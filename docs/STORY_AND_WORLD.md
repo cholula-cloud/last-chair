@@ -1,20 +1,21 @@
 # Last Chair — story & world (Story Mode)
 
-**Version:** 0.4 · **Updated:** 2026-11-13  
-**Scope:** Story Mode only. **Real Northeast mountains + real regional lore**; player plot is fiction.
+**Version:** 0.5 · **Updated:** 2026-11-13  
+**Scope:** Real Northeast mountains + regional lore. **Act I = broken hill in the sticks.**
 
 ---
 
 ## World
 
-**New England** — Massachusetts, New Hampshire, Vermont, Maine (**the Ice Coast**). You are a foreclosed-hill operator in the same narrative tradition as **reviving lost ski areas**: rope tows gone quiet, school buses rerouted, lift parts on eBay.
+**New England — the Ice Coast.** You start on [**Dutch Hill**](https://www.nelsap.org/vt/dutch1.html): **Heartwellville**, Readsboro, Vermont — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**.
 
-**SummitLink Pass** (fictional) = megapass pressure. **Real** consolidation trends inform radio banter; no real pass trademarks in UI.
+**SummitLink Pass** (fictional) = consolidation pressure.
 
-**Career opens at [Tenney Mountain, NH](https://www.nelsap.org/nh/tenney.html)** — Plymouth region, community-sized vertical, documented closure fights. Full roster: [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md).  
-**Lore pantry:** [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
+- [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md)  
+- [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md)  
+- [NORTHEAST_LORE.md](./NORTHEAST_LORE.md)
 
-Tone: hopeful, operational, **dignified memory** for dead hills.
+Tone: hopeful operator; **dignified** history (NELSAP, DHASH).
 
 ---
 
@@ -24,32 +25,22 @@ Tone: hopeful, operational, **dignified memory** for dead hills.
 |-------|----------------|
 | **Daily** | Ski sim; optional follow guest |
 | **Nightly** | Fare + snow/service (+ rare story reply) |
-| **Beats (~8–12 / mountain)** | Metric-gated; radio + heritage callback |
-| **Winter review** | Real peak name + “what you saved this winter” |
+| **Beats (~8–12 / mountain)** | Metric-gated radio |
+| **Winter review** | Real peak name + what you saved |
 
-**Act I (Tenney Mountain)** — ship with 99% parity:
+**Act I (Dutch Hill)** — 99% parity:
 
-1. **First legal chair** — radio cites last contested reopening season (paraphrased history).  
-2. **Saturday crunch** — Lakes Region traffic idiom.  
-3. **School bus week** — NH vacation / district contract beat.  
-4. **Thaw week** — Ice Coast granular sermon ([NORTHEAST_LORE.md](./NORTHEAST_LORE.md)).  
-5. **SummitLink “coffee”** — Boston office; no forced sell.  
-6. **Winter review** → unlock **Maple Valley, VT** teaser.
-
-Acts II+ use next real peaks; heavy lore beats wait for [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) if needed.
+1. **First uphill load** — closed since **1985**.  
+2. **Saturday** — Bennington / Berkshire corridor.  
+3. **School bus** — one contract matters.  
+4. **Dry week** — **no snowmaking** at start.  
+5. **SummitLink** — pass wants the dot on the map.  
+6. **Winter review** → **Tenney Mountain, NH**.
 
 ---
 
-## Story ↔ simplicity contract
+## Story ↔ simplicity
 
-- Beats never add a **fourth** mandatory nightly control in Act I.  
-- Heritage / lore is **optional** depth (1 tap from recap).  
-- Settings: **Radio off** / **Heritage minimal** still progresses career.
-
----
-
-## Sandbox
-
-Same 3D build rules; **no** career map pins, **no** SummitLink, **no** heritage-required beats. Optional: load **Tenney template** topography.
-
-See [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md).
+- No fourth mandatory nightly control in Act I.  
+- Heritage optional; radio can be off.  
+- Sandbox: no career pins / SummitLink — [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md). Optional: **Dutch Hill** template.

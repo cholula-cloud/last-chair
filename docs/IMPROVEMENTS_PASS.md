@@ -10,7 +10,7 @@ This file is the **parking lot** for differentiation. During parity work, if an 
 
 ## Gate to start this pass
 
-- [ ] Story Mode: 28-day winter on Tenney Mountain without cheats
+- [ ] Story Mode: 28-day winter on Dutch Hill without cheats
 - [ ] Build: 2+ lift types, lodge upgrade, café, snow guns, groom outcome visible
 - [ ] Crew talent order: at least 20 talents functioning
 - [ ] Second mountain enterable with caretaker stub

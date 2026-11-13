@@ -9,7 +9,7 @@
 
 1. **Story Mode = ICR Simple loop** + light narrative hooks.
 2. **Don't over-simulate:** defer Director ops and full accounting UI.
-3. **Sandbox** after Tenney day-loop is fun.
+3. **Sandbox** after Dutch Hill day-loop is fun.
 4. **110%** features only from [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md).
 
 ---

@@ -19,7 +19,7 @@ Ice Coast Revival’s **Build the Mountain (Simple)** is the mechanical template
 
 1. **Title** → Story Mode / Sandbox (Story highlighted).
 2. **Pick founder** (one of six — modifiers, see [CHARACTERS.md](./CHARACTERS.md)).
-3. **Tenney Mountain, NH** loading — flyover + heritage card + radio cold open (optional skip).
+3. **Dutch Hill, VT** loading — overgrown lifts, heritage card, radio (skip OK).
 4. **In-world goal card:** “Get one lift running and one happy descent before the bank calls.”
 
 ### Typical 20–30 minute session
@@ -61,7 +61,7 @@ Days 22–28 Peak week, SummitLink offer, winter review
 
 | Setting | Options |
 |---------|---------|
-| Mountain | Blank / Tenney template / saved layout import (later) |
+| Mountain | Blank / Dutch Hill template / saved layout import (later) |
 | Money | Normal · Comfortable · Unlimited |
 | Weather | Live random · Fixed sunny · Storm week |
 | Story | **Off** |

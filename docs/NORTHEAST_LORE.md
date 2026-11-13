@@ -53,7 +53,7 @@ Hundreds of NE areas operated rope tows and T-bars after WWII; consolidation, in
 
 **Gameplay:**
 
-- Ski school revenue beat on **Tenney** / **Maple Valley**.  
+- Ski school revenue beat on **Dutch Hill** (one bus) / **Maple Valley**.  
 - Radio: “Lesson 1 is still **stand on the downhill ski**.”
 
 ---
@@ -156,16 +156,27 @@ Use for **founder flavor**:
 
 ---
 
-## 14. Story beat → lore mapping (Act I Tenney)
+## 14. Story beat → lore mapping (Act I Dutch Hill)
 
 | Beat | Lore accent |
 |------|-------------|
-| First chair | “Plymouth State kids used to poach the glade” (generic college-town) |
-| Saturday crunch | Lake Winnipesaukee weekend traffic idiom |
-| School bus | NH school vacation week calendar |
-| Thaw | Ice Coast granular sermon |
-| SummitLink meeting | Indy pass neighbor comparison (generic) |
-| Winter review | NELSAP-style “remembered lifts” montage (original art) |
+| First load | “Last adult ticket **$6**” era; DHASH hikers wave |
+| Saturday | **Route 100**; plates from Bennington, North Adams |
+| School bus | Readsboro / Wilmington — one bus = lights stay on |
+| Dry week | **No snowmaking** opening; 1970s drought stories on radio |
+| SummitLink | Stratton/Mount Snow shadow — pass wants the map dot |
+| Winter review | Saved the sticks → **Tenney** on the career map |
+
+Detail: [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md).
+
+---
+
+## 16. Dutch Hill lore stash (Act I)
+
+- **Heartwellville** naming; southern Vermont **snow belt** (~110″ lore) vs closing anyway.  
+- **Alpenwald** across-the-street development failure — optional economic B-text.  
+- **1990 lodge burn** — mention only with dignity (fire dept training).  
+- Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.
 
 ---
 

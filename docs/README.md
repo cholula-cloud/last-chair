@@ -6,6 +6,7 @@ Update these as decisions change. **Build order:** 99% Ice Coast parity → fun 
 |----------|---------|
 | [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) | Vision, Story vs Sandbox, build order |
 | [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md) | Loops, screens, simplicity rules |
+| [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) | **Act I** — Dutch Hill, VT (sticks) |
 | [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) | Story Mode beats & NE setting |
 | [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md) | **Real** career peaks & heritage cards |
 | [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) | **Real** regional lore (radio, beats) |

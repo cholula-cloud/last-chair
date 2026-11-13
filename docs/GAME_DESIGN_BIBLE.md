@@ -52,7 +52,7 @@ Story detail: [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) · Flow: [GAMEPLAY_AND_
 
 ## Player fantasy (Story Mode)
 
-Foreclosed **Tenney Mountain, New Hampshire**—real town, real lost-hill history. Locals want the school bus back. You're the person who gets **one lift turning** and earns **one more Ice Coast winter**. Mountains & lore: [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md), [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
+You reopen [**Dutch Hill**](https://www.nelsap.org/vt/dutch1.html)—a **shut-down Vermont hill in the sticks** (Heartwellville, Readsboro). One rusty lift, no guns at first, the forest creeping back. Earn **one more winter**, then take the career north. [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) · [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md) · [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
 
 ---
 

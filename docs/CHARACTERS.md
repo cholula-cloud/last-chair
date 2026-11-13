@@ -12,7 +12,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 
 ### 1. **Elena Vargas — *The Caretaker***
 
-- **Background:** Former ski-school director; **Tenney Mountain’s** last paid employee before foreclosure.
+- **Background:** Taught the last lessons at **Dutch Hill** before the **1985** closure (fiction: you’re back for the revival).
 - **Bonus:** +arrival mood for families; lesson conversion slightly easier.
 - **Constraint:** Cannot demolish the original warming hut (upgrade in place only).
 - **Story:** Knows every bus driver by name; pushes school-day beats early.
