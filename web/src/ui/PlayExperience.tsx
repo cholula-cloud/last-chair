@@ -13,9 +13,7 @@ import { NightRecapSheet } from "@/ui/NightRecapSheet";
 export default function PlayExperience() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [buildOpen, setBuildOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(() =>
-    useGameStore.persist.hasHydrated(),
-  );
+  const [hydrated, setHydrated] = useState(false);
 
   const dayIndex = useGameStore((s) => s.dayIndex);
   const clockMin = useGameStore((s) => s.clockMin);
@@ -36,10 +34,11 @@ export default function PlayExperience() {
   );
 
   useEffect(() => {
-    const unsub = useGameStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-    void useGameStore.persist.rehydrate();
+    const persist = useGameStore.persist;
+    const onReady = () => setHydrated(true);
+    const unsub = persist.onFinishHydration(onReady);
+    void persist.rehydrate();
+    if (persist.hasHydrated()) queueMicrotask(onReady);
     return unsub;
   }, []);
 
