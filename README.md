@@ -13,6 +13,7 @@ Planning index: **[docs/README.md](./docs/README.md)**
 | [Platform & mobile](./docs/PLATFORM_MOBILE.md) | Touch UX, Safari QA |
 | [Simulation spec](./docs/SIMULATION_SPEC.md) | Dutch Hill v0 numbers |
 | [Implementation roadmap](./docs/IMPLEMENTATION_ROADMAP.md) | Engineering phases |
+| [P0 playtest script](./docs/PLAYTEST_P0.md) | iPhone Safari gate |
 | [Ice Coast Revival analysis](./docs/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | ICR reference |
 
 ## Development

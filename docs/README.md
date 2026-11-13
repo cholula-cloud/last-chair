@@ -19,5 +19,6 @@ Update these as decisions change. **Build order:** ICR **Simple loop feel** on *
 | [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) | **110% backlog (gated)** |
 | [LAST_CHAIR_IMPROVEMENT_PLAN.md](./LAST_CHAIR_IMPROVEMENT_PLAN.md) | Archive of differentiation ideas |
 | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) | Engineering phases |
+| [PLAYTEST_P0.md](./PLAYTEST_P0.md) | **15 min** iPhone Safari gate script |
 
 **Modes:** **Story Mode** (career, crew, light plot) · **Sandbox** (build free, no plot).

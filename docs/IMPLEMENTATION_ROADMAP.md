@@ -98,4 +98,5 @@ CLI on VM: logged out; deploy via Git push or dashboard.
 
 1. ~~`web/src/game/` types + sim v0 — [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)~~
 2. ~~R3F scene on `/play`~~
-3. ~~Night recap bottom sheet~~ — next: descent validation UI, save, P1 winter
+3. ~~Night recap bottom sheet~~
+4. ~~Descent validation UI + local save + ops strip~~ — next: iPhone P0 sign-off, P1 winter

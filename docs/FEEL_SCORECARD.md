@@ -25,13 +25,14 @@ Full ICR surface area over time: [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAS
 
 **Platform:** [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) — pass on **iPhone Safari**.
 
-- [ ] Day / pause / skip-to-close
-- [ ] One lift, descent validity, ~20 guests
-- [ ] Follow guest via **Guests list** (not tiny 3D pick)
-- [ ] Night recap **bottom sheet**: fare + snow/service + continue
-- [ ] Cash + satisfaction **one-liners** on recap; no mandatory Ledger
-- [ ] Ops strip or icon hints: queue / snow (stub OK)
-- [ ] No pinch-zoom required to read night tiles
+- [x] Day / pause / skip-to-close
+- [x] One lift, descent validity, ~20 guests
+- [x] Follow guest via **Guests list** (not tiny 3D pick)
+- [x] Night recap **bottom sheet**: fare + snow/service + continue
+- [x] Cash + satisfaction **one-liners** on recap; no mandatory Ledger
+- [x] Ops strip or icon hints: queue / snow (stub OK)
+- [x] No pinch-zoom required to read night tiles
+- [ ] **iPhone Safari** playtest signed ([PLAYTEST_P0.md](./PLAYTEST_P0.md))
 
 **Playtest:** 15 min — one full day + night; player can explain why they changed a preset.
 
