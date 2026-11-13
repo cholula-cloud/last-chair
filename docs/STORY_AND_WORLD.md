@@ -1,17 +1,20 @@
 # Last Chair — story & world (Story Mode)
 
-**Version:** 0.3 · **Updated:** 2026-11-13  
-**Scope:** Story Mode only. Sandbox has **no** SummitLink arc and **no** required beats.
-
-Story is **lightweight glue** on the 99% tycoon loop—not a visual novel. Beats are short (radio + optional 2-line choice), gated by mountain metrics.
+**Version:** 0.4 · **Updated:** 2026-11-13  
+**Scope:** Story Mode only. **Real Northeast mountains + real regional lore**; player plot is fiction.
 
 ---
 
 ## World
 
-**Greylock Foothills** — fictional small NE hills. **SummitLink Pass** (working title) is the consolidating megapass. You start at foreclosed **Hemlock Notch**.
+**New England** — Massachusetts, New Hampshire, Vermont, Maine (**the Ice Coast**). You are a foreclosed-hill operator in the same narrative tradition as **reviving lost ski areas**: rope tows gone quiet, school buses rerouted, lift parts on eBay.
 
-Tone: hopeful, operational humor, no grimdark. [CHARACTERS.md](./CHARACTERS.md).
+**SummitLink Pass** (fictional) = megapass pressure. **Real** consolidation trends inform radio banter; no real pass trademarks in UI.
+
+**Career opens at [Tenney Mountain, NH](https://www.nelsap.org/nh/tenney.html)** — Plymouth region, community-sized vertical, documented closure fights. Full roster: [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md).  
+**Lore pantry:** [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
+
+Tone: hopeful, operational, **dignified memory** for dead hills.
 
 ---
 
@@ -19,42 +22,34 @@ Tone: hopeful, operational humor, no grimdark. [CHARACTERS.md](./CHARACTERS.md).
 
 | Layer | Player effort |
 |-------|----------------|
-| **Daily** | Ski sim runs; optional follow guest |
+| **Daily** | Ski sim; optional follow guest |
 | **Nightly** | Fare + snow/service (+ rare story reply) |
-| **Beats (~8–12 per mountain)** | Auto-fire on metrics; 30s radio or 1 choice |
-| **Winter review** | 1 screen summary + hook to next peak |
+| **Beats (~8–12 / mountain)** | Metric-gated; radio + heritage callback |
+| **Winter review** | Real peak name + “what you saved this winter” |
 
-**Act I (Hemlock)** — ship with parity:
+**Act I (Tenney Mountain)** — ship with 99% parity:
 
-1. First chair (first complete guest loop)
-2. First Saturday crunch (queue lesson)
-3. School bus day scheduled (superintendent call)
-4. Thaw week warning
-5. SummitLink “coffee meeting” (flavor; no hard fail)
-6. Winter review → Pine Barren unlock teaser
+1. **First legal chair** — radio cites last contested reopening season (paraphrased history).  
+2. **Saturday crunch** — Lakes Region traffic idiom.  
+3. **School bus week** — NH vacation / district contract beat.  
+4. **Thaw week** — Ice Coast granular sermon ([NORTHEAST_LORE.md](./NORTHEAST_LORE.md)).  
+5. **SummitLink “coffee”** — Boston office; no forced sell.  
+6. **Winter review** → unlock **Maple Valley, VT** teaser.
 
-Acts II+ live in [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) until parity gate.
+Acts II+ use next real peaks; heavy lore beats wait for [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) if needed.
 
 ---
 
 ## Story ↔ simplicity contract
 
-- Beats **never** add a fourth mandatory nightly control in Act I.
-- Beats **suggest** builds (“café lines are long”) but do not auto-place.
-- Skip all story: allowed in settings (radio off; career still progresses).
-
----
-
-## Mountain roster (fiction)
-
-| # | Name | Story Mode |
-|---|------|------------|
-| 1 | Hemlock Notch | Tutorial + Act I |
-| 2 | Pine Barren | Parity milestone |
-| 3+ | TBD | After 110% review |
+- Beats never add a **fourth** mandatory nightly control in Act I.  
+- Heritage / lore is **optional** depth (1 tap from recap).  
+- Settings: **Radio off** / **Heritage minimal** still progresses career.
 
 ---
 
 ## Sandbox
 
-Same 3D assets and build rules; **no beats, no SummitLink, no career map**. See [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md).
+Same 3D build rules; **no** career map pins, **no** SummitLink, **no** heritage-required beats. Optional: load **Tenney template** topography.
+
+See [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md).

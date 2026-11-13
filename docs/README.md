@@ -6,7 +6,9 @@ Update these as decisions change. **Build order:** 99% Ice Coast parity → fun 
 |----------|---------|
 | [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) | Vision, Story vs Sandbox, build order |
 | [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md) | Loops, screens, simplicity rules |
-| [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) | Story Mode beats & world (light) |
+| [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) | Story Mode beats & NE setting |
+| [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md) | **Real** career peaks & heritage cards |
+| [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) | **Real** regional lore (radio, beats) |
 | [CHARACTERS.md](./CHARACTERS.md) | Founders & NPCs |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | 99% look + 110% art later |
 | [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | Reference mechanics / parity checklist |

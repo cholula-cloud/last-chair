@@ -1,6 +1,6 @@
 # Last Chair — characters
 
-**Version:** 0.2 · **Updated:** 2026-11-13
+**Version:** 0.3 · **Updated:** 2026-11-13
 
 Characters exist to **teach systems** and **anchor emotion**. Mechanics always win if story and sim disagree (story adapts).
 
@@ -12,7 +12,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 
 ### 1. **Elena Vargas — *The Caretaker***
 
-- **Background:** Former ski-school director; Hemlock’s last paid employee before foreclosure.
+- **Background:** Former ski-school director; **Tenney Mountain’s** last paid employee before foreclosure.
 - **Bonus:** +arrival mood for families; lesson conversion slightly easier.
 - **Constraint:** Cannot demolish the original warming hut (upgrade in place only).
 - **Story:** Knows every bus driver by name; pushes school-day beats early.
@@ -43,7 +43,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 - **Background:** Land trust liaison; clearing trees is politically visible.
 - **Bonus:** Reputation from untouched glades / forested character.
 - **Constraint:** Trail clearing costs more; some steep lines blocked until permit beat.
-- **Story:** Mill River Ridge politics arc synergy.
+- **Story:** Vermont land-trust politics arc synergy (e.g. Hogback / Maple Valley region beats).
 
 ### 6. **Marco Russo — *The Showman***
 
@@ -58,7 +58,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 
 | Name | Role | Systems touch |
 |------|------|----------------|
-| **Maris Shaw** | Mountain Radio host | Story delivery, tutorials |
+| **Maris Shaw** | Mountain Radio host (NH accent; Lakes Region idioms) | Story delivery, tutorials, [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) |
 | **Chief Dana Holt** | Patrol captain | Injuries, wind holds, glade openings |
 | **Superintendent Al Waters** | School district | Bus days, lesson seats |
 | **Vivian Cho** | SummitLink regional rep | Buyouts, poaching, race sponsorship |

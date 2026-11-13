@@ -1,6 +1,6 @@
 # Last Chair — game design bible
 
-**Version:** 0.3 · **Updated:** 2026-11-13  
+**Version:** 0.4 · **Updated:** 2026-11-13  
 **Status:** Planning — **Story Mode** is the product; Sandbox supports experimentation.
 
 ---
@@ -52,7 +52,7 @@ Story detail: [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) · Flow: [GAMEPLAY_AND_
 
 ## Player fantasy (Story Mode)
 
-Foreclosed **Hemlock Notch**, Greylock Foothills. Locals want the bus back. You're not a spreadsheet CPA—you're the person who gets **one lift turning** and earns **one more winter**.
+Foreclosed **Tenney Mountain, New Hampshire**—real town, real lost-hill history. Locals want the school bus back. You're the person who gets **one lift turning** and earns **one more Ice Coast winter**. Mountains & lore: [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md), [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
 
 ---
 
