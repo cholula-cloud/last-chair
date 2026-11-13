@@ -1,6 +1,6 @@
 # Ice Coast Revival — design analysis (reference for **Last Chair**)
 
-> **Purpose:** Capture how Ice Coast Revival (ICR) works well enough to replicate ~99% of the fantasy and systems, then exceed it on narrative, UI, and feel.  
+> **Purpose:** Capture how ICR works well enough to replicate **~99%** in **Story Mode** (ICR *Build the Mountain / Simple*). **110%** waits until parity is fun — [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md).  
 > **Sources:** Official manual/talents (v1.4.3 core / web 1.4.6), marketing pages, Steam listing, builder notes.  
 > **Our product:** *Last Chair* — working title aligned with `cholula-cloud/last-chair` (“Slopes Tycoon”).
 
