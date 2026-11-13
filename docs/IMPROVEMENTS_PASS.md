@@ -1,10 +1,10 @@
 # Last Chair — 110% improvements pass
 
-**When:** Only **after** Story Mode reaches **~99% Ice Coast Revival parity** and internal playtest says the loop is fun.
+**When:** Only **after** [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) **P1** (Dutch Hill winter fun on mobile) and internal playtest says “one more day.”
 
 **Version:** 0.1 · **Updated:** 2026-11-13
 
-This file is the **parking lot** for differentiation. During parity work, if an idea is not required to match ICR Simple loop, it goes here—not in the sprint.
+This file is the **parking lot** for differentiation. During loop-feel work, if an idea is not required for ICR Simple verbs on mobile, it goes here—not in the sprint.
 
 ---
 

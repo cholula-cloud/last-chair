@@ -1,6 +1,6 @@
 # Ice Coast Revival — design analysis (reference for **Last Chair**)
 
-> **Purpose:** Capture how ICR works well enough to replicate **~99%** in **Story Mode** (ICR *Build the Mountain / Simple*). **110%** waits until parity is fun — [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md).  
+> **Purpose:** Capture how ICR works so **Story Mode** can match **Build the Mountain (Simple) loop feel** (not a literal feature clone). **v1 gates:** [FEEL_SCORECARD.md](./FEEL_SCORECARD.md). **110%** waits until P0 is fun on mobile — [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md).  
 > **Sources:** Official manual/talents (v1.4.3 core / web 1.4.6), marketing pages, Steam listing, builder notes.  
 > **Our product:** *Last Chair* — working title aligned with `cholula-cloud/last-chair` (“Slopes Tycoon”).
 
@@ -141,9 +141,9 @@ From manual emphasis + community tone (Reddit thread timed out; Steam reviews pa
 
 ---
 
-## 6. Feature parity checklist (~99%)
+## 6. ICR full surface (reference over time)
 
-Use as acceptance criteria before calling v1 “complete”:
+**Not** Last Chair v1 acceptance — that is [FEEL_SCORECARD.md](./FEEL_SCORECARD.md). Use this list as a **long-horizon mechanics bibliography** when extending toward ICR depth:
 
 - [ ] Real-time day + overnight resolution
 - [ ] Lift build preview (terminals, line, quote)

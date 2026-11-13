@@ -87,15 +87,15 @@ Guests are **agents** with a **persona tag** affecting needs, venues, and mood w
 
 ## Relationship to talents & crew
 
-In **Lodge Mode**, overnight “crew picks” are **framed as NPCs**:
+In **Story Mode (ICR Simple)**, overnight crew talent order is **framed as NPCs**:
 
 - **Frank** biases snowmaking maintenance.
 - **Dana** biases patrol talents.
 - **Elena** biases school/lesson talents.
 
-Same fixed priority idea as ICR Simple mode—but **named**, so radio can joke about their stubbornness.
+Same fixed priority idea as ICR **Build the Mountain**—but **named**, so radio can joke about their stubbornness.
 
-In **Director Mode**, player picks talents; NPCs comment in Story log instead.
+In **Sandbox** (optional **ICR Complex** later), player may pick talents manually; NPCs comment in Story log instead.
 
 ---
 

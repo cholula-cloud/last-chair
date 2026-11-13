@@ -28,7 +28,7 @@ Tone: hopeful operator; **dignified** history (NELSAP, DHASH).
 | **Beats (~8–12 / mountain)** | Metric-gated radio |
 | **Winter review** | Real peak name + what you saved |
 
-**Act I (Dutch Hill)** — 99% parity:
+**Act I (Dutch Hill)** — ICR Simple loop feel + story beats:
 
 1. **First uphill load** — closed since **1985**.  
 2. **Saturday** — Bennington / Berkshire corridor.  

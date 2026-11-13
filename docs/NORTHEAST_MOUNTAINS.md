@@ -72,7 +72,7 @@ Terrain archetype tags (for sim): `southern_thaw`, `family_ropetow`, `exposed_su
 
 ## Implementation order
 
-1. **Dutch Hill** — only mountain in Phase A (99% parity); start **no snowmaking**, surface lift.  
+1. **Dutch Hill** — only mountain in Phase A ([FEEL_SCORECARD](./FEEL_SCORECARD.md)); start **no snowmaking**, surface lift.  
 2. **Tenney** — mountain 2 + caretaker.  
 3. **Maple Valley** — mountain 3.  
 4. Remaining peaks — post-parity / 110% pass.

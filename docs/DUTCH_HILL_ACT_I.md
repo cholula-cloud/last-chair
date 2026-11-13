@@ -34,7 +34,7 @@ Real arc (public record):
 
 ---
 
-## Sim template (Phase A · 99% parity)
+## Sim template (Phase A · [FEEL_SCORECARD](./FEEL_SCORECARD.md) P0/P1)
 
 | Field | Value |
 |-------|--------|

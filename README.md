@@ -1,12 +1,19 @@
 # Last Chair
 
-**Slopes tycoon** — bring lost New England ski hills back to life. A browser game built for [cholula-cloud](https://github.com/cholula-cloud).
+**Slopes tycoon** — bring lost New England ski hills back to life. **Browser-first**, built for **iPhone, iPad, and desktop** — [cholula-cloud](https://github.com/cholula-cloud).
 
 ## Docs
 
-- [Ice Coast Revival — game analysis](./docs/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) (reference mechanics)
-- [Last Chair — 110% improvement plan](./docs/LAST_CHAIR_IMPROVEMENT_PLAN.md)
-- [Implementation roadmap](./docs/IMPLEMENTATION_ROADMAP.md)
+Planning index: **[docs/README.md](./docs/README.md)**
+
+| Start here | |
+|------------|--|
+| [Game design bible](./docs/GAME_DESIGN_BIBLE.md) | Vision + why Last Chair |
+| [Feel scorecard](./docs/FEEL_SCORECARD.md) | P0/P1 ship gates |
+| [Platform & mobile](./docs/PLATFORM_MOBILE.md) | Touch UX, Safari QA |
+| [Simulation spec](./docs/SIMULATION_SPEC.md) | Dutch Hill v0 numbers |
+| [Implementation roadmap](./docs/IMPLEMENTATION_ROADMAP.md) | Engineering phases |
+| [Ice Coast Revival analysis](./docs/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | ICR reference |
 
 ## Development
 
@@ -15,6 +22,8 @@ cd web
 npm install
 npm run dev
 ```
+
+Open `/play` for the vertical slice (React Three Fiber + day/night loop).
 
 ## Deploy
 

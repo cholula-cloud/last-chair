@@ -1,7 +1,8 @@
 # Last Chair — gameplay & flow
 
-**Version:** 0.3 · **Updated:** 2026-11-13  
-**Priority:** **Story Mode** first; Sandbox after core loop.
+**Version:** 0.4 · **Updated:** 2026-11-13  
+**Priority:** **Story Mode** first; Sandbox after core loop.  
+**Platform:** [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) — validate flows on **iPhone + iPad Safari** before desktop.
 
 ---
 
@@ -28,10 +29,10 @@ Ice Coast Revival’s **Build the Mountain (Simple)** is the mechanical template
 |------|--------|------|
 | 1 | Unpause or stay paused | Day clock runs 6am–4pm |
 | 2 | Build / move / inspect | Tap lift, guest, building |
-| 3 | Follow guest (optional) | Camera tracks agent |
+| 3 | Follow guest (optional) | **Guests sheet** → Follow; camera tracks agent (avoid tiny 3D pick on phone) |
 | 4 | Pause to plan | No penalty |
 | 5 | Let day finish or skip to close | “Skip to close” after 2pm (accessibility) |
-| 6 | **Night recap** (1 screen) | Crowd, satisfaction emoji, cash Δ, **one problem highlight** |
+| 6 | **Night recap** (bottom sheet on mobile) | Crowd, satisfaction emoji, cash Δ, **one problem highlight** |
 | 7 | **Choices (max 3)** | Fare preset · Snow & service · Story reply (if beat) |
 | 8 | Sleep | Crew talents + overnight sim |
 | 9 | Morning headline | Weather + radio line |
@@ -51,7 +52,7 @@ Days 22–28 Peak week, SummitLink offer, winter review
 
 **Story beats** gate on sim metrics (sellout, broke cash, school day scheduled)—never on arbitrary timers alone. Log in **Career → Story**.
 
-**Talents:** In Story Mode, **crew learns overnight** in a fixed priority order (ICR-style list to be ported/adapted). Player sees “Tomorrow the crew learns: *Rope Tow*” on Level screen—no tree UI required for v1 parity.
+**Talents:** In Story Mode, **crew learns overnight** in a fixed priority order (ICR-style list to be ported/adapted). Player sees “Tomorrow the crew learns: *Rope Tow*” on Level screen—no tree UI required for [FEEL_SCORECARD](./FEEL_SCORECARD.md) P0.
 
 ---
 
@@ -73,33 +74,32 @@ Sandbox is where we test **110% build tools** (trail draw, lift types) without b
 
 ---
 
-## Screen map (Story Mode v1 — 99% parity)
+## Screen map (Story Mode v1 — mobile-first)
 
-Minimal chrome; 3D is home.
+Minimal chrome; 3D is home. On phone: **bottom sheets** for Build, Guests, Night.
 
 ```
-┌─────────────────────────────────────┐
+┌─────────────────────────────────────┐  safe area top
 │ [Pause]  Day 12 · Sat · 11:42  [$]  │
-│                                     │
+│  queue · snow · mood (ops strip)    │
 │         3D MOUNTAIN (main)          │
-│                                     │
-│ [Build] [Guests] [Night▸when close] │
+│ [Build] [Guests] [Night▸when close] │  thumb zone
 └─────────────────────────────────────┘
 
-Build sheet    → categories: Lifts · Terrain · Village · Snow
-Guests sheet   → list + Follow · mood snippet
-Night recap    → recap + fare + snow/service + Continue
+Build sheet    → bottom sheet: Lifts · Terrain · Village · Snow
+Guests sheet   → bottom sheet: list + Follow · mood snippet
+Night recap    → bottom sheet: recap + fare + snow/service tiles + Continue
 Career (hub)   → map · level · talents progress · story log · Ledger (optional)
 ```
 
-**Ledger (optional depth):** Income snapshot only in v1 parity; full IS/BS/CF in parity phase 3 or 110% pass.
+**Ledger (optional depth):** Income snapshot in P1; full IS/BS/CF in P2 or 110% pass.
 
 ---
 
 ## Controls & feel
 
 - **Desktop:** click place, wheel zoom, drag pan, Esc menu.
-- **Mobile:** one-thumb pan; build mode explicit; large close buttons.
+- **Mobile (primary):** one-thumb pan; pinch zoom; build mode explicit; night tiles full-width ≥56px; see [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md).
 - **Speed:** 1× default; 2× when “day going well”; never force 4× on new players.
 
 ---
