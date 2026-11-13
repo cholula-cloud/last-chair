@@ -1,7 +1,7 @@
 # Last Chair — art direction
 
 **Version:** 0.3 · **Updated:** 2026-11-13  
-**Strategy:** **99% match the reference fantasy** (cozy NE diorama) with **original assets**; **110%** = lighting, juice, UI polish **after** parity.
+**Strategy:** Match **ICR cozy NE diorama feel** with **original assets**; **110%** = lighting, juice, UI polish **after** [FEEL_SCORECARD](./FEEL_SCORECARD.md) P0 on mobile.
 
 ---
 
@@ -22,7 +22,7 @@ What we are matching emotionally—not copying literally:
 
 ---
 
-## 99% pass — art deliverables
+## Loop-feel pass — art deliverables (P0/P1)
 
 **Phase 1 (vertical slice):**
 
@@ -31,7 +31,7 @@ What we are matching emotionally—not copying literally:
 - Placeholder hut: box + roof + emissive windows.
 - Guest: capsule or stock low-poly rig.
 
-**Phase 2 (parity look):**
+**Phase 2 (P1 look):**
 
 - Blender **village kit v1:** warming hut, café, small shop.
 - Blender **lift kit v1:** rope/surface, double chair.

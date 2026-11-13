@@ -1,7 +1,8 @@
 # Last Chair — implementation roadmap
 
-**Version:** 0.3 · **Updated:** 2026-11-13  
-**Focus:** **99% ICR parity in Story Mode** → Sandbox → **110% pass**
+**Version:** 0.4 · **Updated:** 2026-11-13  
+**Focus:** **ICR Simple loop feel** in Story Mode ([FEEL_SCORECARD](./FEEL_SCORECARD.md)) → Sandbox → **110% pass**  
+**Platform:** Phase A1 exit on **iOS Safari** — [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md)
 
 ---
 
@@ -26,14 +27,16 @@ web/src/ui/       # night recap, build sheets
 
 ---
 
-## Phase A — 99% parity core (Story Mode)
+## Phase A — loop-feel core (Story Mode)
 
 ### A1 Vertical slice
 
-- [ ] Day / pause / close
-- [ ] One lift, descent check, 20 guests, follow
-- [ ] Night: fare + snow/service presets
-- [ ] Cash + satisfaction one-liners
+**Exit:** playable `/play` on **iPhone Safari** (touch-first UI).
+
+- [x] Day / pause / close
+- [x] One lift, descent check, ~20 guests, follow via Guests list
+- [x] Night **bottom sheet**: fare + snow/service presets
+- [x] Cash + satisfaction one-liners
 
 ### A2 One winter (simplified)
 
@@ -93,6 +96,6 @@ CLI on VM: logged out; deploy via Git push or dashboard.
 
 ## Open engineering tasks (now)
 
-1. `web/src/game/` types from ICR manual rules
-2. R3F heightfield scene on `/play`
-3. Night recap UI (2 tiles + continue)
+1. ~~`web/src/game/` types + sim v0 — [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)~~
+2. ~~R3F scene on `/play`~~
+3. ~~Night recap bottom sheet~~ — next: descent validation UI, save, P1 winter

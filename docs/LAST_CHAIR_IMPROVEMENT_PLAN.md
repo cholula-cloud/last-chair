@@ -1,6 +1,6 @@
 # Last Chair — 110% improvement plan (deferred)
 
-**Status:** **Not active** until ~99% Ice Coast Revival parity in **Story Mode**.  
+**Status:** **Not active** until [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) P1 in **Story Mode** on mobile.  
 **Active backlog:** [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md)
 
 This document keeps the **original differentiation ideas** for the second pass. Do not implement during parity sprints unless a playtest proves ICR’s simplicity is already missing in our build.
