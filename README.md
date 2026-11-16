@@ -23,4 +23,9 @@ Open `/play` for the Dutch Hill slice (React Three Fiber + day/night loop).
 
 ## Deploy
 
-The Next.js app is in **`web/`**. Vercel project **last-chair** uses root directory `web` and GitHub `cholula-cloud/last-chair`.
+The Next.js app is in **`web/`**. **Production (cholula-cloud only):**
+
+- Project: [cholula-clouds-projects / last-chair](https://vercel.com/cholula-clouds-projects/last-chair)
+- URL: **https://last-chair-iota.vercel.app** → **`/play`**
+
+If the site 404s, follow **[docs/VERCEL_SETUP.md](./docs/VERCEL_SETUP.md)** (root directory `web`, promote production, domain).

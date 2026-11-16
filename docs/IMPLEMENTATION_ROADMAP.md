@@ -90,9 +90,9 @@ Only after [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) gate.
 |-------|--------|
 | Git connected | User confirmed; ensure pushes to `main` deploy |
 | Production deploy | Page showed **No Production Deployment** earlier—first green `main` build should fix |
-| Duplicate project | Agent MCP also sees `last-chair` under another team; use **cholula-cloud** project for prod |
+| Wrong Vercel team | Use **only** [cholula-clouds-projects / last-chair](https://vercel.com/cholula-clouds-projects/last-chair) — see [VERCEL_SETUP.md](./VERCEL_SETUP.md) |
 
-CLI on VM: logged out; deploy via Git push or dashboard.
+CLI on VM: logged out; deploy via Git push or dashboard. Full checklist: [VERCEL_SETUP.md](./VERCEL_SETUP.md).
 
 ---
 
