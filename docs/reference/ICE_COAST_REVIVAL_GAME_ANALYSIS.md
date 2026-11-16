@@ -1,6 +1,6 @@
 # Ice Coast Revival — design analysis (reference for **Last Chair**)
 
-> **Purpose:** Capture how ICR works so **Story Mode** can match **Build the Mountain (Simple) loop feel** (not a literal feature clone). **v1 gates:** [FEEL_SCORECARD.md](./FEEL_SCORECARD.md). **110%** waits until P0 is fun on mobile — [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md).  
+> **Purpose:** Capture how ICR works so **Story Mode** can match **Build the Mountain (Simple) loop feel** (not a literal feature clone). **Plan and gates:** [MASTER_PLAN.md](../MASTER_PLAN.md).  
 > **Sources:** Official manual/talents (v1.4.3 core / web 1.4.6), marketing pages, Steam listing, builder notes.  
 > **Our product:** *Last Chair* — working title aligned with `cholula-cloud/last-chair` (“Slopes Tycoon”).
 
@@ -143,7 +143,7 @@ From manual emphasis + community tone (Reddit thread timed out; Steam reviews pa
 
 ## 6. ICR full surface (reference over time)
 
-**Not** Last Chair v1 acceptance — that is [FEEL_SCORECARD.md](./FEEL_SCORECARD.md). Use this list as a **long-horizon mechanics bibliography** when extending toward ICR depth:
+**Not** Last Chair v1 acceptance — that is the roadmap in [MASTER_PLAN.md](../MASTER_PLAN.md#6-roadmap). Use this list as a **long-horizon mechanics bibliography** when extending toward ICR depth:
 
 - [ ] Real-time day + overnight resolution
 - [ ] Lift build preview (terminals, line, quote)
@@ -177,4 +177,65 @@ We **do not** copy assets, code, audio, or trademarked names. We **do** replicat
 - Individually simulated skiers imply **entity component** or agent loop on terrain nav mesh / heightfield.
 - Heavy UI + pause suggests **simulation thread** or fixed tick with UI on React/Vue/similar for web.
 
-**Last Chair stack recommendation:** see `IMPLEMENTATION_ROADMAP.md`.
+**Last Chair stack:** see [MASTER_PLAN.md §4](../MASTER_PLAN.md#4-how-it-is-built).
+
+---
+
+## 9. Steam release and patch history (read 2026-11-16)
+
+**Sources:** Steam store page for app 4999040, the four Steam user reviews, and all ten Steam announcements (Sep 6 – Nov 10, 2026) via the Steam news API. Summaries are ours.
+
+### 9.1 Store facts
+
+| Item | Value |
+|---|---|
+| Developer / publisher | Firn LLC |
+| Steam release | 18 Aug 2026, full release (not Early Access) |
+| Price | $9.99 |
+| Platforms | Windows; macOS (Intel + Apple silicon) since Sep 23. Web and phone builds exist outside Steam; the Sep 6 notes mention phone battery/heat |
+| Tags | Management, Skiing, City Builder, Economy, Cozy, Lore-Rich, Relaxing, Story Rich, Stylized, Family Friendly |
+| Requirements | Win 10 64-bit, dual-core 2 GHz, 4 GB RAM, DX11 GPU (integrated OK), 1 GB disk |
+| AI disclosure | Some shipped text and audio AI-generated and human-reviewed |
+| Reviews | 4 total, 3 positive (75%); too few for a Steam score |
+
+Store copy adds features not covered above: trails are drawn, **named and rated**; terrain parks, race courses, Nordic, night skiing; skating rink; staff hiring; a **demand analyst**; company **valuation**; Daily Challenge and weekly cups; founder stories; original soundtrack. The rival conglomerate is **Apex Summit Collective** (staff poaching, rumors, buyout offers).
+
+### 9.2 Patch timeline (what changed)
+
+| Date | Changes |
+|---|---|
+| Sep 6 | 70 career levels granting talent points; **delegation** (hand nightly decisions to crew or run them yourself); skiers path around buildings and leave on time; cooler on phones |
+| Sep 14 | Inn with nightly room rate in the books; paths between buildings; **trail rating by sustained pitch, not steepest point**; trail board showing terrain-mix value; 57 achievements; **Ops Meeting: every event that used to pause the day now arrives at one nightly meeting**; reworked career start; rewritten Apex letters |
+| Sep 22 | Guests choose destinations, re-climb for laps, **go to the village when a lift line is long**; lifts can close at night; Park and Race are per-run switches with a gate tool; Daily Challenge plays day by day and names the costliest dial; **ticket price judged at day's end against hill value**; idle fee removed; departed hills keep earning a share; shareable trail-map poster |
+| Sep 23 | macOS release |
+| ~Sep 29 (1.1.0) | Patrol snowmobile + rescue helicopter; moguls on ungroomed blacks + mogul contest; GS / Super G formats; big air; expert drop-in feature; Bandstand building with band days; college ski teams; hills no longer gated by stars or hill count; **Playbook**: 70-point tree, 3 groups (Mountain, Village, People), 9 branches, 7 sets |
+| Oct 16 | Halloween seasonal look (toggleable) |
+| Oct 20 | Seasonal looks switch; Veterans Day look (10th Mountain statue); **shareable season card at winter's end**; end-of-winter page (Complex adds best day, past-winter chart, three statements); biathlon mat; turned-away skiers counted in the daily report; radio "next song"; busy hills faster |
+| Oct 28 | Daily mini-games (Liftie: fill chair seats; Cat Track: groom a dark trail); **Main Street village layout per hill, buildings snap to lots**; paved paths and footbridge; ski school and road fixes |
+| Nov 2 | **Intro film and a coached first winter** (first J-bar to first chairlift); Daily Arcade with retries; founder profiles; temperature on the weather chip |
+| Nov 10 | Teams by code, weekly team cup, friends, Daily Arcade scoreboards; redesigned profile; coach walk-through of first days; pick a home hill from real US/Canada/international locations |
+
+No post names a roadmap. Cadence is weekly to biweekly.
+
+### 9.3 What the patches tell us
+
+1. **Night consolidation works.** ICR moved every interrupting event into one nightly Ops Meeting. That is the same shape as our night recap sheet; it confirms keeping the day uninterrupted and the night as the single decision point.
+2. **Guests react to bottlenecks.** Long line → guest goes to the village. Lines and venues are linked, which makes "see it, fix it" work.
+3. **Trail difficulty uses sustained pitch.** A single rollover should not reclassify a run. Adopt this rule in PR 13.
+4. **Ticket price is judged against hill value**, not a fixed expectation per preset. Our `ticketMismatch` constant is the weaker model; PR 9 should judge fare against what the hill offered that day.
+5. **Onboarding came late and is now a priority** (intro film, coach for the first winter). We should build a coached first winter into the MVP, not after it.
+6. **The live-service layer is growing fast**: dailies, arcade, teams, leaderboards, seasonal skins. This is ICR's direction, not ours.
+7. **Gating was loosened.** Stars and hill counts no longer lock career hills.
+
+### 9.4 What players say (4 reviews, 0.3–31.6 h playtime)
+
+| Praise | Complaint |
+|---|---|
+| Finance depth (EBITDA-multiple valuation, expense management) | Only lift tickets are a meaningful price; food, rentals, shop, lessons are not |
+| Hard to stop playing ("one more day") | Snow guns and grooming have little visible effect |
+| Long-awaited niche (ski tycoon) | Clunky UI, many buttons without descriptions, rushed-feeling skill tree, missing keybinds |
+| Humor in Apex and villager writing; original music | Easy once the hill is figured out, even in Complex |
+| Good value at $10 | Feels ~70% finished; visual bugs; rough performance on a good PC; one launch failure |
+| | No snowboarders despite store copy; wants staff wages, training, firing |
+
+The sample is small; treat each complaint as a hypothesis, not a finding.
