@@ -6,6 +6,7 @@ import {
   DAY_START_MIN,
   applyOvernight,
   buildNightRecap,
+  computeSatisfaction,
   createInitialGuests,
   nextTalentName,
   planArrivals,
@@ -40,17 +41,39 @@ export function arrivalMood(
   return Math.min(0.95, mood);
 }
 
+/** Inputs to the satisfaction formula, shared by `liveSatisfaction` and `openNight` so they cannot drift. */
+function satisfactionInputs(state: GameState) {
+  const founder = founderById(state.founderId);
+  return {
+    avgQueueMin: queueMinutes(state.guests, state.talentsOwned),
+    mood: arrivalMood(state.buildings, state.founderId),
+    snowPenalty: founder?.snowExpectationPenalty ?? 0,
+  };
+}
+
+/** Satisfaction as `openNight` would record it right now; the HUD uses this. */
+export function liveSatisfaction(state: GameState): number {
+  const { avgQueueMin, mood, snowPenalty } = satisfactionInputs(state);
+  return computeSatisfaction(
+    state.fare,
+    state.snowQuality,
+    avgQueueMin,
+    mood,
+    snowPenalty,
+  );
+}
+
 export function openNight(state: GameState): GameState {
   const founder = founderById(state.founderId);
   const openLifts = state.lifts.filter((l) => l.confirmed).length;
-  const avgQueueMin = queueMinutes(state.guests, state.talentsOwned);
+  const { avgQueueMin, mood, snowPenalty } = satisfactionInputs(state);
   const recap = buildNightRecap(
     { ...state.dayStats, avgQueueMin },
     state.fare,
     state.snowQuality,
     avgQueueMin,
-    arrivalMood(state.buildings, state.founderId),
-    founder?.snowExpectationPenalty ?? 0,
+    mood,
+    snowPenalty,
     openLifts,
     founder?.fixedCostDelta ?? 0,
   );

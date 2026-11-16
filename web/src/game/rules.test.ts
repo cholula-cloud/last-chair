@@ -292,3 +292,23 @@ describe("save migration", () => {
     expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
 });
+
+describe("liveSatisfaction", () => {
+  it("matches the recap satisfaction at close, with cafe and founder bonuses", () => {
+    const base = rules.togglePause(started());
+    const withCafe: GameState = {
+      ...base,
+      buildings: [...base.buildings, "cafe", "lodge"],
+    };
+    const cases = [base, withCafe, { ...withCafe, fare: "expensive" as const }];
+    for (const s of cases) {
+      const live = rules.liveSatisfaction(s);
+      const recap = rules.openNight(s).nightRecap!.satisfaction;
+      expect(Math.round(live)).toBe(Math.round(recap));
+    }
+    const noFounder = { ...withCafe, founderId: null };
+    expect(rules.liveSatisfaction(withCafe)).not.toBe(
+      rules.liveSatisfaction(noFounder),
+    );
+  });
+});

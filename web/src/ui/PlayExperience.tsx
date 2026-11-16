@@ -2,9 +2,10 @@
 
 import { Canvas } from "@react-three/fiber";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { founderById } from "@/game/content";
-import { computeSatisfaction, formatClock, weekdayLabel } from "@/game/sim";
+import { useEffect, useState } from "react";
+import { formatMoney } from "@/game/format";
+import { liveSatisfaction } from "@/game/rules";
+import { formatClock, weekdayLabel } from "@/game/sim";
 import { useGameStore } from "@/game/store";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
@@ -24,34 +25,18 @@ export default function PlayExperience() {
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
   const phase = useGameStore((s) => s.phase);
-  const fare = useGameStore((s) => s.fare);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   const avgQueue = useGameStore((s) => s.dayStats.avgQueueMin);
   const weather = useGameStore((s) => s.weather);
   const morningHeadline = useGameStore((s) => s.morningHeadline);
   const talentToast = useGameStore((s) => s.talentToast);
-  const founderId = useGameStore((s) => s.founderId);
-  const buildings = useGameStore((s) => s.buildings);
   const togglePause = useGameStore((s) => s.togglePause);
   const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
 
-  const founder = founderById(founderId);
-  const mood = useMemo(
-    () =>
-      Math.round(
-        computeSatisfaction(
-          fare,
-          snowQuality,
-          avgQueue,
-          0.65 + (buildings.includes("lodge") ? 0.08 : 0.05),
-          founder?.snowExpectationPenalty ?? 0,
-        ),
-      ),
-    [fare, snowQuality, avgQueue, buildings, founder],
-  );
+  const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
 
   useEffect(() => {
     const persist = useGameStore.persist;
@@ -108,7 +93,7 @@ export default function PlayExperience() {
             {formatClock(clockMin)}
           </span>
           <span className="rounded-full border border-white/10 bg-black/40 px-3 py-2 font-medium backdrop-blur">
-            ${cash.toLocaleString()}
+            {formatMoney(cash)}
           </span>
         </div>
         {phase === "day" && (
@@ -143,17 +128,17 @@ export default function PlayExperience() {
       )}
 
       {phase === "day" && (
-        <>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <OpsStrip
             avgQueue={avgQueue}
             snowQuality={snowQuality}
             snowDepth={snowDepth}
             mood={mood}
           />
-          <footer className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-2 px-3 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))]">
+          <footer className="pointer-events-auto flex flex-wrap items-center justify-between gap-2">
             <Link
               href="/"
-              className="min-h-11 rounded-full border border-white/15 bg-black/50 px-4 text-xs font-medium text-slate-300 backdrop-blur"
+              className="flex min-h-11 items-center rounded-full border border-white/15 bg-black/50 px-4 text-xs font-medium text-slate-300 backdrop-blur"
             >
               ← Home
             </Link>
@@ -185,7 +170,7 @@ export default function PlayExperience() {
               </button>
             </div>
           </footer>
-        </>
+        </div>
       )}
 
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
@@ -216,20 +201,20 @@ function OpsStrip({
 }) {
   const moodIcon = mood >= 70 ? "😊" : mood >= 50 ? "🙂" : "😐";
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="flex justify-center">
       <div
         className="pointer-events-auto flex w-full max-w-lg flex-wrap items-center justify-center gap-2 text-xs text-slate-200"
         role="status"
         aria-label="Mountain operations"
       >
-        <span className="min-h-11 rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
+        <span className="flex min-h-11 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
           Queue ~{avgQueue.toFixed(1)}m
         </span>
-        <span className="min-h-11 rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
+        <span className="flex min-h-11 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
           Cover {Math.round(snowQuality * 100)}% · depth{" "}
           {Math.round(snowDepth * 100)}%
         </span>
-        <span className="min-h-11 rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
+        <span className="flex min-h-11 items-center whitespace-nowrap rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
           {moodIcon} Mood {mood}%
         </span>
       </div>

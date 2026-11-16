@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { formatMoney } from "@/game/format";
 import { nextTalentName } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import {
@@ -55,7 +56,7 @@ export function NightRecapSheet() {
             recap.cashDelta >= 0 ? "text-emerald-400" : "text-rose-400"
           }
         >
-          {recap.cashDelta >= 0 ? "+" : ""}${recap.cashDelta}
+          {formatMoney(recap.cashDelta, { signed: true })}
         </span>
       </p>
       <p className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-sm text-orange-200">
@@ -103,11 +104,17 @@ export function NightRecapSheet() {
         </p>
       )}
 
+      {!canSleep && (
+        <p id="sleep-hint" className="mt-6 text-center text-xs text-sky-200">
+          Read the radio message above, then tap Got it.
+        </p>
+      )}
       <button
         type="button"
         disabled={!canSleep}
+        aria-describedby={canSleep ? undefined : "sleep-hint"}
         onClick={sleep}
-        className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white disabled:opacity-40 active:scale-[0.98]"
+        className={`${canSleep ? "mt-6" : "mt-2"} flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white disabled:opacity-40 active:scale-[0.98]`}
       >
         Sleep — next morning
       </button>

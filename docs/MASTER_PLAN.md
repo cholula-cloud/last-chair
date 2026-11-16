@@ -270,7 +270,7 @@ Goal: a codebase where rules are testable and known bugs are gone.
 | 3 | ☑ | Pure sim core | Move rules out of `store.ts` into `game/` over a serializable `GameState`; seeded RNG; store becomes thin | Characterization tests pass before and after; zero behavior change; store < 200 lines |
 | 4 | ☑ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; one lap-or-leave draw per skier (not per tick); dead code and the 3 render lint warnings; save key + `version` field; `playtest-p0.mjs` runs on any machine | One regression test per bug |
 
-| 4b | ☐ | Phone HUD fixes from the M0 smoke check | Portrait ops strip no longer overlapped by Home / Close hill; one mood number (ops strip and recap show the same satisfaction); money formats as −$104; Sleep explains why it is disabled while a radio beat waits | Playwright screenshot at 390×844 shows no overlap; unit test for money format |
+| 4b | ☑ | Phone HUD fixes from the M0 smoke check | Portrait ops strip no longer overlapped by Home / Close hill; one mood number (ops strip and recap show the same satisfaction); money formats as −$104; Sleep explains why it is disabled while a radio beat waits | Playwright screenshot at 390×844 shows no overlap; unit test for money format |
 
 **Gate M0:** `npm run check` green in CI; sim runs headless from a test.
 
