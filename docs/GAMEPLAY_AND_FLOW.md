@@ -124,16 +124,6 @@ Career (hub)   → map · level · talents progress · story log · Ledger (opti
 
 ---
 
-## Implementation order (gameplay code)
+## Implementation order
 
-1. Day clock + pause + close
-2. One lift + descent validity + 20 guests
-3. Night recap + 2 presets
-4. Snow thaw stub + satisfaction
-5. Build menu: 2nd lift, warming hut → lodge step 1
-6. Crew talent #1–5
-7. Story beat hooks (radio text only)
-8. **Sandbox** duplicate scene with economy flags
-9. Winter review → mountain 2 stub
-
-Roadmap detail: [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md).
+Eng phases and checkboxes: [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md). Ship gates: [FEEL_SCORECARD.md](./FEEL_SCORECARD.md).

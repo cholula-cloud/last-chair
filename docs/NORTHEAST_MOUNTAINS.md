@@ -72,9 +72,4 @@ Terrain archetype tags (for sim): `southern_thaw`, `family_ropetow`, `exposed_su
 
 ## Implementation order
 
-1. **Dutch Hill** — only mountain in Phase A ([FEEL_SCORECARD](./FEEL_SCORECARD.md)); start **no snowmaking**, surface lift.  
-2. **Tenney** — mountain 2 + caretaker.  
-3. **Maple Valley** — mountain 3.  
-4. Remaining peaks — post-parity / 110% pass.
-
-Update this table when locking elevation, lift type, and opening scenario per peak.
+Ship **Dutch Hill only** through P1 ([FEEL_SCORECARD](./FEEL_SCORECARD.md)); then Tenney + caretaker. Eng checklist: [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md). Update the roster table when locking elevation, lift type, and opening scenario per peak.

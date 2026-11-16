@@ -1,7 +1,7 @@
 # Last Chair — 110% improvement plan (deferred)
 
-**Status:** **Not active** until [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) P1 in **Story Mode** on mobile.  
-**Active backlog:** [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md)
+**Status:** **Archived** — not active until [FEEL_SCORECARD.md](../FEEL_SCORECARD.md) P1 in **Story Mode** on mobile.  
+**Active backlog:** [IMPROVEMENTS_PASS.md](../IMPROVEMENTS_PASS.md)
 
 This document keeps the **original differentiation ideas** for the second pass. Do not implement during parity sprints unless a playtest proves ICR’s simplicity is already missing in our build.
 
@@ -31,7 +31,7 @@ That **is** the balanced product for v1. Everything below is **extra**.
 
 ## A–G sections (archive)
 
-Prior content (narrative upgrades, UI revamp, gameplay upgrades, Blender pipeline, metrics) remains valid for **post-gate** prioritization. See git history or expand from [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) when the gate clears.
+Prior content (narrative upgrades, UI revamp, gameplay upgrades, Blender pipeline, metrics) remains valid for **post-gate** prioritization. See git history or expand from [IMPROVEMENTS_PASS.md](../IMPROVEMENTS_PASS.md) when the gate clears.
 
 **Positioning (unchanged):**
 

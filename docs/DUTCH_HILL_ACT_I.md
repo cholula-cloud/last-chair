@@ -1,8 +1,12 @@
 # Dutch Hill — Act I (Story Mode)
 
-**Version:** 0.1 · **Updated:** 2026-11-13  
+**Version:** 0.2 · **Updated:** 2026-11-16  
 **Place:** [Dutch Hill / Dutch Mountain](https://www.nelsap.org/vt/dutch1.html), **Heartwellville**, Readsboro, Vermont  
 **Also:** [DHASH — backcountry revival](https://www.dhash4vt.org/dutch-hill)
+
+**Story Mode structure (player effort):** daily ski sim → nightly fare + snow/service (+ rare story reply) → metric-gated radio beats → winter review (real peak name). Tone: hopeful operator; **dignified** history (NELSAP, DHASH). No fourth mandatory nightly control in Act I; heritage optional; radio can be off.
+
+**World:** New England Ice Coast. You start on Dutch Hill — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**. **SummitLink Pass** (fictional) = consolidation pressure. Career continues to [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md); copy pantry: [NORTHEAST_LORE.md](./NORTHEAST_LORE.md).
 
 ---
 
@@ -66,4 +70,4 @@ Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**,
 - [ ] Do not depict real 1990 fire as player stunt  
 - [ ] Clarify: structures are fictional rebuilds on a real place  
 
-See [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) §14.
+Writer accents for these beats: [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) (Dutch Hill lore stash). Metric gates: [SIMULATION_SPEC.md](./SIMULATION_SPEC.md).

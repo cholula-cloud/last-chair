@@ -4,7 +4,9 @@
 
 This is **not** a literal “99% of Ice Coast Revival features” checklist. It defines when Last Chair **feels like ICR Build the Mountain (Simple)**: same verbs, cozy diorama, diagnose → change fare or snow/service → read tomorrow — **validated on iPhone Safari first**.
 
-Full ICR surface area over time: [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAST_REVIVAL_GAME_ANALYSIS.md) §6 (reference bibliography).
+**Product MVP = P1** (Dutch Hill winter / Act I shell). P0 is the vertical-slice gate; P2+ is career/Sandbox after winter-1 is fun.
+
+Full ICR surface area over time: [reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) §6 (reference bibliography).
 
 ---
 
