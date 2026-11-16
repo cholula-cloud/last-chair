@@ -271,7 +271,7 @@ Goal: a codebase where rules are testable and known bugs are gone.
 | # | Status | PR | Accomplishes | Done when |
 |---|---|---|---|---|
 | 1 | ◐ | Docs consolidation + master plan | 22 docs → 6; this file | No dead links; every fact from removed docs lives somewhere |
-| 2 | ☐ | Tooling + CI | Vitest; `typecheck`, `test`, `check` scripts; GitHub Actions running lint, typecheck, test, build on PRs; remove stock SVGs | CI green on a PR; one sample sim test passes |
+| 2 | ◐ | Tooling + CI | Vitest; `typecheck`, `test`, `check` scripts; GitHub Actions running lint, typecheck, test, build on PRs; remove stock SVGs | CI green on a PR; one sample sim test passes |
 | 3 | ☐ | Pure sim core | Move rules out of `store.ts` into `game/` over a serializable `GameState`; seeded RNG; store becomes thin | Characterization tests pass before and after; zero behavior change; store < 200 lines |
 | 4 | ☐ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; dead code; save key + `version` field | One regression test per bug |
 
