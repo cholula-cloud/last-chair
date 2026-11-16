@@ -15,6 +15,7 @@
 | **P1 playtest** | [PLAYTEST_P1.md](./PLAYTEST_P1.md) |
 | **Mobile / Safari** | [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) |
 | **Eng phases** | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) |
+| **Vercel / deploy** | [VERCEL_SETUP.md](./VERCEL_SETUP.md) |
 | **Numbers** | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) |
 | **Sessions / screens** | [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md) |
 | **Act I setting** | [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) |
