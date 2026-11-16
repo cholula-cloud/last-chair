@@ -9,6 +9,8 @@
 |------|----------|
 | **Vision** | [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) |
 | **Ship gates / MVP** | [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) |
+| **Ship-shape audit** | [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) |
+| **Art sprint** | [ART_IMPLEMENTATION.md](./ART_IMPLEMENTATION.md) |
 | **P0 playtest** | [PLAYTEST_P0.md](./PLAYTEST_P0.md) |
 | **P1 playtest** | [PLAYTEST_P1.md](./PLAYTEST_P1.md) |
 | **Mobile / Safari** | [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) |

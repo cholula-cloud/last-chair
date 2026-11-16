@@ -8,6 +8,7 @@ All planning lives in **[docs/](./docs/README.md)**. Start with:
 
 - [Feel scorecard](./docs/FEEL_SCORECARD.md) — P0/P1 ship gates (**P1 = product MVP**)
 - [Game design bible](./docs/GAME_DESIGN_BIBLE.md) — vision
+- [Ship-shape review](./docs/SHIP_SHAPE_REVIEW.md) — cut/keep + art honesty
 - [Implementation roadmap](./docs/IMPLEMENTATION_ROADMAP.md) — eng phases
 
 ## Development

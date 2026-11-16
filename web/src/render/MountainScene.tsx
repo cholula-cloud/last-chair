@@ -1,72 +1,140 @@
 "use client";
 
 import { OrbitControls } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
-import type { Mesh } from "three";
-import { LIFT_PREVIEW_SLOTS, checkDescentValid } from "@/game/descent";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import * as THREE from "three";
+import {
+  LIFT_PREVIEW_SLOTS,
+  checkDescentValid,
+  type LiftAnchor,
+} from "@/game/descent";
 import { useGameStore } from "@/game/store";
+import { followedGuestPosition, Guests } from "./Guests";
+import { Lift } from "./Lift";
+import { Lodge } from "./Lodge";
+import { Terrain } from "./Terrain";
+import { TrailRibbon } from "./TrailRibbon";
+import { Trees } from "./Trees";
+import { terrainHeight } from "./guestPaths";
 
-function guestColor(state: string): string {
-  switch (state) {
-    case "queue":
-      return "#f59e0b";
-    case "ride":
-      return "#38bdf8";
-    case "ski":
-      return "#4ade80";
-    default:
-      return "#e2e8f0";
-  }
+function FollowCamera({
+  followId,
+  liftAnchor,
+}: {
+  followId: string | null;
+  liftAnchor: LiftAnchor;
+}) {
+  const guests = useGameStore((s) => s.guests);
+  const target = useRef(new THREE.Vector3(0, 0.5, 1));
+  const controls = useThree(
+    (s) => s.controls as OrbitControlsImpl | undefined,
+  );
+
+  useFrame(() => {
+    if (!controls) return;
+    const pos = followedGuestPosition(guests, followId, liftAnchor);
+    if (pos) {
+      target.current.set(pos.x, pos.y + 0.35, pos.z);
+      controls.target.lerp(target.current, 0.12);
+      controls.update();
+    }
+  });
+
+  return null;
 }
 
-function GuestDot({
-  index,
-  state,
-  progress,
-  followed,
+function VillageExtras({
+  buildings,
+  gunsVisible,
 }: {
-  index: number;
-  state: string;
-  progress: number;
-  followed: boolean;
+  buildings: string[];
+  gunsVisible: boolean;
 }) {
-  const baseX = -3 + (index % 6) * 1.1;
-  const baseZ = 2 + Math.floor(index / 6) * 0.8;
-  let x = baseX;
-  let y = 0.35;
-  let z = baseZ;
+  const cafeY = terrainHeight(3.4, 2.0);
+  const shopY = terrainHeight(3.2, 3.1);
 
-  if (state === "queue") {
-    z = 1.2 - progress * 0.5;
-  } else if (state === "ride") {
-    y = 0.5 + progress * 2.5;
-    x = -1.2;
-    z = 0.5 + progress * 1.5;
-  } else if (state === "ski") {
-    y = 2.2 - progress * 1.8;
-    x = 0.5 + progress * 2;
-    z = 2.5 - progress * 1.5;
-  }
-
-  const scale = followed ? 1.35 : 1;
   return (
-    <group position={[x, y, z]} scale={scale}>
-      {followed && (
-        <mesh position={[0, 0.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.2, 0.28, 24]} />
-          <meshBasicMaterial color="#fbbf24" transparent opacity={0.85} />
-        </mesh>
+    <>
+      {buildings.includes("cafe") && (
+        <group position={[3.4, cafeY, 2.0]}>
+          <mesh position={[0, 0.32, 0]}>
+            <boxGeometry args={[0.85, 0.65, 0.75]} />
+            <meshStandardMaterial
+              color="#b45309"
+              roughness={0.8}
+              emissive="#fbbf24"
+              emissiveIntensity={0.15}
+            />
+          </mesh>
+          <mesh position={[0, 0.72, 0]}>
+            <coneGeometry args={[0.65, 0.4, 4]} />
+            <meshStandardMaterial color="#7c2d12" roughness={0.9} />
+          </mesh>
+        </group>
       )}
-      <mesh>
-        <capsuleGeometry args={[0.08, 0.22, 4, 8]} />
+
+      {buildings.includes("shop") && (
+        <group position={[3.2, shopY, 3.1]}>
+          <mesh position={[0, 0.28, 0]}>
+            <boxGeometry args={[0.75, 0.55, 0.65]} />
+            <meshStandardMaterial color="#334155" roughness={0.85} />
+          </mesh>
+        </group>
+      )}
+
+      {(gunsVisible || buildings.includes("snow_guns")) && (
+        <>
+          <SnowGun x={-2.2} z={0.2} active={gunsVisible} />
+          <SnowGun x={1.6} z={-0.4} active={gunsVisible} />
+        </>
+      )}
+    </>
+  );
+}
+
+function SnowGun({
+  x,
+  z,
+  active,
+}: {
+  x: number;
+  z: number;
+  active: boolean;
+}) {
+  const y = terrainHeight(x, z);
+  return (
+    <group position={[x, y, z]}>
+      <mesh position={[0, 0.55, 0]}>
+        <cylinderGeometry args={[0.08, 0.12, 1.1, 8]} />
+        <meshStandardMaterial color="#94a3b8" roughness={0.55} />
+      </mesh>
+      <mesh position={[0, 1.15, 0]}>
+        <sphereGeometry args={[0.16, 12, 12]} />
         <meshStandardMaterial
-          color={guestColor(state)}
-          emissive={followed ? "#fbbf24" : "#000000"}
-          emissiveIntensity={followed ? 0.35 : 0}
+          color="#e2e8f0"
+          emissive="#93c5fd"
+          emissiveIntensity={active ? 0.55 : 0.15}
         />
       </mesh>
     </group>
+  );
+}
+
+function GroomBands({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <>
+      <mesh position={[0.8, 0.06, 1.2]} rotation={[-Math.PI / 2.15, 0, 0.35]}>
+        <planeGeometry args={[0.45, 3.2]} />
+        <meshBasicMaterial color="#dbeafe" transparent opacity={0.28} />
+      </mesh>
+      <mesh position={[1.4, 0.06, 1.0]} rotation={[-Math.PI / 2.15, 0, 0.35]}>
+        <planeGeometry args={[0.45, 2.8]} />
+        <meshBasicMaterial color="#bfdbfe" transparent opacity={0.24} />
+      </mesh>
+    </>
   );
 }
 
@@ -78,179 +146,92 @@ export function MountainScene() {
   const lifts = useGameStore((s) => s.lifts);
   const buildMode = useGameStore((s) => s.buildMode);
   const selectedSlotIndex = useGameStore((s) => s.selectedSlotIndex);
-  const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const buildings = useGameStore((s) => s.buildings);
   const gunsVisible = useGameStore((s) => s.gunsVisible);
   const groomVisible = useGameStore((s) => s.groomVisible);
   const weather = useGameStore((s) => s.weather);
+
+  const confirmedLifts = lifts.filter((l) => l.confirmed);
+  const primaryAnchor: LiftAnchor =
+    confirmedLifts[0]?.anchor ??
+    LIFT_PREVIEW_SLOTS[0] ?? { x: -1.2, z: 0.2 };
   const previewSlot =
     LIFT_PREVIEW_SLOTS[selectedSlotIndex] ?? LIFT_PREVIEW_SLOTS[0];
   const previewValid = previewSlot ? checkDescentValid(previewSlot) : false;
-  const snowRef = useRef<Mesh>(null);
+  const treeAnchor =
+    buildMode && previewSlot ? previewSlot : primaryAnchor;
 
   useFrame((_, delta) => {
     useGameStore.getState().tick(delta * 1000);
   });
 
   const lightBoost = weather === "snow" ? 0.15 : weather === "thaw" ? -0.08 : 0;
-  const snowColor = `hsl(210, 35%, ${68 + snowQuality * 18 + snowDepth * 6}%)`;
+  const terrainSnow = Math.min(1, snowQuality * 0.75 + snowDepth * 0.25);
+  const defaultTarget: [number, number, number] = followId
+    ? [0, 1, 1]
+    : [0.5, 0.4, 1.8];
 
   return (
     <>
       <color attach="background" args={["#0b1628"]} />
       <ambientLight intensity={0.55 + lightBoost} />
-      <directionalLight position={[5, 8, 4]} intensity={1.1 + lightBoost} />
-      <mesh ref={snowRef} rotation={[-Math.PI / 2.2, 0, 0]} position={[0, -0.2, 0]}>
-        <planeGeometry args={[14, 12, 32, 32]} />
-        <meshStandardMaterial color={snowColor} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, 1.2, -1]} rotation={[0.2, 0.3, 0]}>
-        <boxGeometry args={[4, 1.6, 3]} />
-        <meshStandardMaterial color="#2d5a4a" />
-      </mesh>
+      <directionalLight
+        position={[6, 10, 5]}
+        intensity={1.15 + lightBoost}
+        castShadow
+      />
+      <Terrain snowQuality={terrainSnow} />
+      <Lodge />
+      <VillageExtras buildings={buildings} gunsVisible={gunsVisible} />
+      <GroomBands visible={groomVisible} />
+      <Trees liftAnchor={treeAnchor} />
 
-      {groomVisible && (
-        <>
-          <mesh position={[0.8, 0.02, 1.2]} rotation={[-Math.PI / 2.15, 0, 0.35]}>
-            <planeGeometry args={[0.45, 3.2]} />
-            <meshBasicMaterial color="#dbeafe" transparent opacity={0.35} />
-          </mesh>
-          <mesh position={[1.4, 0.02, 1.0]} rotation={[-Math.PI / 2.15, 0, 0.35]}>
-            <planeGeometry args={[0.45, 2.8]} />
-            <meshBasicMaterial color="#bfdbfe" transparent opacity={0.3} />
-          </mesh>
-        </>
-      )}
-
-      {(gunsVisible || buildings.includes("snow_guns")) && (
-        <>
-          <mesh position={[-2.2, 0.55, 0.2]}>
-            <cylinderGeometry args={[0.08, 0.12, 1.1, 8]} />
-            <meshStandardMaterial color="#94a3b8" />
-          </mesh>
-          <mesh position={[-2.2, 1.15, 0.2]}>
-            <sphereGeometry args={[0.16, 12, 12]} />
-            <meshStandardMaterial
-              color="#e2e8f0"
-              emissive="#93c5fd"
-              emissiveIntensity={gunsVisible ? 0.55 : 0.15}
-            />
-          </mesh>
-          <mesh position={[1.6, 0.55, -0.4]}>
-            <cylinderGeometry args={[0.08, 0.12, 1.1, 8]} />
-            <meshStandardMaterial color="#94a3b8" />
-          </mesh>
-          <mesh position={[1.6, 1.15, -0.4]}>
-            <sphereGeometry args={[0.16, 12, 12]} />
-            <meshStandardMaterial
-              color="#e2e8f0"
-              emissive="#93c5fd"
-              emissiveIntensity={gunsVisible ? 0.55 : 0.15}
-            />
-          </mesh>
-        </>
-      )}
-
-      {lifts
-        .filter((l) => l.confirmed)
-        .map((lift, i) => (
-          <group
-            key={`lift-${i}-${lift.type}`}
-            position={[lift.anchor.x, 0, lift.anchor.z]}
-          >
-            <mesh position={[0, lift.type === "chair" ? 1.8 : 1.5, 0]}>
-              <boxGeometry
-                args={[0.15, lift.type === "chair" ? 3.6 : 3.2, 0.15]}
-              />
-              <meshStandardMaterial
-                color={lift.type === "chair" ? "#475569" : "#64748b"}
-              />
-            </mesh>
-            <mesh position={[0, lift.type === "chair" ? 3.6 : 3.2, 1.8]}>
-              <boxGeometry args={[0.12, 0.12, 3.6]} />
-              <meshStandardMaterial
-                color={lift.type === "chair" ? "#64748b" : "#94a3b8"}
-              />
-            </mesh>
-            {lift.type === "chair" && (
-              <mesh position={[0.25, 2.2, 1.2]}>
-                <boxGeometry args={[0.35, 0.12, 0.35]} />
-                <meshStandardMaterial color="#cbd5e1" />
-              </mesh>
-            )}
-          </group>
-        ))}
+      {confirmedLifts.map((lift, i) => (
+        <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
+          <TrailRibbon
+            anchor={lift.anchor}
+            buildMode={false}
+            previewValid
+            liftConfirmed
+          />
+          <Lift
+            anchor={lift.anchor}
+            visible
+            previewInvalid={false}
+          />
+        </group>
+      ))}
 
       {buildMode && previewSlot && (
-        <group position={[previewSlot.x, 0, previewSlot.z]}>
-          <mesh position={[0, 1.5, 0]}>
-            <boxGeometry args={[0.15, 3.2, 0.15]} />
-            <meshStandardMaterial color={previewValid ? "#4ade80" : "#f87171"} />
-          </mesh>
-          <mesh position={[0, 0.05, 1.5]} rotation={[-Math.PI / 2, 0, 0.4]}>
-            <planeGeometry args={[0.35, 2.2]} />
-            <meshBasicMaterial
-              color={previewValid ? "#4ade80" : "#f87171"}
-              transparent
-              opacity={0.55}
-            />
-          </mesh>
-          <mesh position={[0.4, 0.4, 0]}>
-            <sphereGeometry args={[0.12, 8, 8]} />
-            <meshBasicMaterial
-              color={selectedLiftType === "chair" ? "#38bdf8" : "#fbbf24"}
-            />
-          </mesh>
-        </group>
-      )}
-
-      <mesh position={[2.2, buildings.includes("lodge") ? 0.65 : 0.4, 2.4]}>
-        <boxGeometry
-          args={
-            buildings.includes("lodge") ? [1.6, 1.2, 1.2] : [1.2, 0.8, 1]
-          }
-        />
-        <meshStandardMaterial
-          color={buildings.includes("lodge") ? "#8b5a3c" : "#7c4a2e"}
-          emissive="#f97316"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-
-      {buildings.includes("cafe") && (
-        <mesh position={[3.4, 0.35, 2.0]}>
-          <boxGeometry args={[0.9, 0.7, 0.8]} />
-          <meshStandardMaterial
-            color="#b45309"
-            emissive="#fbbf24"
-            emissiveIntensity={0.2}
+        <>
+          <TrailRibbon
+            anchor={previewSlot}
+            buildMode
+            previewValid={previewValid}
+            liftConfirmed={false}
           />
-        </mesh>
+          <Lift
+            anchor={previewSlot}
+            visible
+            previewInvalid={!previewValid}
+          />
+        </>
       )}
 
-      {buildings.includes("shop") && (
-        <mesh position={[3.2, 0.3, 3.1]}>
-          <boxGeometry args={[0.8, 0.6, 0.7]} />
-          <meshStandardMaterial color="#334155" />
-        </mesh>
-      )}
-
-      {guests.map((g, i) => (
-        <GuestDot
-          key={g.id}
-          index={i}
-          state={g.state}
-          progress={g.progress}
-          followed={g.id === followId}
-        />
-      ))}
+      <Guests
+        guests={guests}
+        followId={followId}
+        liftAnchor={primaryAnchor}
+      />
+      <FollowCamera followId={followId} liftAnchor={primaryAnchor} />
       <OrbitControls
+        makeDefault
         enablePan
         enableZoom
-        maxPolarAngle={Math.PI / 2.1}
+        maxPolarAngle={Math.PI / 2.08}
         minDistance={4}
-        maxDistance={16}
-        target={followId ? [0, 1, 1] : [0, 0.5, 1]}
+        maxDistance={18}
+        target={defaultTarget}
       />
     </>
   );

@@ -87,8 +87,9 @@ export function computeSatisfaction(
   arrivalMood = 0.7,
   snowExpectationPenalty = 0,
 ): number {
+  // ticketMismatch 0 / 0.5 / 1 matches SIMULATION_SPEC (main Tier 0 fix)
   const ticketMismatch =
-    fare === "cheap" ? 0 : fare === "balanced" ? 0.3 : 1;
+    fare === "cheap" ? 0 : fare === "balanced" ? 0.5 : 1;
   const snowTerm = snowQuality - snowExpectationPenalty;
   return Math.max(
     0,
@@ -266,6 +267,7 @@ export function nextTalentName(owned: string[]): string | null {
   return learnNextTalent(owned)?.name ?? null;
 }
 
+/** Honest next-day arrivals (fare + weather + buildings + founder). */
 export function planArrivals(opts: {
   dayIndex: number;
   fare: FarePreset;

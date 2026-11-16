@@ -17,13 +17,15 @@
 
 ## Architecture
 
-Unchanged: `web/` Next.js + R3F + Zustand + worker sim + Blender GLB.
+`web/` Next.js + R3F + Zustand. Blender GLB when assets exist. **No worker sim yet** (main-thread tick is fine for P0 guest counts).
 
 ```
 web/src/game/     # pure TS sim (ICR rules)
 web/src/render/   # R3F
 web/src/ui/       # night recap, build sheets
 ```
+
+**Active triage:** [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) — honesty + legible art before A2 winter systems.
 
 ---
 

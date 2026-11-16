@@ -367,6 +367,7 @@ export const useGameStore = create<GameStore>()(
           return;
         }
 
+        // Honest preview: roll next-day arrivals at sleep (fare/weather apply)
         const arrivals = planArrivals({
           dayIndex: nextDay,
           fare: state.pendingFare,

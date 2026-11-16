@@ -18,16 +18,16 @@ export default function Home() {
           <section className="grid gap-6 md:grid-cols-3">
             {[
               {
-                title: "Revive the hill",
-                body: "Reopen a foreclosed New England peak. One lift, one good way down, then grow from there.",
+                title: "Dutch Hill preview",
+                body: "Reopen a foreclosed New England peak in the browser — one lift, one run, tiny skiers you can follow.",
               },
               {
-                title: "Run the books",
-                body: "Tickets, snowmaking, grooming, and village revenue — with statements that teach, not hide.",
+                title: "Day → night → sleep",
+                body: "Run the day clock, watch queue and snow, then pick fare and snow & service before the next morning.",
               },
               {
-                title: "Make it yours",
-                body: "Talents, founders, and story beats that persist across a regional career.",
+                title: "Build the lift",
+                body: "Place the lift top on Ridge, Mid, or Creek and confirm a valid descent before guests ride.",
               },
             ].map((card) => (
               <article
@@ -45,8 +45,8 @@ export default function Home() {
 
         <footer className="flex flex-col items-start gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-slate-400">
-            Inspired by the depth of ski-resort tycoon classics — original art,
-            story, and code.
+            Preview slice only — ledgers, talents, founders, and career map are
+            on the roadmap, not in this build yet.
           </p>
           <Link
             href="/play"
@@ -65,12 +65,12 @@ function MotionHero() {
     <div className="max-w-3xl">
       <p className="mb-3 text-sm font-medium text-orange-400">Last Chair</p>
       <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-        The slopes tycoon for people who love the last run of the day.
+        Dutch Hill day / night loop — preview
       </h1>
       <p className="mt-6 text-lg leading-relaxed text-slate-300">
-        A 3D browser game: build lifts, shape snow, grow the village, and follow
-        every guest from first tracks to après — then read the books before
-        tomorrow opens.
+        A cozy 3D ski-hill tycoon slice: pause or run the day, follow guests,
+        tweak tonight&apos;s fare and snow, then sleep and see tomorrow&apos;s
+        crowd. Built for phone-first Safari playtests.
       </p>
     </div>
   );
