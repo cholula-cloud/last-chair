@@ -222,8 +222,7 @@ The loop is clickable end to end and deployed, but most of the simulation is cos
 | `startNewSeason` hardcodes 22 arrivals | `store.ts` |
 | Lift type only changes build cost; `liftCapacityBonus` unused | `sim.ts` |
 | 8 of 12 crew talents and 3 of 6 founder modifiers do nothing | `content.ts`, `sim.ts` |
-| Weather is `(day*17+3) % 10`; all other randomness is `Math.random` | `sim.ts` |
-| Game rules live inside the 554-line Zustand store | `store.ts` |
+| Weather is `(day*17+3) % 10` (fixed in PR 18). Other randomness comes from an injected seeded RNG whose state lives in `GameState` | `sim.ts` |
 | No unit tests, no CI | — |
 | Season is 14 days (spec 28); stock create-next-app SVGs in `public/`; unused `LiftPlacement` type | various |
 
@@ -270,10 +269,10 @@ Goal: a codebase where rules are testable and known bugs are gone.
 
 | # | Status | PR | Accomplishes | Done when |
 |---|---|---|---|---|
-| 1 | ◐ | Docs consolidation + master plan | 22 docs → 6; this file | No dead links; every fact from removed docs lives somewhere |
-| 2 | ◐ | Tooling + CI | Vitest; `typecheck`, `test`, `check` scripts; GitHub Actions running lint, typecheck, test, build on PRs; remove stock SVGs | CI green on a PR; one sample sim test passes |
-| 3 | ☐ | Pure sim core | Move rules out of `store.ts` into `game/` over a serializable `GameState`; seeded RNG; store becomes thin | Characterization tests pass before and after; zero behavior change; store < 200 lines |
-| 4 | ☐ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; dead code; save key + `version` field | One regression test per bug |
+| 1 | ☑ | Docs consolidation + master plan | 22 docs → 6; this file | No dead links; every fact from removed docs lives somewhere |
+| 2 | ☑ | Tooling + CI | Vitest; `typecheck`, `test`, `check` scripts; GitHub Actions running lint, typecheck, test, build on PRs; remove stock SVGs | CI green on a PR; one sample sim test passes |
+| 3 | ◐ | Pure sim core | Move rules out of `store.ts` into `game/` over a serializable `GameState`; seeded RNG; store becomes thin | Characterization tests pass before and after; zero behavior change; store < 200 lines |
+| 4 | ☐ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; one lap-or-leave draw per skier (not per tick); dead code and the 3 render lint warnings; save key + `version` field; `playtest-p0.mjs` runs on any machine | One regression test per bug |
 
 **Gate M0:** `npm run check` green in CI; sim runs headless from a test.
 
