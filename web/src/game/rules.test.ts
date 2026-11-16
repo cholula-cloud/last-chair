@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
-import { createInitialState, type GameState } from "./state";
-import { BUILDING_COSTS, SNOW_NIGHT_COST } from "./types";
+import { planArrivals, queueMinutes } from "./sim";
+import { createRng } from "./rng";
+import {
+  createInitialState,
+  hydrate,
+  migrate,
+  toPersisted,
+  type GameState,
+} from "./state";
+import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
 
 const started = () => rules.pickFounder(createInitialState(7), "elena");
 
@@ -143,5 +151,144 @@ describe("tick", () => {
   it("is deterministic for a given RNG state", () => {
     const running = rules.togglePause(started());
     expect(pure(rules.tick, running, 2000)).toEqual(rules.tick(running, 2000));
+  });
+});
+
+const guestAt = (over: Partial<Guest>): Guest => ({
+  id: "g",
+  label: "Guest",
+  state: "ski",
+  progress: 0,
+  mood: 0.8,
+  ...over,
+});
+
+/** A running day with exactly the given guests. */
+function runningWith(guests: Guest[], seed = 7): GameState {
+  return { ...rules.togglePause(started()), guests, rngState: seed };
+}
+
+// One tick of 1000 ms = 2 game minutes = dt 0.25; a skier at 0.99 finishes (rate 0.5).
+const TICK_MS = 1000;
+
+describe("night reload", () => {
+  it("restores the night sheet so sleeping after a reload matches sleeping without one", () => {
+    const night = rules.setPendingSnow(atNight(), "high");
+    const saved = JSON.parse(JSON.stringify(toPersisted(night)));
+    const reloaded = hydrate(saved, createInitialState(999));
+    expect(reloaded.phase).toBe("night");
+    expect(reloaded.nightRecap).toEqual(night.nightRecap);
+    expect(reloaded.dayStats).toEqual(night.dayStats);
+    const direct = rules.sleep(night);
+    const viaReload = rules.sleep(reloaded);
+    expect(viaReload.cash).toBe(direct.cash);
+    expect(viaReload.cash).not.toBe(night.cash);
+    expect(viaReload.dayIndex).toBe(night.dayIndex + 1);
+  });
+});
+
+describe("completedRuns", () => {
+  it("counts a finishing skier once, whether they lap or leave", () => {
+    for (let seed = 1; seed <= 25; seed++) {
+      const out = rules.tick(runningWith([guestAt({ progress: 0.99 })], seed), TICK_MS);
+      expect(["queue", "depart"]).toContain(out.guests[0].state);
+      expect(out.dayStats.completedRuns).toBe(1);
+    }
+  });
+
+  it("does not count guests who were already departed or are not finishing", () => {
+    for (let seed = 1; seed <= 25; seed++) {
+      const s = runningWith(
+        [
+          guestAt({ state: "depart", progress: 0.5 }),
+          guestAt({ state: "queue", progress: 0.99 }),
+          guestAt({ state: "ski", progress: 0 }),
+          guestAt({ state: "ski", progress: 0.99 }),
+        ],
+        seed,
+      );
+      expect(rules.tick(s, TICK_MS).dayStats.completedRuns).toBe(1);
+    }
+  });
+
+  it("accumulates across ticks and resets on the next day", () => {
+    let s = runningWith([guestAt({ progress: 0.99 }), guestAt({ progress: 0.99 })]);
+    s = rules.tick(s, TICK_MS);
+    expect(s.dayStats.completedRuns).toBe(2);
+    // Guests who departed on that tick add nothing on later ticks.
+    const departed = s.guests.filter((g) => g.state === "depart").length;
+    const later = rules.tick(s, 1);
+    expect(later.dayStats.completedRuns).toBe(2);
+    expect(later.guests.filter((g) => g.state === "depart").length).toBe(departed);
+    const next = rules.sleep(rules.skipToClose({ ...later, paused: false }));
+    expect(next.dayStats.completedRuns).toBe(0);
+  });
+});
+
+describe("queue time", () => {
+  it("the night recap uses the same queue minutes the last tick showed", () => {
+    const queued = Array.from({ length: 12 }, (_, i) =>
+      guestAt({ id: `q${i}`, state: "queue", progress: 0 }),
+    );
+    const s = { ...runningWith(queued), clockMin: 15 * 60 + 59 };
+    const ticked = rules.tick(s, 100);
+    expect(ticked.phase).toBe("day");
+    const shown = ticked.dayStats.avgQueueMin;
+    expect(shown).toBeCloseTo(queueMinutes(ticked.guests, ticked.talentsOwned), 10);
+    const night = rules.skipToClose(ticked);
+    expect(night.dayStats.avgQueueMin).toBeCloseTo(shown, 10);
+    // And a tick that crosses close shows the same figure in the recap.
+    const closing = rules.tick({ ...ticked, clockMin: 15 * 60 + 59 }, 4000);
+    expect(closing.phase).toBe("night");
+    expect(closing.dayStats.avgQueueMin).toBeCloseTo(
+      queueMinutes(closing.guests, closing.talentsOwned),
+      10,
+    );
+  });
+});
+
+describe("startNewSeason", () => {
+  it("plans day-1 arrivals with planArrivals instead of a hardcoded 22", () => {
+    const base: GameState = { ...started(), founderId: "riley", rngState: 99 };
+    const rng = createRng(99);
+    const expected = planArrivals({
+      dayIndex: 1,
+      fare: "balanced",
+      snowQuality: 0.55,
+      weather: "clear",
+      buildings: ["warming_hut"],
+      talentsOwned: [],
+      founderId: "riley",
+      rand: () => rng.next(),
+    });
+    const s = pure(rules.startNewSeason, base);
+    expect(s.dayStats.arrivals).toBe(expected);
+    expect(s.guests).toHaveLength(expected);
+  });
+});
+
+describe("save migration", () => {
+  it("loads an unversioned v0 night save as a playable day", () => {
+    const v0 = JSON.parse(JSON.stringify(toPersisted(atNight())));
+    delete v0.rngState;
+    delete v0.nightRecap;
+    delete v0.dayStats;
+    expect(v0.phase).toBe("night");
+    const migrated = migrate(v0, 0);
+    // A v0 night save has no recap to restore, so it resumes as a day.
+    expect(migrated.phase).toBe("day");
+    expect(migrated.nightRecap).toBeNull();
+    expect(typeof migrated.rngState).toBe("number");
+    expect(migrated.dayStats).toEqual(createInitialState().dayStats);
+    const loaded = hydrate(migrated, createInitialState(5));
+    expect(loaded.phase).toBe("day");
+    expect(rules.tick(rules.togglePause(loaded), 500)).toBeDefined();
+  });
+
+  it("keeps a v1 night save in the night with its recap", () => {
+    const night = atNight();
+    const migrated = migrate(JSON.parse(JSON.stringify(toPersisted(night))), 1);
+    expect(migrated.phase).toBe("night");
+    expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
 });

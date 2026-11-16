@@ -4,10 +4,12 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORY_BEATS } from "./content";
 import * as rules from "./rules";
-import { formatClock } from "./sim";
 import {
   createInitialState,
+  SAVE_KEY,
+  SAVE_VERSION,
   hydrate,
+  migrate,
   toPersisted,
   type GameState,
   type PersistedState,
@@ -75,17 +77,15 @@ export const useGameStore = create<GameStore>()(
       nextTalentHint: () => rules.nextTalentHint(get()),
     }),
     {
-      name: "last-chair-v1",
+      name: SAVE_KEY,
+      version: SAVE_VERSION,
+      migrate: (persisted, fromVersion) => migrate(persisted, fromVersion),
       storage: createJSONStorage(() => localStorage),
       partialize: toPersisted,
       merge: hydrate,
     },
   ),
 );
-
-export function useClockLabel(): string {
-  return formatClock(useGameStore((s) => s.clockMin));
-}
 
 export function storyBeatCopy(id: StoryBeatId | null) {
   if (!id) return null;

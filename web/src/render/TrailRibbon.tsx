@@ -54,13 +54,14 @@ export function TrailRibbon({
   previewValid: boolean;
   liftConfirmed: boolean;
 }) {
+  const { x, z } = anchor;
   const groomGeo = useMemo(
-    () => ribbonGeometry(anchor, 0.22, 28),
-    [anchor.x, anchor.z],
+    () => ribbonGeometry({ x, z }, 0.22, 28),
+    [x, z],
   );
   const previewGeo = useMemo(
-    () => ribbonGeometry(anchor, 0.28, 28),
-    [anchor.x, anchor.z],
+    () => ribbonGeometry({ x, z }, 0.28, 28),
+    [x, z],
   );
 
   return (

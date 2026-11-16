@@ -9,6 +9,7 @@ import {
   createInitialGuests,
   nextTalentName,
   planArrivals,
+  queueMinutes,
   readyStoryBeat,
   tickGuests,
 } from "./sim";
@@ -42,13 +43,7 @@ export function arrivalMood(
 export function openNight(state: GameState): GameState {
   const founder = founderById(state.founderId);
   const openLifts = state.lifts.filter((l) => l.confirmed).length;
-  const queueCount = state.guests.filter((g) => g.state === "queue").length;
-  const avgQueueMin = Math.max(
-    1.2,
-    2 +
-      queueCount * 0.15 -
-      (state.talentsOwned.includes("patrol_radio") ? 0.3 : 0),
-  );
+  const avgQueueMin = queueMinutes(state.guests, state.talentsOwned);
   const recap = buildNightRecap(
     { ...state.dayStats, avgQueueMin },
     state.fare,
@@ -95,19 +90,22 @@ export function tick(state: GameState, deltaMs: number): GameState {
   const addMin = deltaMs / MS_PER_GAME_MINUTE;
   const clockMin = state.clockMin + addMin;
   const guests = tickGuests(state.guests, addMin / 8, () => rng.next());
-  const completedRuns = guests.filter((g) => g.state === "depart").length;
-  const queueCount = guests.filter((g) => g.state === "queue").length;
-  const avgQueueMin = Math.max(
-    1.2,
-    2 +
-      queueCount * 0.12 -
-      (state.talentsOwned.includes("patrol_radio") ? 0.3 : 0),
-  );
+  // A run completes when a skier reaches the bottom: ski -> queue (another lap) or ski -> depart.
+  const finishedRuns = guests.filter(
+    (g, i) =>
+      state.guests[i]?.state === "ski" &&
+      (g.state === "queue" || g.state === "depart"),
+  ).length;
+  const avgQueueMin = queueMinutes(guests, state.talentsOwned);
   const next: GameState = {
     ...state,
     clockMin,
     guests,
-    dayStats: { ...state.dayStats, completedRuns, avgQueueMin },
+    dayStats: {
+      ...state.dayStats,
+      completedRuns: state.dayStats.completedRuns + finishedRuns,
+      avgQueueMin,
+    },
     rngState: rng.state(),
   };
   return clockMin >= DAY_END_MIN
@@ -315,7 +313,18 @@ export function finishWinterReview(state: GameState): GameState {
 
 export function startNewSeason(state: GameState): GameState {
   const rng = createRng(state.rngState);
-  // PR 4: the 22 arrivals are hardcoded; they should come from planArrivals.
+  const rand = () => rng.next();
+  const founderId = state.founderId ?? "elena";
+  const arrivals = planArrivals({
+    dayIndex: 1,
+    fare: "balanced",
+    snowQuality: 0.55,
+    weather: "clear",
+    buildings: ["warming_hut"],
+    talentsOwned: [],
+    founderId,
+    rand,
+  });
   return {
     ...state,
     dayIndex: 1,
@@ -340,9 +349,9 @@ export function startNewSeason(state: GameState): GameState {
     gunsVisible: false,
     groomVisible: false,
     nightRecap: null,
-    founderId: state.founderId ?? "elena",
-    guests: createInitialGuests(22, () => rng.next()),
-    dayStats: { arrivals: 22, completedRuns: 0, avgQueueMin: 2.5 },
+    founderId,
+    guests: createInitialGuests(arrivals, rand),
+    dayStats: { arrivals, completedRuns: 0, avgQueueMin: 2.5 },
     talentToast: null,
     rngState: rng.state(),
   };

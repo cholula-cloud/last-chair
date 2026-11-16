@@ -33,10 +33,8 @@ export function Trees({ liftAnchor }: { liftAnchor: LiftAnchor }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const coneRef = useRef<THREE.InstancedMesh>(null);
 
-  const places = useMemo(
-    () => scatterPositions(liftAnchor, 90210),
-    [liftAnchor.x, liftAnchor.z],
-  );
+  const { x, z } = liftAnchor;
+  const places = useMemo(() => scatterPositions({ x, z }, 90210), [x, z]);
 
   useLayoutEffect(() => {
     const trunk = trunkRef.current;

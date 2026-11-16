@@ -11,10 +11,8 @@ import {
   type DayStats,
   type FarePreset,
   type FounderId,
-  type GamePhase,
   type Guest,
   type GuestState,
-  type LiftType,
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
@@ -69,11 +67,10 @@ export function tickGuests(
     ski: 0.5,
     depart: 0.2,
   };
-  const nextState: Record<GuestState, GuestState> = {
+  const nextState: Record<Exclude<GuestState, "ski">, GuestState> = {
     arrive: "queue",
     queue: "ride",
     ride: "ski",
-    ski: rand() > 0.35 ? "queue" : "depart",
     depart: "depart",
   };
 
@@ -83,10 +80,25 @@ export function tickGuests(
     let state: GuestState = g.state;
     if (progress >= 1) {
       progress = 0;
-      state = nextState[g.state];
+      // One lap-or-leave draw per guest, only when that guest finishes a run.
+      state =
+        g.state === "ski"
+          ? rand() > 0.35
+            ? "queue"
+            : "depart"
+          : nextState[g.state];
     }
     return { ...g, progress, state };
   });
+}
+
+/** Average queue wait shown to the player, from the guests currently queued. */
+export function queueMinutes(guests: Guest[], talentsOwned: string[]): number {
+  const queueCount = guests.filter((g) => g.state === "queue").length;
+  return Math.max(
+    1.2,
+    2 + queueCount * 0.12 - (talentsOwned.includes("patrol_radio") ? 0.3 : 0),
+  );
 }
 
 export function computeSatisfaction(
@@ -352,14 +364,6 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
 
 export function emptyDayStats(): DayStats {
   return { arrivals: 0, completedRuns: 0, avgQueueMin: 2.5 };
-}
-
-export function isDayOver(clockMin: number, phase: GamePhase): boolean {
-  return phase === "day" && clockMin >= DAY_END_MIN;
-}
-
-export function liftCapacityBonus(types: LiftType[]): number {
-  return types.reduce((n, t) => n + (t === "chair" ? 0.15 : 0), 0);
 }
 
 export { DAY_START_MIN, DAY_END_MIN, SEASON_LENGTH };

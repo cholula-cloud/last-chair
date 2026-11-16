@@ -44,12 +44,6 @@ export type DayStats = {
   avgQueueMin: number;
 };
 
-export type LiftPlacement = {
-  type: LiftType;
-  slotIndex: number;
-  confirmed: boolean;
-};
-
 export type FounderDef = {
   id: FounderId;
   name: string;

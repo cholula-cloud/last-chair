@@ -23,7 +23,7 @@
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key is `last-chair-v1`, no version field; night reload bug | 4, 25 |
+| Save format | 🟡 | Key `last-chair-v1`, schema version 1 with migration; cloud later | 25 |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
 ---
@@ -211,13 +211,11 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ---
 
-## Save format (v0)
+## Save format (v1)
 
-JSON blob, localStorage key `last-chair-save-v0`:
+JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 1`. The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
 
-- `dayIndex`, `cash`, `farePreset`, `snowPreset`
-- lift placements, guest seed
-- `talents[]`, `founderId`, `storyFlags`
+`migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
 
 Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 

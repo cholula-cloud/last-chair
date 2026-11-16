@@ -53,12 +53,13 @@ export type PersistedState = {
   seasonLength: number;
   /** Internal state of the seeded RNG (see rng.ts). */
   rngState: number;
+  /** The open night sheet, so a reload during the night restores it. */
+  nightRecap: NightRecap | null;
+  dayStats: DayStats;
 };
 
 /** The whole game: saved fields plus per-session display state. */
 export type GameState = PersistedState & {
-  nightRecap: NightRecap | null;
-  dayStats: DayStats;
   talentToast: string | null;
 };
 
@@ -146,6 +147,8 @@ export function toPersisted(state: PersistedState): PersistedState {
     groomVisible: state.groomVisible,
     seasonLength: state.seasonLength,
     rngState: state.rngState,
+    nightRecap: state.nightRecap,
+    dayStats: state.dayStats,
   };
 }
 
@@ -153,20 +156,35 @@ export function toPersisted(state: PersistedState): PersistedState {
 export function hydrate<T extends GameState>(persisted: unknown, current: T): T {
   const p = persisted as Partial<PersistedState> | undefined;
   if (!p) return current;
-  // PR 4: a save made during the night should apply the night's cash instead of
-  // jumping back to the day. Kept as is for PR 3 (zero behavior change).
-  if (p.phase === "night") {
-    return {
-      ...current,
-      ...p,
-      nightRecap: null,
-      phase: "day" as const,
-      pendingBeat: null,
-      beatAcknowledged: true,
-    };
-  }
   if (p.phase === "setup" || !p.founderId) {
     return { ...current, ...p, phase: "setup" as const };
   }
   return { ...current, ...p };
+}
+
+/** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
+export const SAVE_KEY = "last-chair-v1";
+export const SAVE_VERSION = 1;
+
+/**
+ * Upgrade a saved slice from an older schema. Fields that are missing are
+ * filled from a fresh state. Version 0 (unversioned) saves have no `rngState`,
+ * `nightRecap` or `dayStats`. A v0 save made during the night has no recap to
+ * restore, so it cannot resume the night sheet and is loaded as a day.
+ */
+export function migrate(persisted: unknown, fromVersion: number): PersistedState {
+  const fresh = toPersisted(createInitialState());
+  if (!persisted || typeof persisted !== "object") return fresh;
+  const p = { ...(persisted as Partial<PersistedState>) };
+  if (fromVersion < 1) {
+    if (p.phase === "night" && !p.nightRecap) {
+      p.phase = "day";
+      p.pendingBeat = null;
+      p.beatAcknowledged = true;
+    }
+  }
+  // A save without rngState gets a fresh random seed; filling it from
+  // createInitialState() would put every migrated save on the same seed.
+  const rngState = p.rngState ?? Math.floor(Math.random() * 0x100000000);
+  return { ...fresh, ...p, rngState };
 }

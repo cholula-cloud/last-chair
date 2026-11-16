@@ -13,7 +13,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
 | Balance harness | Node script (PR 10) | N seeds × fixed strategies over a full season; flags dominant strategies and broken economies | Before milestone gates | Not yet set up |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
-| Phone viewport | Playwright iPhone viewport, `npm run playtest:p0` | P0 script steps in Chromium at iPhone size | Local, before merge | Exists |
+| Phone viewport | Playwright iPhone viewport, `npm run playtest:p0` (Chromium from `npx playwright install chromium`; screenshots to `PLAYTEST_OUT`, default `web/playtest-artifacts/`) | P0 script steps in Chromium at iPhone size | Local, before merge | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Milestone gates | Scripts below |
 
 `npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
