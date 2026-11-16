@@ -1,5 +1,6 @@
 "use client";
 
+import { formatMoney } from "@/game/format";
 import {
   LIFT_PREVIEW_SLOTS,
   checkDescentValid,
@@ -118,7 +119,7 @@ export function BuildSheet({
         }}
         className="mt-5 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white disabled:opacity-40 active:scale-[0.98]"
       >
-        Place {LIFT_LABELS[selectedLiftType]} · ${liftCost}
+        Place {LIFT_LABELS[selectedLiftType]} · {formatMoney(liftCost)}
       </button>
 
       <p className="mt-5 text-xs font-medium uppercase tracking-wider text-slate-400">
@@ -140,7 +141,7 @@ export function BuildSheet({
                 {BUILDING_LABELS[id]}
                 {owned ? " · built" : ""}
               </span>
-              <span className="font-semibold">{owned ? "✓" : `$${cost}`}</span>
+              <span className="font-semibold">{owned ? "✓" : formatMoney(cost)}</span>
             </button>
           );
         })}

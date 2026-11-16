@@ -1,5 +1,6 @@
 "use client";
 
+import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 
 export function WinterReviewSheet() {
@@ -39,8 +40,7 @@ export function WinterReviewSheet() {
       <div className="w-full max-w-lg rounded-t-3xl border border-white/10 bg-[#0f1d33] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:rounded-3xl">
         <h2 className="text-lg font-semibold text-white">Winter review</h2>
         <p className="mt-2 text-sm text-slate-300">
-          You held one more winter in the sticks. Cash $
-          {cash.toLocaleString()} · Rep {reputation} · Beats{" "}
+          You held one more winter in the sticks. Cash {formatMoney(cash)} · Rep {reputation} · Beats{" "}
           {completedBeats.length}/6 · Talents {talentsOwned.length}
         </p>
         <p className="mt-3 rounded-xl bg-white/5 px-3 py-2 text-sm text-orange-100">
