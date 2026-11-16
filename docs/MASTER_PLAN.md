@@ -268,7 +268,9 @@ Goal: a codebase where rules are testable and known bugs are gone.
 | 1 | ☑ | Docs consolidation + master plan | 22 docs → 6; this file | No dead links; every fact from removed docs lives somewhere |
 | 2 | ☑ | Tooling + CI | Vitest; `typecheck`, `test`, `check` scripts; GitHub Actions running lint, typecheck, test, build on PRs; remove stock SVGs | CI green on a PR; one sample sim test passes |
 | 3 | ☑ | Pure sim core | Move rules out of `store.ts` into `game/` over a serializable `GameState`; seeded RNG; store becomes thin | Characterization tests pass before and after; zero behavior change; store < 200 lines |
-| 4 | ◐ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; one lap-or-leave draw per skier (not per tick); dead code and the 3 render lint warnings; save key + `version` field; `playtest-p0.mjs` runs on any machine | One regression test per bug |
+| 4 | ☑ | Known-bug fixes | Night-reload cash skip; real `completedRuns`; one queue formula; new-season arrivals; one lap-or-leave draw per skier (not per tick); dead code and the 3 render lint warnings; save key + `version` field; `playtest-p0.mjs` runs on any machine | One regression test per bug |
+
+| 4b | ☐ | Phone HUD fixes from the M0 smoke check | Portrait ops strip no longer overlapped by Home / Close hill; one mood number (ops strip and recap show the same satisfaction); money formats as −$104; Sleep explains why it is disabled while a radio beat waits | Playwright screenshot at 390×844 shows no overlap; unit test for money format |
 
 **Gate M0:** `npm run check` green in CI; sim runs headless from a test.
 
@@ -279,7 +281,7 @@ Goal: every number on the recap is caused by something visible on the hill.
 | # | Status | PR | Accomplishes | Done when |
 |---|---|---|---|---|
 | 5 | ☐ | Lift as a server | Capacity per hour, ride time, FIFO queue; wait measured in game minutes | Test: doubling arrivals at fixed capacity raises average wait |
-| 6 | ☐ | Guest day script | Arrival curve 08:00–14:00; energy; laps; departure; real run count; First-Timer + Saturday Regular personas | Test: guest count, runs per guest, all depart by close |
+| 6 | ☐ | Guest day script | Arrival curve 08:00–14:00 (smoke check: today everyone arrives at 6 AM, giving a 4.6 min opening queue); energy; laps; departure; real run count; First-Timer + Saturday Regular personas | Test: guest count, runs per guest, all depart by close |
 | 7 | ☐ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
 | 8 | ☐ | Snow per trail segment | Depth / quality / coverage per segment; thaw hits low elevation first; overnight presets per spec; terrain tint reads real values | Test: High beats Mid beats Minimal on quality after one night; a phone tester can see the difference next morning |
 | 9 | ☐ | Levers you can feel | Fare judged against what the hill offered that day (snow, queues, venues), with elasticity by persona; "Why?" breakdown on the recap; today-vs-yesterday deltas | Player can see what fare did to arrivals and mood |
@@ -293,7 +295,7 @@ Goal: where you put things matters.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 11 | ☐ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette |
+| 11 | ☐ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
 | 12 | ☐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |

@@ -73,5 +73,10 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|---|
 | 2026-11-16 | P0 (stub sim) | Agent, Chromium iPhone viewport, `playtest-p0.mjs` | Click-through passed; sim later found mostly cosmetic. Re-sign in M1 |
 | 2026-11-16 | P1 (stub sim) | Agent, `smoke-winter.mjs`, 14-day season | Click-through passed; external players not run. Re-sign in M3 |
+| 2026-11-16 | Smoke after M0 (PRs 1–4) | Sonnet agent, Playwright Chromium: iPhone 390×844 portrait + landscape, iPad 1180×820; stopped at day 6 | No app errors; night reload, run count and day-1 beat confirmed. Found: portrait HUD overlap, ops-strip mood ≠ recap happy %, `$-104` formatting, Sleep disabled with no reason during a radio beat → PR 4b |
 
 Log friction as a GitHub issue with device and OS version.
+
+### Smoke check rule
+
+A smoke check between PRs is **≤10 minutes and ≤2 in-game days**: load, one day, one night, one reload, one viewport each for iPhone portrait and iPad. Full-season and feel playtests happen only at milestone gates (M1 = PR 10, M3 = PR 27).
