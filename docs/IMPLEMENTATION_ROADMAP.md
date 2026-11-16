@@ -81,21 +81,6 @@ Only after [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) gate.
 
 ---
 
-## Vercel
-
-**Project:** [cholula-cloud's last-chair](https://vercel.com/cholula-clouds-projects/last-chair)  
-**Repo:** `cholula-cloud/last-chair` · **Root Directory:** `web`
-
-| Check | Notes |
-|-------|--------|
-| Git connected | User confirmed; ensure pushes to `main` deploy |
-| Production deploy | Page showed **No Production Deployment** earlier—first green `main` build should fix |
-| Wrong Vercel team | Use **only** [cholula-clouds-projects / last-chair](https://vercel.com/cholula-clouds-projects/last-chair) — see [VERCEL_SETUP.md](./VERCEL_SETUP.md) |
-
-CLI on VM: logged out; deploy via Git push or dashboard. Full checklist: [VERCEL_SETUP.md](./VERCEL_SETUP.md).
-
----
-
 ## Open engineering tasks (now)
 
 1. ~~`web/src/game/` types + sim v0 — [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)~~

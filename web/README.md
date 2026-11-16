@@ -22,4 +22,4 @@ npm run dev
 
 Product gates, sim numbers, and roadmap live in the repo **[docs/](../docs/README.md)** — especially [FEEL_SCORECARD.md](../docs/FEEL_SCORECARD.md) and [SIMULATION_SPEC.md](../docs/SIMULATION_SPEC.md).
 
-Deploy: Vercel root directory = `web`.
+Deploy: published through Cursor (no Vercel). The app root is `web/`.
