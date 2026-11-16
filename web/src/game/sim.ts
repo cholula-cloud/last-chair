@@ -57,18 +57,38 @@ export function tickGuests(guests: Guest[], dt: number): Guest[] {
   });
 }
 
+const ARRIVAL_MIN = 18;
+const ARRIVAL_MAX = 28;
+const ARRIVAL_MOOD_STUB = 0.7;
+
+export function rollNextDayArrivals(dayIndex: number, fare: FarePreset): number {
+  const base =
+    ARRIVAL_MIN + Math.floor(Math.random() * (ARRIVAL_MAX - ARRIVAL_MIN + 1));
+  const dayOfWeek = (dayIndex - 1) % 7;
+  const weekend = dayOfWeek >= 5;
+  let count = weekend ? Math.round(base * 1.3) : base;
+  const fareMult =
+    fare === "cheap" ? 1.1 : fare === "expensive" ? 0.9 : 1;
+  count = Math.round(count * fareMult);
+  return Math.max(1, count);
+}
+
 export function computeSatisfaction(
   fare: FarePreset,
   snowQuality: number,
   avgQueueMin: number,
 ): number {
   const ticketMismatch =
-    fare === "cheap" ? 0 : fare === "balanced" ? 0.3 : 1;
+    fare === "cheap" ? 0 : fare === "balanced" ? 0.5 : 1;
   return Math.max(
     0,
     Math.min(
       100,
-      70 - 8 * avgQueueMin + 25 * snowQuality - 15 * ticketMismatch + 7,
+      70 -
+        8 * avgQueueMin +
+        25 * snowQuality -
+        15 * ticketMismatch +
+        10 * ARRIVAL_MOOD_STUB,
     ),
   );
 }

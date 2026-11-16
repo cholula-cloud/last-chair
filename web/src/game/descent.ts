@@ -2,6 +2,8 @@
 
 export type LiftAnchor = { x: number; z: number };
 
+export type LiftSlot = LiftAnchor & { label: string };
+
 const BASE_ZONE = { xMin: -1.5, xMax: 2.5, zMin: 2, zMax: 3.5 };
 const TOP_ZONE = { xMin: -2, xMax: 1, zMin: -0.5, zMax: 1.2 };
 
@@ -17,8 +19,8 @@ export function checkDescentValid(anchor: LiftAnchor): boolean {
   return drop >= 1.2 && horizontal <= 2.5;
 }
 
-export const LIFT_PREVIEW_SLOTS: LiftAnchor[] = [
-  { x: -1.2, z: 0.2 },
-  { x: 0.8, z: 0.6 },
-  { x: -0.2, z: 1.0 },
+export const LIFT_PREVIEW_SLOTS: LiftSlot[] = [
+  { x: -1.2, z: 0.2, label: "Ridge" },
+  { x: 0.8, z: 0.6, label: "Mid" },
+  { x: -0.2, z: 1.0, label: "Creek" },
 ];

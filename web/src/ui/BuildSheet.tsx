@@ -3,7 +3,7 @@
 import {
   LIFT_PREVIEW_SLOTS,
   checkDescentValid,
-  type LiftAnchor,
+  type LiftSlot,
 } from "@/game/descent";
 import { useGameStore } from "@/game/store";
 
@@ -67,7 +67,7 @@ export function BuildSheet({
             selected={
               slot.x === liftAnchor.x && slot.z === liftAnchor.z
             }
-            onPick={() => setLiftAnchor(slot)}
+            onPick={() => setLiftAnchor({ x: slot.x, z: slot.z })}
           />
         ))}
       </div>
@@ -102,7 +102,7 @@ function SlotButton({
   selected,
   onPick,
 }: {
-  slot: LiftAnchor;
+  slot: LiftSlot;
   selected: boolean;
   onPick: () => void;
 }) {
@@ -119,7 +119,10 @@ function SlotButton({
           : "border-white/10 bg-white/5 text-slate-300"
       }`}
     >
-      {valid ? "OK" : "✕"} · ({slot.x.toFixed(1)}, {slot.z.toFixed(1)})
+      <span className="block text-sm">{slot.label}</span>
+      <span className="mt-0.5 block font-normal text-slate-400">
+        {valid ? "Valid run" : "No run"}
+      </span>
     </button>
   );
 }

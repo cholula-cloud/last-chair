@@ -11,10 +11,17 @@ import {
   DAY_START_MIN,
   emptyDayStats,
   formatClock,
+  rollNextDayArrivals,
   tickGuests,
   type NightRecap,
 } from "./sim";
-import type { FarePreset, GamePhase, Guest, SnowPreset } from "./types";
+import type {
+  DayStats,
+  FarePreset,
+  GamePhase,
+  Guest,
+  SnowPreset,
+} from "./types";
 import { MS_PER_GAME_MINUTE } from "./types";
 
 const DEFAULT_LIFT: LiftAnchor = { x: -1.2, z: 0.2 };
@@ -35,12 +42,11 @@ type PersistedSlice = {
   liftAnchor: LiftAnchor;
   liftConfirmed: boolean;
   buildMode: boolean;
+  nightRecap: NightRecap | null;
+  dayStats: DayStats;
 };
 
 type GameStore = PersistedSlice & {
-  nightRecap: NightRecap | null;
-  dayStats: ReturnType<typeof emptyDayStats>;
-  liftOpen: boolean;
   tick: (deltaMs: number) => void;
   togglePause: () => void;
   skipToClose: () => void;
@@ -49,11 +55,12 @@ type GameStore = PersistedSlice & {
   setPendingSnow: (s: SnowPreset) => void;
   sleep: () => void;
   setFollowId: (id: string | null) => void;
-  resetDay: () => void;
   setBuildMode: (on: boolean) => void;
   setLiftAnchor: (anchor: LiftAnchor) => void;
   confirmLift: () => void;
 };
+
+const dayOneArrivals = rollNextDayArrivals(1, "balanced");
 
 export const useGameStore = create<GameStore>()(
   persist(
@@ -66,13 +73,12 @@ export const useGameStore = create<GameStore>()(
       fare: "balanced",
       snow: "mid",
       snowQuality: 0.55,
-      guests: createInitialGuests(22),
+      guests: createInitialGuests(dayOneArrivals),
       followId: null,
       nightRecap: null,
-      dayStats: { arrivals: 22, completedRuns: 0, avgQueueMin: 2.5 },
+      dayStats: { arrivals: dayOneArrivals, completedRuns: 0, avgQueueMin: 2.5 },
       pendingFare: "balanced",
       pendingSnow: "mid",
-      liftOpen: true,
       liftAnchor: DEFAULT_LIFT,
       liftConfirmed: true,
       buildMode: false,
@@ -85,7 +91,7 @@ export const useGameStore = create<GameStore>()(
       confirmLift: () => {
         const anchor = get().liftAnchor;
         if (!checkDescentValid(anchor)) return;
-        set({ liftConfirmed: true, buildMode: false, liftOpen: true });
+        set({ liftConfirmed: true, buildMode: false });
       },
       skipToClose: () => {
         const state = get();
@@ -117,6 +123,8 @@ export const useGameStore = create<GameStore>()(
         if (state.phase !== "night" || !state.nightRecap) return;
         const afterCash = state.cash + state.nightRecap.cashDelta;
         const overnight = applyOvernight(state.pendingSnow, afterCash);
+        const nextDayIndex = state.dayIndex + 1;
+        const arrivals = rollNextDayArrivals(nextDayIndex, state.pendingFare);
         set({
           phase: "day",
           paused: true,
@@ -125,24 +133,16 @@ export const useGameStore = create<GameStore>()(
           snow: state.pendingSnow,
           snowQuality: overnight.snowQuality,
           clockMin: DAY_START_MIN,
-          dayIndex: state.dayIndex + 1,
+          dayIndex: nextDayIndex,
           nightRecap: null,
-          guests: createInitialGuests(20 + Math.floor(Math.random() * 8)),
+          guests: createInitialGuests(arrivals),
           dayStats: {
-            arrivals: 22,
+            arrivals,
             completedRuns: 0,
             avgQueueMin: 2.5,
           },
         });
       },
-      resetDay: () =>
-        set({
-          clockMin: DAY_START_MIN,
-          phase: "day",
-          paused: true,
-          guests: createInitialGuests(22),
-          nightRecap: null,
-        }),
       tick: (deltaMs) => {
         const state = get();
         if (state.phase !== "day" || state.paused) return;
@@ -187,7 +187,7 @@ export const useGameStore = create<GameStore>()(
       },
     }),
     {
-      name: "last-chair-v0",
+      name: "last-chair-save-v0",
       storage: createJSONStorage(() => localStorage),
       partialize: (state): PersistedSlice => ({
         dayIndex: state.dayIndex,
@@ -205,14 +205,28 @@ export const useGameStore = create<GameStore>()(
         liftAnchor: state.liftAnchor,
         liftConfirmed: state.liftConfirmed,
         buildMode: state.buildMode,
+        nightRecap: state.phase === "night" ? state.nightRecap : null,
+        dayStats: state.dayStats,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<PersistedSlice> | undefined;
         if (!p) return current;
-        if (p.phase === "night") {
-          return { ...current, ...p, nightRecap: null, phase: "day" };
+        const merged = { ...current, ...p };
+        if (p.phase === "night" && !p.nightRecap) {
+          const avgQueueMin = p.dayStats?.avgQueueMin ?? 2.5;
+          const recap = buildNightRecap(
+            {
+              arrivals: p.dayStats?.arrivals ?? merged.guests.length,
+              completedRuns: p.dayStats?.completedRuns ?? 0,
+              avgQueueMin,
+            },
+            p.fare ?? merged.fare,
+            p.snowQuality ?? merged.snowQuality,
+            avgQueueMin,
+          );
+          return { ...merged, nightRecap: recap, paused: true };
         }
-        return { ...current, ...p };
+        return merged;
       },
     },
   ),
