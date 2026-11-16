@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { nextTalentName } from "@/game/sim";
+import { storyBeatCopy, useGameStore } from "@/game/store";
 import {
   FARE_LABELS,
   SNOW_LABELS,
   type FarePreset,
   type SnowPreset,
 } from "@/game/types";
-import { useGameStore } from "@/game/store";
 
 const fareOptions: FarePreset[] = ["cheap", "balanced", "expensive"];
 const snowOptions: SnowPreset[] = ["minimal", "mid", "high"];
@@ -24,11 +25,19 @@ export function NightRecapSheet() {
   const recap = useGameStore((s) => s.nightRecap);
   const pendingFare = useGameStore((s) => s.pendingFare);
   const pendingSnow = useGameStore((s) => s.pendingSnow);
+  const pendingBeat = useGameStore((s) => s.pendingBeat);
+  const beatAcknowledged = useGameStore((s) => s.beatAcknowledged);
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
+  const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
   const sleep = useGameStore((s) => s.sleep);
+  const talentsOwned = useGameStore((s) => s.talentsOwned);
+  const nextTalent = nextTalentName(talentsOwned);
 
   if (phase !== "night" || !recap) return null;
+
+  const beat = storyBeatCopy(pendingBeat);
+  const canSleep = !pendingBeat || beatAcknowledged;
 
   return (
     <div
@@ -53,6 +62,22 @@ export function NightRecapSheet() {
         {recap.problem}
       </p>
 
+      {beat && !beatAcknowledged && (
+        <div className="mt-4 rounded-2xl border border-sky-500/30 bg-sky-500/10 px-3 py-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-sky-300">
+            Mountain Radio · {beat.title}
+          </p>
+          <p className="mt-2 text-sm text-slate-100">{beat.radio}</p>
+          <button
+            type="button"
+            onClick={acknowledgeBeat}
+            className="mt-3 flex h-12 w-full items-center justify-center rounded-xl bg-sky-500/30 text-sm font-semibold text-white"
+          >
+            Got it
+          </button>
+        </div>
+      )}
+
       <div className="mt-5 space-y-4">
         <PresetBlock title="Fare">
           <PresetRow
@@ -72,10 +97,17 @@ export function NightRecapSheet() {
         </PresetBlock>
       </div>
 
+      {nextTalent && (
+        <p className="mt-4 text-xs text-slate-400">
+          Tomorrow the crew learns: <span className="text-slate-200">{nextTalent}</span>
+        </p>
+      )}
+
       <button
         type="button"
+        disabled={!canSleep}
         onClick={sleep}
-        className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white active:scale-[0.98]"
+        className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white disabled:opacity-40 active:scale-[0.98]"
       >
         Sleep — next morning
       </button>

@@ -10,6 +10,7 @@
 | **Vision** | [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) |
 | **Ship gates / MVP** | [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) |
 | **P0 playtest** | [PLAYTEST_P0.md](./PLAYTEST_P0.md) |
+| **P1 playtest** | [PLAYTEST_P1.md](./PLAYTEST_P1.md) |
 | **Mobile / Safari** | [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) |
 | **Eng phases** | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) |
 | **Numbers** | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) |
