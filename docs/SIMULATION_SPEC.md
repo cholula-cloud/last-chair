@@ -1,7 +1,30 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.1 · **Updated:** 2026-11-13  
-**Scope:** P0/P1 **feel** on mobile — not full ICR parity. Tune against [FEEL_SCORECARD.md](./FEEL_SCORECARD.md).
+**Version:** 0.2 · **Updated:** 2026-11-16  
+**Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
+
+## Implementation status (2026-11-16 audit)
+
+✅ implemented as written · 🟡 partial or approximated · ❌ not implemented. Update this table in the same PR that changes the code.
+
+| Section | Status | Gap | Fixed by PR |
+|---|---|---|---|
+| Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
+| Guest day script | ❌ | Random state machine; no arrival curve, energy or refuel | 6 |
+| Personas | ❌ | Not modeled | 6, 9 |
+| Satisfaction formula | 🟡 | Formula matches, but `queueMinutes` is invented and computed once per day, not per guest | 5, 7 |
+| Arrivals | 🟡 | Weekend/fare/weather modifiers exist; no spawn curve | 6, 9 |
+| Lift types / capacity | ❌ | Type changes cost only; no capacity, ride time or FIFO | 5, 15 |
+| Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
+| Trail graph | ❌ | Single implicit run | 13 |
+| Snow | 🟡 | One global depth + quality; no per-segment coverage; thaw is hill-wide | 8 |
+| Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |
+| Night choices | ✅ | Fare + snow/service presets with costs | — |
+| Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
+| Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
+| Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
+| Save format | 🟡 | Key is `last-chair-v1`, no version field; night reload bug | 4, 25 |
+| Randomness | ❌ | `Math.random` throughout; weather is a modulo formula | 3, 18 |
 
 ---
 
@@ -146,7 +169,7 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ## Crew talents (P0 stub)
 
-Overnight picks **first unowned** talent in crew order (see future `TALENTS_AND_CREW_ORDER.md`). P0 implements **3 placeholders:**
+Overnight picks **first unowned** talent in crew order (list in `web/src/game/content.ts`). P0 implements **3 placeholders:**
 
 1. **Rope Tow** — surface lift ops efficiency  
 2. **Trail Guns** — +gun reach P1  
@@ -210,4 +233,4 @@ web/src/render/MountainScene.tsx
 web/src/ui/NightRecapSheet.tsx
 ```
 
-Refs: [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md), [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md).
+Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
