@@ -18,7 +18,7 @@
 
 Do **not** ship bespoke story systems before the mountain day loop works. Do **not** add simulation depth that ICR hides behind Simple mode.
 
-Full improvement backlog: [LAST_CHAIR_IMPROVEMENT_PLAN.md](./LAST_CHAIR_IMPROVEMENT_PLAN.md) (**post–loop-feel**).
+Full improvement backlog: [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) (**post–P1**). Archived differentiation notes: [archive/LAST_CHAIR_IMPROVEMENT_PLAN.md](./archive/LAST_CHAIR_IMPROVEMENT_PLAN.md).
 
 ---
 
@@ -59,7 +59,7 @@ Optional P1 wedge: **guest regulars** via list follow; **Ledger** tutorial on ta
 | **Save** | Cloud career (P2); local v0 | Local quick-save slots |
 | **When to build** | **Phases 1–5 (primary)** | After core build loop works (~Phase 2) |
 
-Story detail: [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) · Flow: [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md).
+**Story Mode (Act I):** reopen [Dutch Hill](./DUTCH_HILL_ACT_I.md) (Heartwellville, VT) — one lift, no guns at first, six radio beats, winter review → Tenney Mountain. Daily: watch/build; nightly: fare + snow/service (+ rare story reply). Career peaks: [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md). Session flows: [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md).
 
 ---
 

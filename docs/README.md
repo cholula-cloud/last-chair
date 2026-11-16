@@ -1,27 +1,29 @@
-# Last Chair — planning docs (living)
+# Last Chair — planning docs
 
-Update these as decisions change. **Build order:** ICR **Simple loop feel** on **iPhone/iPad Safari** → fun check → 110% pass — see [FEEL_SCORECARD.md](./FEEL_SCORECARD.md).
+**Build order:** ICR Simple loop feel on iPhone/iPad Safari → fun check → 110% pass.  
+**Ship gates:** [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) (P0 vertical slice · **P1 = product MVP** Dutch Hill winter · P2 career).
 
-| Document | Purpose |
-|----------|---------|
-| [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) | Vision, why Last Chair, Story vs Sandbox |
-| [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) | Browser-first; mobile-primary QA & UX |
-| [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) | **v1 ship gates** (P0/P1/P2), not literal ICR clone |
-| [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Guest/snow/economy numbers (Dutch Hill v0) |
-| [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md) | Loops, screens, simplicity rules |
-| [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) | **Act I** — Dutch Hill, VT (sticks) |
-| [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) | Story Mode beats & NE setting |
-| [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md) | **Real** career peaks & heritage cards |
-| [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) | **Real** regional lore (radio, beats) |
-| [CHARACTERS.md](./CHARACTERS.md) | Founders & NPCs |
-| [ART_DIRECTION.md](./ART_DIRECTION.md) | Cozy NE diorama + 110% art later |
-| [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | ICR reference / long-horizon mechanics |
-| [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) | **110% backlog (gated)** |
-| [LAST_CHAIR_IMPROVEMENT_PLAN.md](./LAST_CHAIR_IMPROVEMENT_PLAN.md) | Archive of differentiation ideas |
-| [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) | Engineering phases |
-| [PLAYTEST_P0.md](./PLAYTEST_P0.md) | **15 min** iPhone Safari gate script |
-| [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) | **Active** audit: cut/keep, art, honesty sprint |
+**Authority when docs conflict:** Scorecard → Bible → Sim Spec / Platform → Roadmap → content docs → reference.
 
-**Modes:** **Story Mode** (career, crew, light plot) · **Sandbox** (build free, no plot).
+| Role | Document |
+|------|----------|
+| **Vision** | [GAME_DESIGN_BIBLE.md](./GAME_DESIGN_BIBLE.md) |
+| **Ship gates / MVP** | [FEEL_SCORECARD.md](./FEEL_SCORECARD.md) |
+| **Ship-shape audit** | [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) |
+| **Art sprint** | [ART_IMPLEMENTATION.md](./ART_IMPLEMENTATION.md) |
+| **P0 playtest** | [PLAYTEST_P0.md](./PLAYTEST_P0.md) |
+| **P1 playtest** | [PLAYTEST_P1.md](./PLAYTEST_P1.md) |
+| **Mobile / Safari** | [PLATFORM_MOBILE.md](./PLATFORM_MOBILE.md) |
+| **Eng phases** | [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) |
+| **Numbers** | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) |
+| **Sessions / screens** | [GAMEPLAY_AND_FLOW.md](./GAMEPLAY_AND_FLOW.md) |
+| **Act I setting** | [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) |
+| **Career peaks** | [NORTHEAST_MOUNTAINS.md](./NORTHEAST_MOUNTAINS.md) |
+| **Writer pantry** | [NORTHEAST_LORE.md](./NORTHEAST_LORE.md) |
+| **Cast** | [CHARACTERS.md](./CHARACTERS.md) |
+| **Art** | [ART_DIRECTION.md](./ART_DIRECTION.md) |
+| **110% backlog (post-P1)** | [IMPROVEMENTS_PASS.md](./IMPROVEMENTS_PASS.md) |
+| **ICR reference** | [reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) |
+| **Archived stub** | [archive/LAST_CHAIR_IMPROVEMENT_PLAN.md](./archive/LAST_CHAIR_IMPROVEMENT_PLAN.md) |
 
-**Active sprint focus:** [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) Tier 0–1 (honest loop + legible art) before P1 winter systems.
+**Modes:** Story Mode (career, crew, light plot) · Sandbox (after loop is fun).

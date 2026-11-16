@@ -1,12 +1,34 @@
 export type FarePreset = "cheap" | "balanced" | "expensive";
 export type SnowPreset = "minimal" | "mid" | "high";
-export type GamePhase = "day" | "night";
+export type GamePhase =
+  | "setup"
+  | "day"
+  | "night"
+  | "winter_review"
+  | "mountain2";
 export type GuestState =
   | "arrive"
   | "queue"
   | "ride"
   | "ski"
   | "depart";
+export type LiftType = "surface" | "chair";
+export type WeatherKind = "snow" | "clear" | "thaw";
+export type BuildingId = "warming_hut" | "lodge" | "cafe" | "shop" | "snow_guns";
+export type FounderId =
+  | "elena"
+  | "tom"
+  | "riley"
+  | "amira"
+  | "juniper"
+  | "marco";
+export type StoryBeatId =
+  | "first_load"
+  | "saturday"
+  | "school_bus"
+  | "dry_week"
+  | "summit_link"
+  | "winter_review";
 
 export type Guest = {
   id: string;
@@ -20,6 +42,34 @@ export type DayStats = {
   arrivals: number;
   completedRuns: number;
   avgQueueMin: number;
+};
+
+export type LiftPlacement = {
+  type: LiftType;
+  slotIndex: number;
+  confirmed: boolean;
+};
+
+export type FounderDef = {
+  id: FounderId;
+  name: string;
+  title: string;
+  blurb: string;
+  arrivalMoodBonus: number;
+  fixedCostDelta: number;
+  snowExpectationPenalty: number;
+};
+
+export type TalentDef = {
+  id: string;
+  name: string;
+  effect: string;
+};
+
+export type StoryBeatDef = {
+  id: StoryBeatId;
+  title: string;
+  radio: string;
 };
 
 export const FARE_PRICES: Record<FarePreset, number> = {
@@ -46,6 +96,36 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
   high: 350,
 };
 
+export const LIFT_LABELS: Record<LiftType, string> = {
+  surface: "Surface lift",
+  chair: "Double chair",
+};
+
+export const LIFT_BUILD_COST: Record<LiftType, number> = {
+  surface: 0,
+  chair: 2500,
+};
+
+export const BUILDING_LABELS: Record<BuildingId, string> = {
+  warming_hut: "Warming hut",
+  lodge: "Lodge (step 1)",
+  cafe: "Café",
+  shop: "Shop",
+  snow_guns: "Snow guns",
+};
+
+export const BUILDING_COSTS: Record<BuildingId, number> = {
+  warming_hut: 0,
+  lodge: 1800,
+  cafe: 1200,
+  shop: 900,
+  snow_guns: 2200,
+};
+
 export const DAY_START_MIN = 6 * 60;
 export const DAY_END_MIN = 16 * 60;
 export const MS_PER_GAME_MINUTE = 500;
+/** Internal P1 shortcut; scale to 28 for ship. */
+export const SEASON_LENGTH = 14;
+export const DAILY_FIXED_COST = 400;
+export const LIFT_OPS_COST = 180;

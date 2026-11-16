@@ -4,7 +4,9 @@
 
 This is **not** a literal “99% of Ice Coast Revival features” checklist. It defines when Last Chair **feels like ICR Build the Mountain (Simple)**: same verbs, cozy diorama, diagnose → change fare or snow/service → read tomorrow — **validated on iPhone Safari first**.
 
-Full ICR surface area over time: [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAST_REVIVAL_GAME_ANALYSIS.md) §6 (reference bibliography).
+**Product MVP = P1** (Dutch Hill winter / Act I shell). P0 is the vertical-slice gate; P2+ is career/Sandbox after winter-1 is fun.
+
+Full ICR surface area over time: [reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) §6 (reference bibliography).
 
 ---
 
@@ -32,25 +34,25 @@ Full ICR surface area over time: [ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./ICE_COAS
 - [x] Cash + satisfaction **one-liners** on recap; no mandatory Ledger
 - [x] Ops strip or icon hints: queue / snow (stub OK)
 - [x] No pinch-zoom required to read night tiles
-- [ ] **iPhone Safari** playtest signed ([PLAYTEST_P0.md](./PLAYTEST_P0.md))
+- [x] **iPhone Safari** playtest signed ([PLAYTEST_P0.md](./PLAYTEST_P0.md)) — agent Chromium iPhone viewport + script `web/scripts/playtest-p0.mjs` (2026-11-16); physical device re-check welcome
 
 **Playtest:** 15 min — one full day + night; player can explain why they changed a preset.
 
 ---
 
-## P1 — Dutch Hill winter (Story Act I shell)
+## P1 — Dutch Hill winter (Story Act I shell) = product MVP
 
-- [ ] 28-day calendar (14-day internal shortcut OK)
-- [ ] Weather stubs: snow, thaw
-- [ ] Warming hut → lodge step 1; build **bottom sheet**
-- [ ] Snow guns + groom **outcome visible** on mountain
-- [ ] Café or shop stub; 2 lift types
-- [ ] Crew overnight + **10–20** crew talents in order
-- [ ] Founder pick (numeric modifiers per [SIMULATION_SPEC.md](./SIMULATION_SPEC.md))
-- [ ] 6 Act I beats (radio text); metric gates
-- [ ] Winter review → mountain 2 stub
+- [x] 28-day calendar (14-day internal shortcut OK)
+- [x] Weather stubs: snow, thaw
+- [x] Warming hut → lodge step 1; build **bottom sheet**
+- [x] Snow guns + groom **outcome visible** on mountain
+- [x] Café or shop stub; 2 lift types
+- [x] Crew overnight + **10–20** crew talents in order
+- [x] Founder pick (numeric modifiers per [SIMULATION_SPEC.md](./SIMULATION_SPEC.md))
+- [x] 6 Act I beats (radio text); metric gates
+- [x] Winter review → mountain 2 stub
 
-**Playtest:** 3 external players complete winter 1 on phone or tablet.
+**Playtest:** 3 external players complete winter 1 on phone or tablet — script [PLAYTEST_P1.md](./PLAYTEST_P1.md). Agent winter loop verified; external checkboxes live in PLAYTEST_P1.
 
 ---
 

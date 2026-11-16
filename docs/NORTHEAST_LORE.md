@@ -156,31 +156,23 @@ Use for **founder flavor**:
 
 ---
 
-## 14. Story beat → lore mapping (Act I Dutch Hill)
+## 14. Act I beats (Dutch Hill)
 
-| Beat | Lore accent |
-|------|-------------|
-| First load | “Last adult ticket **$6**” era; DHASH hikers wave |
-| Saturday | **Route 100**; plates from Bennington, North Adams |
-| School bus | Readsboro / Wilmington — one bus = lights stay on |
-| Dry week | **No snowmaking** opening; 1970s drought stories on radio |
-| SummitLink | Stratton/Mount Snow shadow — pass wants the map dot |
-| Winter review | Saved the sticks → **Tenney** on the career map |
-
-Detail: [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md).
+Beat table and ship notes live in **[DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md)** — do not duplicate here. Lore accents for copy: §15 stash below.
 
 ---
 
-## 16. Dutch Hill lore stash (Act I)
+## 15. Dutch Hill lore stash (Act I)
 
 - **Heartwellville** naming; southern Vermont **snow belt** (~110″ lore) vs closing anyway.  
 - **Alpenwald** across-the-street development failure — optional economic B-text.  
 - **1990 lodge burn** — mention only with dignity (fire dept training).  
-- Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.
+- Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.  
+- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; SummitLink map-dot pressure; winter review → Tenney.
 
 ---
 
-## 15. Where lore must not block simplicity
+## 16. Where lore must not block simplicity
 
 - **No quiz** on history.  
 - Heritage card = **optional** read.  

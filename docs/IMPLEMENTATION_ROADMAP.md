@@ -42,22 +42,22 @@ web/src/ui/       # night recap, build sheets
 
 ### A2 One winter (simplified)
 
-- [ ] 28-day calendar (can shorten for internal test to 14)
-- [ ] Weather stubs (snow, thaw)
-- [ ] Warming hut → build menu basics
-- [ ] Crew overnight + talents 1–10 (order list from analysis doc)
+- [x] 28-day calendar (can shorten for internal test to 14)
+- [x] Weather stubs (snow, thaw)
+- [x] Warming hut → build menu basics
+- [x] Crew overnight + talents 1–12 (ordered list in `web/src/game/content.ts`)
 
 ### A3 Story Mode shell
 
-- [ ] Founder pick (stats only, minimal copy)
-- [ ] 6 story beats Act I (radio text)
-- [ ] Career hub: map placeholder, level, talent progress read-only
+- [x] Founder pick (stats only, minimal copy)
+- [x] 6 story beats Act I (radio text)
+- [ ] Career hub: map placeholder, level, talent progress read-only (P2)
 
 ### A4 Parity expansion
 
-- [ ] Trails draw, 2 lift types, snow guns, groom visible
-- [ ] Café + shop; lodge tier 1→2
-- [ ] Winter review; mountain 2 stub; caretaker idle $ 
+- [x] 2 lift types, snow guns, groom visible (trail draw still later)
+- [x] Café + shop; lodge tier 1
+- [x] Winter review; mountain 2 stub; caretaker idle $ later
 - [ ] Crew talents → 25+; satisfaction breakdown on tap
 
 **Exit:** Side-by-side with ICR Simple on comparable hill—same verbs, our art.
@@ -101,4 +101,5 @@ CLI on VM: logged out; deploy via Git push or dashboard.
 1. ~~`web/src/game/` types + sim v0 — [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)~~
 2. ~~R3F scene on `/play`~~
 3. ~~Night recap bottom sheet~~
-4. ~~Descent validation UI + local save + ops strip~~ — next: iPhone P0 sign-off, P1 winter
+4. ~~Descent validation UI + local save + ops strip~~
+5. ~~P0 mobile viewport playtest + P1 Dutch Hill winter (14-day)~~ — next: external PLAYTEST_P1 sign-off, P2 career hub

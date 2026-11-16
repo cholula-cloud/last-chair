@@ -20,7 +20,7 @@ This file is the **parking lot** for differentiation. During loop-feel work, if 
 
 ## Narrative (110%)
 
-From [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) — promote when gated:
+From [DUTCH_HILL_ACT_I.md](./DUTCH_HILL_ACT_I.md) / career docs — promote when gated:
 
 - Full SummitLink arc branches
 - Named regulars + guest bios
@@ -32,7 +32,7 @@ From [STORY_AND_WORLD.md](./STORY_AND_WORLD.md) — promote when gated:
 
 ## UI / UX (110%)
 
-From [LAST_CHAIR_IMPROVEMENT_PLAN.md](./LAST_CHAIR_IMPROVEMENT_PLAN.md):
+From [archive/LAST_CHAIR_IMPROVEMENT_PLAN.md](./archive/LAST_CHAIR_IMPROVEMENT_PLAN.md):
 
 - Tomorrow cards on night recap
 - In-game talent **planner graph** (Director / Sandbox first)

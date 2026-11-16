@@ -3,12 +3,15 @@
 import { Canvas } from "@react-three/fiber";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { computeSatisfaction, formatClock } from "@/game/sim";
+import { founderById } from "@/game/content";
+import { computeSatisfaction, formatClock, weekdayLabel } from "@/game/sim";
 import { useGameStore } from "@/game/store";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
+import { FounderPick } from "@/ui/FounderPick";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
+import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience() {
   const [guestsOpen, setGuestsOpen] = useState(false);
@@ -16,21 +19,38 @@ export default function PlayExperience() {
   const [hydrated, setHydrated] = useState(false);
 
   const dayIndex = useGameStore((s) => s.dayIndex);
+  const seasonLength = useGameStore((s) => s.seasonLength);
   const clockMin = useGameStore((s) => s.clockMin);
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
   const phase = useGameStore((s) => s.phase);
   const fare = useGameStore((s) => s.fare);
   const snowQuality = useGameStore((s) => s.snowQuality);
+  const snowDepth = useGameStore((s) => s.snowDepth);
   const avgQueue = useGameStore((s) => s.dayStats.avgQueueMin);
+  const weather = useGameStore((s) => s.weather);
+  const morningHeadline = useGameStore((s) => s.morningHeadline);
+  const talentToast = useGameStore((s) => s.talentToast);
+  const founderId = useGameStore((s) => s.founderId);
+  const buildings = useGameStore((s) => s.buildings);
   const togglePause = useGameStore((s) => s.togglePause);
   const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
 
+  const founder = founderById(founderId);
   const mood = useMemo(
-    () => Math.round(computeSatisfaction(fare, snowQuality, avgQueue)),
-    [fare, snowQuality, avgQueue],
+    () =>
+      Math.round(
+        computeSatisfaction(
+          fare,
+          snowQuality,
+          avgQueue,
+          0.65 + (buildings.includes("lodge") ? 0.08 : 0.05),
+          founder?.snowExpectationPenalty ?? 0,
+        ),
+      ),
+    [fare, snowQuality, avgQueue, buildings, founder],
   );
 
   useEffect(() => {
@@ -56,7 +76,20 @@ export default function PlayExperience() {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
 
-  const showStartHint = hydrated && phase === "day" && paused && dayIndex === 1;
+  useEffect(() => {
+    if (!talentToast) return;
+    const t = window.setTimeout(
+      () => useGameStore.setState({ talentToast: null }),
+      5000,
+    );
+    return () => window.clearTimeout(t);
+  }, [talentToast]);
+
+  const showStartHint =
+    hydrated && phase === "day" && paused && dayIndex === 1;
+
+  const weatherLabel =
+    weather === "snow" ? "Snow" : weather === "thaw" ? "Thaw" : "Clear";
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-[#0b1628] text-slate-100">
@@ -71,12 +104,18 @@ export default function PlayExperience() {
             {paused ? "▶" : "❚❚"}
           </button>
           <span className="rounded-full border border-white/10 bg-black/40 px-3 py-2 font-medium backdrop-blur">
-            Day {dayIndex} · {formatClock(clockMin)}
+            Day {dayIndex}/{seasonLength} · {weekdayLabel(dayIndex)} ·{" "}
+            {formatClock(clockMin)}
           </span>
           <span className="rounded-full border border-white/10 bg-black/40 px-3 py-2 font-medium backdrop-blur">
             ${cash.toLocaleString()}
           </span>
         </div>
+        {phase === "day" && (
+          <p className="pointer-events-none mx-auto max-w-lg truncate rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-center text-[11px] text-slate-200 backdrop-blur">
+            {weatherLabel} · {morningHeadline}
+          </p>
+        )}
       </header>
 
       <Canvas
@@ -95,9 +134,22 @@ export default function PlayExperience() {
         </div>
       )}
 
+      {talentToast && phase === "day" && (
+        <div className="pointer-events-none absolute inset-x-0 top-24 z-20 flex justify-center px-4">
+          <p className="rounded-xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-slate-200 backdrop-blur">
+            {talentToast}
+          </p>
+        </div>
+      )}
+
       {phase === "day" && (
         <>
-          <OpsStrip avgQueue={avgQueue} snowQuality={snowQuality} mood={mood} />
+          <OpsStrip
+            avgQueue={avgQueue}
+            snowQuality={snowQuality}
+            snowDepth={snowDepth}
+            mood={mood}
+          />
           <footer className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-2 px-3 pb-[max(5.5rem,calc(env(safe-area-inset-bottom)+4.5rem))]">
             <Link
               href="/"
@@ -141,12 +193,12 @@ export default function PlayExperience() {
         open={buildOpen}
         onClose={() => {
           setBuildOpen(false);
-          if (!useGameStore.getState().liftConfirmed) {
-            setBuildMode(false);
-          }
+          setBuildMode(false);
         }}
       />
       <NightRecapSheet />
+      <FounderPick />
+      <WinterReviewSheet />
     </div>
   );
 }
@@ -154,10 +206,12 @@ export default function PlayExperience() {
 function OpsStrip({
   avgQueue,
   snowQuality,
+  snowDepth,
   mood,
 }: {
   avgQueue: number;
   snowQuality: number;
+  snowDepth: number;
   mood: number;
 }) {
   const moodIcon = mood >= 70 ? "😊" : mood >= 50 ? "🙂" : "😐";
@@ -172,7 +226,8 @@ function OpsStrip({
           Queue ~{avgQueue.toFixed(1)}m
         </span>
         <span className="min-h-11 rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
-          Snow {Math.round(snowQuality * 100)}%
+          Cover {Math.round(snowQuality * 100)}% · depth{" "}
+          {Math.round(snowDepth * 100)}%
         </span>
         <span className="min-h-11 rounded-full border border-white/10 bg-black/55 px-3 py-2 backdrop-blur">
           {moodIcon} Mood {mood}%
