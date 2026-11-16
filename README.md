@@ -15,6 +15,7 @@ Planning index: **[docs/README.md](./docs/README.md)**
 | [Implementation roadmap](./docs/IMPLEMENTATION_ROADMAP.md) | Engineering phases |
 | [P0 playtest script](./docs/PLAYTEST_P0.md) | iPhone Safari gate |
 | [Ice Coast Revival analysis](./docs/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | ICR reference |
+| [Ship-shape review](./docs/SHIP_SHAPE_REVIEW.md) | Active cut/keep + art sprint |
 
 ## Development
 

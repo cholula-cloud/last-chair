@@ -24,12 +24,15 @@ What we are matching emotionally—not copying literally:
 
 ## Loop-feel pass — art deliverables (P0/P1)
 
-**Phase 1 (vertical slice):**
+**Status (2026-11-16):** Phase 1 is **under-delivered** — flat plane + green box + stick lift + capsules. See [SHIP_SHAPE_REVIEW.md](./SHIP_SHAPE_REVIEW.md) Tier 1. Readability is gameplay; ship functional diorama art before 110% juice.
+
+**Phase 1 (vertical slice) — still required:**
 
 - Procedural heightfield + snow cap shader (no bespoke hero mesh yet).
-- Placeholder lift: T-bar mesh (simple).
+- Placeholder lift: T-bar mesh (simple) **aligned to guest ride path**.
 - Placeholder hut: box + roof + emissive windows.
-- Guest: capsule or stock low-poly rig.
+- Guest: capsule or stock low-poly rig (prefer readable skier silhouette).
+- Trail ribbon for descent validity; instanced tree scatter framing the bowl.
 
 **Phase 2 (P1 look):**
 
