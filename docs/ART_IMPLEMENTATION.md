@@ -1,8 +1,8 @@
 # Art implementation plan (Tier 1 — legible diorama)
 
-**Status:** Plan ready · **Executor:** Composer 2.5 (Opus 5.5 medium blocked by spend limit)  
+**Status:** Implemented · **Executor:** Composer 2.5  
 **Branch:** `cursor/honest-loop-art-721c`  
-**Owns:** `web/src/render/**` only
+**Owns:** `web/src/render/**` (Tier 1 diorama shipped)
 
 Palette: navy `#0b1628`, snow `#f4f7fb`, accent `#e85d26`, pine `#2d5a4a`.
 
