@@ -32,10 +32,12 @@ Open http://localhost:3000/play. `/` is the landing page.
 | `npm run dev` | Dev server |
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
-| `npm run smoke:winter` | Playwright: founder pick → full winter → review |
+| `npm run typecheck` | Generate Next route types, then `tsc --noEmit` |
+| `npm test` | Vitest unit tests (`npm run test:watch` to watch) |
+| `npm run check` | Lint, typecheck, test, build, stopping at the first failure |
 | `npm run playtest:p0` | Playwright: P0 playtest steps at iPhone viewport |
 
-Unit tests and a single `npm run check` arrive in PR 2 (see the roadmap).
+CI runs the `check` steps (lint, typecheck, test, build) on every PR.
 
 ## Deploy (Vercel)
 

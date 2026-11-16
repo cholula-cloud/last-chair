@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "smoke:winter": "node scripts/smoke-winter.mjs",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "playtest:p0": "node scripts/playtest-p0.mjs"
   },
   "dependencies": {
@@ -28,6 +31,7 @@
     "eslint-config-next": "16.4.6",
     "playwright": "^1.65.1",
     "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "4.1.12"
   }
 }
