@@ -24,7 +24,7 @@
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
 | Save format | 🟡 | Key is `last-chair-v1`, no version field; night reload bug | 4, 25 |
-| Randomness | ❌ | `Math.random` throughout; weather is a modulo formula | 3, 18 |
+| Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
 ---
 

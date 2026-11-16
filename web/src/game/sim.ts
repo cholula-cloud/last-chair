@@ -38,21 +38,30 @@ export function isWeekend(dayIndex: number): boolean {
   return d === 5 || d === 6;
 }
 
-export function createInitialGuests(count: number): Guest[] {
+export type Rand = () => number;
+
+export function createInitialGuests(
+  count: number,
+  rand: Rand = Math.random,
+): Guest[] {
   return Array.from({ length: count }, (_, i) => ({
-    id: `g-${daySeed()}-${i}`,
+    id: `g-${daySeed(rand)}-${i}`,
     label: i % 3 === 0 ? `Regular #${i + 1}` : `Guest ${i + 1}`,
     state: "arrive" as GuestState,
-    progress: Math.random() * 0.3,
-    mood: 0.7 + Math.random() * 0.2,
+    progress: rand() * 0.3,
+    mood: 0.7 + rand() * 0.2,
   }));
 }
 
-function daySeed(): string {
-  return Math.random().toString(36).slice(2, 7);
+function daySeed(rand: Rand): string {
+  return rand().toString(36).slice(2, 7);
 }
 
-export function tickGuests(guests: Guest[], dt: number): Guest[] {
+export function tickGuests(
+  guests: Guest[],
+  dt: number,
+  rand: Rand = Math.random,
+): Guest[] {
   const stateRate: Record<GuestState, number> = {
     arrive: 0.35,
     queue: 0.25,
@@ -64,7 +73,7 @@ export function tickGuests(guests: Guest[], dt: number): Guest[] {
     arrive: "queue",
     queue: "ride",
     ride: "ski",
-    ski: Math.random() > 0.35 ? "queue" : "depart",
+    ski: rand() > 0.35 ? "queue" : "depart",
     depart: "depart",
   };
 
@@ -276,10 +285,12 @@ export function planArrivals(opts: {
   buildings: BuildingId[];
   talentsOwned: string[];
   founderId: FounderId | null;
+  rand?: Rand;
 }): number {
+  const rand = opts.rand ?? Math.random;
   const weekend = isWeekend(opts.dayIndex);
   let base = weekend ? 24 : 18;
-  base += Math.floor(Math.random() * 5);
+  base += Math.floor(rand() * 5);
   if (weekend) base = Math.round(base * 1.3);
   if (opts.fare === "cheap") base = Math.round(base * 1.1);
   if (opts.fare === "expensive") base = Math.round(base * 0.9);
