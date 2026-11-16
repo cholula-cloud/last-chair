@@ -9,6 +9,7 @@ import {
   formatClock,
   isWeekend,
   planArrivals,
+  queueMinutes,
   readyStoryBeat,
   rollMorningWeather,
   tickGuests,
@@ -28,7 +29,7 @@ import {
 } from "./types";
 
 // Characterization tests: they pin what sim.ts does today. Tests marked
-// "PR 4:" pin behavior that is known to be wrong and will change in PR 4.
+// "Pinned" record a simplification that a later roadmap PR replaces.
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -97,8 +98,8 @@ describe("computeSatisfaction", () => {
     expect(penalized).toBeLessThan(base);
   });
 
-  // PR 4: queue term is a flat -8 per average queue minute with no cap, so
-  // the queue dominates every other input. Exact value pinned on purpose.
+  // Pinned (replaced in PR 7): the queue term is a flat -8 per average queue
+  // minute with no cap, so the queue dominates every other input.
   it("pins the current linear queue formula", () => {
     // 70 - 8*2 + 25*0.7 - 15*0.5 + 10*0.7 = 71
     expect(computeSatisfaction("balanced", 0.7, 2)).toBeCloseTo(71, 10);
@@ -167,9 +168,9 @@ describe("buildNightRecap", () => {
     expect(r.problem).toBe("Crowd flowed well.");
   });
 
-  // PR 4: day stats are a stub, so every recap sees 0 completed runs and a
-  // fixed 2.5 minute queue regardless of what happened on the hill.
-  it("pins the stubbed emptyDayStats defaults", () => {
+  // Pinned: the start-of-day defaults. rules.tick overwrites completedRuns and
+  // avgQueueMin as the day plays out.
+  it("pins the emptyDayStats defaults", () => {
     expect(emptyDayStats()).toEqual({
       arrivals: 0,
       completedRuns: 0,
@@ -214,8 +215,8 @@ describe("applyOvernight", () => {
     expect(high.snowQuality).toBeCloseTo(0.72, 10);
   });
 
-  // PR 4: mid and high overwrite snowQuality with a constant, ignoring the
-  // quality the hill started the night with.
+  // Pinned (replaced in PR 8): mid and high overwrite snowQuality with a
+  // constant, ignoring the quality the hill started the night with.
   it("pins that mid and high ignore the starting snowQuality", () => {
     expect(run("mid", { snowQuality: 0.1 }).snowQuality).toBeCloseTo(0.6, 10);
     expect(run("mid", { snowQuality: 0.9 }).snowQuality).toBeCloseTo(0.6, 10);
@@ -400,8 +401,7 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat(quiet)).toBeNull();
   });
 
-  // PR 4: in the live game completedRuns is fed the count of departed guests
-  // (store.ts tick), not runs, so this gate measures the wrong thing.
+  // completedRuns is the number of finished ski runs (rules.tick), not departures.
   it("first_load fires at 1 open lift and 5 completed runs, not below", () => {
     const at = { ...quiet, liftsOpen: 1, completedRuns: 5 };
     expect(readyStoryBeat(at)).toBe("first_load");
@@ -514,6 +514,30 @@ describe("tickGuests", () => {
     expect(tickGuests([skier], 1)[0].state).toBe("depart");
   });
 
+  it("draws once per finishing skier, so two skiers can choose differently", () => {
+    const skiers = [
+      guest({ id: "a", state: "ski", progress: 0.99 }),
+      guest({ id: "b", state: "ski", progress: 0.99 }),
+    ];
+    const rolls = [0.9, 0.1];
+    const out = tickGuests(skiers, 1, () => rolls.shift()!);
+    expect(out.map((g) => g.state)).toEqual(["queue", "depart"]);
+  });
+
+  it("draws nothing for guests that are not finishing a ski run", () => {
+    const rand = vi.fn(() => 0.5);
+    tickGuests(
+      [
+        guest({ state: "arrive" }),
+        guest({ state: "queue", progress: 0.99 }),
+        guest({ state: "ski", progress: 0 }),
+      ],
+      1,
+      rand,
+    );
+    expect(rand).not.toHaveBeenCalled();
+  });
+
   it("depart is terminal", () => {
     const gone = guest({ state: "depart", progress: 0.5 });
     const [g] = tickGuests([gone], 100);
@@ -594,5 +618,26 @@ describe("headless season", () => {
     // One talent per night until the list runs out, never a duplicate.
     expect(talentsOwned).toHaveLength(Math.min(nights, CREW_TALENTS.length));
     expect(new Set(talentsOwned).size).toBe(talentsOwned.length);
+  });
+});
+
+describe("queueMinutes", () => {
+  const queued = (n: number): Guest[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `q${i}`,
+      label: "Guest",
+      state: "queue" as const,
+      progress: 0,
+      mood: 0.8,
+    }));
+
+  it("is 2 minutes plus 0.12 per queued guest", () => {
+    expect(queueMinutes([], [])).toBeCloseTo(2, 10);
+    expect(queueMinutes(queued(10), [])).toBeCloseTo(3.2, 10);
+  });
+
+  it("patrol_radio takes 0.3 minutes off", () => {
+    expect(queueMinutes(queued(10), ["patrol_radio"])).toBeCloseTo(2.9, 10);
+    expect(queueMinutes([], ["patrol_radio"])).toBeCloseTo(1.7, 10);
   });
 });

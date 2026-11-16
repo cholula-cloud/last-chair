@@ -1,6 +1,7 @@
 /**
  * Automated P0/P1 smoke playtest against local /play (Chromium, iPhone viewport).
- * Run from web/: npx playwright install chromium && node scripts/playtest-p0.mjs
+ * Run from web/: npx playwright install chromium && npm run playtest:p0
+ * Screenshots go to $PLAYTEST_OUT, default ./playtest-artifacts.
  */
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
@@ -8,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const BASE = process.env.PLAY_URL ?? "http://127.0.0.1:3000";
-const outDir = "/opt/cursor/artifacts";
+const outDir = process.env.PLAYTEST_OUT ?? path.join(process.cwd(), "playtest-artifacts");
 fs.mkdirSync(outDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
@@ -48,9 +49,9 @@ await page.screenshot({ path: path.join(outDir, "follow-guest.png") });
 
 await page.getByRole("button", { name: "Build", exact: true }).click();
 await page.getByRole("heading", { name: "Build" }).waitFor();
-const bad = page.getByRole("button", { name: /✕ ·/ });
+const bad = page.getByRole("button", { name: /No run/ });
 if (await bad.count()) await bad.first().click();
-await page.getByRole("button", { name: /^OK ·/ }).first().click();
+await page.getByRole("button", { name: /Valid run/ }).first().click();
 await page.getByRole("button", { name: /Place Surface lift/i }).click();
 
 await page.getByRole("button", { name: "Build", exact: true }).click();
