@@ -296,7 +296,7 @@ Goal: where you put things matters.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 11 | ☐ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
+| 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
 | 12 | ☐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
