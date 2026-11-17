@@ -7,7 +7,7 @@ import { merge, type Part } from "./geo";
 import { bakeKit, SHADOW_LAYER_MASK, useKit } from "./kit";
 import { LIFT_BASE, ROAD_Z } from "./layout";
 import { PALETTE } from "./palette";
-import { fbm, terrainHeight } from "./terrainShape";
+import { TERRAIN, fbm } from "@/game/terrain";
 import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
 
 const MAX_NEAR = 540;
@@ -78,7 +78,7 @@ function scatter(anchors: LiftAnchor[]): Forest {
         else if (distSqToLiftLine(x, z, anchors[i]) < LIFT_CLEAR) blocked = true;
       }
       if (blocked) continue;
-      const h = terrainHeight(x, z);
+      const h = TERRAIN.height(x, z);
       if (h > 3.55 + fbm(x * 0.8, z * 0.8) * 0.5) continue; // open summit snowfield
 
       // Clumpy forest: denser on the ridges and back slopes, glades in the bowl.
@@ -130,7 +130,7 @@ function TreeInstances({
     if (!mesh) return;
     for (let i = 0; i < spots.length; i++) {
       const p = spots[i];
-      dummy.position.set(p.x, terrainHeight(p.x, p.z) - 0.03, p.z);
+      dummy.position.set(p.x, TERRAIN.height(p.x, p.z) - 0.03, p.z);
       dummy.rotation.set(0, p.rot, 0);
       dummy.scale.setScalar(p.s * scale);
       dummy.updateMatrix();

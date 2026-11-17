@@ -15,7 +15,7 @@
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
-| Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
+| Viability rule | 🟡 | Height drop + lift-length cap + terminal grade on fixed slots; trail path test PR 13 | 12–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
 | Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
 | Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |
@@ -171,6 +171,23 @@ A lift placement is **valid** iff:
 3. At least one run segment has `snow.depth ≥ minDepth` (0.15 m P0).
 
 Invalid preview: red ghost; cannot confirm.
+
+**Implemented (PR 11):** rule 1 is a terrain test; rules 2 and 3 are not yet. `checkDescentValid(anchor)` in `game/descent.ts` accepts an anchor iff it is inside the map bounds, its height above the base is at least `MIN_LIFT_VERTICAL` (0.85), the horizontal distance from the base is at most `MAX_LIFT_LENGTH` (3.4), and the grade at both terminals is at most `MAX_LOAD_GRADE` (1.25). Thresholds are calibrated on the three fixed slots (Ridge and Mid valid, Creek fails for too little vertical). The trail path test arrives with PR 13.
+
+### Terrain (PR 11)
+
+One heightfield serves the sim and the renderer (`game/terrain.ts`, pure TypeScript). A mountain is a `TerrainDef` (data, `game/mountains/dutchHill.ts`); `createTerrain(def)` returns a `Terrain` and `TERRAIN` is Dutch Hill. Height is analytic (no baked grid), so a query at any x, z is exact and deterministic.
+
+| Member | Meaning |
+|--------|---------|
+| `bounds`, `base` | Map extent and the lift loading point; vertical is measured from `height(base)` |
+| `height(x, z)` | Height in world units |
+| `gradient`, `grade(x, z)` | Central difference (h = 0.01); grade is rise over run, dimensionless |
+| `gradeAlong(a, b, step)` | Signed downhill grade samples along a segment (positive going down) |
+| `sustainedPitch(path, window = 0.6)` | Largest mean downhill grade over any stretch at least `window` long, so one steep sample does not set it (PR 13 trail difficulty) |
+| `feetPerUnit` | `verticalFeet / (summit height - base height)`; feet appear only through this factor (Dutch Hill: 570 ft) |
+
+Dutch Hill's features are named in the data: base apron (flat village ground at z ≥ 2.1, height 0.1), meadow (gentle novice apron), face (fall-line control points with a monotone cubic and one steeper rollover band), summit and east shoulder domes, side ridges, bowl and noise. The characterization snapshot does not depend on terrain.
 
 ### Trail graph (P0)
 

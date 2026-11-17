@@ -1,7 +1,7 @@
 import type { LiftAnchor } from "@/game/descent";
 import { LIFT_BASE, LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
 import { clamp01 } from "./math";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 
 export type LiftPoint = { x: number; z: number; ground: number; top: number };
 
@@ -25,7 +25,7 @@ export function liftTowers(anchor: LiftAnchor): LiftPoint[] {
     const t = i / (n - 1);
     const x = LIFT_BASE.x + (anchor.x - LIFT_BASE.x) * t;
     const z = LIFT_BASE.z + (anchor.z - LIFT_BASE.z) * t;
-    const ground = terrainHeight(x, z);
+    const ground = TERRAIN.height(x, z);
     const terminal = i === 0 || i === n - 1;
     pts.push({ x, z, ground, top: ground + (terminal ? LIFT_TERMINAL_H : LIFT_TOWER_H) });
   }
@@ -37,7 +37,7 @@ export function liftTowers(anchor: LiftAnchor): LiftPoint[] {
       const b = pts[i + 1];
       const mx = (a.x + b.x) / 2;
       const mz = (a.z + b.z) / 2;
-      const need = terrainHeight(mx, mz) + 0.7 - (a.top + b.top) / 2;
+      const need = TERRAIN.height(mx, mz) + 0.7 - (a.top + b.top) / 2;
       if (need <= 0) continue;
       const aFixed = i === 0;
       const bFixed = i + 1 === n - 1;

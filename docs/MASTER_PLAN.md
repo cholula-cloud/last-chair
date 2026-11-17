@@ -195,7 +195,7 @@ Next.js 16 (App Router) · React 19 · TypeScript · React Three Fiber + drei + 
 
 ```
 web/src/app/      routes: / (home), /play (game)
-web/src/game/     simulation rules, content tables, store
+web/src/game/     simulation rules, content tables, store, terrain heightfield (terrain.ts, mountains/)
 web/src/render/   R3F diorama: terrain, lift, trail, lodge, trees, guests
 web/src/ui/       HUD and bottom sheets: build, guests, night recap, founder pick, winter review
 web/scripts/      Playwright smoke + playtest scripts
@@ -205,7 +205,7 @@ web/scripts/      Playwright smoke + playtest scripts
 
 - **`game/` is pure TypeScript with no React.** All state is one serializable `GameState`. Rules are functions `(state, input, rng) → state`. Randomness comes from a seeded RNG stored in state, so any day can be replayed and tested.
 - **`store.ts` is a thin wrapper**: holds `GameState`, calls rule functions, persists with a schema version.
-- **`render/` reads state, never writes rules.** Positions for drawing come from pure helpers (`guestPaths.ts`).
+- **`render/` reads state, never writes rules.** Positions for drawing come from pure helpers (`guestPlacement.ts`, `liftLine.ts`, `trail.ts`) over the `game/terrain.ts` heightfield.
 - **Content is data** (`content.ts`; later per-mountain definitions), so new talents, beats and mountains do not need new code paths.
 - Main-thread tick is fine at current guest counts; a Web Worker is considered only if a profile shows the sim costing frames.
 
@@ -296,7 +296,7 @@ Goal: where you put things matters.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 11 | ☐ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
+| 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
 | 12 | ☐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |

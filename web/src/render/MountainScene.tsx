@@ -11,9 +11,11 @@ import {
   type LiftAnchor,
 } from "@/game/descent";
 import { decodeSnowKey, snowKey } from "@/game/snow";
+import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
 import { Atmosphere } from "./Atmosphere";
+import { cameraPosition, framingAspect, homeView, isPortraitAspect } from "./cameraFraming";
 import { Guests, type FollowedRef } from "./Guests";
 import type { GuestPlacement } from "./guestPlacement";
 import { Lift } from "./Lift";
@@ -23,25 +25,10 @@ import { Road, Terrain } from "./Terrain";
 import { TrailRibbon } from "./TrailRibbon";
 import { Trees } from "./Trees";
 
-/** Default framing: elevated 3/4 view of the whole hill, per aspect ratio. */
-const VIEW_TARGET = new THREE.Vector3(0.7, 1.2, 0.5);
-const TARGET_MIN = new THREE.Vector3(-5, 0, -5);
-const TARGET_MAX = new THREE.Vector3(6.5, 5, 5);
-
-function defaultView(portrait: boolean) {
-  const fov = portrait ? 52 : 38;
-  const dist = portrait ? 19 : 14;
-  const azimuth = -0.42;
-  const elevation = portrait ? 0.56 : 0.44;
-  const position = new THREE.Vector3(
-    Math.sin(azimuth) * Math.cos(elevation),
-    Math.sin(elevation),
-    Math.cos(azimuth) * Math.cos(elevation),
-  )
-    .multiplyScalar(dist)
-    .add(VIEW_TARGET);
-  return { fov, position };
-}
+/** Pan limits for the orbit target: the play area around the base, not the fogged edges. */
+const { xMin, xMax, zMin, zMax } = TERRAIN.bounds;
+const TARGET_MIN = new THREE.Vector3(xMin * 0.25, 0, zMin * 0.25);
+const TARGET_MAX = new THREE.Vector3(xMax * 0.25, 5, zMax * 0.25);
 
 const FALLBACK_ANCHOR: LiftAnchor = LIFT_PREVIEW_SLOTS[0] ?? { x: -1.2, z: 0.2 };
 const GOAL = new THREE.Vector3();
@@ -56,20 +43,51 @@ function CameraRig({
 }) {
   const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
   const get = useThree((s) => s.get);
-  const portrait = useThree((s) => s.size.width / Math.max(1, s.size.height) < 0.9);
+  // Floored to the 0.05 framing bucket (see framingAspect): a phone browser's
+  // collapsing toolbar stays in one bucket and does not reset the camera, and
+  // the view is framed for an aspect no wider than the real one.
+  const aspect = useThree((s) => framingAspect(s.size.width / Math.max(1, s.size.height)));
+  // The framed home view for this aspect; the follow camera eases back to its target.
+  const home = useMemo(() => {
+    const v = homeView(aspect);
+    const p = cameraPosition(v.target, v.distance, v.azimuth, v.elevation);
+    return {
+      fov: v.fov,
+      portrait: isPortraitAspect(aspect),
+      target: new THREE.Vector3(v.target.x, v.target.y, v.target.z),
+      position: new THREE.Vector3(p.x, p.y, p.z),
+    };
+  }, [aspect]);
   const returning = useRef(false);
   const wasFollowing = useRef(false);
+  // True once the user has orbited, panned or zoomed since the home view was applied.
+  const userMoved = useRef(false);
+  const appliedPortrait = useRef<boolean | null>(null);
 
   useEffect(() => {
     if (!controls) return;
-    const v = defaultView(portrait);
+    const onStart = () => {
+      userMoved.current = true;
+    };
+    controls.addEventListener("start", onStart);
+    return () => controls.removeEventListener("start", onStart);
+  }, [controls]);
+
+  // Re-home on first mount and on a portrait/landscape flip; for a resize
+  // within a mode, only while the user has not moved the camera.
+  useEffect(() => {
+    if (!controls) return;
+    const modeFlipped = appliedPortrait.current !== home.portrait;
+    if (!modeFlipped && userMoved.current) return;
+    appliedPortrait.current = home.portrait;
+    userMoved.current = false;
     const camera = get().camera as THREE.PerspectiveCamera;
-    camera.fov = v.fov;
-    camera.position.copy(v.position);
+    camera.fov = home.fov;
+    camera.position.copy(home.position);
     camera.updateProjectionMatrix();
-    controls.target.copy(VIEW_TARGET);
+    controls.target.copy(home.target);
     controls.update();
-  }, [controls, get, portrait]);
+  }, [controls, get, home]);
 
   useEffect(() => {
     if (!followId) returning.current = true;
@@ -87,8 +105,8 @@ function CameraRig({
       if (wasFollowing.current) returning.current = true;
       wasFollowing.current = false;
       if (returning.current) {
-        controls.target.lerp(VIEW_TARGET, 0.08);
-        if (controls.target.distanceTo(VIEW_TARGET) < 0.02) returning.current = false;
+        controls.target.lerp(home.target, 0.08);
+        if (controls.target.distanceTo(home.target) < 0.02) returning.current = false;
       }
     }
     controls.target.clamp(TARGET_MIN, TARGET_MAX);

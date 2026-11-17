@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { bakeKit, LIFT_TOY_SCALE, METERS_TO_WORLD, mergePlaced, placeKit, useKit } from "./kit";
 import type { LiftAnchor } from "@/game/descent";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
 
 /** Guns stand beside the trail at these positions along it (0 = lift top, 1 = lodge). */
@@ -51,7 +51,7 @@ export function SnowGuns({
   const geo = useMemo(
     () =>
       mergePlaced(
-        GUNS.map((g) => placeKit(gun, g.x, terrainHeight(g.x, g.z) - 0.02, g.z, g.yaw, SCALE)),
+        GUNS.map((g) => placeKit(gun, g.x, TERRAIN.height(g.x, g.z) - 0.02, g.z, g.yaw, SCALE)),
       ),
     [gun, GUNS],
   );
@@ -70,7 +70,7 @@ export function SnowGuns({
     const t = clock.elapsedTime;
     let k = 0;
     for (const g of firing) {
-      const y = terrainHeight(g.x, g.z) + NOZZLE_Y;
+      const y = TERRAIN.height(g.x, g.z) + NOZZLE_Y;
       const dx = Math.sin(g.yaw);
       const dz = Math.cos(g.yaw);
       for (let i = 0; i < PUFFS / GUNS.length; i++) {

@@ -1,10 +1,12 @@
 /** World-space layout constants for the base area and the lift line. */
 
+import { TERRAIN } from "@/game/terrain";
+
 /** Lodge / base paperwork zone. Skiers finish their run here. */
 export const LODGE = { x: 2.2, z: 2.4 } as const;
 
 /** Lift loading zone at the base of the hill. */
-export const LIFT_BASE = { x: 0.45, z: 2.55 } as const;
+export const LIFT_BASE = TERRAIN.base;
 
 /** Parking / arrival strip near the lodge. */
 export const PARKING = { x: 3.2, z: 3.1 } as const;

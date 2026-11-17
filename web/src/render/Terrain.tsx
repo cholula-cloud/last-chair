@@ -7,54 +7,9 @@ import { smoothstep } from "./math";
 import { PALETTE, SUN_DIR } from "./palette";
 import type { Trail } from "@/game/snow";
 import type { LiftAnchor } from "@/game/descent";
-import { fbm, terrainHeight } from "./terrainShape";
+import { TERRAIN, fbm } from "@/game/terrain";
+import { buildGeometry } from "./terrainMesh";
 import { sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
-
-const NX = 150;
-const NZ = 124;
-const CX = 0.6;
-const CZ = -0.4;
-
-/** Non-uniform grid: dense in the play area, coarse toward the fogged edges. */
-function gridX(s: number) {
-  return CX + 8.5 * s + 14 * s * s * s;
-}
-function gridZ(s: number) {
-  return CZ + 7 * s + 11 * s * s * s;
-}
-
-function buildGeometry() {
-  const positions = new Float32Array((NX + 1) * (NZ + 1) * 3);
-  let p = 0;
-  for (let j = 0; j <= NZ; j++) {
-    const z = gridZ((j / NZ) * 2 - 1);
-    for (let i = 0; i <= NX; i++) {
-      const x = gridX((i / NX) * 2 - 1);
-      positions[p++] = x;
-      positions[p++] = terrainHeight(x, z);
-      positions[p++] = z;
-    }
-  }
-  const indices: number[] = [];
-  for (let j = 0; j < NZ; j++) {
-    for (let i = 0; i < NX; i++) {
-      const a = j * (NX + 1) + i;
-      const b = a + 1;
-      const c = a + (NX + 1);
-      const d = c + 1;
-      indices.push(a, c, b, b, c, d);
-    }
-  }
-  const g = new THREE.BufferGeometry();
-  g.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  g.setIndex(indices);
-  g.computeVertexNormals();
-  g.setAttribute(
-    "color",
-    new THREE.BufferAttribute(new Float32Array(positions.length), 3),
-  );
-  return g;
-}
 
 const C = {
   snow: new THREE.Color(PALETTE.snow),
@@ -110,10 +65,10 @@ function paint(
     // Hollows go blue-lavender.
     const e = 0.45;
     const avg =
-      (terrainHeight(x + e, z) +
-        terrainHeight(x - e, z) +
-        terrainHeight(x, z + e) +
-        terrainHeight(x, z - e)) /
+      (TERRAIN.height(x + e, z) +
+        TERRAIN.height(x - e, z) +
+        TERRAIN.height(x, z + e) +
+        TERRAIN.height(x, z - e)) /
       4;
     const curv = avg - y;
     c.lerp(C.shade, Math.max(0, Math.min(0.55, curv * 4 + 0.05)));
@@ -195,7 +150,7 @@ export function Road() {
       const z = ROAD_Z + Math.sin(x * 0.18) * 0.25;
       for (const s of [-1, 0, 1]) {
         const zz = z + s * w;
-        pos.push(x, terrainHeight(x, zz) + 0.025, zz);
+        pos.push(x, TERRAIN.height(x, zz) + 0.025, zz);
       }
       if (i < segs) {
         const a = i * 3;
