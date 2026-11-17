@@ -4,7 +4,6 @@ import {
   applyOvernight,
   buildNightRecap,
   computeDayRevenue,
-  computeSatisfaction,
   emptyDayStats,
   formatClock,
   isWeekend,
@@ -19,6 +18,7 @@ import {
   type GuestClock,
 } from "./sim";
 import { PERSONAS, skiMinutes } from "./personas";
+import { ZERO_TERMS, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import { createRng } from "./rng";
 import {
   ARRIVAL_EARLIEST_MIN,
@@ -75,50 +75,6 @@ describe("clock and calendar helpers", () => {
   });
 });
 
-describe("computeSatisfaction", () => {
-  it("clamps to 0..100", () => {
-    expect(computeSatisfaction("cheap", 1, 0, 1)).toBe(100);
-    expect(computeSatisfaction("expensive", 0, 20, 0)).toBe(0);
-  });
-
-  it("drops as the queue gets worse", () => {
-    const short = computeSatisfaction("balanced", 0.7, 1);
-    const long = computeSatisfaction("balanced", 0.7, 5);
-    expect(long).toBeLessThan(short);
-  });
-
-  it("rises with better snow", () => {
-    const thin = computeSatisfaction("balanced", 0.3, 2);
-    const deep = computeSatisfaction("balanced", 0.9, 2);
-    expect(deep).toBeGreaterThan(thin);
-  });
-
-  it("ranks cheap > balanced > expensive at equal inputs", () => {
-    const cheap = computeSatisfaction("cheap", 0.6, 2);
-    const balanced = computeSatisfaction("balanced", 0.6, 2);
-    const expensive = computeSatisfaction("expensive", 0.6, 2);
-    expect(cheap).toBeGreaterThan(balanced);
-    expect(balanced).toBeGreaterThan(expensive);
-  });
-
-  it("is lowered by snowExpectationPenalty", () => {
-    const base = computeSatisfaction("balanced", 0.7, 2, 0.7, 0);
-    const penalized = computeSatisfaction("balanced", 0.7, 2, 0.7, 0.1);
-    expect(penalized).toBeLessThan(base);
-  });
-
-  // Pinned (replaced in PR 7): the queue term is a flat -8 per average queue
-  // minute with no cap, so the queue dominates every other input.
-  it("pins the current linear queue formula", () => {
-    // 70 - 8*2 + 25*0.7 - 15*0.5 + 10*0.7 = 71
-    expect(computeSatisfaction("balanced", 0.7, 2)).toBeCloseTo(71, 10);
-    // Each extra queue minute costs exactly 8 points.
-    const a = computeSatisfaction("balanced", 0.7, 3);
-    const b = computeSatisfaction("balanced", 0.7, 4);
-    expect(a - b).toBeCloseTo(8, 10);
-  });
-});
-
 describe("computeDayRevenue", () => {
   it("scales arrivals * fare * satisfaction multiplier", () => {
     // mult = 0.75 + 0.35 * s/100
@@ -140,41 +96,47 @@ describe("buildNightRecap", () => {
     arrivals,
     avgQueueMin: 2,
   });
+  const day = (score: number, over: Partial<SatTerms> = {}): DaySatisfaction => ({
+    score,
+    breakdown: { ...ZERO_TERMS, ...over },
+    guests: 10,
+  });
+  const recapOf = (arrivals: number, lifts: number, founderDelta: number, d = day(71)) =>
+    buildNightRecap({
+      stats: stats(arrivals),
+      fare: "balanced",
+      snowQuality: 0.7,
+      day: d,
+      arrivalMood: 0.7,
+      openLiftCount: lifts,
+      founderFixedDelta: founderDelta,
+    });
 
   it("cashDelta equals revenue minus fixed, founder and lift costs", () => {
-    const recap = buildNightRecap(stats(30), "balanced", 0.7, 2, 0.7, 0, 2, 80);
-    const revenue = computeDayRevenue("balanced", recap.satisfaction, 30);
+    const recap = recapOf(30, 2, 80);
+    const revenue = computeDayRevenue("balanced", 71, 30);
     expect(recap.arrivals).toBe(30);
-    expect(recap.satisfaction).toBeCloseTo(71, 10);
+    expect(recap.satisfaction).toBe(71);
     expect(recap.cashDelta).toBe(
       revenue - (DAILY_FIXED_COST + 80 + LIFT_OPS_COST * 2),
     );
   });
 
   it("bills at least one lift even with none open", () => {
-    const none = buildNightRecap(stats(30), "balanced", 0.7, 2, 0.7, 0, 0, 0);
-    const one = buildNightRecap(stats(30), "balanced", 0.7, 2, 0.7, 0, 1, 0);
-    expect(none.cashDelta).toBe(one.cashDelta);
+    expect(recapOf(30, 0, 0).cashDelta).toBe(recapOf(30, 1, 0).cashDelta);
   });
 
-  it("reports a long queue first", () => {
-    const r = buildNightRecap(stats(10), "balanced", 0.2, 5, 0.7, 0, 1, 0);
-    expect(r.problem).toContain("Lift queue ran long");
+  it("carries the day's breakdown and names its largest negative term", () => {
+    const r = recapOf(10, 1, 0, day(50, { queue: -9, snow: -12, value: -2 }));
+    expect(r.breakdown).toEqual({ ...ZERO_TERMS, queue: -9, snow: -12, value: -2 });
+    expect(r.problem).toContain("Thin, scraped snow");
+    expect(r.problem).toContain("70%");
   });
 
-  it("reports thin cover when the queue is fine", () => {
-    const r = buildNightRecap(stats(10), "balanced", 0.4, 2, 0.7, 0, 1, 0);
-    expect(r.problem).toContain("Thin cover");
-  });
-
-  it("reports a quiet hill when queue and snow are fine", () => {
-    const r = buildNightRecap(stats(17), "balanced", 0.7, 2, 0.7, 0, 1, 0);
-    expect(r.problem).toContain("Quiet hill");
-  });
-
-  it("reports a good flow otherwise", () => {
-    const r = buildNightRecap(stats(18), "balanced", 0.7, 4, 0.7, 0, 1, 0);
-    expect(r.problem).toBe("Crowd flowed well.");
+  it("says the day was good when no term is meaningfully negative", () => {
+    expect(recapOf(18, 1, 0, day(75, { queue: -2, value: -1 })).problem).toBe(
+      "Good day on the hill.",
+    );
   });
 
   // Pinned: the start-of-day defaults. rules.tick fills them in as the day plays out.
@@ -663,16 +625,15 @@ describe("headless season", () => {
       expect(arrivals).toBeGreaterThanOrEqual(12);
       expect(arrivals).toBeLessThanOrEqual(40);
 
-      const recap = buildNightRecap(
-        { ...emptyDayStats(), arrivals },
-        "balanced",
+      const recap = buildNightRecap({
+        stats: { ...emptyDayStats(), arrivals },
+        fare: "balanced",
         snowQuality,
-        2.5,
-        0.7,
-        0,
-        1,
-        0,
-      );
+        day: { score: 70, breakdown: ZERO_TERMS, guests: arrivals },
+        arrivalMood: 0.7,
+        openLiftCount: 1,
+        founderFixedDelta: 0,
+      });
       cash += recap.cashDelta;
 
       const overnight = applyOvernight({

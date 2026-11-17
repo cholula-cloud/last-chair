@@ -1,5 +1,6 @@
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
+import { problemLine, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import {
   ARRIVAL_EARLIEST_MIN,
   ARRIVAL_LATEST_MIN,
@@ -78,6 +79,9 @@ export function makeGuest(over: Partial<Guest> = {}): Guest {
     energy: def.startEnergy,
     runs: 0,
     targetRuns: def.targetRuns[1],
+    waitMin: 0,
+    waitCount: 0,
+    snowSum: 0,
     arriveAtMin: DAY_START_MIN,
     stateSinceMin: DAY_START_MIN,
     ...over,
@@ -148,13 +152,20 @@ export type GuestClock = {
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
-  const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => ({
-    ...g,
-    ...over,
-    state: "depart",
-    progress: 0,
-    stateSinceMin: now,
-  });
+  const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
+    // Sent home from a line: the wait so far counts as a completed wait.
+    const left =
+      g.state === "queue" && g.joinedQueueAtMin !== undefined
+        ? { waitMin: g.waitMin + (now - g.joinedQueueAtMin), waitCount: g.waitCount + 1 }
+        : {};
+    return { ...g, ...left, ...over, state: "depart", progress: 0, stateSinceMin: now };
+  };
+  /** Back in line: the next wait starts when stepLifts seats the guest in a lift queue. */
+  const joinLine = (g: Guest, over: Partial<Guest> = {}): Guest => {
+    const next: Guest = { ...g, ...over, state: "queue", progress: 0 };
+    delete next.joinedQueueAtMin;
+    return next;
+  };
 
   return guests.map((g) => {
     switch (g.state) {
@@ -165,7 +176,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "arrive": {
         const progress = (now - g.stateSinceMin) / ARRIVE_WALK_MIN;
         if (progress < 1) return { ...g, progress };
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : { ...g, state: "queue", progress: 0 };
+        return now >= LIFT_CLOSE_MIN ? goHome(g) : joinLine(g);
       }
       case "queue":
         return now >= LIFT_CLOSE_MIN ? goHome(g) : g;
@@ -175,12 +186,12 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         if (progress < 1) return { ...g, progress };
         const runs = g.runs + 1;
         const energy = g.energy - PERSONAS[g.persona].energyPerRun;
-        const done = { runs, energy };
+        const done = { runs, energy, snowSum: g.snowSum + clock.snowQuality };
         const lapEnds = now + clock.lapOverheadMin + duration;
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
           return goHome(g, done);
         }
-        return { ...g, ...done, state: "queue", progress: 0 };
+        return joinLine(g, done);
       }
       case "depart": {
         const progress = (now - g.stateSinceMin) / DEPART_WALK_MIN;
@@ -190,30 +201,6 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         return g;
     }
   });
-}
-
-export function computeSatisfaction(
-  fare: FarePreset,
-  snowQuality: number,
-  avgQueueMin: number,
-  arrivalMood = 0.7,
-  snowExpectationPenalty = 0,
-): number {
-  // ticketMismatch 0 / 0.5 / 1 matches SIMULATION_SPEC (main Tier 0 fix)
-  const ticketMismatch =
-    fare === "cheap" ? 0 : fare === "balanced" ? 0.5 : 1;
-  const snowTerm = snowQuality - snowExpectationPenalty;
-  return Math.max(
-    0,
-    Math.min(
-      100,
-      70 -
-        8 * avgQueueMin +
-        25 * snowTerm -
-        15 * ticketMismatch +
-        10 * arrivalMood,
-    ),
-  );
 }
 
 export function computeDayRevenue(
@@ -227,48 +214,43 @@ export function computeDayRevenue(
 
 export type NightRecap = {
   arrivals: number;
+  /** Mean guest satisfaction, 0–100. */
   satisfaction: number;
+  /** Mean signed points of each satisfaction term over the guests who arrived. */
+  breakdown: SatTerms;
   cashDelta: number;
   problem: string;
 };
 
-export function buildNightRecap(
-  stats: DayStats,
-  fare: FarePreset,
-  snowQuality: number,
-  avgQueueMin: number,
-  arrivalMood: number,
-  snowExpectationPenalty: number,
-  openLiftCount: number,
-  founderFixedDelta: number,
-): NightRecap {
-  const satisfaction = computeSatisfaction(
-    fare,
-    snowQuality,
-    avgQueueMin,
-    arrivalMood,
-    snowExpectationPenalty,
-  );
-  const revenue = computeDayRevenue(fare, satisfaction, stats.arrivals);
+export function buildNightRecap(opts: {
+  stats: DayStats;
+  fare: FarePreset;
+  snowQuality: number;
+  /** The day's guest-built satisfaction (see `daySatisfaction`). */
+  day: DaySatisfaction;
+  arrivalMood: number;
+  openLiftCount: number;
+  founderFixedDelta: number;
+}): NightRecap {
+  const { stats, fare, day } = opts;
+  const revenue = computeDayRevenue(fare, day.score, stats.arrivals);
   const costs =
     DAILY_FIXED_COST +
-    founderFixedDelta +
-    LIFT_OPS_COST * Math.max(1, openLiftCount);
-  const cashDelta = revenue - costs;
-
-  let problem = "Crowd flowed well.";
-  if (avgQueueMin > 4)
-    problem = "Lift queue ran long — add capacity or ease crowd.";
-  else if (snowQuality < 0.45)
-    problem = "Thin cover — bump snow & service tonight.";
-  else if (stats.arrivals < 18)
-    problem = "Quiet hill — weekend pricing or weather may help.";
-
+    opts.founderFixedDelta +
+    LIFT_OPS_COST * Math.max(1, opts.openLiftCount);
   return {
     arrivals: stats.arrivals,
-    satisfaction,
-    cashDelta,
-    problem,
+    satisfaction: day.score,
+    breakdown: day.breakdown,
+    cashDelta: revenue - costs,
+    problem: problemLine(day.breakdown, {
+      avgWaitMin: stats.avgQueueMin,
+      snowQuality: opts.snowQuality,
+      fare,
+      turnedAway: stats.turnedAway,
+      runsPerGuest: stats.runsPerGuest,
+      arrivalMood: opts.arrivalMood,
+    }),
   };
 }
 

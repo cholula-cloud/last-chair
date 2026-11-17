@@ -1,5 +1,6 @@
 import { LIFT_PREVIEW_SLOTS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
+import { ZERO_TERMS } from "./satisfaction";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import type {
   BuildingId,
@@ -171,7 +172,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
@@ -182,7 +183,9 @@ export const SAVE_VERSION = 3;
  * accumulators 0, and any guest saved mid-queue rejoins a lift on the next tick.
  * Versions below 3 have no personas or day script: each guest becomes a
  * regular who has already arrived, with a full tank, and old "depart" guests
- * are "gone".
+ * are "gone". Versions below 4 have no per-guest wait or snow tallies (they
+ * start at 0, so a guest mid-day is scored from the next ride on) and no
+ * satisfaction breakdown on a saved night recap (it loads as all zeros).
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -223,6 +226,17 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       guestsArrived: p.dayStats?.guestsArrived ?? arrived,
       runsPerGuest: arrived > 0 ? stats.completedRuns / arrived : 0,
     };
+  }
+  if (fromVersion < 4) {
+    p.guests = (p.guests ?? []).map((g) => ({
+      ...g,
+      waitMin: g.waitMin ?? 0,
+      waitCount: g.waitCount ?? 0,
+      snowSum: g.snowSum ?? 0,
+    }));
+    if (p.nightRecap && !p.nightRecap.breakdown) {
+      p.nightRecap = { ...p.nightRecap, breakdown: { ...ZERO_TERMS } };
+    }
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

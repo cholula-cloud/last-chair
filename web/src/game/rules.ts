@@ -10,12 +10,12 @@ import {
   stepLifts,
 } from "./lifts";
 import { createRng } from "./rng";
+import { SAT, daySatisfaction, type SatisfactionContext } from "./satisfaction";
 import {
   DAY_END_MIN,
   DAY_START_MIN,
   applyOvernight,
   buildNightRecap,
-  computeSatisfaction,
   createInitialGuests,
   emptyDayStats,
   isOnHill,
@@ -36,6 +36,7 @@ import {
   type FounderId,
   type LiftType,
   type SnowPreset,
+  type WeatherKind,
 } from "./types";
 
 /** Every rule is pure: `(state, ...args) => state`. It returns the same object when nothing changes. */
@@ -43,14 +44,17 @@ import {
 export function arrivalMood(
   buildings: BuildingId[],
   founderId: FounderId | null,
+  weather: WeatherKind = "clear",
 ): number {
   let mood = 0.65;
+  if (weather === "snow") mood += 0.06;
+  if (weather === "thaw") mood -= 0.08;
   if (buildings.includes("warming_hut")) mood += 0.05;
   if (buildings.includes("lodge")) mood += 0.08;
   if (buildings.includes("cafe")) mood += 0.04;
   const founder = founderById(founderId);
   if (founder) mood += founder.arrivalMoodBonus;
-  return Math.min(0.95, mood);
+  return Math.max(0, Math.min(0.95, mood));
 }
 
 /**
@@ -62,42 +66,42 @@ export function measuredWaitMin(state: GameState): number {
   return dispatched > 0 ? waitSumMin / dispatched : currentWaitMin(state);
 }
 
-/** Inputs to the satisfaction formula, shared by `liveSatisfaction` and `openNight` so they cannot drift. */
-function satisfactionInputs(state: GameState) {
+/** Day-wide inputs to every guest's satisfaction, shared by the HUD, the Guests sheet and `openNight` so they cannot drift. */
+export function satisfactionContext(
+  state: Pick<
+    GameState,
+    "fare" | "buildings" | "founderId" | "weather" | "clockMin"
+  >,
+): SatisfactionContext {
   const founder = founderById(state.founderId);
   return {
-    avgQueueMin: measuredWaitMin(state),
-    mood: arrivalMood(state.buildings, state.founderId),
-    snowPenalty: founder?.snowExpectationPenalty ?? 0,
+    fare: state.fare,
+    arrivalMood: arrivalMood(state.buildings, state.founderId, state.weather),
+    snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
+    now: state.clockMin,
   };
 }
 
 /** Satisfaction as `openNight` would record it right now; the HUD uses this. */
 export function liveSatisfaction(state: GameState): number {
-  const { avgQueueMin, mood, snowPenalty } = satisfactionInputs(state);
-  return computeSatisfaction(
-    state.fare,
-    state.snowQuality,
-    avgQueueMin,
-    mood,
-    snowPenalty,
-  );
+  return daySatisfaction(state.guests, satisfactionContext(state)).score;
 }
 
 export function openNight(state: GameState): GameState {
   const founder = founderById(state.founderId);
   const openLifts = state.lifts.filter((l) => l.confirmed).length;
-  const { avgQueueMin, mood, snowPenalty } = satisfactionInputs(state);
-  const recap = buildNightRecap(
-    { ...state.dayStats, avgQueueMin },
-    state.fare,
-    state.snowQuality,
-    avgQueueMin,
-    mood,
-    snowPenalty,
-    openLifts,
-    founder?.fixedCostDelta ?? 0,
-  );
+  const avgQueueMin = measuredWaitMin(state);
+  const ctx = satisfactionContext(state);
+  const stats = { ...state.dayStats, avgQueueMin };
+  const recap = buildNightRecap({
+    stats,
+    fare: state.fare,
+    snowQuality: state.snowQuality,
+    day: daySatisfaction(state.guests, ctx),
+    arrivalMood: ctx.arrivalMood,
+    openLiftCount: openLifts,
+    founderFixedDelta: founder?.fixedCostDelta ?? 0,
+  });
   const reputation = Math.round(
     state.reputation * 0.85 + recap.satisfaction * 0.15,
   );
@@ -123,7 +127,7 @@ export function openNight(state: GameState): GameState {
     reputation,
     pendingBeat,
     beatAcknowledged: pendingBeat == null,
-    dayStats: { ...state.dayStats, avgQueueMin },
+    dayStats: stats,
   };
 }
 

@@ -108,7 +108,15 @@ export function stepLifts(
       const gi = index.get(id) as number;
       const g = out[gi];
       waits.push(now - (g.joinedQueueAtMin ?? now));
-      out[gi] = { ...g, state: "ride", liftIndex: li, rideStartMin: now, progress: 0 };
+      out[gi] = {
+        ...g,
+        state: "ride",
+        liftIndex: li,
+        rideStartMin: now,
+        progress: 0,
+        waitMin: g.waitMin + waits[waits.length - 1],
+        waitCount: g.waitCount + 1,
+      };
       credit -= 1;
     }
     // An idle lift does not bank capacity beyond the next guest.

@@ -40,6 +40,7 @@ export type Guest = {
   label: string;
   state: GuestState;
   progress: number;
+  /** Starting disposition drawn with the roster (0–1). The live score is derived: see satisfaction.ts. */
   mood: number;
   /** Index into `GameState.lifts` of the lift this guest last queued for or rode. */
   liftIndex?: number;
@@ -47,6 +48,12 @@ export type Guest = {
   joinedQueueAtMin?: number;
   /** Game clock minute at which the guest was dispatched onto the lift. */
   rideStartMin?: number;
+  /** Game minutes this guest has waited in lift lines today (completed waits). */
+  waitMin: number;
+  /** Number of completed waits in `waitMin` (rides, plus a line left at closing). */
+  waitCount: number;
+  /** Sum of the snow quality (0–1) under each finished run today. */
+  snowSum: number;
   persona: PersonaId;
   /** 1 = fresh, 0 or below = done for the day. */
   energy: number;

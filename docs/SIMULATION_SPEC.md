@@ -1,6 +1,6 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.2 · **Updated:** 2026-11-16  
+**Version:** 0.3 · **Updated:** 2026-11-16  
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
 ## Implementation status (2026-11-16 audit)
@@ -11,8 +11,8 @@
 |---|---|---|---|
 | Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure are real (PR 6). No refuel stop | 16 |
-| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time and target runs; satisfaction weights not applied yet | 7, 9 |
-| Satisfaction formula | 🟡 | Formula matches. The queue input is now the measured mean wait of guests dispatched so far today (PR 5); still one day-level number, not per guest | 7 |
+| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
+| Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term is 🟡: fare preset vs a fixed expectation until PR 9 judges fare against what the hill offered | 9 |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a bell curve over 08:00–14:00 (PR 6). Fare elasticity by persona waits for PR 9 | 9 |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
@@ -69,7 +69,7 @@ Each guest draws a persona from the day's mix, a target run count in the persona
 | First-Timer | 60% / 40% | 0.18 (tired after 6) | 14 min | 3–6 | 4.4 |
 | Saturday Regular | 40% / 60% | 0.11 (tired after 10) | 8 min | 6–10 | 8.0–8.3 |
 
-Observed runs are the mean over 20 seeds on a day with short queues (surface + chair). Family Pack and Race Kid are not modeled. The satisfaction weights in the next table are PR 7's; they are not applied yet.
+Observed runs are the mean over 20 seeds on a day with short queues (surface + chair). Family Pack and Race Kid are not modeled. The satisfaction weights in the next table apply to the queue, snow and value terms (see Satisfaction below).
 
 ### Personas (weights on satisfaction terms)
 
@@ -82,21 +82,36 @@ Observed runs are the mean over 20 seeds on a day with short queues (surface + c
 
 P0: pool **First-Timer + Saturday Regular** only.
 
-### Satisfaction (session, 0–100)
+### Satisfaction (guest, 0–100)
 
-Aggregate weighted terms (display as emoji tier on recap):
+Each guest's score is built from what happened to them. The day score is the mean over guests who arrived: guests gone home count their finished day, guests still on the hill their day so far, guests turned away count their low score. The HUD reading (`liveSatisfaction`) and the closing recap use the same function, so they agree at close. Revenue uses the day score; reputation is unchanged.
 
-| Term | Source (v0) |
-|------|-------------|
-| `queue` | avg wait min × persona weight |
-| `snow` | trail average quality 0–1 |
-| `ticketValue` | fare preset vs persona expectation |
-| `arrivalMood` | lodge tier + weather (stub 0.7 P0) |
+`score = clamp(70 + arrivalMood + queue + snow + value + runs, 0, 100)`
 
-**Formula (v0):**  
-`satisfaction = clamp(70 - 8*queueMinutes + 25*snow - 15*ticketMismatch + 10*arrivalMood, 0, 100)`
+Every term is signed points from a neutral baseline, in `satisfaction.ts` (`SAT`). Persona weights are in `personas.ts`.
 
-`ticketMismatch` ∈ {0, 0.5, 1} for fare Cheap/Balanced/Expensive vs crowd mix.
+| Term | Formula | Constants |
+|---|---|---|
+| `arrivalMood` | `40 × (mood − 0.70)` | `mood` = `arrivalMood(buildings, founder, weather)`: 0.65 + hut 0.05 + lodge 0.08 + café 0.04 + founder bonus, weather snow +0.06 / thaw −0.08, clamped 0–0.95. Hut only on a clear day is 0 |
+| `queue` | `−min(35, 3.5 × queueWeight × pain)` | `pain(w)` for mean wait per ride `w` minutes: 0 up to 1 min, then `w − 1` up to 6 min, then 5 + half a point per minute beyond. Includes the line the guest is standing in; a line left at closing counts as a wait |
+| `snow` | `50 × snowWeight × (avgQuality − expected)` | `expected` = 0.55 + founder `snowExpectationPenalty`; `avgQuality` is the mean snow quality under the guest's finished runs; 0 before the first run |
+| `value` | `10 × valueWeight × step` | `step`: Cheap +0.4, Balanced 0, Expensive −1. Fare preset vs a fixed expectation (🟡; PR 9 replaces it with fare vs what the hill offered) |
+| `runs` | finished guests only: `share = min(1, runs / targetRuns)`; `5 × (share − 0.6) / 0.4` from 0.6 up, `−8 × (0.6 − share) / 0.6` below | Full target +5, 0.6 of target 0, zero runs (turned away) −8 |
+
+Persona weights:
+
+| Persona | queueWeight | snowWeight | valueWeight |
+|---|---|---|---|
+| First-Timer | 1.2 | 1.0 | 0.8 |
+| Saturday Regular | 1.5 | 1.1 | 1.3 |
+
+Family Pack (1.4 / 0.9 / 1.0) and Race Kid (1.0 / 1.4 / 0.9) have weights in the design but are not modeled yet.
+
+**Day breakdown.** `nightRecap.breakdown` holds the mean of each term over the guests who arrived, in signed points (PR 9 shows it under "Why?").
+
+**Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill." Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
+
+**Observed (mean of 10 seeds, Elena, balanced fare, snow 0.55):** weekday surface + chair 78; weekday surface only 76 (queue −2); Saturday surface only 50 (queue −28); Saturday surface + chair 78; weekday snow 0.30 65 (snow −13); weekday snow 0.85 94; weekday Expensive 68 (value −10); weekday Cheap 82; Saturday surface only and Expensive 39.
 
 ### Arrivals (Dutch Hill P0)
 
