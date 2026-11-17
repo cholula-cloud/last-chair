@@ -140,26 +140,34 @@ export function guestWorldPosition(
   }
 }
 
+/** A lift guests can be placed on; the list index matches `Guest.liftIndex`. */
+export type PlacedLift = { anchor: LiftAnchor; type: LiftType; towers?: LiftPoint[] };
+
 /**
- * Place every guest. Queued guests get a tidy rank: front of the line is the
+ * Place every guest on their own lift (`liftIndex`, falling back to the first).
+ * Queued guests get a tidy rank within their lift: front of the line is the
  * guest with the most progress, ties broken by list order.
  */
-export function placeGuests(
-  guests: Guest[],
-  anchor: LiftAnchor,
-  liftType: LiftType,
-  towers: LiftPoint[] = liftTowers(anchor),
-): GuestPlacement[] {
+export function placeGuests(guests: Guest[], lifts: PlacedLift[]): GuestPlacement[] {
+  const primary = lifts[0];
   return guests.map((g, i) => {
+    const lift = lifts[g.liftIndex ?? 0] ?? primary;
+    const liftKey = lifts[g.liftIndex ?? 0] ? (g.liftIndex ?? 0) : 0;
     let queueRank: number | undefined;
     if (g.state === "queue") {
       queueRank = 0;
       for (let j = 0; j < guests.length; j++) {
         const o = guests[j];
         if (o.state !== "queue" || j === i) continue;
+        const oKey = lifts[o.liftIndex ?? 0] ? (o.liftIndex ?? 0) : 0;
+        if (oKey !== liftKey) continue;
         if (o.progress > g.progress || (o.progress === g.progress && j < i)) queueRank++;
       }
     }
-    return guestWorldPosition(i, g.state, g.progress, anchor, { queueRank, liftType, towers });
+    return guestWorldPosition(i, g.state, g.progress, lift.anchor, {
+      queueRank,
+      liftType: lift.type,
+      towers: lift.towers ?? liftTowers(lift.anchor),
+    });
   });
 }

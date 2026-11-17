@@ -114,7 +114,13 @@ export function MountainScene() {
 
   const confirmedLifts = useMemo(() => lifts.filter((l) => l.confirmed), [lifts]);
   const primaryAnchor = confirmedLifts[0]?.anchor ?? FALLBACK_ANCHOR;
-  const primaryType: LiftType = confirmedLifts[0]?.type ?? "surface";
+  const guestLifts = useMemo(
+    () =>
+      lifts.length > 0
+        ? lifts
+        : [{ anchor: FALLBACK_ANCHOR, type: "surface" as LiftType }],
+    [lifts],
+  );
   const previewSlot = LIFT_PREVIEW_SLOTS[selectedSlotIndex] ?? LIFT_PREVIEW_SLOTS[0];
   const previewValid = previewSlot ? checkDescentValid(previewSlot) : false;
   const showPreview = buildMode && !!previewSlot;
@@ -164,7 +170,7 @@ export function MountainScene() {
           </>
         )}
 
-        <Guests liftAnchor={primaryAnchor} liftType={primaryType} followedRef={followedRef} />
+        <Guests lifts={guestLifts} followedRef={followedRef} />
       </Suspense>
       <CameraRig followId={followId} followedRef={followedRef} />
       <OrbitControls

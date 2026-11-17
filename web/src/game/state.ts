@@ -17,6 +17,10 @@ export type LiftSlot = {
   type: LiftType;
   anchor: LiftAnchor;
   confirmed: boolean;
+  /** FIFO queue of guest ids waiting at this lift, front first. */
+  queue: string[];
+  /** Dispatch accumulator: whole units dispatch one guest each (see lifts.ts). */
+  dispatchCredit: number;
 };
 
 /** Everything that is saved between sessions. */
@@ -71,6 +75,8 @@ export function defaultLifts(): LiftSlot[] {
       type: "surface",
       anchor: LIFT_PREVIEW_SLOTS[0] ?? { x: -1.2, z: 0.2 },
       confirmed: true,
+      queue: [],
+      dispatchCredit: 0,
     },
   ];
 }
@@ -164,13 +170,15 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
  * filled from a fresh state. Version 0 (unversioned) saves have no `rngState`,
  * `nightRecap` or `dayStats`. A v0 save made during the night has no recap to
  * restore, so it cannot resume the night sheet and is loaded as a day.
+ * Versions below 2 have no lift queues or queue statistics: queues load empty,
+ * accumulators 0, and any guest saved mid-queue rejoins a lift on the next tick.
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -182,6 +190,14 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       p.pendingBeat = null;
       p.beatAcknowledged = true;
     }
+  }
+  if (fromVersion < 2) {
+    p.lifts = (p.lifts ?? fresh.lifts).map((l) => ({
+      ...l,
+      queue: l.queue ?? [],
+      dispatchCredit: l.dispatchCredit ?? 0,
+    }));
+    p.dayStats = { ...emptyDayStats(), ...p.dayStats, avgQueueMin: 0 };
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

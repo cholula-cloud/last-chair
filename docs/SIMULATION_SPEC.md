@@ -12,9 +12,9 @@
 | Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
 | Guest day script | ❌ | Random state machine; no arrival curve, energy or refuel | 6 |
 | Personas | ❌ | Not modeled | 6, 9 |
-| Satisfaction formula | 🟡 | Formula matches, but `queueMinutes` is invented and computed once per day, not per guest | 5, 7 |
+| Satisfaction formula | 🟡 | Formula matches. The queue input is now the measured mean wait of guests dispatched so far today (PR 5); still one day-level number, not per guest | 7 |
 | Arrivals | 🟡 | Weekend/fare/weather modifiers exist; no spawn curve | 6, 9 |
-| Lift types / capacity | ❌ | Type changes cost only; no capacity, ride time or FIFO | 5, 15 |
+| Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
 | Snow | 🟡 | One global depth + quality; no per-segment coverage; thaw is hill-wide | 8 |
@@ -96,10 +96,21 @@ Aggregate weighted terms (display as emoji tier on recap):
 
 ### Lift types (P0 / P1)
 
-| Type | Ride time | Capacity/hr (nominal) |
-|------|-----------|------------------------|
-| Surface (rope/T) | 4 min | 600 |
-| Double chair (P1) | 3 min | 900 |
+Each confirmed lift is a server: a FIFO queue of guest ids plus a dispatch accumulator. Every sim step adds `minutes × capacity/60` to the accumulator and, while it is at least 1 and the queue is not empty, the guest at the front boards (wait = now − time joined). An idle lift keeps at most one unit, so it never banks capacity. A ride ends after the ride time, then the guest skis. Guests who finish a run join the lift with the shortest expected wait (queue length ÷ capacity, ties to the higher capacity). Sim ticks longer than 0.5 game minutes are split into 0.5 minute steps so measured waits stay accurate.
+
+| Type | Ride time | Capacity/hr (game-scaled) | Real-world nominal |
+|------|-----------|---------------------------|--------------------|
+| Surface (rope/T) | 4 min | 70 | 600 |
+| Double chair (P1) | 3 min | 110 | 900 |
+
+**Game-scaled:** days have 12–40 guests, so real capacities would never queue. The numbers were tuned against today's guest behaviour (everyone arrives in one burst; PR 6 replaces it, then retune). Headless experiment, 20 seeds per cell, full day, surface only versus surface plus chair:
+
+| Day | Guests | Surface only: avg / peak wait | Surface + chair: avg / peak wait |
+|-----|--------|-------------------------------|----------------------------------|
+| Weekday | 18–22 | 1.8 / 10.1 min | 0.1 / 1.2 min |
+| Saturday | 31–40 | 5.5 / 23.1 min | 0.9 / 5.2 min |
+
+Talent **Patrol Radio** adds 5% to every lift's capacity. The HUD queue reading is the expected wait at the busiest lift (queue length ÷ capacity per minute); the day average (`avgQueueMin`) is the measured mean wait of guests dispatched today, alongside `maxQueueLength` and `peakWaitMin`.
 
 ### Viability rule (build preview)
 
@@ -213,7 +224,7 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (v1)
 
-JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 1`. The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
+JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 2` (v2 added lift queues and queue statistics; older saves migrate with empty queues). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
 
 `migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
 

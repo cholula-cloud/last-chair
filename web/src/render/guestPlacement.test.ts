@@ -88,11 +88,35 @@ describe("guest placement", () => {
     });
     const guests = [g("a", "queue", 0.2), g("b", "ski", 0.9), g("c", "queue", 0.8), g("d", "queue", 0.2)];
     const anchor = LIFT_PREVIEW_SLOTS[1];
-    const placed = placeGuests(guests, anchor, "surface");
+    const placed = placeGuests(guests, [{ anchor, type: "surface" }]);
     const rankOf = (i: number, rank: number) =>
       guestWorldPosition(i, "queue", 0, anchor, { queueRank: rank });
     expect(placed[2]).toEqual(rankOf(2, 0));
     expect(placed[0]).toEqual(rankOf(0, 1));
     expect(placed[3]).toEqual(rankOf(3, 2));
+  });
+
+  it("places each guest on their own lift and ranks queues per lift", () => {
+    const g = (id: string, liftIndex: number | undefined, progress: number) => ({
+      id,
+      label: id,
+      state: "queue" as const,
+      progress,
+      mood: 0.5,
+      liftIndex,
+    });
+    const lifts = [
+      { anchor: LIFT_PREVIEW_SLOTS[0], type: "surface" as const },
+      { anchor: LIFT_PREVIEW_SLOTS[1], type: "chair" as const },
+    ];
+    // a and c queue at lift 1; b at lift 0; d has no lift and falls back to lift 0.
+    const guests = [g("a", 1, 0.2), g("b", 0, 0.9), g("c", 1, 0.8), g("d", undefined, 0.1)];
+    const placed = placeGuests(guests, lifts);
+    const at = (i: number, liftIdx: number, rank: number) =>
+      guestWorldPosition(i, "queue", 0, lifts[liftIdx].anchor, { queueRank: rank });
+    expect(placed[2]).toEqual(at(2, 1, 0));
+    expect(placed[0]).toEqual(at(0, 1, 1));
+    expect(placed[1]).toEqual(at(1, 0, 0));
+    expect(placed[3]).toEqual(at(3, 0, 1));
   });
 });

@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useState } from "react";
 import { liveSatisfaction } from "@/game/rules";
-import { DAY_START_MIN } from "@/game/sim";
+import { DAY_START_MIN, currentWaitMin } from "@/game/sim";
 import { useGameStore } from "@/game/store";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
@@ -33,7 +33,7 @@ export default function PlayExperience() {
   const phase = useGameStore((s) => s.phase);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
-  const avgQueue = useGameStore((s) => s.dayStats.avgQueueMin);
+  const avgQueue = useGameStore((s) => currentWaitMin(s));
   const weather = useGameStore((s) => s.weather);
   const morningHeadline = useGameStore((s) => s.morningHeadline);
   const talentToast = useGameStore((s) => s.talentToast);

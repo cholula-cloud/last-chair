@@ -36,12 +36,27 @@ export type Guest = {
   state: GuestState;
   progress: number;
   mood: number;
+  /** Index into `GameState.lifts` of the lift this guest last queued for or rode. */
+  liftIndex?: number;
+  /** Game clock minute at which the guest joined the lift queue. */
+  joinedQueueAtMin?: number;
+  /** Game clock minute at which the guest was dispatched onto the lift. */
+  rideStartMin?: number;
 };
 
 export type DayStats = {
   arrivals: number;
   completedRuns: number;
+  /** Mean measured wait (game minutes) of guests dispatched today; 0 before the first dispatch. */
   avgQueueMin: number;
+  /** Guests dispatched onto a lift today. */
+  dispatched: number;
+  /** Sum of the measured waits of those guests, in game minutes. */
+  waitSumMin: number;
+  /** Longest single lift queue seen today, in guests. */
+  maxQueueLength: number;
+  /** Longest measured wait of any dispatched guest today, in game minutes. */
+  peakWaitMin: number;
 };
 
 export type FounderDef = {
@@ -93,6 +108,15 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
 export const LIFT_LABELS: Record<LiftType, string> = {
   surface: "Surface lift",
   chair: "Double chair",
+};
+
+/** Game-scaled lift server numbers (see SIMULATION_SPEC, Lifts). */
+export const LIFT_SPECS: Record<
+  LiftType,
+  { capacityPerHour: number; rideMinutes: number }
+> = {
+  surface: { capacityPerHour: 70, rideMinutes: 4 },
+  chair: { capacityPerHour: 110, rideMinutes: 3 },
 };
 
 export const LIFT_BUILD_COST: Record<LiftType, number> = {
