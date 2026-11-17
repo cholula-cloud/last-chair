@@ -3,8 +3,9 @@
 import { STORY_BEATS } from "@/game/content";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
-import { PaperSheet } from "@/ui/kit/PaperSheet";
-import { PrimaryButton, StatTile } from "@/ui/kit/parts";
+import { Sheet } from "@/ui/kit/Sheet";
+import { PinIcon } from "@/ui/kit/icons";
+import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
 export function WinterReviewSheet() {
   const phase = useGameStore((s) => s.phase);
@@ -19,7 +20,7 @@ export function WinterReviewSheet() {
 
   if (phase === "mountain2") {
     return (
-      <PaperSheet
+      <Sheet
         modal
         z="z-50"
         title="Tenney Mountain, NH"
@@ -30,16 +31,18 @@ export function WinterReviewSheet() {
           </PrimaryButton>
         }
       >
-        <p className="text-[0.95rem] leading-relaxed text-ink">
-          Tenney isn&apos;t playable yet. Caretaker income and the career map
-          come in a later build. Dutch Hill stays saved on this device.
-        </p>
-      </PaperSheet>
+        <div className="panel px-4 py-3.5">
+          <p className="text-[1rem] font-bold leading-snug">
+            Tenney isn&apos;t playable yet. Caretaker income and the career map
+            come in a later build. Dutch Hill stays saved on this device.
+          </p>
+        </div>
+      </Sheet>
     );
   }
 
   return (
-    <PaperSheet
+    <Sheet
       modal
       z="z-50"
       title="Winter review"
@@ -50,32 +53,31 @@ export function WinterReviewSheet() {
         </PrimaryButton>
       }
     >
-      <p className="pencil px-1 text-[1.05rem] text-pine">
-        You held one more winter in the sticks.
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-3 sm:grid-cols-4">
-        <StatTile
-          label="Cash"
-          value={formatMoney(cash)}
-          tone={cash >= 0 ? "good" : "bad"}
-        />
-        <StatTile label="Reputation" value={reputation} />
-        <StatTile
-          label="Story beats"
-          value={`${completedBeats.length}/${STORY_BEATS.length}`}
-        />
-        <StatTile label="Crew talents" value={talentsOwned.length} />
-      </div>
-      <div className="mt-4 flex items-center gap-3 rounded-xl border-[1.5px] border-dashed border-amber/70 bg-[#fff6ec] px-3.5 py-3">
-        <span
-          className="size-3 shrink-0 rounded-full bg-amber ring-4 ring-amber/25"
-          aria-hidden="true"
-        />
-        <p className="text-[0.95rem] text-ink">
+      <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, season one">
+        <p className="display text-[1.35rem] leading-tight text-white">
+          You held one more winter in the sticks.
+        </p>
+        <div className="sign-rule my-3" aria-hidden="true" />
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
+          <StatTile onSign label="Cash" value={formatMoney(cash)} />
+          <StatTile onSign label="Reputation" value={reputation} />
+          <StatTile
+            onSign
+            label="Story beats"
+            value={`${completedBeats.length}/${STORY_BEATS.length}`}
+          />
+          <StatTile onSign label="Crew talents" value={talentsOwned.length} />
+        </div>
+      </Sign>
+      <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-snow-2">
+          <PinIcon size={20} />
+        </span>
+        <p className="text-[1rem] font-bold">
           Career pin unlocked:{" "}
-          <strong className="serif">Tenney Mountain, NH</strong>
+          <strong className="font-extrabold">Tenney Mountain, NH</strong>
         </p>
       </div>
-    </PaperSheet>
+    </Sheet>
   );
 }

@@ -17,8 +17,8 @@ import {
   type LiftType,
 } from "@/game/types";
 import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
-import { PaperSheet } from "@/ui/kit/PaperSheet";
-import { PlateHeading, PriceTag, PrimaryButton } from "@/ui/kit/parts";
+import { Sheet } from "@/ui/kit/Sheet";
+import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 
 const BUILD_OPTIONS: BuildingId[] = ["lodge", "cafe", "shop", "snow_guns"];
 
@@ -65,12 +65,12 @@ export function BuildSheet({
   const short = liftCost - cash;
 
   return (
-    <PaperSheet
+    <Sheet
       title="Build"
       subtitle={
         <>
           Cash on hand{" "}
-          <span className="num font-semibold text-pine">
+          <span className="display text-[1.05rem] tabular-nums">
             {formatMoney(cash)}
           </span>
         </>
@@ -79,10 +79,10 @@ export function BuildSheet({
       closeLabel="Close build sheet"
       wide
     >
-      <div className="short:grid short:grid-cols-2 short:gap-6">
-        <div>
-          <PlateHeading>Lift</PlateHeading>
-          <div className="grid grid-cols-2 gap-2">
+      <div className="short:grid short:grid-cols-2 short:gap-4">
+        <div className="panel px-3.5 pb-4 pt-3.5 short:self-start">
+          <SectionHeading>Lift</SectionHeading>
+          <div className="grid grid-cols-2 gap-2.5">
             {(["surface", "chair"] as LiftType[]).map((t) => {
               const on = selectedLiftType === t;
               return (
@@ -91,17 +91,14 @@ export function BuildSheet({
                   type="button"
                   aria-pressed={on}
                   onClick={() => setSelectedLiftType(t)}
-                  className={`press flex min-h-[76px] flex-col items-start justify-between gap-1.5 rounded-xl border-2 p-2.5 text-left ${
-                    on
-                      ? "border-amber bg-[#fff6ec]"
-                      : "border-ink/15 bg-paper-deep/60"
-                  }`}
+                  className="key press flex min-h-[92px] flex-col items-start justify-between gap-1.5 p-2.5 text-left"
                 >
-                  <span className="flex items-center gap-1.5 text-[0.95rem] font-bold text-ink">
-                    <LiftIcon size={18} />
+                  <span className="flex items-center gap-1.5 text-[1rem] font-extrabold">
+                    <LiftIcon size={20} />
                     {LIFT_LABELS[t]}
+                    {on && <CheckIcon size={16} />}
                   </span>
-                  <span className="text-[0.78rem] text-ink-soft">
+                  <span data-muted className="text-[0.8rem] font-bold leading-tight">
                     {LIFT_NOTES[t]}
                   </span>
                   <PriceTag>
@@ -114,14 +111,14 @@ export function BuildSheet({
             })}
           </div>
 
-          <p className="mt-3 text-[0.88rem] text-ink-soft">
+          <p className="mt-4 text-[0.9rem] font-bold text-ink-soft">
             Pick where the lift unloads. Skiers need a run from there back to
             the base.
           </p>
           <div
             role="group"
             aria-label="Lift top"
-            className="mt-2 grid grid-cols-3 gap-2"
+            className="mt-2.5 grid grid-cols-3 gap-2.5"
           >
             {LIFT_PREVIEW_SLOTS.map((s, i) => (
               <SlotButton
@@ -135,7 +132,7 @@ export function BuildSheet({
           </div>
 
           <PrimaryButton
-            className="mt-3"
+            className="mt-4"
             disabled={!valid || inUse || cash < liftCost}
             aria-describedby="lift-reason"
             onClick={() => {
@@ -143,11 +140,11 @@ export function BuildSheet({
               onClose();
             }}
           >
-            Place {LIFT_LABELS[selectedLiftType]} · {formatMoney(liftCost)}
+            Place {LIFT_LABELS[selectedLiftType]} for {formatMoney(liftCost)}
           </PrimaryButton>
           <p
             id="lift-reason"
-            className={`mt-1.5 text-center text-[0.8rem] font-medium ${valid && !inUse && short <= 0 ? "text-pine" : "text-barn"}`}
+            className={`mt-2.5 text-center text-[0.85rem] font-extrabold ${valid && !inUse && short <= 0 ? "text-sign-green" : "text-barn-deep"}`}
           >
             {inUse
               ? `${slot?.label} already has a lift. Pick another top.`
@@ -158,9 +155,9 @@ export function BuildSheet({
                 : "Run reaches the base. Ready to place."}
           </p>
         </div>
-        <div>
-          <PlateHeading>Village &amp; snow</PlateHeading>
-          <ul className="space-y-2">
+        <div className="mt-4 panel px-3.5 pb-4 pt-3.5 short:mt-0 short:self-start">
+          <SectionHeading>Village &amp; snow</SectionHeading>
+          <ul className="space-y-2.5">
             {BUILD_OPTIONS.map((id) => {
               const owned = buildings.includes(id);
               const cost = BUILDING_COSTS[id];
@@ -171,14 +168,14 @@ export function BuildSheet({
                     type="button"
                     disabled={owned || need > 0}
                     onClick={() => buyBuilding(id)}
-                    className="press flex min-h-[60px] w-full items-center gap-3 rounded-xl border border-ink/15 bg-white/40 px-3 py-2 text-left enabled:hover:border-ink/30 disabled:bg-paper-deep/50"
+                    className="key press flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left"
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[0.95rem] font-bold text-ink">
+                      <span className="block text-[1rem] font-extrabold">
                         {BUILDING_LABELS[id]}
                       </span>
                       <span
-                        className={`block text-[0.78rem] ${owned ? "font-semibold text-pine" : need > 0 ? "font-medium text-barn" : "text-ink-soft"}`}
+                        className={`block text-[0.82rem] ${owned ? "font-extrabold text-sign-green" : need > 0 ? "font-extrabold text-barn-deep" : "font-bold text-ink-soft"}`}
                       >
                         {owned
                           ? "Built"
@@ -188,7 +185,7 @@ export function BuildSheet({
                       </span>
                     </span>
                     {owned ? (
-                      <span className="flex size-8 items-center justify-center rounded-full bg-pine text-paper">
+                      <span className="flex size-8 items-center justify-center rounded-full border-2 border-ink bg-sign-green text-white">
                         <CheckIcon size={18} />
                       </span>
                     ) : (
@@ -200,18 +197,18 @@ export function BuildSheet({
             })}
           </ul>
 
-          <label className="mt-4 flex min-h-11 items-center gap-3 text-[0.9rem] text-ink">
+          <label className="mt-4 flex min-h-11 items-center gap-3 text-[0.92rem] font-bold">
             <input
               type="checkbox"
               checked={buildMode}
               onChange={(e) => setBuildMode(e.target.checked)}
-              className="size-5 accent-[var(--pine)]"
+              className="check"
             />
             Show placement preview on the mountain
           </label>
         </div>
       </div>
-    </PaperSheet>
+    </Sheet>
   );
 }
 
@@ -227,24 +224,22 @@ function SlotButton({
   onPick: () => void;
 }) {
   const valid = checkDescentValid(slot);
-  const ring = inUse
-    ? "border-ink/10 bg-paper-deep/40 opacity-70"
-    : selected
-    ? valid
-      ? "border-pine bg-[#e6f0e9]"
-      : "border-barn bg-[#f8e6e1]"
-    : "border-ink/15 bg-paper-deep/60";
   return (
     <button
       type="button"
       aria-pressed={selected && !inUse}
       disabled={inUse}
       onClick={onPick}
-      className={`press flex min-h-14 flex-col items-center justify-center rounded-xl border-2 px-2 py-1.5 ${ring}`}
+      data-tone={valid ? undefined : "bad"}
+      className="key press flex min-h-14 flex-col items-center justify-center px-2 py-1.5"
     >
-      <span className="text-[0.95rem] font-bold text-ink">{slot.label}</span>
+      <span className="flex items-center gap-1 text-[1rem] font-extrabold">
+        {slot.label}
+        {selected && !inUse && <CheckIcon size={14} />}
+      </span>
       <span
-        className={`text-[0.75rem] font-semibold ${inUse ? "text-ink-soft" : valid ? "text-pine" : "text-barn"}`}
+        data-muted
+        className={`text-[0.78rem] font-extrabold ${(selected && !inUse) || inUse ? "" : valid ? "!text-sign-green" : "!text-barn-deep"}`}
       >
         {inUse ? "In use" : valid ? "Valid run" : "No run"}
       </span>

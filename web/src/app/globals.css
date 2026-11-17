@@ -13,178 +13,306 @@
 }
 
 /*
- * Last Chair UI language: "lodge paperwork on a phone".
- * Cream paper cards on a dark night-navy table, pine plates, one amber
- * primary action per screen, barn red for warnings. See docs/ART_DIRECTION.md.
+ * Last Chair UI language: "toy box with Route 100 road signs".
+ * Every surface is a flat colour with a 3px navy outline and a hard offset
+ * shadow. Each sign colour carries one meaning:
+ *   green  summaries, results, play, the selected option, good news
+ *   yellow radio, alerts, warnings
+ *   brown  the end-of-day action only
+ *   gold   the player's cash only
+ *   barn   problems, losses, close hill
  */
 
 :root {
-  --paper: #f4efe4;
-  --paper-deep: #e8dfcb;
-  --paper-edge: #d6c9ab;
-  --kraft: #e3cf9f;
-  --ink: #1e2420;
-  --ink-soft: #545a50;
-  --pine: #2d5a4a;
-  --pine-deep: #1f4236;
-  --navy: #0b1628;
-  --navy-soft: #15243d;
-  /* Accent amber for fills and rings; the button fill is a deeper amber so
-     white labels clear 4.5:1. */
-  --amber: #e85d26;
-  --amber-fill: #c94b18;
-  --barn: #a8382b;
-  --ochre: #8a5a10;
+  --ink: #1b3a57;
+  --ink-soft: #4b6580;
+  --sky: #9ad7f5;
+  --snow: #ffffff;
+  --snow-2: #e3f2fa;
+  --sign-green: #0b6b3a;
+  --sign-green-ink: #d6ebdd;
+  --sign-yellow: #f6c700;
+  --sign-yellow-soft: #fff6cc;
+  --sign-brown: #7a4524;
+  --gold: #ffc93c;
+  --barn: #e0483e;
+  /* Text-safe barn: 6:1 on white and on snow-2. Use for small red text and
+     for fills that carry small white labels. */
+  --barn-deep: #b8302a;
+
+  /* Radius scale by hierarchy; night adds 2px for a softer feel. */
+  --r-panel: 20px;
+  --r-key: 16px;
+  --r-chip: 12px;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-paper-deep: var(--paper-deep);
-  --color-paper-edge: var(--paper-edge);
-  --color-kraft: var(--kraft);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
-  --color-pine: var(--pine);
-  --color-pine-deep: var(--pine-deep);
-  --color-navy: var(--navy);
-  --color-navy-soft: var(--navy-soft);
-  --color-amber: var(--amber);
-  --color-amber-fill: var(--amber-fill);
+  --color-sky: var(--sky);
+  --color-snow: var(--snow);
+  --color-snow-2: var(--snow-2);
+  --color-sign-green: var(--sign-green);
+  --color-sign-green-ink: var(--sign-green-ink);
+  --color-sign-yellow: var(--sign-yellow);
+  --color-sign-yellow-soft: var(--sign-yellow-soft);
+  --color-sign-brown: var(--sign-brown);
+  --color-gold: var(--gold);
   --color-barn: var(--barn);
-  --color-ochre: var(--ochre);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-fraunces);
+  --color-barn-deep: var(--barn-deep);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-lilita);
+  --radius-sheet: 28px;
+  --radius-panel: 20px;
+  --radius-key: 16px;
+  --radius-chip: 12px;
+}
+
+/* Night: warm white panels, a deeper navy outline, warmer secondary text
+   (7.4:1 on warm snow). Set on the night recap sheet and the HUD behind it; day stays crisp. */
+[data-mood="night"] {
+  --snow: #fff8ec;
+  --snow-2: #f6ead6;
+  --ink: #13283f;
+  --ink-soft: #5a5048;
+  --sign-yellow-soft: #fff1c2;
+  --r-panel: 22px;
+  --r-key: 18px;
+  --r-chip: 14px;
 }
 
 html {
-  background: var(--navy);
+  background: var(--ink);
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  background: var(--navy);
-  color: var(--paper);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
+/* Yellow ring plus a navy ring around it, so focus reads on white, sky and
+   yellow alike. Pressables fold --ring into their box-shadow. */
 :focus-visible {
-  outline: 3px solid var(--amber);
+  outline: 3px solid var(--sign-yellow);
   outline-offset: 2px;
+  --ring: 0 0 0 7px var(--ink);
 }
 
 @layer components {
-  /* Cream card with fibre grain (inline SVG noise, no image download). */
-  .paper {
-    background-color: var(--paper);
-    background-image:
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .25 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-      linear-gradient(180deg, rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 40%);
+  /* Display face: headings, big numbers and primary button labels only. */
+  .display {
+    font-family: var(--font-lilita), var(--font-nunito), sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.05;
+  }
+  .display-lg {
+    letter-spacing: -0.005em;
+  }
+
+  /* Flat surfaces: 3px navy outline and a hard offset shadow. --lift is the
+     shadow depth; the radius steps with hierarchy (panel 20, key 16, chip 12). */
+  .chip,
+  .panel,
+  .key,
+  .sign,
+  .bubble {
+    border: 3px solid var(--ink);
+    box-shadow:
+      var(--ring, 0 0 #0000),
+      0 var(--lift) 0 var(--ink);
+  }
+  .chip {
+    --lift: 3px;
+    background: var(--snow);
     color: var(--ink);
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.6) inset,
-      0 1px 2px rgb(11 22 40 / 0.25),
-      0 8px 24px -8px rgb(11 22 40 / 0.45);
+    border-radius: var(--r-chip);
+  }
+  .panel {
+    --lift: 5px;
+    background: var(--snow);
+    color: var(--ink);
+    border-radius: var(--r-panel);
   }
 
-  /* Tilted paper: like a slip dropped on a table. */
-  .paper-tilt {
-    rotate: -0.6deg;
+  /* Raised key. The pressed look (selected, disabled) sinks it into the page. */
+  .key {
+    --lift: 5px;
+    background: var(--snow);
+    color: var(--ink);
+    border-radius: var(--r-key);
+  }
+  .key-sm {
+    --lift: 3px;
+    border-radius: var(--r-chip);
+  }
+  .key[aria-pressed="true"] {
+    --lift: 1px;
+    background: var(--sign-green);
+    color: #fff;
+    transform: translateY(4px);
+  }
+  .key[aria-pressed="true"][data-tone="bad"] {
+    background: var(--barn-deep);
+  }
+  .key[aria-expanded="true"] {
+    background: var(--snow-2);
+  }
+  .key:disabled {
+    --lift: 2px;
+    background: var(--snow-2);
+    transform: translateY(3px);
+    cursor: not-allowed;
+  }
+  .key [data-muted] {
+    color: var(--ink-soft);
+  }
+  .key[aria-pressed="true"] [data-muted] {
+    color: var(--sign-green-ink);
+  }
+  .key:disabled [data-muted] {
+    color: var(--ink-soft);
+  }
+  .key-solid {
+    /* Coloured key (close hill, got it): keeps its own fill when pressed. */
+    background: var(--key-fill);
+    color: var(--key-ink, var(--ink));
   }
 
-  .stitch {
-    border-top: 1.5px dashed color-mix(in srgb, var(--ink) 22%, transparent);
-  }
-
-  /* Pine header plate with serif small capitals. */
-  .plate {
-    background: linear-gradient(180deg, #336553, var(--pine) 55%, var(--pine-deep));
-    color: var(--paper);
-    font-family: var(--font-fraunces), serif;
-    font-variant-caps: all-small-caps;
-    letter-spacing: 0.06em;
-    font-weight: 600;
-    box-shadow:
-      0 1px 0 rgb(255 255 255 / 0.18) inset,
-      0 1px 2px rgb(0 0 0 / 0.3);
-  }
-
-  .num {
-    font-family: var(--font-fraunces), serif;
-    font-variant-numeric: tabular-nums lining-nums;
-    font-variation-settings: "SOFT" 50, "opsz" 48;
-  }
-
-  .serif {
-    font-family: var(--font-fraunces), serif;
-    font-variation-settings: "SOFT" 60;
-  }
-
-  /* Pencil note: italic serif on a faint ruled line. */
-  .pencil {
-    font-family: var(--font-fraunces), serif;
-    font-style: italic;
-    font-variation-settings: "SOFT" 100, "WONK" 1;
-    background-image: repeating-linear-gradient(
-      180deg,
-      transparent 0 1.55em,
-      rgb(45 90 74 / 0.22) 1.55em calc(1.55em + 1px)
-    );
-    line-height: 1.6em;
-  }
-
-  /* Pressable feedback for every button. Colour changes are near-instant:
-     tiles and toggles are pressed many times a night. */
+  /* Pressable feedback: the key physically goes down 3px on pointer-down and
+     springs back on release. Exact properties, never "all". */
   .press {
     transition:
-      transform 160ms var(--ease-out),
-      background-color 120ms ease,
-      border-color 120ms ease,
-      color 120ms ease;
+      transform 110ms var(--ease-out),
+      box-shadow 110ms var(--ease-out),
+      background-color 160ms var(--ease-out),
+      color 160ms var(--ease-out);
   }
   .press:active:not(:disabled) {
-    transform: scale(0.97);
-  }
-
-  .btn-primary {
-    background: var(--amber-fill);
-    color: #fff;
+    transform: translateY(3px);
     box-shadow:
-      0 1px 0 rgb(255 200 170 / 0.45) inset,
-      0 -2px 0 rgb(0 0 0 / 0.18) inset,
-      0 2px 4px rgb(80 25 5 / 0.35);
+      var(--ring, 0 0 #0000),
+      0 max(0px, calc(var(--lift) - 3px)) 0 var(--ink);
   }
-  .btn-primary:disabled {
-    background: #c9b9a4;
-    color: #4a4339;
-    box-shadow: none;
+  .key[aria-pressed="true"]:active:not(:disabled) {
+    transform: translateY(4px);
+    box-shadow:
+      var(--ring, 0 0 #0000),
+      0 1px 0 var(--ink);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .key:not(:disabled):not([aria-pressed="true"]):hover {
+      background: var(--snow-2);
+    }
+    .key.key-solid:not(:disabled):not([aria-pressed="true"]):hover {
+      background: var(--key-fill);
+      filter: brightness(1.06);
+    }
+    .sign:not(:disabled):hover {
+      filter: brightness(1.08);
+    }
   }
 
-  /* Price tag: kraft label with a punched hole. */
-  .tag {
-    background:
-      radial-gradient(circle at 8px 50%, var(--paper) 0 3px, transparent 3.5px),
-      var(--kraft);
+  /* Road sign: coloured fill with 5px of padding, then an inner rim. Green and
+     brown get a white rim, yellow a navy one, like US highway signs. */
+  .sign {
+    --lift: 6px;
+    --sign-fill: var(--sign-green);
+    --sign-rim: #fff;
+    background: var(--sign-fill);
+    color: #fff;
+    border-radius: var(--r-panel);
+    padding: 5px;
+    position: relative;
+  }
+  .sign-brown {
+    --sign-fill: var(--sign-brown);
+  }
+  .sign-inner {
+    border: 2px solid var(--sign-rim);
+    border-radius: calc(var(--r-panel) - 6px);
+  }
+  /* Sign used as a button: tighter frame, shallower shadow. */
+  .sign-btn {
+    --lift: 5px;
+    padding: 4px;
+    border-radius: var(--r-key);
+  }
+  .sign-btn .sign-inner {
+    border-radius: calc(var(--r-key) - 5px);
+  }
+  .sign:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .sign-rule {
+    height: 2px;
+    background: #fff;
+    border-radius: 1px;
+  }
+
+  /* Radio speech bubble: the corner nearest the diamond is tight. */
+  .bubble {
+    --lift: 4px;
+    background: var(--sign-yellow-soft);
     color: var(--ink);
-    clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
-    padding-left: 16px;
+    border-radius: 20px 20px 20px 6px;
   }
 
-  /* Lift-ticket notches: semicircles bitten out at the perforation. */
-  .ticket {
-    --notch-x: 72px;
-    mask:
-      radial-gradient(circle 7px at var(--notch-x) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-      radial-gradient(circle 7px at var(--notch-x) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  /* Title screen outline: stroke first, fill over it, so 6px reads as 3px out. */
+  .title-outline {
+    color: #fff;
+    -webkit-text-stroke: 6px var(--ink);
+    paint-order: stroke fill;
+    text-shadow: 0 6px 0 var(--ink);
+  }
+
+  /* Nordic knit stripe: red wool, cream diamonds and dots, navy rules. */
+  .knit {
+    height: 22px;
+    border-block: 3px solid #13283f;
+    background-color: #b8372f;
+    background-image:
+      linear-gradient(45deg, transparent 43%, #fff8ec 43% 57%, transparent 57%),
+      linear-gradient(-45deg, transparent 43%, #fff8ec 43% 57%, transparent 57%),
+      radial-gradient(circle at 50% 0, #fff8ec 0 1.6px, transparent 2px),
+      radial-gradient(circle at 50% 100%, #fff8ec 0 1.6px, transparent 2px);
+    background-size: 16px 16px;
+  }
+
+  .check {
+    appearance: none;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--ink);
+    border-radius: 9px;
+    background: var(--snow) center / 18px 18px no-repeat;
+    transition: background-color 160ms var(--ease-out);
+  }
+  .check:checked {
+    background-color: var(--sign-green);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 9.5 7.5 13.5 14.5 5'/%3E%3C/svg%3E");
+  }
+  .check:focus-visible {
+    box-shadow: var(--ring);
   }
 
   /* Sheets: transform-only, interruptible transitions driven by data-state.
      Enter 360ms on the drawer curve, exit faster at 200ms. */
   .sheet {
+    /* Same colour as the ridge fill, so the snowy ridgeline and the sheet read as one slope. */
+    background: var(--snow-2);
+    color: var(--ink);
     transition: transform 360ms var(--ease-drawer);
     will-change: transform;
   }
@@ -227,7 +355,6 @@ body {
       transform: scale(0.95);
     }
   }
-  /* Rare moments get a little delight (radio beat, founder badges). */
   .arrive {
     transition:
       opacity 280ms var(--ease-out),
@@ -237,24 +364,54 @@ body {
       transform: translateY(8px) scale(0.98);
     }
   }
+  /* The one bounce: the radio diamond arrives with a small overshoot. */
+  .pop {
+    transition:
+      opacity 160ms var(--ease-out),
+      transform 300ms var(--ease-spring);
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
 
+  /* Start hint on the play key: a ring that grows and fades, never from zero. */
   .pulse-ring {
+    position: relative;
+  }
+  .pulse-ring::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border: 3px solid var(--sign-yellow);
+    border-radius: 20px;
+    pointer-events: none;
     animation: pulse-ring 1.8s var(--ease-out) infinite;
   }
 }
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgb(232 93 38 / 0.7);
+    transform: scale(0.92);
+    opacity: 0.95;
   }
   70%,
   100% {
-    box-shadow: 0 0 0 14px rgb(232 93 38 / 0);
+    transform: scale(1.18);
+    opacity: 0;
   }
 }
 
 /* Reduced motion keeps opacity and colour, drops movement. */
 @media (prefers-reduced-motion: reduce) {
+  .press {
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+  }
+  .press:active:not(:disabled):not([aria-pressed="true"]) {
+    transform: none;
+  }
   .sheet {
     transition: opacity 200ms ease;
   }
@@ -265,18 +422,16 @@ body {
   }
   .note-in,
   .callout-in,
-  .arrive {
+  .arrive,
+  .pop {
     transition: opacity 200ms ease;
     @starting-style {
       opacity: 0;
       transform: none;
     }
   }
-  .pulse-ring {
+  .pulse-ring::after {
     animation: none;
-    box-shadow: 0 0 0 3px var(--amber);
-  }
-  .press:active:not(:disabled) {
-    transform: none;
+    inset: -5px;
   }
 }

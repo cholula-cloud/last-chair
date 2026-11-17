@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
-/** Line icons drawn for Last Chair (24px grid, currentColor stroke). */
+/** Chunky line icons drawn for Last Chair (24px grid, 2.4px round stroke, currentColor). */
 function Icon({
   children,
   size = 22,
@@ -13,7 +13,7 @@ function Icon({
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.9}
+      strokeWidth={2.4}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -109,7 +109,7 @@ export const QueueIcon = (p: P) => (
 export const SnowIcon = (p: P) => (
   <Icon {...p}>
     <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" />
-    <path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5" />
+    
   </Icon>
 );
 
@@ -119,8 +119,8 @@ export function MoodIcon({ mood, ...p }: P & { mood: number }) {
   return (
     <Icon {...p}>
       <circle cx="12" cy="12" r="8.5" />
-      <circle cx="9" cy="10" r="0.9" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="10" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="9" cy="10" r="1.3" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="10" r="1.3" fill="currentColor" stroke="none" />
       <path
         d={`M8 ${14.5 - curve / 2} Q12 ${14.5 + curve} 16 ${14.5 - curve / 2}`}
       />
@@ -140,7 +140,7 @@ export const SnowfallIcon = (p: P) => (
     <path d="M7 14a4 4 0 0 1-.4-8A5.5 5.5 0 0 1 17 7a3.5 3.5 0 0 1 .5 7z" />
     <path
       d="M8 17.5h.01M12 19.5h.01M16 17.5h.01M10 21.5h.01M14 21.5h.01"
-      strokeWidth={2.6}
+      strokeWidth={3.4}
     />
   </Icon>
 );
@@ -148,7 +148,7 @@ export const SnowfallIcon = (p: P) => (
 export const ThawIcon = (p: P) => (
   <Icon {...p}>
     <path d="M12 3.5c3 4 5 6.8 5 9.5a5 5 0 0 1-10 0c0-2.7 2-5.5 5-9.5z" />
-    <path d="M10 14.5a2 2 0 0 0 2 2" />
+    <path d="M10.2 14.6a2 2 0 0 0 1.8 1.8" />
   </Icon>
 );
 
@@ -166,3 +166,68 @@ export const LiftIcon = (p: P) => (
     <path d="M9 21h6" />
   </Icon>
 );
+
+/** Broadcast waves for the radio. */
+export const RadioWavesIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+    <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6" />
+    <path d="M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6" />
+  </Icon>
+);
+
+/** Map pin for the career pin. */
+export const PinIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 21.5c-4-4.6-6-7.7-6-10.5a6 6 0 0 1 12 0c0 2.8-2 5.9-6 10.5z" />
+    <circle cx="12" cy="11" r="2.2" />
+  </Icon>
+);
+
+/** Filled mountain with a snow cap line, for tabs and signs. */
+export const MountainIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M2.5 19.5 9.5 6.5l4.5 8 2.5-3.5 5 8.5z" fill="currentColor" />
+  </Icon>
+);
+
+/** Mountain silhouette under a crescent moon: end of the day on the hill. */
+export const MountainMoonIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M2.5 20.5 8.5 11l4 6 2.5-3 6 6.5z" fill="currentColor" />
+    <path d="M20 8.6A4.4 4.4 0 0 1 14.6 3.2a4.4 4.4 0 1 0 5.4 5.4z" />
+  </Icon>
+);
+
+/** Mug of cocoa with two curls of steam. */
+export const CocoaIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4.5 10.5h11v5.5a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4z" />
+    <path d="M15.5 12.2h1.4a2.6 2.6 0 0 1 0 5.2h-1.4" />
+    <path d="M8 3.5c-1.2 1.2 1.2 2.3 0 3.5M12 3.5c-1.2 1.2 1.2 2.3 0 3.5" />
+  </Icon>
+);
+
+/** Elevation glyph: one, two or three peaks. Decorative, takes currentColor. */
+export function PeaksGlyph({ peaks }: { peaks: 1 | 2 | 3 }) {
+  const d = {
+    1: "M3 13 14 2l11 11z",
+    2: "M1 13 8 3l5 6 5-7 9 11z",
+    3: "M0 13 5 4l4 6 5-9 5 9 4-5 5 8z",
+  }[peaks];
+  return (
+    <svg
+      viewBox="0 0 28 14"
+      width="28"
+      height="14"
+      fill="currentColor"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={d} />
+    </svg>
+  );
+}

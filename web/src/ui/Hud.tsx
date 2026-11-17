@@ -11,7 +11,7 @@ import {
   GuestsIcon,
   HomeIcon,
   MoodIcon,
-  MoonIcon,
+  MountainMoonIcon,
   PauseIcon,
   PlayIcon,
   QueueIcon,
@@ -20,10 +20,10 @@ import {
   SunIcon,
   ThawIcon,
 } from "@/ui/kit/icons";
-import { TONE_TEXT, type Tone } from "@/ui/kit/parts";
+import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 
-/** Day pass: pause stub on the left, then day, clock and cash. */
-export function TicketStrip({
+/** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
+export function TopBar({
   dayIndex,
   seasonLength,
   clockMin,
@@ -40,54 +40,49 @@ export function TicketStrip({
   notStarted: boolean;
   onTogglePause: () => void;
 }) {
-  const stubLabel = paused ? "Resume" : "Pause";
   return (
-    <div className="ticket paper flex h-[62px] w-full items-stretch rounded-[10px] sm:w-[400px]">
-      <div className="flex w-[72px] shrink-0 items-center justify-center rounded-l-[10px] bg-pine">
-        <button
-          type="button"
-          onClick={onTogglePause}
-          aria-label={paused ? "Resume day" : "Pause day"}
-          className={`press flex h-[50px] w-[58px] flex-col items-center justify-center rounded-lg text-paper hover:bg-white/10 active:bg-white/15 ${
-            notStarted ? "pulse-ring bg-amber-fill" : ""
-          }`}
-        >
-          {paused ? <PlayIcon size={20} /> : <PauseIcon size={20} />}
-          <span className="mt-0.5 text-[0.72rem] font-semibold leading-none">
-            {stubLabel}
-          </span>
-        </button>
-      </div>
-      <div className="flex min-w-0 flex-1 items-center gap-3 border-l-[1.5px] border-dashed border-ink/25 pl-3 pr-3.5">
+    <div className="flex w-full items-center gap-2 sm:w-[420px]">
+      <button
+        type="button"
+        onClick={onTogglePause}
+        aria-label={paused ? "Resume day" : "Pause day"}
+        className={`sign sign-btn press flex size-12 shrink-0 items-center justify-center [--lift:4px] ${
+          notStarted ? "pulse-ring" : ""
+        }`}
+      >
+        {paused ? <PlayIcon size={22} /> : <PauseIcon size={22} />}
+      </button>
+      <div className="chip flex h-12 min-w-0 flex-1 items-center gap-2 px-3">
         <div className="flex flex-col leading-tight">
-          <span className="whitespace-nowrap text-[0.8rem] font-semibold text-ink">
+          <span className="whitespace-nowrap text-[0.9rem] font-extrabold tabular-nums">
             Day {dayIndex}/{seasonLength}
           </span>
-          <span className="text-[0.75rem] text-ink-soft">
+          <span className="text-[0.75rem] font-bold text-ink-soft">
             {weekdayLabel(dayIndex)}
           </span>
         </div>
         <ClockText text={formatClock(clockMin)} />
-        <span className="h-8 w-px bg-ink/15" aria-hidden="true" />
-        <span
-          className={`num min-w-[4.6rem] text-right text-[1.45rem] font-semibold ${cash < 0 ? "text-barn" : "text-pine"}`}
-        >
-          {formatMoney(cash)}
-        </span>
       </div>
+      <span
+        className={`chip display flex h-12 min-w-[5.6rem] shrink-0 items-center justify-center px-3 text-[1.3rem] tabular-nums ${
+          cash < 0 ? "bg-barn-deep text-white" : "bg-gold"
+        }`}
+      >
+        {formatMoney(cash)}
+      </span>
     </div>
   );
 }
 
-/** "6:00 AM" with the meridiem set small, so the time never wraps. */
+/** "6:00 am" with the meridiem set small, so the time never wraps. */
 function ClockText({ text }: { text: string }) {
   const [time, meridiem] = text.split(" ");
   return (
-    <span className="num ml-auto whitespace-nowrap text-[1.45rem] font-semibold text-ink">
+    <span className="display ml-auto min-w-[4.6rem] whitespace-nowrap text-right text-[1.25rem] tabular-nums">
       {time}
       {meridiem && (
-        <span className="ml-0.5 text-[0.8rem] font-semibold text-ink-soft">
-          {meridiem}
+        <span className="ml-0.5 font-sans text-[0.8rem] font-extrabold text-ink-soft">
+          {meridiem.toLowerCase()}
         </span>
       )}
     </span>
@@ -119,27 +114,27 @@ export function MorningNote({
   return (
     <aside
       aria-label="Morning note"
-      className="paper paper-tilt note-in pointer-events-auto flex w-full max-w-[400px] items-start gap-2.5 rounded-[10px] py-2 pl-3 pr-1"
+      className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-start gap-2.5 py-2 pl-2.5 pr-2"
     >
-      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-pine text-paper">
+      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink">
         {w.icon}
       </span>
       <div className="min-w-0 flex-1 py-0.5">
-        <p className="text-[0.82rem] leading-snug text-ink">
-          <span className="font-semibold">{w.label}.</span> {headline}
+        <p className="text-[0.88rem] font-bold leading-snug">
+          <span className="font-extrabold">{w.label}.</span> {headline}
         </p>
         {overnightLine && (
-          <p className="num mt-0.5 text-[0.8rem] font-semibold text-ink-soft">{overnightLine}</p>
+          <p className="mt-0.5 text-[0.82rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
         )}
         {crewLine && (
-          <p className="pencil mt-0.5 text-[0.85rem] text-pine">{crewLine}</p>
+          <p className="mt-0.5 text-[0.88rem] font-extrabold text-sign-green">{crewLine}</p>
         )}
       </div>
       <button
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss morning note"
-        className="press flex size-11 shrink-0 items-center justify-center rounded-full text-ink-soft hover:bg-ink/5"
+        className="key key-sm press flex size-11 shrink-0 items-center justify-center"
       >
         <CloseIcon size={18} />
       </button>
@@ -147,15 +142,15 @@ export function MorningNote({
   );
 }
 
-/** Small amber callout under the ticket stub on the very first morning. */
+/** Small navy callout under the play key on the very first morning. */
 export function StartCallout() {
   return (
-    <p className="callout-in pointer-events-none relative ml-2 mt-1 w-max rounded-lg bg-amber-fill px-3 py-1.5 text-[0.82rem] font-semibold text-white shadow-md">
+    <p className="callout-in pointer-events-none relative ml-2 mt-2.5 w-max rounded-xl border-[3px] border-ink bg-ink px-3 py-1.5 text-[0.88rem] font-extrabold text-white">
       <span
-        className="absolute -top-1.5 left-[1.4rem] size-3 rotate-45 bg-amber-fill"
+        className="absolute -top-2 left-[1.15rem] size-3 rotate-45 bg-ink"
         aria-hidden="true"
       />
-      <span className="relative">Tap Resume to open the hill</span>
+      <span className="relative">Tap the play key to open the hill</span>
     </p>
   );
 }
@@ -181,7 +176,7 @@ function worse(a: Tone, b: Tone): Tone {
   return rank.indexOf(a) > rank.indexOf(b) ? a : b;
 }
 
-/** Conditions board: queue, snow, mood with icon, number and a word. */
+/** Conditions board: queue, snow, mood with icon, number and a word chip. */
 export function ConditionsBoard({
   avgQueue,
   snowQuality,
@@ -244,7 +239,7 @@ export function ConditionsBoard({
   return (
     <section
       aria-label="Conditions"
-      className="paper pointer-events-auto grid w-full grid-cols-3 divide-x divide-dashed divide-ink/20 rounded-xl py-1.5"
+      className="panel pointer-events-auto grid w-full grid-cols-3 divide-x-2 divide-snow-2 py-2"
     >
       {items.map((c) => (
         <div
@@ -253,16 +248,18 @@ export function ConditionsBoard({
           aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
           role="group"
         >
-          <span className={`shrink-0 ${TONE_TEXT[c.tone]}`}>{c.icon}</span>
-          <div className="flex min-w-0 flex-col leading-tight">
-            <span className="num text-[1.2rem] font-semibold text-ink">
+          <span className="shrink-0 text-ink">{c.icon}</span>
+          <div className="flex min-w-0 flex-col items-start gap-0.5 leading-none">
+            <span className="display text-[1.15rem] tabular-nums">
               {c.value}
             </span>
-            <span className="truncate text-[0.72rem] text-ink-soft">
-              <span className={`font-semibold ${TONE_TEXT[c.tone]}`}>
-                {c.state}
-              </span>
-              {c.bare ? "" : ` ${c.label.toLowerCase()}`}
+            <span
+              className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none ${TONE_CHIP[c.tone]}`}
+            >
+              {c.state}
+              {c.bare ? null : (
+                <span className="sr-only">{` ${c.label.toLowerCase()}`}</span>
+              )}
             </span>
           </div>
         </div>
@@ -276,30 +273,26 @@ function BarButton({
   label,
   onClick,
   active,
-  className = "",
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
   active?: boolean;
-  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`press paper flex h-14 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[0.82rem] font-semibold ${
-        active ? "ring-[2.5px] ring-amber" : ""
-      } ${className}`}
+      className="key press flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.85rem] font-extrabold [--lift:4px]"
     >
-      <span className="text-pine">{icon}</span>
+      {icon}
       {label}
     </button>
   );
 }
 
-/** Thumb-zone action row: Home, Build, Guests, and the amber Close hill. */
+/** Thumb-zone action row: Home, Build, Guests, and the barn-red Close hill. */
 export function ActionBar({
   buildActive,
   onBuild,
@@ -318,7 +311,7 @@ export function ActionBar({
     >
       <Link
         href="/"
-        className="press flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl bg-navy/70 text-[0.72rem] font-semibold text-paper ring-1 ring-white/15 backdrop-blur"
+        className="key press flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 text-[0.8rem] font-extrabold [--lift:4px]"
       >
         <HomeIcon size={20} />
         Home
@@ -333,10 +326,10 @@ export function ActionBar({
       <button
         type="button"
         onClick={onCloseHill}
-        className="press btn-primary flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 rounded-xl text-[0.88rem] font-bold"
+        className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"
       >
-        <MoonIcon />
-        Close hill
+        <MountainMoonIcon size={22} />
+        <span className="display text-[1.2rem]">Close hill</span>
       </button>
     </nav>
   );

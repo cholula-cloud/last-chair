@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
+import { MountainIcon } from "@/ui/kit/icons";
 
-/** Section header: serif small capitals on a pine plate. */
-export function PlateHeading({
+/** Section title inside a panel: display face, with an optional quiet aside on the right. */
+export function SectionHeading({
   children,
   aside,
 }: {
@@ -9,49 +10,93 @@ export function PlateHeading({
   aside?: ReactNode;
 }) {
   return (
-    <div className="mb-2.5 mt-5 flex items-center gap-3 first:mt-1">
-      <h3 className="plate rounded-[5px] px-2.5 py-0.5 text-[0.95rem]">
-        {children}
-      </h3>
-      <span className="h-px flex-1 bg-ink/15" aria-hidden="true" />
-      {aside && <span className="text-xs text-ink-soft">{aside}</span>}
+    <div className="mb-2.5 mt-5 flex items-baseline justify-between gap-3 first:mt-0">
+      <h3 className="display text-[1.3rem] text-ink">{children}</h3>
+      {aside && (
+        <span className="text-[0.82rem] font-bold text-ink-soft">{aside}</span>
+      )}
     </div>
   );
 }
 
 export type Tone = "good" | "watch" | "bad" | "plain";
 
+/** Text colours that clear 4.5:1 on white and on snow-2. Watch has no safe yellow text, so it stays navy. */
 export const TONE_TEXT: Record<Tone, string> = {
-  good: "text-pine",
-  watch: "text-ochre",
-  bad: "text-barn",
+  good: "text-sign-green",
+  watch: "text-ink",
+  bad: "text-barn-deep",
   plain: "text-ink",
 };
 
-/** Large ledger number with a small label underneath. */
+/** Small status chip fills: green, yellow, barn. Each pairs with a label colour that clears 4.5:1. */
+export const TONE_CHIP: Record<Tone, string> = {
+  good: "bg-sign-green text-white",
+  watch: "bg-sign-yellow text-ink",
+  bad: "bg-barn-deep text-white",
+  plain: "bg-snow-2 text-ink",
+};
+
+/** Road-sign surface: coloured fill, outer navy outline, inner rim. */
+export function Sign({
+  tone = "green",
+  className = "",
+  innerClassName = "",
+  tab,
+  children,
+}: {
+  tone?: "green" | "brown";
+  className?: string;
+  innerClassName?: string;
+  /** Small white tab chip overlapping the top edge, with a mountain glyph. */
+  tab?: ReactNode;
+  children: ReactNode;
+}) {
+  const toneClass =
+    tone === "brown" ? "sign-brown" : "";
+  return (
+    <div className={`sign ${toneClass} ${tab ? "mt-5" : ""} ${className}`}>
+      {tab && (
+        <span className="chip absolute -top-[19px] left-4 z-10 flex h-7 items-center gap-1.5 px-2.5 text-[0.82rem] font-extrabold leading-none">
+          <MountainIcon size={16} />
+          {tab}
+        </span>
+      )}
+      <div className={`sign-inner ${innerClassName}`}>{children}</div>
+    </div>
+  );
+}
+
+/** Large display number with a small label underneath. `onSign` is for the white-on-green summary sign. */
 export function StatTile({
   label,
   value,
   tone = "plain",
   note,
+  onSign = false,
 }: {
   label: string;
   value: ReactNode;
   tone?: Tone;
   note?: ReactNode;
+  onSign?: boolean;
 }) {
   return (
     <div className="flex min-w-0 flex-col items-start">
       <span
-        className={`num text-[2rem] font-semibold leading-none ${TONE_TEXT[tone]}`}
+        className={`display tabular-nums text-[1.75rem] ${onSign ? "text-white" : TONE_TEXT[tone]}`}
       >
         {value}
       </span>
-      <span className="mt-1.5 text-[0.8rem] font-medium text-ink-soft">
+      <span
+        className={`mt-1 text-[0.82rem] font-bold leading-tight ${onSign ? "text-sign-green-ink" : "text-ink-soft"}`}
+      >
         {label}
       </span>
       {note && (
-        <span className={`text-[0.75rem] font-semibold ${TONE_TEXT[tone]}`}>
+        <span
+          className={`text-[0.78rem] font-extrabold leading-tight ${onSign ? "text-sign-green-ink" : TONE_TEXT[tone]}`}
+        >
           {note}
         </span>
       )}
@@ -59,7 +104,7 @@ export function StatTile({
   );
 }
 
-/** Kraft price tag. */
+/** Price chip. */
 export function PriceTag({
   children,
   muted = false,
@@ -69,7 +114,7 @@ export function PriceTag({
 }) {
   return (
     <span
-      className={`tag num inline-flex h-7 shrink-0 items-center rounded-r-[5px] pr-2.5 text-[0.95rem] font-semibold ${
+      className={`inline-flex h-7 shrink-0 items-center rounded-[10px] border-2 border-ink bg-snow-2 px-2.5 text-[1rem] font-extrabold tabular-nums text-ink ${
         muted ? "opacity-60" : ""
       }`}
     >
@@ -84,11 +129,13 @@ export type ChoiceOption<T extends string> = {
   detail?: string;
   /** Expected effect, one short line under the detail (e.g. "~27 skiers"). */
   note?: string;
+  /** Small decorative glyph above the label (elevation peaks for fares). */
+  glyph?: ReactNode;
 };
 
 /**
- * Big segmented tiles (≥56 px). Buttons with aria-pressed so each reads as
- * a toggle; the group carries the label.
+ * Big raised keys (at least 76 px). Buttons with aria-pressed so each reads as a
+ * toggle; the group carries the label. The selected key turns green and sinks.
  */
 export function ChoiceTiles<T extends string>({
   label,
@@ -102,7 +149,7 @@ export function ChoiceTiles<T extends string>({
   onPick: (v: T) => void;
 }) {
   return (
-    <div role="group" aria-label={label} className="grid grid-cols-3 gap-2">
+    <div role="group" aria-label={label} className="grid grid-cols-3 gap-2.5">
       {options.map((opt) => {
         const on = opt.value === value;
         return (
@@ -111,44 +158,40 @@ export function ChoiceTiles<T extends string>({
             type="button"
             aria-pressed={on}
             onClick={() => onPick(opt.value)}
-            className={`press relative flex min-h-[76px] flex-col items-center justify-center rounded-xl border-2 px-1.5 py-2 text-center ${
-              on
-                ? "border-amber bg-[#fff6ec] text-ink shadow-[0_2px_0_var(--amber)]"
-                : "border-ink/15 bg-paper-deep/60 text-ink-soft hover:border-ink/30"
-            }`}
+            className="key press relative flex min-h-[84px] flex-col items-center justify-center px-1.5 py-2 text-center"
           >
             {on && (
               <span
-                className="absolute -top-2 right-1.5 flex size-5 items-center justify-center rounded-full bg-amber-fill text-white"
+                className="absolute -right-2 -top-2.5 flex size-6 items-center justify-center rounded-full border-2 border-ink bg-white text-ink"
                 aria-hidden="true"
               >
                 <svg
                   viewBox="0 0 12 12"
-                  width="11"
-                  height="11"
+                  width="12"
+                  height="12"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <path d="M2.5 6.2 5 8.5l4.5-5" />
+                  <path d="M2.5 6.4 5 8.8l4.5-5.2" />
                 </svg>
               </span>
             )}
-            <span
-              className={`text-[0.98rem] ${on ? "font-bold" : "font-semibold"}`}
-            >
+            {opt.glyph && <span className="mb-0.5">{opt.glyph}</span>}
+            <span className="text-[1rem] font-extrabold leading-tight">
               {opt.label}
             </span>
             {opt.detail && (
-              <span className="num mt-0.5 text-[0.8rem] font-medium">
+              <span className="mt-0.5 text-[0.85rem] font-bold tabular-nums">
                 {opt.detail}
               </span>
             )}
             {opt.note && (
               <span
-                className={`mt-0.5 text-[0.75rem] font-semibold leading-tight ${
-                  on ? "text-pine" : "text-ink-soft"
-                }`}
+                data-muted
+                className="mt-0.5 text-[0.75rem] font-bold leading-tight"
               >
                 {opt.note}
               </span>
@@ -160,19 +203,24 @@ export function ChoiceTiles<T extends string>({
   );
 }
 
-/** The one amber action on a screen. */
+/** The one big action on a screen: a green guide-sign button, or brown for the end-of-day action. */
 export function PrimaryButton({
   children,
   className = "",
+  tone = "green",
   ...rest
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  tone?: "green" | "brown";
+}) {
   return (
     <button
       type="button"
-      className={`press btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-[1.05rem] font-bold ${className}`}
+      className={`sign sign-btn press block w-full ${tone === "brown" ? "sign-brown" : ""} ${className}`}
       {...rest}
     >
-      {children}
+      <span className="sign-inner display flex min-h-[42px] items-center justify-center gap-2 px-3 text-[1.3rem] short:min-h-[34px]">
+        {children}
+      </span>
     </button>
   );
 }
@@ -192,23 +240,28 @@ export function DeltaChip({
   what: string;
 }) {
   const tone =
-    direction === "up" ? "text-pine" : direction === "down" ? "text-barn" : "text-ink-soft";
-  const word = direction === "up" ? "up" : direction === "down" ? "down" : "unchanged";
+    direction === "up"
+      ? "text-sign-green"
+      : direction === "down"
+        ? "text-barn-deep"
+        : "text-ink-soft";
+  const word =
+    direction === "up" ? "up" : direction === "down" ? "down" : "unchanged";
   return (
-    <span className={`num text-[0.8rem] font-semibold ${tone}`}>
+    <span className={`text-[0.85rem] font-extrabold tabular-nums ${tone}`}>
       <span className="sr-only">{`${what} ${word}`}</span>
       {direction === "same" ? (
         <span aria-hidden="true">same</span>
       ) : (
         <span aria-hidden="true">
-          {direction === "up" ? "\u25B2" : "\u25BC"} {children}
+          {direction === "up" ? "▲" : "▼"} {children}
         </span>
       )}
     </span>
   );
 }
 
-/** Full-width disclosure button (≥48 px). Colour-only state change; the chevron flips without animating. */
+/** Full-width disclosure key (at least 48 px). The chevron flips without animating. */
 export function DisclosureButton({
   open,
   controls,
@@ -226,18 +279,16 @@ export function DisclosureButton({
       aria-expanded={open}
       aria-controls={controls}
       onClick={onToggle}
-      className={`press flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-2 px-3.5 text-left text-[0.98rem] font-semibold text-ink ${
-        open ? "border-amber bg-[#fff6ec]" : "border-ink/15 bg-paper-deep/60"
-      }`}
+      className="key press flex min-h-12 w-full items-center justify-between gap-3 px-3.5 text-left text-[1rem] font-extrabold"
     >
       <span>{children}</span>
       <svg
         viewBox="0 0 12 12"
-        width="14"
-        height="14"
+        width="16"
+        height="16"
         fill="none"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
         className={open ? "rotate-180" : ""}
@@ -247,4 +298,9 @@ export function DisclosureButton({
       </svg>
     </button>
   );
+}
+
+/** Game copy is written with spaced em dashes; the UI shows commas instead. */
+export function tidy(text: string): string {
+  return text.replace(/\s+\u2014\s+/g, ", ").replace(/\u2014/g, "none");
 }
