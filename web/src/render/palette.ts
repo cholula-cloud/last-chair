@@ -12,6 +12,8 @@ export const PALETTE = {
   snowShade: "#bccbec",
   snowWarm: "#fff4e4",
   snowOld: "#c8cfd9",
+  /** Scraped, icy snow on a worn trail segment. */
+  snowIce: "#8995a8",
   rock: "#5d5650",
   earth: "#7a6850",
   pineDeep: "#1f4a3d",

@@ -10,6 +10,7 @@ import {
   checkDescentValid,
   type LiftAnchor,
 } from "@/game/descent";
+import { decodeSnowKey, snowKey } from "@/game/snow";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
 import { Atmosphere } from "./Atmosphere";
@@ -107,6 +108,10 @@ export function MountainScene() {
   const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const buildings = useGameStore((s) => s.buildings);
   const gunsVisible = useGameStore((s) => s.gunsVisible);
+  const gunReach = useGameStore((s) => s.gunReach);
+  // Snapped trail snow: changes only when the look does, so the terrain repaints rarely.
+  const trailKey = useGameStore((s) => snowKey(s.lifts));
+  const trails = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
   const groomVisible = useGameStore((s) => s.groomVisible);
 
   // Placements of the followed guest, shared between <Guests> and the camera.
@@ -141,19 +146,29 @@ export function MountainScene() {
   return (
     <>
       <Atmosphere />
-      <Terrain snowQuality={terrainSnow} snowDepth={snowDepth} />
+      <Terrain
+        snowQuality={terrainSnow}
+        snowDepth={snowDepth}
+        trails={trails}
+        anchors={confirmedLifts.map((l) => l.anchor)}
+      />
       <Road />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>
         <Village buildings={buildings} />
         {(gunsVisible || buildings.includes("snow_guns")) && (
-          <SnowGuns active={gunsVisible} />
+          <SnowGuns reach={gunReach} anchor={primaryAnchor} />
         )}
         <Trees anchors={clearings} />
 
         {confirmedLifts.map((lift, i) => (
           <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
-            <TrailRibbon kind="built" anchor={lift.anchor} groomed={groomVisible} />
+            <TrailRibbon
+              kind="built"
+              anchor={lift.anchor}
+              groomed={groomVisible}
+              trail={trails[i] ?? trails[0]}
+            />
             <Lift anchor={lift.anchor} previewInvalid={false} type={lift.type} />
           </group>
         ))}

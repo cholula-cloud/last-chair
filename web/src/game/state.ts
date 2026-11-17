@@ -1,6 +1,7 @@
 import { LIFT_PREVIEW_SLOTS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
 import { ZERO_TERMS } from "./satisfaction";
+import { START_DEPTH, START_QUALITY, deriveSnow, freshTrail, trailFromGlobals, type Trail } from "./snow";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import type {
   BuildingId,
@@ -23,6 +24,8 @@ export type LiftSlot = {
   queue: string[];
   /** Dispatch accumulator: whole units dispatch one guest each (see lifts.ts). */
   dispatchCredit: number;
+  /** Snow on this lift's trail, top (index 0) to bottom (see snow.ts). */
+  trail: Trail;
 };
 
 /** Everything that is saved between sessions. */
@@ -34,8 +37,12 @@ export type PersistedState = {
   cash: number;
   fare: FarePreset;
   snow: SnowPreset;
+  /** Derived: mean of every open trail segment (`deriveSnow`). Never set by hand. */
   snowQuality: number;
+  /** Derived: mean of every open trail segment (`deriveSnow`). Never set by hand. */
   snowDepth: number;
+  /** Fraction of the trail from the bottom the guns covered last night (0 = not fired). */
+  gunReach: number;
   guests: Guest[];
   followId: string | null;
   pendingFare: FarePreset;
@@ -79,6 +86,7 @@ export function defaultLifts(): LiftSlot[] {
       confirmed: true,
       queue: [],
       dispatchCredit: 0,
+      trail: freshTrail(),
     },
   ];
 }
@@ -92,8 +100,9 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     cash: 12000,
     fare: "balanced",
     snow: "mid",
-    snowQuality: 0.55,
-    snowDepth: 0.45,
+    snowQuality: START_QUALITY,
+    snowDepth: START_DEPTH,
+    gunReach: 0,
     guests: [],
     followId: null,
     nightRecap: null,
@@ -133,6 +142,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     snow: state.snow,
     snowQuality: state.snowQuality,
     snowDepth: state.snowDepth,
+    gunReach: state.gunReach,
     guests: state.guests,
     followId: state.followId,
     pendingFare: state.pendingFare,
@@ -172,7 +182,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
@@ -186,6 +196,8 @@ export const SAVE_VERSION = 4;
  * are "gone". Versions below 4 have no per-guest wait or snow tallies (they
  * start at 0, so a guest mid-day is scored from the next ride on) and no
  * satisfaction breakdown on a saved night recap (it loads as all zeros).
+ * Versions below 5 have one global snow depth and quality: every lift gets a
+ * trail of segments all set to those values, and `gunReach` is 0.
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -237,6 +249,16 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
     if (p.nightRecap && !p.nightRecap.breakdown) {
       p.nightRecap = { ...p.nightRecap, breakdown: { ...ZERO_TERMS } };
     }
+  }
+  if (fromVersion < 5) {
+    const depth = p.snowDepth ?? START_DEPTH;
+    const quality = p.snowQuality ?? START_QUALITY;
+    p.lifts = (p.lifts ?? fresh.lifts).map((l) => ({
+      ...l,
+      trail: l.trail ?? trailFromGlobals(depth, quality),
+    }));
+    p.gunReach = p.gunReach ?? 0;
+    Object.assign(p, deriveSnow(p.lifts));
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

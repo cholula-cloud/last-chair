@@ -5,7 +5,10 @@ import * as THREE from "three";
 import { ROAD_Z } from "./layout";
 import { smoothstep } from "./math";
 import { PALETTE, SUN_DIR } from "./palette";
+import type { Trail } from "@/game/snow";
+import type { LiftAnchor } from "@/game/descent";
 import { fbm, terrainHeight } from "./terrainShape";
+import { sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
 
 const NX = 150;
 const NZ = 124;
@@ -58,6 +61,8 @@ const C = {
   shade: new THREE.Color(PALETTE.snowShade),
   warm: new THREE.Color(PALETTE.snowWarm),
   old: new THREE.Color(PALETTE.snowOld),
+  ice: new THREE.Color(PALETTE.snowIce),
+  white: new THREE.Color(PALETTE.white),
   rock: new THREE.Color(PALETTE.rock),
   earth: new THREE.Color(PALETTE.earth),
 };
@@ -71,13 +76,29 @@ function paint(
   g: THREE.BufferGeometry,
   snowQuality: number,
   snowDepth: number,
+  trails: readonly Trail[],
+  influence: readonly TrailInfluence[],
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
   const nor = g.attributes.normal as THREE.BufferAttribute;
   const col = g.attributes.color as THREE.BufferAttribute;
   const c = new THREE.Color();
-  const thin = 1 - Math.max(0, Math.min(1, snowDepth));
   for (let i = 0; i < pos.count; i++) {
+    // Near a trail the segment values replace the hill-wide means (strongest trail wins).
+    let w = 0;
+    let q = snowQuality;
+    let depth = snowDepth;
+    let cover = 1;
+    for (let k = 0; k < influence.length && k < trails.length; k++) {
+      if (influence[k].w[i] > w) {
+        w = influence[k].w[i];
+        const t = influence[k].t[i];
+        q = snowQuality + (sampleSegments(trails[k], t, "quality") - snowQuality) * w;
+        depth = snowDepth + (sampleSegments(trails[k], t, "depth") - snowDepth) * w;
+        cover = 1 + (sampleSegments(trails[k], t, "coverage") - 1) * w;
+      }
+    }
+    const thin = 1 - Math.max(0, Math.min(1, depth));
     const x = pos.getX(i);
     const y = pos.getY(i);
     const z = pos.getZ(i);
@@ -99,7 +120,12 @@ function paint(
     // Sun-facing slopes go a touch warm.
     c.lerp(C.warm, Math.max(0, Math.min(0.6, (sun - 0.72) * 2.4)));
     // Tired snow greys out.
-    c.lerp(C.old, Math.max(0, 0.75 - snowQuality) * 0.7);
+    c.lerp(C.old, Math.max(0, 0.75 - q) * 0.7);
+    // Worn trail segments go grey-blue ice; a fresh groom reads a clean bright white.
+    if (w > 0) {
+      c.lerp(C.ice, w * Math.max(0, Math.min(1, (0.55 - q) / 0.3)) * 0.85);
+      c.lerp(C.white, w * smoothstep(0.62, 0.88, q) * 0.7);
+    }
 
     // Rock on steep faces.
     const steep = 1 - ny + fbm(x * 1.7, z * 1.7) * 0.12;
@@ -107,7 +133,9 @@ function paint(
 
     // Bare earth: thin cover shows first low on the hill and on the valley floor.
     const n = fbm(x * 0.9 + 3.1, z * 0.9 - 7.7);
-    const bare = (thin - 0.45) * 1.6 - 0.42 - y * 0.1 + n * 0.7;
+    const bareDepth = (thin - 0.45) * 1.6 - 0.42 - y * 0.1 + n * 0.7;
+    const bareCover = (1 - cover) * 1.6 - 0.35 + (n - 0.5) * 0.6;
+    const bare = Math.max(bareDepth, bareCover);
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
 
@@ -119,17 +147,30 @@ function paint(
 export function Terrain({
   snowQuality,
   snowDepth,
+  trails,
+  anchors,
 }: {
   snowQuality: number;
   snowDepth: number;
+  /** Trail snow, one per entry of `anchors` (already snapped, see `snowKey`). */
+  trails: readonly Trail[];
+  anchors: readonly LiftAnchor[];
 }) {
   const geometry = useMemo(() => buildGeometry(), []);
   const q = Math.round(snowQuality * 20) / 20;
   const d = Math.round(snowDepth * 20) / 20;
+  const anchorKey = anchors.map((a) => `${a.x},${a.z}`).join("|");
+  // Which vertices sit on which trail never changes while the lifts do not.
+  const influence = useMemo(
+    () => anchors.map((a) => trailInfluence(a, geometry.attributes.position.array)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [geometry, anchorKey],
+  );
 
+  // Repaints only when the snapped snow changes: once a night, then now and then by day.
   useLayoutEffect(() => {
-    paint(geometry, q, d);
-  }, [geometry, q, d]);
+    paint(geometry, q, d, trails, influence);
+  }, [geometry, q, d, trails, influence]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 

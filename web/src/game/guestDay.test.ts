@@ -1,3 +1,4 @@
+import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
 import { LIFT_PREVIEW_SLOTS } from "./descent";
 import { PERSONAS } from "./personas";
@@ -28,7 +29,7 @@ function freshDay(seed: number, dayIndex: number, chair = false): GameState {
   const lifts = chair
     ? [
         ...base.lifts,
-        { type: "chair" as const, anchor: LIFT_PREVIEW_SLOTS[1], confirmed: true, queue: [], dispatchCredit: 0 },
+        { type: "chair" as const, anchor: LIFT_PREVIEW_SLOTS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
       ]
     : base.lifts;
   return {
@@ -126,7 +127,7 @@ describe("guest day script", () => {
       ...freshDay(1, WEEKDAY),
       clockMin: LIFT_CLOSE_MIN - 1,
       guests: [queued("a", 0), queued("b", 3)],
-      lifts: freshDay(1, WEEKDAY).lifts.map((l) => ({ ...l, queue: ["a", "b"], dispatchCredit: 0 })),
+      lifts: freshDay(1, WEEKDAY).lifts.map((l) => ({ ...l, queue: ["a", "b"], dispatchCredit: 0, trail: freshTrail() })),
     };
     const out = rules.tick(s, 1000);
     expect(out.guests.map((g) => g.state)).toEqual(["depart", "depart"]);

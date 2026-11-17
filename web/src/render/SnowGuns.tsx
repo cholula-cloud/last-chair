@@ -4,26 +4,56 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { bakeKit, LIFT_TOY_SCALE, METERS_TO_WORLD, mergePlaced, placeKit, useKit } from "./kit";
+import type { LiftAnchor } from "@/game/descent";
 import { terrainHeight } from "./terrainShape";
+import { trailPoint } from "./trail";
 
-const GUNS: { x: number; z: number; yaw: number }[] = [
-  { x: -2.2, z: 0.2, yaw: 0.9 },
-  { x: 1.6, z: -0.4, yaw: -0.6 },
+/** Guns stand beside the trail at these positions along it (0 = lift top, 1 = lodge). */
+const GUN_SPOTS: { t: number; side: number }[] = [
+  { t: 0.78, side: 0.75 },
+  { t: 0.42, side: -0.75 },
 ];
+type Gun = { x: number; z: number; yaw: number; elevation: number };
+
+function placeGuns(anchor: LiftAnchor): Gun[] {
+  return GUN_SPOTS.map(({ t, side }) => {
+    const c = trailPoint(t, anchor);
+    const a = trailPoint(t - 0.02, anchor);
+    const b = trailPoint(t + 0.02, anchor);
+    const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    const nx = -(b.z - a.z) / len;
+    const nz = (b.x - a.x) / len;
+    // Face the trail.
+    return {
+      x: c.x + nx * side,
+      z: c.z + nz * side,
+      yaw: Math.atan2(-nx * side, -nz * side),
+      elevation: 1 - t,
+    };
+  });
+}
 const PUFFS = 14;
 const SCALE = METERS_TO_WORLD * LIFT_TOY_SCALE;
 /** Kit fan nozzle height (5.6 m) in world units. */
 const NOZZLE_Y = 5.6 * SCALE;
 
 /** Kit tower snow guns with a plume when running. */
-export function SnowGuns({ active }: { active: boolean }) {
+export function SnowGuns({
+  reach,
+  anchor,
+}: {
+  /** Fraction of the trail from the bottom the guns covered last night; 0 = off. */
+  reach: number;
+  anchor: LiftAnchor;
+}) {
+  const GUNS = useMemo(() => placeGuns(anchor), [anchor]);
   const gun = bakeKit(useKit("snow-gun")).body;
   const geo = useMemo(
     () =>
       mergePlaced(
         GUNS.map((g) => placeKit(gun, g.x, terrainHeight(g.x, g.z) - 0.02, g.z, g.yaw, SCALE)),
       ),
-    [gun],
+    [gun, GUNS],
   );
   useEffect(() => () => geo.dispose(), [geo]);
 
@@ -33,11 +63,13 @@ export function SnowGuns({ active }: { active: boolean }) {
   useFrame(({ clock }) => {
     const m = puffs.current;
     if (!m) return;
-    m.visible = active;
-    if (!active) return;
+    // Plume only from guns whose stretch of trail is within reach.
+    const firing = GUNS.filter((g) => g.elevation <= reach + 1e-9);
+    m.visible = firing.length > 0;
+    if (firing.length === 0) return;
     const t = clock.elapsedTime;
     let k = 0;
-    for (const g of GUNS) {
+    for (const g of firing) {
       const y = terrainHeight(g.x, g.z) + NOZZLE_Y;
       const dx = Math.sin(g.yaw);
       const dz = Math.cos(g.yaw);
@@ -53,6 +85,7 @@ export function SnowGuns({ active }: { active: boolean }) {
         m.setMatrixAt(k++, dummy.matrix);
       }
     }
+    m.count = k;
     m.instanceMatrix.needsUpdate = true;
   });
 

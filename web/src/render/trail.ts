@@ -65,3 +65,61 @@ export function distSqToPolyline(px: number, pz: number, pts: XZ[]): number {
 export function distSqToLiftLine(px: number, pz: number, anchor: LiftAnchor): number {
   return distSqToSegment(px, pz, LIFT_BASE.x, LIFT_BASE.z, anchor.x, anchor.z);
 }
+
+export type TrailInfluence = {
+  /** 1 on the trail centre line, fading to 0 beside it, per vertex. */
+  w: Float32Array;
+  /** Position along the trail per vertex: 0 at the lift top, 1 at the lodge. */
+  t: Float32Array;
+};
+
+/** For each vertex of a position buffer: how strongly and where along `anchor`'s trail it sits. */
+export function trailInfluence(
+  anchor: LiftAnchor,
+  positions: ArrayLike<number>,
+  core = 0.5,
+  fade = 1.05,
+  n = 40,
+): TrailInfluence {
+  const pts = trailPolyline(anchor, n);
+  const count = positions.length / 3;
+  const w = new Float32Array(count);
+  const t = new Float32Array(count);
+  for (let v = 0; v < count; v++) {
+    const px = positions[v * 3];
+    const pz = positions[v * 3 + 2];
+    let best = Infinity;
+    let bestT = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = pts[i].x;
+      const az = pts[i].z;
+      const dx = pts[i + 1].x - ax;
+      const dz = pts[i + 1].z - az;
+      const lenSq = dx * dx + dz * dz || 1e-6;
+      const u = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
+      const d = (px - (ax + u * dx)) ** 2 + (pz - (az + u * dz)) ** 2;
+      if (d < best) {
+        best = d;
+        bestT = (i + u) / n;
+      }
+    }
+    const d = Math.sqrt(best);
+    const k = Math.max(0, Math.min(1, (d - core) / (fade - core)));
+    w[v] = 1 - k * k * (3 - 2 * k);
+    t[v] = bestT;
+  }
+  return { w, t };
+}
+
+/** A snow value interpolated between segment centres at position t (0 top, 1 bottom). */
+export function sampleSegments(
+  segments: readonly { depth: number; quality: number; coverage: number }[],
+  t: number,
+  key: "depth" | "quality" | "coverage",
+): number {
+  const n = segments.length;
+  const f = Math.max(0, Math.min(n - 1, t * n - 0.5));
+  const i = Math.floor(f);
+  const j = Math.min(n - 1, i + 1);
+  return lerp(segments[i][key], segments[j][key], f - i);
+}

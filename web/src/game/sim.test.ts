@@ -20,6 +20,7 @@ import {
 import { PERSONAS, skiMinutes } from "./personas";
 import { ZERO_TERMS, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import { createRng } from "./rng";
+import { freshTrail, type Trail } from "./snow";
 import {
   ARRIVAL_EARLIEST_MIN,
   ARRIVAL_LATEST_MIN,
@@ -169,11 +170,12 @@ describe("rollMorningWeather", () => {
 });
 
 describe("applyOvernight", () => {
+  // Snow numbers per segment are tested in snow.test.ts; this block covers the
+  // cash, talent, weather and visibility parts of the night.
   const start = {
     cash: 1000,
-    snowQuality: 0.5,
-    snowDepth: 0.3,
-    // next day is 2 -> clear, so weather does not move snow numbers
+    trails: [freshTrail(0.3, 0.5)],
+    // next day is 2 -> clear
     dayIndex: 1,
     buildings: [] as BuildingId[],
     talentsOwned: [] as string[],
@@ -182,54 +184,21 @@ describe("applyOvernight", () => {
   const run = (snow: SnowPreset, over: Partial<typeof start> = {}) =>
     applyOvernight({ snow, ...start, ...over });
 
-  it("orders snowQuality High >= Mid >= Minimal from the same start", () => {
-    const min = run("minimal");
-    const mid = run("mid");
-    const high = run("high");
-    expect(high.snowQuality).toBeGreaterThanOrEqual(mid.snowQuality);
-    expect(mid.snowQuality).toBeGreaterThanOrEqual(min.snowQuality);
-    expect(min.snowQuality).toBeCloseTo(0.45, 10);
-    expect(mid.snowQuality).toBeCloseTo(0.6, 10);
-    expect(high.snowQuality).toBeCloseTo(0.72, 10);
-  });
-
-  // Pinned (replaced in PR 8): mid and high overwrite snowQuality with a
-  // constant, ignoring the quality the hill started the night with.
-  it("pins that mid and high ignore the starting snowQuality", () => {
-    expect(run("mid", { snowQuality: 0.1 }).snowQuality).toBeCloseTo(0.6, 10);
-    expect(run("mid", { snowQuality: 0.9 }).snowQuality).toBeCloseTo(0.6, 10);
-    expect(run("high", { snowQuality: 0.1 }).snowQuality).toBeCloseTo(0.72, 10);
-  });
-
   it("subtracts the snow cost from cash", () => {
     expect(run("minimal").cash).toBe(1000 - SNOW_NIGHT_COST.minimal);
     expect(run("mid").cash).toBe(1000 - SNOW_NIGHT_COST.mid);
     expect(run("high").cash).toBe(1000 - SNOW_NIGHT_COST.high);
   });
 
-  it("snow guns add depth and fire on mid and high only", () => {
-    const withGuns = run("mid", { buildings: ["snow_guns"] });
-    const without = run("mid");
-    expect(withGuns.snowDepth).toBeGreaterThan(without.snowDepth);
-    expect(withGuns.gunsFired).toBe(true);
-    expect(without.gunsFired).toBe(false);
+  it("snow guns fire on mid and high only", () => {
+    expect(run("mid", { buildings: ["snow_guns"] }).gunsFired).toBe(true);
+    expect(run("mid").gunsFired).toBe(false);
     expect(run("minimal", { buildings: ["snow_guns"] }).gunsFired).toBe(false);
   });
 
   it("trail_guns talent fires guns on high only", () => {
     expect(run("high", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(true);
     expect(run("mid", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(false);
-  });
-
-  it("groom talents raise mid and high quality", () => {
-    expect(run("mid", { talentsOwned: ["groom_pass"] }).snowQuality).toBeCloseTo(
-      0.67,
-      10,
-    );
-    expect(run("high", { talentsOwned: ["corduroy"] }).snowQuality).toBeCloseTo(
-      0.82,
-      10,
-    );
   });
 
   it("groomVisible is false on minimal, true otherwise", () => {
@@ -241,10 +210,7 @@ describe("applyOvernight", () => {
   it("learns the first unowned talent in CREW_TALENTS order", () => {
     expect(run("mid").talentLearned).toBe(CREW_TALENTS[0].name);
     expect(run("mid").nextTalentHint).toBe(CREW_TALENTS[1].name);
-    // owning a later talent does not skip an earlier unowned one
-    expect(run("mid", { talentsOwned: ["trail_guns"] }).talentLearned).toBe(
-      "Rope Tow",
-    );
+    expect(run("mid", { talentsOwned: ["trail_guns"] }).talentLearned).toBe("Rope Tow");
     expect(
       run("mid", { talentsOwned: ["rope_tow", "trail_guns"] }).talentLearned,
     ).toBe("House Band");
@@ -257,35 +223,28 @@ describe("applyOvernight", () => {
   });
 
   it("takes next-morning weather from rollMorningWeather", () => {
-    expect(run("mid", { dayIndex: 1 }).weather).toBe(rollMorningWeather(2, false));
     for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
-      expect(run("mid", { dayIndex: day }).weather).toBe(
-        rollMorningWeather(day + 1, false),
-      );
+      expect(run("mid", { dayIndex: day }).weather).toBe(rollMorningWeather(day + 1, false));
     }
   });
 
-  it("a snow morning adds depth and quality and resets daysWithoutSnow", () => {
-    // next day 4 -> roll 1 -> snow
-    const r = run("minimal", { dayIndex: 3, daysWithoutSnow: 4 });
+  it("a snow morning resets daysWithoutSnow and adds depth", () => {
+    const r = run("minimal", { dayIndex: 3, daysWithoutSnow: 4 }); // next day 4 -> snow
     expect(r.weather).toBe("snow");
     expect(r.daysWithoutSnow).toBe(0);
-    expect(r.snowDepth).toBeCloseTo(0.3 + 0.02 + 0.12, 10);
-    expect(r.snowQuality).toBeCloseTo(0.45 + 0.08, 10);
+    expect(r.snowDepth).toBeGreaterThan(0.3);
     expect(r.morningHeadline).toContain("Overnight squall");
   });
 
-  it("a thaw morning removes depth and quality and counts a dry day", () => {
-    // next day 8 -> roll 9 -> thaw
-    const r = run("minimal", { dayIndex: 7, daysWithoutSnow: 1 });
+  it("a thaw morning removes depth and counts a dry day", () => {
+    const r = run("minimal", { dayIndex: 7, daysWithoutSnow: 1 }); // next day 8 -> thaw
     expect(r.weather).toBe("thaw");
     expect(r.daysWithoutSnow).toBe(2);
-    expect(r.snowDepth).toBeCloseTo(0.3 + 0.02 - 0.08, 10);
-    expect(r.snowQuality).toBeCloseTo(0.45 - 0.12, 10);
+    expect(r.snowDepth).toBeLessThan(0.3);
     expect(r.morningHeadline).toContain("Thaw watch");
   });
 
-  it("a clear morning counts a dry day without changing snow", () => {
+  it("a clear morning counts a dry day", () => {
     const r = run("minimal", { dayIndex: 1, daysWithoutSnow: 1 });
     expect(r.weather).toBe("clear");
     expect(r.daysWithoutSnow).toBe(2);
@@ -604,6 +563,7 @@ describe("headless season", () => {
 
     let day = 1;
     let cash = 5000;
+    let trails: Trail[] = [freshTrail(0.45, 0.6)];
     let snowQuality = 0.6;
     let snowDepth = 0.5;
     let daysWithoutSnow = 0;
@@ -639,14 +599,14 @@ describe("headless season", () => {
       const overnight = applyOvernight({
         snow: "mid",
         cash,
-        snowQuality,
-        snowDepth,
+        trails,
         dayIndex: day,
         buildings,
         talentsOwned,
         daysWithoutSnow,
       });
       cash = overnight.cash;
+      trails = overnight.trails;
       snowQuality = overnight.snowQuality;
       snowDepth = overnight.snowDepth;
       daysWithoutSnow = overnight.daysWithoutSnow;

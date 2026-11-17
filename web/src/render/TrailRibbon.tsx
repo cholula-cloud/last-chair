@@ -1,21 +1,22 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
 import { sceneMood } from "./Atmosphere";
 import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
 import { terrainHeight } from "./terrainShape";
-import { trailPoint } from "./trail";
+import { sampleSegments, trailPoint } from "./trail";
+import type { Trail } from "@/game/snow";
 
 const TRAIL_WIDTH = 0.86;
 const PREVIEW_WIDTH = TRAIL_WIDTH + 0.08;
 
 /** Ribbon that hugs the terrain; u runs across the trail, v along it. */
 function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
-  const across = 6;
+  const across = ACROSS;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
@@ -62,9 +63,9 @@ function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
 /**
  * Procedural corduroy: fine, crisp grooves running down the fall line,
  * white-on-white (neutral, no blue tint), alpha feathered into the snow at
- * both edges. `crisp` = freshly groomed: deeper grooves.
+ * both edges. `depth` is the groove strength (0 = a plain feathered ribbon).
  */
-function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
+function corduroyTexture(depth: number): THREE.CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const w = 256;
   const h = 32;
@@ -75,7 +76,6 @@ function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
   if (!ctx) return null;
   const img = ctx.createImageData(w, h);
   const stripes = 16;
-  const depth = crisp ? 30 : 14;
   for (let x = 0; x < w; x++) {
     const u = (x + 0.5) / w;
     const edge = Math.min(u, 1 - u);
@@ -105,8 +105,54 @@ function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
   return tex;
 }
 
+const ICE = new THREE.Color(PALETTE.snowIce);
+const SNOW = new THREE.Color(PALETTE.white);
+const SEGMENTS = 56;
+const ACROSS = 6;
+
+function hash(a: number, b: number): number {
+  const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * Per-vertex RGBA from the trail's snow. Base: worn snow is grey ice, groomed
+ * snow is white, low coverage punches patchy holes. Stripes: corduroy shows
+ * only where quality is high, so a fresh groom reads crisp and a scraped
+ * segment reads flat.
+ */
+function paintRibbon(base: THREE.BufferGeometry, stripes: THREE.BufferGeometry, trail: Trail) {
+  const rows = SEGMENTS + 1;
+  const cols = ACROSS + 1;
+  const bc = new Float32Array(rows * cols * 4);
+  const sc = new Float32Array(rows * cols * 4);
+  const c = new THREE.Color();
+  for (let i = 0; i < rows; i++) {
+    const t = i / SEGMENTS;
+    const q = sampleSegments(trail, t, "quality");
+    const cover = sampleSegments(trail, t, "coverage");
+    c.copy(ICE).lerp(SNOW, smoothstep(0.3, 0.75, q));
+    const crisp = smoothstep(0.55, 0.8, q);
+    for (let k = 0; k < cols; k++) {
+      const n = hash(i * 0.5, k);
+      const alpha = smoothstep(0, 0.25, cover * 1.25 - n * 0.6);
+      const v = (i * cols + k) * 4;
+      bc[v] = c.r;
+      bc[v + 1] = c.g;
+      bc[v + 2] = c.b;
+      bc[v + 3] = alpha;
+      sc[v] = 1;
+      sc[v + 1] = 1;
+      sc[v + 2] = 1;
+      sc[v + 3] = alpha * crisp;
+    }
+  }
+  base.setAttribute("color", new THREE.BufferAttribute(bc, 4));
+  stripes.setAttribute("color", new THREE.BufferAttribute(sc, 4));
+}
+
 type TrailRibbonProps = { anchor: LiftAnchor } & (
-  | { kind: "built"; groomed: boolean }
+  | { kind: "built"; groomed: boolean; trail: Trail }
   | { kind: "preview"; valid: boolean }
 );
 
@@ -115,17 +161,26 @@ export function TrailRibbon(props: TrailRibbonProps) {
   const { x, z } = props.anchor;
   const built = props.kind === "built";
   const groomed = props.kind === "built" && props.groomed;
+  const trail = props.kind === "built" ? props.trail : null;
 
   const geometry = useMemo(
     () =>
       built
-        ? ribbonGeometry({ x, z }, TRAIL_WIDTH, 56)
+        ? ribbonGeometry({ x, z }, TRAIL_WIDTH, SEGMENTS)
         : ribbonGeometry({ x, z }, PREVIEW_WIDTH, 40),
     [x, z, built],
   );
-  const map = useMemo(() => (built ? corduroyTexture(groomed) : null), [built, groomed]);
+  const stripeGeo = useMemo(() => (built ? geometry.clone() : null), [built, geometry]);
+  const stripeMap = useMemo(() => (built ? corduroyTexture(groomed ? 30 : 14) : null), [built, groomed]);
+  const baseMap = useMemo(() => (built ? corduroyTexture(0) : null), [built]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  useEffect(() => () => map?.dispose(), [map]);
+  useEffect(() => () => stripeGeo?.dispose(), [stripeGeo]);
+  useEffect(() => () => stripeMap?.dispose(), [stripeMap]);
+  useEffect(() => () => baseMap?.dispose(), [baseMap]);
+  // Repaints only when the snapped trail snow changes (see `snowKey`).
+  useLayoutEffect(() => {
+    if (trail && stripeGeo) paintRibbon(geometry, stripeGeo, trail);
+  }, [geometry, stripeGeo, trail]);
   const mat = useRef<THREE.MeshLambertMaterial>(null);
   // Self-lit so the groomed corridor reads brighter than the snow by day; fades at night.
   const glow = groomed ? 0.42 : 0.3;
@@ -148,18 +203,33 @@ export function TrailRibbon(props: TrailRibbonProps) {
     );
   }
   return (
-    <mesh geometry={geometry} receiveShadow renderOrder={1}>
-      <meshLambertMaterial
-        ref={mat}
-        map={map}
-        color={PALETTE.white}
-        emissive={PALETTE.white}
-        emissiveIntensity={glow}
-        transparent
-        depthWrite={false}
-        polygonOffset
-        polygonOffsetFactor={-3}
-      />
-    </mesh>
+    <group>
+      <mesh geometry={geometry} receiveShadow renderOrder={1}>
+        <meshLambertMaterial
+          map={baseMap}
+          vertexColors
+          transparent
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-3}
+        />
+      </mesh>
+      {stripeGeo && (
+        <mesh geometry={stripeGeo} receiveShadow renderOrder={2}>
+          <meshLambertMaterial
+            ref={mat}
+            map={stripeMap}
+            vertexColors
+            color={PALETTE.white}
+            emissive={PALETTE.white}
+            emissiveIntensity={glow}
+            transparent
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-4}
+          />
+        </mesh>
+      )}
+    </group>
   );
 }

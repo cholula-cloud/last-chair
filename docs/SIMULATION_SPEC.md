@@ -17,7 +17,7 @@
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
-| Snow | 🟡 | One global depth + quality; no per-segment coverage; thaw is hill-wide | 8 |
+| Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
 | Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |
 | Night choices | ✅ | Fare + snow/service presets with costs | — |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
@@ -159,27 +159,37 @@ Single cleared run from mid-mountain to base + optional stub. P1: second run + g
 
 ---
 
-## Snow (v0)
+## Snow (PR 8)
 
-Three scalars per run segment (0–1 normalized):
+Each confirmed lift has one trail of 6 segments from the top (index 0, elevation 1) to the bottom (index 5, elevation 0), stored as `lift.trail` (`game/snow.ts`). Each segment has `depth`, `quality` and `coverage` in 0–1. `snowQuality` and `snowDepth` in game state are derived: the means over every open segment (`deriveSnow`).
 
 | Field | Meaning |
 |-------|---------|
-| `depth` | Keeps route open |
-| `quality` | Corduroy / fresh / ice |
-| `coverage` | Fraction skiable |
+| `depth` | Keeps the run open; below 0.15 the cover breaks up |
+| `quality` | Corduroy / fresh (high) to scraped / ice (low) |
+| `coverage` | Fraction skiable; falls with depth under 0.15, restored by snow days, a High groom (fully) or a Mid groom (+0.3) where depth ≥ 0.15 |
 
-**Overnight (player snow/service preset):**
+**Overnight, per segment** (preset first, then the morning weather):
 
-| Preset | Guns effect | Groom effect |
-|--------|-------------|--------------|
-| Minimal | +0 depth on 1 segment | none |
-| Mid | +depth spread, quality → 0.6 | groom stripes, quality +0.2 |
-| High | +depth all served runs | quality cap 0.85 |
+| Preset | Guns | Groom | Quality |
+|--------|------|-------|---------|
+| Minimal | off | none | −0.04 (floor 0.2); depth unchanged |
+| Mid | owned guns add +0.14 depth on the bottom half (+0.25 reach with `trail_guns`); groomer +0.04 everywhere | yes | `max(q, 0.6) + 0.03` |
+| High | owned guns (or `trail_guns`) add +0.20 on every segment; groomer +0.06 | yes | `max(q, 0.75) + 0.06` |
 
-**Thaw stub (daytime):** if temp > threshold, `depth -= 0.05`, `quality -= 0.15` on lowest third of mountain.
+`groom_pass` / `corduroy` add +0.07 to the groom target. Quality caps at 0.95. Cost unchanged (+$0 / +$150 / +$350).
 
-Weather P0: random **snow day** (+depth) or **thaw day** — icon in morning headline.
+**Weather** (`e` = elevation, `low = (1 − e)²`): snow day depth +0.12 + 0.08e, quality +0.06 + 0.04e, coverage restored where depth ≥ 0.15. Thaw depth −(0.02 + 0.12·low), quality −(0.04 + 0.16·low): the bottom takes 0.14 / 0.20, the top 0.02 / 0.04. Clear: depth −0.01, quality −0.02.
+
+**Day.** Each finished run takes 0.0006 quality off every segment of that lift's trail (a 150-run day costs about 0.09). On a thaw day from 11:00 the low segments lose a further 0.0007 × (0.15 + low) per game minute (about 0.2 at the bottom by close). The tick aggregates runs per lift per step; nothing is per guest per frame.
+
+**Guests.** The snow a guest feels on a run is `0.5 × worst + 0.5 × mean` segment quality of that lift's trail, minus 0.10 if any segment has coverage < 0.3 (thin) and a further 0.15 if the bottom has coverage < 0.1 (bare; they still ski it). This value feeds `snowSum` (satisfaction) and the run time multiplier.
+
+**Words.** The conditions board shows the worst segment ("Icy bottom", "Thin snow", "Bare bottom", "Good cover", "Fresh corduroy") beside the mean quality, and the snow problem line names where ("Bare patches at the bottom of the trail", "Icy up top").
+
+**Render.** Terrain vertex colours near the trail use the segment values (grey-blue ice, bare earth where coverage is low, bright white where freshly groomed); the trail ribbon shows corduroy stripes only where quality is high, with patchy holes where coverage is low. Both repaint when the snow snapped to 0.05 changes, not per frame. Guns plume only on the segments inside last night's reach (`gunReach`).
+
+Persistence: save version 5. A v4 save gets every lift a trail with all segments at the old global depth and quality.
 
 ---
 
@@ -255,7 +265,7 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (v1)
 
-JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 2` (v2 added lift queues and queue statistics; older saves migrate with empty queues). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
+JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 5` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
 
 `migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
 
