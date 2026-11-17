@@ -1,5 +1,11 @@
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
+import {
+  deriveSnow,
+  gunReach,
+  overnightTrail,
+  type Trail,
+} from "./snow";
 import { problemLine, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import {
   ARRIVAL_EARLIEST_MIN,
@@ -137,6 +143,8 @@ export type GuestClock = {
   /** Game clock minute at the end of this step. */
   now: number;
   snowQuality: number;
+  /** Experienced snow per lift index (see snow.ts `experiencedSnow`); falls back to `snowQuality`. */
+  snowByLift?: number[];
   /** Expected wait plus ride time for the next lap at the best open lift (Infinity with none). */
   lapOverheadMin: number;
 };
@@ -181,12 +189,13 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "queue":
         return now >= LIFT_CLOSE_MIN ? goHome(g) : g;
       case "ski": {
-        const duration = skiMinutes(g.persona, clock.snowQuality);
+        const q = clock.snowByLift?.[g.liftIndex ?? 0] ?? clock.snowQuality;
+        const duration = skiMinutes(g.persona, q);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
         const runs = g.runs + 1;
         const energy = g.energy - PERSONAS[g.persona].energyPerRun;
-        const done = { runs, energy, snowSum: g.snowSum + clock.snowQuality };
+        const done = { runs, energy, snowSum: g.snowSum + q };
         const lapEnds = now + clock.lapOverheadMin + duration;
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
           return goHome(g, done);
@@ -226,6 +235,7 @@ export function buildNightRecap(opts: {
   stats: DayStats;
   fare: FarePreset;
   snowQuality: number;
+  snowTrouble?: string;
   /** The day's guest-built satisfaction (see `daySatisfaction`). */
   day: DaySatisfaction;
   arrivalMood: number;
@@ -246,6 +256,7 @@ export function buildNightRecap(opts: {
     problem: problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
       snowQuality: opts.snowQuality,
+      snowTrouble: opts.snowTrouble,
       fare,
       turnedAway: stats.turnedAway,
       runsPerGuest: stats.runsPerGuest,
@@ -255,11 +266,16 @@ export function buildNightRecap(opts: {
 }
 
 export type OvernightResult = {
+  /** One trail per input trail, after the player's night and the morning weather. */
+  trails: Trail[];
+  /** Derived: means over `trails`. */
   snowQuality: number;
   snowDepth: number;
   cash: number;
   groomVisible: boolean;
   gunsFired: boolean;
+  /** Fraction of the trail from the bottom the guns covered (0 when not fired). */
+  gunReach: number;
   weather: WeatherKind;
   morningHeadline: string;
   talentLearned: string | null;
@@ -281,8 +297,7 @@ export function rollMorningWeather(
 export function applyOvernight(opts: {
   snow: SnowPreset;
   cash: number;
-  snowQuality: number;
-  snowDepth: number;
+  trails: Trail[];
   dayIndex: number;
   buildings: BuildingId[];
   talentsOwned: string[];
@@ -293,41 +308,15 @@ export function applyOvernight(opts: {
   const hasGroom = opts.talentsOwned.includes("groom_pass") ||
     opts.talentsOwned.includes("corduroy");
 
-  let snowQuality = opts.snowQuality;
-  let snowDepth = opts.snowDepth;
-  let gunsFired = false;
-  let groomVisible = false;
-
-  if (opts.snow === "minimal") {
-    snowDepth = Math.min(1, snowDepth + (hasGuns ? 0.08 : 0.02));
-    snowQuality = Math.max(0.35, snowQuality - 0.05);
-  } else if (opts.snow === "mid") {
-    snowDepth = Math.min(1, snowDepth + (hasGuns ? 0.18 : 0.1));
-    snowQuality = Math.min(0.85, 0.55 + (hasGroom ? 0.12 : 0.05));
-    gunsFired = hasGuns;
-    groomVisible = true;
-  } else {
-    snowDepth = Math.min(1, snowDepth + (hasGuns || hasTrailGuns ? 0.28 : 0.14));
-    snowQuality = Math.min(0.9, 0.72 + (hasGroom ? 0.1 : 0));
-    gunsFired = hasGuns || hasTrailGuns;
-    groomVisible = true;
-  }
-
   const nextDay = opts.dayIndex + 1;
   const weather = rollMorningWeather(nextDay, hasGuns);
+  const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
+  const reach = gunReach(night);
+  const trails = opts.trails.map((t) => overnightTrail(t, night));
+  const groomVisible = opts.snow !== "minimal";
+  const gunsFired = reach > 0;
   let daysWithoutSnow = opts.daysWithoutSnow;
-
-  if (weather === "snow") {
-    snowDepth = Math.min(1, snowDepth + 0.12);
-    snowQuality = Math.min(0.95, snowQuality + 0.08);
-    daysWithoutSnow = 0;
-  } else if (weather === "thaw") {
-    snowDepth = Math.max(0.05, snowDepth - 0.08);
-    snowQuality = Math.max(0.25, snowQuality - 0.12);
-    daysWithoutSnow += 1;
-  } else {
-    daysWithoutSnow += 1;
-  }
+  daysWithoutSnow = weather === "snow" ? 0 : daysWithoutSnow + 1;
 
   const talent = learnNextTalent(opts.talentsOwned);
   const nextHint = nextTalentName([...opts.talentsOwned, ...(talent ? [talent.id] : [])]);
@@ -340,11 +329,12 @@ export function applyOvernight(opts: {
         : "Clear and cold — corduroy holds if you groomed.";
 
   return {
-    snowQuality,
-    snowDepth,
+    trails,
+    ...deriveSnow(trails.map((trail) => ({ confirmed: true, trail }))),
     cash: opts.cash - SNOW_NIGHT_COST[opts.snow],
     groomVisible,
     gunsFired,
+    gunReach: reach,
     weather,
     morningHeadline: headline,
     talentLearned: talent?.name ?? null,

@@ -5,6 +5,7 @@ import { NeutralToneMapping } from "three";
 import { useEffect, useState } from "react";
 import { liveSatisfaction } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin } from "@/game/sim";
+import { readSnow } from "@/game/snow";
 import { useGameStore } from "@/game/store";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
@@ -33,6 +34,11 @@ export default function PlayExperience() {
   const phase = useGameStore((s) => s.phase);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
+  // "tone|label" of the worst trail segment, as a string so the HUD re-renders only when it changes.
+  const snowRead = useGameStore((s) => {
+    const r = readSnow(s.lifts);
+    return `${r.tone}|${r.label}`;
+  });
   const avgQueue = useGameStore((s) => currentWaitMin(s));
   const weather = useGameStore((s) => s.weather);
   const morningHeadline = useGameStore((s) => s.morningHeadline);
@@ -129,6 +135,7 @@ export default function PlayExperience() {
               avgQueue={avgQueue}
               snowQuality={snowQuality}
               snowDepth={snowDepth}
+              snowRead={snowRead}
               mood={mood}
             />
           </div>

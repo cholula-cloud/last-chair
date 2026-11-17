@@ -1,3 +1,4 @@
+import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
 import { LIFT_PREVIEW_SLOTS } from "./descent";
 import { createRng } from "./rng";
@@ -305,7 +306,7 @@ describe("whole days", () => {
     const lifts = chair
       ? [
           ...base.lifts,
-          { type: "chair" as const, anchor: LIFT_PREVIEW_SLOTS[1], confirmed: true, queue: [], dispatchCredit: 0 },
+          { type: "chair" as const, anchor: LIFT_PREVIEW_SLOTS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
         ]
       : base.lifts;
     const s: GameState = {
@@ -318,6 +319,10 @@ describe("whole days", () => {
       paused: false,
       ...over,
     };
+    // Snow lives on the trails; a snowQuality override means an even trail at that quality.
+    if (over.snowQuality !== undefined) {
+      s.lifts = s.lifts.map((l) => ({ ...l, trail: freshTrail(0.45, over.snowQuality) }));
+    }
     return rules.skipToClose(s);
   }
   const WEEKDAY = 2;
@@ -346,7 +351,8 @@ describe("whole days", () => {
     for (const seed of seeds) {
       const thin = playDay(seed, WEEKDAY, { snowQuality: 0.3 }, true).nightRecap!;
       expect(thin.problem).toContain("Thin, scraped snow");
-      expect(thin.problem).toContain("30%");
+      // The day's traffic wears the 30% trail a little, so the quoted mean is a bit under 30%.
+      expect(thin.problem).toMatch(/\(mean quality (2\d|30)%\)/);
       const steep = playDay(seed, WEEKDAY, { fare: "expensive" }, true).nightRecap!;
       expect(steep.problem).toContain("steep");
       expect(steep.problem).toContain("$62");

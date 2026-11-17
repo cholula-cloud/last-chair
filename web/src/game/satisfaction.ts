@@ -176,6 +176,8 @@ export function daySatisfaction(
 export type ProblemFacts = {
   avgWaitMin: number;
   snowQuality: number;
+  /** Where the worst segment is, e.g. "Bare patches at the bottom of the trail" (see snow.ts `readSnow`). */
+  snowTrouble?: string;
   fare: FarePreset;
   turnedAway: number;
   runsPerGuest: number;
@@ -203,7 +205,9 @@ export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
     case "queue":
       return `Long lift lines — guests waited ~${Math.max(1, Math.round(facts.avgWaitMin))} min a ride. More capacity or a cheaper fare to spread the crowd.`;
     case "snow":
-      return `Thin, scraped snow (quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`;
+      return facts.snowTrouble
+        ? `${facts.snowTrouble} (mean quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`
+        : `Thin, scraped snow (quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`;
     case "value":
       return `Guests felt the ${formatMoney(FARE_PRICES[facts.fare])} ticket was steep for what they got.`;
     case "runs":

@@ -161,6 +161,8 @@ type Condition = {
   value: string;
   state: string;
   detail?: string;
+  /** The state already names the thing; skip the trailing label. */
+  bare?: boolean;
   tone: Tone;
 };
 
@@ -178,17 +180,22 @@ export function ConditionsBoard({
   avgQueue,
   snowQuality,
   snowDepth,
+  snowRead,
   mood,
 }: {
   avgQueue: number;
   snowQuality: number;
   snowDepth: number;
+  /** "tone|label" of the worst trail segment (see snow.ts `readSnow`). */
+  snowRead: string;
   mood: number;
 }) {
   const queueTone: Tone =
     avgQueue < 3 ? "good" : avgQueue < 5 ? "watch" : "bad";
+  const [readTone, snowLabel] = snowRead.split("|");
+  // The worst segment sets the word; the mean quality and depth can only make the tone worse.
   const snowTone = worse(
-    band(snowQuality, 0.7, 0.45),
+    worse(readTone as Tone, band(snowQuality, 0.7, 0.45)),
     band(snowDepth, 0.6, 0.35),
   );
   const moodTone = band(mood, 70, 50);
@@ -208,8 +215,9 @@ export function ConditionsBoard({
       icon: <SnowIcon />,
       label: "Snow",
       value: `${Math.round(snowQuality * 100)}%`,
-      state: { good: "Good", watch: "Thin", bad: "Bare", plain: "" }[snowTone],
-      detail: `cover · depth ${Math.round(snowDepth * 100)}%`,
+      state: snowLabel,
+      bare: true,
+      detail: `mean quality, depth ${Math.round(snowDepth * 100)}%`,
       tone: snowTone,
     },
     {
@@ -243,8 +251,8 @@ export function ConditionsBoard({
             <span className="truncate text-[0.72rem] text-ink-soft">
               <span className={`font-semibold ${TONE_TEXT[c.tone]}`}>
                 {c.state}
-              </span>{" "}
-              {c.label.toLowerCase()}
+              </span>
+              {c.bare ? "" : ` ${c.label.toLowerCase()}`}
             </span>
           </div>
         </div>
