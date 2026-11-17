@@ -191,7 +191,7 @@ Career hub    → map · level · talents · story log · Ledger (M5)
 
 ### Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Playwright scripts · Vercel (root directory `web/`).
+Next.js 16 (App Router) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Playwright scripts · static export hosted on GitHub Pages.
 
 ```
 web/src/app/      routes: / (home), /play (game)
@@ -223,7 +223,7 @@ Earlier docs marked P0 and P1 gates as passed. They passed as **click-through st
 
 ### Deploy
 
-Production: [cholula-clouds-projects / last-chair](https://vercel.com/cholula-clouds-projects/last-chair) → https://last-chair-iota.vercel.app/play. Setup and 404 fixes are in the root [README](../README.md).
+GitHub Pages, published by `.github/workflows/pages.yml` on every push to `main`: https://cholula-cloud.github.io/last-chair/play/. Details in the root [README](../README.md).
 
 ---
 
