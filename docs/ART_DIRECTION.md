@@ -24,7 +24,7 @@ What we are matching emotionally—not copying literally:
 
 ## Loop-feel pass — art deliverables (P0/P1)
 
-**Status (2026-11-16):** Phase 1 shipped as procedural R3F primitives (sloped terrain, T-bar, trail ribbon, hut with roof, instanced trees, low-poly guests). See "Current scene" below.
+**Status (2026-11-16):** Art pass 1 shipped (PR 4c): a procedural diorama of Dutch Hill in a forested valley, with soft sun and shadows, a groomed trail cut through dense snowy conifers, a T-bar with towers and cable, a red clapboard lodge and toy-scale skiers. See "Art pass 1" below. GLB kits (Phase 2) replace the procedural props later.
 
 **Phase 1 (vertical slice) — still required:**
 
@@ -55,6 +55,49 @@ Phase 2 and 3 map to M4 (PRs 27–32) in the master plan. The 110% lighting pass
 - UI motion: night recap slide, satisfaction pulse (respect reduced motion).
 
 ---
+
+## Art pass 1 (procedural diorama, PR 4c)
+
+**Look:** a tabletop miniature of a small Vermont ski hill seen from an elevated 3/4 angle. The hill sits in a valley framed by hazy ridges. Trails and the lift line read as cleared white corridors through a dense, snow-capped conifer forest, following Ice Coast Revival's readability language with our own assets. Light is a warm late-morning sun with soft shadows and a cool blue-lavender sky fill, so shaded snow goes blue and lit snow goes warm white. Skiers are deliberately oversized and brightly dressed so they read on a phone.
+
+### Extended palette
+
+Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Scene colours live in `web/src/render/palette.ts`.
+
+| Role | Hex |
+|------|-----|
+| Shaded snow (hollows) | `#bccbec` |
+| Sun-warm snow | `#fff4e4` |
+| Tired snow | `#c8cfd9` |
+| Rock / bare earth | `#5d5650` / `#7a6850` |
+| Pine variants | `#1f4a3d`, `#2d5a4a`, `#356b5e` |
+| Barn red / clapboard / shutter | `#a8382b` / `#ece6da` / `#24313f` |
+| Roof slate / stone | `#3a4250` / `#8b8682` |
+| Window and lamp glow | `#ffc46b` / `#ffb35c` |
+| Lift steel / cable | `#56616e` / `#2b3138` |
+| Sky top / horizon haze | `#8fb6e3` / `#e9e7e6` |
+| Ridges near / mid / far | `#7f93ad` / `#a3b2c8` / `#c3ccdb` |
+| Night sky / horizon | `#081226` / `#24365a` |
+| Jackets | `#d7263d`, `#f2c014`, `#0fa3a3`, `#f2711c`, `#7b4fc9`, `#2f7de1`, `#e8467c` |
+
+### Components
+
+| File | What it draws |
+|------|---------------|
+| `Atmosphere.tsx` | Gradient sky dome, three layered ridge silhouettes, fog, hemisphere fill and the shadow-casting sun (1024 shadow map, ±11 bounds). Lerps to a cool night when `phase === "night"` and warms toward 4 PM. Exposes `sceneMood` for window and lamp glow. |
+| `Terrain.tsx` | Valley heightfield (dense grid in the play area, coarse toward the fog) with vertex colours: blue hollows, warm sun-facing slopes, rock on steep faces, bare earth that spreads from the bottom as `snowDepth` falls. Also the valley road. |
+| `guestPaths.ts` | `terrainHeight` (base flat, steep lower face, summit dome, side ridges), lift tower layout, trail curve, tidy queue snake, guest placement and poses. |
+| `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture (crisper when `groomVisible`); green/red translucent preview in build mode. |
+| `Lift.tsx` | Merged towers, crossarms, bull wheels, up/return cables and two terminal huts; instanced moving T-bars or chairs; translucent green/red ghost for the build preview. |
+| `Trees.tsx` | Three tiered conifer variants with a snow cap on every tier, instanced (up to 480 each), cleared along trails, lift lines, the base and the road. |
+| `Lodge.tsx` | Base village: red clapboard lodge with steep snowy gable, stone chimney, deck and warm windows; café and shop when built; parked cars; lamp posts with additive light pools that glow at dusk and night. |
+| `Guests.tsx` | Instanced toy skiers (legs, skis, poles, face, tinted jacket and beanie); T-bar or chair attached to riders; amber ring and marker for the followed guest. |
+| `SnowGuns.tsx` | Tower guns with a yellow fan housing and an animated plume when running. |
+| `geo.ts` | Helper that bakes coloured primitives into one merged geometry per prop. |
+
+**Camera:** per-aspect default framing (portrait: wider FOV and farther back; landscape: tighter), elevated 3/4 view from the south-west so the lift and trail cross the screen. Orbit is limited in polar angle, azimuth, distance and pan so the camera stays above the valley; follow mode still lerps the target to the guest and eases home afterwards.
+
+**Performance:** about 22 draw calls in the main pass and about 14 in the shadow pass (counted by mesh, not profiled on device): one merged mesh each for village and lift, three instanced tree meshes, four instanced guest meshes, instanced carriers and plume puffs. Sun is the only shadow caster light. No post-processing. Canvas uses `dpr={[1, 2]}` and Neutral tone mapping.
 
 ## UI (Story Mode = simple)
 

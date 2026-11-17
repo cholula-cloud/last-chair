@@ -2,6 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import Link from "next/link";
+import { NeutralToneMapping } from "three";
 import { useEffect, useState } from "react";
 import { formatMoney } from "@/game/format";
 import { liveSatisfaction } from "@/game/rules";
@@ -105,8 +106,14 @@ export default function PlayExperience() {
 
       <Canvas
         className="touch-none"
-        camera={{ position: [6, 5, 8], fov: 48 }}
-        gl={{ antialias: true, powerPreference: "high-performance" }}
+        shadows="percentage"
+        dpr={[1, 2]}
+        camera={{ position: [8, 13, 22], fov: 45, near: 0.1, far: 220 }}
+        gl={{
+          antialias: true,
+          powerPreference: "high-performance",
+          toneMapping: NeutralToneMapping,
+        }}
       >
         <MountainScene />
       </Canvas>

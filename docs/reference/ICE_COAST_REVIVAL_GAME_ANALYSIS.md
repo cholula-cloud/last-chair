@@ -239,3 +239,25 @@ No post names a roadmap. Cadence is weekly to biweekly.
 | | No snowboarders despite store copy; wants staff wages, training, firing |
 
 The sample is small; treat each complaint as a hypothesis, not a finding.
+
+---
+
+## 10. Visual language (from the 7 Steam screenshots, 2026-11-16)
+
+**World art**
+- A large hill covered by a **dense conifer forest** (hundreds of trees, each tier snow-capped). Trails and lift lines read as **cleared white corridors**: the forest is what makes the layout legible.
+- Chairlift towers with chairs and cable march straight up a cleared line.
+- Layered, hazy background mountain silhouettes; overcast, desaturated, cool light.
+- Base village laid out along a road: New England clapboard (white houses with dark shutters, red and brown timber buildings), snow on every roof, lamp posts throwing warm light pools, a skating rink, string lights.
+- Weaknesses on small screens: skiers are near-invisible specks; towers get lost in the trees; everything is grey under flat light.
+
+**UI**
+- A "hill office" desk metaphor: dark wood frame, cream paper cards on a clipboard, dark-green header plates with serif capitals, colored folder tabs down the right edge for sections (overview, level, talents, buildings, finance, report, locals, trails).
+- A skeuomorphic radio object for the story feed.
+- Career map as an illustrated relief map of New England with serif range labels and pins.
+- A thin dark top bar of stats; dense, desktop-first layouts with many small targets.
+
+**What Last Chair takes and improves**
+- Take: dense forest with cleared trails; towers up a cleared line; hazy backdrop ridges; clapboard village with warm lamps; paper-and-wood "lodge paperwork" UI warmth.
+- Improve: skiers readable on a phone (bright jackets, toy scale, contact shadows); warmer light with blue shadows; a clearer lift line; UI built as phone bottom sheets with large targets and few sections instead of a desk of tabs.
+- Avoid copying: layouts, assets, the "Hill Office" label, and the "Mountain Radio" name. Last Chair renames its story feed to **Route 100 Radio** (decided 2026-11-16, applied in the UI pass).
