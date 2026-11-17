@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGameStore } from "@/game/store";
+import { SHADOW_LAYER } from "./kit";
 import { smoothstep } from "./math";
 import { fbm } from "./terrainShape";
 import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
@@ -93,6 +94,10 @@ const RIDGES = [
 export function Atmosphere() {
   const fog = useRef<THREE.Fog>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
+  // Shadow-only proxies (trees, skiers) live on SHADOW_LAYER.
+  useEffect(() => {
+    sun.current?.shadow.camera.layers.enable(SHADOW_LAYER);
+  }, []);
   const hemi = useRef<THREE.HemisphereLight>(null);
   const mood = useRef(useGameStore.getState().phase === "night" ? 1 : 0);
   const ridgeMats = useRef<(THREE.MeshBasicMaterial | null)[]>([]);

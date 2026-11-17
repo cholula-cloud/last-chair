@@ -2,7 +2,7 @@
 
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import {
@@ -137,32 +137,35 @@ export function MountainScene() {
       <Atmosphere />
       <Terrain snowQuality={terrainSnow} snowDepth={snowDepth} />
       <Road />
-      <Village buildings={buildings} />
-      {(gunsVisible || buildings.includes("snow_guns")) && (
-        <SnowGuns active={gunsVisible} />
-      )}
-      <Trees anchors={clearings} />
+      {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
+      <Suspense fallback={null}>
+        <Village buildings={buildings} />
+        {(gunsVisible || buildings.includes("snow_guns")) && (
+          <SnowGuns active={gunsVisible} />
+        )}
+        <Trees anchors={clearings} />
 
-      {confirmedLifts.map((lift, i) => (
-        <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
-          <TrailRibbon kind="built" anchor={lift.anchor} groomed={groomVisible} />
-          <Lift anchor={lift.anchor} previewInvalid={false} type={lift.type} />
-        </group>
-      ))}
+        {confirmedLifts.map((lift, i) => (
+          <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
+            <TrailRibbon kind="built" anchor={lift.anchor} groomed={groomVisible} />
+            <Lift anchor={lift.anchor} previewInvalid={false} type={lift.type} />
+          </group>
+        ))}
 
-      {showPreview && (
-        <>
-          <TrailRibbon kind="preview" anchor={previewSlot} valid={previewValid} />
-          <Lift
-            anchor={previewSlot}
-            preview
-            previewInvalid={!previewValid}
-            type={selectedLiftType}
-          />
-        </>
-      )}
+        {showPreview && (
+          <>
+            <TrailRibbon kind="preview" anchor={previewSlot} valid={previewValid} />
+            <Lift
+              anchor={previewSlot}
+              preview
+              previewInvalid={!previewValid}
+              type={selectedLiftType}
+            />
+          </>
+        )}
 
-      <Guests liftAnchor={primaryAnchor} liftType={primaryType} followedRef={followedRef} />
+        <Guests liftAnchor={primaryAnchor} liftType={primaryType} followedRef={followedRef} />
+      </Suspense>
       <CameraRig followId={followId} followedRef={followedRef} />
       <OrbitControls
         makeDefault

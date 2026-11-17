@@ -1,24 +1,25 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
+import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import type { LiftType } from "@/game/types";
 import type { LiftAnchor } from "@/game/descent";
 import { useGameStore } from "@/game/store";
-import { box, merge, sphere, type Part } from "./geo";
 import { placeGuests, type GuestPlacement } from "./guestPlacement";
+import { bakeKit, METERS_TO_WORLD, SHADOW_LAYER_MASK, TOY_SCALE, useKit } from "./kit";
 import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
-import { carrierGeometry } from "./Lift";
+import { TBAR_DROP, useCarrierGeometry } from "./Lift";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 import { HATS, JACKETS, PALETTE } from "./palette";
 
-const MAX = 48;
-/** Toy scale: slightly oversized so skiers read on a phone. */
-const SCALE = 1.25;
+const SPLIT = ["jacket", "helmet"] as const;
 
-const { white: WHITE, pants: PANTS, skin: SKIN } = PALETTE;
-const SKI_BLACK = PALETTE.inkDeep;
+const MAX = 48;
+/** Kit skier (1.8 m) at toy scale so guests read on a phone. */
+const SCALE = METERS_TO_WORLD * TOY_SCALE;
+/** Hip height of the kit skier, metres. */
+const HIP_M = 0.98;
 
 /** Scratch objects reused by every layout pass (module scope: no per-frame allocation). */
 const dummy = new THREE.Object3D();
@@ -27,35 +28,8 @@ const tint = new THREE.Color();
 /** Latest placement of the followed guest, written by <Guests>, read by the camera rig. */
 export type FollowedRef = RefObject<GuestPlacement | null>;
 
-/** Skier parts in three groups: fixed colours, jacket (tinted), hat (tinted). */
-function skierGeometries() {
-  const base: Part[] = [
-    // Legs / boots.
-    { geo: box(0.05, 0.15, 0.06), color: PANTS, pos: [-0.035, 0.09, 0] },
-    { geo: box(0.05, 0.15, 0.06), color: PANTS, pos: [0.035, 0.09, 0] },
-    // Skis.
-    { geo: box(0.035, 0.014, 0.44), color: SKI_BLACK, pos: [-0.04, 0.008, 0.03] },
-    { geo: box(0.035, 0.014, 0.44), color: SKI_BLACK, pos: [0.04, 0.008, 0.03] },
-    { geo: box(0.036, 0.016, 0.06), color: PALETTE.snow, pos: [-0.04, 0.012, 0.22] },
-    { geo: box(0.036, 0.016, 0.06), color: PALETTE.snow, pos: [0.04, 0.012, 0.22] },
-    // Poles.
-    { geo: box(0.012, 0.3, 0.012), color: PALETTE.poleGrey, pos: [-0.11, 0.14, -0.04], rot: [-0.35, 0, 0.12] },
-    { geo: box(0.012, 0.3, 0.012), color: PALETTE.poleGrey, pos: [0.11, 0.14, -0.04], rot: [-0.35, 0, -0.12] },
-    // Face and goggles.
-    { geo: sphere(0.055, 8, 6), color: SKIN, pos: [0, 0.37, 0] },
-    { geo: box(0.09, 0.025, 0.03), color: SKI_BLACK, pos: [0, 0.385, 0.042] },
-  ];
-  const jacket: Part[] = [
-    { geo: box(0.13, 0.16, 0.1), color: WHITE, pos: [0, 0.245, 0] },
-    { geo: box(0.04, 0.13, 0.05), color: WHITE, pos: [-0.085, 0.24, 0.015], rot: [-0.4, 0, 0.15] },
-    { geo: box(0.04, 0.13, 0.05), color: WHITE, pos: [0.085, 0.24, 0.015], rot: [-0.4, 0, -0.15] },
-  ];
-  const hat: Part[] = [
-    { geo: sphere(0.062, 8, 5), color: WHITE, pos: [0, 0.4, -0.005], scale: [1, 0.8, 1] },
-    { geo: sphere(0.022, 6, 4), color: WHITE, pos: [0, 0.455, -0.005] },
-  ];
-  return { base: merge(base), jacket: merge(jacket), hat: merge(hat) };
-}
+/** Cheap box standing in for a skier in the shadow pass (metres, scaled with the skier). */
+const shadowProxy = new THREE.BoxGeometry(0.5, 1.7, 0.4).translate(0, 0.85, 0);
 
 function idHash(id: string): number {
   let h = 0;
@@ -75,24 +49,17 @@ export function Guests({
   const guests = useGameStore((s) => s.guests);
   const followId = useGameStore((s) => s.followId);
 
-  const geos = useMemo(() => skierGeometries(), []);
-  const hanger = useMemo(() => carrierGeometry(liftType), [liftType]);
+  const skier = bakeKit(useKit("skier"), SPLIT);
+  const geos = { base: skier.body, jacket: skier.split.jacket, hat: skier.split.helmet };
+  const hanger = useCarrierGeometry(liftType);
   const towers = useMemo(() => liftTowers(liftAnchor), [liftAnchor]);
   const frame = useMemo(() => liftFrame(liftAnchor), [liftAnchor]);
-  useEffect(
-    () => () => {
-      geos.base.dispose();
-      geos.jacket.dispose();
-      geos.hat.dispose();
-    },
-    [geos],
-  );
-  useEffect(() => () => hanger.dispose(), [hanger]);
 
   const baseRef = useRef<THREE.InstancedMesh>(null);
   const jacketRef = useRef<THREE.InstancedMesh>(null);
   const hatRef = useRef<THREE.InstancedMesh>(null);
   const hangerRef = useRef<THREE.InstancedMesh>(null);
+  const shadowRef = useRef<THREE.InstancedMesh>(null);
   const ringRef = useRef<THREE.Group>(null);
   const markerRef = useRef<THREE.Mesh>(null);
 
@@ -102,10 +69,10 @@ export function Guests({
   );
 
   useLayoutEffect(() => {
-    const meshes = [baseRef.current, jacketRef.current, hatRef.current];
+    const meshes = [baseRef.current, jacketRef.current, hatRef.current, shadowRef.current];
     const hang = hangerRef.current;
     if (meshes.some((m) => !m) || !hang) return;
-    const [base, jacket, hat] = meshes as THREE.InstancedMesh[];
+    const [base, jacket, hat, shadow] = meshes as THREE.InstancedMesh[];
     const n = Math.min(MAX, guests.length);
     let hangers = 0;
     followedRef.current = null;
@@ -121,6 +88,7 @@ export function Guests({
       base.setMatrixAt(i, dummy.matrix);
       jacket.setMatrixAt(i, dummy.matrix);
       hat.setMatrixAt(i, dummy.matrix);
+      shadow.setMatrixAt(i, dummy.matrix);
       const h = idHash(g.id);
       jacket.setColorAt(i, tint.set(JACKETS[h % JACKETS.length]));
       hat.setColorAt(i, tint.set(HATS[(h >> 3) % HATS.length]));
@@ -129,21 +97,21 @@ export function Guests({
         const t = g.progress;
         const lx = LIFT_BASE.x + (liftAnchor.x - LIFT_BASE.x) * t + frame.px * LIFT_CABLE_OFFSET;
         const lz = LIFT_BASE.z + (liftAnchor.z - LIFT_BASE.z) * t + frame.pz * LIFT_CABLE_OFFSET;
-        const cy = cableHeightAt(t, towers) - 0.04;
+        const cy = cableHeightAt(t, towers) - 0.03;
         dummy.position.set(lx, cy, lz);
         dummy.rotation.set(0, frame.yaw, 0);
         if (liftType === "chair") {
           dummy.scale.setScalar(1);
         } else {
           // Stretch the T-bar so the bar sits at the skier's hip.
-          const reach = cy - (p.y + 0.27 * SCALE);
-          dummy.scale.set(1, Math.max(0.4, reach / 0.6), 1);
+          const reach = cy - (p.y + HIP_M * SCALE);
+          dummy.scale.set(1, Math.max(0.4, reach / TBAR_DROP), 1);
         }
         dummy.updateMatrix();
         hang.setMatrixAt(hangers++, dummy.matrix);
       }
     });
-    for (const m of [base, jacket, hat]) {
+    for (const m of [base, jacket, hat, shadow]) {
       m.count = n;
       m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
@@ -169,14 +137,23 @@ export function Guests({
 
   return (
     <group>
-      <instancedMesh ref={baseRef} args={[geos.base, undefined, MAX]} castShadow frustumCulled={false}>
+      <instancedMesh ref={baseRef} args={[geos.base, undefined, MAX]} frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
-      <instancedMesh ref={jacketRef} args={[geos.jacket, undefined, MAX]} castShadow frustumCulled={false}>
+      <instancedMesh ref={jacketRef} args={[geos.jacket, undefined, MAX]} frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
-      <instancedMesh ref={hatRef} args={[geos.hat, undefined, MAX]} castShadow frustumCulled={false}>
+      <instancedMesh ref={hatRef} args={[geos.hat, undefined, MAX]} frustumCulled={false}>
         <meshLambertMaterial vertexColors />
+      </instancedMesh>
+      <instancedMesh
+        ref={shadowRef}
+        args={[shadowProxy, undefined, MAX]}
+        castShadow
+        frustumCulled={false}
+        layers={SHADOW_LAYER_MASK}
+      >
+        <meshBasicMaterial colorWrite={false} />
       </instancedMesh>
       <instancedMesh ref={hangerRef} args={[hanger, undefined, MAX]} castShadow frustumCulled={false}>
         <meshLambertMaterial vertexColors />

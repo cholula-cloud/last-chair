@@ -23,8 +23,12 @@ export type GuestPlacement = {
 
 type PlaceOpts = { queueRank?: number; liftType?: LiftType; towers?: LiftPoint[] };
 
-/** Chair seat sits this far below the cable; skiers ride at least this far above snow. */
-const CHAIR_DROP = 0.62;
+/**
+ * Rider's feet sit this far below the cable on a chair: kit chair seat 1.75 m
+ * under the grip plus the skier's 0.98 m hip, at toy scale 0.15, plus the
+ * grip's 0.03 hang. Skiers ride at least CHAIR_CLEARANCE above snow.
+ */
+const CHAIR_DROP = 0.44;
 const CHAIR_CLEARANCE = 0.15;
 
 function onGround(x: number, z: number, yaw: number, pose: GuestPose): GuestPlacement {

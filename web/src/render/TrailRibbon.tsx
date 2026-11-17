@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
+import { sceneMood } from "./Atmosphere";
+import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
 import { terrainHeight } from "./terrainShape";
 import { trailPoint } from "./trail";
 
-const TRAIL_WIDTH = 0.78;
+const TRAIL_WIDTH = 0.86;
 const PREVIEW_WIDTH = TRAIL_WIDTH + 0.08;
 
 /** Ribbon that hugs the terrain; u runs across the trail, v along it. */
@@ -56,35 +59,40 @@ function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
   return geo;
 }
 
-/** Procedural corduroy: stripes along the fall line, soft banked edges. */
+/**
+ * Procedural corduroy: fine, crisp grooves running down the fall line,
+ * white-on-white (neutral, no blue tint), alpha feathered into the snow at
+ * both edges. `crisp` = freshly groomed: deeper grooves.
+ */
 function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
   if (typeof document === "undefined") return null;
-  const w = 128;
-  const h = 64;
+  const w = 256;
+  const h = 32;
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   const img = ctx.createImageData(w, h);
-  const stripes = 7;
+  const stripes = 16;
+  const depth = crisp ? 30 : 14;
   for (let x = 0; x < w; x++) {
-    const u = x / (w - 1);
+    const u = (x + 0.5) / w;
     const edge = Math.min(u, 1 - u);
-    const alpha = Math.min(1, edge / 0.07);
-    // Inner groomed band: soft-edged corduroy stripes running downhill.
-    const inner = Math.max(0, Math.min(1, (u - 0.12) / 0.76));
-    const wave = 0.5 + 0.5 * Math.cos(inner * stripes * Math.PI * 2);
-    const depth = crisp ? 16 : 9;
-    // Banked, slightly shaded lip of ungroomed snow along each edge.
-    const lip = Math.max(0, 1 - Math.abs(edge - 0.07) / 0.06);
+    // Feather: transparent at the rim, fully opaque 14% in.
+    const alpha = smoothstep(0.0, 0.14, edge);
+    const f = (u * stripes) % 1;
+    // Thin groove at each stripe boundary, flat bright ridge between.
+    const groove = 1 - smoothstep(0.04, 0.2, Math.min(f, 1 - f));
+    // Grooves fade out toward the feathered edge.
+    const g = groove * smoothstep(0.05, 0.16, edge);
     for (let y = 0; y < h; y++) {
-      const grain = (((x * 7 + y * 13) % 11) / 11) * 4;
-      const v = 255 - wave * depth - grain - lip * 28;
+      const grain = ((x * 7 + y * 13) % 11) / 11;
+      const v = 255 - g * depth - grain * 2.5;
       const i = (y * w + x) * 4;
-      img.data[i] = Math.max(0, v - 5 * (wave + lip));
-      img.data[i + 1] = Math.max(0, v - 6 * (wave + lip));
-      img.data[i + 2] = 255;
+      img.data[i] = v - g * 2;
+      img.data[i + 1] = v - g * 1;
+      img.data[i + 2] = v;
       img.data[i + 3] = alpha * 255;
     }
   }
@@ -93,7 +101,7 @@ function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.RepeatWrapping;
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = 8;
   return tex;
 }
 
@@ -118,6 +126,12 @@ export function TrailRibbon(props: TrailRibbonProps) {
   const map = useMemo(() => (built ? corduroyTexture(groomed) : null), [built, groomed]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => map?.dispose(), [map]);
+  const mat = useRef<THREE.MeshLambertMaterial>(null);
+  // Self-lit so the groomed corridor reads brighter than the snow by day; fades at night.
+  const glow = groomed ? 0.42 : 0.3;
+  useFrame(() => {
+    if (mat.current) mat.current.emissiveIntensity = glow * (1 - 0.85 * sceneMood.night);
+  });
 
   if (props.kind === "preview") {
     return (
@@ -136,10 +150,11 @@ export function TrailRibbon(props: TrailRibbonProps) {
   return (
     <mesh geometry={geometry} receiveShadow renderOrder={1}>
       <meshLambertMaterial
+        ref={mat}
         map={map}
         color={PALETTE.white}
         emissive={PALETTE.white}
-        emissiveIntensity={groomed ? 0.08 : 0.04}
+        emissiveIntensity={glow}
         transparent
         depthWrite={false}
         polygonOffset

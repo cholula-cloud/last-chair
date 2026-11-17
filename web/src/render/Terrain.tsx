@@ -133,8 +133,10 @@ export function Terrain({
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
+  // Receives only: the hill barely self-shadows at this sun angle, and casting
+  // cost ~37k triangles per frame.
   return (
-    <mesh geometry={geometry} receiveShadow castShadow>
+    <mesh geometry={geometry} receiveShadow>
       <meshLambertMaterial vertexColors />
     </mesh>
   );
