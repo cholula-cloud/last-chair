@@ -9,6 +9,7 @@ import {
   stepLifts,
 } from "./lifts";
 import * as rules from "./rules";
+import { makeGuest } from "./sim";
 import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
@@ -20,13 +21,8 @@ const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
   dispatchCredit: 0,
 });
 
-const queued = (id: string): Guest => ({
-  id,
-  label: id,
-  state: "queue",
-  progress: 0,
-  mood: 0.8,
-});
+const queued = (id: string): Guest => makeGuest({ id, label: id, state: "queue" });
+const SURFACE_PER_HR = LIFT_SPECS.surface.capacityPerHour;
 
 type RunOpts = {
   types: LiftType[];
@@ -94,10 +90,10 @@ describe("lift server", () => {
     const g = r.guests.find((x) => x.id === "g0")!;
     expect(g.joinedQueueAtMin).toBeCloseTo(step, 9);
     expect(r.waits[0]).toBeCloseTo((g.rideStartMin ?? 0) - (g.joinedQueueAtMin ?? 0), 9);
-    // One guest dispatches per 60/70 min; the first waits that long, to within a step.
-    expect(Math.abs(r.waits[0] - 60 / 70)).toBeLessThanOrEqual(step);
+    // One guest dispatches per 60/capacity min; the first waits that long, to within a step.
+    expect(Math.abs(r.waits[0] - 60 / SURFACE_PER_HR)).toBeLessThanOrEqual(step);
     // The next guest waits one dispatch interval longer.
-    expect(r.waits[1] - r.waits[0]).toBeCloseTo(60 / 70, 0);
+    expect(r.waits[1] - r.waits[0]).toBeCloseTo(60 / SURFACE_PER_HR, 0);
   });
 
   it("an idle lift dispatches the next arrival at once", () => {
@@ -110,7 +106,7 @@ describe("lift server", () => {
     const doubled = run({ types: ["surface"], minutes: 60, arrivals: burst(6) });
     expect(base.waits.length).toBeGreaterThan(0);
     expect(doubled.avg).toBeGreaterThan(base.avg);
-    // Steady demand too: 1.5 guests/min is past the surface lift's 70/hr, 3.0 is further past it.
+    // Steady demand too: 1.5 guests/min is past the surface lift's hourly capacity (46), 3.0 is further past it.
     const heavy = run({ types: ["surface"], minutes: 120, arrivals: () => 1.5 });
     const over = run({ types: ["surface"], minutes: 120, arrivals: () => 3.0 });
     expect(heavy.avg).toBeGreaterThan(0);
@@ -141,12 +137,12 @@ describe("lift server", () => {
 
   it("patrol_radio raises throughput by 5%", () => {
     const sat = (talents: string[]) =>
-      run({ types: ["surface"], talents, minutes: 60, arrivals: (t) => (t <= 0.5 ? 400 : 0) })
+      run({ types: ["surface"], talents, minutes: 120, arrivals: (t) => (t <= 0.5 ? 400 : 0) })
         .waits.length;
     const base = sat([]);
     const radio = sat(["patrol_radio"]);
     expect(liftCapacityPerHour("surface", ["patrol_radio"])).toBeCloseTo(
-      70 * PATROL_RADIO_CAPACITY,
+      SURFACE_PER_HR * PATROL_RADIO_CAPACITY,
       10,
     );
     expect(radio - base).toBeGreaterThanOrEqual(3);
@@ -241,18 +237,16 @@ describe("lifts in the day tick", () => {
     const s = createInitialState(1);
     expect(currentWaitMin(s)).toBe(0);
     const busy = { ...s, lifts: [slot("surface", ["a", "b", "c", "d", "e", "f", "g"])] };
-    expect(currentWaitMin(busy)).toBeCloseTo(7 / (70 / 60), 10);
+    expect(currentWaitMin(busy)).toBeCloseTo(7 / (SURFACE_PER_HR / 60), 10);
     const two = { ...busy, lifts: [...busy.lifts, slot("chair", ["x"])] };
-    expect(currentWaitMin(two)).toBeCloseTo(7 / (70 / 60), 10);
+    expect(currentWaitMin(two)).toBeCloseTo(7 / (SURFACE_PER_HR / 60), 10);
     const radio = { ...busy, talentsOwned: ["patrol_radio"] };
     expect(currentWaitMin(radio)).toBeLessThan(currentWaitMin(busy));
   });
 
   it("a new day starts with empty queues", () => {
-    let s = rules.togglePause(rules.pickFounder(createInitialState(5), "elena"));
-    for (let i = 0; i < 200 && s.lifts.every((l) => l.queue.length === 0); i++) {
-      s = rules.tick(s, 500);
-    }
+    let s = dayState(["a", "b", "c", "d", "e", "f"].map(queued), 5);
+    s = rules.tick(s, 500);
     expect(s.lifts.flatMap((l) => l.queue).length).toBeGreaterThan(0);
     const night = rules.acknowledgeBeat(rules.skipToClose(s));
     const next = rules.sleep(night);

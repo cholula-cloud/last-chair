@@ -88,15 +88,18 @@ export function Guests({
     const chairMesh = chairRef.current;
     if (meshes.some((m) => !m) || !tbarMesh || !chairMesh) return;
     const [base, jacket, hat, shadow] = meshes as THREE.InstancedMesh[];
-    const n = Math.min(MAX, guests.length);
+    // Pending and gone guests are not drawn; the rest fill instance slots 0..n-1.
+    let n = 0;
     let tbars = 0;
     let chairs = 0;
     followedRef.current = null;
-    guests.forEach((g, i) => {
-      const p = placements[i];
+    guests.forEach((g, gi) => {
+      if (g.state === "pending" || g.state === "gone") return;
+      const p = placements[gi];
       const isFollowed = g.id === followId;
       if (isFollowed) followedRef.current = p;
-      if (i >= n) return;
+      if (n >= MAX) return;
+      const i = n++;
       dummy.position.set(p.x, p.y, p.z);
       dummy.rotation.set(p.lean * 0.6, p.yaw, p.roll * 0.6, "YXZ");
       dummy.scale.setScalar(SCALE * (isFollowed ? 1.25 : 1));

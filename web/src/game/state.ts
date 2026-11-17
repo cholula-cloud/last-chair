@@ -1,5 +1,6 @@
 import { LIFT_PREVIEW_SLOTS, type LiftAnchor } from "./descent";
-import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, type NightRecap } from "./sim";
+import { PERSONAS } from "./personas";
+import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import type {
   BuildingId,
   DayStats,
@@ -170,7 +171,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
@@ -179,6 +180,9 @@ export const SAVE_VERSION = 2;
  * restore, so it cannot resume the night sheet and is loaded as a day.
  * Versions below 2 have no lift queues or queue statistics: queues load empty,
  * accumulators 0, and any guest saved mid-queue rejoins a lift on the next tick.
+ * Versions below 3 have no personas or day script: each guest becomes a
+ * regular who has already arrived, with a full tank, and old "depart" guests
+ * are "gone".
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -198,6 +202,27 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       dispatchCredit: l.dispatchCredit ?? 0,
     }));
     p.dayStats = { ...emptyDayStats(), ...p.dayStats, avgQueueMin: 0 };
+  }
+  if (fromVersion < 3) {
+    const clock = p.clockMin ?? DAY_START_MIN;
+    const guests = (p.guests ?? []) as unknown as Array<Record<string, unknown>>;
+    p.guests = guests.map((g) => {
+      if (g.persona) return g as unknown as Guest;
+      const old = g as { state?: string; progress?: number };
+      return makeGuest({
+        ...(g as object),
+        state: old.state === "depart" ? "gone" : (old.state as Guest["state"]),
+        arriveAtMin: DAY_START_MIN,
+        stateSinceMin: clock - (old.progress ?? 0) * PERSONAS.regular.skiMin,
+      });
+    });
+    const arrived = p.guests.filter((g) => g.state !== "pending").length;
+    const stats = { ...emptyDayStats(), ...p.dayStats };
+    p.dayStats = {
+      ...stats,
+      guestsArrived: p.dayStats?.guestsArrived ?? arrived,
+      runsPerGuest: arrived > 0 ? stats.completedRuns / arrived : 0,
+    };
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

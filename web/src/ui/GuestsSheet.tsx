@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
 import { PaperSheet } from "@/ui/kit/PaperSheet";
 
 const STATE_WORD: Record<GuestState, string> = {
+  pending: "Not here yet",
+  gone: "Gone home",
   arrive: "Arriving",
   queue: "In the lift line",
   ride: "Riding up",
@@ -19,7 +22,12 @@ export function GuestsSheet({
   open: boolean;
   onClose: () => void;
 }) {
-  const guests = useGameStore((s) => s.guests);
+  const allGuests = useGameStore((s) => s.guests);
+  // Guests who have not arrived or have gone home are not on the hill, so they are not listed.
+  const guests = useMemo(
+    () => allGuests.filter((g) => g.state !== "pending" && g.state !== "gone"),
+    [allGuests],
+  );
   const followId = useGameStore((s) => s.followId);
   const setFollowId = useGameStore((s) => s.setFollowId);
 
@@ -34,7 +42,7 @@ export function GuestsSheet({
     >
       {guests.length === 0 && (
         <p className="py-6 text-center text-[0.9rem] text-ink-soft">
-          Nobody here yet. Resume the day and the first cars pull in.
+          Nobody on the hill right now. Guests arrive from 8 AM and head home by 4.
         </p>
       )}
       <ul className="divide-y divide-dashed divide-ink/20">

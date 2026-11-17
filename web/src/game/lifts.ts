@@ -134,7 +134,7 @@ export function stepLifts(
     if (elapsed >= rideMin - 1e-9) {
       const rest = { ...g };
       delete rest.rideStartMin;
-      out[i] = { ...rest, state: "ski", progress: 0 };
+      out[i] = { ...rest, state: "ski", progress: 0, stateSinceMin: now };
     } else {
       out[i] = { ...g, rideStartMin: start, progress: elapsed / rideMin };
     }

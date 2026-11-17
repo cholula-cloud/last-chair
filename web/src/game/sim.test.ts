@@ -11,12 +11,22 @@ import {
   planArrivals,
   readyStoryBeat,
   rollMorningWeather,
+  createInitialGuests,
+  makeGuest,
   tickGuests,
   weekdayLabel,
   type BeatCheckInput,
+  type GuestClock,
 } from "./sim";
+import { PERSONAS, skiMinutes } from "./personas";
+import { createRng } from "./rng";
 import {
+  ARRIVAL_EARLIEST_MIN,
+  ARRIVAL_LATEST_MIN,
+  ARRIVE_WALK_MIN,
   DAILY_FIXED_COST,
+  DEPART_WALK_MIN,
+  LIFT_CLOSE_MIN,
   LIFT_OPS_COST,
   SEASON_LENGTH,
   SNOW_NIGHT_COST,
@@ -171,7 +181,11 @@ describe("buildNightRecap", () => {
   it("pins the emptyDayStats defaults", () => {
     expect(emptyDayStats()).toEqual({
       arrivals: 0,
+      guestsArrived: 0,
       completedRuns: 0,
+      runsPerGuest: 0,
+      turnedAway: 0,
+      peakOnHill: 0,
       avgQueueMin: 0,
       dispatched: 0,
       waitSumMin: 0,
@@ -479,76 +493,146 @@ describe("readyStoryBeat", () => {
 });
 
 describe("tickGuests", () => {
-  const guest = (over: Partial<Guest> = {}): Guest => ({
-    id: "g",
-    label: "Guest",
-    state: "arrive",
-    progress: 0,
-    mood: 0.8,
+  const T0 = 10 * 60;
+  const clock = (now: number, over: Partial<GuestClock> = {}): GuestClock => ({
+    now,
+    snowQuality: 1,
+    lapOverheadMin: 5,
     ...over,
   });
+  const skier = (over: Partial<Guest> = {}) =>
+    makeGuest({ state: "ski", stateSinceMin: T0, persona: "regular", ...over });
 
-  it("advances progress by dt * the state rate", () => {
-    const [g] = tickGuests([guest()], 1);
-    expect(g.state).toBe("arrive");
-    expect(g.progress).toBeCloseTo(0.35, 10);
+  it("keeps a pending guest at home until their arrival minute, then starts the walk in", () => {
+    const g = makeGuest({ state: "pending", arriveAtMin: T0 + 5 });
+    expect(tickGuests([g], clock(T0 + 4.5))[0]).toBe(g);
+    const [a] = tickGuests([g], clock(T0 + 5));
+    expect(a.state).toBe("arrive");
+    expect(a.stateSinceMin).toBe(T0 + 5);
+    expect(a.progress).toBe(0);
   });
 
-  it("moves to the next state and resets progress at 1", () => {
-    const [g] = tickGuests([guest({ progress: 0.9 })], 1);
+  it("arrive progress is elapsed over the walk, then the guest joins the line", () => {
+    const g = makeGuest({ state: "arrive", stateSinceMin: T0 });
+    const [half] = tickGuests([g], clock(T0 + ARRIVE_WALK_MIN / 2));
+    expect(half.state).toBe("arrive");
+    expect(half.progress).toBeCloseTo(0.5, 10);
+    const [done] = tickGuests([g], clock(T0 + ARRIVE_WALK_MIN));
+    expect(done.state).toBe("queue");
+    expect(done.progress).toBe(0);
+  });
+
+  it("ski progress is elapsed over the persona's run time; first-timers and bad snow are slower", () => {
+    const at = (persona: "regular" | "first_timer", q: number, now: number) =>
+      tickGuests([skier({ persona })], clock(now, { snowQuality: q }))[0].progress;
+    expect(at("regular", 1, T0 + 4)).toBeCloseTo(4 / PERSONAS.regular.skiMin, 10);
+    expect(at("first_timer", 1, T0 + 4)).toBeLessThan(at("regular", 1, T0 + 4));
+    expect(at("regular", 0.3, T0 + 4)).toBeLessThan(at("regular", 1, T0 + 4));
+    expect(skiMinutes("regular", 0)).toBeGreaterThan(skiMinutes("regular", 1));
+  });
+
+  it("counts a finished run, spends energy, and sends the guest back to the line", () => {
+    const end = T0 + skiMinutes("regular", 1);
+    const [g] = tickGuests([skier({ runs: 2, targetRuns: 9 })], clock(end));
+    expect(g.runs).toBe(3);
+    expect(g.energy).toBeCloseTo(1 - PERSONAS.regular.energyPerRun, 10);
     expect(g.state).toBe("queue");
-    expect(g.progress).toBe(0);
   });
 
-  it("moves arrivals to the queue", () => {
-    expect(tickGuests([guest({ state: "arrive", progress: 0.99 })], 1)[0].state).toBe("queue");
+  it("goes home when energy runs out, when the target is reached, or when a lap cannot finish", () => {
+    const end = T0 + skiMinutes("regular", 1);
+    expect(tickGuests([skier({ energy: 0.1, targetRuns: 9 })], clock(end))[0].state).toBe("depart");
+    expect(tickGuests([skier({ runs: 5, targetRuns: 6 })], clock(end))[0].state).toBe("depart");
+    // 15:33 finish + 5 min to the top + 8 min run ends after the 15:45 close.
+    const late = LIFT_CLOSE_MIN - 12 - skiMinutes("regular", 1);
+    const lateEnd = late + skiMinutes("regular", 1);
+    const lateSkier = skier({ stateSinceMin: late, targetRuns: 9 });
+    expect(tickGuests([lateSkier], clock(lateEnd))[0].state).toBe("depart");
+    expect(tickGuests([lateSkier], clock(lateEnd, { lapOverheadMin: 1 }))[0].state).toBe("queue");
+    // No open lift at all: nobody laps.
+    expect(
+      tickGuests([skier({ targetRuns: 9 })], clock(end, { lapOverheadMin: Infinity }))[0].state,
+    ).toBe("depart");
   });
 
-  it("leaves queued and riding guests to the lifts", () => {
-    for (const state of ["queue", "ride"] as const) {
-      const g = guest({ state, progress: 0.99 });
-      expect(tickGuests([g], 1)[0]).toEqual(g);
+  it("sends everyone still in line home when the lifts close, and counts nobody's run for it", () => {
+    const g = makeGuest({ state: "queue", runs: 0 });
+    expect(tickGuests([g], clock(LIFT_CLOSE_MIN - 0.5))[0].state).toBe("queue");
+    const [out] = tickGuests([g], clock(LIFT_CLOSE_MIN));
+    expect(out.state).toBe("depart");
+    expect(out.runs).toBe(0);
+  });
+
+  it("walks departers to the car park, then they are gone for good", () => {
+    const g = makeGuest({ state: "depart", stateSinceMin: T0 });
+    const [mid] = tickGuests([g], clock(T0 + DEPART_WALK_MIN / 2));
+    expect(mid.state).toBe("depart");
+    expect(mid.progress).toBeCloseTo(0.5, 10);
+    const [gone] = tickGuests([g], clock(T0 + DEPART_WALK_MIN));
+    expect(gone.state).toBe("gone");
+    expect(tickGuests([gone], clock(T0 + 500))[0]).toBe(gone);
+  });
+
+  it("leaves riders and the pending roster to the lifts and the clock", () => {
+    const rider = makeGuest({ state: "ride", progress: 0.4 });
+    expect(tickGuests([rider], clock(T0 + 100))[0]).toBe(rider);
+  });
+});
+
+describe("arrival curve and roster", () => {
+  const rosterFor = (seed: number, count = 200, weekend = false) => {
+    const rng = createRng(seed);
+    return createInitialGuests(count, () => rng.next(), weekend);
+  };
+
+  it("every arrival falls between 08:00 and 14:00", () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      for (const g of rosterFor(seed, 40)) {
+        expect(g.arriveAtMin).toBeGreaterThanOrEqual(ARRIVAL_EARLIEST_MIN);
+        expect(g.arriveAtMin).toBeLessThanOrEqual(ARRIVAL_LATEST_MIN);
+      }
     }
   });
 
-  it("sends skiers back to the queue or out, by the random roll", () => {
-    const skier = guest({ state: "ski", progress: 0.99 });
-    vi.spyOn(Math, "random").mockReturnValue(0.9);
-    expect(tickGuests([skier], 1)[0].state).toBe("queue");
-    vi.spyOn(Math, "random").mockReturnValue(0.1);
-    expect(tickGuests([skier], 1)[0].state).toBe("depart");
+  it("is bell-shaped around mid-morning: the 09-11 window is busier than 08-09 and 13-14", () => {
+    const all = Array.from({ length: 20 }, (_, i) => rosterFor(i + 1, 40)).flat();
+    const inHour = (from: number, to: number) =>
+      all.filter((g) => g.arriveAtMin >= from * 60 && g.arriveAtMin < to * 60).length;
+    const nineToEleven = inHour(9, 11) / 2;
+    expect(nineToEleven).toBeGreaterThan(inHour(8, 9) * 1.5);
+    expect(nineToEleven).toBeGreaterThan(inHour(13, 14) * 1.5);
+    expect(inHour(8, 14)).toBe(all.length);
   });
 
-  it("draws once per finishing skier, so two skiers can choose differently", () => {
-    const skiers = [
-      guest({ id: "a", state: "ski", progress: 0.99 }),
-      guest({ id: "b", state: "ski", progress: 0.99 }),
-    ];
-    const rolls = [0.9, 0.1];
-    const out = tickGuests(skiers, 1, () => rolls.shift()!);
-    expect(out.map((g) => g.state)).toEqual(["queue", "depart"]);
-  });
-
-  it("draws nothing for guests that are not finishing a ski run", () => {
-    const rand = vi.fn(() => 0.5);
-    tickGuests(
-      [
-        guest({ state: "arrive" }),
-        guest({ state: "queue", progress: 0.99 }),
-        guest({ state: "ski", progress: 0 }),
-      ],
-      1,
-      rand,
+  it("builds a pending roster sorted by arrival, with full energy and no runs", () => {
+    const guests = rosterFor(3, 25);
+    expect(guests).toHaveLength(25);
+    expect(guests.every((g) => g.state === "pending" && g.runs === 0 && g.energy === 1)).toBe(true);
+    expect(guests.map((g) => g.arriveAtMin)).toEqual(
+      [...guests.map((g) => g.arriveAtMin)].sort((x, y) => x - y),
     );
-    expect(rand).not.toHaveBeenCalled();
+    expect(new Set(guests.map((g) => g.id)).size).toBe(25);
+    for (const g of guests) {
+      const [lo, hi] = PERSONAS[g.persona].targetRuns;
+      expect(g.targetRuns).toBeGreaterThanOrEqual(lo);
+      expect(g.targetRuns).toBeLessThanOrEqual(hi);
+    }
   });
 
-  it("depart is terminal", () => {
-    const gone = guest({ state: "depart", progress: 0.5 });
-    const [g] = tickGuests([gone], 100);
-    expect(g).toBe(gone);
-    expect(g.state).toBe("depart");
-    expect(g.progress).toBe(0.5);
+  it("splits personas about 60/40 first-timer on weekdays and 40/60 on weekends", () => {
+    const share = (weekend: boolean) => {
+      const all = Array.from({ length: 20 }, (_, i) => rosterFor(i + 1, 40, weekend)).flat();
+      return all.filter((g) => g.persona === "first_timer").length / all.length;
+    };
+    expect(share(false)).toBeGreaterThan(0.53);
+    expect(share(false)).toBeLessThan(0.67);
+    expect(share(true)).toBeGreaterThan(0.33);
+    expect(share(true)).toBeLessThan(0.47);
+  });
+
+  it("is deterministic for a given seed", () => {
+    expect(rosterFor(9)).toEqual(rosterFor(9));
+    expect(rosterFor(9)).not.toEqual(rosterFor(10));
   });
 });
 
