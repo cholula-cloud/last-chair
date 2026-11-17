@@ -33,6 +33,7 @@ export function PaperSheet({
   children,
   z = "z-40",
   wide = false,
+  aside,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
@@ -45,6 +46,11 @@ export function PaperSheet({
   z?: string;
   /** Widen on short landscape screens so the body can use two columns. */
   wide?: boolean;
+  /**
+   * Second column on short landscape screens, beside `children`, with the footer pinned under it;
+   * each column scrolls on its own. On portrait it simply follows `children` in the one scrolling body.
+   */
+  aside?: ReactNode;
 }) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
@@ -132,10 +138,10 @@ export function PaperSheet({
         role="dialog"
         aria-modal={modal || undefined}
         aria-labelledby={titleId}
-        className={`paper sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full max-w-xl flex-col short:max-h-[calc(100dvh-0.75rem)] ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))]" : ""} rounded-t-[22px] sm:mb-3 sm:rounded-[22px] short:mb-0 short:rounded-b-none`}
+        className={`paper sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full max-w-xl flex-col short:max-h-[calc(100dvh-0.75rem)] ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))]" : ""} ${aside ? "short:grid short:grid-cols-2 short:grid-rows-[auto_minmax(0,1fr)_auto] short:h-[calc(100dvh-0.75rem)]" : ""} rounded-t-[22px] sm:mb-3 sm:rounded-[22px] short:mb-0 short:rounded-b-none`}
       >
         <div
-          className={`select-none ${onClose ? "cursor-grab touch-none" : ""}`}
+          className={`select-none ${aside ? "short:col-span-2" : ""} ${onClose ? "cursor-grab touch-none" : ""}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -171,11 +177,24 @@ export function PaperSheet({
             )}
           </header>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">
-          {children}
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 ${aside ? "short:contents" : ""}`}
+        >
+          {aside ? (
+            <>
+              <div className="short:col-start-1 short:row-span-2 short:row-start-2 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-4">
+                {children}
+              </div>
+              <div className="mt-2 short:col-start-2 short:row-start-2 short:mt-0 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-2">
+                {aside}
+              </div>
+            </>
+          ) : (
+            children
+          )}
         </div>
         {footer && (
-          <footer className="stitch px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 short:pb-[max(0.6rem,env(safe-area-inset-bottom))] short:pt-2">
+          <footer className={`stitch px-5 ${aside ? "short:col-start-2 short:row-start-3" : ""} pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 short:pb-[max(0.6rem,env(safe-area-inset-bottom))] short:pt-2`}>
             {footer}
           </footer>
         )}

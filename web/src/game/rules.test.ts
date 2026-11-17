@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
+import { LIFT_PREVIEW_SLOTS } from "./descent";
 import { makeGuest, planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
@@ -123,6 +124,20 @@ describe("confirmLift", () => {
     expect(s.lifts).toHaveLength(2);
     expect(s.cash).toBeLessThan(base.cash);
     expect(s.buildMode).toBe(false);
+  });
+
+  it("rejects a chair on the slot the surface lift already uses, but allows the other slot and replacing in place", () => {
+    const onSurface = rules.setSelectedLiftType(
+      rules.setSelectedSlotIndex({ ...started(), cash: 99999 }, 0),
+      "chair",
+    );
+    expect(started().lifts.some((l) => l.confirmed && l.type === "surface")).toBe(true);
+    expect(rules.isSlotInUse(onSurface.lifts, LIFT_PREVIEW_SLOTS[0], "chair")).toBe(true);
+    expect(rules.confirmLift(onSurface)).toBe(onSurface);
+    const mid = rules.setSelectedSlotIndex(onSurface, 1);
+    expect(rules.confirmLift(mid).lifts).toHaveLength(2);
+    const sameType = rules.setSelectedLiftType(onSurface, "surface");
+    expect(rules.isSlotInUse(sameType.lifts, LIFT_PREVIEW_SLOTS[0], "surface")).toBe(false);
   });
 
   it("rejects an invalid descent", () => {
@@ -333,6 +348,19 @@ describe("night previews", () => {
     expect(rules.expectedArrivals(night, "balanced")).toBe(a);
     expect(rules.expectedArrivals(night, "cheap")).toBeGreaterThan(a);
     expect(rules.expectedArrivals(night, "expensive")).toBeLessThan(a);
+  });
+
+  it("previews do not move when the radio beat is acknowledged", () => {
+    const night = pure(rules.skipToClose, rules.togglePause(started()));
+    expect(night.pendingBeat).not.toBeNull();
+    expect(night.beatAcknowledged).toBe(false);
+    const fares = ["cheap", "balanced", "expensive"] as const;
+    const before = fares.map((f) => rules.expectedArrivals(night, f));
+    const snows = (["minimal", "mid", "high"] as const).map((v) => rules.previewOvernight(night, v));
+    const read = rules.acknowledgeBeat(night);
+    expect(read.reputation).toBe(night.reputation);
+    expect(fares.map((f) => rules.expectedArrivals(read, f))).toEqual(before);
+    expect((["minimal", "mid", "high"] as const).map((v) => rules.previewOvernight(read, v))).toEqual(snows);
   });
 
   it("expectedArrivals tracks what Sleep will actually plan", () => {

@@ -24,7 +24,7 @@ describe("whyLines", () => {
     expect(lines[0].detail).toBe("waited 6.4 min a ride");
     expect(lines[1].detail).toContain("$62 felt steep");
     expect(lines[1].detail).toContain("$51");
-    expect(lines[3].detail).toBe("good cover, quality 62%");
+    expect(lines[3].detail).toBe("Today's average: good cover, quality 62%");
     expect(lines[4].detail).toBe("mood 74 on arrival");
   });
 

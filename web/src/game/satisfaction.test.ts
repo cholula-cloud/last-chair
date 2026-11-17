@@ -244,6 +244,14 @@ describe("problem line", () => {
     expect(problemLine({ ...ZERO_TERMS, snow: 15 }, facts)).toBe(NO_PROBLEM);
   });
 
+  it("names a cash loss when no satisfaction term is a problem, and only then", () => {
+    expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: -105 })).toBe(
+      "Lost $105 today — running costs beat ticket sales on a quiet day.",
+    );
+    expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: 40 })).toBe(NO_PROBLEM);
+    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Long lift lines");
+  });
+
   it("quotes the real number in each sentence", () => {
     expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("7.4 min a ride");
     expect(problemLine({ ...ZERO_TERMS, snow: -10 }, facts)).toContain("30%");
@@ -344,7 +352,8 @@ describe("whole days", () => {
       const r = playDay(seed, WEEKDAY, {}, true).nightRecap!;
       expect(r.satisfaction).toBeGreaterThan(65);
       expect(r.satisfaction).toBeLessThan(85);
-      expect(r.problem).toBe(NO_PROBLEM);
+      // A weekday near break-even may also name a small cash loss; no satisfaction term is blamed.
+      expect(r.problem).toMatch(/^(Good day on the hill\.|Lost \$\d+ today)/);
     }
   });
 
@@ -360,7 +369,7 @@ describe("whole days", () => {
   it("a thin-snow day blames the snow, a steep-fare day the ticket", () => {
     for (const seed of seeds) {
       const thin = playDay(seed, WEEKDAY, { snowQuality: 0.3 }, true).nightRecap!;
-      expect(thin.problem).toContain("Thin, scraped snow");
+      expect(thin.problem).toContain("bump Snow & service tonight");
       // The day's traffic wears the 30% trail a little, so the quoted mean is a bit under 30%.
       expect(thin.problem).toMatch(/\(mean quality (2\d|30)%\)/);
       const steep = playDay(seed, WEEKDAY, { fare: "expensive" }, true).nightRecap!;

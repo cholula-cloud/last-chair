@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { formatMoney } from "./format";
 import { CREW_TALENTS } from "./content";
 import {
   applyOvernight,
@@ -139,8 +140,16 @@ describe("buildNightRecap", () => {
   });
 
   it("says the day was good when no term is meaningfully negative", () => {
-    expect(recapOf(18, 1, 0, day(75, { queue: -2, value: -1 })).problem).toBe(
+    expect(recapOf(30, 1, 0, day(75, { queue: -2, value: -1 })).problem).toBe(
       "Good day on the hill.",
+    );
+  });
+
+  it("a losing day with no satisfaction problem names the loss", () => {
+    const r = recapOf(12, 1, 0, day(75, { queue: -2 }));
+    expect(r.cashDelta).toBeLessThan(0);
+    expect(r.problem).toBe(
+      `Lost ${formatMoney(-r.cashDelta)} today — running costs beat ticket sales on a quiet day.`,
     );
   });
 
@@ -572,7 +581,7 @@ describe("arrival curve and roster", () => {
     return createInitialGuests(count, () => rng.next(), weekend);
   };
 
-  it("every arrival falls between 08:00 and 14:00", () => {
+  it("every arrival falls between 08:00 and 13:30", () => {
     for (let seed = 1; seed <= 20; seed++) {
       for (const g of rosterFor(seed, 40)) {
         expect(g.arriveAtMin).toBeGreaterThanOrEqual(ARRIVAL_EARLIEST_MIN);
@@ -581,14 +590,18 @@ describe("arrival curve and roster", () => {
     }
   });
 
-  it("is bell-shaped around mid-morning: the 09-11 window is busier than 08-09 and 13-14", () => {
-    const all = Array.from({ length: 20 }, (_, i) => rosterFor(i + 1, 40)).flat();
+  it("opens at 08:00, has about a fifth in by 09:00 and most in by 11:00, peaking mid-morning", () => {
+    const all = Array.from({ length: 40 }, (_, i) => rosterFor(i + 1, 40)).flat();
+    const share = (to: number) => all.filter((g) => g.arriveAtMin < to * 60).length / all.length;
+    expect(Math.min(...all.map((g) => g.arriveAtMin))).toBeGreaterThanOrEqual(8 * 60);
+    expect(share(9)).toBeGreaterThan(0.17);
+    expect(share(9)).toBeLessThan(0.28);
+    expect(share(11)).toBeGreaterThan(0.7);
+    expect(share(11)).toBeLessThan(0.88);
     const inHour = (from: number, to: number) =>
       all.filter((g) => g.arriveAtMin >= from * 60 && g.arriveAtMin < to * 60).length;
-    const nineToEleven = inHour(9, 11) / 2;
-    expect(nineToEleven).toBeGreaterThan(inHour(8, 9) * 1.5);
-    expect(nineToEleven).toBeGreaterThan(inHour(13, 14) * 1.5);
-    expect(inHour(8, 14)).toBe(all.length);
+    expect(inHour(9, 10)).toBeGreaterThan(inHour(8, 9));
+    expect(inHour(9, 10)).toBeGreaterThan(inHour(12, 13) * 2);
   });
 
   it("builds a pending roster sorted by arrival, with full energy and no runs", () => {

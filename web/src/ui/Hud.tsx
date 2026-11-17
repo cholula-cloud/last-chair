@@ -105,11 +105,14 @@ export function MorningNote({
   weather,
   headline,
   crewLine,
+  overnightLine,
   onDismiss,
 }: {
   weather: WeatherKind;
   headline: string;
   crewLine: string | null;
+  /** What last night's Snow & service cost ("Overnight: High snow & service, −$350"), if anything. */
+  overnightLine?: string | null;
   onDismiss: () => void;
 }) {
   const w = WEATHER[weather];
@@ -125,6 +128,9 @@ export function MorningNote({
         <p className="text-[0.82rem] leading-snug text-ink">
           <span className="font-semibold">{w.label}.</span> {headline}
         </p>
+        {overnightLine && (
+          <p className="num mt-0.5 text-[0.8rem] font-semibold text-ink-soft">{overnightLine}</p>
+        )}
         {crewLine && (
           <p className="pencil mt-0.5 text-[0.85rem] text-pine">{crewLine}</p>
         )}
@@ -182,8 +188,11 @@ export function ConditionsBoard({
   snowDepth,
   snowRead,
   mood,
+  anyOnHill = true,
 }: {
   avgQueue: number;
+  /** False until a guest is on the hill: the queue then reads "No line yet" instead of 0.0m. */
+  anyOnHill?: boolean;
   snowQuality: number;
   snowDepth: number;
   /** "tone|label" of the worst trail segment (see snow.ts `readSnow`). */
@@ -204,11 +213,12 @@ export function ConditionsBoard({
       key: "queue",
       icon: <QueueIcon />,
       label: "Queue",
-      value: `${avgQueue.toFixed(1)}m`,
-      state: { good: "Short", watch: "Busy", bad: "Long", plain: "" }[
-        queueTone
-      ],
-      tone: queueTone,
+      value: anyOnHill ? `${avgQueue.toFixed(1)}m` : "No line",
+      state: anyOnHill
+        ? { good: "Short", watch: "Busy", bad: "Long", plain: "" }[queueTone]
+        : "yet",
+      bare: !anyOnHill,
+      tone: anyOnHill ? queueTone : "plain",
     },
     {
       key: "snow",
