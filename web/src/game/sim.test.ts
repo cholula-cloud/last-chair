@@ -7,6 +7,9 @@ import {
   emptyDayStats,
   formatClock,
   isWeekend,
+  DEMAND,
+  fareDemandMultiplier,
+  meanArrivals,
   planArrivals,
   readyStoryBeat,
   rollMorningWeather,
@@ -101,6 +104,7 @@ describe("buildNightRecap", () => {
     score,
     breakdown: { ...ZERO_TERMS, ...over },
     guests: 10,
+    hillValue: 45,
   });
   const recapOf = (arrivals: number, lifts: number, founderDelta: number, d = day(71)) =>
     buildNightRecap({
@@ -277,8 +281,9 @@ describe("planArrivals", () => {
     const cheap = planArrivals({ ...base, fare: "cheap" });
     const expensive = planArrivals({ ...base, fare: "expensive" });
     expect(cheap).toBeGreaterThanOrEqual(expensive);
-    expect(cheap).toBe(Math.round(20 * 1.1));
-    expect(expensive).toBe(Math.round(20 * 0.9));
+    expect(planArrivals({ ...base, fare: "balanced" })).toBe(20);
+    expect(cheap).toBe(23);
+    expect(expensive).toBe(18);
   });
 
   it("applies weather, thin snow, building and talent modifiers", () => {
@@ -286,7 +291,8 @@ describe("planArrivals", () => {
     expect(planArrivals({ ...base, weather: "snow" })).toBe(21);
     expect(planArrivals({ ...base, weather: "thaw" })).toBe(14);
     expect(planArrivals({ ...base, snowQuality: 0.3 })).toBe(15);
-    expect(planArrivals({ ...base, buildings: ["cafe"] })).toBe(19);
+    // +1 for the café itself, +1 because a café raises what the town expects a day to be worth.
+    expect(planArrivals({ ...base, buildings: ["cafe"] })).toBe(20);
     expect(planArrivals({ ...base, talentsOwned: ["school_day"] })).toBe(20);
     expect(
       planArrivals({ ...base, dayIndex: 6, talentsOwned: ["ticket_booth"] }),
@@ -316,6 +322,64 @@ describe("planArrivals", () => {
         founderId: "elena",
       }),
     ).toBe(40);
+  });
+});
+
+describe("fare elasticity of arrivals", () => {
+  const base = {
+    dayIndex: 2,
+    snowQuality: 0.7,
+    weather: "clear" as const,
+    buildings: [] as BuildingId[],
+    talentsOwned: [] as string[],
+    founderId: null,
+  };
+  const mean = (over: Partial<Parameters<typeof meanArrivals>[0]> = {}) =>
+    meanArrivals({ ...base, fare: "balanced", ...over });
+
+  it("a cheaper fare brings more expected arrivals", () => {
+    const cheap = mean({ fare: "cheap" });
+    const balanced = mean({ fare: "balanced" });
+    const expensive = mean({ fare: "expensive" });
+    expect(cheap).toBeGreaterThan(balanced);
+    expect(balanced).toBeGreaterThan(expensive);
+  });
+
+  it("a better reputation brings more at every fare", () => {
+    for (const fare of ["cheap", "balanced", "expensive"] as const) {
+      expect(mean({ fare, reputation: 85 })).toBeGreaterThan(mean({ fare, reputation: 40 }));
+      expect(mean({ fare, reputation: 40 })).toBeGreaterThanOrEqual(mean({ fare, reputation: 10 }));
+    }
+    // Reputation is what makes a high fare tolerable.
+    expect(mean({ fare: "expensive", reputation: 85 })).toBeGreaterThanOrEqual(
+      mean({ fare: "balanced", reputation: 40 }) - 1,
+    );
+  });
+
+  it("regulars are more price-sensitive than first-timers", () => {
+    // The weekend roster is mostly regulars, so the same fare move shifts demand further.
+    const swing = (weekend: boolean) =>
+      fareDemandMultiplier("cheap", 41, weekend) - fareDemandMultiplier("expensive", 41, weekend);
+    expect(swing(true)).toBeGreaterThan(swing(false));
+    expect(fareDemandMultiplier("balanced", 41, false)).toBeCloseTo(1, 2);
+  });
+
+  it("keeps the multiplier inside its clamps", () => {
+    expect(fareDemandMultiplier("cheap", 1000, true)).toBe(DEMAND.MAX_MULT);
+    expect(fareDemandMultiplier("expensive", 1, false)).toBe(DEMAND.MIN_MULT);
+  });
+
+  it("meanArrivals is deterministic and the mean of planArrivals over the day noise", () => {
+    expect(mean({ fare: "cheap" })).toBe(mean({ fare: "cheap" }));
+    for (const dayIndex of [2, 6]) {
+      for (const fare of ["cheap", "balanced", "expensive"] as const) {
+        const draws = [0, 0.2, 0.4, 0.6, 0.8].map((r) =>
+          planArrivals({ ...base, dayIndex, fare, rand: () => r }),
+        );
+        const avg = draws.reduce((a, b) => a + b, 0) / draws.length;
+        expect(Math.abs(mean({ dayIndex, fare }) - avg)).toBeLessThanOrEqual(1);
+      }
+    }
   });
 });
 
@@ -589,7 +653,7 @@ describe("headless season", () => {
         stats: { ...emptyDayStats(), arrivals },
         fare: "balanced",
         snowQuality,
-        day: { score: 70, breakdown: ZERO_TERMS, guests: arrivals },
+        day: { score: 70, breakdown: ZERO_TERMS, guests: arrivals, hillValue: 45 },
         arrivalMood: 0.7,
         openLiftCount: 1,
         founderFixedDelta: 0,

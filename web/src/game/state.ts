@@ -1,19 +1,20 @@
 import { LIFT_PREVIEW_SLOTS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
-import { ZERO_TERMS } from "./satisfaction";
+import { VALUE, ZERO_TERMS } from "./satisfaction";
 import { START_DEPTH, START_QUALITY, deriveSnow, freshTrail, trailFromGlobals, type Trail } from "./snow";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
-import type {
-  BuildingId,
-  DayStats,
-  FarePreset,
-  FounderId,
-  GamePhase,
-  Guest,
-  LiftType,
-  SnowPreset,
-  StoryBeatId,
-  WeatherKind,
+import {
+  FARE_PRICES,
+  type BuildingId,
+  type DayStats,
+  type FarePreset,
+  type FounderId,
+  type GamePhase,
+  type Guest,
+  type LiftType,
+  type SnowPreset,
+  type StoryBeatId,
+  type WeatherKind,
 } from "./types";
 
 export type LiftSlot = {
@@ -26,6 +27,18 @@ export type LiftSlot = {
   dispatchCredit: number;
   /** Snow on this lift's trail, top (index 0) to bottom (see snow.ts). */
   trail: Trail;
+};
+
+/** What yesterday looked like, kept so tonight's recap can show the change. Null on day 1 and after a new season. */
+export type LastDay = {
+  arrivals: number;
+  satisfaction: number;
+  cashDelta: number;
+  avgWaitMin: number;
+  /** The fare the day ran at. */
+  fare: FarePreset;
+  /** The snow & service preset the crew worked the night before. */
+  snow: SnowPreset;
 };
 
 /** Everything that is saved between sessions. */
@@ -68,6 +81,8 @@ export type PersistedState = {
   rngState: number;
   /** The open night sheet, so a reload during the night restores it. */
   nightRecap: NightRecap | null;
+  /** Set at Sleep; shown as deltas on the next night's recap. */
+  lastDay: LastDay | null;
   dayStats: DayStats;
 };
 
@@ -106,6 +121,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     guests: [],
     followId: null,
     nightRecap: null,
+    lastDay: null,
     dayStats: emptyDayStats(),
     pendingFare: "balanced",
     pendingSnow: "mid",
@@ -166,6 +182,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     seasonLength: state.seasonLength,
     rngState: state.rngState,
     nightRecap: state.nightRecap,
+    lastDay: state.lastDay,
     dayStats: state.dayStats,
   };
 }
@@ -182,7 +199,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
@@ -198,6 +215,9 @@ export const SAVE_VERSION = 5;
  * satisfaction breakdown on a saved night recap (it loads as all zeros).
  * Versions below 5 have one global snow depth and quality: every lift gets a
  * trail of segments all set to those values, and `gunReach` is 0.
+ * Versions below 6 have no `lastDay` (it loads null, so the first recap shows
+ * no deltas) and no `facts` on a saved night recap (rebuilt from the day's
+ * stats, the fare and the snow, with the hill's worth at its base value).
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -259,6 +279,26 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
     }));
     p.gunReach = p.gunReach ?? 0;
     Object.assign(p, deriveSnow(p.lifts));
+  }
+  if (fromVersion < 6) {
+    p.lastDay = p.lastDay ?? null;
+    if (p.nightRecap && !p.nightRecap.facts) {
+      const fare = p.fare ?? fresh.fare;
+      const stats = { ...emptyDayStats(), ...p.dayStats };
+      p.nightRecap = {
+        ...p.nightRecap,
+        facts: {
+          avgWaitMin: stats.avgQueueMin,
+          snowQuality: p.snowQuality ?? START_QUALITY,
+          snowLabel: "Good cover",
+          farePrice: FARE_PRICES[fare],
+          hillValue: VALUE.BASE,
+          runsPerGuest: stats.runsPerGuest,
+          turnedAway: stats.turnedAway,
+          arrivalMood: 0.7,
+        },
+      };
+    }
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

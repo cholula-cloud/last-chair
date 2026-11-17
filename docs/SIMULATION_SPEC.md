@@ -12,14 +12,14 @@
 | Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure are real (PR 6). No refuel stop | 16 |
 | Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
-| Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term is 🟡: fare preset vs a fixed expectation until PR 9 judges fare against what the hill offered | 9 |
-| Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a bell curve over 08:00–14:00 (PR 6). Fare elasticity by persona waits for PR 9 | 9 |
+| Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants uncalibrated until PR 10 | — |
+| Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a bell curve over 08:00–14:00 (PR 6). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
 | Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
 | Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |
-| Night choices | ✅ | Fare + snow/service presets with costs | — |
+| Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
@@ -95,7 +95,7 @@ Every term is signed points from a neutral baseline, in `satisfaction.ts` (`SAT`
 | `arrivalMood` | `40 × (mood − 0.70)` | `mood` = `arrivalMood(buildings, founder, weather)`: 0.65 + hut 0.05 + lodge 0.08 + café 0.04 + founder bonus, weather snow +0.06 / thaw −0.08, clamped 0–0.95. Hut only on a clear day is 0 |
 | `queue` | `−min(35, 3.5 × queueWeight × pain)` | `pain(w)` for mean wait per ride `w` minutes: 0 up to 1 min, then `w − 1` up to 6 min, then 5 + half a point per minute beyond. Includes the line the guest is standing in; a line left at closing counts as a wait |
 | `snow` | `50 × snowWeight × (avgQuality − expected)` | `expected` = 0.55 + founder `snowExpectationPenalty`; `avgQuality` is the mean snow quality under the guest's finished runs; 0 before the first run |
-| `value` | `10 × valueWeight × step` | `step`: Cheap +0.4, Balanced 0, Expensive −1. Fare preset vs a fixed expectation (🟡; PR 9 replaces it with fare vs what the hill offered) |
+| `value` | `clamp(30 × valueWeight × (hillValue − fare) / fare, −20, +10)` | `hillValue` is dollars, see Ticket value below |
 | `runs` | finished guests only: `share = min(1, runs / targetRuns)`; `5 × (share − 0.6) / 0.4` from 0.6 up, `−8 × (0.6 − share) / 0.6` below | Full target +5, 0.6 of target 0, zero runs (turned away) −8 |
 
 Persona weights:
@@ -107,7 +107,23 @@ Persona weights:
 
 Family Pack (1.4 / 0.9 / 1.0) and Race Kid (1.0 / 1.4 / 0.9) have weights in the design but are not modeled yet.
 
-**Day breakdown.** `nightRecap.breakdown` holds the mean of each term over the guests who arrived, in signed points (PR 9 shows it under "Why?").
+**Ticket value (`satisfaction.ts` `VALUE`).** A guest judges the ticket against what the day gave them, in dollars:
+
+`hillValue = max(10, 45 + 40 × (avgSnow − snowExpectation) − min(20, 0.35 × excessWaitMin) + venues + 8 × runsFraction)`
+
+| Part | Rule |
+|---|---|
+| Base | $45, a Dutch Hill day with middling snow and the warming hut |
+| Snow | $40 per 1.0 of mean snow quality under the guest's finished runs above their expectation (0 before the first run) |
+| Waiting | $0.35 per minute in lift lines beyond the free minute per ride (the line they stand in counts), capped at $20 |
+| Venues | Lodge +$4, café +$3 (`venueValue`) |
+| Runs | Finished guests only: +$8 at the full target, 0 at 0.6 of target, −$8 at zero runs (the same fraction as the runs term) |
+
+The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to −20…+10 points (a deal helps less than a rip-off hurts). Fares are $35 / $48 / $62. A neutral finished regular scores about +4 at Balanced, +10 (the cap) at Cheap and −6 at Expensive; on a great day (snow 0.85, no queue, lodge and café, full runs) Expensive is +6, and on an awful day (snow 0.3, an hour in line, 3 of 8 runs) Cheap is −20. Regulars (1.3) move 1.6 times as far as first-timers (0.8) until the clamp. Constants are uncalibrated; PR 10 tunes them.
+
+**Day breakdown.** `nightRecap.breakdown` holds the mean of each term over the guests who arrived, in signed points. `nightRecap.facts` holds the numbers behind them (mean wait, snow quality and word, fare, mean `hillValue`, runs per guest, turned away, arrival mood). The recap's "Why?" list (`why.ts` `whyLines`) shows the five terms largest effect first with those numbers.
+
+**Yesterday.** `lastDay` (`arrivals`, `satisfaction`, `cashDelta`, `avgWaitMin`, `fare`, `snow`) is written at Sleep and cleared by a new season. The next recap shows today-versus-yesterday deltas (hidden on day 1).
 
 **Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill." Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
 
@@ -115,7 +131,9 @@ Family Pack (1.4 / 0.9 / 1.0) and Race Kid (1.0 / 1.4 / 0.9) have weights in the
 
 ### Arrivals (Dutch Hill P0)
 
-- Base guests/day: **18–28** uniform by weekend flag (Sat/Sun +30%), then modifiers (`planArrivals`).
+- Base guests/day: **18–22** on a weekday and **24–28** on a weekend (uniform noise of 0–4), Sat/Sun ×1.3, then the fare multiplier and modifiers (`planArrivals`).
+- Fare elasticity: `expected = max(10, 45 + 0.4 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.45 × valueWeight × (expected / fare − 0.854), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix (weekday 60% first-timers, weekend 60% regulars). The reference ratio 0.854 is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–40.
+- `meanArrivals` / `rules.expectedArrivals(state, fare, snow)` is the same count with the noise replaced by its mean (2) and no RNG; the night sheet shows it on each fare tile. `rules.previewOvernight(state, snow)` runs `applyOvernight` on the current trails and returns the morning's worst-segment word, mean quality and cost.
 - Spawn minute per guest: the mean of two triangular draws on 08:00–14:00 with its mode at 10:00 (seeded). About 80% of guests arrive between 09:00 and 11:30, 2% between 08:00 and 09:00, and under 1% after 13:00; the tails stay inside the window. A single triangular draw (63% in 09:00–11:00) spreads the day wider but needs a lower surface capacity to give weekday waits above a minute, which pushes Saturday past 12.
 - Day stats: `arrivals` (roster size), `guestsArrived`, `completedRuns`, `runsPerGuest`, `turnedAway`, `peakOnHill`, plus the lift waits below.
 
@@ -212,8 +230,8 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 
 | Control | Options | Sim effect |
 |---------|---------|------------|
-| Fare | Cheap / Balanced / Expensive | `ticketMismatch`, arrivals ±10% |
-| Snow & service | Minimal / Mid / High | overnight table above + fixed cost +$0 / +$150 / +$350 |
+| Fare | Cheap / Balanced / Expensive | Value term (fare vs `hillValue`) and arrivals elasticity; tiles show `~N skiers` |
+| Snow & service | Minimal / Mid / High | overnight table above + fixed cost +$0 / +$150 / +$350; tiles show the predicted morning word and mean quality |
 
 Max **2** player choices Act I (+ optional story reply when beat ready).
 
@@ -265,7 +283,7 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (v1)
 
-JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 5` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
+JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 6` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments, v6 `lastDay` and recap `facts`; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
 
 `migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
 
