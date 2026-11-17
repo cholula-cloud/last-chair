@@ -222,7 +222,7 @@ export function computeDayRevenue(
   satisfaction: number,
   arrivals: number,
 ): number {
-  const mult = 0.75 + (satisfaction / 100) * 0.35;
+  const mult = 0.5 + (satisfaction / 100) * 0.7;
   return Math.round(arrivals * FARE_PRICES[fare] * mult);
 }
 
@@ -393,9 +393,9 @@ export function nextTalentName(owned: string[]): string | null {
  * and the day's multiplier is the mean over the persona mix.
  */
 export const DEMAND = {
-  ELASTICITY: 0.45,
+  ELASTICITY: 0.8,
   /** Value-to-fare ratio at which demand is unchanged: Balanced at the starting reputation (40) with no venues. */
-  REF_RATIO: 41 / 48,
+  REF_RATIO: 39 / 48,
   MIN_MULT: 0.75,
   MAX_MULT: 1.3,
   /** Reputation of a new hill. */
@@ -448,7 +448,7 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   if (opts.talentsOwned.includes("school_day") && !weekend) base += 2;
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
-  return Math.max(12, Math.min(40, base));
+  return Math.max(12, Math.min(48, base));
 }
 
 /** Honest next-day arrivals (fare against reputation, weather, buildings, founder). */

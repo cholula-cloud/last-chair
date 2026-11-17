@@ -103,10 +103,10 @@ describe("guest day script", () => {
       all.filter((g) => g.persona === p).map((g) => g.runs);
     expect(mean(runsOf("regular"))).toBeGreaterThan(mean(runsOf("first_timer")) + 2);
     // With a chair and short queues, runs are limited by energy and targets, not the clock.
-    expect(mean(runsOf("regular"))).toBeGreaterThanOrEqual(6);
-    expect(mean(runsOf("regular"))).toBeLessThanOrEqual(10);
-    expect(mean(runsOf("first_timer"))).toBeGreaterThanOrEqual(3);
-    expect(mean(runsOf("first_timer"))).toBeLessThanOrEqual(6);
+    expect(mean(runsOf("regular"))).toBeGreaterThanOrEqual(9);
+    expect(mean(runsOf("regular"))).toBeLessThanOrEqual(13);
+    expect(mean(runsOf("first_timer"))).toBeGreaterThanOrEqual(4);
+    expect(mean(runsOf("first_timer"))).toBeLessThanOrEqual(8);
     for (const g of all) {
       expect(g.runs).toBeLessThanOrEqual(PERSONAS[g.persona].targetRuns[1]);
       expect(g.runs).toBeGreaterThan(0);

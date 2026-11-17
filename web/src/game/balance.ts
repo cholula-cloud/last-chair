@@ -1,0 +1,379 @@
+import {
+  acknowledgeBeat,
+  buyBuilding,
+  confirmLift,
+  pickFounder,
+  previewOvernight,
+  setPendingFare,
+  setPendingSnow,
+  setSelectedLiftType,
+  setSelectedSlotIndex,
+  skipToClose,
+  sleep,
+} from "./rules";
+import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
+import { isWeekend, type NightRecap } from "./sim";
+import { createInitialState, type GameState } from "./state";
+import type { BuildingId, FarePreset, FounderId, SnowPreset } from "./types";
+
+/**
+ * Headless balance harness (see SIMULATION_SPEC, Balance (PR 10)). `runSeason`
+ * plays a whole winter through the real rules: pick a founder, then each day
+ * build (by strategy), skip to close, acknowledge the beat, set the presets
+ * (by strategy), sleep. Pure over its inputs: the same seed and strategy give
+ * the same result.
+ */
+
+export type BuildAction = "chair" | BuildingId;
+
+export type StrategyContext = {
+  /** The game at the decision point: start of a day (builds) or the night sheet (presets). */
+  state: GameState;
+  /** Last night's recap (at the night sheet, tonight's), or null on day 1. */
+  recap: NightRecap | null;
+  /** The recap's biggest problem term, or null on a good day. */
+  problem: keyof SatTerms | null;
+};
+
+export type NightPlan = { fare: FarePreset; snow: SnowPreset };
+
+export type Strategy = {
+  id: string;
+  label: string;
+  /** Purchases at the start of a day. Omitted: never builds. */
+  build?: (ctx: StrategyContext) => BuildAction[];
+  /** The two night choices. */
+  night: (ctx: StrategyContext) => NightPlan;
+};
+
+const FARES: FarePreset[] = ["cheap", "balanced", "expensive"];
+const SNOWS: SnowPreset[] = ["minimal", "mid", "high"];
+const SNOW_NAMES = { minimal: "Minimal", mid: "Mid", high: "High" } as const;
+const FARE_NAMES = { cheap: "Cheap", balanced: "Balanced", expensive: "Expensive" } as const;
+
+function stepFare(fare: FarePreset, delta: -1 | 1): FarePreset {
+  const i = Math.max(0, Math.min(FARES.length - 1, FARES.indexOf(fare) + delta));
+  return FARES[i];
+}
+
+function hasChair(state: GameState): boolean {
+  return state.lifts.some((l) => l.confirmed && l.type === "chair");
+}
+
+export const CHAIR_COST = 2500;
+/** Cash the builder and adaptive strategies keep after buying a chair. */
+export const CASH_RESERVE = 2500;
+
+function canAffordChair(state: GameState): boolean {
+  return !hasChair(state) && state.cash >= CHAIR_COST + CASH_RESERVE;
+}
+
+/** The nine fixed combinations: one fare and one snow preset all winter, no building. */
+export const FIXED_STRATEGIES: Strategy[] = FARES.flatMap((fare) =>
+  SNOWS.map<Strategy>((snow) => ({
+    id: `${fare}/${snow}`,
+    label: `${FARE_NAMES[fare]} / ${SNOW_NAMES[snow]}`,
+    night: () => ({ fare, snow }),
+  })),
+);
+
+/**
+ * Reads last night's recap. Queue problem: buy a chair at the start of the
+ * next day if the bank allows, otherwise go Cheap. Snow problem: High. Value
+ * problem: fare one step down. A good day: fare one step up. Snow is High only
+ * on a thaw morning or after thin cover, otherwise Mid.
+ */
+export const ADAPTIVE: Strategy = {
+  id: "adaptive",
+  label: "Adaptive",
+  build: ({ state, problem }) => (problem === "queue" && canAffordChair(state) ? ["chair"] : []),
+  night: ({ state, problem }) => {
+    let fare: FarePreset = state.fare;
+    if (problem === "queue") fare = hasChair(state) || state.cash < CHAIR_COST + CASH_RESERVE ? "cheap" : fare;
+    else if (problem === "value") fare = stepFare(fare, -1);
+    else if (problem === null) fare = stepFare(fare, 1);
+    const thaw = previewOvernight(state, "mid").weather === "thaw";
+    const thin = state.snowDepth < 0.3;
+    const snow: SnowPreset = problem === "snow" || thaw || thin ? "high" : "mid";
+    return { fare, snow };
+  },
+};
+
+/** Buys the chair on day 1 to 3 as soon as it can, then Balanced / Mid. */
+export const BUILDER: Strategy = {
+  id: "builder",
+  label: "Builder",
+  build: ({ state }) => (state.dayIndex <= 3 && canAffordChair(state) ? ["chair"] : []),
+  night: () => ({ fare: "balanced", snow: "mid" }),
+};
+
+/** Never builds, Minimal snow, Expensive fare. */
+export const STINGY: Strategy = {
+  id: "stingy",
+  label: "Stingy",
+  night: () => ({ fare: "expensive", snow: "minimal" }),
+};
+
+export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY];
+
+export function strategyById(id: string): Strategy {
+  const s = STRATEGIES.find((x) => x.id === id);
+  if (!s) throw new Error(`unknown strategy ${id}`);
+  return s;
+}
+
+/** What one day looked like, for the property tests that care about particular days. */
+export type DayRecord = {
+  day: number;
+  weekend: boolean;
+  fare: FarePreset;
+  snow: SnowPreset;
+  hasChair: boolean;
+  arrivals: number;
+  satisfaction: number;
+  avgWaitMin: number;
+  runsPerGuest: number;
+  /** Mean signed points of each satisfaction term over the day's guests. */
+  breakdown: SatTerms;
+  cashDelta: number;
+  problem: string;
+};
+
+export type SeasonResult = {
+  seed: number;
+  strategy: string;
+  endCash: number;
+  minCash: number;
+  endReputation: number;
+  meanSatisfaction: number;
+  totalArrivals: number;
+  totalRuns: number;
+  /** Mean measured wait per ride over the whole season, game minutes. */
+  meanWaitMin: number;
+  /** Days whose recap named a problem. */
+  problemDays: number;
+  wentNegative: boolean;
+  /** Story beats fired (the winter review excluded). */
+  beats: number;
+  talents: number;
+  days: DayRecord[];
+};
+
+function applyBuild(state: GameState, action: BuildAction): GameState {
+  if (action === "chair") {
+    return confirmLift(setSelectedLiftType(setSelectedSlotIndex(state, 1), "chair"));
+  }
+  return buyBuilding(state, action);
+}
+
+export function runSeason(
+  seed: number,
+  strategy: Strategy,
+  founderId: FounderId = "elena",
+): SeasonResult {
+  let state = pickFounder(createInitialState(seed), founderId);
+  let recap: NightRecap | null = null;
+  const days: DayRecord[] = [];
+  let minCash = state.cash;
+  let runs = 0;
+  let waitSum = 0;
+  let dispatched = 0;
+  const ctxOf = (): StrategyContext => ({
+    state,
+    recap,
+    problem: recap ? biggestProblem(recap.breakdown) : null,
+  });
+
+  let guard = 0;
+  while (state.phase === "day" && guard++ < 400) {
+    for (const action of strategy.build?.(ctxOf()) ?? []) state = applyBuild(state, action);
+    const fare = state.fare;
+    const snow = state.snow;
+    const chair = hasChair(state);
+    state = skipToClose(state);
+    state = acknowledgeBeat(state);
+    recap = state.nightRecap as NightRecap;
+    const { dayStats } = state;
+    runs += dayStats.completedRuns;
+    waitSum += dayStats.waitSumMin;
+    dispatched += dayStats.dispatched;
+    minCash = Math.min(minCash, state.cash + recap.cashDelta);
+    days.push({
+      day: state.dayIndex,
+      weekend: isWeekend(state.dayIndex),
+      fare,
+      snow,
+      hasChair: chair,
+      arrivals: recap.arrivals,
+      satisfaction: recap.satisfaction,
+      avgWaitMin: recap.facts.avgWaitMin,
+      runsPerGuest: recap.facts.runsPerGuest,
+      breakdown: recap.breakdown,
+      cashDelta: recap.cashDelta,
+      problem: recap.problem,
+    });
+    const plan = strategy.night(ctxOf());
+    state = sleep(setPendingSnow(setPendingFare(state, plan.fare), plan.snow));
+    minCash = Math.min(minCash, state.cash);
+  }
+
+  const n = Math.max(1, days.length);
+  return {
+    seed,
+    strategy: strategy.id,
+    endCash: state.cash,
+    minCash,
+    endReputation: state.reputation,
+    meanSatisfaction: days.reduce((a, d) => a + d.satisfaction, 0) / n,
+    totalArrivals: days.reduce((a, d) => a + d.arrivals, 0),
+    totalRuns: runs,
+    meanWaitMin: dispatched > 0 ? waitSum / dispatched : 0,
+    problemDays: days.filter((d) => d.problem !== NO_PROBLEM).length,
+    wentNegative: minCash < 0,
+    beats: state.completedBeats.filter((b) => b !== "winter_review").length,
+    talents: state.talentsOwned.length,
+    days,
+  };
+}
+
+export type StrategySummary = {
+  id: string;
+  label: string;
+  seeds: number;
+  endCash: number;
+  minCash: number;
+  endReputation: number;
+  meanSatisfaction: number;
+  totalArrivals: number;
+  totalRuns: number;
+  meanWaitMin: number;
+  problemDays: number;
+  negativeShare: number;
+  beats: number;
+  talents: number;
+  /** Mean over seeds of Saturday wait, game minutes, on days with a chair / without. */
+  satWaitChair: number | null;
+  satWaitNoChair: number | null;
+};
+
+function mean(xs: number[]): number {
+  return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+}
+
+export function summarize(strategy: Strategy, results: SeasonResult[]): StrategySummary {
+  const m = (f: (r: SeasonResult) => number) => mean(results.map(f));
+  const sat = (chair: boolean) => {
+    const waits = results.flatMap((r) =>
+      r.days.filter((d) => d.day % 7 === 6 && d.hasChair === chair).map((d) => d.avgWaitMin),
+    );
+    return waits.length ? mean(waits) : null;
+  };
+  return {
+    id: strategy.id,
+    label: strategy.label,
+    seeds: results.length,
+    endCash: m((r) => r.endCash),
+    minCash: m((r) => r.minCash),
+    endReputation: m((r) => r.endReputation),
+    meanSatisfaction: m((r) => r.meanSatisfaction),
+    totalArrivals: m((r) => r.totalArrivals),
+    totalRuns: m((r) => r.totalRuns),
+    meanWaitMin: m((r) => r.meanWaitMin),
+    problemDays: m((r) => r.problemDays),
+    negativeShare: m((r) => (r.wentNegative ? 1 : 0)),
+    beats: m((r) => r.beats),
+    talents: m((r) => r.talents),
+    satWaitChair: sat(true),
+    satWaitNoChair: sat(false),
+  };
+}
+
+export function seedList(n: number, from = 1): number[] {
+  return Array.from({ length: n }, (_, i) => from + i);
+}
+
+/** Season results of every strategy over `seeds`. */
+export function runAll(
+  seeds: number[],
+  strategies: Strategy[] = STRATEGIES,
+): Map<string, SeasonResult[]> {
+  const out = new Map<string, SeasonResult[]>();
+  for (const s of strategies) out.set(s.id, seeds.map((seed) => runSeason(seed, s)));
+  return out;
+}
+
+/** Summaries in strategy order. */
+export function summarizeAll(
+  runs: Map<string, SeasonResult[]>,
+  strategies: Strategy[] = STRATEGIES,
+): StrategySummary[] {
+  return strategies.map((s) => summarize(s, runs.get(s.id) ?? []));
+}
+
+/**
+ * Cash and satisfaction scaled 0–1 across `all` and averaged, so one number
+ * ranks strategies on money and mood together.
+ */
+export function combinedScores(all: StrategySummary[]): Map<string, number> {
+  const norm = (v: number, lo: number, hi: number) => (hi > lo ? (v - lo) / (hi - lo) : 0.5);
+  const cashes = all.map((s) => s.endCash);
+  const sats = all.map((s) => s.meanSatisfaction);
+  const [cLo, cHi] = [Math.min(...cashes), Math.max(...cashes)];
+  const [sLo, sHi] = [Math.min(...sats), Math.max(...sats)];
+  return new Map(
+    all.map((s) => [
+      s.id,
+      (norm(s.endCash, cLo, cHi) + norm(s.meanSatisfaction, sLo, sHi)) / 2,
+    ]),
+  );
+}
+
+export function median(xs: number[]): number {
+  const s = [...xs].sort((a, b) => a - b);
+  const mid = s.length >> 1;
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
+/** The fixed combination with the highest `pick`, ties to the first. */
+export function bestBy(
+  all: StrategySummary[],
+  pick: (s: StrategySummary) => number,
+): StrategySummary {
+  return all.reduce((best, s) => (pick(s) > pick(best) ? s : best));
+}
+
+/** A fixed-width table of summaries (the `npm run balance` output). */
+export function formatTable(all: StrategySummary[]): string {
+  const scores = combinedScores(all);
+  const head = [
+    "strategy".padEnd(20),
+    "endCash".padStart(8),
+    "minCash".padStart(8),
+    "rep".padStart(5),
+    "sat".padStart(6),
+    "arrivals".padStart(9),
+    "runs".padStart(6),
+    "wait".padStart(6),
+    "probDays".padStart(9),
+    "neg%".padStart(5),
+    "beats".padStart(6),
+    "score".padStart(6),
+  ].join(" ");
+  const rows = all.map((s) =>
+    [
+      s.label.padEnd(20),
+      Math.round(s.endCash).toString().padStart(8),
+      Math.round(s.minCash).toString().padStart(8),
+      s.endReputation.toFixed(1).padStart(5),
+      s.meanSatisfaction.toFixed(1).padStart(6),
+      s.totalArrivals.toFixed(0).padStart(9),
+      s.totalRuns.toFixed(0).padStart(6),
+      s.meanWaitMin.toFixed(2).padStart(6),
+      s.problemDays.toFixed(1).padStart(9),
+      Math.round(s.negativeShare * 100).toString().padStart(5),
+      s.beats.toFixed(1).padStart(6),
+      (scores.get(s.id) ?? 0).toFixed(2).padStart(6),
+    ].join(" "),
+  );
+  return [head, ...rows].join("\n");
+}

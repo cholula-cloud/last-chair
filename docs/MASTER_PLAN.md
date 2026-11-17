@@ -285,7 +285,7 @@ Goal: every number on the recap is caused by something visible on the hill.
 | 7 | ☑ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
 | 8 | ☑ | Snow per trail segment | Depth / quality / coverage per segment; thaw hits low elevation first; overnight presets per spec; terrain tint reads real values | Test: High beats Mid beats Minimal on quality after one night; a phone tester can see the difference next morning |
 | 9 | ☑ | Levers you can feel | Fare judged against what the hill offered that day (snow, queues, venues), with elasticity by persona; "Why?" breakdown on the recap; today-vs-yesterday deltas | Player can see what fare did to arrivals and mood |
-| 10 | ☐ | Balance harness + P0 re-sign | Headless season runner over N seeds × fixed strategies (always cheap, always expensive, adaptive); P0 device playtest | No single fixed strategy dominates; P0 script passes on iPhone |
+| 10 | ◐ | Balance harness + P0 re-sign | Headless season runner over N seeds × fixed strategies (always cheap, always expensive, adaptive); P0 device playtest | No single fixed strategy dominates; P0 script passes on iPhone |
 
 **Gate M1 (P0):** 15-minute phone session; player explains why they changed a preset; numbers trace to causes.
 
@@ -313,7 +313,7 @@ Goal: Dutch Hill Act I from founder pick to winter review, with consequences.
 |---|---|---|---|
 | 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
 | 19 | ☐ | 28-day calendar | Weekends and holiday weeks; season length as config |
-| 20 | ☐ | Economy + fail-soft | Fixed and lift ops costs; construction draws cash; loan offer; bankruptcy |
+| 20 | ☐ | Economy + fail-soft | Fixed and lift ops costs; construction draws cash; loan offer; bankruptcy. PR 10 harness: no strategy can go broke in 14 days — with 28 days (PR 19) at least one careless strategy must risk it |
 | 21 | ☐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ☐ | Founders complete | All six modifiers live per [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) |
 | 23 | ☐ | Route 100 Radio + Act I beats | Radio feed UI; six beats on metric gates, delivered at night (never mid-day pauses); story log |

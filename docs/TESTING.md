@@ -11,7 +11,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|---|---|
 | Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents | `npm test`, CI on every PR | Set up (PR 2) |
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
-| Balance harness | Node script (PR 10) | N seeds × fixed strategies over a full season; flags dominant strategies and broken economies | Before milestone gates | Not yet set up |
+| Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the 12-strategy table over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
 | Phone viewport | Playwright iPhone viewport, `npm run playtest:p0` (Chromium from `npx playwright install chromium`; screenshots to `PLAYTEST_OUT`, default `web/playtest-artifacts/`) | P0 script steps in Chromium at iPhone size | Local, before merge | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Milestone gates | Scripts below |

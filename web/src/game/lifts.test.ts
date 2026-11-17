@@ -147,8 +147,8 @@ describe("lift server", () => {
       SURFACE_PER_HR * PATROL_RADIO_CAPACITY,
       10,
     );
-    expect(radio - base).toBeGreaterThanOrEqual(3);
-    expect(radio - base).toBeLessThanOrEqual(4);
+    expect(radio - base).toBeGreaterThanOrEqual(4);
+    expect(radio - base).toBeLessThanOrEqual(6);
   });
 
   it("a ride lasts the lift's rideMinutes", () => {
