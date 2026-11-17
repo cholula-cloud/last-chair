@@ -3,9 +3,12 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
-import { terrainHeight, trailPoint } from "./guestPaths";
+import { PALETTE } from "./palette";
+import { terrainHeight } from "./terrainShape";
+import { trailPoint } from "./trail";
 
 const TRAIL_WIDTH = 0.78;
+const PREVIEW_WIDTH = TRAIL_WIDTH + 0.08;
 
 /** Ribbon that hugs the terrain; u runs across the trail, v along it. */
 function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
@@ -94,72 +97,54 @@ function corduroyTexture(crisp: boolean): THREE.CanvasTexture | null {
   return tex;
 }
 
-let crispTex: THREE.CanvasTexture | null = null;
-let softTex: THREE.CanvasTexture | null = null;
-function getTexture(crisp: boolean) {
-  if (crisp) return (crispTex ??= corduroyTexture(true));
-  return (softTex ??= corduroyTexture(false));
-}
+type TrailRibbonProps = { anchor: LiftAnchor } & (
+  | { kind: "built"; groomed: boolean }
+  | { kind: "preview"; valid: boolean }
+);
 
-export function TrailRibbon({
-  anchor,
-  buildMode,
-  previewValid,
-  liftConfirmed,
-  groomed = false,
-}: {
-  anchor: LiftAnchor;
-  buildMode: boolean;
-  previewValid: boolean;
-  liftConfirmed: boolean;
-  groomed?: boolean;
-}) {
-  const { x, z } = anchor;
-  const groomGeo = useMemo(
-    () => ribbonGeometry({ x, z }, TRAIL_WIDTH, 56),
-    [x, z],
-  );
-  const previewGeo = useMemo(
-    () => ribbonGeometry({ x, z }, TRAIL_WIDTH + 0.08, 40),
-    [x, z],
-  );
-  useEffect(
-    () => () => {
-      groomGeo.dispose();
-      previewGeo.dispose();
-    },
-    [groomGeo, previewGeo],
-  );
-  const map = getTexture(groomed);
+/** The corduroy ribbon of a built run, or the green / red ghost while placing a lift. */
+export function TrailRibbon(props: TrailRibbonProps) {
+  const { x, z } = props.anchor;
+  const built = props.kind === "built";
+  const groomed = props.kind === "built" && props.groomed;
 
+  const geometry = useMemo(
+    () =>
+      built
+        ? ribbonGeometry({ x, z }, TRAIL_WIDTH, 56)
+        : ribbonGeometry({ x, z }, PREVIEW_WIDTH, 40),
+    [x, z, built],
+  );
+  const map = useMemo(() => (built ? corduroyTexture(groomed) : null), [built, groomed]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => map?.dispose(), [map]);
+
+  if (props.kind === "preview") {
+    return (
+      <mesh geometry={geometry} renderOrder={2}>
+        <meshBasicMaterial
+          color={props.valid ? PALETTE.valid : PALETTE.invalid}
+          transparent
+          opacity={0.5}
+          depthWrite={false}
+          polygonOffset
+          polygonOffsetFactor={-4}
+        />
+      </mesh>
+    );
+  }
   return (
-    <group>
-      {liftConfirmed && (
-        <mesh geometry={groomGeo} receiveShadow renderOrder={1}>
-          <meshLambertMaterial
-            map={map}
-            color="#ffffff"
-            emissive="#ffffff"
-            emissiveIntensity={groomed ? 0.08 : 0.04}
-            transparent
-            depthWrite={false}
-            polygonOffset
-            polygonOffsetFactor={-3}
-          />
-        </mesh>
-      )}
-      {buildMode && (
-        <mesh geometry={previewGeo} renderOrder={2}>
-          <meshBasicMaterial
-            color={previewValid ? "#3fd27a" : "#f25c5c"}
-            transparent
-            opacity={0.5}
-            depthWrite={false}
-            polygonOffset
-            polygonOffsetFactor={-4}
-          />
-        </mesh>
-      )}
-    </group>
+    <mesh geometry={geometry} receiveShadow renderOrder={1}>
+      <meshLambertMaterial
+        map={map}
+        color={PALETTE.white}
+        emissive={PALETTE.white}
+        emissiveIntensity={groomed ? 0.08 : 0.04}
+        transparent
+        depthWrite={false}
+        polygonOffset
+        polygonOffsetFactor={-3}
+      />
+    </mesh>
   );
 }

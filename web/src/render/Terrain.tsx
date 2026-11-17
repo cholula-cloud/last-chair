@@ -2,8 +2,10 @@
 
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
-import { fbm, ROAD_Z, smoothstep, terrainHeight } from "./guestPaths";
+import { ROAD_Z } from "./layout";
+import { smoothstep } from "./math";
 import { PALETTE, SUN_DIR } from "./palette";
+import { fbm, terrainHeight } from "./terrainShape";
 
 const NX = 150;
 const NZ = 124;
