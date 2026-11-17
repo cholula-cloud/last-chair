@@ -15,7 +15,7 @@
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
-| Viability rule | 🟡 | Height drop + terminal grade on fixed slots; trail path test PR 13 | 12–13 |
+| Viability rule | 🟡 | Height drop + lift-length cap + terminal grade on fixed slots; trail path test PR 13 | 12–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
 | Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
 | Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |

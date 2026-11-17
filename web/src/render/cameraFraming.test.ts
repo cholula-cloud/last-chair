@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
 import {
   cameraBasis,
   cameraPosition,
   frameView,
   homeView,
+  framingAspect,
   keyPoints,
   type SafeRect,
   type Vec3,
 } from "./cameraFraming";
+import { liftTowers } from "./liftLine";
+import { trailPolyline } from "./trail";
+import { TERRAIN } from "@/game/terrain";
 
 const MAX_DISTANCE = 34; // OrbitControls maxDistance in MountainScene
 
@@ -36,12 +41,26 @@ function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: numbe
   };
 }
 
-function expectInside(view: ReturnType<typeof homeView>, aspect: number) {
+/** Everything the home view promises to show: key points, every trail sample, every lift tower top. */
+function allPoints(): Vec3[] {
+  const pts = [...keyPoints()];
+  for (const slot of LIFT_PREVIEW_SLOTS) {
+    for (const q of trailPolyline(slot)) {
+      pts.push({ x: q.x, y: TERRAIN.height(q.x, q.z), z: q.z });
+    }
+    for (const t of liftTowers(slot)) pts.push({ x: t.x, y: t.top, z: t.z });
+  }
+  return pts;
+}
+
+/** Frames at `homeView(aspect)` (floor-rounded internally) and projects at the real aspect. */
+function expectInside(aspect: number) {
+  const view = homeView(aspect);
   const cam = cameraPosition(view.target, view.distance, view.azimuth, view.elevation);
   const eps = 1e-6;
-  for (const [i, p] of keyPoints().entries()) {
+  for (const [i, p] of allPoints().entries()) {
     const n = project(p, cam, view.target, view.fov, aspect);
-    const where = `aspect ${aspect.toFixed(2)} point ${i}`;
+    const where = `aspect ${aspect.toFixed(3)} point ${i}`;
     expect(n.depth, where).toBeGreaterThan(0);
     expect(n.x, where).toBeGreaterThanOrEqual(view.safe.xMin - eps);
     expect(n.x, where).toBeLessThanOrEqual(view.safe.xMax + eps);
@@ -94,15 +113,27 @@ describe("frameView", () => {
 describe("home view", () => {
   for (const [name, w, h] of [
     ["iPhone portrait", 390, 844],
+    ["iPhone SE", 375, 667],
+    ["iPad portrait", 820, 1180],
     ["phone landscape", 844, 390],
     ["tablet landscape", 1180, 820],
   ] as const) {
-    it(`keeps base, lift tops, lodge and trails in the safe rect: ${name}`, () => {
-      expectInside(homeView(w / h), w / h);
+    it(`keeps key points, trails and lift tops in the safe rect: ${name}`, () => {
+      expectInside(w / h);
     });
   }
 
+  it("frames at the aspect rounded down to 0.05, so the real viewport is never narrower", () => {
+    expect(framingAspect(0.4621)).toBeCloseTo(0.45, 12);
+    expect(framingAspect(0.9)).toBeCloseTo(0.9, 12);
+    for (const a of [0.449, 0.461, 0.5619, 0.8999, 1.3, 2.1633]) {
+      expect(framingAspect(a)).toBeLessThanOrEqual(a);
+      expect(a - framingAspect(a)).toBeLessThan(0.05 + 1e-12);
+    }
+  });
+
   it("fits portrait within the orbit camera's maximum distance", () => {
     expect(homeView(390 / 844).distance).toBeLessThanOrEqual(MAX_DISTANCE);
+    expect(homeView(375 / 667).distance).toBeLessThanOrEqual(MAX_DISTANCE);
   });
 });

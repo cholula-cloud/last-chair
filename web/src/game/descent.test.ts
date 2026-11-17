@@ -33,6 +33,9 @@ describe("checkDescentValid", () => {
     expect(checkDescentValid({ x: TERRAIN.bounds.xMin - 1, z: 0 })).toBe(false);
     expect(checkDescentValid({ x: 0, z: TERRAIN.bounds.zMin - 1 })).toBe(false);
     expect(checkDescentValid({ x: Number.NaN, z: 0 })).toBe(false);
+    expect(checkDescentValid({ x: 0, z: Number.NaN })).toBe(false);
+    expect(checkDescentValid({ x: Number.POSITIVE_INFINITY, z: 0 })).toBe(false);
+    expect(checkDescentValid({ x: 0, z: Number.NEGATIVE_INFINITY })).toBe(false);
   });
 
   it("rejects an anchor on the flat base", () => {

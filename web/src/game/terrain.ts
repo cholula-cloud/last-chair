@@ -90,7 +90,7 @@ export interface Terrain {
   readonly def: TerrainDef;
   readonly bounds: TerrainDef["bounds"];
   readonly base: Readonly<XZ>;
-  /** World units of height per foot of real vertical: feet = units * feetPerUnit. */
+  /** Feet of real vertical per world unit of height: feet = units * feetPerUnit. */
   readonly feetPerUnit: number;
   height(x: number, z: number): number;
   /** Central-difference gradient, h = 0.01. */
@@ -221,6 +221,7 @@ export function createTerrain(def: TerrainDef): Terrain {
   };
 
   const gradeAlong = (a: XZ, b: XZ, step = 0.05): number[] => {
+    if (!(step > 0)) throw new RangeError(`gradeAlong: step must be > 0, got ${step}`);
     const len = Math.hypot(b.x - a.x, b.z - a.z);
     if (len === 0) return [0];
     const ux = (b.x - a.x) / len;

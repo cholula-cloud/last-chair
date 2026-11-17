@@ -18,6 +18,7 @@ export const MAX_LOAD_GRADE = 1.25;
 
 export function checkDescentValid(anchor: LiftAnchor, terrain: Terrain = TERRAIN): boolean {
   const { bounds, base } = terrain;
+  if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) return false;
   if (
     anchor.x < bounds.xMin ||
     anchor.x > bounds.xMax ||

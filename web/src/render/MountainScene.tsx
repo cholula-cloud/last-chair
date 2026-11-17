@@ -15,7 +15,7 @@ import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
 import { Atmosphere } from "./Atmosphere";
-import { cameraPosition, homeView } from "./cameraFraming";
+import { cameraPosition, framingAspect, homeView, isPortraitAspect } from "./cameraFraming";
 import { Guests, type FollowedRef } from "./Guests";
 import type { GuestPlacement } from "./guestPlacement";
 import { Lift } from "./Lift";
@@ -43,23 +43,44 @@ function CameraRig({
 }) {
   const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
   const get = useThree((s) => s.get);
-  // Rounded, so a phone browser's collapsing toolbar does not reset the camera.
-  const aspect = useThree((s) => Math.round((s.size.width / Math.max(1, s.size.height)) * 20) / 20);
+  // Floored to the 0.05 framing bucket (see framingAspect): a phone browser's
+  // collapsing toolbar stays in one bucket and does not reset the camera, and
+  // the view is framed for an aspect no wider than the real one.
+  const aspect = useThree((s) => framingAspect(s.size.width / Math.max(1, s.size.height)));
   // The framed home view for this aspect; the follow camera eases back to its target.
   const home = useMemo(() => {
     const v = homeView(aspect);
     const p = cameraPosition(v.target, v.distance, v.azimuth, v.elevation);
     return {
       fov: v.fov,
+      portrait: isPortraitAspect(aspect),
       target: new THREE.Vector3(v.target.x, v.target.y, v.target.z),
       position: new THREE.Vector3(p.x, p.y, p.z),
     };
   }, [aspect]);
   const returning = useRef(false);
   const wasFollowing = useRef(false);
+  // True once the user has orbited, panned or zoomed since the home view was applied.
+  const userMoved = useRef(false);
+  const appliedPortrait = useRef<boolean | null>(null);
 
   useEffect(() => {
     if (!controls) return;
+    const onStart = () => {
+      userMoved.current = true;
+    };
+    controls.addEventListener("start", onStart);
+    return () => controls.removeEventListener("start", onStart);
+  }, [controls]);
+
+  // Re-home on first mount and on a portrait/landscape flip; for a resize
+  // within a mode, only while the user has not moved the camera.
+  useEffect(() => {
+    if (!controls) return;
+    const modeFlipped = appliedPortrait.current !== home.portrait;
+    if (!modeFlipped && userMoved.current) return;
+    appliedPortrait.current = home.portrait;
+    userMoved.current = false;
     const camera = get().camera as THREE.PerspectiveCamera;
     camera.fov = home.fov;
     camera.position.copy(home.position);

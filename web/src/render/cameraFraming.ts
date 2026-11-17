@@ -152,10 +152,26 @@ const LANDSCAPE = {
   safe: { xMin: -0.9, xMax: 0.9, yMin: -0.62, yMax: 0.78 },
 } as const;
 
+/**
+ * The aspect the home view is framed for: the real aspect rounded down to the
+ * nearest 0.05. A narrower aspect needs a larger distance, so the real, wider
+ * viewport always shows at least what was framed, and any aspect in the same
+ * 0.05 bucket (a collapsing mobile toolbar) maps to the same view.
+ */
+export function framingAspect(aspect: number) {
+  return Math.floor(aspect * 20) / 20;
+}
+
+/** True when the home view for this aspect uses the portrait parameters. */
+export function isPortraitAspect(aspect: number) {
+  return framingAspect(aspect) < PORTRAIT_ASPECT;
+}
+
 export function homeView(aspect: number) {
-  const params = aspect < PORTRAIT_ASPECT ? PORTRAIT : LANDSCAPE;
-  const framed = frameView({ points: keyPoints(), aspect, ...params });
-  return { ...params, ...framed, aspect };
+  const framedAspect = framingAspect(aspect);
+  const params = framedAspect < PORTRAIT_ASPECT ? PORTRAIT : LANDSCAPE;
+  const framed = frameView({ points: keyPoints(), aspect: framedAspect, ...params });
+  return { ...params, ...framed, aspect: framedAspect };
 }
 
 /** Camera position for a target, distance and view angles. */
