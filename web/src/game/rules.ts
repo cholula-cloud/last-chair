@@ -1,5 +1,11 @@
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
-import { LIFT_PREVIEW_SLOTS, checkDescentValid } from "./descent";
+import {
+  checkLiftLine,
+  checkSpacing,
+  MAX_LIFTS,
+  type LiftLine,
+  type PlacementReason,
+} from "./descent";
 import {
   chooseLift,
   currentWaitMin,
@@ -37,11 +43,12 @@ import {
   tickGuests,
 } from "./sim";
 import { defaultLifts, type GameState, type LiftSlot } from "./state";
+import { TERRAIN, type XZ } from "./terrain";
 import {
   BUILDING_COSTS,
-  LIFT_BUILD_COST,
   LIFT_SPECS,
   MS_PER_GAME_MINUTE,
+  liftCost,
   type BuildingId,
   type FarePreset,
   type FounderId,
@@ -288,60 +295,91 @@ export function setFollowId(state: GameState, id: string | null): GameState {
   return { ...state, followId: id };
 }
 
+/** Opening the build sheet pauses the day so the player can place without the clock running. */
 export function setBuildMode(state: GameState, on: boolean): GameState {
-  return { ...state, buildMode: on };
+  return { ...state, buildMode: on, paused: on ? true : state.paused };
 }
 
 export function setSelectedLiftType(state: GameState, type: LiftType): GameState {
   return { ...state, selectedLiftType: type };
 }
 
-export function setSelectedSlotIndex(state: GameState, index: number): GameState {
-  return { ...state, selectedSlotIndex: index };
+export type PlacementCheck =
+  | { ok: true; cost: number; length: number; vertical: number }
+  | { ok: false; reason: PlacementReason; type?: LiftType; need?: number };
+
+/** The line of a built lift; a lift without a stored bottom starts at the base. */
+export function liftLineOf(lift: LiftSlot): LiftLine {
+  return { bottom: lift.bottom ?? TERRAIN.base, top: lift.anchor };
 }
 
-/** True when a confirmed lift of another type already unloads at `slot` (same type may be replaced in place). */
-export function isSlotInUse(
-  lifts: GameState["lifts"],
-  slot: { x: number; z: number },
+/** Terrain checks plus lift count, spacing, crossing and cash, in `PlacementReason` order. */
+export function checkPlacement(
+  state: Pick<GameState, "lifts" | "cash">,
   type: LiftType,
-): boolean {
-  return lifts.some((l) => l.confirmed && l.type !== type && l.anchor.x === slot.x && l.anchor.z === slot.z);
+  line: LiftLine,
+): PlacementCheck {
+  const open = state.lifts.filter((l) => l.confirmed);
+  if (open.length >= MAX_LIFTS) return { ok: false, reason: "max_lifts" };
+  const terrain = checkLiftLine(line);
+  if (!terrain.ok) return terrain;
+  const conflict = checkSpacing(
+    line,
+    open.map((l) => ({ line: liftLineOf(l), type: l.type })),
+  );
+  if (conflict) return { ok: false, reason: conflict.reason, type: conflict.type };
+  const cost = liftCost(type, line);
+  if (state.cash < cost) return { ok: false, reason: "cash", need: cost - state.cash };
+  return { ok: true, cost, length: terrain.length, vertical: terrain.vertical };
 }
 
-export function confirmLift(state: GameState): GameState {
-  const slot = LIFT_PREVIEW_SLOTS[state.selectedSlotIndex];
-  if (!slot || !checkDescentValid(slot)) return state;
-  const type = state.selectedLiftType;
-  if (isSlotInUse(state.lifts, slot, type)) return state;
-  const cost = state.lifts.some((l) => l.confirmed && l.type === type)
-    ? 400
-    : LIFT_BUILD_COST[type];
-  if (state.cash < cost) return state;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+const roundXZ = (p: XZ): XZ => ({ x: round2(p.x), z: round2(p.z) });
 
-  const existingIdx = state.lifts.findIndex(
-    (l) => l.anchor.x === slot.x && l.anchor.z === slot.z && l.type === type,
-  );
-  let lifts = [...state.lifts];
-  const place = (i: number): LiftSlot => ({
-    type,
-    anchor: slot,
+/** Build a lift during the day; invalid input returns `state` unchanged. */
+export function placeLift(
+  state: GameState,
+  req: { type: LiftType; bottom: XZ; top: XZ },
+): GameState {
+  if (state.phase !== "day") return state;
+  const line: LiftLine = { bottom: roundXZ(req.bottom), top: roundXZ(req.top) };
+  const check = checkPlacement(state, req.type, line);
+  if (!check.ok) return state;
+  const lift: LiftSlot = {
+    type: req.type,
+    anchor: line.top,
+    bottom: line.bottom,
     confirmed: true,
-    queue: lifts[i]?.queue ?? [],
-    dispatchCredit: lifts[i]?.dispatchCredit ?? 0,
+    queue: [],
+    dispatchCredit: 0,
     // A new run starts with the hill's average snow, so the means do not jump.
-    trail:
-      lifts[i]?.trail ??
-      averageTrail(state.lifts.filter((l) => l.confirmed).map((l) => l.trail)),
-  });
-  if (existingIdx >= 0) lifts[existingIdx] = place(existingIdx);
-  else if (lifts.length < 2) lifts = [...lifts, place(lifts.length)];
-  else {
-    const i = type === "chair" ? 1 : 0;
-    lifts[i] = place(i);
-  }
+    trail: averageTrail(state.lifts.filter((l) => l.confirmed).map((l) => l.trail)),
+    builtDay: state.dayIndex,
+    builtAtMin: state.clockMin,
+    paid: check.cost,
+  };
+  return {
+    ...state,
+    lifts: [...state.lifts, lift],
+    cash: state.cash - check.cost,
+    buildMode: false,
+  };
+}
 
-  return { ...state, lifts, cash: state.cash - cost, buildMode: false };
+/** The last lift while it can still be taken back: same day, clock unmoved. Else -1; the default lift never qualifies. */
+export function undoableLiftIndex(
+  state: Pick<GameState, "lifts" | "dayIndex" | "clockMin" | "phase">,
+): number {
+  const i = state.lifts.length - 1;
+  const last = state.lifts[i];
+  if (i < 1 || !last || state.phase !== "day") return -1;
+  return last.builtDay === state.dayIndex && last.builtAtMin === state.clockMin ? i : -1;
+}
+
+export function undoLift(state: GameState): GameState {
+  const i = undoableLiftIndex(state);
+  if (i < 0) return state;
+  return { ...state, lifts: state.lifts.slice(0, i), cash: state.cash + (state.lifts[i].paid ?? 0) };
 }
 
 export function buyBuilding(state: GameState, id: BuildingId): GameState {

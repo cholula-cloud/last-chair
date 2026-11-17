@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
+import { REFERENCE_TOPS } from "@/game/descent";
 import {
   cameraBasis,
   cameraPosition,
@@ -44,7 +44,7 @@ function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: numbe
 /** Everything the home view promises to show: key points, every trail sample, every lift tower top. */
 function allPoints(): Vec3[] {
   const pts = [...keyPoints()];
-  for (const slot of LIFT_PREVIEW_SLOTS) {
+  for (const slot of REFERENCE_TOPS) {
     for (const q of trailPolyline(slot)) {
       pts.push({ x: q.x, y: TERRAIN.height(q.x, q.z), z: q.z });
     }

@@ -1,6 +1,7 @@
-import { LIFT_PREVIEW_SLOTS, type LiftAnchor } from "./descent";
+import { MAX_LIFTS, REFERENCE_TOPS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
 import { VALUE, ZERO_TERMS } from "./satisfaction";
+import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY, deriveSnow, freshTrail, trailFromGlobals, type Trail } from "./snow";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import {
@@ -17,9 +18,22 @@ import {
   type WeatherKind,
 } from "./types";
 
+/**
+ * One lift. Identity is the index in `GameState.lifts`, which is append-only
+ * within a season: undo pops only the last lift (before the clock moves) and
+ * any future closure sets `confirmed: false` instead of splicing.
+ */
 export type LiftSlot = {
   type: LiftType;
+  /** The top terminal. */
   anchor: LiftAnchor;
+  /** The bottom terminal; absent means `TERRAIN.base`. */
+  bottom?: XZ;
+  /** Day and clock minute the lift was placed; absent on the pre-built default lift. */
+  builtDay?: number;
+  builtAtMin?: number;
+  /** What the player paid, refunded exactly by undo. */
+  paid?: number;
   confirmed: boolean;
   /** FIFO queue of guest ids waiting at this lift, front first. */
   queue: string[];
@@ -65,7 +79,6 @@ export type PersistedState = {
   buildings: BuildingId[];
   lifts: LiftSlot[];
   selectedLiftType: LiftType;
-  selectedSlotIndex: number;
   talentsOwned: string[];
   completedBeats: StoryBeatId[];
   pendingBeat: StoryBeatId | null;
@@ -97,7 +110,7 @@ export function defaultLifts(): LiftSlot[] {
   return [
     {
       type: "surface",
-      anchor: LIFT_PREVIEW_SLOTS[0] ?? { x: -1.2, z: 0.2 },
+      anchor: REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 },
       confirmed: true,
       queue: [],
       dispatchCredit: 0,
@@ -130,7 +143,6 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     buildings: ["warming_hut"],
     lifts: defaultLifts(),
     selectedLiftType: "surface",
-    selectedSlotIndex: 0,
     talentsOwned: [],
     completedBeats: [],
     pendingBeat: null,
@@ -168,7 +180,6 @@ export function toPersisted(state: PersistedState): PersistedState {
     buildings: state.buildings,
     lifts: state.lifts,
     selectedLiftType: state.selectedLiftType,
-    selectedSlotIndex: state.selectedSlotIndex,
     talentsOwned: state.talentsOwned,
     completedBeats: state.completedBeats,
     pendingBeat: state.pendingBeat,
@@ -199,7 +210,21 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
+
+const finiteXZ = (p: unknown): boolean =>
+  !!p &&
+  Number.isFinite((p as XZ).x) &&
+  Number.isFinite((p as XZ).z);
+
+function liftsUsable(lifts: unknown): boolean {
+  return (
+    Array.isArray(lifts) &&
+    lifts.length > 0 &&
+    lifts.length <= MAX_LIFTS &&
+    lifts.every((l) => finiteXZ(l?.anchor) && (l.bottom === undefined || finiteXZ(l.bottom)))
+  );
+}
 
 /**
  * Upgrade a saved slice from an older schema. Fields that are missing are
@@ -218,6 +243,9 @@ export const SAVE_VERSION = 6;
  * Versions below 6 have no `lastDay` (it loads null, so the first recap shows
  * no deltas) and no `facts` on a saved night recap (rebuilt from the day's
  * stats, the fare and the snow, with the hill's worth at its base value).
+ * Versions below 7 drop `selectedSlotIndex` (free lift placement) and keep
+ * their lifts, unless the lifts are missing, empty, hold a non-finite
+ * terminal or exceed `MAX_LIFTS`, in which case they reset to the default lift.
  */
 export function migrate(persisted: unknown, fromVersion: number): PersistedState {
   const fresh = toPersisted(createInitialState());
@@ -298,6 +326,13 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
           arrivalMood: 0.7,
         },
       };
+    }
+  }
+  if (fromVersion < 7) {
+    delete (p as Record<string, unknown>).selectedSlotIndex;
+    if (!liftsUsable(p.lifts)) {
+      p.lifts = fresh.lifts;
+      p.guests = (p.guests ?? []).map((g) => ({ ...g, liftIndex: undefined }));
     }
   }
   // A save without rngState gets a fresh random seed; filling it from

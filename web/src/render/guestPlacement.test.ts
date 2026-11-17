@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
+import { REFERENCE_TOPS } from "@/game/descent";
 import { makeGuest } from "@/game/sim";
 import type { GuestState } from "@/game/types";
 import { guestWorldPosition, placeGuests } from "./guestPlacement";
@@ -13,7 +13,7 @@ const PROGRESS = [0, 0.5, 1];
 const EPS = 1e-9;
 
 describe("guest placement", () => {
-  for (const slot of LIFT_PREVIEW_SLOTS) {
+  for (const slot of REFERENCE_TOPS) {
     describe(`lift slot ${slot.label}`, () => {
       it("yields finite coordinates above the terrain in every state", () => {
         for (const liftType of ["surface", "chair"] as const) {
@@ -65,16 +65,16 @@ describe("guest placement", () => {
   }
 
   it("places the three lift slots higher than the lift base", () => {
-    expect(LIFT_PREVIEW_SLOTS).toHaveLength(3);
+    expect(REFERENCE_TOPS).toHaveLength(3);
     const baseHeight = TERRAIN.height(LIFT_BASE.x, LIFT_BASE.z);
-    for (const slot of LIFT_PREVIEW_SLOTS) {
+    for (const slot of REFERENCE_TOPS) {
       expect(TERRAIN.height(slot.x, slot.z)).toBeGreaterThan(baseHeight);
     }
   });
 
   it("survives out-of-range or non-finite progress", () => {
     for (const progress of [-1, 2, Number.NaN]) {
-      const p = guestWorldPosition(3, "ski", progress, LIFT_PREVIEW_SLOTS[0]);
+      const p = guestWorldPosition(3, "ski", progress, REFERENCE_TOPS[0]);
       expect(Number.isFinite(p.x + p.y + p.z)).toBe(true);
     }
   });
@@ -83,7 +83,7 @@ describe("guest placement", () => {
     const g = (id: string, state: GuestState, progress: number) =>
       makeGuest({ id, label: id, state, progress, mood: 0.5 });
     const guests = [g("a", "queue", 0.2), g("b", "ski", 0.9), g("c", "queue", 0.8), g("d", "queue", 0.2)];
-    const anchor = LIFT_PREVIEW_SLOTS[1];
+    const anchor = REFERENCE_TOPS[1];
     const placed = placeGuests(guests, [{ anchor, type: "surface" }]);
     const rankOf = (i: number, rank: number) =>
       guestWorldPosition(i, "queue", 0, anchor, { queueRank: rank });
@@ -96,8 +96,8 @@ describe("guest placement", () => {
     const g = (id: string, liftIndex: number | undefined, progress: number) =>
       makeGuest({ id, label: id, state: "queue", progress, mood: 0.5, liftIndex });
     const lifts = [
-      { anchor: LIFT_PREVIEW_SLOTS[0], type: "surface" as const },
-      { anchor: LIFT_PREVIEW_SLOTS[1], type: "chair" as const },
+      { anchor: REFERENCE_TOPS[0], type: "surface" as const },
+      { anchor: REFERENCE_TOPS[1], type: "chair" as const },
     ];
     // a and c queue at lift 1; b at lift 0; d has no lift and falls back to lift 0.
     const guests = [g("a", 1, 0.2), g("b", 0, 0.9), g("c", 1, 0.8), g("d", undefined, 0.1)];

@@ -267,7 +267,7 @@ arrive/depart: near lodge / parking
 
 #### TrailRibbon
 - Thin plane or ribbon mesh along ski corridor.
-- `buildMode`: opacity 0.55, green if descent valid else red (`checkDescentValid(liftAnchor)`).
+- `buildMode`: opacity 0.55, green if descent valid else red (`checkLiftLine({ bottom, top })`).
 - Confirmed: softer white/groom stripe always visible.
 
 #### Lodge

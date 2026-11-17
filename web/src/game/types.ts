@@ -1,3 +1,5 @@
+import { liftLength, liftVertical, type LiftLine } from "./descent";
+
 export type FarePreset = "cheap" | "balanced" | "expensive";
 export type SnowPreset = "minimal" | "mid" | "high";
 export type GamePhase =
@@ -152,10 +154,20 @@ export const LIFT_SPECS: Record<
   chair: { capacityPerHour: 50, rideMinutes: 3 },
 };
 
-export const LIFT_BUILD_COST: Record<LiftType, number> = {
-  surface: 0,
-  chair: 2500,
+/**
+ * Build cost per lift type: `base + perLength * length + perVertical * vertical`,
+ * rounded to $50. Chair at Mid (length 1.98, vertical 0.99) comes to exactly $2,500.
+ */
+export const LIFT_COST_PARAMS: Record<LiftType, { base: number; perLength: number; perVertical: number }> = {
+  surface: { base: 300, perLength: 250, perVertical: 150 },
+  chair: { base: 1000, perLength: 500, perVertical: 500 },
 };
+
+export function liftCost(type: LiftType, line: LiftLine): number {
+  const { base, perLength, perVertical } = LIFT_COST_PARAMS[type];
+  const raw = base + perLength * liftLength(line) + perVertical * liftVertical(line);
+  return Math.round(raw / 50) * 50;
+}
 
 export const BUILDING_LABELS: Record<BuildingId, string> = {
   warming_hut: "Warming hut",

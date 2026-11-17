@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import * as rules from "./rules";
+import { REFERENCE_TOPS } from "./descent";
 import { createInitialState, type GameState } from "./state";
+import { TERRAIN, type XZ } from "./terrain";
 
 const SEED = 42;
 
@@ -50,9 +52,8 @@ type Driver = {
   togglePause(): void;
   tick(ms: number): void;
   buyBuilding(id: "cafe"): void;
-  setSelectedSlotIndex(i: number): void;
   setSelectedLiftType(t: "chair"): void;
-  confirmLift(): void;
+  placeLift(req: { type: "chair"; bottom: XZ; top: XZ }): void;
   setPendingFare(f: "cheap" | "balanced" | "expensive"): void;
   setPendingSnow(s: "minimal" | "mid" | "high"): void;
   acknowledgeBeat(): void;
@@ -90,9 +91,8 @@ function playSeason(d: Driver) {
     const day = d.view().dayIndex;
     if (d.view().phase === "day" && day === 2) d.buyBuilding("cafe");
     if (d.view().phase === "day" && day === 4) {
-      d.setSelectedSlotIndex(1);
       d.setSelectedLiftType("chair");
-      d.confirmLift();
+      d.placeLift({ type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
     }
     if (d.view().paused) d.togglePause();
     while (d.view().phase === "day") d.tick(2000);
@@ -138,9 +138,8 @@ function storeDriver(
     togglePause: () => s().togglePause(),
     tick: (ms) => s().tick(ms),
     buyBuilding: (id) => s().buyBuilding(id),
-    setSelectedSlotIndex: (i) => s().setSelectedSlotIndex(i),
     setSelectedLiftType: (t) => s().setSelectedLiftType(t),
-    confirmLift: () => s().confirmLift(),
+    placeLift: (req) => s().placeLift(req),
     setPendingFare: (f) => s().setPendingFare(f),
     setPendingSnow: (x) => s().setPendingSnow(x),
     acknowledgeBeat: () => s().acknowledgeBeat(),
@@ -159,9 +158,8 @@ function pureDriver(seed: number): Driver {
     togglePause: () => apply(rules.togglePause),
     tick: (ms) => apply((s) => rules.tick(s, ms)),
     buyBuilding: (id) => apply((s) => rules.buyBuilding(s, id)),
-    setSelectedSlotIndex: (i) => apply((s) => rules.setSelectedSlotIndex(s, i)),
     setSelectedLiftType: (t) => apply((s) => rules.setSelectedLiftType(s, t)),
-    confirmLift: () => apply(rules.confirmLift),
+    placeLift: (req) => apply((s) => rules.placeLift(s, req)),
     setPendingFare: (f) => apply((s) => rules.setPendingFare(s, f)),
     setPendingSnow: (x) => apply((s) => rules.setPendingSnow(s, x)),
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),

@@ -1,21 +1,19 @@
 "use client";
 
 import { formatMoney } from "@/game/format";
-import {
-  LIFT_PREVIEW_SLOTS,
-  checkDescentValid,
-  type LiftSlot,
-} from "@/game/descent";
-import { isSlotInUse } from "@/game/rules";
+import { REFERENCE_TOPS, placementReason, type PlacementReason, type ReferenceTop } from "@/game/descent";
+import { checkPlacement, undoableLiftIndex } from "@/game/rules";
 import { useGameStore } from "@/game/store";
+import { TERRAIN } from "@/game/terrain";
 import {
   BUILDING_COSTS,
   BUILDING_LABELS,
-  LIFT_BUILD_COST,
   LIFT_LABELS,
+  liftCost,
   type BuildingId,
   type LiftType,
 } from "@/game/types";
+import { usePlacementDraft } from "@/ui/placementDraft";
 import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
 import { Sheet } from "@/ui/kit/Sheet";
 import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
@@ -43,26 +41,27 @@ export function BuildSheet({
   onClose: () => void;
 }) {
   const buildMode = useGameStore((s) => s.buildMode);
-  const selectedSlotIndex = useGameStore((s) => s.selectedSlotIndex);
   const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const lifts = useGameStore((s) => s.lifts);
   const buildings = useGameStore((s) => s.buildings);
   const cash = useGameStore((s) => s.cash);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
-  const setSelectedSlotIndex = useGameStore((s) => s.setSelectedSlotIndex);
   const setSelectedLiftType = useGameStore((s) => s.setSelectedLiftType);
-  const confirmLift = useGameStore((s) => s.confirmLift);
+  const placeLift = useGameStore((s) => s.placeLift);
+  const undoLift = useGameStore((s) => s.undoLift);
+  const dayIndex = useGameStore((s) => s.dayIndex);
+  const clockMin = useGameStore((s) => s.clockMin);
+  const phase = useGameStore((s) => s.phase);
+  const candidateTop = usePlacementDraft((s) => s.candidateTop) ?? REFERENCE_TOPS[0];
   const buyBuilding = useGameStore((s) => s.buyBuilding);
 
   if (!open) return null;
 
-  const slot = LIFT_PREVIEW_SLOTS[selectedSlotIndex] ?? LIFT_PREVIEW_SLOTS[0];
-  const inUse = slot ? isSlotInUse(lifts, slot, selectedLiftType) : false;
-  const valid = slot ? checkDescentValid(slot) : false;
-  const liftCostFor = (t: LiftType) =>
-    lifts.some((l) => l.confirmed && l.type === t) ? 400 : LIFT_BUILD_COST[t];
-  const liftCost = liftCostFor(selectedLiftType);
-  const short = liftCost - cash;
+  const lineFor = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
+  const check = checkPlacement({ lifts, cash }, selectedLiftType, lineFor(candidateTop));
+  const costFor = (t: LiftType) => liftCost(t, lineFor(candidateTop));
+  const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
+  const refund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
 
   return (
     <Sheet
@@ -102,9 +101,7 @@ export function BuildSheet({
                     {LIFT_NOTES[t]}
                   </span>
                   <PriceTag>
-                    {liftCostFor(t) === 0
-                      ? "Free"
-                      : formatMoney(liftCostFor(t))}
+                    {formatMoney(costFor(t))}
                   </PriceTag>
                 </button>
               );
@@ -120,40 +117,48 @@ export function BuildSheet({
             aria-label="Lift top"
             className="mt-2.5 grid grid-cols-3 gap-2.5"
           >
-            {LIFT_PREVIEW_SLOTS.map((s, i) => (
-              <SlotButton
-                key={`${s.x}-${s.z}`}
-                slot={s}
-                selected={i === selectedSlotIndex}
-                inUse={isSlotInUse(lifts, s, selectedLiftType)}
-                onPick={() => setSelectedSlotIndex(i)}
-              />
-            ))}
+            {REFERENCE_TOPS.map((t) => {
+              const c = checkPlacement({ lifts, cash }, selectedLiftType, lineFor(t));
+              return (
+                <TopButton
+                  key={`${t.x}-${t.z}`}
+                  top={t}
+                  selected={t.x === candidateTop.x && t.z === candidateTop.z}
+                  reason={c.ok ? null : c.reason}
+                  onPick={() => usePlacementDraft.setState({ candidateTop: t })}
+                />
+              );
+            })}
           </div>
 
           <PrimaryButton
             className="mt-4"
-            disabled={!valid || inUse || cash < liftCost}
+            disabled={!check.ok}
             aria-describedby="lift-reason"
             onClick={() => {
-              confirmLift();
+              placeLift({ type: selectedLiftType, bottom: TERRAIN.base, top: candidateTop });
               onClose();
             }}
           >
-            Place {LIFT_LABELS[selectedLiftType]} for {formatMoney(liftCost)}
+            Place {LIFT_LABELS[selectedLiftType]} for {formatMoney(costFor(selectedLiftType))}
           </PrimaryButton>
           <p
             id="lift-reason"
-            className={`mt-2.5 text-center text-[0.85rem] font-extrabold ${valid && !inUse && short <= 0 ? "text-sign-green" : "text-barn-deep"}`}
+            className={`mt-2.5 text-center text-[0.85rem] font-extrabold ${check.ok ? "text-sign-green" : "text-barn-deep"}`}
           >
-            {inUse
-              ? `${slot?.label} already has a lift. Pick another top.`
-              : !valid
-              ? "No run from this top. Pick another."
-              : short > 0
-                ? `Need ${formatMoney(short)} more.`
-                : "Run reaches the base. Ready to place."}
+            {check.ok
+              ? "Run reaches the base. Ready to place."
+              : placementReason(check.reason, check)}
           </p>
+          {undoIndex >= 0 && (
+            <button
+              type="button"
+              onClick={undoLift}
+              className="key press mt-3 min-h-11 w-full px-3 text-[0.95rem] font-extrabold"
+            >
+              Undo last lift (+{formatMoney(refund)})
+            </button>
+          )}
         </div>
         <div className="mt-4 panel px-3.5 pb-4 pt-3.5 short:mt-0 short:self-start">
           <SectionHeading>Village &amp; snow</SectionHeading>
@@ -212,36 +217,36 @@ export function BuildSheet({
   );
 }
 
-function SlotButton({
-  slot,
+function TopButton({
+  top,
   selected,
-  inUse,
+  reason,
   onPick,
 }: {
-  slot: LiftSlot;
+  top: ReferenceTop;
   selected: boolean;
-  inUse: boolean;
+  /** Null when the lift can be placed here. */
+  reason: PlacementReason | null;
   onPick: () => void;
 }) {
-  const valid = checkDescentValid(slot);
+  const ok = reason === null;
   return (
     <button
       type="button"
-      aria-pressed={selected && !inUse}
-      disabled={inUse}
+      aria-pressed={selected}
       onClick={onPick}
-      data-tone={valid ? undefined : "bad"}
+      data-tone={ok ? undefined : "bad"}
       className="key press flex min-h-14 flex-col items-center justify-center px-2 py-1.5"
     >
       <span className="flex items-center gap-1 text-[1rem] font-extrabold">
-        {slot.label}
-        {selected && !inUse && <CheckIcon size={14} />}
+        {top.label}
+        {selected && <CheckIcon size={14} />}
       </span>
       <span
         data-muted
-        className={`text-[0.78rem] font-extrabold ${(selected && !inUse) || inUse ? "" : valid ? "!text-sign-green" : "!text-barn-deep"}`}
+        className={`text-[0.78rem] font-extrabold ${selected ? "" : ok ? "!text-sign-green" : "!text-barn-deep"}`}
       >
-        {inUse ? "In use" : valid ? "Valid run" : "No run"}
+        {ok ? "Valid run" : "Blocked"}
       </span>
     </button>
   );

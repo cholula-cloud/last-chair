@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "./descent";
+import { REFERENCE_TOPS } from "./descent";
 import * as rules from "./rules";
 import { applyOvernight, makeGuest } from "./sim";
 import {
@@ -229,6 +229,6 @@ describe("state integration", () => {
   it("segment elevation runs 1 at the top to 0 at the bottom", () => {
     expect(segmentElevation(0)).toBe(1);
     expect(segmentElevation(TRAIL_SEGMENTS - 1)).toBe(0);
-    expect(LIFT_PREVIEW_SLOTS.length).toBeGreaterThan(0);
+    expect(REFERENCE_TOPS.length).toBeGreaterThan(0);
   });
 });

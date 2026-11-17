@@ -1,57 +1,156 @@
 import { describe, expect, it } from "vitest";
 import {
-  LIFT_PREVIEW_SLOTS,
+  BASE_AREA_RADIUS,
   MAX_LIFT_LENGTH,
+  MAX_LIFTS,
   MAX_LOAD_GRADE,
   MIN_LIFT_VERTICAL,
-  checkDescentValid,
+  REFERENCE_TOPS,
+  checkLiftLine,
+  checkSpacing,
+  liftLength,
+  liftVertical,
+  placementReason,
+  type LiftLine,
+  type PlacementReason,
 } from "./descent";
 import { TERRAIN } from "./terrain";
 
-const slot = (label: string) => {
-  const s = LIFT_PREVIEW_SLOTS.find((x) => x.label === label);
+const top = (label: string) => {
+  const s = REFERENCE_TOPS.find((x) => x.label === label);
   if (!s) throw new Error(label);
   return s;
 };
+const fromBase = (t: { x: number; z: number }): LiftLine => ({ bottom: TERRAIN.base, top: t });
+const reasonOf = (line: LiftLine) => {
+  const c = checkLiftLine(line);
+  return c.ok ? "ok" : c.reason;
+};
+const hBase = TERRAIN.height(TERRAIN.base.x, TERRAIN.base.z);
 
-describe("checkDescentValid", () => {
-  it("accepts the Ridge and Mid slots", () => {
-    expect(checkDescentValid(slot("Ridge"))).toBe(true);
-    expect(checkDescentValid(slot("Mid"))).toBe(true);
+describe("checkLiftLine", () => {
+  it("accepts the Ridge and Mid tops from the base", () => {
+    expect(checkLiftLine(fromBase(top("Ridge"))).ok).toBe(true);
+    expect(checkLiftLine(fromBase(top("Mid"))).ok).toBe(true);
+  });
+
+  it("reports length and vertical measured from the bottom", () => {
+    const line = fromBase(top("Mid"));
+    const c = checkLiftLine(line);
+    if (!c.ok) throw new Error("expected ok");
+    expect(c.length).toBe(liftLength(line));
+    expect(c.vertical).toBe(liftVertical(line));
+    expect(c.vertical).toBe(TERRAIN.height(0.8, 0.6) - hBase);
   });
 
   it("rejects Creek for too little vertical, not for length or grade", () => {
-    const creek = slot("Creek");
-    const vertical = TERRAIN.height(creek.x, creek.z) - TERRAIN.height(TERRAIN.base.x, TERRAIN.base.z);
-    expect(vertical).toBeLessThan(MIN_LIFT_VERTICAL);
-    expect(Math.hypot(creek.x - TERRAIN.base.x, creek.z - TERRAIN.base.z)).toBeLessThanOrEqual(MAX_LIFT_LENGTH);
+    const creek = top("Creek");
+    expect(liftVertical(fromBase(creek))).toBeLessThan(MIN_LIFT_VERTICAL);
+    expect(liftLength(fromBase(creek))).toBeLessThanOrEqual(MAX_LIFT_LENGTH);
     expect(TERRAIN.grade(creek.x, creek.z)).toBeLessThanOrEqual(MAX_LOAD_GRADE);
-    expect(checkDescentValid(creek)).toBe(false);
+    expect(reasonOf(fromBase(creek))).toBe("too_low");
   });
 
-  it("rejects an anchor outside the map", () => {
-    expect(checkDescentValid({ x: TERRAIN.bounds.xMin - 1, z: 0 })).toBe(false);
-    expect(checkDescentValid({ x: 0, z: TERRAIN.bounds.zMin - 1 })).toBe(false);
-    expect(checkDescentValid({ x: Number.NaN, z: 0 })).toBe(false);
-    expect(checkDescentValid({ x: 0, z: Number.NaN })).toBe(false);
-    expect(checkDescentValid({ x: Number.POSITIVE_INFINITY, z: 0 })).toBe(false);
-    expect(checkDescentValid({ x: 0, z: Number.NEGATIVE_INFINITY })).toBe(false);
+  it("rejects non-finite or out-of-bounds coordinates as off_map", () => {
+    for (const t of [
+      { x: TERRAIN.bounds.xMin - 1, z: 0 },
+      { x: 0, z: TERRAIN.bounds.zMin - 1 },
+      { x: Number.NaN, z: 0 },
+      { x: 0, z: Number.NaN },
+      { x: Number.POSITIVE_INFINITY, z: 0 },
+      { x: 0, z: Number.NEGATIVE_INFINITY },
+    ]) {
+      expect(reasonOf(fromBase(t))).toBe("off_map");
+    }
+    expect(reasonOf({ bottom: { x: Number.NaN, z: 0 }, top: top("Ridge") })).toBe("off_map");
   });
 
-  it("rejects an anchor on the flat base", () => {
-    expect(checkDescentValid({ x: 2.2, z: 2.4 })).toBe(false);
-    expect(checkDescentValid(TERRAIN.base)).toBe(false);
+  it("rejects a top on the flat base apron as too_low", () => {
+    expect(reasonOf(fromBase({ x: 2.2, z: 2.4 }))).toBe("too_low");
+    expect(reasonOf(fromBase(TERRAIN.base))).toBe("too_low");
   });
 
-  it("rejects a top that is too far from the base", () => {
-    // High ground, but past the longest allowed lift.
-    expect(checkDescentValid({ x: -1.2, z: -3.2 })).toBe(false);
+  it("rejects a top past the longest lift as too_long", () => {
+    expect(reasonOf(fromBase({ x: -1.2, z: -3.2 }))).toBe("too_long");
   });
 
-  it("rejects a terminal on the steep rollover band", () => {
-    const x = 0.45;
-    const z = -0.45;
-    expect(TERRAIN.grade(x, z)).toBeGreaterThan(MAX_LOAD_GRADE);
-    expect(checkDescentValid({ x, z })).toBe(false);
+  it("rejects a terminal on the steep rollover band as too_steep", () => {
+    const t = { x: 0.45, z: -0.45 };
+    expect(TERRAIN.grade(t.x, t.z)).toBeGreaterThan(MAX_LOAD_GRADE);
+    expect(reasonOf(fromBase(t))).toBe("too_steep");
+  });
+
+  it("rejects a bottom 0.7 from the base as bottom_far, and accepts one inside the area", () => {
+    const far = { x: TERRAIN.base.x + 0.7, z: TERRAIN.base.z };
+    expect(reasonOf({ bottom: far, top: top("Ridge") })).toBe("bottom_far");
+    const near = { x: TERRAIN.base.x - 0.3, z: TERRAIN.base.z - 0.2 };
+    expect(Math.hypot(0.3, 0.2)).toBeLessThan(BASE_AREA_RADIUS);
+    expect(reasonOf({ bottom: near, top: top("Ridge") })).toBe("ok");
+  });
+
+  it("measures vertical from the moved bottom", () => {
+    const bottom = { x: TERRAIN.base.x - 0.3, z: TERRAIN.base.z - 0.4 };
+    const t = top("Ridge");
+    const moved = liftVertical({ bottom, top: t });
+    const fromBaseV = liftVertical(fromBase(t));
+    expect(moved - fromBaseV).toBeCloseTo(hBase - TERRAIN.height(bottom.x, bottom.z), 12);
+    const c = checkLiftLine({ bottom, top: t });
+    expect(c.ok && c.vertical).toBe(moved);
+  });
+});
+
+describe("checkSpacing", () => {
+  const ridge: LiftLine = fromBase(top("Ridge"));
+  const others = [{ line: ridge, type: "surface" as const }];
+
+  it("keeps Ridge and Mid both placeable", () => {
+    expect(checkSpacing(fromBase(top("Mid")), others)).toBeNull();
+  });
+
+  it("rejects a top 0.5 from an existing top as too_close, naming that lift", () => {
+    const near = { x: top("Ridge").x + 0.5, z: top("Ridge").z };
+    expect(checkSpacing(fromBase(near), others)).toEqual({ reason: "too_close", type: "surface" });
+  });
+
+  it("rejects a top within the clearance of another line as too_close", () => {
+    // 0.3 off the middle of the Ridge line, far from its top.
+    const mid = { x: (TERRAIN.base.x + ridge.top.x) / 2, z: (TERRAIN.base.z + ridge.top.z) / 2 };
+    const line = { bottom: TERRAIN.base, top: { x: mid.x + 0.3, z: mid.z - 0.05 } };
+    expect(checkSpacing(line, others)?.reason).toBe("too_close");
+  });
+
+  it("rejects lines that properly cross away from the base", () => {
+    const a: LiftLine = { bottom: { x: 0, z: 0 }, top: { x: 2, z: 2 } };
+    const b: LiftLine = { bottom: { x: 0, z: 2 }, top: { x: 2, z: 0 } };
+    expect(checkSpacing(b, [{ line: a, type: "chair" }])).toEqual({ reason: "crosses", type: "chair" });
+  });
+
+  it("allows coinciding bottoms and crossings inside the base area", () => {
+    expect(checkSpacing(fromBase(top("Mid")), others)).toBeNull();
+    const b = TERRAIN.base;
+    const a: LiftLine = { bottom: { x: b.x - 0.2, z: b.z }, top: { x: b.x + 1.5, z: b.z - 2 } };
+    const c: LiftLine = { bottom: { x: b.x + 0.2, z: b.z }, top: { x: b.x - 1.5, z: b.z - 2 } };
+    expect(checkSpacing(c, [{ line: a, type: "chair" }])).toBeNull();
+  });
+});
+
+describe("placementReason", () => {
+  it("has copy for every code", () => {
+    const codes: PlacementReason[] = [
+      "max_lifts",
+      "off_map",
+      "bottom_far",
+      "too_steep",
+      "too_low",
+      "too_long",
+      "too_close",
+      "crosses",
+      "cash",
+    ];
+    for (const c of codes) expect(placementReason(c).length).toBeGreaterThan(5);
+    expect(MAX_LIFTS).toBe(3);
+    expect(placementReason("max_lifts")).toBe("Dutch Hill has room for 3 lifts.");
+    expect(placementReason("too_close", { type: "chair" })).toBe("Too close to the chair lift.");
+    expect(placementReason("cash", { need: 1250 })).toBe("Need $1,250 more.");
   });
 });

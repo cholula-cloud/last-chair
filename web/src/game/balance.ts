@@ -1,20 +1,20 @@
 import {
   acknowledgeBeat,
   buyBuilding,
-  confirmLift,
   pickFounder,
+  placeLift,
   previewOvernight,
   setPendingFare,
   setPendingSnow,
-  setSelectedLiftType,
-  setSelectedSlotIndex,
   skipToClose,
   sleep,
 } from "./rules";
+import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import { isWeekend, type NightRecap } from "./sim";
 import { createInitialState, type GameState } from "./state";
-import type { BuildingId, FarePreset, FounderId, SnowPreset } from "./types";
+import { TERRAIN } from "./terrain";
+import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
 
 /**
  * Headless balance harness (see SIMULATION_SPEC, Balance (PR 10)). `runSeason`
@@ -60,7 +60,7 @@ function hasChair(state: GameState): boolean {
   return state.lifts.some((l) => l.confirmed && l.type === "chair");
 }
 
-export const CHAIR_COST = 2500;
+export const CHAIR_COST = liftCost("chair", { bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
 /** Cash the builder and adaptive strategies keep after buying a chair. */
 export const CASH_RESERVE = 2500;
 
@@ -161,7 +161,7 @@ export type SeasonResult = {
 
 function applyBuild(state: GameState, action: BuildAction): GameState {
   if (action === "chair") {
-    return confirmLift(setSelectedLiftType(setSelectedSlotIndex(state, 1), "chair"));
+    return placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
   }
   return buyBuilding(state, action);
 }

@@ -14,6 +14,7 @@ import {
   type GameState,
   type PersistedState,
 } from "./state";
+import type { XZ } from "./terrain";
 import type {
   BuildingId,
   FarePreset,
@@ -36,8 +37,8 @@ type GameActions = {
   setFollowId: (id: string | null) => void;
   setBuildMode: (on: boolean) => void;
   setSelectedLiftType: (t: LiftType) => void;
-  setSelectedSlotIndex: (i: number) => void;
-  confirmLift: () => void;
+  placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
+  undoLift: () => void;
   buyBuilding: (id: BuildingId) => void;
   pickFounder: (id: FounderId) => void;
   acknowledgeBeat: () => void;
@@ -67,8 +68,8 @@ export const useGameStore = create<GameStore>()(
       setFollowId: (id) => set((s) => rules.setFollowId(s, id)),
       setBuildMode: (on) => set((s) => rules.setBuildMode(s, on)),
       setSelectedLiftType: (t) => set((s) => rules.setSelectedLiftType(s, t)),
-      setSelectedSlotIndex: (i) => set((s) => rules.setSelectedSlotIndex(s, i)),
-      confirmLift: () => set((s) => rules.confirmLift(s)),
+      placeLift: (req) => set((s) => rules.placeLift(s, req)),
+      undoLift: () => set((s) => rules.undoLift(s)),
       buyBuilding: (id) => set((s) => rules.buyBuilding(s, id)),
       pickFounder: (id) => set((s) => rules.pickFounder(s, id)),
       acknowledgeBeat: () => set((s) => rules.acknowledgeBeat(s)),

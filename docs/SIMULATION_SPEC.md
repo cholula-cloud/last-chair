@@ -15,15 +15,15 @@
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
-| Viability rule | 🟡 | Height drop + lift-length cap + terminal grade on fixed slots; trail path test PR 13 | 12–13 |
+| Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); tap placement UI PR 12b–c; trail path test PR 13 | 12–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
 | Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
-| Economy | 🟡 | Costs and revenue as written; no loan / fail-soft | 20 |
+| Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key `last-chair-v1`, schema version 1 with migration; cloud later | 25 |
+| Save format | 🟡 | Key `last-chair-v1`, schema version 7 with migration; cloud later | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
@@ -172,7 +172,23 @@ A lift placement is **valid** iff:
 
 Invalid preview: red ghost; cannot confirm.
 
-**Implemented (PR 11):** rule 1 is a terrain test; rules 2 and 3 are not yet. `checkDescentValid(anchor)` in `game/descent.ts` accepts an anchor iff it is inside the map bounds, its height above the base is at least `MIN_LIFT_VERTICAL` (0.85), the horizontal distance from the base is at most `MAX_LIFT_LENGTH` (3.4), and the grade at both terminals is at most `MAX_LOAD_GRADE` (1.25). Thresholds are calibrated on the three fixed slots (Ridge and Mid valid, Creek fails for too little vertical). The trail path test arrives with PR 13.
+**Implemented (PR 12a):** rule 1 is a terrain test; rules 2 and 3 are not yet. A lift is a line `{bottom, top}`; `bottom` is absent on a lift stored without one and means `TERRAIN.base`. `checkLiftLine(line)` in `game/descent.ts` returns `{ok: true, length, vertical}` or `{ok: false, reason}`. Vertical and length are measured from the bottom. Reasons in check order:
+
+| Code | Fails when |
+|------|-----------|
+| `max_lifts` | `MAX_LIFTS` (3, default lift included) are already open |
+| `off_map` | a terminal is non-finite or outside the map bounds |
+| `bottom_far` | the bottom is more than `BASE_AREA_RADIUS` (0.6) from `TERRAIN.base` |
+| `too_steep` | grade at either terminal exceeds `MAX_LOAD_GRADE` (1.25) |
+| `too_low` | vertical is under `MIN_LIFT_VERTICAL` (0.85) |
+| `too_long` | length exceeds `MAX_LIFT_LENGTH` (3.4) |
+| `too_close` | the top is under `MIN_TOP_SPACING` (0.8) from another top, or under `MIN_LINE_CLEARANCE` (0.4) from another lift's line, or another top is that close to the new line |
+| `crosses` | the new line properly intersects another line outside the base area (bottoms may coincide) |
+| `cash` | cash is below `liftCost` |
+
+`checkPlacement(state, type, line)` in `game/rules.ts` runs all nine checks (the first six and `too_close`, `crosses` through `checkSpacing`). `placementReason(code, ctx)` holds the player-facing copy. `placeLift` rounds coordinates to 0.01, appends the lift with `builtDay`, `builtAtMin` and `paid`, deducts the cost and closes build mode; it acts only in the day phase and returns the state unchanged on any failed check. `undoLift` removes the last lift and refunds `paid`, only while `builtDay` is today and `builtAtMin` equals the clock (nothing has ticked) and never for the default lift. Lift identity is the array index, so `lifts` only grows within a season: undo pops the last entry, and any later closure sets `confirmed: false`. `setBuildMode(true)` pauses the day.
+
+Thresholds are unchanged from PR 11 and calibrated on three reference tops (`REFERENCE_TOPS`: Ridge and Mid valid from the base, Creek fails `too_low`; Ridge and Mid are 2.04 apart, so both stay placeable together). The interim Build sheet offers those three tops; tapping the terrain arrives in PR 12b–c. The trail path test arrives with PR 13.
 
 ### Terrain (PR 11)
 
@@ -237,6 +253,16 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
 | Daily fixed cost | $750 (power, staff stub; PR 10, was $400) |
 | Lift ops / day | $180 per open lift |
+| Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
+
+**Lift build cost (PR 12a).** Length is the horizontal distance bottom to top and vertical the height of the top above the bottom, both in world units (`liftLength`, `liftVertical`). Parameters live in `LIFT_COST_PARAMS` (`game/types.ts`):
+
+| Type | base | perLength | perVertical | At Mid from the base (length 1.98, vertical 0.99) |
+|------|------|-----------|-------------|------|
+| Surface | $300 | $250 | $150 | $950 |
+| Double chair | $1,000 | $500 | $500 | $2,500 (exact; asserted in a test) |
+
+The default surface lift is pre-built and free. The cost is deducted when the lift is placed and refunded exactly by undo. The old flat $400 charge for a second lift of a type is gone. `LIFT_OPS_COST` still counts open lifts.
 
 **Revenue/day:** `arrivals × fare × (0.5 + 0.7 × satisfaction/100)`, a multiplier of 0.5 at satisfaction 0 to 1.2 at 100 (PR 10; was 0.75 + 0.35 × s).
 
@@ -301,7 +327,7 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (v1)
 
-JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 6` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments, v6 `lastDay` and recap `facts`; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
+JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 7` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments, v6 `lastDay` and recap `facts`, v7 free lift placement: `selectedSlotIndex` is removed and a lift may carry `bottom`, `builtDay`, `builtAtMin` and `paid`; v7 keeps saved lifts unless they are missing, empty, hold a non-finite terminal or number more than `MAX_LIFTS`, which reset to the default lift; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
 
 `migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
 

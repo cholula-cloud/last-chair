@@ -63,7 +63,7 @@ await page.screenshot({ path: path.join(outDir, "follow-guest.png") });
 
 await page.getByRole("button", { name: "Build", exact: true }).click();
 await page.getByRole("heading", { name: "Build" }).waitFor();
-const bad = page.getByRole("button", { name: /No run/ });
+const bad = page.getByRole("button", { name: /Blocked/ });
 if (await bad.count()) await bad.first().click();
 await page.getByRole("button", { name: /Valid run/ }).first().click();
 await page.getByRole("button", { name: /Place Surface lift/i }).click();

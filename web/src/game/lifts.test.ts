@@ -1,6 +1,6 @@
 import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "./descent";
+import { REFERENCE_TOPS } from "./descent";
 import {
   PATROL_RADIO_CAPACITY,
   chooseLift,
@@ -12,11 +12,12 @@ import {
 import * as rules from "./rules";
 import { makeGuest } from "./sim";
 import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
+import { TERRAIN } from "./terrain";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
 const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
   type,
-  anchor: LIFT_PREVIEW_SLOTS[0],
+  anchor: REFERENCE_TOPS[0],
   confirmed: true,
   queue,
   dispatchCredit: 0,
@@ -199,8 +200,7 @@ describe("lifts in the day tick", () => {
   it("never puts a guest in two queues, and every queued guest is in exactly one", () => {
     for (let seed = 1; seed <= 4; seed++) {
       let s = rules.pickFounder(createInitialState(seed), "elena");
-      s = rules.setSelectedLiftType(rules.setSelectedSlotIndex(s, 1), "chair");
-      s = rules.confirmLift({ ...s, cash: 99999 });
+      s = rules.placeLift({ ...s, cash: 99999 }, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
       expect(s.lifts).toHaveLength(2);
       s = rules.togglePause(s);
       while (s.phase === "day") {
