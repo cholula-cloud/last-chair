@@ -160,7 +160,7 @@ Browser-first, no app store for v1. **iPhone + iPad Safari is the primary target
 | Stress | iPhone SE width, iPad landscape | Milestone gates |
 | Secondary | Desktop Chrome/Firefox | Dev only |
 
-**Layout:** respect `env(safe-area-inset-*)`; primary actions in the bottom third; touch targets ≥44 px, night tiles full-width ≥56 px; no hover-only affordances; every control has a visible label or one-line description (no bare icons). iPhone day view is landscape; night recap and career sheets work in portrait. Never force rotation.
+**Layout:** respect `env(safe-area-inset-*)`; primary actions in the bottom third; touch targets ≥44 px, night tiles full-width ≥56 px; no hover-only affordances; every control has a visible label or one-line description (no bare icons). iPhone day view is portrait first; landscape also works, and night recap and career sheets work in portrait. Never force rotation.
 
 **Screen map (Story Mode):**
 
@@ -177,7 +177,7 @@ Night recap   → recap + fare + snow/service tiles + Continue
 Career hub    → map · level · talents · story log · Ledger (M5)
 ```
 
-**Touch:** one-finger pan, pinch zoom, tap select. Build mode is an explicit toggle; two-finger gestures are disabled while placing.
+**Touch:** one-finger pan, pinch zoom, two-finger orbit and tilt, tap select, double-tap focus; pan and zoom stay on while placing; recenter button. Build mode is an explicit toggle.
 
 **Performance budgets:** 20–30 simulated guests on iPhone (40 on iPad); ≤24 drawn guest meshes on iPhone; instanced trees; 30 fps acceptable on mid iPhone, 60 stretch; heightfield ≤2K; GLB <500 KB each. Pause the day clock and flush the save when `document.visibilityState` is hidden. Use `requestAnimationFrame`; never assume 60 Hz. Audio only after a user gesture.
 
@@ -297,6 +297,7 @@ Goal: where you put things matters.
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
+| 12-pre | ◐ | Camera, scale and playability (parts 1 to 3) | Part 1 is free camera controls: ground-plane pan with momentum, pinch zoom, two-finger orbit and tilt, double-tap focus, keyboard, recenter button, Resume follow chip, Menu confirm, shorter morning note; parts 2 and 3 follow |
 | 12 | ◐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots. 12a rules merged (game rules, cost, undo, save v7, interim Build buttons); 12b render helpers and 12c tap UI to follow |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
