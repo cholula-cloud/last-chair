@@ -6,6 +6,7 @@ import {
   checkDescentValid,
   type LiftSlot,
 } from "@/game/descent";
+import { isSlotInUse } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import {
   BUILDING_COSTS,
@@ -56,6 +57,7 @@ export function BuildSheet({
   if (!open) return null;
 
   const slot = LIFT_PREVIEW_SLOTS[selectedSlotIndex] ?? LIFT_PREVIEW_SLOTS[0];
+  const inUse = slot ? isSlotInUse(lifts, slot, selectedLiftType) : false;
   const valid = slot ? checkDescentValid(slot) : false;
   const liftCostFor = (t: LiftType) =>
     lifts.some((l) => l.confirmed && l.type === t) ? 400 : LIFT_BUILD_COST[t];
@@ -126,6 +128,7 @@ export function BuildSheet({
                 key={`${s.x}-${s.z}`}
                 slot={s}
                 selected={i === selectedSlotIndex}
+                inUse={isSlotInUse(lifts, s, selectedLiftType)}
                 onPick={() => setSelectedSlotIndex(i)}
               />
             ))}
@@ -133,7 +136,7 @@ export function BuildSheet({
 
           <PrimaryButton
             className="mt-3"
-            disabled={!valid || cash < liftCost}
+            disabled={!valid || inUse || cash < liftCost}
             aria-describedby="lift-reason"
             onClick={() => {
               confirmLift();
@@ -144,9 +147,11 @@ export function BuildSheet({
           </PrimaryButton>
           <p
             id="lift-reason"
-            className={`mt-1.5 text-center text-[0.8rem] font-medium ${valid && short <= 0 ? "text-pine" : "text-barn"}`}
+            className={`mt-1.5 text-center text-[0.8rem] font-medium ${valid && !inUse && short <= 0 ? "text-pine" : "text-barn"}`}
           >
-            {!valid
+            {inUse
+              ? `${slot?.label} already has a lift. Pick another top.`
+              : !valid
               ? "No run from this top. Pick another."
               : short > 0
                 ? `Need ${formatMoney(short)} more.`
@@ -213,14 +218,18 @@ export function BuildSheet({
 function SlotButton({
   slot,
   selected,
+  inUse,
   onPick,
 }: {
   slot: LiftSlot;
   selected: boolean;
+  inUse: boolean;
   onPick: () => void;
 }) {
   const valid = checkDescentValid(slot);
-  const ring = selected
+  const ring = inUse
+    ? "border-ink/10 bg-paper-deep/40 opacity-70"
+    : selected
     ? valid
       ? "border-pine bg-[#e6f0e9]"
       : "border-barn bg-[#f8e6e1]"
@@ -228,15 +237,16 @@ function SlotButton({
   return (
     <button
       type="button"
-      aria-pressed={selected}
+      aria-pressed={selected && !inUse}
+      disabled={inUse}
       onClick={onPick}
       className={`press flex min-h-14 flex-col items-center justify-center rounded-xl border-2 px-2 py-1.5 ${ring}`}
     >
       <span className="text-[0.95rem] font-bold text-ink">{slot.label}</span>
       <span
-        className={`text-[0.75rem] font-semibold ${valid ? "text-pine" : "text-barn"}`}
+        className={`text-[0.75rem] font-semibold ${inUse ? "text-ink-soft" : valid ? "text-pine" : "text-barn"}`}
       >
-        {valid ? "Valid run" : "No run"}
+        {inUse ? "In use" : valid ? "Valid run" : "No run"}
       </span>
     </button>
   );

@@ -257,6 +257,8 @@ export type ProblemFacts = {
   turnedAway: number;
   runsPerGuest: number;
   arrivalMood: number;
+  /** Today's cash result; a loss names itself when no satisfaction term is a problem. */
+  cashDelta?: number;
 };
 
 export const NO_PROBLEM = "Good day on the hill.";
@@ -292,6 +294,8 @@ export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
     case "arrivalMood":
       return `A cold welcome (mood ${Math.round(facts.arrivalMood * 100)} on arrival) — a warmer lodge would help.`;
     default:
-      return NO_PROBLEM;
+      return facts.cashDelta !== undefined && facts.cashDelta < 0
+        ? `Lost ${formatMoney(-facts.cashDelta)} today — running costs beat ticket sales on a quiet day.`
+        : NO_PROBLEM;
   }
 }

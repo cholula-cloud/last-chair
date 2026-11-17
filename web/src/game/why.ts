@@ -25,9 +25,9 @@ function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]):
     case "queue":
       return `waited ${f.avgWaitMin.toFixed(1)} min a ride`;
     case "snow":
-      return `${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%`;
+      return `Today's average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%`;
     case "value": {
-      const worth = `hill felt worth about ${formatMoney(f.hillValue)}`;
+      const worth = `guests felt today was worth about ${formatMoney(f.hillValue)}`;
       const price = formatMoney(f.farePrice);
       if (points <= -1) return `${price} felt steep for the day (${worth})`;
       if (points >= 1) return `${price} felt like a fair deal (${worth})`;

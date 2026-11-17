@@ -106,7 +106,7 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
       aria-label={`Change since day ${dayIndex - 1}`}
     >
       <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
-      <DeltaChip direction={happy.direction} what="Happy">{happy.text}</DeltaChip>
+      <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
       <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
       <p className="col-span-3 -mt-1 text-[0.75rem] text-ink-soft">
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
@@ -149,7 +149,7 @@ function Choices({
       <PlateHeading aside="Tomorrow’s ticket">Fare</PlateHeading>
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
-        Locals expect a day here to be worth about {formatMoney(worth)}.{" "}
+        Tomorrow, locals expect a day here to be worth about {formatMoney(worth)}.{" "}
         {FARE_LABELS[pendingFare]} {formatMoney(FARE_PRICES[pendingFare])} brings about {skiers(pendingFare)} skiers.
       </p>
 
@@ -161,9 +161,12 @@ function Choices({
         onPick={setPendingSnow}
       />
       <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
-        {SNOW_LABELS[pendingSnow]}: {chosen.label.toLowerCase()} tomorrow, average quality{" "}
-        {Math.round(chosen.meanQuality * 100)}%
-        {chosen.cost ? `, ${formatMoney(chosen.cost)} tonight` : ", no cost"}.
+        Tomorrow morning: {chosen.label.toLowerCase()}, average quality{" "}
+        {Math.round(chosen.meanQuality * 100)}%.
+      </p>
+      <p className="num mt-1 text-[0.85rem] font-semibold text-ink" aria-live="polite">
+        Tonight&rsquo;s snow &amp; service:{" "}
+        {chosen.cost ? `${formatMoney(-chosen.cost)}, charged at Sleep` : "free, nothing charged"}
       </p>
     </>
   );
@@ -190,73 +193,8 @@ export function NightRecapSheet() {
       modal
       wide
       z="z-50"
-      title="Closing recap"
-      subtitle={`Day ${dayIndex} · ${weekdayLabel(dayIndex)} night`}
-      footer={
-        <div className="short:flex short:items-center short:gap-4">
-          {!canSleep && (
-            <p
-              id="sleep-hint"
-              className="mb-2 text-center text-[0.85rem] font-medium text-ink-soft short:mb-0 short:flex-1 short:text-left"
-            >
-              Read the radio message, then tap Got it.
-            </p>
-          )}
-          <PrimaryButton
-            disabled={!canSleep}
-            aria-describedby={canSleep ? undefined : "sleep-hint"}
-            onClick={sleep}
-            className="short:ml-auto short:h-12 short:w-[min(22rem,50%)]"
-          >
-            <MoonIcon size={20} />
-            Sleep until morning
-          </PrimaryButton>
-        </div>
-      }
-    >
-      <div className="short:grid short:grid-cols-2 short:gap-6">
-        <div>
-          <div className="grid grid-cols-3 gap-3 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-3">
-            <StatTile label="Skiers" value={recap.arrivals} />
-            <StatTile
-              label="Happy"
-              value={`${Math.round(recap.satisfaction)}%`}
-              tone={mood.tone}
-              note={mood.word}
-            />
-            <StatTile
-              label="Cash today"
-              value={formatMoney(recap.cashDelta, { signed: true })}
-              tone={recap.cashDelta >= 0 ? "good" : "bad"}
-            />
-          </div>
-          {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
-
-          <p className="pencil mt-3 px-1 text-[1.05rem] text-ink">
-            <span className="sr-only">Problem: </span>
-            {recap.problem}
-          </p>
-
-          <WhyList key={dayIndex} recap={recap} />
-
-          {beat && !beatAcknowledged && (
-            <RadioCard
-              title={beat.title}
-              action={
-                <button
-                  type="button"
-                  onClick={acknowledgeBeat}
-                  className="press flex h-12 w-full items-center justify-center rounded-xl bg-pine text-[0.95rem] font-semibold text-paper"
-                >
-                  Got it
-                </button>
-              }
-            >
-              {beat.radio}
-            </RadioCard>
-          )}
-        </div>
-        <div>
+      aside={
+        <>
           <Choices
             night={night}
             setPendingFare={setPendingFare}
@@ -271,7 +209,72 @@ export function NightRecapSheet() {
               </span>
             </p>
           )}
+        </>
+      }
+      title="Closing recap"
+      subtitle={`Day ${dayIndex} · ${weekdayLabel(dayIndex)} night`}
+      footer={
+        <div>
+          {!canSleep && (
+            <p
+              id="sleep-hint"
+              className="mb-2 text-center text-[0.85rem] font-medium text-ink-soft short:mb-1.5"
+            >
+              Read the radio message, then tap Got it.
+            </p>
+          )}
+          <PrimaryButton
+            disabled={!canSleep}
+            aria-describedby={canSleep ? undefined : "sleep-hint"}
+            onClick={sleep}
+            className="short:h-12"
+          >
+            <MoonIcon size={20} />
+            Sleep until morning
+          </PrimaryButton>
         </div>
+      }
+    >
+      <div>
+        <div className="grid grid-cols-3 gap-3 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-3">
+          <StatTile label="Skiers" value={recap.arrivals} />
+          <StatTile
+            label="Happiness"
+            value={`${Math.round(recap.satisfaction)}%`}
+            tone={mood.tone}
+            note={mood.word}
+          />
+          <StatTile
+            label="Cash today"
+            value={formatMoney(recap.cashDelta, { signed: true })}
+            tone={recap.cashDelta >= 0 ? "good" : "bad"}
+          />
+        </div>
+        {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
+
+        <p className="pencil mt-3 px-1 text-[1.05rem] text-ink">
+          <span className="sr-only">Problem: </span>
+          {recap.problem}
+        </p>
+
+        <WhyList key={dayIndex} recap={recap} />
+
+        {beat && !beatAcknowledged && (
+          <RadioCard
+            title={beat.title}
+            action={
+              <button
+                type="button"
+                onClick={acknowledgeBeat}
+                className="press flex h-12 w-full items-center justify-center rounded-xl bg-pine text-[0.95rem] font-semibold text-paper"
+              >
+                Got it
+              </button>
+            }
+          >
+            {beat.radio}
+          </RadioCard>
+        )}
       </div>
     </PaperSheet>
   );

@@ -285,9 +285,9 @@ Goal: every number on the recap is caused by something visible on the hill.
 | 7 | ☑ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
 | 8 | ☑ | Snow per trail segment | Depth / quality / coverage per segment; thaw hits low elevation first; overnight presets per spec; terrain tint reads real values | Test: High beats Mid beats Minimal on quality after one night; a phone tester can see the difference next morning |
 | 9 | ☑ | Levers you can feel | Fare judged against what the hill offered that day (snow, queues, venues), with elasticity by persona; "Why?" breakdown on the recap; today-vs-yesterday deltas | Player can see what fare did to arrivals and mood |
-| 10 | ◐ | Balance harness + P0 re-sign | Headless season runner over N seeds × fixed strategies (always cheap, always expensive, adaptive); P0 device playtest | No single fixed strategy dominates; P0 script passes on iPhone |
+| 10 | ☑ | Balance harness + P0 re-sign | Headless season runner over N seeds × fixed strategies (always cheap, always expensive, adaptive); P0 device playtest | No single fixed strategy dominates; P0 script passes on iPhone |
 
-**Gate M1 (P0):** 15-minute phone session; player explains why they changed a preset; numbers trace to causes.
+**Gate M1 (P0):** 15-minute phone session; player explains why they changed a preset; numbers trace to causes. Status: met in browser at phone sizes (PR 10b fixed the M1 playtest findings); real-device and external playtests pending.
 
 ### M2 — Build the mountain
 

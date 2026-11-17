@@ -13,7 +13,7 @@
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure are real (PR 6). No refuel stop | 16 |
 | Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
-| Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a bell curve over 08:00–14:00 (PR 6). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
+| Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Zone check on three fixed slots, not a terrain/trail test | 11–13 |
 | Trail graph | ❌ | Single implicit run | 13 |
@@ -126,7 +126,7 @@ The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to
 
 **Yesterday.** `lastDay` (`arrivals`, `satisfaction`, `cashDelta`, `avgWaitMin`, `fare`, `snow`) is written at Sleep and cleared by a new season. The next recap shows today-versus-yesterday deltas (hidden on day 1).
 
-**Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill." Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
+**Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill.", or, when today lost cash, "Lost $N today — running costs beat ticket sales on a quiet day." (PR 10b). A story beat's +2 reputation is applied when the night opens (`openNight`), so the recap previews do not move when the beat is acknowledged Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
 
 **Observed (mean of 10 seeds, Elena, balanced fare, snow 0.55):** weekday surface + chair 78; weekday surface only 76 (queue −2); Saturday surface only 50 (queue −28); Saturday surface + chair 78; weekday snow 0.30 65 (snow −13); weekday snow 0.85 94; weekday Expensive 68 (value −10); weekday Cheap 82; Saturday surface only and Expensive 39.
 
@@ -135,7 +135,7 @@ The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to
 - Base guests/day: **18–22** on a weekday and **24–28** on a weekend (uniform noise of 0–4), Sat/Sun ×1.3, then the fare multiplier and modifiers (`planArrivals`).
 - Fare elasticity: `expected = max(10, 45 + 0.6 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.8 × valueWeight × (expected / fare − 0.8125), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix (weekday 60% first-timers, weekend 60% regulars). The reference ratio 0.8125 (39 / 48) is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–48.
 - `meanArrivals` / `rules.expectedArrivals(state, fare, snow)` is the same count with the noise replaced by its mean (2) and no RNG; the night sheet shows it on each fare tile. `rules.previewOvernight(state, snow)` runs `applyOvernight` on the current trails and returns the morning's worst-segment word, mean quality and cost.
-- Spawn minute per guest: the mean of two triangular draws on 08:00–14:00 with its mode at 10:00 (seeded). About 80% of guests arrive between 09:00 and 11:30, 2% between 08:00 and 09:00, and under 1% after 13:00; the tails stay inside the window. A single triangular draw (63% in 09:00–11:00) spreads the day wider but needs a lower surface capacity to give weekday waits above a minute, which pushes Saturday past 12.
+- Spawn minute per guest (PR 10b): a mix of early birds (30%, triangle 08:00–10:00, mode 09:00) and the main crowd (70%, triangle 08:00–13:30, mode 09:30), seeded. The first guests arrive at 08:00, about 22% are in by 09:00, about 79% by 11:00, under 1% after 13:00, and no one comes after 13:30. The earlier mean-of-two-triangulars curve (PR 6) left the hill empty until about 09:25 while the clock ran from 07:30.
 - Day stats: `arrivals` (roster size), `guestsArrived`, `completedRuns`, `runsPerGuest`, `turnedAway`, `peakOnHill`, plus the lift waits below.
 
 ---
@@ -148,8 +148,8 @@ Each confirmed lift is a server: a FIFO queue of guest ids plus a dispatch accum
 
 | Type | Ride time | Capacity/hr (game-scaled) | Real-world nominal |
 |------|-----------|---------------------------|--------------------|
-| Surface (rope/T) | 4 min | 52 | 600 |
-| Double chair (P1) | 3 min | 56 | 900 |
+| Surface (rope/T) | 4 min | 47 | 600 |
+| Double chair (P1) | 3 min | 50 | 900 |
 
 **Game-scaled:** days have 12–48 guests, so real capacities would never queue. PR 5 tuned 70 and 110 per hour against the old 06:00 burst. PR 6 retuned against the arrival curve and the persona table. Headless experiment, 20 seeds per cell, full day, Elena as founder, balanced fare, snow 0.55; surface only versus surface plus chair:
 
@@ -158,7 +158,7 @@ Each confirmed lift is a server: a FIFO queue of guest ids plus a dispatch accum
 | Weekday | 18–22 | 1.1 / 5.1 min | 0.03 / 0.65 min | 5.9 |
 | Saturday | 31–40 | 10.8 / 22.9 min | 0.16 / 1.65 min | 6.6 |
 
-Sweep that led to 46 per hour (surface capacity, avg wait weekday / Saturday): 36 → 3.5 / 20.2, 40 → 2.4 / 15.6, 45 → 1.2 / 11.4, 48 → 0.8 / 9.5, 50 → 0.7 / 8.5. One capacity cannot put both days in a 1–3 and 5–10 minute band, because Saturday carries about 1.8× the guests and queues grow faster than linearly. 46 keeps the weekday near 1 minute and Saturday just over 10; the chair removes both. Saturday's wait is the day's peak pressure, which PR 8–9 and the lever work should lean on. The two tables above are the PR 6 measurements at 46 and 70 per hour; PR 10 retuned the capacities to 52 and 56 (see Balance).
+Sweep that led to 46 per hour (surface capacity, avg wait weekday / Saturday): 36 → 3.5 / 20.2, 40 → 2.4 / 15.6, 45 → 1.2 / 11.4, 48 → 0.8 / 9.5, 50 → 0.7 / 8.5. One capacity cannot put both days in a 1–3 and 5–10 minute band, because Saturday carries about 1.8× the guests and queues grow faster than linearly. 46 keeps the weekday near 1 minute and Saturday just over 10; the chair removes both. Saturday's wait is the day's peak pressure, which PR 8–9 and the lever work should lean on. The two tables above are the PR 6 measurements at 46 and 70 per hour; PR 10 retuned the capacities to 52 and 56, and PR 10b to 47 and 50 (see Balance).
 
 Talent **Patrol Radio** adds 5% to every lift's capacity. The HUD queue reading is the expected wait at the busiest lift (queue length ÷ capacity per minute); the day average (`avgQueueMin`) is the measured mean wait of guests dispatched today, alongside `maxQueueLength` and `peakWaitMin`.
 
@@ -322,6 +322,25 @@ Strategies: the nine fixed combinations {Cheap, Balanced, Expensive} × {Minimal
 | First-Timer: targets, energy per run | 3–6, 0.18 → 4–8, 0.13 | Same, scaled with the Regular |
 
 Not changed: satisfaction weights, snow numbers, snow night costs, lift ops cost, weekend multiplier, arrival base counts.
+
+**PR 10b retune (arrival curve).** The new curve (see Arrivals) spreads guests earlier and thinner through the morning, which cut the Saturday wait with a chair to 0.5–0.7 minutes and broke property 3 (it needs waits above one minute). One lever moved, lift capacity scaled by about 0.9 for both lifts: surface 52 → 47 and chair 56 → 50 per hour. The chair stays faster than the surface. Capacity alone does not fix the chair-only wait, since guests join the shorter line and the chair carries them; lowering the surface alone (52 → 46) left the chair-day wait at 0.87. Other properties hold. 40 seeds, Elena, 14 days, after PR 10b:
+
+| Strategy | End cash | Min cash | rep | sat | arrivals | wait | neg |
+|---|---|---|---|---|---|---|---|
+| Cheap / Minimal | 9,383 | 9,383 | 31.0 | 36.6 | 405 | 8.56 | 0 |
+| Cheap / Mid | 11,271 | 10,924 | 56.4 | 60.0 | 452 | 11.26 | 0 |
+| Cheap / High | 9,867 | 9,557 | 67.8 | 71.8 | 452 | 11.49 | 0 |
+| Balanced / Minimal | 10,685 | 10,648 | 32.8 | 37.0 | 335 | 4.91 | 0 |
+| Balanced / Mid | 14,236 | 11,832 | 53.8 | 57.7 | 416 | 9.61 | 0 |
+| Balanced / High | 13,630 | 11,402 | 63.4 | 68.2 | 430 | 10.69 | 0 |
+| Expensive / Minimal | 11,836 | 11,504 | 34.0 | 37.3 | 286 | 2.95 | 0 |
+| Expensive / Mid | 16,091 | 11,939 | 55.2 | 58.6 | 356 | 6.01 | 0 |
+| Expensive / High | 15,866 | 11,645 | 64.2 | 68.5 | 375 | 7.25 | 0 |
+| Adaptive | 15,223 | 9,245 | 79.3 | 80.4 | 404 | 1.04 | 0 |
+| Builder | 14,297 | 9,012 | 79.5 | 80.4 | 438 | 0.80 | 0 |
+| Stingy | 11,836 | 11,504 | 34.0 | 37.3 | 286 | 2.95 | 0 |
+
+Capacity before → after PR 10b: surface 52 → 47, chair 56 → 50. Saturday mean wait with a chair: builder 1.19 minutes, adaptive 0.81; without one, Balanced / Mid 17.3. The numbers quoted under Properties and in the PR 10 table above are the PR 10 results.
 
 **Before and after, 40 seeds** (founder Elena, 14 days; `rep` end reputation, `sat` mean satisfaction, `wait` mean minutes per ride, `neg` seeds that went below $0):
 

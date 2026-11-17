@@ -3,10 +3,12 @@
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useState } from "react";
+import { formatMoney } from "@/game/format";
 import { liveSatisfaction } from "@/game/rules";
-import { DAY_START_MIN, currentWaitMin } from "@/game/sim";
+import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { useGameStore } from "@/game/store";
+import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
@@ -40,8 +42,10 @@ export default function PlayExperience() {
     return `${r.tone}|${r.label}`;
   });
   const avgQueue = useGameStore((s) => currentWaitMin(s));
+  const anyOnHill = useGameStore((s) => s.guests.some(isOnHill));
   const weather = useGameStore((s) => s.weather);
   const morningHeadline = useGameStore((s) => s.morningHeadline);
+  const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
   const togglePause = useGameStore((s) => s.togglePause);
   const skipToClose = useGameStore((s) => s.skipToClose);
@@ -123,6 +127,11 @@ export default function PlayExperience() {
             weather={weather}
             headline={morningHeadline}
             crewLine={talentToast}
+            overnightLine={
+              dayIndex > 1 && SNOW_NIGHT_COST[snowPreset] > 0
+                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
+                : null
+            }
             onDismiss={() => setNoteDismissedDay(dayIndex)}
           />
         )}
@@ -137,6 +146,7 @@ export default function PlayExperience() {
               snowDepth={snowDepth}
               snowRead={snowRead}
               mood={mood}
+              anyOnHill={anyOnHill}
             />
           </div>
           <div className="w-full sm:max-w-[400px]">

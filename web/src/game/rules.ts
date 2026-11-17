@@ -100,6 +100,9 @@ export function liveSatisfaction(state: GameState): number {
   return daySatisfaction(state.guests, satisfactionContext(state)).score;
 }
 
+/** Reputation a radio beat adds when it is chosen at close. */
+const BEAT_REPUTATION_BONUS = 2;
+
 export function openNight(state: GameState): GameState {
   const founder = founderById(state.founderId);
   const openLifts = state.lifts.filter((l) => l.confirmed).length;
@@ -117,9 +120,11 @@ export function openNight(state: GameState): GameState {
     openLiftCount: openLifts,
     founderFixedDelta: founder?.fixedCostDelta ?? 0,
   });
-  const reputation = Math.round(
+  const rawReputation = Math.round(
     state.reputation * 0.85 + recap.satisfaction * 0.15,
   );
+  // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
+  const reputationAfterBeat = (beat: string | null) => rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0);
   const pendingBeat = readyStoryBeat({
     dayIndex: state.dayIndex,
     liftsOpen: openLifts,
@@ -127,7 +132,7 @@ export function openNight(state: GameState): GameState {
     arrivals: state.dayStats.arrivals,
     snowDepth: state.snowDepth,
     daysWithoutSnow: state.daysWithoutSnow,
-    reputation,
+    reputation: rawReputation,
     buildings: state.buildings,
     lessonsBooked: state.talentsOwned.includes("school_day"),
     completedBeats: state.completedBeats,
@@ -139,7 +144,7 @@ export function openNight(state: GameState): GameState {
     nightRecap: recap,
     pendingFare: state.fare,
     pendingSnow: state.snow,
-    reputation,
+    reputation: reputationAfterBeat(pendingBeat),
     pendingBeat,
     beatAcknowledged: pendingBeat == null,
     dayStats: stats,
@@ -295,10 +300,20 @@ export function setSelectedSlotIndex(state: GameState, index: number): GameState
   return { ...state, selectedSlotIndex: index };
 }
 
+/** True when a confirmed lift of another type already unloads at `slot` (same type may be replaced in place). */
+export function isSlotInUse(
+  lifts: GameState["lifts"],
+  slot: { x: number; z: number },
+  type: LiftType,
+): boolean {
+  return lifts.some((l) => l.confirmed && l.type !== type && l.anchor.x === slot.x && l.anchor.z === slot.z);
+}
+
 export function confirmLift(state: GameState): GameState {
   const slot = LIFT_PREVIEW_SLOTS[state.selectedSlotIndex];
   if (!slot || !checkDescentValid(slot)) return state;
   const type = state.selectedLiftType;
+  if (isSlotInUse(state.lifts, slot, type)) return state;
   const cost = state.lifts.some((l) => l.confirmed && l.type === type)
     ? 400
     : LIFT_BUILD_COST[type];
@@ -380,7 +395,6 @@ export function acknowledgeBeat(state: GameState): GameState {
     completedBeats: [...state.completedBeats, state.pendingBeat],
     pendingBeat: null,
     beatAcknowledged: true,
-    reputation: state.reputation + 2,
   };
 }
 

@@ -148,8 +148,8 @@ export const LIFT_SPECS: Record<
   LiftType,
   { capacityPerHour: number; rideMinutes: number }
 > = {
-  surface: { capacityPerHour: 52, rideMinutes: 4 },
-  chair: { capacityPerHour: 56, rideMinutes: 3 },
+  surface: { capacityPerHour: 47, rideMinutes: 4 },
+  chair: { capacityPerHour: 50, rideMinutes: 3 },
 };
 
 export const LIFT_BUILD_COST: Record<LiftType, number> = {
@@ -179,8 +179,12 @@ export const DAY_END_MIN = 16 * 60;
 export const LIFT_CLOSE_MIN = 15 * 60 + 45;
 /** Guests reach the hill between these clock minutes, most around the peak. */
 export const ARRIVAL_EARLIEST_MIN = 8 * 60;
-export const ARRIVAL_PEAK_MIN = 10 * 60;
-export const ARRIVAL_LATEST_MIN = 14 * 60;
+export const ARRIVAL_PEAK_MIN = 9 * 60 + 30;
+export const ARRIVAL_LATEST_MIN = 13 * 60 + 30;
+/** Early birds: a share of guests who arrive for first chair, a triangle 08:00–10:00 peaking at 09:00. */
+export const ARRIVAL_EARLY_SHARE = 0.3;
+export const ARRIVAL_EARLY_PEAK_MIN = 9 * 60;
+export const ARRIVAL_EARLY_LATEST_MIN = 10 * 60;
 /** Walk between the car park and the lift line (arriving) or the lodge and the car park (departing). */
 export const ARRIVE_WALK_MIN = 3;
 export const DEPART_WALK_MIN = 3;

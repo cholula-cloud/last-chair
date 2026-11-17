@@ -14,6 +14,9 @@ import {
 } from "./satisfaction";
 import {
   ARRIVAL_EARLIEST_MIN,
+  ARRIVAL_EARLY_LATEST_MIN,
+  ARRIVAL_EARLY_PEAK_MIN,
+  ARRIVAL_EARLY_SHARE,
   ARRIVAL_LATEST_MIN,
   ARRIVAL_PEAK_MIN,
   ARRIVE_WALK_MIN,
@@ -58,17 +61,17 @@ export function isWeekend(dayIndex: number): boolean {
 export type Rand = () => number;
 
 /**
- * Arrival minute from a triangular curve over the arrival window, peaking at
- * ARRIVAL_PEAK_MIN: a slow trickle from 08:00, a mid-morning rush, a long tail to 14:00.
+ * Arrival minute: a mix of early birds (triangle 08:00–10:00, peak 09:00) and the main
+ * crowd (triangle 08:00–13:30, peak 09:30). First guests arrive about 08:00, about a
+ * fifth are in by 09:00, the peak is mid-morning, the tail runs to 13:30.
  */
 export function drawArrivalMin(rand: Rand): number {
-  return (triangular(rand) + triangular(rand)) / 2;
+  return rand() < ARRIVAL_EARLY_SHARE
+    ? triangular(rand, ARRIVAL_EARLIEST_MIN, ARRIVAL_EARLY_LATEST_MIN, ARRIVAL_EARLY_PEAK_MIN)
+    : triangular(rand, ARRIVAL_EARLIEST_MIN, ARRIVAL_LATEST_MIN, ARRIVAL_PEAK_MIN);
 }
 
-function triangular(rand: Rand): number {
-  const a = ARRIVAL_EARLIEST_MIN;
-  const b = ARRIVAL_LATEST_MIN;
-  const c = ARRIVAL_PEAK_MIN;
+function triangular(rand: Rand, a: number, b: number, c: number): number {
   const u = rand();
   const split = (c - a) / (b - a);
   return u < split
@@ -274,11 +277,12 @@ export function buildNightRecap(opts: {
     DAILY_FIXED_COST +
     opts.founderFixedDelta +
     LIFT_OPS_COST * Math.max(1, opts.openLiftCount);
+  const cashDelta = revenue - costs;
   return {
     arrivals: stats.arrivals,
     satisfaction: day.score,
     breakdown: day.breakdown,
-    cashDelta: revenue - costs,
+    cashDelta,
     problem: problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
       snowQuality: opts.snowQuality,
@@ -287,6 +291,7 @@ export function buildNightRecap(opts: {
       turnedAway: stats.turnedAway,
       runsPerGuest: stats.runsPerGuest,
       arrivalMood: opts.arrivalMood,
+      cashDelta,
     }),
     facts: {
       avgWaitMin: stats.avgQueueMin,
