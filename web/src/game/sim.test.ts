@@ -9,7 +9,6 @@ import {
   formatClock,
   isWeekend,
   planArrivals,
-  queueMinutes,
   readyStoryBeat,
   rollMorningWeather,
   tickGuests,
@@ -127,8 +126,8 @@ describe("computeDayRevenue", () => {
 
 describe("buildNightRecap", () => {
   const stats = (arrivals: number): DayStats => ({
+    ...emptyDayStats(),
     arrivals,
-    completedRuns: 0,
     avgQueueMin: 2,
   });
 
@@ -168,13 +167,16 @@ describe("buildNightRecap", () => {
     expect(r.problem).toBe("Crowd flowed well.");
   });
 
-  // Pinned: the start-of-day defaults. rules.tick overwrites completedRuns and
-  // avgQueueMin as the day plays out.
+  // Pinned: the start-of-day defaults. rules.tick fills them in as the day plays out.
   it("pins the emptyDayStats defaults", () => {
     expect(emptyDayStats()).toEqual({
       arrivals: 0,
       completedRuns: 0,
-      avgQueueMin: 2.5,
+      avgQueueMin: 0,
+      dispatched: 0,
+      waitSumMin: 0,
+      maxQueueLength: 0,
+      peakWaitMin: 0,
     });
   });
 });
@@ -498,12 +500,15 @@ describe("tickGuests", () => {
     expect(g.progress).toBe(0);
   });
 
-  it("follows arrive -> queue -> ride -> ski", () => {
-    const next = (state: Guest["state"]) =>
-      tickGuests([guest({ state, progress: 0.99 })], 1)[0].state;
-    expect(next("arrive")).toBe("queue");
-    expect(next("queue")).toBe("ride");
-    expect(next("ride")).toBe("ski");
+  it("moves arrivals to the queue", () => {
+    expect(tickGuests([guest({ state: "arrive", progress: 0.99 })], 1)[0].state).toBe("queue");
+  });
+
+  it("leaves queued and riding guests to the lifts", () => {
+    for (const state of ["queue", "ride"] as const) {
+      const g = guest({ state, progress: 0.99 });
+      expect(tickGuests([g], 1)[0]).toEqual(g);
+    }
   });
 
   it("sends skiers back to the queue or out, by the random roll", () => {
@@ -618,26 +623,5 @@ describe("headless season", () => {
     // One talent per night until the list runs out, never a duplicate.
     expect(talentsOwned).toHaveLength(Math.min(nights, CREW_TALENTS.length));
     expect(new Set(talentsOwned).size).toBe(talentsOwned.length);
-  });
-});
-
-describe("queueMinutes", () => {
-  const queued = (n: number): Guest[] =>
-    Array.from({ length: n }, (_, i) => ({
-      id: `q${i}`,
-      label: "Guest",
-      state: "queue" as const,
-      progress: 0,
-      mood: 0.8,
-    }));
-
-  it("is 2 minutes plus 0.12 per queued guest", () => {
-    expect(queueMinutes([], [])).toBeCloseTo(2, 10);
-    expect(queueMinutes(queued(10), [])).toBeCloseTo(3.2, 10);
-  });
-
-  it("patrol_radio takes 0.3 minutes off", () => {
-    expect(queueMinutes(queued(10), ["patrol_radio"])).toBeCloseTo(2.9, 10);
-    expect(queueMinutes([], ["patrol_radio"])).toBeCloseTo(1.7, 10);
   });
 });

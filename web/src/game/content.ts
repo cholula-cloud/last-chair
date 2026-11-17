@@ -68,7 +68,7 @@ export const CREW_TALENTS: TalentDef[] = [
   { id: "house_band", name: "House Band", effect: "Village mood +3" },
   { id: "groom_pass", name: "Groom Pass", effect: "Morning corduroy quality +0.05" },
   { id: "ticket_booth", name: "Ticket Booth", effect: "Arrivals +1 on weekends" },
-  { id: "patrol_radio", name: "Patrol Radio", effect: "Queue pain −0.3 min" },
+  { id: "patrol_radio", name: "Patrol Radio", effect: "Lift capacity +5%" },
   { id: "cafe_shift", name: "Café Shift", effect: "Café guests linger happier" },
   { id: "school_day", name: "School Day", effect: "Weekday bus arrivals unlocked" },
   { id: "wind_hold", name: "Wind Hold", effect: "Chair stays open in gusts" },

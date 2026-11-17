@@ -55,50 +55,30 @@ function daySeed(rand: Rand): string {
   return rand().toString(36).slice(2, 7);
 }
 
+/**
+ * Advance guests that move on their own clock (arriving, skiing, departing).
+ * Queueing and riding belong to the lifts (`stepLifts` in lifts.ts), so those
+ * guests are returned untouched.
+ */
 export function tickGuests(
   guests: Guest[],
   dt: number,
   rand: Rand = Math.random,
 ): Guest[] {
-  const stateRate: Record<GuestState, number> = {
-    arrive: 0.35,
-    queue: 0.25,
-    ride: 0.4,
-    ski: 0.5,
-    depart: 0.2,
-  };
-  const nextState: Record<Exclude<GuestState, "ski">, GuestState> = {
-    arrive: "queue",
-    queue: "ride",
-    ride: "ski",
-    depart: "depart",
-  };
+  const stateRate = { arrive: 0.35, ski: 0.5, depart: 0.2 } as const;
 
   return guests.map((g) => {
-    if (g.state === "depart") return g;
+    if (g.state === "depart" || g.state === "queue" || g.state === "ride") return g;
     let progress = g.progress + dt * stateRate[g.state];
     let state: GuestState = g.state;
     if (progress >= 1) {
       progress = 0;
       // One lap-or-leave draw per guest, only when that guest finishes a run.
       state =
-        g.state === "ski"
-          ? rand() > 0.35
-            ? "queue"
-            : "depart"
-          : nextState[g.state];
+        g.state === "ski" ? (rand() > 0.35 ? "queue" : "depart") : "queue";
     }
     return { ...g, progress, state };
   });
-}
-
-/** Average queue wait shown to the player, from the guests currently queued. */
-export function queueMinutes(guests: Guest[], talentsOwned: string[]): number {
-  const queueCount = guests.filter((g) => g.state === "queue").length;
-  return Math.max(
-    1.2,
-    2 + queueCount * 0.12 - (talentsOwned.includes("patrol_radio") ? 0.3 : 0),
-  );
 }
 
 export function computeSatisfaction(
@@ -363,7 +343,17 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
 }
 
 export function emptyDayStats(): DayStats {
-  return { arrivals: 0, completedRuns: 0, avgQueueMin: 2.5 };
+  return {
+    arrivals: 0,
+    completedRuns: 0,
+    avgQueueMin: 0,
+    dispatched: 0,
+    waitSumMin: 0,
+    maxQueueLength: 0,
+    peakWaitMin: 0,
+  };
 }
+
+export { currentWaitMin } from "./lifts";
 
 export { DAY_START_MIN, DAY_END_MIN, SEASON_LENGTH };

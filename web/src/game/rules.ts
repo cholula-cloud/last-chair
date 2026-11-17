@@ -1,5 +1,6 @@
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
 import { LIFT_PREVIEW_SLOTS, checkDescentValid } from "./descent";
+import { currentWaitMin, longestQueue, resetLiftQueues, stepLifts } from "./lifts";
 import { createRng } from "./rng";
 import {
   DAY_END_MIN,
@@ -8,9 +9,9 @@ import {
   buildNightRecap,
   computeSatisfaction,
   createInitialGuests,
+  emptyDayStats,
   nextTalentName,
   planArrivals,
-  queueMinutes,
   readyStoryBeat,
   tickGuests,
 } from "./sim";
@@ -41,11 +42,20 @@ export function arrivalMood(
   return Math.min(0.95, mood);
 }
 
+/**
+ * Queue input to satisfaction: today's measured mean wait so far, or the
+ * current expected wait at the busiest lift before anyone has been dispatched.
+ */
+export function measuredWaitMin(state: GameState): number {
+  const { dispatched, waitSumMin } = state.dayStats;
+  return dispatched > 0 ? waitSumMin / dispatched : currentWaitMin(state);
+}
+
 /** Inputs to the satisfaction formula, shared by `liveSatisfaction` and `openNight` so they cannot drift. */
 function satisfactionInputs(state: GameState) {
   const founder = founderById(state.founderId);
   return {
-    avgQueueMin: queueMinutes(state.guests, state.talentsOwned),
+    avgQueueMin: measuredWaitMin(state),
     mood: arrivalMood(state.buildings, state.founderId),
     snowPenalty: founder?.snowExpectationPenalty ?? 0,
   };
@@ -106,28 +116,53 @@ export function openNight(state: GameState): GameState {
   };
 }
 
+/** Longest slice of game time simulated in one step, so coarse ticks still measure waits to within it. */
+const MAX_STEP_MIN = 0.5;
+
 export function tick(state: GameState, deltaMs: number): GameState {
   if (state.phase !== "day" || state.paused) return state;
 
   const rng = createRng(state.rngState);
+  const rand = () => rng.next();
   const addMin = deltaMs / MS_PER_GAME_MINUTE;
-  const clockMin = state.clockMin + addMin;
-  const guests = tickGuests(state.guests, addMin / 8, () => rng.next());
-  // A run completes when a skier reaches the bottom: ski -> queue (another lap) or ski -> depart.
-  const finishedRuns = guests.filter(
-    (g, i) =>
-      state.guests[i]?.state === "ski" &&
-      (g.state === "queue" || g.state === "depart"),
-  ).length;
-  const avgQueueMin = queueMinutes(guests, state.talentsOwned);
+  const steps = Math.max(1, Math.ceil(addMin / MAX_STEP_MIN));
+  const stepMin = addMin / steps;
+
+  let { clockMin, guests, lifts } = state;
+  let { completedRuns, dispatched, waitSumMin, maxQueueLength, peakWaitMin } =
+    state.dayStats;
+  for (let k = 0; k < steps; k++) {
+    clockMin += stepMin;
+    const moved = tickGuests(guests, stepMin / 8, rand);
+    // A run completes when a skier reaches the bottom: ski -> queue (another lap) or ski -> depart.
+    completedRuns += moved.filter(
+      (g, i) =>
+        guests[i].state === "ski" && (g.state === "queue" || g.state === "depart"),
+    ).length;
+    const step = stepLifts(moved, lifts, state.talentsOwned, clockMin, stepMin);
+    guests = step.guests;
+    lifts = step.lifts;
+    for (const w of step.waits) {
+      dispatched += 1;
+      waitSumMin += w;
+      peakWaitMin = Math.max(peakWaitMin, w);
+    }
+    maxQueueLength = Math.max(maxQueueLength, longestQueue(lifts));
+  }
+
   const next: GameState = {
     ...state,
     clockMin,
     guests,
+    lifts,
     dayStats: {
       ...state.dayStats,
-      completedRuns: state.dayStats.completedRuns + finishedRuns,
-      avgQueueMin,
+      completedRuns,
+      dispatched,
+      waitSumMin,
+      maxQueueLength,
+      peakWaitMin,
+      avgQueueMin: dispatched > 0 ? waitSumMin / dispatched : 0,
     },
     rngState: rng.state(),
   };
@@ -145,9 +180,18 @@ export function openNightIfReady(state: GameState): GameState {
   return openNight(state);
 }
 
+/**
+ * Fast-forward the rest of the day through the real simulation, so skipping
+ * produces the same kind of day (queues, waits, runs) as watching it.
+ */
 export function skipToClose(state: GameState): GameState {
   if (state.phase !== "day") return state;
-  return openNightIfReady({ ...state, clockMin: DAY_END_MIN });
+  const STEP_MIN = 4;
+  let s: GameState = { ...state, paused: false };
+  while (s.phase === "day") {
+    s = tick(s, STEP_MIN * MS_PER_GAME_MINUTE);
+  }
+  return s;
 }
 
 export function setPendingFare(state: GameState, fare: FarePreset): GameState {
@@ -187,10 +231,19 @@ export function confirmLift(state: GameState): GameState {
     (l) => l.anchor.x === slot.x && l.anchor.z === slot.z && l.type === type,
   );
   let lifts = [...state.lifts];
-  const next: LiftSlot = { type, anchor: slot, confirmed: true };
-  if (existingIdx >= 0) lifts[existingIdx] = next;
-  else if (lifts.length < 2) lifts = [...lifts, next];
-  else lifts[type === "chair" ? 1 : 0] = next;
+  const place = (i: number): LiftSlot => ({
+    type,
+    anchor: slot,
+    confirmed: true,
+    queue: lifts[i]?.queue ?? [],
+    dispatchCredit: lifts[i]?.dispatchCredit ?? 0,
+  });
+  if (existingIdx >= 0) lifts[existingIdx] = place(existingIdx);
+  else if (lifts.length < 2) lifts = [...lifts, place(lifts.length)];
+  else {
+    const i = type === "chair" ? 1 : 0;
+    lifts[i] = place(i);
+  }
 
   return { ...state, lifts, cash: state.cash - cost, buildMode: false };
 }
@@ -229,7 +282,8 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     phase: "day",
     paused: true,
     guests: createInitialGuests(arrivals, rand),
-    dayStats: { arrivals, completedRuns: 0, avgQueueMin: 2.5 },
+    dayStats: { ...emptyDayStats(), arrivals },
+    lifts: resetLiftQueues(state.lifts),
     morningHeadline: `${founderById(id)?.name ?? "Founder"} takes the keys to Dutch Hill.`,
     talentToast: `Crew will learn overnight: ${nextTalentName([]) ?? "—"}`,
     rngState: rng.state(),
@@ -325,7 +379,8 @@ export function sleep(state: GameState): GameState {
     dayIndex: nextDay,
     beatAcknowledged: true,
     guests: createInitialGuests(arrivals, rand),
-    dayStats: { arrivals, completedRuns: 0, avgQueueMin: 2.5 },
+    dayStats: { ...emptyDayStats(), arrivals },
+    lifts: resetLiftQueues(state.lifts),
     rngState: rng.state(),
   };
 }
@@ -374,7 +429,7 @@ export function startNewSeason(state: GameState): GameState {
     nightRecap: null,
     founderId,
     guests: createInitialGuests(arrivals, rand),
-    dayStats: { arrivals, completedRuns: 0, avgQueueMin: 2.5 },
+    dayStats: { ...emptyDayStats(), arrivals },
     talentToast: null,
     rngState: rng.state(),
   };

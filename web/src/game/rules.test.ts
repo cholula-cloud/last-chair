@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
-import { planArrivals, queueMinutes } from "./sim";
+import { planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
   createInitialState,
@@ -25,8 +25,9 @@ function pure<A extends unknown[]>(
   return out;
 }
 
+/** Close the day and acknowledge any radio beat, so Sleep is allowed. */
 function atNight(): GameState {
-  return pure(rules.skipToClose, rules.togglePause(started()));
+  return rules.acknowledgeBeat(pure(rules.skipToClose, rules.togglePause(started())));
 }
 
 describe("pickFounder", () => {
@@ -191,7 +192,8 @@ describe("completedRuns", () => {
   it("counts a finishing skier once, whether they lap or leave", () => {
     for (let seed = 1; seed <= 25; seed++) {
       const out = rules.tick(runningWith([guestAt({ progress: 0.99 })], seed), TICK_MS);
-      expect(["queue", "depart"]).toContain(out.guests[0].state);
+      // A guest who laps joins the lift line and may be dispatched within the same tick.
+      expect(["queue", "ride", "depart"]).toContain(out.guests[0].state);
       expect(out.dayStats.completedRuns).toBe(1);
     }
   });
@@ -226,24 +228,33 @@ describe("completedRuns", () => {
 });
 
 describe("queue time", () => {
-  it("the night recap uses the same queue minutes the last tick showed", () => {
+  it("the HUD and the night recap use the same measured wait", () => {
+    // Twelve guests join at once; the surface lift dispatches them one by one.
     const queued = Array.from({ length: 12 }, (_, i) =>
       guestAt({ id: `q${i}`, state: "queue", progress: 0 }),
     );
-    const s = { ...runningWith(queued), clockMin: 15 * 60 + 59 };
-    const ticked = rules.tick(s, 100);
-    expect(ticked.phase).toBe("day");
-    const shown = ticked.dayStats.avgQueueMin;
-    expect(shown).toBeCloseTo(queueMinutes(ticked.guests, ticked.talentsOwned), 10);
-    const night = rules.skipToClose(ticked);
-    expect(night.dayStats.avgQueueMin).toBeCloseTo(shown, 10);
-    // And a tick that crosses close shows the same figure in the recap.
-    const closing = rules.tick({ ...ticked, clockMin: 15 * 60 + 59 }, 4000);
-    expect(closing.phase).toBe("night");
-    expect(closing.dayStats.avgQueueMin).toBeCloseTo(
-      queueMinutes(closing.guests, closing.talentsOwned),
+    let s = { ...runningWith(queued), clockMin: 15 * 60 + 40 };
+    s = rules.tick(s, 4000);
+    expect(s.phase).toBe("day");
+    expect(s.dayStats.dispatched).toBeGreaterThan(0);
+    // skipToClose simulates the remaining minutes, so the recap reflects them too.
+    const night = rules.skipToClose(s);
+    expect(night.dayStats.avgQueueMin).toBeCloseTo(
+      night.dayStats.waitSumMin / night.dayStats.dispatched,
       10,
     );
+    // A tick that crosses close shows the same figure in the recap.
+    const closing = rules.tick({ ...s, clockMin: 15 * 60 + 59 }, 4000);
+    expect(closing.phase).toBe("night");
+    expect(closing.nightRecap?.satisfaction).toBeCloseTo(
+      rules.liveSatisfaction({ ...closing, phase: "day" }),
+      10,
+    );
+  });
+
+  it("before anyone is dispatched the live figure is the current expected wait", () => {
+    const s = runningWith([]);
+    expect(rules.measuredWaitMin(s)).toBe(0);
   });
 });
 

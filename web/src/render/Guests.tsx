@@ -37,13 +37,14 @@ function idHash(id: string): number {
   return Math.abs(h);
 }
 
+/** A lift as the guests see it; the array index matches `Guest.liftIndex`. */
+export type GuestLift = { anchor: LiftAnchor; type: LiftType };
+
 export function Guests({
-  liftAnchor,
-  liftType,
+  lifts,
   followedRef,
 }: {
-  liftAnchor: LiftAnchor;
-  liftType: LiftType;
+  lifts: GuestLift[];
   followedRef: FollowedRef;
 }) {
   const guests = useGameStore((s) => s.guests);
@@ -51,30 +52,45 @@ export function Guests({
 
   const skier = bakeKit(useKit("skier"), SPLIT);
   const geos = { base: skier.body, jacket: skier.split.jacket, hat: skier.split.helmet };
-  const hanger = useCarrierGeometry(liftType);
-  const towers = useMemo(() => liftTowers(liftAnchor), [liftAnchor]);
-  const frame = useMemo(() => liftFrame(liftAnchor), [liftAnchor]);
+  const tbar = useCarrierGeometry("surface");
+  const chair = useCarrierGeometry("chair");
+  // `lifts` changes identity on every sim tick (queues move); geometry only depends on anchor and type.
+  const liftKey = lifts.map((l) => `${l.type}:${l.anchor.x},${l.anchor.z}`).join("|");
+  const placedLifts = useMemo(
+    () =>
+      lifts.map((l) => ({
+        anchor: l.anchor,
+        type: l.type,
+        towers: liftTowers(l.anchor),
+        frame: liftFrame(l.anchor),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [liftKey],
+  );
 
   const baseRef = useRef<THREE.InstancedMesh>(null);
   const jacketRef = useRef<THREE.InstancedMesh>(null);
   const hatRef = useRef<THREE.InstancedMesh>(null);
-  const hangerRef = useRef<THREE.InstancedMesh>(null);
+  const tbarRef = useRef<THREE.InstancedMesh>(null);
+  const chairRef = useRef<THREE.InstancedMesh>(null);
   const shadowRef = useRef<THREE.InstancedMesh>(null);
   const ringRef = useRef<THREE.Group>(null);
   const markerRef = useRef<THREE.Mesh>(null);
 
   const placements = useMemo(
-    () => placeGuests(guests, liftAnchor, liftType, towers),
-    [guests, liftAnchor, liftType, towers],
+    () => placeGuests(guests, placedLifts),
+    [guests, placedLifts],
   );
 
   useLayoutEffect(() => {
     const meshes = [baseRef.current, jacketRef.current, hatRef.current, shadowRef.current];
-    const hang = hangerRef.current;
-    if (meshes.some((m) => !m) || !hang) return;
+    const tbarMesh = tbarRef.current;
+    const chairMesh = chairRef.current;
+    if (meshes.some((m) => !m) || !tbarMesh || !chairMesh) return;
     const [base, jacket, hat, shadow] = meshes as THREE.InstancedMesh[];
     const n = Math.min(MAX, guests.length);
-    let hangers = 0;
+    let tbars = 0;
+    let chairs = 0;
     followedRef.current = null;
     guests.forEach((g, i) => {
       const p = placements[i];
@@ -94,13 +110,16 @@ export function Guests({
       hat.setColorAt(i, tint.set(HATS[(h >> 3) % HATS.length]));
 
       if (g.state === "ride") {
+        const lift = placedLifts[g.liftIndex ?? 0] ?? placedLifts[0];
+        if (!lift) return;
+        const { anchor, towers, frame } = lift;
         const t = g.progress;
-        const lx = LIFT_BASE.x + (liftAnchor.x - LIFT_BASE.x) * t + frame.px * LIFT_CABLE_OFFSET;
-        const lz = LIFT_BASE.z + (liftAnchor.z - LIFT_BASE.z) * t + frame.pz * LIFT_CABLE_OFFSET;
+        const lx = LIFT_BASE.x + (anchor.x - LIFT_BASE.x) * t + frame.px * LIFT_CABLE_OFFSET;
+        const lz = LIFT_BASE.z + (anchor.z - LIFT_BASE.z) * t + frame.pz * LIFT_CABLE_OFFSET;
         const cy = cableHeightAt(t, towers) - 0.03;
         dummy.position.set(lx, cy, lz);
         dummy.rotation.set(0, frame.yaw, 0);
-        if (liftType === "chair") {
+        if (lift.type === "chair") {
           dummy.scale.setScalar(1);
         } else {
           // Stretch the T-bar so the bar sits at the skier's hip.
@@ -108,7 +127,8 @@ export function Guests({
           dummy.scale.set(1, Math.max(0.4, reach / TBAR_DROP), 1);
         }
         dummy.updateMatrix();
-        hang.setMatrixAt(hangers++, dummy.matrix);
+        if (lift.type === "chair") chairMesh.setMatrixAt(chairs++, dummy.matrix);
+        else tbarMesh.setMatrixAt(tbars++, dummy.matrix);
       }
     });
     for (const m of [base, jacket, hat, shadow]) {
@@ -116,9 +136,11 @@ export function Guests({
       m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
     }
-    hang.count = hangers;
-    hang.instanceMatrix.needsUpdate = true;
-  }, [guests, placements, followId, liftAnchor, liftType, towers, frame, followedRef]);
+    tbarMesh.count = tbars;
+    tbarMesh.instanceMatrix.needsUpdate = true;
+    chairMesh.count = chairs;
+    chairMesh.instanceMatrix.needsUpdate = true;
+  }, [guests, placements, followId, placedLifts, followedRef]);
 
   useFrame(({ clock }) => {
     const p = followedRef.current;
@@ -155,7 +177,10 @@ export function Guests({
       >
         <meshBasicMaterial colorWrite={false} />
       </instancedMesh>
-      <instancedMesh ref={hangerRef} args={[hanger, undefined, MAX]} castShadow frustumCulled={false}>
+      <instancedMesh ref={tbarRef} args={[tbar, undefined, MAX]} castShadow frustumCulled={false}>
+        <meshLambertMaterial vertexColors />
+      </instancedMesh>
+      <instancedMesh ref={chairRef} args={[chair, undefined, MAX]} castShadow frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
       <group ref={ringRef} visible={false}>
