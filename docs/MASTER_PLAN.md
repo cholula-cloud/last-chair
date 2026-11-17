@@ -110,7 +110,7 @@ ICR is a full release on Steam (18 Aug 2026, $9.99, Windows + macOS) by Firn LLC
 | Platform | Desktop-shaped UI that shrinks to phone | Phone-first: bottom sheets, thumb zone, recap + both levers on one sheet, ≤90 s night |
 | Act I | Generic foreclosed starter hill | Dutch Hill VT, a documented ghost hill (credited to NELSAP and DHASH) |
 | Crew | Anonymous priority list | Named crew (Frank, Dana, Elena) whose biases explain the talent order |
-| Story | Light framing; megapass antagonist mostly in store copy | Mountain Radio text beats gated on sim metrics; fictional **SummitLink** pass as the pressure |
+| Story | Light framing; megapass antagonist mostly in store copy | Route 100 Radio text beats gated on sim metrics; fictional **SummitLink** pass as the pressure |
 | Finance | Full statements always present | One summary line, tap "Why?" for the breakdown; Ledger is optional (M5) |
 | Complexity | Simple and Complex modes; player can delegate nights to the crew or run them | Story Mode is Simple only; manual ops only ever arrive as an optional Sandbox/Director setting |
 | Feedback | Snow tools have little visible effect (player reviews) | Every overnight choice must change something you can see on the mountain next morning |
@@ -272,6 +272,7 @@ Goal: a codebase where rules are testable and known bugs are gone.
 
 | 4b | ☑ | Phone HUD fixes from the M0 smoke check | Portrait ops strip no longer overlapped by Home / Close hill; one mood number (ops strip and recap show the same satisfaction); money formats as −$104; Sleep explains why it is disabled while a radio beat waits | Playwright screenshot at 390×844 shows no overlap; unit test for money format |
 | 4c | ☑ | Art pass 1 (procedural diorama) | Readable cozy diorama: real hill shape, light and shadows, trail, lift towers and cable, lodge, skier figures, per-aspect camera | Screenshots at phone sizes read at a glance |
+| 4d | ☑ | UI pass 1 (lodge paperwork) | Paper-card sheets, ticket-strip HUD, conditions board with SVG icons, serif type, Route 100 Radio rename, title screen | Screenshots at phone sizes; no overlaps; targets ≥44 px |
 
 **Gate M0:** `npm run check` green in CI; sim runs headless from a test.
 
@@ -317,7 +318,7 @@ Goal: Dutch Hill Act I from founder pick to winter review, with consequences.
 | 20 | ☐ | Economy + fail-soft | Fixed and lift ops costs; construction draws cash; loan offer; bankruptcy |
 | 21 | ☐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ☐ | Founders complete | All six modifiers live per [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) |
-| 23 | ☐ | Mountain Radio + Act I beats | Radio feed UI; six beats on metric gates, delivered at night (never mid-day pauses); story log |
+| 23 | ☐ | Route 100 Radio + Act I beats | Radio feed UI; six beats on metric gates, delivered at night (never mid-day pauses); story log |
 | 24 | ☐ | Winter review | Season score, beats, talents; carry-forward data for career |
 | 25 | ☐ | Save versioning | Schema version + migrations; old saves load or reset cleanly |
 | 26 | ☐ | Coached first winter | Elena (or the chosen founder) walks a new player from the first surface lift to the first night choice; skippable; no wall of text |

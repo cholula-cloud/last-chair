@@ -147,7 +147,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 
 | Name | Role | Systems touch |
 |------|------|----------------|
-| **Maris Shaw** | Mountain Radio host (NH accent; Lakes Region idioms) | Story delivery, tutorials, [Part 4](#part-4-lore-pantry) |
+| **Maris Shaw** | Route 100 Radio host (NH accent; Lakes Region idioms) | Story delivery, tutorials, [Part 4](#part-4-lore-pantry) |
 | **Chief Dana Holt** | Patrol captain | Injuries, wind holds, glade openings |
 | **Superintendent Al Waters** | School district | Bus days, lesson seats |
 | **Vivian Cho** | SummitLink regional rep | Buyouts, poaching, race sponsorship |
