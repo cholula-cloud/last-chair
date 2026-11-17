@@ -7,7 +7,7 @@ import type { LiftAnchor } from "@/game/descent";
 import { sceneMood } from "./Atmosphere";
 import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 import { sampleSegments, trailPoint } from "./trail";
 import type { Trail } from "@/game/snow";
 
@@ -40,7 +40,7 @@ function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
       const s = k / across - 0.5;
       const x = c.x + nx * w * s;
       const z = c.z + nz * w * s;
-      positions.push(x, terrainHeight(x, z) + 0.05, z);
+      positions.push(x, TERRAIN.height(x, z) + 0.05, z);
       uvs.push(k / across, travelled / 0.9);
     }
     if (i < segments) {

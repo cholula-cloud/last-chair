@@ -3,7 +3,7 @@ import type { LiftAnchor } from "@/game/descent";
 import { cableHeightAt, liftFrame, liftTowers, type LiftPoint } from "./liftLine";
 import { LIFT_BASE, LIFT_CABLE_OFFSET, LODGE, PARKING } from "./layout";
 import { clamp01, lerp } from "./math";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
 
 type GuestPose = "stand" | "walk" | "ride" | "ski";
@@ -32,7 +32,7 @@ const CHAIR_DROP = 0.44;
 const CHAIR_CLEARANCE = 0.15;
 
 function onGround(x: number, z: number, yaw: number, pose: GuestPose): GuestPlacement {
-  return { x, y: terrainHeight(x, z), z, yaw, pose, lean: 0, roll: 0 };
+  return { x, y: TERRAIN.height(x, z), z, yaw, pose, lean: 0, roll: 0 };
 }
 
 /** Where the n-th guest in the lift line stands (tidy snake behind loading). */
@@ -81,7 +81,7 @@ function ride(t: number, anchor: LiftAnchor, type: LiftType | undefined, towers?
   const { px, pz, yaw } = liftFrame(anchor);
   const x = lerp(LIFT_BASE.x, anchor.x, t) + px * LIFT_CABLE_OFFSET;
   const z = lerp(LIFT_BASE.z, anchor.z, t) + pz * LIFT_CABLE_OFFSET;
-  let y = terrainHeight(x, z);
+  let y = TERRAIN.height(x, z);
   if (type === "chair") {
     y = Math.max(y + CHAIR_CLEARANCE, cableHeightAt(t, towers ?? liftTowers(anchor)) - CHAIR_DROP);
   }
@@ -100,7 +100,7 @@ function ski(index: number, t: number, anchor: LiftAnchor): GuestPlacement {
   const z = p.z - Math.sin(yaw) * w;
   return {
     x,
-    y: terrainHeight(x, z),
+    y: TERRAIN.height(x, z),
     z,
     yaw: yaw + Math.cos(phase) * 0.45,
     pose: "ski",

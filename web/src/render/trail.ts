@@ -1,7 +1,7 @@
 import type { LiftAnchor } from "@/game/descent";
 import { LIFT_BASE, LODGE } from "./layout";
 import { lerp, smooth } from "./math";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 
 type XZ = { x: number; z: number };
 
@@ -23,7 +23,7 @@ export function trailPoint(
   const bend = Math.sin(t * Math.PI) * 0.95 + Math.sin(t * Math.PI * 2) * 0.22;
   const x = lerp(anchor.x, LODGE.x, ease) + px * bend;
   const z = lerp(anchor.z, LODGE.z, ease) + pz * bend;
-  return { x, y: terrainHeight(x, z) + TRAIL_LIFT, z };
+  return { x, y: TERRAIN.height(x, z) + TRAIL_LIFT, z };
 }
 
 /** Trail sampled as a polyline (for tree clearing). */

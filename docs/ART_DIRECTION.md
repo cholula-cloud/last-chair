@@ -86,7 +86,7 @@ Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Sc
 |------|---------------|
 | `Atmosphere.tsx` | Gradient sky dome, three layered ridge silhouettes, fog, hemisphere fill and the shadow-casting sun (1024 shadow map, ±11 bounds). Lerps to a cool night when `phase === "night"` and warms toward 4 PM. Exposes `sceneMood` for window and lamp glow. |
 | `Terrain.tsx` | Valley heightfield (dense grid in the play area, coarse toward the fog) with vertex colours: blue hollows, warm sun-facing slopes, rock on steep faces, bare earth that spreads from the bottom as `snowDepth` falls. Also the valley road. |
-| `guestPaths.ts` | `terrainHeight` (base flat, steep lower face, summit dome, side ridges), lift tower layout, trail curve, tidy queue snake, guest placement and poses. |
+| `game/terrain.ts` | The heightfield (`TERRAIN.height`) read by the sim and the renderer; Dutch Hill is data in `game/mountains/dutchHill.ts` (flat base apron, meadow, steep face with a rollover, summit dome, side ridges). Render helpers `liftLine.ts`, `trail.ts` and `guestPlacement.ts` hold the lift tower layout, trail curve, tidy queue snake, guest placement and poses. |
 | `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture (crisper when `groomVisible`); green/red translucent preview in build mode. |
 | `Lift.tsx` | Merged towers, crossarms, bull wheels, up/return cables and two terminal huts; instanced moving T-bars or chairs; translucent green/red ghost for the build preview. |
 | `Trees.tsx` | Three tiered conifer variants with a snow cap on every tier, instanced (up to 480 each), cleared along trails, lift lines, the base and the road. |

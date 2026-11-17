@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { useGameStore } from "@/game/store";
 import { SHADOW_LAYER } from "./kit";
 import { smoothstep } from "./math";
-import { fbm } from "./terrainShape";
+import { fbm } from "@/game/terrain";
 import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
 
 /**

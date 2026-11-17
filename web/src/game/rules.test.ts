@@ -141,7 +141,7 @@ describe("confirmLift", () => {
   });
 
   it("rejects an invalid descent", () => {
-    // Slot 2 ("Creek") has too little vertical drop.
+    // Slot 2 ("Creek") fails for too little vertical: its top is under MIN_LIFT_VERTICAL above the base.
     const base = rules.setSelectedLiftType(
       rules.setSelectedSlotIndex(started(), 2),
       "chair",

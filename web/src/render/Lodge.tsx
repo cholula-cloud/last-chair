@@ -26,7 +26,7 @@ import {
   WARMING_HUT_POS,
 } from "./layout";
 import { PALETTE } from "./palette";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 
 function car(color: string): Part[] {
   return [
@@ -116,7 +116,7 @@ export function Village({ buildings }: { buildings: string[] }) {
       const scene = scenes[p.name];
       if (!scene) continue;
       const kit = bakeKit(scene);
-      const y = terrainHeight(p.x, p.z) - 0.02;
+      const y = TERRAIN.height(p.x, p.z) - 0.02;
       bodies.push(placeKit(kit.body, p.x, y, p.z, p.yaw, p.scale));
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
     }
@@ -126,7 +126,7 @@ export function Village({ buildings }: { buildings: string[] }) {
     cars.forEach((c, i) => {
       const x = 2.9 + i * 0.32;
       const z = 3.62;
-      carParts.push(...placeParts(car(c), x, terrainHeight(x, z), z, Math.PI / 2 + 0.06 * i));
+      carParts.push(...placeParts(car(c), x, TERRAIN.height(x, z), z, Math.PI / 2 + 0.06 * i));
     });
     bodies.push(merge(carParts));
     return { body: mergePlaced(bodies), glow: mergePlaced(glows) };
@@ -151,14 +151,14 @@ export function Village({ buildings }: { buildings: string[] }) {
     if (!m) return;
     const d = new THREE.Object3D();
     LAMPS.forEach(([x, z], i) => {
-      d.position.set(x, terrainHeight(x, z) + 0.035, z);
+      d.position.set(x, TERRAIN.height(x, z) + 0.035, z);
       d.rotation.set(-Math.PI / 2, 0, 0);
       d.scale.setScalar(1);
       d.updateMatrix();
       m.setMatrixAt(i, d.matrix);
     });
     // Lodge porch pool.
-    d.position.set(LODGE.x, terrainHeight(LODGE.x, LODGE.z + 0.9) + 0.035, LODGE.z + 0.95);
+    d.position.set(LODGE.x, TERRAIN.height(LODGE.x, LODGE.z + 0.9) + 0.035, LODGE.z + 0.95);
     d.scale.set(1.8, 1.2, 1);
     d.updateMatrix();
     m.setMatrixAt(LAMPS.length, d.matrix);

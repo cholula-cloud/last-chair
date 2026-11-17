@@ -5,7 +5,7 @@ import type { GuestState } from "@/game/types";
 import { guestWorldPosition, placeGuests } from "./guestPlacement";
 import { LIFT_BASE, LODGE } from "./layout";
 import { cableHeightAt, liftTowers } from "./liftLine";
-import { terrainHeight } from "./terrainShape";
+import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
 
 const STATES: GuestState[] = ["arrive", "queue", "ride", "ski", "depart"]; // pending and gone are never drawn
@@ -25,7 +25,7 @@ describe("guest placement", () => {
                 for (const v of [p.x, p.y, p.z, p.yaw, p.lean, p.roll]) {
                   expect(Number.isFinite(v), where).toBe(true);
                 }
-                expect(p.y, where).toBeGreaterThanOrEqual(terrainHeight(p.x, p.z) - EPS);
+                expect(p.y, where).toBeGreaterThanOrEqual(TERRAIN.height(p.x, p.z) - EPS);
               }
             }
           }
@@ -36,7 +36,7 @@ describe("guest placement", () => {
         const towers = liftTowers(slot);
         for (const progress of PROGRESS) {
           const p = guestWorldPosition(0, "ride", progress, slot, { liftType: "chair", towers });
-          expect(p.y).toBeGreaterThan(terrainHeight(p.x, p.z));
+          expect(p.y).toBeGreaterThan(TERRAIN.height(p.x, p.z));
           expect(p.y).toBeLessThanOrEqual(cableHeightAt(progress, towers));
         }
       });
@@ -66,9 +66,9 @@ describe("guest placement", () => {
 
   it("places the three lift slots higher than the lift base", () => {
     expect(LIFT_PREVIEW_SLOTS).toHaveLength(3);
-    const baseHeight = terrainHeight(LIFT_BASE.x, LIFT_BASE.z);
+    const baseHeight = TERRAIN.height(LIFT_BASE.x, LIFT_BASE.z);
     for (const slot of LIFT_PREVIEW_SLOTS) {
-      expect(terrainHeight(slot.x, slot.z)).toBeGreaterThan(baseHeight);
+      expect(TERRAIN.height(slot.x, slot.z)).toBeGreaterThan(baseHeight);
     }
   });
 

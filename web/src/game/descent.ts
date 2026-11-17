@@ -1,22 +1,35 @@
-/** P0 stub: lift top must reach a base zone with enough vertical drop. */
+/** Lift viability: the top terminal must sit well above the base on loadable ground. */
+
+import { TERRAIN, type Terrain } from "./terrain";
 
 export type LiftAnchor = { x: number; z: number };
 
 export type LiftSlot = LiftAnchor & { label: string };
 
-const BASE_ZONE = { xMin: -1.5, xMax: 2.5, zMin: 2, zMax: 3.5 };
-const TOP_ZONE = { xMin: -2, xMax: 1, zMin: -0.5, zMax: 1.2 };
+/** Least height (world units) the top terminal must stand above the base. */
+export const MIN_LIFT_VERTICAL = 0.85;
+/** Longest lift, horizontal distance base to top (world units). */
+export const MAX_LIFT_LENGTH = 3.4;
+/**
+ * Steepest ground a terminal may stand on (rise over run). The toy hill
+ * exaggerates vertical, so its face runs near 1.0; the rollover band is about 1.8.
+ */
+export const MAX_LOAD_GRADE = 1.25;
 
-export function checkDescentValid(anchor: LiftAnchor): boolean {
-  const inTop =
-    anchor.x >= TOP_ZONE.xMin &&
-    anchor.x <= TOP_ZONE.xMax &&
-    anchor.z >= TOP_ZONE.zMin &&
-    anchor.z <= TOP_ZONE.zMax;
-  if (!inTop) return false;
-  const drop = BASE_ZONE.zMin - anchor.z;
-  const horizontal = Math.abs(anchor.x - 0.5);
-  return drop >= 1.2 && horizontal <= 2.5;
+export function checkDescentValid(anchor: LiftAnchor, terrain: Terrain = TERRAIN): boolean {
+  const { bounds, base } = terrain;
+  if (
+    anchor.x < bounds.xMin ||
+    anchor.x > bounds.xMax ||
+    anchor.z < bounds.zMin ||
+    anchor.z > bounds.zMax
+  ) {
+    return false;
+  }
+  const vertical = terrain.height(anchor.x, anchor.z) - terrain.height(base.x, base.z);
+  if (vertical < MIN_LIFT_VERTICAL) return false;
+  if (Math.hypot(anchor.x - base.x, anchor.z - base.z) > MAX_LIFT_LENGTH) return false;
+  return terrain.grade(anchor.x, anchor.z) <= MAX_LOAD_GRADE && terrain.grade(base.x, base.z) <= MAX_LOAD_GRADE;
 }
 
 export const LIFT_PREVIEW_SLOTS: LiftSlot[] = [
