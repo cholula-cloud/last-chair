@@ -14,11 +14,11 @@ import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
 const started = () => rules.pickFounder(createInitialState(7), "elena");
 
 /** Runs the rule on a copy and checks the input state was left untouched. */
-function pure<A extends unknown[]>(
-  rule: (s: GameState, ...a: A) => GameState,
+function pure<A extends unknown[], R = GameState>(
+  rule: (s: GameState, ...a: A) => R,
   state: GameState,
   ...args: A
-): GameState {
+): R {
   const before = structuredClone(state);
   const out = rule(state, ...args);
   expect(state).toEqual(before);
@@ -323,5 +323,91 @@ describe("liveSatisfaction", () => {
     expect(rules.liveSatisfaction(withCafe)).not.toBe(
       rules.liveSatisfaction(noFounder),
     );
+  });
+});
+
+describe("night previews", () => {
+  it("expectedArrivals is pure, deterministic and moves with the fare", () => {
+    const night = atNight();
+    const a = pure(rules.expectedArrivals, night, "balanced");
+    expect(rules.expectedArrivals(night, "balanced")).toBe(a);
+    expect(rules.expectedArrivals(night, "cheap")).toBeGreaterThan(a);
+    expect(rules.expectedArrivals(night, "expensive")).toBeLessThan(a);
+  });
+
+  it("expectedArrivals tracks what Sleep will actually plan", () => {
+    const night = atNight();
+    const expected = rules.expectedArrivals(night, night.pendingFare);
+    const next = rules.sleep(night);
+    // Sleep draws day-to-day noise of 0 to 4 (mean 2) on top of the preview.
+    expect(Math.abs(next.dayStats.arrivals - expected)).toBeLessThanOrEqual(3);
+  });
+
+  it("higher reputation raises expected arrivals", () => {
+    const night = atNight();
+    const famous = { ...night, reputation: 85 };
+    expect(rules.expectedArrivals(famous, "expensive")).toBeGreaterThan(
+      rules.expectedArrivals({ ...night, reputation: 20 }, "expensive"),
+    );
+  });
+
+  it("previewOvernight is pure and deterministic, and High previews better than Minimal", () => {
+    const night = atNight();
+    const minimal = pure(rules.previewOvernight, night, "minimal");
+    expect(rules.previewOvernight(night, "minimal")).toEqual(minimal);
+    const mid = rules.previewOvernight(night, "mid");
+    const high = rules.previewOvernight(night, "high");
+    expect(high.meanQuality).toBeGreaterThan(mid.meanQuality);
+    expect(mid.meanQuality).toBeGreaterThan(minimal.meanQuality);
+    expect(high.cost).toBe(SNOW_NIGHT_COST.high);
+    expect(minimal.cost).toBe(0);
+    expect(typeof high.label).toBe("string");
+  });
+
+  it("previewOvernight matches the snow Sleep produces", () => {
+    const night = { ...atNight(), pendingSnow: "high" as const };
+    const preview = rules.previewOvernight(night, "high");
+    const next = rules.sleep(night);
+    expect(next.snowQuality).toBeCloseTo(preview.meanQuality, 10);
+    expect(next.weather).toBe(preview.weather);
+  });
+});
+
+describe("lastDay", () => {
+  it("is empty on day 1, recorded at Sleep, and cleared by a new season", () => {
+    const night = atNight();
+    expect(night.lastDay).toBeNull();
+    const recap = night.nightRecap!;
+    const next = rules.sleep({ ...night, fare: "expensive", snow: "high", pendingFare: "cheap" });
+    expect(next.lastDay).toEqual({
+      arrivals: recap.arrivals,
+      satisfaction: recap.satisfaction,
+      cashDelta: recap.cashDelta,
+      avgWaitMin: recap.facts.avgWaitMin,
+      fare: "expensive",
+      snow: "high",
+    });
+    expect(next.fare).toBe("cheap");
+    expect(rules.startNewSeason(next).lastDay).toBeNull();
+  });
+
+  it("survives a save and reload, and a v5 save loads without it", () => {
+    const night = atNight();
+    const next = rules.sleep(night);
+    const saved = JSON.parse(JSON.stringify(toPersisted(next)));
+    expect(migrate(saved, 6).lastDay).toEqual(next.lastDay);
+    delete saved.lastDay;
+    expect(migrate(saved, 5).lastDay).toBeNull();
+  });
+
+  it("a v5 night save gains recap facts so the Why? list can render", () => {
+    const night = atNight();
+    const saved = JSON.parse(JSON.stringify(toPersisted(night)));
+    delete saved.nightRecap.facts;
+    delete saved.lastDay;
+    const migrated = migrate(saved, 5);
+    expect(migrated.phase).toBe("night");
+    expect(migrated.nightRecap!.facts.farePrice).toBeGreaterThan(0);
+    expect(migrated.lastDay).toBeNull();
   });
 });

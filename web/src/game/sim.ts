@@ -6,7 +6,12 @@ import {
   overnightTrail,
   type Trail,
 } from "./snow";
-import { problemLine, type DaySatisfaction, type SatTerms } from "./satisfaction";
+import {
+  expectedHillValue,
+  problemLine,
+  type DaySatisfaction,
+  type SatTerms,
+} from "./satisfaction";
 import {
   ARRIVAL_EARLIEST_MIN,
   ARRIVAL_LATEST_MIN,
@@ -221,6 +226,24 @@ export function computeDayRevenue(
   return Math.round(arrivals * FARE_PRICES[fare] * mult);
 }
 
+/** The real numbers behind the breakdown, so "Why?" can quote them. */
+export type RecapFacts = {
+  /** Mean measured wait per ride, game minutes. */
+  avgWaitMin: number;
+  /** Hill-wide mean snow quality at close, 0–1. */
+  snowQuality: number;
+  /** The conditions board word for the worst segment at close ("Good cover", "Icy bottom"). */
+  snowLabel: string;
+  /** Ticket price the day ran at, dollars. */
+  farePrice: number;
+  /** Mean dollars a day here was worth to the guests (see `guestHillValue`). */
+  hillValue: number;
+  runsPerGuest: number;
+  turnedAway: number;
+  /** Mood on arrival, 0–1. */
+  arrivalMood: number;
+};
+
 export type NightRecap = {
   arrivals: number;
   /** Mean guest satisfaction, 0–100. */
@@ -229,6 +252,7 @@ export type NightRecap = {
   breakdown: SatTerms;
   cashDelta: number;
   problem: string;
+  facts: RecapFacts;
 };
 
 export function buildNightRecap(opts: {
@@ -236,6 +260,8 @@ export function buildNightRecap(opts: {
   fare: FarePreset;
   snowQuality: number;
   snowTrouble?: string;
+  /** Conditions board word for the worst segment at close. */
+  snowLabel?: string;
   /** The day's guest-built satisfaction (see `daySatisfaction`). */
   day: DaySatisfaction;
   arrivalMood: number;
@@ -262,6 +288,16 @@ export function buildNightRecap(opts: {
       runsPerGuest: stats.runsPerGuest,
       arrivalMood: opts.arrivalMood,
     }),
+    facts: {
+      avgWaitMin: stats.avgQueueMin,
+      snowQuality: opts.snowQuality,
+      snowLabel: opts.snowLabel ?? "Good cover",
+      farePrice: FARE_PRICES[fare],
+      hillValue: day.hillValue,
+      runsPerGuest: stats.runsPerGuest,
+      turnedAway: stats.turnedAway,
+      arrivalMood: opts.arrivalMood,
+    },
   };
 }
 
@@ -351,8 +387,38 @@ export function nextTalentName(owned: string[]): string | null {
   return learnNextTalent(owned)?.name ?? null;
 }
 
-/** Honest next-day arrivals (fare + weather + buildings + founder). */
-export function planArrivals(opts: {
+/**
+ * Fare elasticity (see SIMULATION_SPEC, Arrivals). A persona's demand is
+ * `1 + ELASTICITY × valueWeight × (expectedValue / fare − REF_RATIO)`, clamped,
+ * and the day's multiplier is the mean over the persona mix.
+ */
+export const DEMAND = {
+  ELASTICITY: 0.45,
+  /** Value-to-fare ratio at which demand is unchanged: Balanced at the starting reputation (40) with no venues. */
+  REF_RATIO: 41 / 48,
+  MIN_MULT: 0.75,
+  MAX_MULT: 1.3,
+  /** Reputation of a new hill. */
+  START_REPUTATION: 40,
+} as const;
+
+/** Demand multiplier from the fare against what the town expects a day here to be worth. */
+export function fareDemandMultiplier(
+  fare: FarePreset,
+  expectedValue: number,
+  weekend: boolean,
+): number {
+  const ratio = expectedValue / FARE_PRICES[fare];
+  let mult = 0;
+  for (const p of Object.values(PERSONAS)) {
+    const share = weekend ? p.weekendShare : p.weekdayShare;
+    const m = 1 + DEMAND.ELASTICITY * p.valueWeight * (ratio - DEMAND.REF_RATIO);
+    mult += share * Math.max(DEMAND.MIN_MULT, Math.min(DEMAND.MAX_MULT, m));
+  }
+  return mult;
+}
+
+export type ArrivalInputs = {
   dayIndex: number;
   fare: FarePreset;
   snowQuality: number;
@@ -360,15 +426,20 @@ export function planArrivals(opts: {
   buildings: BuildingId[];
   talentsOwned: string[];
   founderId: FounderId | null;
-  rand?: Rand;
-}): number {
-  const rand = opts.rand ?? Math.random;
+  /** Word of mouth, 0–100. Defaults to a new hill's. */
+  reputation?: number;
+};
+
+/** The day-to-day noise `planArrivals` draws is floor(rand × 5); its mean is 2. */
+const MEAN_NOISE = 2;
+
+function arrivalCount(opts: ArrivalInputs, noise: number): number {
   const weekend = isWeekend(opts.dayIndex);
   let base = weekend ? 24 : 18;
-  base += Math.floor(rand() * 5);
+  base += noise;
   if (weekend) base = Math.round(base * 1.3);
-  if (opts.fare === "cheap") base = Math.round(base * 1.1);
-  if (opts.fare === "expensive") base = Math.round(base * 0.9);
+  const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
+  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, weekend));
   if (opts.weather === "snow") base += 3;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
@@ -378,6 +449,17 @@ export function planArrivals(opts: {
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
   return Math.max(12, Math.min(40, base));
+}
+
+/** Honest next-day arrivals (fare against reputation, weather, buildings, founder). */
+export function planArrivals(opts: ArrivalInputs & { rand?: Rand }): number {
+  const rand = opts.rand ?? Math.random;
+  return arrivalCount(opts, Math.floor(rand() * 5));
+}
+
+/** Mean of `planArrivals` over the day-to-day noise, without drawing any: the UI's "~27 skiers". */
+export function meanArrivals(opts: ArrivalInputs): number {
+  return arrivalCount(opts, MEAN_NOISE);
 }
 
 export type BeatCheckInput = {

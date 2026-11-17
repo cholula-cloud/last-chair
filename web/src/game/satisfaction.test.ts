@@ -9,10 +9,12 @@ import {
   ZERO_TERMS,
   biggestProblem,
   daySatisfaction,
+  guestHillValue,
   guestSatisfaction,
   guestTerms,
   problemLine,
   queuePain,
+  VALUE,
   type SatisfactionContext,
 } from "./satisfaction";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals, tickGuests } from "./sim";
@@ -23,6 +25,7 @@ import { DAY_START_MIN, LIFT_CLOSE_MIN, type Guest } from "./types";
 const ctx = (over: Partial<SatisfactionContext> = {}): SatisfactionContext => ({
   fare: "balanced",
   arrivalMood: SAT.ARRIVAL_NEUTRAL,
+  venueValue: 0,
   snowExpectation: SAT.SNOW_EXPECTED,
   now: 12 * 60,
   ...over,
@@ -48,10 +51,12 @@ describe("guest satisfaction terms", () => {
     const t = guestTerms(finished(), ctx());
     expect(t.queue).toBeCloseTo(0, 10);
     expect(t.snow).toBeCloseTo(0, 10);
-    expect(t.value).toBeCloseTo(0, 10);
+    // Base worth plus the full-target runs, against a $48 ticket, for a regular.
+    const value = 1.3 * VALUE.K * ((VALUE.BASE + VALUE.RUNS - 48) / 48);
+    expect(t.value).toBeCloseTo(value, 10);
     expect(t.arrivalMood).toBeCloseTo(0, 10);
     expect(t.runs).toBe(SAT.RUNS_BONUS);
-    expect(score(finished())).toBeCloseTo(SAT.BASE + SAT.RUNS_BONUS, 10);
+    expect(score(finished())).toBeCloseTo(SAT.BASE + SAT.RUNS_BONUS + value, 10);
   });
 
   it("longer waits lower the score", () => {
@@ -75,7 +80,10 @@ describe("guest satisfaction terms", () => {
     const worse = guestTerms(finished({ waitMin: 8 * 600 }), ctx());
     expect(awful.queue).toBe(-SAT.QUEUE_CAP);
     expect(worse.queue).toBe(-SAT.QUEUE_CAP);
-    expect(score(finished({ waitMin: 8 * 600 }))).toBeGreaterThan(SAT.BASE - SAT.QUEUE_CAP - 1);
+    // The wasted time also dents the ticket value, which is bounded too.
+    expect(score(finished({ waitMin: 8 * 600 }))).toBeGreaterThan(
+      SAT.BASE - SAT.QUEUE_CAP + SAT.RUNS_BONUS + VALUE.MIN_PTS - 1,
+    );
   });
 
   it("weighs queue pain by persona (regulars mind more than first-timers)", () => {
@@ -206,7 +214,9 @@ describe("day satisfaction", () => {
   it("before anyone arrives is the score of a fresh guest", () => {
     const day = daySatisfaction([], ctx());
     expect(day.guests).toBe(0);
-    expect(day.score).toBeCloseTo(SAT.BASE, 10);
+    // A fresh regular has felt nothing but the $48 ticket against the base worth.
+    expect(day.score).toBeCloseTo(SAT.BASE + day.breakdown.value, 10);
+    expect(day.breakdown.value).toBeCloseTo(1.3 * VALUE.K * ((VALUE.BASE - 48) / 48), 10);
     expect(daySatisfaction([makeGuest({ state: "pending" })], ctx()).score).toBe(day.score);
   });
 });
@@ -235,7 +245,7 @@ describe("problem line", () => {
   });
 
   it("quotes the real number in each sentence", () => {
-    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("~7 min a ride");
+    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("7.4 min a ride");
     expect(problemLine({ ...ZERO_TERMS, snow: -10 }, facts)).toContain("30%");
     expect(problemLine({ ...ZERO_TERMS, value: -10 }, facts)).toContain("$62");
     expect(problemLine({ ...ZERO_TERMS, runs: -10 }, facts)).toContain("3 turned away");
@@ -440,4 +450,70 @@ describe("save migration to v4", () => {
   function playDayNight(): GameState {
     return rules.skipToClose(rules.togglePause(rules.pickFounder(createInitialState(7), "elena")));
   }
+});
+
+describe("ticket value is judged against what the hill offered", () => {
+  const great = (over: Partial<Guest> = {}) =>
+    finished({ snowSum: 8 * 0.85, waitMin: 0, waitCount: 8, ...over });
+  const awful = (over: Partial<Guest> = {}) =>
+    finished({ snowSum: 3 * 0.3, runs: 3, waitMin: 3 * 12, waitCount: 3, ...over });
+  const greatCtx = (over: Partial<SatisfactionContext> = {}) => ctx({ venueValue: 7, ...over });
+  const value = (g: Guest, c: SatisfactionContext) => guestTerms(g, c).value;
+
+  it("the same fare scores higher on a great day than on a bad day", () => {
+    for (const fare of ["cheap", "balanced", "expensive"] as const) {
+      expect(value(great(), greatCtx({ fare }))).toBeGreaterThan(value(awful(), ctx({ fare })));
+    }
+  });
+
+  it("Expensive on a perfect day beats Cheap on an awful day", () => {
+    const expensiveGreat = value(great(), greatCtx({ fare: "expensive" }));
+    const cheapAwful = value(awful(), ctx({ fare: "cheap" }));
+    expect(expensiveGreat).toBeGreaterThan(0);
+    expect(cheapAwful).toBeLessThan(0);
+    expect(expensiveGreat).toBeGreaterThan(cheapAwful);
+  });
+
+  it("each part of the day moves the dollar worth the right way", () => {
+    const worth = (g: Guest, c = ctx()) => guestHillValue(g, c);
+    expect(worth(great())).toBeGreaterThan(worth(finished()));
+    expect(worth(finished({ snowSum: 8 * 0.3 }))).toBeLessThan(worth(finished()));
+    expect(worth(finished({ waitMin: 8 * 6 }))).toBeLessThan(worth(finished()));
+    expect(worth(finished(), ctx({ venueValue: 7 }))).toBe(worth(finished()) + 7);
+    expect(worth(finished({ runs: 2, snowSum: 2 * SAT.SNOW_EXPECTED }))).toBeLessThan(worth(finished()));
+    // A minute per ride is free, like the queue term.
+    expect(worth(finished({ waitMin: 8 }))).toBe(worth(finished()));
+    expect(worth(awful(), ctx({ venueValue: 0 }))).toBeGreaterThanOrEqual(VALUE.FLOOR);
+  });
+
+  it("regulars react to the same fare more than first-timers, in both directions", () => {
+    const at = (fare: "expensive", persona: "regular" | "first_timer") =>
+      value(great({ persona }), greatCtx({ fare }));
+    expect(Math.abs(at("expensive", "regular"))).toBeGreaterThan(Math.abs(at("expensive", "first_timer")));
+    const deal = (persona: "regular" | "first_timer") => value(finished({ persona }), ctx({ fare: "balanced" }));
+    expect(deal("regular")).toBeGreaterThan(deal("first_timer"));
+    // Neither is clamped here, so the ratio is the weight ratio.
+    expect(at("expensive", "regular") / at("expensive", "first_timer")).toBeCloseTo(1.3 / 0.8, 10);
+  });
+
+  it("is bounded, and a deal helps less than a rip-off hurts", () => {
+    const best = value(great(), greatCtx({ fare: "cheap", venueValue: 100 }));
+    const worst = value(awful({ waitMin: 3 * 600 }), ctx({ fare: "expensive" }));
+    expect(best).toBe(VALUE.MAX_PTS);
+    expect(worst).toBe(VALUE.MIN_PTS);
+  });
+
+  it("counts the line a guest is standing in", () => {
+    const standing = makeGuest({
+      state: "queue",
+      persona: "regular",
+      runs: 3,
+      waitMin: 0,
+      waitCount: 0,
+      snowSum: 3 * 0.55,
+      joinedQueueAtMin: 12 * 60 - 20,
+    });
+    const fresh = makeGuest({ ...standing, joinedQueueAtMin: 12 * 60 });
+    expect(guestHillValue(standing, ctx())).toBeLessThan(guestHillValue(fresh, ctx()));
+  });
 });

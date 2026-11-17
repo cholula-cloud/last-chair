@@ -82,6 +82,8 @@ export type ChoiceOption<T extends string> = {
   value: T;
   label: string;
   detail?: string;
+  /** Expected effect, one short line under the detail (e.g. "~27 skiers"). */
+  note?: string;
 };
 
 /**
@@ -109,7 +111,7 @@ export function ChoiceTiles<T extends string>({
             type="button"
             aria-pressed={on}
             onClick={() => onPick(opt.value)}
-            className={`press relative flex min-h-[58px] flex-col items-center justify-center rounded-xl border-2 px-1.5 py-2 text-center ${
+            className={`press relative flex min-h-[76px] flex-col items-center justify-center rounded-xl border-2 px-1.5 py-2 text-center ${
               on
                 ? "border-amber bg-[#fff6ec] text-ink shadow-[0_2px_0_var(--amber)]"
                 : "border-ink/15 bg-paper-deep/60 text-ink-soft hover:border-ink/30"
@@ -142,6 +144,15 @@ export function ChoiceTiles<T extends string>({
                 {opt.detail}
               </span>
             )}
+            {opt.note && (
+              <span
+                className={`mt-0.5 text-[0.75rem] font-semibold leading-tight ${
+                  on ? "text-pine" : "text-ink-soft"
+                }`}
+              >
+                {opt.note}
+              </span>
+            )}
           </button>
         );
       })}
@@ -162,6 +173,78 @@ export function PrimaryButton({
       {...rest}
     >
       {children}
+    </button>
+  );
+}
+
+export type DeltaDirection = "up" | "down" | "same";
+
+/** Change against yesterday: a glyph and words, so the direction never rests on colour alone. */
+export function DeltaChip({
+  direction,
+  children,
+  what,
+}: {
+  direction: DeltaDirection;
+  /** The size of the change, already formatted ("6 pts", "$120"). Ignored when `same`. */
+  children: ReactNode;
+  /** Screen-reader name of the thing that changed ("Skiers"). */
+  what: string;
+}) {
+  const tone =
+    direction === "up" ? "text-pine" : direction === "down" ? "text-barn" : "text-ink-soft";
+  const word = direction === "up" ? "up" : direction === "down" ? "down" : "unchanged";
+  return (
+    <span className={`num text-[0.8rem] font-semibold ${tone}`}>
+      <span className="sr-only">{`${what} ${word}`}</span>
+      {direction === "same" ? (
+        <span aria-hidden="true">same</span>
+      ) : (
+        <span aria-hidden="true">
+          {direction === "up" ? "\u25B2" : "\u25BC"} {children}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Full-width disclosure button (≥48 px). Colour-only state change; the chevron flips without animating. */
+export function DisclosureButton({
+  open,
+  controls,
+  onToggle,
+  children,
+}: {
+  open: boolean;
+  controls: string;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-controls={controls}
+      onClick={onToggle}
+      className={`press flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-2 px-3.5 text-left text-[0.98rem] font-semibold text-ink ${
+        open ? "border-amber bg-[#fff6ec]" : "border-ink/15 bg-paper-deep/60"
+      }`}
+    >
+      <span>{children}</span>
+      <svg
+        viewBox="0 0 12 12"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={open ? "rotate-180" : ""}
+        aria-hidden="true"
+      >
+        <path d="M2.5 4.5 6 8l3.5-3.5" />
+      </svg>
     </button>
   );
 }

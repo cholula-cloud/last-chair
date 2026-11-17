@@ -1,8 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { formatMoney } from "@/game/format";
-import { nextTalentName, weekdayLabel } from "@/game/sim";
+import { expectedArrivals, previewOvernight } from "@/game/rules";
+import { expectedHillValue } from "@/game/satisfaction";
+import { nextTalentName, weekdayLabel, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
+import type { GameState, LastDay } from "@/game/state";
+import { WHY_BASE, delta, formatPoints, whyLines } from "@/game/why";
 import {
   FARE_LABELS,
   FARE_PRICES,
@@ -15,6 +20,8 @@ import { MoonIcon } from "@/ui/kit/icons";
 import { PaperSheet } from "@/ui/kit/PaperSheet";
 import {
   ChoiceTiles,
+  DeltaChip,
+  DisclosureButton,
   PlateHeading,
   PrimaryButton,
   StatTile,
@@ -23,23 +30,8 @@ import {
 } from "@/ui/kit/parts";
 import { RadioCard } from "@/ui/kit/RadioCard";
 
-const fareOptions: ChoiceOption<FarePreset>[] = (
-  ["cheap", "balanced", "expensive"] as FarePreset[]
-).map((v) => ({
-  value: v,
-  label: FARE_LABELS[v],
-  detail: formatMoney(FARE_PRICES[v]),
-}));
-
-const snowOptions: ChoiceOption<SnowPreset>[] = (
-  ["minimal", "mid", "high"] as SnowPreset[]
-).map((v) => ({
-  value: v,
-  label: SNOW_LABELS[v],
-  detail: SNOW_NIGHT_COST[v]
-    ? `${formatMoney(SNOW_NIGHT_COST[v])}/night`
-    : "Free",
-}));
+const FARES: FarePreset[] = ["cheap", "balanced", "expensive"];
+const SNOWS: SnowPreset[] = ["minimal", "mid", "high"];
 
 function moodWord(score: number): { word: string; tone: Tone } {
   if (score >= 75) return { word: "Happy", tone: "good" };
@@ -48,23 +40,147 @@ function moodWord(score: number): { word: string; tone: Tone } {
   return { word: "Grumpy", tone: "bad" };
 }
 
+/** Largest effect on the bars; anything bigger fills the half-track. */
+const BAR_FULL_PTS = 20;
+
+function WhyList({ recap }: { recap: NightRecap }) {
+  const [open, setOpen] = useState(false);
+  const lines = whyLines(recap);
+  return (
+    <div className="mt-3">
+      <DisclosureButton open={open} controls="why-list" onToggle={() => setOpen((o) => !o)}>
+        Why {Math.round(recap.satisfaction)}% happy?
+      </DisclosureButton>
+      {open && (
+        <div
+          id="why-list"
+          className="mt-2 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-2"
+        >
+          <ul>
+            {lines.map((line) => {
+              const width = Math.min(1, Math.abs(line.points) / BAR_FULL_PTS) * 50;
+              const rounded = Math.round(line.points);
+              return (
+                <li key={line.key} className="border-b border-ink/10 py-2.5 last:border-b-0">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="serif text-[1rem] font-semibold text-ink">{line.label}</span>
+                    <span
+                      className={`num text-[1.05rem] font-bold ${
+                        rounded > 0 ? "text-pine" : rounded < 0 ? "text-barn" : "text-ink-soft"
+                      }`}
+                    >
+                      {formatPoints(line.points)}
+                    </span>
+                  </div>
+                  <p className="text-[0.85rem] leading-snug text-ink-soft">{line.detail}</p>
+                  <div className="relative mt-1.5 h-2 rounded-full bg-ink/10" aria-hidden="true">
+                    <span className="absolute inset-y-0 left-1/2 w-px bg-ink/35" />
+                    <span
+                      className={`absolute inset-y-0 rounded-full ${
+                        line.points < 0 ? "right-1/2 bg-barn" : "left-1/2 bg-pine"
+                      }`}
+                      style={{ width: `${width}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="pt-1.5 text-[0.8rem] text-ink-soft">
+            Average guest: {WHY_BASE} to start, plus the above, is about{" "}
+            {Math.round(recap.satisfaction)}.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; dayIndex: number }) {
+  const skiers = delta(recap.arrivals, last.arrivals, (d) => `${Math.round(d)}`, 0.5);
+  const happy = delta(recap.satisfaction, last.satisfaction, (d) => `${Math.round(d)} pts`, 0.5);
+  const cash = delta(recap.cashDelta, last.cashDelta, (d) => formatMoney(d), 0.5);
+  return (
+    <div
+      className="mt-1.5 grid grid-cols-3 gap-3 px-3.5"
+      aria-label={`Change since day ${dayIndex - 1}`}
+    >
+      <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
+      <DeltaChip direction={happy.direction} what="Happy">{happy.text}</DeltaChip>
+      <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
+      <p className="col-span-3 -mt-1 text-[0.75rem] text-ink-soft">
+        vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
+      </p>
+    </div>
+  );
+}
+
+function Choices({
+  night,
+  setPendingFare,
+  setPendingSnow,
+}: {
+  night: GameState;
+  setPendingFare: (f: FarePreset) => void;
+  setPendingSnow: (s: SnowPreset) => void;
+}) {
+  const { pendingFare, pendingSnow } = night;
+  const skiers = (f: FarePreset) => Math.round(expectedArrivals(night, f, pendingSnow));
+  const fareOptions: ChoiceOption<FarePreset>[] = FARES.map((v) => ({
+    value: v,
+    label: FARE_LABELS[v],
+    detail: formatMoney(FARE_PRICES[v]),
+    note: `~${skiers(v)} skiers`,
+  }));
+  const previews = Object.fromEntries(SNOWS.map((v) => [v, previewOvernight(night, v)])) as Record<
+    SnowPreset,
+    ReturnType<typeof previewOvernight>
+  >;
+  const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
+    value: v,
+    label: SNOW_LABELS[v],
+    detail: SNOW_NIGHT_COST[v] ? `${formatMoney(SNOW_NIGHT_COST[v])}/night` : "Free",
+    note: `${previews[v].label}, ${Math.round(previews[v].meanQuality * 100)}%`,
+  }));
+  const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
+  const chosen = previews[pendingSnow];
+  return (
+    <>
+      <PlateHeading aside="Tomorrow’s ticket">Fare</PlateHeading>
+      <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
+      <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
+        Locals expect a day here to be worth about {formatMoney(worth)}.{" "}
+        {FARE_LABELS[pendingFare]} {formatMoney(FARE_PRICES[pendingFare])} brings about {skiers(pendingFare)} skiers.
+      </p>
+
+      <PlateHeading aside="Crew overnight">Snow &amp; service</PlateHeading>
+      <ChoiceTiles
+        label="Snow and service"
+        options={snowOptions}
+        value={pendingSnow}
+        onPick={setPendingSnow}
+      />
+      <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
+        {SNOW_LABELS[pendingSnow]}: {chosen.label.toLowerCase()} tomorrow, average quality{" "}
+        {Math.round(chosen.meanQuality * 100)}%
+        {chosen.cost ? `, ${formatMoney(chosen.cost)} tonight` : ", no cost"}.
+      </p>
+    </>
+  );
+}
+
 export function NightRecapSheet() {
-  const phase = useGameStore((s) => s.phase);
-  const recap = useGameStore((s) => s.nightRecap);
-  const dayIndex = useGameStore((s) => s.dayIndex);
-  const pendingFare = useGameStore((s) => s.pendingFare);
-  const pendingSnow = useGameStore((s) => s.pendingSnow);
-  const pendingBeat = useGameStore((s) => s.pendingBeat);
-  const beatAcknowledged = useGameStore((s) => s.beatAcknowledged);
+  const night = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s : null));
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
   const sleep = useGameStore((s) => s.sleep);
-  const talentsOwned = useGameStore((s) => s.talentsOwned);
-  const nextTalent = nextTalentName(talentsOwned);
 
-  if (phase !== "night" || !recap) return null;
+  const recap = night?.nightRecap;
+  if (!night || !recap) return null;
 
+  const { dayIndex, pendingBeat, beatAcknowledged, lastDay } = night;
+  const nextTalent = nextTalentName(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat);
   const canSleep = !pendingBeat || beatAcknowledged;
   const mood = moodWord(recap.satisfaction);
@@ -114,11 +230,14 @@ export function NightRecapSheet() {
               tone={recap.cashDelta >= 0 ? "good" : "bad"}
             />
           </div>
+          {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
           <p className="pencil mt-3 px-1 text-[1.05rem] text-ink">
             <span className="sr-only">Problem: </span>
             {recap.problem}
           </p>
+
+          <WhyList key={dayIndex} recap={recap} />
 
           {beat && !beatAcknowledged && (
             <RadioCard
@@ -138,20 +257,10 @@ export function NightRecapSheet() {
           )}
         </div>
         <div>
-          <PlateHeading aside="Tomorrow’s ticket">Fare</PlateHeading>
-          <ChoiceTiles
-            label="Fare"
-            options={fareOptions}
-            value={pendingFare}
-            onPick={setPendingFare}
-          />
-
-          <PlateHeading aside="Crew overnight">Snow &amp; service</PlateHeading>
-          <ChoiceTiles
-            label="Snow and service"
-            options={snowOptions}
-            value={pendingSnow}
-            onPick={setPendingSnow}
+          <Choices
+            night={night}
+            setPendingFare={setPendingFare}
+            setPendingSnow={setPendingSnow}
           />
 
           {nextTalent && (

@@ -16,10 +16,11 @@ import {
   deriveSnow,
   experiencedSnow,
   readSnow,
+  type SnowTone,
   softenTrail,
   wearTrail,
 } from "./snow";
-import { SAT, daySatisfaction, type SatisfactionContext } from "./satisfaction";
+import { SAT, daySatisfaction, venueValue, type SatisfactionContext } from "./satisfaction";
 import {
   DAY_END_MIN,
   DAY_START_MIN,
@@ -29,6 +30,7 @@ import {
   emptyDayStats,
   isOnHill,
   isWeekend,
+  meanArrivals,
   nextTalentName,
   planArrivals,
   readyStoryBeat,
@@ -44,6 +46,7 @@ import {
   type FarePreset,
   type FounderId,
   type LiftType,
+  SNOW_NIGHT_COST,
   type SnowPreset,
   type WeatherKind,
 } from "./types";
@@ -86,6 +89,7 @@ export function satisfactionContext(
   return {
     fare: state.fare,
     arrivalMood: arrivalMood(state.buildings, state.founderId, state.weather),
+    venueValue: venueValue(state.buildings),
     snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
     now: state.clockMin,
   };
@@ -107,6 +111,7 @@ export function openNight(state: GameState): GameState {
     fare: state.fare,
     snowQuality: state.snowQuality,
     snowTrouble: readSnow(state.lifts).trouble,
+    snowLabel: readSnow(state.lifts).label,
     day: daySatisfaction(state.guests, ctx),
     arrivalMood: ctx.arrivalMood,
     openLiftCount: openLifts,
@@ -379,13 +384,11 @@ export function acknowledgeBeat(state: GameState): GameState {
   };
 }
 
-export function sleep(state: GameState): GameState {
-  if (state.phase !== "night" || !state.nightRecap) return state;
-  if (state.pendingBeat && !state.beatAcknowledged) return state;
-
+/** One night's overnight result and the crew talents owned in the morning (the learned talent counts). */
+function nightFor(state: GameState, snow: SnowPreset, cash: number) {
   const overnight = applyOvernight({
-    snow: state.pendingSnow,
-    cash: state.cash + state.nightRecap.cashDelta,
+    snow,
+    cash,
     trails: state.lifts.map((l) => l.trail),
     dayIndex: state.dayIndex,
     buildings: state.buildings,
@@ -393,11 +396,74 @@ export function sleep(state: GameState): GameState {
     daysWithoutSnow: state.daysWithoutSnow,
   });
   const learned = CREW_TALENTS.find((x) => x.name === overnight.talentLearned);
-  const talentsOwned = learned
-    ? [...state.talentsOwned, learned.id]
-    : state.talentsOwned;
+  const talentsOwned = learned ? [...state.talentsOwned, learned.id] : state.talentsOwned;
+  return { overnight, talentsOwned };
+}
+
+export type OvernightPreview = {
+  /** Conditions board word for the worst segment tomorrow morning ("Icy bottom", "Good cover", "Fresh corduroy"). */
+  label: string;
+  tone: SnowTone;
+  /** Mean snow quality over every open segment, 0–1. */
+  meanQuality: number;
+  cost: number;
+  /** Tomorrow's weather as the sim rolls it (a formula today, so the preview is exact). */
+  weather: WeatherKind;
+};
+
+/** Tomorrow morning's snow if the crew works the night at `snow`. Pure: no RNG, no state change. */
+export function previewOvernight(state: GameState, snow: SnowPreset): OvernightPreview {
+  const { overnight } = nightFor(state, snow, state.cash);
+  const lifts = state.lifts.map((l, i) => ({ confirmed: l.confirmed, trail: overnight.trails[i] ?? l.trail }));
+  const reading = readSnow(lifts);
+  return {
+    label: reading.label,
+    tone: reading.tone,
+    meanQuality: overnight.snowQuality,
+    cost: SNOW_NIGHT_COST[snow],
+    weather: overnight.weather,
+  };
+}
+
+/** Mean arrivals tomorrow at `fare` (and the snow chosen tonight). Pure: the day-to-day noise is replaced by its mean. */
+export function expectedArrivals(
+  state: GameState,
+  fare: FarePreset,
+  snow: SnowPreset = state.pendingSnow,
+): number {
+  const { overnight, talentsOwned } = nightFor(state, snow, state.cash);
+  return meanArrivals({
+    dayIndex: state.dayIndex + 1,
+    fare,
+    snowQuality: overnight.snowQuality,
+    weather: overnight.weather,
+    buildings: state.buildings,
+    talentsOwned,
+    founderId: state.founderId,
+    reputation: state.reputation,
+  });
+}
+
+export function sleep(state: GameState): GameState {
+  if (state.phase !== "night" || !state.nightRecap) return state;
+  if (state.pendingBeat && !state.beatAcknowledged) return state;
+
+  const { overnight, talentsOwned } = nightFor(
+    state,
+    state.pendingSnow,
+    state.cash + state.nightRecap.cashDelta,
+  );
+  const recap = state.nightRecap;
   const carried: GameState = {
     ...state,
+    lastDay: {
+      arrivals: recap.arrivals,
+      satisfaction: recap.satisfaction,
+      cashDelta: recap.cashDelta,
+      avgWaitMin: recap.facts.avgWaitMin,
+      fare: state.fare,
+      snow: state.snow,
+    },
     paused: true,
     cash: overnight.cash,
     fare: state.pendingFare,
@@ -441,6 +507,7 @@ export function sleep(state: GameState): GameState {
     buildings: state.buildings,
     talentsOwned,
     founderId: state.founderId,
+    reputation: state.reputation,
     rand,
   });
   return {
@@ -505,6 +572,7 @@ export function startNewSeason(state: GameState): GameState {
     gunsVisible: false,
     groomVisible: false,
     nightRecap: null,
+    lastDay: null,
     founderId,
     guests: createInitialGuests(arrivals, rand, false),
     dayStats: { ...emptyDayStats(), arrivals },

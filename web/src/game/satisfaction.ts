@@ -1,6 +1,6 @@
 import { formatMoney } from "./format";
 import { PERSONAS } from "./personas";
-import { FARE_PRICES, type FarePreset, type Guest } from "./types";
+import { FARE_PRICES, type BuildingId, type FarePreset, type Guest } from "./types";
 
 /** Constants of the satisfaction formula (see SIMULATION_SPEC, Satisfaction). All points are on the 0–100 scale. */
 export const SAT = {
@@ -21,10 +21,6 @@ export const SAT = {
   /** Snow quality a guest expects before the founder's expectation penalty. */
   SNOW_EXPECTED: 0.55,
   SNOW_PTS: 50,
-  /** Value points per fare step before the persona weight. */
-  VALUE_PTS: 10,
-  /** Fare steps: cheap beats the guest's expectation, balanced meets it, expensive overshoots it. */
-  FARE_STEP: { cheap: 0.4, balanced: 0, expensive: -1 } as Record<FarePreset, number>,
   /** Share of target runs at which the runs term is zero. */
   RUNS_PAR: 0.6,
   /** Bonus at the full target, penalty at zero runs. */
@@ -33,6 +29,48 @@ export const SAT = {
   /** A day term at or below this many points per guest is a problem worth naming. */
   PROBLEM_MIN: -3,
 } as const;
+
+/**
+ * What a ticket was worth to a guest, in dollars (see SIMULATION_SPEC, Value).
+ * `hillValue = BASE + snow − wait + venues + runs`; the value term is the
+ * gap between that and the fare, as a share of the fare.
+ */
+export const VALUE = {
+  /** Worth of a day at Dutch Hill with middling snow, no waiting and the warming hut. */
+  BASE: 45,
+  /** Dollars per 1.0 of snow quality above what the guest expects (below it, a loss). */
+  SNOW_PER_Q: 40,
+  /** Dollars lost per minute in lift lines beyond the free minute per ride, up to `WAIT_CAP`. */
+  WAIT_PER_MIN: 0.35,
+  WAIT_CAP: 20,
+  /** Dollars for a lodge or café on the hill. */
+  LODGE: 4,
+  CAFE: 3,
+  /** Dollars at the full run target (and lost at zero runs), scaled like the runs term. */
+  RUNS: 8,
+  /** A day is never worth less than this. */
+  FLOOR: 10,
+  /** Points per 1.0 of `(hillValue − fare) / fare`, before the persona weight. */
+  K: 30,
+  /** The value term stays inside this band (a deal helps less than a rip-off hurts). */
+  MIN_PTS: -20,
+  MAX_PTS: 10,
+  /** Before the day is played, guests expect `BASE` moved by this many dollars per reputation point from 50. */
+  REP_PER_POINT: 0.4,
+} as const;
+
+/** Dollars the buildings add to a day on the hill. */
+export function venueValue(buildings: readonly BuildingId[]): number {
+  return (buildings.includes("lodge") ? VALUE.LODGE : 0) + (buildings.includes("cafe") ? VALUE.CAFE : 0);
+}
+
+/** What the town expects a day here to be worth: reputation and the venues they know about (no RNG). */
+export function expectedHillValue(reputation: number, buildings: readonly BuildingId[]): number {
+  return Math.max(
+    VALUE.FLOOR,
+    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings),
+  );
+}
 
 /** Signed points each term adds to a guest's score, relative to `SAT.BASE`. */
 export type SatTerms = {
@@ -52,6 +90,8 @@ export type SatisfactionContext = {
   fare: FarePreset;
   /** Today's arrival mood, 0–1 (buildings, founder, weather). */
   arrivalMood: number;
+  /** Dollars the buildings add to every guest's day (`venueValue`). */
+  venueValue: number;
   /** Snow quality guests expect today: `SAT.SNOW_EXPECTED` plus the founder's penalty. */
   snowExpectation: number;
   /** Game clock minute; sizes the wait of a guest still standing in a line. */
@@ -85,12 +125,40 @@ export function guestAvgWaitMin(g: SatGuest, now: number): number {
   return count > 0 ? sum / count : 0;
 }
 
+/** Minutes spent in lift lines today beyond the free minute per ride, counting the line the guest is standing in now. */
+export function guestExcessWaitMin(g: SatGuest, now: number): number {
+  const inLine = g.state === "queue" && g.joinedQueueAtMin !== undefined;
+  const waited = g.waitMin + (inLine ? Math.max(0, now - (g.joinedQueueAtMin as number)) : 0);
+  const rides = g.waitCount + (inLine ? 1 : 0);
+  return Math.max(0, waited - SAT.QUEUE_FREE_MIN * rides);
+}
+
 /** Whether the guest's day on the hill is over (the runs term only applies then). */
 function isFinished(g: SatGuest): boolean {
   return g.state === "depart" || g.state === "gone";
 }
 
-export function guestTerms(g: SatGuest, ctx: SatisfactionContext): SatTerms {
+/** Share of the run target as a signed fraction: +1 at the full target, 0 at `RUNS_PAR`, −1 at zero runs. */
+function runsFraction(g: SatGuest): number {
+  const share = Math.min(1, g.runs / Math.max(1, g.targetRuns));
+  return share >= SAT.RUNS_PAR
+    ? (share - SAT.RUNS_PAR) / (1 - SAT.RUNS_PAR)
+    : -(SAT.RUNS_PAR - share) / SAT.RUNS_PAR;
+}
+
+/** Dollars this guest's day was worth to them: snow felt, time lost waiting, venues, runs got. */
+export function guestHillValue(g: SatGuest, ctx: SatisfactionContext): number {
+  // Guests with no run yet have felt no snow.
+  const snow = g.runs > 0 ? VALUE.SNOW_PER_Q * (g.snowSum / g.runs - ctx.snowExpectation) : 0;
+  const wait = Math.min(VALUE.WAIT_CAP, VALUE.WAIT_PER_MIN * guestExcessWaitMin(g, ctx.now));
+  const runs = isFinished(g) ? VALUE.RUNS * runsFraction(g) : 0;
+  return Math.max(VALUE.FLOOR, VALUE.BASE + snow - wait + ctx.venueValue + runs);
+}
+
+function guestEvaluation(
+  g: SatGuest,
+  ctx: SatisfactionContext,
+): { terms: SatTerms; hillValue: number } {
   const p = PERSONAS[g.persona];
   const arrivalMood = SAT.ARRIVAL_PTS * (ctx.arrivalMood - SAT.ARRIVAL_NEUTRAL);
   const queue = 0 - Math.min(
@@ -102,16 +170,19 @@ export function guestTerms(g: SatGuest, ctx: SatisfactionContext): SatTerms {
     g.runs > 0
       ? SAT.SNOW_PTS * p.snowWeight * (g.snowSum / g.runs - ctx.snowExpectation)
       : 0;
-  const value = SAT.VALUE_PTS * p.valueWeight * SAT.FARE_STEP[ctx.fare];
-  let runs = 0;
-  if (isFinished(g)) {
-    const share = Math.min(1, g.runs / Math.max(1, g.targetRuns));
-    runs =
-      share >= SAT.RUNS_PAR
-        ? (SAT.RUNS_BONUS * (share - SAT.RUNS_PAR)) / (1 - SAT.RUNS_PAR)
-        : (-SAT.RUNS_PENALTY * (SAT.RUNS_PAR - share)) / SAT.RUNS_PAR;
-  }
-  return { arrivalMood, queue, snow, value, runs };
+  const hillValue = guestHillValue(g, ctx);
+  const price = FARE_PRICES[ctx.fare];
+  const value = Math.max(
+    VALUE.MIN_PTS,
+    Math.min(VALUE.MAX_PTS, p.valueWeight * VALUE.K * ((hillValue - price) / price)),
+  );
+  const f = isFinished(g) ? runsFraction(g) : 0;
+  const runs = f >= 0 ? SAT.RUNS_BONUS * f : SAT.RUNS_PENALTY * f;
+  return { terms: { arrivalMood, queue, snow, value, runs }, hillValue };
+}
+
+export function guestTerms(g: SatGuest, ctx: SatisfactionContext): SatTerms {
+  return guestEvaluation(g, ctx).terms;
 }
 
 export function sumTerms(t: SatTerms): number {
@@ -134,6 +205,8 @@ export type DaySatisfaction = {
   breakdown: SatTerms;
   /** Guests who arrived (the mean's denominator). */
   guests: number;
+  /** Mean dollars a day on the hill was worth to those guests (`guestHillValue`). */
+  hillValue: number;
 };
 
 /**
@@ -156,20 +229,22 @@ export function daySatisfaction(
       waitCount: 0,
       snowSum: 0,
     };
-    const breakdown = guestTerms(fresh, ctx);
-    return { score: scoreFromTerms(breakdown), breakdown, guests: 0 };
+    const { terms, hillValue } = guestEvaluation(fresh, ctx);
+    return { score: scoreFromTerms(terms), breakdown: terms, guests: 0, hillValue };
   }
   const total: SatTerms = { ...ZERO_TERMS };
   let scoreSum = 0;
+  let valueSum = 0;
   for (const g of arrived) {
-    const t = guestTerms(g, ctx);
+    const { terms: t, hillValue } = guestEvaluation(g, ctx);
     for (const k of SAT_TERM_KEYS) total[k] += t[k];
     scoreSum += scoreFromTerms(t);
+    valueSum += hillValue;
   }
   const n = arrived.length;
   const breakdown = { ...ZERO_TERMS };
   for (const k of SAT_TERM_KEYS) breakdown[k] = total[k] / n;
-  return { score: scoreSum / n, breakdown, guests: n };
+  return { score: scoreSum / n, breakdown, guests: n, hillValue: valueSum / n };
 }
 
 /** Facts quoted in the problem line. */
@@ -203,7 +278,7 @@ export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
 export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
   switch (biggestProblem(breakdown)) {
     case "queue":
-      return `Long lift lines — guests waited ~${Math.max(1, Math.round(facts.avgWaitMin))} min a ride. More capacity or a cheaper fare to spread the crowd.`;
+      return `Long lift lines — guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More capacity or a cheaper fare to spread the crowd.`;
     case "snow":
       return facts.snowTrouble
         ? `${facts.snowTrouble} (mean quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`
