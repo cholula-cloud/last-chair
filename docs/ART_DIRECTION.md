@@ -1,6 +1,6 @@
 # Last Chair — art direction
 
-**Version:** 1.0 · **Updated:** 2026-11-16  
+**Version:** 1.0 · **Updated:** 2026-11-17  
 **Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs; the dedicated art pass is M4 in [MASTER_PLAN.md](./MASTER_PLAN.md#6-roadmap); lighting and VFX juice is M7.
 
 ---
@@ -99,68 +99,63 @@ Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Sc
 
 **Performance:** about 22 draw calls in the main pass and about 14 in the shadow pass (counted by mesh, not profiled on device): one merged mesh each for village and lift, three instanced tree meshes, four instanced guest meshes, instanced carriers and plume puffs. Sun is the only shadow caster light. No post-processing. Canvas uses `dpr={[1, 2]}` and Neutral tone mapping.
 
-## UI language: lodge paperwork on a phone (UI pass 1, PR 4d)
+## UI language: toy box with Route 100 signs (UI pass 2, PR 10c)
 
-The UI reads as paperwork from the lodge office laid on a dark table: cream paper slips, pine name plates, a lift-ticket day pass, a little transistor radio. Warmth comes from Ice Coast Revival's desk metaphor; the layout is our own and phone-native (bottom sheets, thumb zone, few large targets). We do not reuse ICR's layouts, labels or assets.
+Replaces UI pass 1 (lodge paperwork: cream paper, Fraunces serif, amber). The UI now matches the toy-scale diorama: chunky white panels with thick navy outlines that press down like toy keys, on a sky-blue ground. Meaning comes from US road-sign colours, borrowed from Route 100, the road Dutch Hill sits on. Each sign colour has one job and is never decorative.
 
-### Materials and colour
+Exploration of six directions (Trail Map, Lift Ticket, Night Groomer, Après '85, Route 100, Toy Box) and the chosen combination lives on a private design canvas; this section is the authority.
+
+### Colour
 
 Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| `paper` / `paper-deep` | `#f4efe4` / `#e8dfcb` | Cards and sheets; unselected tiles. Fibre grain from an inline SVG noise filter, no image download |
-| `ink` / `ink-soft` | `#1e2420` / `#545a50` | Text on paper (13.8:1 and 5.7:1) |
-| `pine` / `pine-deep` | `#2d5a4a` / `#1f4236` | Section plates, ticket stub, good state, icons |
-| `navy` | `#0b1628` | Page, scrim, radio body |
-| `amber` | `#e85d26` | Accent: selected rings, callouts, focus ring |
-| `amber-fill` | `#c94b18` | Fill for the one primary button per screen; deeper than `amber` so white labels pass 4.5:1 |
-| `barn` | `#a8382b` | Warnings, bad state, negative cash |
-| `ochre` | `#8a5a10` | Watch state |
-| `kraft` | `#e3cf9f` | Price tags |
+| Token | Hex | One job |
+|-------|-----|---------|
+| `ink` | `#1B3A57` | Outlines, hard shadows, primary text |
+| `ink-soft` | `#4B6580` | Secondary text |
+| `sky` | `#9AD7F5` | Ground behind panels and on the title screen |
+| `snow` / `snow-2` | `#FFFFFF` / `#E3F2FA` | Panels / inset wells and title-screen hills |
+| `sign-green` | `#0B6B3A` | Guide sign: results and summaries, the play key, the selected option, gains |
+| `sign-yellow` / `sign-yellow-soft` | `#F6C700` / `#FFF6CC` | Warning diamond: Route 100 Radio, alerts / the radio message bubble |
+| `sign-brown` | `#7A4524` | Recreation sign: only the action that ends the day (Sleep until morning) |
+| `gold` | `#FFC93C` | Cash only |
+| `barn` | `#E0483E` | Problems, losses, Close hill |
 
-Paper casts a two-layer soft shadow, like a card on wood. A dashed "stitch" rule separates a sheet's pinned footer and the cells of the conditions board. State is never colour-only: every good/watch/bad colour is paired with a word (Short queue, Thin snow, Mixed mood).
+### Shape
+
+- Every panel, chip and button has a 3 px `ink` border and a hard offset shadow (`0 Npx 0 ink`, no blur). No gradients, no soft grey shadows, no translucency.
+- Radius follows hierarchy: sheet top 28 px, panel 20, button and option 16, chip 12.
+- Sign surfaces (green, brown, yellow panels) use highway-sign framing: coloured fill, 4–5 px padding, then an inner 2 px white border (ink on yellow).
+- Radio: a yellow diamond with broadcast waves beside a speech bubble whose corner nearest the diamond is tight.
+- Options are raised white keys. The selected one turns sign green and sits pressed down, with `aria-pressed`.
+
+### Day is mountainous, night is cozy
+
+- **Day surfaces** (HUD, Build, Guests, title screen): bottom sheets rise with a jagged ridgeline top edge instead of rounded corners; the title screen has layered ridges with snow caps and small pines; fare options carry elevation glyphs (one peak for Cheap, two for Balanced, a jagged range for Expensive); the results sign wears a small "Dutch Hill, Monday night" tab.
+- **Night surfaces** (the closing recap): panels warm to `#FFF8EC`, outlines deepen to `#13283F`, radii grow by 2 px, a red-and-cream Nordic knit band sits under the "Closing recap" heading with "Lights on in the lodge" opposite it, the radio bubble warms to `#FFF1C2`, and Sleep shows a mug of cocoa. Night values are CSS variable overrides under a mood attribute, so the same components serve both.
 
 ### Type
 
-- **Fraunces** (variable, via `next/font/google`, `--font-fraunces`) for headings, the numbers that matter (cash, clock, recap stats) and section plates. Plates use small capitals; numbers use tabular lining figures. The SOFT axis is raised for a rounder, friendlier cut; the italic with WONK on is the "pencil" hand for notes.
-- **Geist Sans** for body copy, labels and buttons.
-
-### Components (`web/src/ui/kit/`)
-
-| Primitive | What it is |
-|-----------|------------|
-| `PaperSheet` | Bottom sheet: grab handle, serif title, scrolling body, optional pinned footer for the primary action. Optional scrim. Close by X, Escape, or a downward drag/flick on the handle. `wide` gives two columns on short landscape screens |
-| `PlateHeading` | Section header: serif small caps on a pine plate with a hairline running out to an optional aside |
-| `StatTile` | Large serif number over a small label, with a tone (good/watch/bad) and optional word |
-| `ChoiceTiles` | Three ≥56 px segmented tiles (`aria-pressed`), amber ring and check badge when selected, optional price line |
-| `PriceTag` | Kraft tag with a punched hole for costs |
-| `PrimaryButton` | The amber action |
-| `RadioCard` | Route 100 Radio beat: navy radio with speaker grille and a dial parked on 100, host Maris Shaw, message on a paper slip |
-| `icons.tsx` | Line icons drawn on a 24 px grid (play, pause, build, guests, moon, home, queue, snow, mood face whose mouth follows the score, weather) |
-
-**Day HUD** (`web/src/ui/Hud.tsx`): a lift-ticket strip at the top (pine stub with the labelled Resume/Pause button, perforation with notches, day and weekday, clock, cash); one dismissible morning note card with weather, headline and what the crew learned; a conditions board (queue, snow cover and depth, mood) at the bottom; and a thumb-zone action row (Home, Build, Guests, Close hill in amber). On the first morning the stub pulses and a small callout under it says "Tap Resume to open the hill", so nothing covers the lift. At ≥640 px wide the top and bottom groups each sit in one row.
-
-**Sheets:** Build (lift cards with price tags, lift-top tiles with Valid run / No run, reason line under Place, village cards with "Need $X more" when unaffordable), Guests (list with Follow), Night recap (ledger slip: skiers, happy %, cash Δ as large serif numbers; today-versus-yesterday deltas with ▲/▼ and words; the day's problem in pencil; a "Why?" disclosure with signed bars; radio card; fare tiles with expected skiers and snow tiles with the predicted morning cover; Sleep pinned at the bottom with its disabled hint), Founder pick (six staff badges with a coloured lanyard stripe and monogram), Winter review (stats and the career pin).
-
-**Title screen** (`/`): inline-SVG dusk illustration of Dutch Hill, Fraunces wordmark, one-line pitch, Play, and an honest "In this build" card listing only shipped features.
+- **Lilita One** for headings, big numbers, section titles and primary button labels. Never body text.
+- **Nunito** (600–800, default 700) for everything else. Live numbers (clock, cash, queue, percentages) use tabular figures.
+- Sentence case. No all-caps labels, middle-dot meta strings, em dashes or emoji in UI copy.
 
 ### Motion
 
-Easing tokens: `--ease-out` `cubic-bezier(0.23,1,0.32,1)`, `--ease-in-out` `cubic-bezier(0.77,0,0.175,1)`, `--ease-drawer` `cubic-bezier(0.32,0.72,0,1)`. No ease-in, no `transition: all`; only transform and opacity move.
+Principles from Apple's fluid-interface talks and Emil Kowalski's design engineering: respond on press, keep everything interruptible, animate only transform and opacity.
 
-- Sheets enter from `translateY(100%)` over 360 ms on the drawer curve and exit in 200 ms. They are CSS transitions driven by `data-state`, so they can be interrupted. Drag-to-dismiss uses pointer capture, closes past 110 px or above 0.11 px/ms, and damps upward pulls.
-- Every pressable scales to 0.97 on press (160 ms ease-out).
-- Things seen many times a night (fare/snow tiles, clock, cash, conditions) change colour in ≤120 ms and do not move.
-- Rare moments get a small entrance (≤280 ms): the radio card, founder badges with a 40 ms stagger, the morning note, the first-day callout (scales from its arrow, from 0.95, never from 0).
-- Hover styles exist only for `(hover: hover) and (pointer: fine)`.
-- `prefers-reduced-motion`: movement is replaced by opacity fades; the pulse becomes a static ring.
+- Press: on pointer-down the key moves down 3 px and its shadow shrinks by 3 px (100–120 ms, `--ease-out`); release snaps back.
+- Sheets: CSS transitions driven by `data-state` so they can be interrupted; enter 360 ms on `--ease-drawer`, exit 200 ms; drag-to-dismiss with pointer capture and flick velocity.
+- Selection changes ≤160 ms. Nothing pressed many times a night animates beyond the press.
+- One bounce in the whole UI: the radio diamond arrives with a small overshoot (≤300 ms, from scale 0.9), because radio beats are rare.
+- Hover only for fine pointers. `prefers-reduced-motion` replaces movement with short opacity fades.
 
 ### Accessibility
 
-Contrast AA on paper and navy; every control has a visible label (icons are decorative); targets ≥44 px, night tiles ≥56 px; focus ring 3 px amber; safe-area insets on all edges; layouts checked at 390×844, 844×390 and 1180×820.
+Text contrast ≥4.5:1 on every surface pairing; state is never colour-only (a word or icon goes with it); targets ≥44 px; focus ring 3 px `sign-yellow` with an ink edge; safe-area insets; layouts checked at 390×844 and 844×390.
 
 ---
+
 
 ## Blender pipeline
 

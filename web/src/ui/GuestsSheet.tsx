@@ -5,7 +5,7 @@ import { satisfactionContext } from "@/game/rules";
 import { guestSatisfaction } from "@/game/satisfaction";
 import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
-import { PaperSheet } from "@/ui/kit/PaperSheet";
+import { Sheet } from "@/ui/kit/Sheet";
 
 const STATE_WORD: Record<GuestState, string> = {
   pending: "Not here yet",
@@ -48,49 +48,50 @@ export function GuestsSheet({
   const ctx = satisfactionContext({ fare, buildings, founderId, weather, clockMin });
 
   return (
-    <PaperSheet
+    <Sheet
       title="Guests"
       subtitle={`${guests.length} on the hill. Follow one and the camera goes with them.`}
       onClose={onClose}
       closeLabel="Close guests sheet"
     >
-      {guests.length === 0 && (
-        <p className="py-6 text-center text-[0.9rem] text-ink-soft">
-          Nobody on the hill right now. Guests arrive from 8 AM and head home by 4.
-        </p>
-      )}
-      <ul className="divide-y divide-dashed divide-ink/20">
-        {guests.map((g) => {
-          const following = followId === g.id;
-          return (
-            <li key={g.id} className="flex items-center gap-3 py-2">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[0.95rem] font-semibold text-ink">
-                  {g.label}
-                </p>
-                <p className="text-[0.8rem] text-ink-soft">
-                  {STATE_WORD[g.state]} · {moodWord(guestSatisfaction(g, ctx))}
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-pressed={following}
-                onClick={() => {
-                  setFollowId(following ? null : g.id);
-                  onClose();
-                }}
-                className={`press min-h-11 min-w-[6.5rem] rounded-full px-4 text-[0.85rem] font-semibold ${
-                  following
-                    ? "bg-pine text-paper"
-                    : "border-[1.5px] border-pine text-pine"
-                }`}
+      <div className="panel px-3.5 py-1">
+        {guests.length === 0 && (
+          <p className="py-6 text-center text-[0.92rem] font-bold text-ink-soft">
+            Nobody on the hill right now. Guests arrive from 8 AM and head home by 4.
+          </p>
+        )}
+        <ul>
+          {guests.map((g) => {
+            const following = followId === g.id;
+            return (
+              <li
+                key={g.id}
+                className="flex items-center gap-3 border-b-2 border-snow-2 py-2.5 last:border-b-0"
               >
-                {following ? "Following" : "Follow"}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </PaperSheet>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[1rem] font-extrabold">
+                    {g.label}
+                  </p>
+                  <p className="text-[0.85rem] font-bold text-ink-soft">
+                    {STATE_WORD[g.state]}, {moodWord(guestSatisfaction(g, ctx)).toLowerCase()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-pressed={following}
+                  onClick={() => {
+                    setFollowId(following ? null : g.id);
+                    onClose();
+                  }}
+                  className="key key-sm press min-h-11 min-w-[6.5rem] px-4 text-[0.92rem] font-extrabold"
+                >
+                  {following ? "Following" : "Follow"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </Sheet>
   );
 }

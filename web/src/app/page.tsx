@@ -10,51 +10,52 @@ const FEATURES = [
 
 export default function Home() {
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden bg-navy text-paper short:grid short:grid-cols-2 short:items-start">
-      <NightHill />
-      <main className="relative mx-auto -mt-6 flex max-w-xl flex-col px-4 pb-[max(2rem,env(safe-area-inset-bottom))] sm:-mt-10 short:mt-0 short:pr-[max(1rem,env(safe-area-inset-right))] short:pt-8">
-        <h1
-          className="serif text-center text-[4.2rem] font-semibold leading-[0.9] tracking-[-0.02em] text-paper drop-shadow-[0_3px_12px_rgb(11_22_40/0.9)] sm:text-[5.5rem] short:text-[3.6rem]"
-          style={{ fontVariationSettings: '"SOFT" 100, "opsz" 144, "WONK" 1' }}
-        >
-          Last Chair
-        </h1>
-        <p className="mx-auto mt-4 max-w-sm text-center text-[1.05rem] leading-relaxed text-[#cdd5e0]">
-          Reopen a lost Vermont ski hill for one more winter. Watch the day,
-          make two choices at night, and see who shows up in the morning.
-        </p>
-        <Link
-          href="/play"
-          className="press btn-primary mx-auto mt-6 flex h-14 w-full max-w-xs items-center justify-center rounded-2xl text-[1.15rem] font-bold"
-        >
-          Play
-        </Link>
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-sky text-ink">
+      <Hills />
+      <main className="relative z-10 mx-auto flex max-w-xl flex-col px-4 pb-44 pt-[max(2.5rem,env(safe-area-inset-top))] short:grid short:min-h-[100dvh] short:max-w-none short:grid-cols-2 short:items-center short:gap-8 short:px-[max(2rem,env(safe-area-inset-left))] short:pb-20 short:pt-4">
+        <div className="flex flex-col">
+          <div className="panel relative overflow-hidden !bg-sky px-2 pb-6 pt-14 short:pt-10">
+            <Ridges />
+            <h1 className="title-outline display relative text-center text-[clamp(3rem,16vw,5.2rem)] leading-[0.95] short:text-[3.4rem]">
+              Last Chair
+            </h1>
+          </div>
+          <p className="mx-auto mt-6 max-w-sm text-center text-[1.05rem] font-bold leading-snug short:mt-3">
+            Reopen a lost Vermont ski hill for one more winter. Watch the day,
+            make two choices at night, and see who shows up in the morning.
+          </p>
+          <Link
+            href="/play"
+            className="sign sign-btn press mx-auto mt-6 block w-full max-w-xs short:mt-4"
+          >
+            <span className="sign-inner display flex min-h-[46px] items-center justify-center text-[1.5rem]">
+              Play
+            </span>
+          </Link>
+        </div>
 
         <section
           aria-labelledby="in-this-build"
-          className="paper paper-tilt mt-10 rounded-2xl px-5 py-4"
+          className="panel mt-9 px-5 py-4 short:mt-0"
         >
-          <h2
-            id="in-this-build"
-            className="plate inline-block rounded-[5px] px-2.5 py-0.5 text-[0.95rem]"
-          >
+          <h2 id="in-this-build" className="display text-[1.4rem]">
             In this build
           </h2>
           <ul className="mt-3 space-y-2.5">
             {FEATURES.map((f) => (
               <li
                 key={f}
-                className="flex gap-2.5 text-[0.93rem] leading-snug text-ink"
+                className="flex gap-2.5 text-[0.95rem] font-bold leading-snug"
               >
                 <span
-                  className="mt-[0.45em] size-1.5 shrink-0 rotate-45 bg-pine"
+                  className="mt-[0.5em] size-2 shrink-0 rotate-45 border-2 border-ink bg-sign-green"
                   aria-hidden="true"
                 />
                 {f}
               </li>
             ))}
           </ul>
-          <p className="stitch mt-4 pt-3 text-[0.82rem] text-ink-soft">
+          <p className="mt-4 border-t-2 border-snow-2 pt-3 text-[0.85rem] font-bold text-ink-soft">
             An early preview. The career map, the ledger and the other mountains
             are still on the drawing board. Progress saves in this browser.
           </p>
@@ -64,115 +65,84 @@ export default function Home() {
   );
 }
 
-/** Title illustration: Dutch Hill at dusk, drawn inline. */
-function NightHill() {
-  // Deterministic scatter of pines over the hill, keeping the trail and lift line clear.
-  const hillTop = (x: number) => 72 + Math.abs(x - 205) * 0.38;
-  const trees: { x: number; y: number; s: number }[] = [];
-  for (let i = 0; i < 140; i++) {
-    const x = ((i * 37 + (i % 3) * 11) % 410) - 5;
-    const y = hillTop(x) + 14 + ((i * 53) % 110);
-    const trailX = 205 - (y - 72) * 0.3;
-    const nearTrail = Math.abs(x - trailX) < 20 + (y - 72) * 0.08;
-    const nearLift = Math.abs(x - (214 + (y - 80) * 0.16)) < 6;
-    const nearLodge = x > 222 && x < 286 && y > 176;
-    if (y < 214 && !nearTrail && !nearLift && !nearLodge) {
-      trees.push({ x, y, s: 0.55 + (y - 70) / 260 + ((i * 7) % 4) / 20 });
-    }
-  }
-  trees.sort((a, b) => a.y - b.y);
-  const stars = Array.from({ length: 30 }, (_, i) => ({
-    x: (i * 97) % 400,
-    y: 6 + ((i * 41) % 60),
-    r: i % 5 === 0 ? 1.1 : 0.6,
-  }));
+/** Two snow hills along the bottom edge: a pale back ridge and a white front one, both outlined in navy. */
+function Hills() {
+  const back = "M0 46 C60 14 130 18 195 44 C255 68 325 20 400 30";
+  const front = "M0 80 C70 52 150 60 220 82 C290 102 350 72 400 62";
   return (
     <svg
-      viewBox="0 0 400 230"
-      preserveAspectRatio="xMidYMax slice"
-      className="block h-[46dvh] max-h-[460px] min-h-[260px] w-full short:sticky short:top-0 short:h-[100dvh] short:max-h-none short:min-h-0"
-      role="img"
-      aria-label="Dutch Hill at dusk: a snowy hill with a lift line, a trail cut through the pines, and a red lodge with lit windows"
+      viewBox="0 0 400 120"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-36 w-full short:h-24"
+      aria-hidden="true"
+      focusable="false"
     >
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#081226" />
-          <stop offset="1" stopColor="#33497a" />
-        </linearGradient>
-        <linearGradient id="snow" x1="0" y1="0" x2="1" y2="0.6">
-          <stop offset="0" stopColor="#c9d5ee" />
-          <stop offset="0.5" stopColor="#f4f7fb" />
-          <stop offset="1" stopColor="#a9b9de" />
-        </linearGradient>
-        <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0b1628" stopOpacity="0" />
-          <stop offset="1" stopColor="#0b1628" />
-        </linearGradient>
-        <radialGradient id="glow">
-          <stop offset="0" stopColor="#ffc46b" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#ffc46b" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="400" height="230" fill="url(#sky)" />
-      {stars.map((s, i) => (
-        <circle
-          key={i}
-          cx={s.x}
-          cy={s.y}
-          r={s.r}
-          fill="#f4efe4"
-          opacity={0.7}
+      <path d={`${back} V120 H0Z`} fill="var(--snow-2)" />
+      <path
+        d={back}
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+      <path d={`${front} V120 H0Z`} fill="var(--snow)" />
+      <path
+        d={front}
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+/** Layered ridges behind the title: a pale far range, and a near range with snow caps and pines. */
+function Ridges() {
+  const far =
+    "M0 120 L50 70 L95 105 L150 45 L210 100 L265 60 L320 100 L370 55 L400 85";
+  const near =
+    "M0 150 L40 115 L85 140 L140 95 L195 135 L250 105 L305 140 L355 110 L400 135";
+  const pines = [
+    [62, 140],
+    [77, 147],
+    [300, 152],
+    [331, 148],
+    [376, 140],
+  ];
+  return (
+    <svg
+      viewBox="0 20 400 180"
+      preserveAspectRatio="xMidYMax slice"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d={`${far} V200 H0Z`} fill="#c6e6f7" />
+      <path d={`${near} V200 H0Z`} fill="#6e9fc7" />
+      <path d="M140 95 L127 109 L135 106 L141 112 L147 106 L153 109Z" fill="#fff" />
+      <path d="M250 105 L238 114 L245 112 L250 117 L256 112 L262 115Z" fill="#fff" />
+      <path
+        d={near}
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth="3"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+      {pines.map(([x, y]) => (
+        <path
+          key={x}
+          d={`M${x - 7} ${y} L${x} ${y - 20} L${x + 7} ${y}Z`}
+          fill="var(--sign-green)"
+          stroke="var(--ink)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
       ))}
-      <path
-        d="M0 118 C40 104 70 96 100 104 C130 112 150 92 180 96 C230 100 250 84 290 90 C330 96 360 108 400 104 V230 H0z"
-        fill="#22355a"
-      />
-      <path
-        d="M-5 150 C50 136 100 120 140 102 C170 86 190 74 205 72 C222 74 245 88 268 102 C305 122 350 134 405 142 V230 H-5z"
-        fill="url(#snow)"
-      />
-      <path
-        d="M203 74 C199 100 190 124 182 150 C176 172 172 190 170 214 L196 214 C196 192 200 170 206 150 C212 126 213 100 209 74z"
-        fill="#ffffff"
-        opacity={0.85}
-      />
-      <path d="M214 80 L234 206" stroke="#2b3138" strokeWidth={0.8} />
-      {[0.12, 0.38, 0.64, 0.9].map((t) => {
-        const x = 214 + 20 * t;
-        const y = 80 + 126 * t;
-        return (
-          <path
-            key={t}
-            d={`M${x} ${y} v8 M${x - 3} ${y} h6`}
-            stroke="#3a4250"
-            strokeWidth={1.3}
-          />
-        );
-      })}
-      {trees.map((t, i) => (
-        <g
-          key={i}
-          transform={`translate(${t.x.toFixed(1)} ${t.y.toFixed(1)}) scale(${t.s.toFixed(2)})`}
-        >
-          <path d="M0 -15 L6 -4 L-6 -4z M0 -9 L8 4 L-8 4z" fill="#1f4a3d" />
-          <path
-            d="M0 -15 L3 -9.5 L-3 -9.5z M0 -9 L3.6 -3 L-3.6 -3z"
-            fill="#eef3fa"
-          />
-        </g>
-      ))}
-      <ellipse cx="258" cy="204" rx="44" ry="14" fill="url(#glow)" />
-      <g transform="translate(238 188)">
-        <rect x="0" y="0" width="40" height="17" fill="#a8382b" />
-        <path d="M-4 1 L20 -13 L44 1z" fill="#f4f7fb" />
-        <rect x="5" y="5" width="6" height="6" fill="#ffc46b" />
-        <rect x="17" y="5" width="6" height="6" fill="#ffc46b" />
-        <rect x="29" y="5" width="6" height="6" fill="#ffc46b" />
-        <rect x="31" y="-11" width="4" height="8" fill="#8b8682" />
-      </g>
-      <rect y="170" width="400" height="52" fill="url(#fade)" />
-      <rect y="221" width="400" height="20" fill="#0b1628" />
     </svg>
   );
 }

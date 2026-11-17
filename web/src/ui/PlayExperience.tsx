@@ -18,8 +18,9 @@ import {
   ConditionsBoard,
   MorningNote,
   StartCallout,
-  TicketStrip,
+  TopBar,
 } from "@/ui/Hud";
+import { tidy } from "@/ui/kit/parts";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
@@ -94,7 +95,7 @@ export default function PlayExperience() {
   const showNote = phase === "day" && noteDismissedDay !== dayIndex;
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-navy text-paper">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink">
       <Canvas
         className="touch-none"
         shadows="percentage"
@@ -109,9 +110,10 @@ export default function PlayExperience() {
         <MountainScene />
       </Canvas>
 
-      <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3">
-        <div className="pointer-events-auto w-full sm:w-auto">
-          <TicketStrip
+      {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
+      <header data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
+        <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
+          <TopBar
             dayIndex={dayIndex}
             seasonLength={seasonLength}
             clockMin={clockMin}
@@ -125,8 +127,8 @@ export default function PlayExperience() {
         {showNote && (
           <MorningNote
             weather={weather}
-            headline={morningHeadline}
-            crewLine={talentToast}
+            headline={tidy(morningHeadline)}
+            crewLine={talentToast ? tidy(talentToast) : null}
             overnightLine={
               dayIndex > 1 && SNOW_NIGHT_COST[snowPreset] > 0
                 ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`

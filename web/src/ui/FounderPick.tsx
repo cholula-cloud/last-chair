@@ -2,7 +2,7 @@
 
 import { FOUNDERS } from "@/game/content";
 import { useGameStore } from "@/game/store";
-import { PaperSheet } from "@/ui/kit/PaperSheet";
+import { Sheet } from "@/ui/kit/Sheet";
 
 /** Badge stripe per founder, drawn from the scene's jacket palette. */
 const BADGE_TINT = [
@@ -29,13 +29,13 @@ export function FounderPick() {
   if (phase !== "setup") return null;
 
   return (
-    <PaperSheet
+    <Sheet
       modal
       z="z-50"
-      title="Dutch Hill · Winter 1"
+      title="Dutch Hill, winter 1"
       subtitle="Who signs the lease? Your founder’s quirks last the whole winter."
     >
-      <ul className="grid gap-2.5 pt-1 sm:grid-cols-2">
+      <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
         {FOUNDERS.map((f, i) => (
           <li
             key={f.id}
@@ -45,18 +45,14 @@ export function FounderPick() {
             <button
               type="button"
               onClick={() => pickFounder(f.id)}
-              className="press group relative flex h-full w-full overflow-hidden rounded-xl border border-ink/15 bg-white/55 text-left shadow-[0_1px_2px_rgb(11_22_40/0.15)] hover:border-ink/35"
+              className="key press flex h-full w-full overflow-hidden text-left"
             >
               <span
-                className="flex w-[68px] shrink-0 flex-col items-center justify-center gap-1.5 py-3 text-paper"
+                className="flex w-[68px] shrink-0 items-center justify-center border-r-[3px] border-ink py-3"
                 style={{ background: BADGE_TINT[i % BADGE_TINT.length] }}
               >
                 <span
-                  className="h-1.5 w-6 rounded-full bg-black/30"
-                  aria-hidden="true"
-                />
-                <span
-                  className="serif flex size-11 items-center justify-center rounded-full bg-paper text-[1.1rem] font-semibold"
+                  className="display flex size-11 items-center justify-center rounded-full border-[3px] border-ink bg-white text-[1.15rem]"
                   style={{ color: BADGE_TINT[i % BADGE_TINT.length] }}
                   aria-hidden="true"
                 >
@@ -64,13 +60,11 @@ export function FounderPick() {
                 </span>
               </span>
               <span className="flex min-w-0 flex-1 flex-col justify-center px-3 py-2.5">
-                <span className="serif text-[1.08rem] font-semibold leading-tight text-ink">
-                  {f.name}
-                </span>
-                <span className="text-[0.8rem] font-semibold text-pine">
+                <span className="display text-[1.2rem]">{f.name}</span>
+                <span className="text-[0.85rem] font-extrabold text-sign-green">
                   {f.title}
                 </span>
-                <span className="mt-1 text-[0.83rem] leading-snug text-ink-soft">
+                <span className="mt-1 text-[0.85rem] font-bold leading-snug text-ink-soft">
                   {f.blurb}
                 </span>
               </span>
@@ -78,6 +72,6 @@ export function FounderPick() {
           </li>
         ))}
       </ul>
-    </PaperSheet>
+    </Sheet>
   );
 }

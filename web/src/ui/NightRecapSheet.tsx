@@ -16,19 +16,31 @@ import {
   type FarePreset,
   type SnowPreset,
 } from "@/game/types";
-import { MoonIcon } from "@/ui/kit/icons";
-import { PaperSheet } from "@/ui/kit/PaperSheet";
+import { CocoaIcon, PeaksGlyph } from "@/ui/kit/icons";
+import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
 import {
   ChoiceTiles,
   DeltaChip,
   DisclosureButton,
-  PlateHeading,
   PrimaryButton,
+  SectionHeading,
+  Sign,
   StatTile,
+  tidy,
   type ChoiceOption,
   type Tone,
 } from "@/ui/kit/parts";
 import { RadioCard } from "@/ui/kit/RadioCard";
+
+const WEEKDAY_FULL: Record<string, string> = {
+  Mon: "Monday",
+  Tue: "Tuesday",
+  Wed: "Wednesday",
+  Thu: "Thursday",
+  Fri: "Friday",
+  Sat: "Saturday",
+  Sun: "Sunday",
+};
 
 const FARES: FarePreset[] = ["cheap", "balanced", "expensive"];
 const SNOWS: SnowPreset[] = ["minimal", "mid", "high"];
@@ -52,41 +64,38 @@ function WhyList({ recap }: { recap: NightRecap }) {
         Why {Math.round(recap.satisfaction)}% happy?
       </DisclosureButton>
       {open && (
-        <div
-          id="why-list"
-          className="mt-2 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-2"
-        >
+        <div id="why-list" className="panel mt-2.5 px-3.5 py-1.5">
           <ul>
             {lines.map((line) => {
               const width = Math.min(1, Math.abs(line.points) / BAR_FULL_PTS) * 50;
               const rounded = Math.round(line.points);
               return (
-                <li key={line.key} className="border-b border-ink/10 py-2.5 last:border-b-0">
+                <li key={line.key} className="border-b-2 border-snow-2 py-2.5 last:border-b-0">
                   <div className="flex items-baseline justify-between gap-3">
-                    <span className="serif text-[1rem] font-semibold text-ink">{line.label}</span>
+                    <span className="text-[1rem] font-extrabold">{line.label}</span>
                     <span
-                      className={`num text-[1.05rem] font-bold ${
-                        rounded > 0 ? "text-pine" : rounded < 0 ? "text-barn" : "text-ink-soft"
+                      className={`text-[1.05rem] font-extrabold tabular-nums ${
+                        rounded > 0 ? "text-sign-green" : rounded < 0 ? "text-barn-deep" : "text-ink-soft"
                       }`}
                     >
                       {formatPoints(line.points)}
                     </span>
                   </div>
-                  <p className="text-[0.85rem] leading-snug text-ink-soft">{line.detail}</p>
-                  <div className="relative mt-1.5 h-2 rounded-full bg-ink/10" aria-hidden="true">
-                    <span className="absolute inset-y-0 left-1/2 w-px bg-ink/35" />
+                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}</p>
+                  <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-snow-2" aria-hidden="true">
                     <span
-                      className={`absolute inset-y-0 rounded-full ${
-                        line.points < 0 ? "right-1/2 bg-barn" : "left-1/2 bg-pine"
+                      className={`absolute inset-y-0 ${
+                        line.points < 0 ? "right-1/2 bg-barn-deep" : "left-1/2 bg-sign-green"
                       }`}
                       style={{ width: `${width}%` }}
                     />
+                    <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-ink" />
                   </div>
                 </li>
               );
             })}
           </ul>
-          <p className="pt-1.5 text-[0.8rem] text-ink-soft">
+          <p className="pb-1 pt-1.5 text-[0.82rem] font-bold text-ink-soft">
             Average guest: {WHY_BASE} to start, plus the above, is about{" "}
             {Math.round(recap.satisfaction)}.
           </p>
@@ -102,13 +111,13 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
   const cash = delta(recap.cashDelta, last.cashDelta, (d) => formatMoney(d), 0.5);
   return (
     <div
-      className="mt-1.5 grid grid-cols-3 gap-3 px-3.5"
+      className="chip mt-4 grid grid-cols-3 gap-x-3 gap-y-1 px-3.5 py-2"
       aria-label={`Change since day ${dayIndex - 1}`}
     >
       <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
       <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
       <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
-      <p className="col-span-3 -mt-1 text-[0.75rem] text-ink-soft">
+      <p className="col-span-3 text-[0.78rem] font-bold leading-snug text-ink-soft">
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
       </p>
     </div>
@@ -126,8 +135,9 @@ function Choices({
 }) {
   const { pendingFare, pendingSnow } = night;
   const skiers = (f: FarePreset) => Math.round(expectedArrivals(night, f, pendingSnow));
-  const fareOptions: ChoiceOption<FarePreset>[] = FARES.map((v) => ({
+  const fareOptions: ChoiceOption<FarePreset>[] = FARES.map((v, i) => ({
     value: v,
+    glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
     label: FARE_LABELS[v],
     detail: formatMoney(FARE_PRICES[v]),
     note: `~${skiers(v)} skiers`,
@@ -145,30 +155,30 @@ function Choices({
   const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
   const chosen = previews[pendingSnow];
   return (
-    <>
-      <PlateHeading aside="Tomorrow’s ticket">Fare</PlateHeading>
+    <div className="panel px-3.5 pb-4 pt-3.5">
+      <SectionHeading aside="Tomorrow’s ticket">Fare</SectionHeading>
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
-      <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
+      <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         Tomorrow, locals expect a day here to be worth about {formatMoney(worth)}.{" "}
         {FARE_LABELS[pendingFare]} {formatMoney(FARE_PRICES[pendingFare])} brings about {skiers(pendingFare)} skiers.
       </p>
 
-      <PlateHeading aside="Crew overnight">Snow &amp; service</PlateHeading>
+      <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
       <ChoiceTiles
         label="Snow and service"
         options={snowOptions}
         value={pendingSnow}
         onPick={setPendingSnow}
       />
-      <p className="mt-2 text-[0.85rem] leading-snug text-ink-soft" aria-live="polite">
+      <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         Tomorrow morning: {chosen.label.toLowerCase()}, average quality{" "}
         {Math.round(chosen.meanQuality * 100)}%.
       </p>
-      <p className="num mt-1 text-[0.85rem] font-semibold text-ink" aria-live="polite">
+      <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
         Tonight&rsquo;s snow &amp; service:{" "}
         {chosen.cost ? `${formatMoney(-chosen.cost)}, charged at Sleep` : "free, nothing charged"}
       </p>
-    </>
+    </div>
   );
 }
 
@@ -189,10 +199,13 @@ export function NightRecapSheet() {
   const mood = moodWord(recap.satisfaction);
 
   return (
-    <PaperSheet
+    <Sheet
       modal
       wide
+      titleHidden
+      mood="night"
       z="z-50"
+      title="Closing recap"
       aside={
         <>
           <Choices
@@ -202,59 +215,69 @@ export function NightRecapSheet() {
           />
 
           {nextTalent && (
-            <p className="mt-4 text-[0.88rem] text-ink-soft">
+            <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
               Tomorrow the crew learns{" "}
-              <span className="serif font-semibold text-pine">
-                {nextTalent}
-              </span>
+              <span className="font-extrabold text-sign-green">{nextTalent}</span>
             </p>
           )}
         </>
       }
-      title="Closing recap"
-      subtitle={`Day ${dayIndex} · ${weekdayLabel(dayIndex)} night`}
       footer={
         <div>
           {!canSleep && (
             <p
               id="sleep-hint"
-              className="mb-2 text-center text-[0.85rem] font-medium text-ink-soft short:mb-1.5"
+              className="mb-2 text-center text-[0.88rem] font-bold text-ink short:mb-1.5"
             >
               Read the radio message, then tap Got it.
             </p>
           )}
           <PrimaryButton
+            tone="brown"
             disabled={!canSleep}
             aria-describedby={canSleep ? undefined : "sleep-hint"}
             onClick={sleep}
-            className="short:h-12"
           >
-            <MoonIcon size={20} />
+            <CocoaIcon size={24} />
             Sleep until morning
           </PrimaryButton>
         </div>
       }
     >
       <div>
-        <div className="grid grid-cols-3 gap-3 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-3">
-          <StatTile label="Skiers" value={recap.arrivals} />
-          <StatTile
-            label="Happiness"
-            value={`${Math.round(recap.satisfaction)}%`}
-            tone={mood.tone}
-            note={mood.word}
-          />
-          <StatTile
-            label="Cash today"
-            value={formatMoney(recap.cashDelta, { signed: true })}
-            tone={recap.cashDelta >= 0 ? "good" : "bad"}
-          />
-        </div>
+        <Sign
+          innerClassName="pb-4 pt-3"
+          tab={`Dutch Hill, ${WEEKDAY_FULL[weekdayLabel(dayIndex)] ?? weekdayLabel(dayIndex)} night`}
+        >
+          <div className="flex items-center justify-between gap-2 px-3.5 pt-1">
+            <SheetTitle className="display display-lg whitespace-nowrap text-[1.85rem] text-white">
+              Closing recap
+            </SheetTitle>
+            <span className="max-w-[6.2rem] text-right text-[0.82rem] font-extrabold leading-tight text-sign-green-ink">
+              Lights on in the lodge
+            </span>
+          </div>
+          <div className="knit mt-3" aria-hidden="true" />
+          <div className="grid grid-cols-3 gap-3 px-3.5 pt-3">
+            <StatTile onSign label="Skiers" value={recap.arrivals} />
+            <StatTile
+              onSign
+              label="Happiness"
+              value={`${Math.round(recap.satisfaction)}%`}
+              note={mood.word}
+            />
+            <StatTile
+              onSign
+              label="Cash today"
+              value={formatMoney(recap.cashDelta, { signed: true })}
+            />
+          </div>
+        </Sign>
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
-        <p className="pencil mt-3 px-1 text-[1.05rem] text-ink">
+        <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
-          {recap.problem}
+          {tidy(recap.problem)}
         </p>
 
         <WhyList key={dayIndex} recap={recap} />
@@ -266,16 +289,16 @@ export function NightRecapSheet() {
               <button
                 type="button"
                 onClick={acknowledgeBeat}
-                className="press flex h-12 w-full items-center justify-center rounded-xl bg-pine text-[0.95rem] font-semibold text-paper"
+                className="key key-solid press flex h-12 w-full items-center justify-center text-[1rem] font-extrabold [--key-fill:var(--sign-yellow)] [--lift:4px]"
               >
                 Got it
               </button>
             }
           >
-            {beat.radio}
+            {tidy(beat.radio)}
           </RadioCard>
         )}
       </div>
-    </PaperSheet>
+    </Sheet>
   );
 }
