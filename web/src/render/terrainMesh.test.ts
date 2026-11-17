@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
+import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { liftTowers } from "./liftLine";
 import { NX, NZ, buildPositions } from "./terrainMesh";
@@ -35,7 +35,7 @@ describe("terrain mesh and sim share one heightfield", () => {
   });
 
   it("lift tower ground equals TERRAIN.height at the tower position", () => {
-    for (const slot of LIFT_PREVIEW_SLOTS) {
+    for (const slot of REFERENCE_TOPS) {
       for (const t of liftTowers(slot)) {
         expect(t.ground).toBe(TERRAIN.height(t.x, t.z));
       }

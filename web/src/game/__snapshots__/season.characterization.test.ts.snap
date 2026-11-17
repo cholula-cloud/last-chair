@@ -89,7 +89,6 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     "reputation": 40,
     "seasonLength": 14,
     "selectedLiftType": "chair",
-    "selectedSlotIndex": 1,
     "snow": "mid",
     "snowDepth": 0.45,
     "snowQuality": 0.55,

@@ -1,6 +1,6 @@
 import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
-import { LIFT_PREVIEW_SLOTS } from "./descent";
+import { REFERENCE_TOPS } from "./descent";
 import { createRng } from "./rng";
 import * as rules from "./rules";
 import {
@@ -324,7 +324,7 @@ describe("whole days", () => {
     const lifts = chair
       ? [
           ...base.lifts,
-          { type: "chair" as const, anchor: LIFT_PREVIEW_SLOTS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
+          { type: "chair" as const, anchor: REFERENCE_TOPS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
         ]
       : base.lifts;
     const s: GameState = {

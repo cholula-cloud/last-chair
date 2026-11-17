@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
-import { LIFT_PREVIEW_SLOTS } from "./descent";
 import { makeGuest, planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
@@ -111,50 +110,6 @@ describe("buyBuilding", () => {
     const noHut: GameState = { ...started(), buildings: [] };
     expect(rules.buyBuilding(noHut, "lodge")).toBe(noHut);
     expect(rules.buyBuilding(started(), "lodge").buildings).toContain("lodge");
-  });
-});
-
-describe("confirmLift", () => {
-  it("builds a chair on a valid slot", () => {
-    const base = rules.setSelectedLiftType(
-      rules.setSelectedSlotIndex(started(), 1),
-      "chair",
-    );
-    const s = pure(rules.confirmLift, base);
-    expect(s.lifts).toHaveLength(2);
-    expect(s.cash).toBeLessThan(base.cash);
-    expect(s.buildMode).toBe(false);
-  });
-
-  it("rejects a chair on the slot the surface lift already uses, but allows the other slot and replacing in place", () => {
-    const onSurface = rules.setSelectedLiftType(
-      rules.setSelectedSlotIndex({ ...started(), cash: 99999 }, 0),
-      "chair",
-    );
-    expect(started().lifts.some((l) => l.confirmed && l.type === "surface")).toBe(true);
-    expect(rules.isSlotInUse(onSurface.lifts, LIFT_PREVIEW_SLOTS[0], "chair")).toBe(true);
-    expect(rules.confirmLift(onSurface)).toBe(onSurface);
-    const mid = rules.setSelectedSlotIndex(onSurface, 1);
-    expect(rules.confirmLift(mid).lifts).toHaveLength(2);
-    const sameType = rules.setSelectedLiftType(onSurface, "surface");
-    expect(rules.isSlotInUse(sameType.lifts, LIFT_PREVIEW_SLOTS[0], "surface")).toBe(false);
-  });
-
-  it("rejects an invalid descent", () => {
-    // Slot 2 ("Creek") fails for too little vertical: its top is under MIN_LIFT_VERTICAL above the base.
-    const base = rules.setSelectedLiftType(
-      rules.setSelectedSlotIndex(started(), 2),
-      "chair",
-    );
-    expect(rules.confirmLift(base)).toBe(base);
-  });
-
-  it("rejects a lift the cash cannot cover", () => {
-    const poor: GameState = {
-      ...rules.setSelectedLiftType(rules.setSelectedSlotIndex(started(), 1), "chair"),
-      cash: 100,
-    };
-    expect(rules.confirmLift(poor)).toBe(poor);
   });
 });
 

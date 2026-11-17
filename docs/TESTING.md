@@ -32,7 +32,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | 2 | Read top HUD | Day, time, cash visible without zoom |
 | 3 | Read the ops strip | Queue, snow %, mood hint visible |
 | 4 | **Guests** → **Follow** one guest | List works; camera follows |
-| 5 | **Build** → invalid slot → valid slot → **Place lift** | Red/green descent message; place only when valid |
+| 5 | **Build** → pick a blocked top (Ridge, Creek) → pick a valid top (Mid) → **Place lift** (then **Undo last lift** before resuming) | Reason text names why a top is blocked; place only when valid and affordable; undo refunds the price until the clock moves |
 | 6 | **Close hill** (or wait until 4 PM) | Night sheet opens |
 | 7 | Change **Fare** and **Snow & service** | Full-width tiles, no pinch to read |
 | 8 | **Sleep** | Morning; snow look changes with tier |

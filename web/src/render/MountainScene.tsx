@@ -5,15 +5,12 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
-import {
-  LIFT_PREVIEW_SLOTS,
-  checkDescentValid,
-  type LiftAnchor,
-} from "@/game/descent";
+import { REFERENCE_TOPS, checkLiftLine, type LiftAnchor } from "@/game/descent";
 import { decodeSnowKey, snowKey } from "@/game/snow";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
+import { usePlacementDraft } from "@/ui/placementDraft";
 import { Atmosphere } from "./Atmosphere";
 import { cameraPosition, framingAspect, homeView, isPortraitAspect } from "./cameraFraming";
 import { Guests, type FollowedRef } from "./Guests";
@@ -30,7 +27,7 @@ const { xMin, xMax, zMin, zMax } = TERRAIN.bounds;
 const TARGET_MIN = new THREE.Vector3(xMin * 0.25, 0, zMin * 0.25);
 const TARGET_MAX = new THREE.Vector3(xMax * 0.25, 5, zMax * 0.25);
 
-const FALLBACK_ANCHOR: LiftAnchor = LIFT_PREVIEW_SLOTS[0] ?? { x: -1.2, z: 0.2 };
+const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 const GOAL = new THREE.Vector3();
 
 /** Frames the hill on mount / rotation, follows the followed guest, then eases home. */
@@ -122,7 +119,7 @@ export function MountainScene() {
   const snowDepth = useGameStore((s) => s.snowDepth);
   const lifts = useGameStore((s) => s.lifts);
   const buildMode = useGameStore((s) => s.buildMode);
-  const selectedSlotIndex = useGameStore((s) => s.selectedSlotIndex);
+  const candidateTop = usePlacementDraft((s) => s.candidateTop);
   const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const buildings = useGameStore((s) => s.buildings);
   const gunsVisible = useGameStore((s) => s.gunsVisible);
@@ -144,8 +141,10 @@ export function MountainScene() {
         : [{ anchor: FALLBACK_ANCHOR, type: "surface" as LiftType }],
     [lifts],
   );
-  const previewSlot = LIFT_PREVIEW_SLOTS[selectedSlotIndex] ?? LIFT_PREVIEW_SLOTS[0];
-  const previewValid = previewSlot ? checkDescentValid(previewSlot) : false;
+  const previewSlot = candidateTop ?? REFERENCE_TOPS[0];
+  const previewValid = previewSlot
+    ? checkLiftLine({ bottom: TERRAIN.base, top: previewSlot }).ok
+    : false;
   const showPreview = buildMode && !!previewSlot;
 
   const clearings = useMemo(() => {

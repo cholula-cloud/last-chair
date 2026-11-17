@@ -1,6 +1,6 @@
 /** Camera framing: where to put an orbit camera so key points stay on screen. */
 
-import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
+import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { DUTCH_HILL } from "@/game/mountains/dutchHill";
 import { HOUSES, LIFT_TERMINAL_H, LODGE, SHOP_POS } from "./layout";
@@ -127,7 +127,7 @@ export function keyPoints(): Vec3[] {
     onTerrain(SHOP_POS.x, SHOP_POS.z, 0.5),
     ...HOUSES.map((h) => onTerrain(h.x, h.z, 0.5)),
   ];
-  for (const slot of LIFT_PREVIEW_SLOTS) {
+  for (const slot of REFERENCE_TOPS) {
     pts.push(onTerrain(slot.x, slot.z, LIFT_TERMINAL_H));
     pts.push(trailPoint(0.5, slot));
   }
