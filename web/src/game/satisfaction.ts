@@ -56,7 +56,7 @@ export const VALUE = {
   MIN_PTS: -20,
   MAX_PTS: 10,
   /** Before the day is played, guests expect `BASE` moved by this many dollars per reputation point from 50. */
-  REP_PER_POINT: 0.4,
+  REP_PER_POINT: 0.6,
 } as const;
 
 /** Dollars the buildings add to a day on the hill. */

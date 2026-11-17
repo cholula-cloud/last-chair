@@ -148,8 +148,8 @@ export const LIFT_SPECS: Record<
   LiftType,
   { capacityPerHour: number; rideMinutes: number }
 > = {
-  surface: { capacityPerHour: 46, rideMinutes: 4 },
-  chair: { capacityPerHour: 70, rideMinutes: 3 },
+  surface: { capacityPerHour: 52, rideMinutes: 4 },
+  chair: { capacityPerHour: 56, rideMinutes: 3 },
 };
 
 export const LIFT_BUILD_COST: Record<LiftType, number> = {
@@ -187,5 +187,5 @@ export const DEPART_WALK_MIN = 3;
 export const MS_PER_GAME_MINUTE = 500;
 /** Internal P1 shortcut; scale to 28 for ship. */
 export const SEASON_LENGTH = 14;
-export const DAILY_FIXED_COST = 400;
+export const DAILY_FIXED_COST = 750;
 export const LIFT_OPS_COST = 180;

@@ -81,11 +81,11 @@ describe("clock and calendar helpers", () => {
 
 describe("computeDayRevenue", () => {
   it("scales arrivals * fare * satisfaction multiplier", () => {
-    // mult = 0.75 + 0.35 * s/100
-    expect(computeDayRevenue("balanced", 100, 20)).toBe(1056);
-    expect(computeDayRevenue("balanced", 0, 20)).toBe(720);
+    // mult = 0.5 + 0.7 * s/100
+    expect(computeDayRevenue("balanced", 100, 20)).toBe(1152);
+    expect(computeDayRevenue("balanced", 0, 20)).toBe(480);
     expect(computeDayRevenue("cheap", 50, 10)).toBe(
-      Math.round(10 * 35 * (0.75 + 0.175)),
+      Math.round(10 * 35 * (0.5 + 0.35)),
     );
   });
 
@@ -282,8 +282,8 @@ describe("planArrivals", () => {
     const expensive = planArrivals({ ...base, fare: "expensive" });
     expect(cheap).toBeGreaterThanOrEqual(expensive);
     expect(planArrivals({ ...base, fare: "balanced" })).toBe(20);
-    expect(cheap).toBe(23);
-    expect(expensive).toBe(18);
+    expect(cheap).toBe(25);
+    expect(expensive).toBe(17);
   });
 
   it("applies weather, thin snow, building and talent modifiers", () => {
@@ -301,7 +301,7 @@ describe("planArrivals", () => {
     expect(planArrivals({ ...base, founderId: "elena" })).toBe(20);
   });
 
-  it("clamps to 12..40", () => {
+  it("clamps to 12..48", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     expect(
       planArrivals({
@@ -320,8 +320,10 @@ describe("planArrivals", () => {
         buildings: ["cafe"],
         talentsOwned: ["ticket_booth"],
         founderId: "elena",
+        reputation: 100,
+        rand: () => 0.99,
       }),
-    ).toBe(40);
+    ).toBe(48);
   });
 });
 
@@ -359,9 +361,9 @@ describe("fare elasticity of arrivals", () => {
   it("regulars are more price-sensitive than first-timers", () => {
     // The weekend roster is mostly regulars, so the same fare move shifts demand further.
     const swing = (weekend: boolean) =>
-      fareDemandMultiplier("cheap", 41, weekend) - fareDemandMultiplier("expensive", 41, weekend);
+      fareDemandMultiplier("cheap", 39, weekend) - fareDemandMultiplier("expensive", 39, weekend);
     expect(swing(true)).toBeGreaterThan(swing(false));
-    expect(fareDemandMultiplier("balanced", 41, false)).toBeCloseTo(1, 2);
+    expect(fareDemandMultiplier("balanced", 39, false)).toBeCloseTo(1, 2);
   });
 
   it("keeps the multiplier inside its clamps", () => {
@@ -526,7 +528,7 @@ describe("tickGuests", () => {
 
   it("goes home when energy runs out, when the target is reached, or when a lap cannot finish", () => {
     const end = T0 + skiMinutes("regular", 1);
-    expect(tickGuests([skier({ energy: 0.1, targetRuns: 9 })], clock(end))[0].state).toBe("depart");
+    expect(tickGuests([skier({ energy: 0.05, targetRuns: 9 })], clock(end))[0].state).toBe("depart");
     expect(tickGuests([skier({ runs: 5, targetRuns: 6 })], clock(end))[0].state).toBe("depart");
     // 15:33 finish + 5 min to the top + 8 min run ends after the 15:45 close.
     const late = LIFT_CLOSE_MIN - 12 - skiMinutes("regular", 1);
