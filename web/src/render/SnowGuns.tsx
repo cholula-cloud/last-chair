@@ -4,8 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { box, cyl, merge, type Part } from "./geo";
-import { terrainHeight } from "./guestPaths";
 import { PALETTE } from "./palette";
+import { terrainHeight } from "./terrainShape";
 
 const GUNS: { x: number; z: number; yaw: number }[] = [
   { x: -2.2, z: 0.2, yaw: 0.9 },
@@ -30,11 +30,11 @@ export function SnowGuns({ active }: { active: boolean }) {
         { geo: cyl(0.025, 0.035, 0.9, 6), color: PALETTE.steel, pos: [g.x, y + 0.45, g.z] },
         {
           geo: cyl(0.1, 0.085, 0.16, 12),
-          color: "#f2c014",
+          color: PALETTE.yellow,
           pos: [g.x + s * 0.05, y + 0.92, g.z + c * 0.05],
           rot: [fan.x, fan.y, fan.z],
         },
-        { geo: box(0.12, 0.08, 0.1), color: "#2c333b", pos: [g.x, y + 0.08, g.z] },
+        { geo: box(0.12, 0.08, 0.1), color: PALETTE.ink, pos: [g.x, y + 0.08, g.z] },
       );
     }
     return merge(parts);

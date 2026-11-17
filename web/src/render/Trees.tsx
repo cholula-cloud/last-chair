@@ -3,17 +3,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
-import {
-  distSqToLiftLine,
-  distSqToPolyline,
-  fbm,
-  LIFT_BASE,
-  ROAD_Z,
-  terrainHeight,
-  trailPolyline,
-} from "./guestPaths";
 import { cone, cyl, merge, type Part } from "./geo";
+import { LIFT_BASE, ROAD_Z } from "./layout";
 import { PALETTE } from "./palette";
+import { fbm, terrainHeight } from "./terrainShape";
+import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
 
 const MAX_PER_VARIANT = 480;
 const TRAIL_CLEAR = 0.64 ** 2;
@@ -132,13 +126,14 @@ function scatter(anchors: LiftAnchor[]): TreeSpot[][] {
   );
 }
 
+const dummy = new THREE.Object3D();
+const tint = new THREE.Color();
+
 function TreeVariant({ geo, spots }: { geo: THREE.BufferGeometry; spots: TreeSpot[] }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     const mesh = ref.current;
     if (!mesh) return;
-    const dummy = new THREE.Object3D();
-    const c = new THREE.Color();
     const n = Math.min(spots.length, MAX_PER_VARIANT);
     for (let i = 0; i < n; i++) {
       const p = spots[i];
@@ -147,8 +142,8 @@ function TreeVariant({ geo, spots }: { geo: THREE.BufferGeometry; spots: TreeSpo
       dummy.scale.setScalar(p.s);
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
-      c.setRGB(p.tint, p.tint * (0.97 + (i % 5) * 0.012), p.tint);
-      mesh.setColorAt(i, c);
+      tint.setRGB(p.tint, p.tint * (0.97 + (i % 5) * 0.012), p.tint);
+      mesh.setColorAt(i, tint);
     }
     mesh.count = n;
     mesh.instanceMatrix.needsUpdate = true;
@@ -168,23 +163,11 @@ function TreeVariant({ geo, spots }: { geo: THREE.BufferGeometry; spots: TreeSpo
   );
 }
 
+/** Instanced forest that leaves clearings along every lift and trail in `anchors`. */
 export function Trees({ anchors }: { anchors: LiftAnchor[] }) {
   const geos = useMemo(() => VARIANTS.map((v) => v()), []);
   useEffect(() => () => geos.forEach((g) => g.dispose()), [geos]);
-  const key = anchors.map((a) => `${a.x},${a.z}`).join("|");
-  const spots = useMemo(
-    () =>
-      scatter(
-        key
-          .split("|")
-          .filter(Boolean)
-          .map((s) => {
-            const [x, z] = s.split(",").map(Number);
-            return { x, z };
-          }),
-      ),
-    [key],
-  );
+  const spots = useMemo(() => scatter(anchors), [anchors]);
   return (
     <group>
       {geos.map((g, i) => (

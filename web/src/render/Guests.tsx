@@ -1,30 +1,31 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
-import type { Guest, LiftType } from "@/game/types";
+import type { LiftType } from "@/game/types";
 import type { LiftAnchor } from "@/game/descent";
+import { useGameStore } from "@/game/store";
 import { box, merge, sphere, type Part } from "./geo";
+import { placeGuests, type GuestPlacement } from "./guestPlacement";
+import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
 import { carrierGeometry } from "./Lift";
-import {
-  cableHeightAt,
-  LIFT_BASE,
-  LIFT_CABLE_OFFSET,
-  liftFrame,
-  liftTowers,
-  placeGuests,
-  type GuestPlacement,
-} from "./guestPaths";
-import { HATS, JACKETS } from "./palette";
+import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
+import { HATS, JACKETS, PALETTE } from "./palette";
 
 const MAX = 48;
 /** Toy scale: slightly oversized so skiers read on a phone. */
 const SCALE = 1.25;
 
-const WHITE = "#ffffff";
-const PANTS = "#222a36";
-const SKIN = "#f1c7a3";
+const { white: WHITE, pants: PANTS, skin: SKIN } = PALETTE;
+const SKI_BLACK = PALETTE.inkDeep;
+
+/** Scratch objects reused by every layout pass (module scope: no per-frame allocation). */
+const dummy = new THREE.Object3D();
+const tint = new THREE.Color();
+
+/** Latest placement of the followed guest, written by <Guests>, read by the camera rig. */
+export type FollowedRef = RefObject<GuestPlacement | null>;
 
 /** Skier parts in three groups: fixed colours, jacket (tinted), hat (tinted). */
 function skierGeometries() {
@@ -33,16 +34,16 @@ function skierGeometries() {
     { geo: box(0.05, 0.15, 0.06), color: PANTS, pos: [-0.035, 0.09, 0] },
     { geo: box(0.05, 0.15, 0.06), color: PANTS, pos: [0.035, 0.09, 0] },
     // Skis.
-    { geo: box(0.035, 0.014, 0.44), color: "#1b2129", pos: [-0.04, 0.008, 0.03] },
-    { geo: box(0.035, 0.014, 0.44), color: "#1b2129", pos: [0.04, 0.008, 0.03] },
-    { geo: box(0.036, 0.016, 0.06), color: "#f4f7fb", pos: [-0.04, 0.012, 0.22] },
-    { geo: box(0.036, 0.016, 0.06), color: "#f4f7fb", pos: [0.04, 0.012, 0.22] },
+    { geo: box(0.035, 0.014, 0.44), color: SKI_BLACK, pos: [-0.04, 0.008, 0.03] },
+    { geo: box(0.035, 0.014, 0.44), color: SKI_BLACK, pos: [0.04, 0.008, 0.03] },
+    { geo: box(0.036, 0.016, 0.06), color: PALETTE.snow, pos: [-0.04, 0.012, 0.22] },
+    { geo: box(0.036, 0.016, 0.06), color: PALETTE.snow, pos: [0.04, 0.012, 0.22] },
     // Poles.
-    { geo: box(0.012, 0.3, 0.012), color: "#9aa4b0", pos: [-0.11, 0.14, -0.04], rot: [-0.35, 0, 0.12] },
-    { geo: box(0.012, 0.3, 0.012), color: "#9aa4b0", pos: [0.11, 0.14, -0.04], rot: [-0.35, 0, -0.12] },
+    { geo: box(0.012, 0.3, 0.012), color: PALETTE.poleGrey, pos: [-0.11, 0.14, -0.04], rot: [-0.35, 0, 0.12] },
+    { geo: box(0.012, 0.3, 0.012), color: PALETTE.poleGrey, pos: [0.11, 0.14, -0.04], rot: [-0.35, 0, -0.12] },
     // Face and goggles.
     { geo: sphere(0.055, 8, 6), color: SKIN, pos: [0, 0.37, 0] },
-    { geo: box(0.09, 0.025, 0.03), color: "#1b2129", pos: [0, 0.385, 0.042] },
+    { geo: box(0.09, 0.025, 0.03), color: SKI_BLACK, pos: [0, 0.385, 0.042] },
   ];
   const jacket: Part[] = [
     { geo: box(0.13, 0.16, 0.1), color: WHITE, pos: [0, 0.245, 0] },
@@ -63,18 +64,21 @@ function idHash(id: string): number {
 }
 
 export function Guests({
-  guests,
-  followId,
   liftAnchor,
   liftType,
+  followedRef,
 }: {
-  guests: Guest[];
-  followId: string | null;
   liftAnchor: LiftAnchor;
   liftType: LiftType;
+  followedRef: FollowedRef;
 }) {
+  const guests = useGameStore((s) => s.guests);
+  const followId = useGameStore((s) => s.followId);
+
   const geos = useMemo(() => skierGeometries(), []);
   const hanger = useMemo(() => carrierGeometry(liftType), [liftType]);
+  const towers = useMemo(() => liftTowers(liftAnchor), [liftAnchor]);
+  const frame = useMemo(() => liftFrame(liftAnchor), [liftAnchor]);
   useEffect(
     () => () => {
       geos.base.dispose();
@@ -91,11 +95,10 @@ export function Guests({
   const hangerRef = useRef<THREE.InstancedMesh>(null);
   const ringRef = useRef<THREE.Group>(null);
   const markerRef = useRef<THREE.Mesh>(null);
-  const followed = useRef<GuestPlacement | null>(null);
 
   const placements = useMemo(
-    () => placeGuests(guests, liftAnchor, liftType),
-    [guests, liftAnchor, liftType],
+    () => placeGuests(guests, liftAnchor, liftType, towers),
+    [guests, liftAnchor, liftType, towers],
   );
 
   useLayoutEffect(() => {
@@ -103,58 +106,54 @@ export function Guests({
     const hang = hangerRef.current;
     if (meshes.some((m) => !m) || !hang) return;
     const [base, jacket, hat] = meshes as THREE.InstancedMesh[];
-    const d = new THREE.Object3D();
-    const c = new THREE.Color();
-    const towers = liftTowers(liftAnchor);
-    const frame = liftFrame(liftAnchor);
     const n = Math.min(MAX, guests.length);
     let hangers = 0;
-    followed.current = null;
-    for (let i = 0; i < n; i++) {
-      const g = guests[i];
+    followedRef.current = null;
+    guests.forEach((g, i) => {
       const p = placements[i];
       const isFollowed = g.id === followId;
-      if (isFollowed) followed.current = p;
-      d.position.set(p.x, p.y, p.z);
-      d.rotation.set(p.lean * 0.6, p.yaw, p.roll * 0.6, "YXZ");
-      d.scale.setScalar(SCALE * (isFollowed ? 1.25 : 1));
-      d.updateMatrix();
-      base.setMatrixAt(i, d.matrix);
-      jacket.setMatrixAt(i, d.matrix);
-      hat.setMatrixAt(i, d.matrix);
+      if (isFollowed) followedRef.current = p;
+      if (i >= n) return;
+      dummy.position.set(p.x, p.y, p.z);
+      dummy.rotation.set(p.lean * 0.6, p.yaw, p.roll * 0.6, "YXZ");
+      dummy.scale.setScalar(SCALE * (isFollowed ? 1.25 : 1));
+      dummy.updateMatrix();
+      base.setMatrixAt(i, dummy.matrix);
+      jacket.setMatrixAt(i, dummy.matrix);
+      hat.setMatrixAt(i, dummy.matrix);
       const h = idHash(g.id);
-      jacket.setColorAt(i, c.set(JACKETS[h % JACKETS.length]));
-      hat.setColorAt(i, c.set(HATS[(h >> 3) % HATS.length]));
+      jacket.setColorAt(i, tint.set(JACKETS[h % JACKETS.length]));
+      hat.setColorAt(i, tint.set(HATS[(h >> 3) % HATS.length]));
 
-      if (g.state === "ride" && hangers < MAX) {
+      if (g.state === "ride") {
         const t = g.progress;
         const lx = LIFT_BASE.x + (liftAnchor.x - LIFT_BASE.x) * t + frame.px * LIFT_CABLE_OFFSET;
         const lz = LIFT_BASE.z + (liftAnchor.z - LIFT_BASE.z) * t + frame.pz * LIFT_CABLE_OFFSET;
         const cy = cableHeightAt(t, towers) - 0.04;
-        d.position.set(lx, cy, lz);
-        d.rotation.set(0, frame.yaw, 0);
+        dummy.position.set(lx, cy, lz);
+        dummy.rotation.set(0, frame.yaw, 0);
         if (liftType === "chair") {
-          d.scale.setScalar(1);
+          dummy.scale.setScalar(1);
         } else {
           // Stretch the T-bar so the bar sits at the skier's hip.
           const reach = cy - (p.y + 0.27 * SCALE);
-          d.scale.set(1, Math.max(0.4, reach / 0.6), 1);
+          dummy.scale.set(1, Math.max(0.4, reach / 0.6), 1);
         }
-        d.updateMatrix();
-        hang.setMatrixAt(hangers++, d.matrix);
+        dummy.updateMatrix();
+        hang.setMatrixAt(hangers++, dummy.matrix);
       }
-    }
-    for (const m of meshes as THREE.InstancedMesh[]) {
+    });
+    for (const m of [base, jacket, hat]) {
       m.count = n;
       m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor) m.instanceColor.needsUpdate = true;
     }
     hang.count = hangers;
     hang.instanceMatrix.needsUpdate = true;
-  }, [guests, placements, followId, liftAnchor, liftType]);
+  }, [guests, placements, followId, liftAnchor, liftType, towers, frame, followedRef]);
 
   useFrame(({ clock }) => {
-    const p = followed.current;
+    const p = followedRef.current;
     const ring = ringRef.current;
     const marker = markerRef.current;
     if (!ring || !marker) return;
@@ -185,26 +184,13 @@ export function Guests({
       <group ref={ringRef} visible={false}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={4}>
           <ringGeometry args={[0.24, 0.32, 28]} />
-          <meshBasicMaterial color="#ffb020" transparent opacity={0.85} depthWrite={false} toneMapped={false} />
+          <meshBasicMaterial color={PALETTE.marker} transparent opacity={0.85} depthWrite={false} toneMapped={false} />
         </mesh>
       </group>
       <mesh ref={markerRef} visible={false} rotation={[Math.PI, 0, 0]}>
         <coneGeometry args={[0.09, 0.2, 4]} />
-        <meshBasicMaterial color="#ffb020" toneMapped={false} />
+        <meshBasicMaterial color={PALETTE.marker} toneMapped={false} />
       </mesh>
     </group>
   );
-}
-
-export function followedGuestPosition(
-  guests: Guest[],
-  followId: string | null,
-  liftAnchor: LiftAnchor,
-  liftType: LiftType = "surface",
-): { x: number; y: number; z: number } | null {
-  if (!followId) return null;
-  const idx = guests.findIndex((g) => g.id === followId);
-  if (idx < 0) return null;
-  const p = placeGuests(guests, liftAnchor, liftType)[idx];
-  return { x: p.x, y: p.y, z: p.z };
 }

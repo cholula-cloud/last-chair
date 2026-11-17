@@ -20,7 +20,7 @@ const tmpE = new THREE.Euler();
 const tmpS = new THREE.Vector3();
 const tmpP = new THREE.Vector3();
 
-export function bake(part: Part): THREE.BufferGeometry {
+function bake(part: Part): THREE.BufferGeometry {
   const g = part.geo.index ? part.geo.toNonIndexed() : part.geo.clone();
   g.deleteAttribute("uv");
   tmpE.set(...(part.rot ?? [0, 0, 0]));
@@ -48,6 +48,21 @@ export function merge(parts: Part[]): THREE.BufferGeometry {
   baked.forEach((b) => b.dispose());
   parts.forEach((p) => p.geo.dispose());
   return out;
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+/** Move a list of parts to a world position and rotate it by `yaw` around +Y. */
+export function placeParts(parts: Part[], x: number, y: number, z: number, yaw = 0): Part[] {
+  const qy = new THREE.Quaternion().setFromAxisAngle(UP, yaw);
+  return parts.map((p) => {
+    const v = new THREE.Vector3(...(p.pos ?? [0, 0, 0])).applyQuaternion(qy);
+    const q = qy
+      .clone()
+      .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot ?? [0, 0, 0]))));
+    const e = new THREE.Euler().setFromQuaternion(q);
+    return { ...p, pos: [v.x + x, v.y + y, v.z + z], rot: [e.x, e.y, e.z] };
+  });
 }
 
 export const box = (w: number, h: number, d: number) =>

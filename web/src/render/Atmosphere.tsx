@@ -3,7 +3,9 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { fbm } from "./guestPaths";
+import { useGameStore } from "@/game/store";
+import { smoothstep } from "./math";
+import { fbm } from "./terrainShape";
 import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
 
 /**
@@ -33,18 +35,21 @@ const SKY_FRAG = /* glsl */ `
 const DAY = {
   top: new THREE.Color(PALETTE.skyTop),
   horizon: new THREE.Color(PALETTE.skyHorizon),
-  sun: new THREE.Color("#fff0da"),
-  dusk: new THREE.Color("#ffbd85"),
-  hemiSky: new THREE.Color("#b4c6f2"),
-  hemiGround: new THREE.Color("#e2d3bf"),
+  sun: new THREE.Color(PALETTE.sunDay),
+  dusk: new THREE.Color(PALETTE.sunDusk),
+  hemiSky: new THREE.Color(PALETTE.hemiSkyDay),
+  hemiGround: new THREE.Color(PALETTE.hemiGroundDay),
+  overcastTop: new THREE.Color(PALETTE.overcastTop),
+  duskHorizon: new THREE.Color(PALETTE.duskHorizon),
 };
 const NIGHT = {
   top: new THREE.Color(PALETTE.nightSkyTop),
   horizon: new THREE.Color(PALETTE.nightHorizon),
-  sun: new THREE.Color("#9db4ff"),
-  hemiSky: new THREE.Color("#3b5188"),
-  hemiGround: new THREE.Color("#1a2236"),
+  sun: new THREE.Color(PALETTE.sunNight),
+  hemiSky: new THREE.Color(PALETTE.hemiSkyNight),
+  hemiGround: new THREE.Color(PALETTE.hemiGroundNight),
 };
+const WHITE = new THREE.Color(PALETTE.white);
 
 /** Layered hazy ridges behind the hill so it sits in a valley. */
 function ridgeGeometry(radius: number, base: number, amp: number, seed: number, color: string) {
@@ -53,7 +58,7 @@ function ridgeGeometry(radius: number, base: number, amp: number, seed: number, 
   const colors: number[] = [];
   const idx: number[] = [];
   const low = new THREE.Color(color);
-  const top = low.clone().lerp(new THREE.Color("#f4f7fb"), 0.6);
+  const top = low.clone().lerp(new THREE.Color(PALETTE.snow), 0.6);
   for (let i = 0; i <= segs; i++) {
     const a = -2.4 + (i / segs) * 4.8;
     const x = HILL_CENTER.x + Math.sin(a) * radius;
@@ -81,19 +86,15 @@ const RIDGES = [
   { radius: 27, base: 3.5, amp: 4, seed: 23.1, color: PALETTE.ridgeNear },
 ];
 
-export function Atmosphere({
-  night,
-  clockMin,
-  weather,
-}: {
-  night: boolean;
-  clockMin: number;
-  weather: string;
-}) {
+/**
+ * Sky, fog, ridges, sun and hemisphere light. Re-reads the game clock, phase
+ * and weather from the store each frame, so it never re-renders on a tick.
+ */
+export function Atmosphere() {
   const fog = useRef<THREE.Fog>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
-  const mood = useRef(night ? 1 : 0);
+  const mood = useRef(useGameStore.getState().phase === "night" ? 1 : 0);
   const ridgeMats = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
 
   const sky = useMemo(
@@ -129,21 +130,20 @@ export function Atmosphere({
     [sky, ridgeGeos],
   );
 
-  const tmp = useMemo(() => new THREE.Color(), []);
-
   useFrame((_, delta) => {
-    const goal = night ? 1 : 0;
+    const { phase, clockMin, weather } = useGameStore.getState();
+    const goal = phase === "night" ? 1 : 0;
     mood.current += (goal - mood.current) * Math.min(1, delta * 1.8);
     const n = mood.current;
-    const dusk = THREE.MathUtils.smoothstep(clockMin, 14 * 60, 16 * 60) * (1 - n);
+    const dusk = smoothstep(14 * 60, 16 * 60, clockMin) * (1 - n);
     sceneMood.night = n;
     sceneMood.dusk = dusk;
     const overcast = weather === "snow" ? 1 : 0;
 
     const top = sky.uniforms.topColor.value as THREE.Color;
     const hor = sky.uniforms.horizonColor.value as THREE.Color;
-    top.copy(DAY.top).lerp(tmp.set("#aebfd4"), overcast * 0.6).lerp(NIGHT.top, n);
-    hor.copy(DAY.horizon).lerp(tmp.set("#ffc9a0"), dusk * 0.7).lerp(NIGHT.horizon, n);
+    top.copy(DAY.top).lerp(DAY.overcastTop, overcast * 0.6).lerp(NIGHT.top, n);
+    hor.copy(DAY.horizon).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
     if (fog.current) fog.current.color.copy(hor);
 
     if (sun.current) {
@@ -160,7 +160,7 @@ export function Atmosphere({
     }
     ridgeMats.current.forEach((m) => {
       if (!m) return;
-      m.color.set("#ffffff").lerp(NIGHT.horizon, n * 0.85);
+      m.color.copy(WHITE).lerp(NIGHT.horizon, n * 0.85);
     });
   });
 

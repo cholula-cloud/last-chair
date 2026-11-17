@@ -16,18 +16,36 @@ export const PALETTE = {
   earth: "#7a6850",
   pineDeep: "#1f4a3d",
   pineCool: "#356b5e",
-  pineOlive: "#3f6b4a",
   bark: "#4a3526",
   barnRed: "#a8382b",
   clapboard: "#ece6da",
   shutter: "#24313f",
   roofSlate: "#3a4250",
   stone: "#8b8682",
-  lampGlow: "#ffb35c",
   window: "#ffc46b",
   steel: "#56616e",
   cable: "#2b3138",
   road: "#6f7279",
+
+  white: "#ffffff",
+  ink: "#2c333b",
+  inkDeep: "#1b2129",
+  silver: "#c9cfd6",
+  poleGrey: "#9aa4b0",
+  yellow: "#f2c014",
+  deckWood: "#8a6a4c",
+  doorWood: "#3b2a20",
+  cafeRoof: "#2f5a4c",
+  shopBlue: "#4f6f8f",
+
+  /** Build-preview ghosts and the followed-guest marker. */
+  valid: "#3fd27a",
+  invalid: "#f25c5c",
+  marker: "#ffb020",
+
+  /** Skier kit. */
+  pants: "#222a36",
+  skin: "#f1c7a3",
 
   skyTop: "#8fb6e3",
   skyHorizon: "#e9e7e6",
@@ -37,6 +55,16 @@ export const PALETTE = {
 
   nightSkyTop: "#081226",
   nightHorizon: "#24365a",
+
+  overcastTop: "#aebfd4",
+  duskHorizon: "#ffc9a0",
+  sunDay: "#fff0da",
+  sunDusk: "#ffbd85",
+  sunNight: "#9db4ff",
+  hemiSkyDay: "#b4c6f2",
+  hemiGroundDay: "#e2d3bf",
+  hemiSkyNight: "#3b5188",
+  hemiGroundNight: "#1a2236",
 } as const;
 
 /** Bright jacket colours for guests. */

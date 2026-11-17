@@ -4,25 +4,12 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { sceneMood } from "./Atmosphere";
-import { box, cyl, gable, merge, pitchedRoof, type Part } from "./geo";
-import { LODGE, ROAD_Z, terrainHeight } from "./guestPaths";
+import { box, cyl, gable, merge, pitchedRoof, placeParts, type Part } from "./geo";
+import { CAFE_POS, LODGE, ROAD_Z, SHOP_POS } from "./layout";
 import { PALETTE } from "./palette";
+import { terrainHeight } from "./terrainShape";
 
 type Building = { body: Part[]; windows: Part[] };
-
-/** Offset a list of parts by a world position and yaw (around +Y). */
-function place(parts: Part[], x: number, y: number, z: number, yaw = 0): Part[] {
-  const up = new THREE.Vector3(0, 1, 0);
-  const qy = new THREE.Quaternion().setFromAxisAngle(up, yaw);
-  return parts.map((p) => {
-    const v = new THREE.Vector3(...(p.pos ?? [0, 0, 0])).applyQuaternion(qy);
-    const q = qy
-      .clone()
-      .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...(p.rot ?? [0, 0, 0]))));
-    const e = new THREE.Euler().setFromQuaternion(q);
-    return { ...p, pos: [v.x + x, v.y + y, v.z + z], rot: [e.x, e.y, e.z] };
-  });
-}
 
 /** New England base lodge: barn-red clapboard, steep snowy gable, chimney, deck. */
 function lodge(): Building {
@@ -67,14 +54,14 @@ function lodge(): Building {
     { geo: box(0.16, 0.6, 0.16), color: PALETTE.stone, pos: [0.42, 0.05 + H + R * 0.55 + 0.1, -0.18] },
     { geo: box(0.2, 0.05, 0.2), color: PALETTE.snow, pos: [0.42, 0.05 + H + R * 0.55 + 0.42, -0.18] },
     // Front deck with posts and rail (faces the road).
-    { geo: box(W + 0.2, 0.05, 0.42), color: "#8a6a4c", pos: [0, 0.16, D / 2 + 0.21] },
+    { geo: box(W + 0.2, 0.05, 0.42), color: PALETTE.deckWood, pos: [0, 0.16, D / 2 + 0.21] },
     { geo: box(W + 0.2, 0.025, 0.4), color: PALETTE.snow, pos: [0, 0.195, D / 2 + 0.21] },
     { geo: box(W + 0.2, 0.03, 0.03), color: trim, pos: [0, 0.38, D / 2 + 0.41] },
     ...[-0.8, -0.27, 0.27, 0.8].map(
       (x): Part => ({ geo: box(0.03, 0.22, 0.03), color: trim, pos: [x, 0.27, D / 2 + 0.41] }),
     ),
     // Door.
-    { geo: box(0.2, 0.36, 0.02), color: "#3b2a20", pos: [-0.12, 0.05 + 0.2, D / 2 + 0.01] },
+    { geo: box(0.2, 0.36, 0.02), color: PALETTE.doorWood, pos: [-0.12, 0.05 + 0.2, D / 2 + 0.01] },
     // Shutters beside front windows.
     ...[-0.52, 0.32].flatMap((x) =>
       [-1, 1].map(
@@ -90,9 +77,9 @@ function lodge(): Building {
     { geo: box(0.6, 0.05, 0.035), color: PALETTE.barnRed, pos: [0.1, 0.05 + H + 0.02, D / 2 + 0.065] },
   ];
   const windows: Part[] = [
-    ...[-0.52, 0.32].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: "#ffffff", pos: [x, 0.4, D / 2 + 0.008] })),
-    ...[-0.4, 0.05, 0.45].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: "#ffffff", pos: [x, 0.4, -D / 2 - 0.008] })),
-    ...[-1, 1].map((sx): Part => ({ geo: box(0.02, 0.2, 0.16), color: "#ffffff", pos: [(sx * W) / 2 + sx * 0.008, 0.82, 0] })),
+    ...[-0.52, 0.32].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: PALETTE.white, pos: [x, 0.4, D / 2 + 0.008] })),
+    ...[-0.4, 0.05, 0.45].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: PALETTE.white, pos: [x, 0.4, -D / 2 - 0.008] })),
+    ...[-1, 1].map((sx): Part => ({ geo: box(0.02, 0.2, 0.16), color: PALETTE.white, pos: [(sx * W) / 2 + sx * 0.008, 0.82, 0] })),
   ];
   return { body, windows };
 }
@@ -112,7 +99,7 @@ function cafe(): Building {
           rot: [0, Math.PI / 2, 0],
         }),
       ),
-      ...pitchedRoof({ width: D, length: W, rise: 0.36, y: H, roof: "#2f5a4c", snow: PALETTE.snow }),
+      ...pitchedRoof({ width: D, length: W, rise: 0.36, y: H, roof: PALETTE.cafeRoof, snow: PALETTE.snow }),
       // Striped awning.
       ...[0, 1, 2, 3, 4].map(
         (i): Part => ({
@@ -122,13 +109,13 @@ function cafe(): Building {
           rot: [0.35, 0, 0],
         }),
       ),
-      { geo: box(0.16, 0.3, 0.02), color: "#3b2a20", pos: [0.24, 0.15, D / 2 + 0.01] },
+      { geo: box(0.16, 0.3, 0.02), color: PALETTE.doorWood, pos: [0.24, 0.15, D / 2 + 0.01] },
       // Stovepipe.
-      { geo: cyl(0.035, 0.035, 0.3, 6), color: "#2c333b", pos: [-0.22, H + 0.32, -0.12] },
+      { geo: cyl(0.035, 0.035, 0.3, 6), color: PALETTE.ink, pos: [-0.22, H + 0.32, -0.12] },
     ],
     windows: [
-      { geo: box(0.3, 0.18, 0.02), color: "#ffffff", pos: [-0.12, 0.24, D / 2 + 0.008] },
-      { geo: box(0.02, 0.16, 0.2), color: "#ffffff", pos: [W / 2 + 0.008, 0.26, 0] },
+      { geo: box(0.3, 0.18, 0.02), color: PALETTE.white, pos: [-0.12, 0.24, D / 2 + 0.008] },
+      { geo: box(0.02, 0.16, 0.2), color: PALETTE.white, pos: [W / 2 + 0.008, 0.26, 0] },
     ],
   };
 }
@@ -139,11 +126,11 @@ function shop(): Building {
   const H = 0.42;
   return {
     body: [
-      { geo: box(W, H, D), color: "#4f6f8f", pos: [0, H / 2, 0] },
+      { geo: box(W, H, D), color: PALETTE.shopBlue, pos: [0, H / 2, 0] },
       ...[-1, 1].map(
         (sx): Part => ({
           geo: gable(D, 0.3, 0.02),
-          color: "#4f6f8f",
+          color: PALETTE.shopBlue,
           pos: [(sx * (W - 0.02)) / 2, H, 0],
           rot: [0, Math.PI / 2, 0],
         }),
@@ -152,7 +139,7 @@ function shop(): Building {
       { geo: box(0.46, 0.1, 0.03), color: PALETTE.amber, pos: [0, H + 0.02, D / 2 + 0.03] },
       { geo: box(0.15, 0.28, 0.02), color: PALETTE.clapboard, pos: [-0.18, 0.14, D / 2 + 0.01] },
       // Ski rack with skis.
-      { geo: box(0.3, 0.02, 0.04), color: "#3b2a20", pos: [0.12, 0.2, D / 2 + 0.12] },
+      { geo: box(0.3, 0.02, 0.04), color: PALETTE.doorWood, pos: [0.12, 0.2, D / 2 + 0.12] },
       ...[0, 1, 2, 3].map(
         (i): Part => ({
           geo: box(0.02, 0.32, 0.015),
@@ -162,7 +149,7 @@ function shop(): Building {
         }),
       ),
     ],
-    windows: [{ geo: box(0.2, 0.16, 0.02), color: "#ffffff", pos: [0.12, 0.25, D / 2 + 0.008] }],
+    windows: [{ geo: box(0.2, 0.16, 0.02), color: PALETTE.white, pos: [0.12, 0.25, D / 2 + 0.008] }],
   };
 }
 
@@ -174,9 +161,6 @@ function car(color: string): Part[] {
   ];
 }
 
-export const CAFE_POS = { x: 3.78, z: 2.15 } as const;
-export const SHOP_POS = { x: 4.6, z: 2.95 } as const;
-
 /** Lamp posts along the road and around the base, with soft light pools. */
 const LAMPS: [number, number][] = [
   [-1.2, ROAD_Z - 0.55],
@@ -187,9 +171,9 @@ const LAMPS: [number, number][] = [
   [3.05, 2.3],
 ];
 
-let poolTex: THREE.CanvasTexture | null = null;
-function lightPoolTexture() {
-  if (poolTex || typeof document === "undefined") return poolTex;
+/** Soft amber radial gradient used for the lamp light pools. */
+function lightPoolTexture(): THREE.CanvasTexture | null {
+  if (typeof document === "undefined") return null;
   const c = document.createElement("canvas");
   c.width = c.height = 64;
   const ctx = c.getContext("2d");
@@ -200,13 +184,13 @@ function lightPoolTexture() {
   g.addColorStop(1, "rgba(255,160,80,0)");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 64, 64);
-  poolTex = new THREE.CanvasTexture(c);
-  poolTex.colorSpace = THREE.SRGBColorSpace;
-  return poolTex;
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
 }
 
 const WINDOW_DAY = new THREE.Color("#d9a35a");
-const WINDOW_NIGHT = new THREE.Color("#ffc46b").multiplyScalar(1.6);
+const WINDOW_NIGHT = new THREE.Color(PALETTE.window).multiplyScalar(1.6);
 
 /**
  * Base village: lodge, optional café and shop, cars, lamp posts. Static
@@ -221,8 +205,8 @@ export function Village({ buildings }: { buildings: string[] }) {
     const glowParts: Part[] = [];
     const add = (b: Building, x: number, z: number, yaw = 0) => {
       const y = terrainHeight(x, z) - 0.02;
-      bodyParts.push(...place(b.body, x, y, z, yaw));
-      glowParts.push(...place(b.windows, x, y, z, yaw));
+      bodyParts.push(...placeParts(b.body, x, y, z, yaw));
+      glowParts.push(...placeParts(b.windows, x, y, z, yaw));
     };
     add(lodge(), LODGE.x, LODGE.z + 0.05);
     if (hasCafe) add(cafe(), CAFE_POS.x, CAFE_POS.z, -0.15);
@@ -232,7 +216,7 @@ export function Village({ buildings }: { buildings: string[] }) {
     cars.forEach((c, i) => {
       const x = 2.9 + i * 0.32;
       const z = 3.62;
-      bodyParts.push(...place(car(c), x, terrainHeight(x, z), z, Math.PI / 2 + 0.06 * i));
+      bodyParts.push(...placeParts(car(c), x, terrainHeight(x, z), z, Math.PI / 2 + 0.06 * i));
     });
 
     for (const [x, z] of LAMPS) {
@@ -241,7 +225,7 @@ export function Village({ buildings }: { buildings: string[] }) {
         { geo: cyl(0.018, 0.025, 0.55, 5), color: "#1e252e", pos: [x, y + 0.275, z] },
         { geo: box(0.09, 0.02, 0.09), color: PALETTE.snow, pos: [x, y + 0.62, z] },
       );
-      glowParts.push({ geo: box(0.06, 0.07, 0.06), color: "#ffffff", pos: [x, y + 0.57, z] });
+      glowParts.push({ geo: box(0.06, 0.07, 0.06), color: PALETTE.white, pos: [x, y + 0.57, z] });
     }
     return { body: merge(bodyParts), glow: merge(glowParts) };
   }, [hasCafe, hasShop]);
@@ -257,7 +241,8 @@ export function Village({ buildings }: { buildings: string[] }) {
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
   const poolMat = useRef<THREE.MeshBasicMaterial>(null);
   const pools = useRef<THREE.InstancedMesh>(null);
-  const tex = lightPoolTexture();
+  const tex = useMemo(() => lightPoolTexture(), []);
+  useEffect(() => () => tex?.dispose(), [tex]);
 
   useEffect(() => {
     const m = pools.current;

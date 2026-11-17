@@ -5,15 +5,10 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
 import type { LiftType } from "@/game/types";
-import {
-  cableHeightAt,
-  LIFT_BASE,
-  LIFT_CABLE_OFFSET,
-  liftFrame,
-  liftTowers,
-  terrainHeight,
-} from "./guestPaths";
-import { box, cyl, merge, pitchedRoof, type Part } from "./geo";
+import { box, cyl, merge, pitchedRoof, placeParts, type Part } from "./geo";
+import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
+import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
+import { terrainHeight } from "./terrainShape";
 import { PALETTE } from "./palette";
 
 const CARRIERS = 16;
@@ -53,20 +48,7 @@ function hutParts(x: number, y: number, z: number, yaw: number): Part[] {
       snow: PALETTE.snow,
     }),
   ];
-  const m = new THREE.Matrix4().compose(
-    new THREE.Vector3(x, y, z),
-    new THREE.Quaternion().setFromAxisAngle(UP, yaw),
-    new THREE.Vector3(1, 1, 1),
-  );
-  return local.map((p) => {
-    const lp = new THREE.Vector3(...(p.pos ?? [0, 0, 0])).applyMatrix4(m);
-    const r = p.rot ?? [0, 0, 0];
-    const q = new THREE.Quaternion()
-      .setFromAxisAngle(UP, yaw)
-      .multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...r)));
-    const e = new THREE.Euler().setFromQuaternion(q);
-    return { ...p, pos: [lp.x, lp.y, lp.z], rot: [e.x, e.y, e.z] };
-  });
+  return placeParts(local, x, y, z, yaw);
 }
 
 /** Towers, terminals, bull wheels, cables and huts as one merged mesh. */
@@ -89,7 +71,7 @@ function liftStructure(anchor: LiftAnchor): THREE.BufferGeometry {
       // Bull wheel.
       parts.push({
         geo: cyl(off + 0.03, off + 0.03, 0.05, 14),
-        color: "#c9cfd6",
+        color: PALETTE.silver,
         pos: [t.x, t.top + 0.02, t.z],
       });
       parts.push({
@@ -109,7 +91,7 @@ function liftStructure(anchor: LiftAnchor): THREE.BufferGeometry {
       for (const s of [-1, 1]) {
         parts.push({
           geo: box(0.05, 0.05, 0.16),
-          color: "#2c333b",
+          color: PALETTE.ink,
           pos: [t.x + px * off * s, t.top - 0.04, t.z + pz * off * s],
           rot: [0, yaw, 0],
         });
@@ -156,29 +138,27 @@ function liftStructure(anchor: LiftAnchor): THREE.BufferGeometry {
 export function carrierGeometry(type: LiftType): THREE.BufferGeometry {
   if (type === "chair") {
     return merge([
-      { geo: box(0.05, 0.05, 0.08), color: "#2c333b", pos: [0, 0, 0] },
-      { geo: cyl(0.012, 0.012, 0.5, 4), color: "#2c333b", pos: [0, -0.25, -0.04] },
+      { geo: box(0.05, 0.05, 0.08), color: PALETTE.ink, pos: [0, 0, 0] },
+      { geo: cyl(0.012, 0.012, 0.5, 4), color: PALETTE.ink, pos: [0, -0.25, -0.04] },
       { geo: box(0.36, 0.035, 0.16), color: PALETTE.amber, pos: [0, -0.52, 0.02] },
       { geo: box(0.36, 0.16, 0.03), color: PALETTE.amber, pos: [0, -0.43, -0.07] },
-      { geo: box(0.38, 0.015, 0.015), color: "#2c333b", pos: [0, -0.32, 0.08] },
+      { geo: box(0.38, 0.015, 0.015), color: PALETTE.ink, pos: [0, -0.32, 0.08] },
     ]);
   }
   return merge([
-    { geo: box(0.05, 0.08, 0.06), color: "#2c333b", pos: [0, -0.02, 0] },
-    { geo: cyl(0.01, 0.01, 0.56, 4), color: "#8e98a3", pos: [0, -0.32, 0] },
+    { geo: box(0.05, 0.08, 0.06), color: PALETTE.ink, pos: [0, -0.02, 0] },
+    { geo: cyl(0.01, 0.01, 0.56, 4), color: PALETTE.poleGrey, pos: [0, -0.32, 0] },
     { geo: box(0.3, 0.025, 0.03), color: PALETTE.amber, pos: [0, -0.6, 0] },
   ]);
 }
 
 export function Lift({
   anchor,
-  visible,
   previewInvalid,
   preview = false,
   type = "surface",
 }: {
   anchor: LiftAnchor;
-  visible: boolean;
   previewInvalid: boolean;
   preview?: boolean;
   type?: LiftType;
@@ -215,9 +195,7 @@ export function Lift({
     mesh.instanceMatrix.needsUpdate = true;
   });
 
-  if (!visible) return null;
-
-  const ghostColor = previewInvalid ? "#f25c5c" : "#3fd27a";
+  const ghostColor = previewInvalid ? PALETTE.invalid : PALETTE.valid;
 
   return (
     <group>
