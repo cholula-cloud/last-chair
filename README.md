@@ -2,7 +2,7 @@
 
 A cozy 3D ski-hill tycoon for the browser, built for iPhone and iPad Safari first. Reopen Dutch Hill, a real Vermont ski area that closed in 1985, and run one more winter: watch tiny skiers by day, set ticket fare and snow & service by night, and grow a career across lost New England hills.
 
-**Play:** https://last-chair-iota.vercel.app/play
+**Play:** https://cholula-cloud.github.io/last-chair/play/
 
 ## Docs
 
@@ -39,28 +39,17 @@ Open http://localhost:3000/play. `/` is the landing page.
 
 CI runs the `check` steps (lint, typecheck, test, build) on every PR.
 
-## Deploy (Vercel)
+## Deploy (GitHub Pages)
 
-Production lives on one Vercel team only: [cholula-clouds-projects / last-chair](https://vercel.com/cholula-clouds-projects/last-chair). Do not create projects for this repo on other teams.
+The game is fully client-side, so `next build` writes a static site to `web/out/`. The [Pages workflow](./.github/workflows/pages.yml) builds and publishes it on every push to `main` (and on demand from the Actions tab).
 
 | Item | Value |
 |---|---|
-| GitHub repo | `cholula-cloud/last-chair` |
-| Root Directory | **`web`** |
-| Production URL | https://last-chair-iota.vercel.app (`/play` for the game) |
+| Play | https://cholula-cloud.github.io/last-chair/play/ |
+| Base path | `/last-chair`, set by the workflow through `PAGES_BASE_PATH`; empty for local dev |
+| Repo setting | Settings → Pages → Source = **GitHub Actions** |
 
-Pushes to `main` deploy through the Git integration. On the latest `main` commit, the Vercel check should be green and link to a deployment under cholula-clouds-projects.
-
-**If the site 404s** (usually no production deployment assigned, or the wrong root directory):
-
-1. Project → **Settings → General → Root Directory** = `web` → Save.
-2. **Deployments** → latest green `main` deploy → **⋯ → Promote to Production**.
-3. **Settings → Domains** → confirm `last-chair-iota.vercel.app` is on this project.
-4. **Settings → Deployment Protection** → allow public visitors on the production domain.
-
-Smoke test: `/` and `/play` load without a Vercel login.
-
-**Optional deploy hook** (only if Git deploys are unreliable): Vercel → Settings → Git → Deploy Hooks → create one for `main`; add it to GitHub repo secrets as `VERCEL_DEPLOY_HOOK_URL`.
+Smoke test after a deploy: `/last-chair/` and `/last-chair/play/` load, and the 3D models appear.
 
 ## Credits
 

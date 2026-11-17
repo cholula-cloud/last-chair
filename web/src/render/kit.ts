@@ -16,7 +16,9 @@ export const METERS_TO_WORLD = 0.075;
 export const TOY_SCALE = 2;
 /** Towers, terminals, guns and lamps: sized so the 1.6 m rope gauge lands on LIFT_CABLE_OFFSET. */
 export const LIFT_TOY_SCALE = 0.2 / (1.6 * METERS_TO_WORLD);
-export const DRACO_PATH = "/draco/";
+/** Site base path: empty locally, "/last-chair" on GitHub Pages (set by next.config.ts). */
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+export const DRACO_PATH = `${BASE}/draco/`;
 
 /** Rope heights in the kit, metres above the asset origin. */
 export const KIT_ROPE_Y = { tower: 7.1, terminal: 4.3 } as const;
@@ -45,7 +47,7 @@ export const KIT_ASSETS = [
 ] as const;
 export type KitAsset = (typeof KIT_ASSETS)[number];
 
-const url = (name: KitAsset) => `/models/${name}.glb`;
+const url = (name: KitAsset) => `${BASE}/models/${name}.glb`;
 
 if (typeof window !== "undefined") {
   for (const a of KIT_ASSETS) useGLTF.preload(url(a), DRACO_PATH);
