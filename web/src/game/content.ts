@@ -82,7 +82,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "first_load",
     title: "First uphill load",
     radio:
-      "Maris on Mountain Radio: last adult ticket here was 1985. DHASH hikers wave from the meadow — you just turned the tow.",
+      "Last adult ticket here was 1985. DHASH hikers wave from the meadow — you just turned the tow.",
   },
   {
     id: "saturday",

@@ -1,26 +1,282 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Phone held sideways (or any wide, short window): two-column sheets. */
+@custom-variant short (@media (min-width: 640px) and (max-height: 520px));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Hover styles only for a real mouse; touch taps never trigger them. */
+@custom-variant hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      @slot;
+    }
   }
 }
 
+/*
+ * Last Chair UI language: "lodge paperwork on a phone".
+ * Cream paper cards on a dark night-navy table, pine plates, one amber
+ * primary action per screen, barn red for warnings. See docs/ART_DIRECTION.md.
+ */
+
+:root {
+  --paper: #f4efe4;
+  --paper-deep: #e8dfcb;
+  --paper-edge: #d6c9ab;
+  --kraft: #e3cf9f;
+  --ink: #1e2420;
+  --ink-soft: #545a50;
+  --pine: #2d5a4a;
+  --pine-deep: #1f4236;
+  --navy: #0b1628;
+  --navy-soft: #15243d;
+  /* Accent amber for fills and rings; the button fill is a deeper amber so
+     white labels clear 4.5:1. */
+  --amber: #e85d26;
+  --amber-fill: #c94b18;
+  --barn: #a8382b;
+  --ochre: #8a5a10;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-deep: var(--paper-deep);
+  --color-paper-edge: var(--paper-edge);
+  --color-kraft: var(--kraft);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-pine: var(--pine);
+  --color-pine-deep: var(--pine-deep);
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-amber: var(--amber);
+  --color-amber-fill: var(--amber-fill);
+  --color-barn: var(--barn);
+  --color-ochre: var(--ochre);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-fraunces);
+}
+
+html {
+  background: var(--navy);
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--navy);
+  color: var(--paper);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* Cream card with fibre grain (inline SVG noise, no image download). */
+  .paper {
+    background-color: var(--paper);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .25 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      linear-gradient(180deg, rgb(255 255 255 / 0.35), rgb(255 255 255 / 0) 40%);
+    color: var(--ink);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.6) inset,
+      0 1px 2px rgb(11 22 40 / 0.25),
+      0 8px 24px -8px rgb(11 22 40 / 0.45);
+  }
+
+  /* Tilted paper: like a slip dropped on a table. */
+  .paper-tilt {
+    rotate: -0.6deg;
+  }
+
+  .stitch {
+    border-top: 1.5px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+  }
+
+  /* Pine header plate with serif small capitals. */
+  .plate {
+    background: linear-gradient(180deg, #336553, var(--pine) 55%, var(--pine-deep));
+    color: var(--paper);
+    font-family: var(--font-fraunces), serif;
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.18) inset,
+      0 1px 2px rgb(0 0 0 / 0.3);
+  }
+
+  .num {
+    font-family: var(--font-fraunces), serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-variation-settings: "SOFT" 50, "opsz" 48;
+  }
+
+  .serif {
+    font-family: var(--font-fraunces), serif;
+    font-variation-settings: "SOFT" 60;
+  }
+
+  /* Pencil note: italic serif on a faint ruled line. */
+  .pencil {
+    font-family: var(--font-fraunces), serif;
+    font-style: italic;
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+    background-image: repeating-linear-gradient(
+      180deg,
+      transparent 0 1.55em,
+      rgb(45 90 74 / 0.22) 1.55em calc(1.55em + 1px)
+    );
+    line-height: 1.6em;
+  }
+
+  /* Pressable feedback for every button. Colour changes are near-instant:
+     tiles and toggles are pressed many times a night. */
+  .press {
+    transition:
+      transform 160ms var(--ease-out),
+      background-color 120ms ease,
+      border-color 120ms ease,
+      color 120ms ease;
+  }
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .btn-primary {
+    background: var(--amber-fill);
+    color: #fff;
+    box-shadow:
+      0 1px 0 rgb(255 200 170 / 0.45) inset,
+      0 -2px 0 rgb(0 0 0 / 0.18) inset,
+      0 2px 4px rgb(80 25 5 / 0.35);
+  }
+  .btn-primary:disabled {
+    background: #c9b9a4;
+    color: #4a4339;
+    box-shadow: none;
+  }
+
+  /* Price tag: kraft label with a punched hole. */
+  .tag {
+    background:
+      radial-gradient(circle at 8px 50%, var(--paper) 0 3px, transparent 3.5px),
+      var(--kraft);
+    color: var(--ink);
+    clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+    padding-left: 16px;
+  }
+
+  /* Lift-ticket notches: semicircles bitten out at the perforation. */
+  .ticket {
+    --notch-x: 72px;
+    mask:
+      radial-gradient(circle 7px at var(--notch-x) 0, #0000 98%, #000) top / 100% 51% no-repeat,
+      radial-gradient(circle 7px at var(--notch-x) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  }
+
+  /* Sheets: transform-only, interruptible transitions driven by data-state.
+     Enter 360ms on the drawer curve, exit faster at 200ms. */
+  .sheet {
+    transition: transform 360ms var(--ease-drawer);
+    will-change: transform;
+  }
+  .sheet[data-state="enter"] {
+    transform: translateY(100%);
+  }
+  .sheet[data-state="closing"] {
+    transform: translateY(100%);
+    transition-duration: 200ms;
+    transition-timing-function: var(--ease-out);
+  }
+  .sheet[data-dragging] {
+    transition: none;
+  }
+  .scrim {
+    transition: opacity 240ms var(--ease-out);
+  }
+  .scrim[data-state="enter"],
+  .scrim[data-state="closing"] {
+    opacity: 0;
+  }
+
+  /* Morning note and first-day callout: small, from their own anchor. */
+  .note-in {
+    transition:
+      opacity 240ms var(--ease-out),
+      transform 240ms var(--ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  .callout-in {
+    transform-origin: 1.75rem top;
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+  /* Rare moments get a little delight (radio beat, founder badges). */
+  .arrive {
+    transition:
+      opacity 280ms var(--ease-out),
+      transform 280ms var(--ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+
+  .pulse-ring {
+    animation: pulse-ring 1.8s var(--ease-out) infinite;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(232 93 38 / 0.7);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 14px rgb(232 93 38 / 0);
+  }
+}
+
+/* Reduced motion keeps opacity and colour, drops movement. */
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    transition: opacity 200ms ease;
+  }
+  .sheet[data-state="enter"],
+  .sheet[data-state="closing"] {
+    transform: none;
+    opacity: 0;
+  }
+  .note-in,
+  .callout-in,
+  .arrive {
+    transition: opacity 200ms ease;
+    @starting-style {
+      opacity: 0;
+      transform: none;
+    }
+  }
+  .pulse-ring {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--amber);
+  }
+  .press:active:not(:disabled) {
+    transform: none;
+  }
 }

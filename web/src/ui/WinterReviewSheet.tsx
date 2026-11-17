@@ -1,7 +1,10 @@
 "use client";
 
+import { STORY_BEATS } from "@/game/content";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
+import { PaperSheet } from "@/ui/kit/PaperSheet";
+import { PrimaryButton, StatTile } from "@/ui/kit/parts";
 
 export function WinterReviewSheet() {
   const phase = useGameStore((s) => s.phase);
@@ -16,44 +19,63 @@ export function WinterReviewSheet() {
 
   if (phase === "mountain2") {
     return (
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-        <div className="w-full max-w-lg rounded-t-3xl border border-white/10 bg-[#0f1d33] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:rounded-3xl">
-          <h2 className="text-lg font-semibold text-white">Tenney Mountain, NH</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Mountain 2 stub — caretaker idle income and full career map land in
-            P2. Dutch Hill stays saved locally.
-          </p>
-          <button
-            type="button"
-            onClick={startNewSeason}
-            className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white"
-          >
+      <PaperSheet
+        modal
+        z="z-50"
+        title="Tenney Mountain, NH"
+        subtitle="The next lost hill on the map"
+        footer={
+          <PrimaryButton onClick={startNewSeason}>
             Replay Dutch Hill winter
-          </button>
-        </div>
-      </div>
+          </PrimaryButton>
+        }
+      >
+        <p className="text-[0.95rem] leading-relaxed text-ink">
+          Tenney isn&apos;t playable yet. Caretaker income and the career map
+          come in a later build. Dutch Hill stays saved on this device.
+        </p>
+      </PaperSheet>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center">
-      <div className="w-full max-w-lg rounded-t-3xl border border-white/10 bg-[#0f1d33] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-5 sm:rounded-3xl">
-        <h2 className="text-lg font-semibold text-white">Winter review</h2>
-        <p className="mt-2 text-sm text-slate-300">
-          You held one more winter in the sticks. Cash {formatMoney(cash)} · Rep {reputation} · Beats{" "}
-          {completedBeats.length}/6 · Talents {talentsOwned.length}
-        </p>
-        <p className="mt-3 rounded-xl bg-white/5 px-3 py-2 text-sm text-orange-100">
-          Career pin unlocked: <strong>Tenney Mountain, NH</strong>
-        </p>
-        <button
-          type="button"
-          onClick={finishWinterReview}
-          className="mt-6 flex h-14 w-full items-center justify-center rounded-2xl bg-[#e85d26] text-base font-semibold text-white"
-        >
+    <PaperSheet
+      modal
+      z="z-50"
+      title="Winter review"
+      subtitle="Dutch Hill, season one"
+      footer={
+        <PrimaryButton onClick={finishWinterReview}>
           Continue to mountain 2
-        </button>
+        </PrimaryButton>
+      }
+    >
+      <p className="pencil px-1 text-[1.05rem] text-pine">
+        You held one more winter in the sticks.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-4 rounded-xl border border-ink/10 bg-white/35 px-3.5 py-3 sm:grid-cols-4">
+        <StatTile
+          label="Cash"
+          value={formatMoney(cash)}
+          tone={cash >= 0 ? "good" : "bad"}
+        />
+        <StatTile label="Reputation" value={reputation} />
+        <StatTile
+          label="Story beats"
+          value={`${completedBeats.length}/${STORY_BEATS.length}`}
+        />
+        <StatTile label="Crew talents" value={talentsOwned.length} />
       </div>
-    </div>
+      <div className="mt-4 flex items-center gap-3 rounded-xl border-[1.5px] border-dashed border-amber/70 bg-[#fff6ec] px-3.5 py-3">
+        <span
+          className="size-3 shrink-0 rounded-full bg-amber ring-4 ring-amber/25"
+          aria-hidden="true"
+        />
+        <p className="text-[0.95rem] text-ink">
+          Career pin unlocked:{" "}
+          <strong className="serif">Tenney Mountain, NH</strong>
+        </p>
+      </div>
+    </PaperSheet>
   );
 }
