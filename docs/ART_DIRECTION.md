@@ -164,12 +164,30 @@ Contrast AA on paper and navy; every control has a visible label (icons are deco
 
 ## Blender pipeline
 
-1. Blockout in Blender (metric: 1 unit = 1 m).
-2. Materials: limited palette; one roughness map per kit.
-3. Export GLB, Draco compress &lt; 500 KB per building where possible.
-4. `web/public/assets/...` + manifest JSON.
+Asset kit v1 is in the game (Art pass 2). Seventeen Draco GLBs, 204 KB in total.
 
-Characters: shared rig, texture swap for jackets.
+**Location.** `web/public/models/<name>.glb` plus `manifest.json` (tris, size, height, footprint, `gripHeightMeters` on carriers, `ropeOffsetXMeters` on lift pieces). The loader is `web/src/render/kit.ts`: it maps asset name to URL, preloads every model on the client, and `bakeKit()` flattens each asset into one vertex-coloured body geometry, one emissive `glow` geometry, and optional split material groups.
+
+**Draco decoder.** Self-hosted at `web/public/draco/` (copied from `three/examples/jsm/libs/draco/gltf/`); `useGLTF(url, "/draco/")` never fetches from a CDN. Refresh it after a three upgrade with `cp node_modules/three/examples/jsm/libs/draco/gltf/* public/draco/`. ESLint ignores that folder.
+
+**Conventions.** Metres, +Y up, origin at base centre. Front faces **+Z** in glTF (Blender −Y; the manifest's "-Z" note is wrong). Lift rope runs along Z at x = ±1.6 m.
+
+**Scales** (`kit.ts`):
+
+| Constant | Value | Used for |
+|---|---|---|
+| `METERS_TO_WORLD` | 0.075 | Buildings: base lodge ≈ Art pass 1 lodge footprint (1.46 world units wide). Café / shop ×1.05, warming hut ×1.1, snowcat ×1.25 |
+| `TOY_SCALE` | 2 | Skiers and carriers (t-bar, double chair): a 1.8 m skier is 0.27 units tall |
+| `LIFT_TOY_SCALE` | 1.67 | Towers, terminals, snow guns, lamp posts: puts the 1.6 m rope gauge on `LIFT_CABLE_OFFSET` (0.2) |
+| Pines | 0.11 / 0.085 / 0.098 | pine-a / b / c, each ~0.75–0.9 units tall before scatter scale |
+
+Towers stretch vertically so their sheaves meet the span-cleared cable height; terminals keep a uniform scale, with the bullwheel at `LIFT_TERMINAL_H`.
+
+**Materials.** Kit material colours are baked to vertex colours and drawn with one Lambert material per mesh. `snow` is remapped to `PALETTE.snow`. Emissive materials (`window-glow` #ffb347, `lamp-glow` #ffc46b) go to an untonemapped `MeshBasicMaterial` whose brightness rises from 0.62 by day to 1.15 at night, so the amber stays warm under Neutral tone mapping. Skier `jacket` and `helmet` are split out and take per-instance colour; `pants` stays navy.
+
+**Draw cost.** Static kit pieces (village, towers, terminals, guns) are merged per component into one body and one glow mesh. Pines, skiers and carriers are instanced. Trees and skiers cast shadows through cheap proxies on `SHADOW_LAYER` (a 6-triangle cone per tree, a box per skier), which only the sun's shadow camera renders. Distant trees (behind the hill, outside `NEAR_R`) use an 18-triangle stand-in.
+
+**Rebuild.** The Blender build scripts are in `tools/blender/` (`lib.py` helpers and palette, `buildings.py`, `lift.py`, `props.py`, `scenes.py` for renders). Output goes to `$LAST_CHAIR_KIT_ROOT` (default `~/Documents/Last Chair/asset-kit-v1`) under `glb/`, `renders/` and `blend/`. Run them in Blender's Python (e.g. through the Blender MCP or `blender --background --python`), then copy `glb/*` into `web/public/models/`. Exports use `export_yup=True` and Draco level 6.
 
 ---
 
@@ -191,7 +209,7 @@ Characters: shared rig, texture swap for jackets.
 
 ## Current scene (implemented, Tier 1 diorama)
 
-Procedural and hand-built R3F primitives; no GLB yet, no extra npm deps.
+Terrain, sky, trail ribbon, cables, road and cars are procedural R3F primitives; buildings, lift hardware, skiers, guns and near pines come from the Blender kit (see Blender pipeline).
 
 ### Goal
 

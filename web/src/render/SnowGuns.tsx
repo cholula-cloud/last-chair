@@ -3,8 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { box, cyl, merge, type Part } from "./geo";
-import { PALETTE } from "./palette";
+import { bakeKit, LIFT_TOY_SCALE, METERS_TO_WORLD, mergePlaced, placeKit, useKit } from "./kit";
 import { terrainHeight } from "./terrainShape";
 
 const GUNS: { x: number; z: number; yaw: number }[] = [
@@ -12,33 +11,20 @@ const GUNS: { x: number; z: number; yaw: number }[] = [
   { x: 1.6, z: -0.4, yaw: -0.6 },
 ];
 const PUFFS = 14;
+const SCALE = METERS_TO_WORLD * LIFT_TOY_SCALE;
+/** Kit fan nozzle height (5.6 m) in world units. */
+const NOZZLE_Y = 5.6 * SCALE;
 
-/** Tower snow guns: mast, yellow fan housing, and a plume when running. */
+/** Kit tower snow guns with a plume when running. */
 export function SnowGuns({ active }: { active: boolean }) {
-  const geo = useMemo(() => {
-    const parts: Part[] = [];
-    for (const g of GUNS) {
-      const y = terrainHeight(g.x, g.z);
-      const c = Math.cos(g.yaw);
-      const s = Math.sin(g.yaw);
-      const fan = new THREE.Euler().setFromQuaternion(
-        new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(Math.PI / 2 - 0.35, g.yaw, 0, "YXZ"),
-        ),
-      );
-      parts.push(
-        { geo: cyl(0.025, 0.035, 0.9, 6), color: PALETTE.steel, pos: [g.x, y + 0.45, g.z] },
-        {
-          geo: cyl(0.1, 0.085, 0.16, 12),
-          color: PALETTE.yellow,
-          pos: [g.x + s * 0.05, y + 0.92, g.z + c * 0.05],
-          rot: [fan.x, fan.y, fan.z],
-        },
-        { geo: box(0.12, 0.08, 0.1), color: PALETTE.ink, pos: [g.x, y + 0.08, g.z] },
-      );
-    }
-    return merge(parts);
-  }, []);
+  const gun = bakeKit(useKit("snow-gun")).body;
+  const geo = useMemo(
+    () =>
+      mergePlaced(
+        GUNS.map((g) => placeKit(gun, g.x, terrainHeight(g.x, g.z) - 0.02, g.z, g.yaw, SCALE)),
+      ),
+    [gun],
+  );
   useEffect(() => () => geo.dispose(), [geo]);
 
   const puffs = useRef<THREE.InstancedMesh>(null);
@@ -52,15 +38,15 @@ export function SnowGuns({ active }: { active: boolean }) {
     const t = clock.elapsedTime;
     let k = 0;
     for (const g of GUNS) {
-      const y = terrainHeight(g.x, g.z) + 0.95;
+      const y = terrainHeight(g.x, g.z) + NOZZLE_Y;
       const dx = Math.sin(g.yaw);
       const dz = Math.cos(g.yaw);
       for (let i = 0; i < PUFFS / GUNS.length; i++) {
         const f = (t * 0.45 + i / (PUFFS / GUNS.length)) % 1;
         dummy.position.set(
-          g.x + dx * (0.12 + f * 1.3),
+          g.x + dx * (0.16 + f * 1.3),
           y + f * 0.35 - f * f * 0.5,
-          g.z + dz * (0.12 + f * 1.3),
+          g.z + dz * (0.16 + f * 1.3),
         );
         dummy.scale.setScalar(0.06 + f * 0.24);
         dummy.updateMatrix();

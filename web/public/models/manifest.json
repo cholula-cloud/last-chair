@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "units": "meters",
+  "upAxis": "+Y",
+  "front": "-Z (Blender -Y)",
+  "draco": true,
+  "assets": [
+    {
+      "name": "base-lodge",
+      "file": "base-lodge.glb",
+      "tris": 1968,
+      "sizeBytes": 20184,
+      "heightMeters": 13.96,
+      "footprintMeters": [
+        19.47,
+        14.2
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "clapboard-house",
+      "file": "clapboard-house.glb",
+      "tris": 1408,
+      "sizeBytes": 17488,
+      "heightMeters": 12.88,
+      "footprintMeters": [
+        12.75,
+        8.75
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "cafe",
+      "file": "cafe.glb",
+      "tris": 848,
+      "sizeBytes": 14808,
+      "heightMeters": 8.7,
+      "footprintMeters": [
+        8.37,
+        8.74
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "ski-shop",
+      "file": "ski-shop.glb",
+      "tris": 536,
+      "sizeBytes": 12900,
+      "heightMeters": 8.15,
+      "footprintMeters": [
+        8.17,
+        6.17
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "warming-hut",
+      "file": "warming-hut.glb",
+      "tris": 396,
+      "sizeBytes": 8520,
+      "heightMeters": 5.94,
+      "footprintMeters": [
+        5.44,
+        4.04
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "lift-tower",
+      "file": "lift-tower.glb",
+      "tris": 228,
+      "sizeBytes": 6968,
+      "heightMeters": 7.88,
+      "footprintMeters": [
+        4.1,
+        1.7
+      ],
+      "recolorMaterials": [],
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "lift-terminal-bottom",
+      "file": "lift-terminal-bottom.glb",
+      "tris": 496,
+      "sizeBytes": 14464,
+      "heightMeters": 5.37,
+      "footprintMeters": [
+        7.98,
+        7.9
+      ],
+      "recolorMaterials": [],
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "lift-terminal-top",
+      "file": "lift-terminal-top.glb",
+      "tris": 420,
+      "sizeBytes": 13372,
+      "heightMeters": 5.37,
+      "footprintMeters": [
+        7.81,
+        6.5
+      ],
+      "recolorMaterials": [],
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "t-bar",
+      "file": "t-bar.glb",
+      "tris": 92,
+      "sizeBytes": 4508,
+      "heightMeters": 2.4,
+      "footprintMeters": [
+        1.15,
+        0.34
+      ],
+      "recolorMaterials": [],
+      "gripHeightMeters": 2.31
+    },
+    {
+      "name": "chair-double",
+      "file": "chair-double.glb",
+      "tris": 156,
+      "sizeBytes": 3904,
+      "heightMeters": 2.54,
+      "footprintMeters": [
+        1.42,
+        1.08
+      ],
+      "recolorMaterials": [],
+      "gripHeightMeters": 2.45
+    },
+    {
+      "name": "skier",
+      "file": "skier.glb",
+      "tris": 468,
+      "sizeBytes": 12516,
+      "heightMeters": 1.8,
+      "footprintMeters": [
+        0.8,
+        1.62
+      ],
+      "recolorMaterials": [
+        "jacket",
+        "pants",
+        "helmet"
+      ]
+    },
+    {
+      "name": "snow-gun",
+      "file": "snow-gun.glb",
+      "tris": 172,
+      "sizeBytes": 6928,
+      "heightMeters": 6.28,
+      "footprintMeters": [
+        1.26,
+        2.0
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "snowcat",
+      "file": "snowcat.glb",
+      "tris": 508,
+      "sizeBytes": 11584,
+      "heightMeters": 3.27,
+      "footprintMeters": [
+        4.6,
+        8.02
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "lamp-post",
+      "file": "lamp-post.glb",
+      "tris": 72,
+      "sizeBytes": 3764,
+      "heightMeters": 4.26,
+      "footprintMeters": [
+        0.42,
+        0.42
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "pine-a",
+      "file": "pine-a.glb",
+      "tris": 106,
+      "sizeBytes": 4316,
+      "heightMeters": 6.85,
+      "footprintMeters": [
+        4.14,
+        4.78
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "pine-b",
+      "file": "pine-b.glb",
+      "tris": 114,
+      "sizeBytes": 4420,
+      "heightMeters": 10.16,
+      "footprintMeters": [
+        4.04,
+        3.84
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "pine-c",
+      "file": "pine-c.glb",
+      "tris": 88,
+      "sizeBytes": 4088,
+      "heightMeters": 8.32,
+      "footprintMeters": [
+        5.74,
+        5.46
+      ],
+      "recolorMaterials": []
+    }
+  ]
+}

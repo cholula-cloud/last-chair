@@ -4,154 +4,29 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { sceneMood } from "./Atmosphere";
-import { box, cyl, gable, merge, pitchedRoof, placeParts, type Part } from "./geo";
-import { CAFE_POS, LODGE, ROAD_Z, SHOP_POS } from "./layout";
+import { box, merge, placeParts, type Part } from "./geo";
+import {
+  bakeKit,
+  GLOW_DAY,
+  GLOW_NIGHT,
+  type KitAsset,
+  LIFT_TOY_SCALE,
+  METERS_TO_WORLD,
+  mergePlaced,
+  placeKit,
+  useKit,
+} from "./kit";
+import {
+  CAFE_POS,
+  HOUSES,
+  LODGE,
+  ROAD_Z,
+  SHOP_POS,
+  SNOWCAT_POS,
+  WARMING_HUT_POS,
+} from "./layout";
 import { PALETTE } from "./palette";
 import { terrainHeight } from "./terrainShape";
-
-type Building = { body: Part[]; windows: Part[] };
-
-/** New England base lodge: barn-red clapboard, steep snowy gable, chimney, deck. */
-function lodge(): Building {
-  const W = 1.4; // along X (ridge)
-  const D = 0.95;
-  const H = 0.62;
-  const R = 0.62; // roof rise
-  const trim = PALETTE.clapboard;
-  const body: Part[] = [
-    { geo: box(W + 0.06, 0.1, D + 0.06), color: PALETTE.stone, pos: [0, 0.03, 0] },
-    { geo: box(W, H, D), color: PALETTE.barnRed, pos: [0, 0.05 + H / 2, 0] },
-    // Corner boards.
-    ...[-1, 1].flatMap((sx) =>
-      [-1, 1].map(
-        (sz): Part => ({
-          geo: box(0.05, H, 0.05),
-          color: trim,
-          pos: [(sx * W) / 2, 0.05 + H / 2, (sz * D) / 2],
-        }),
-      ),
-    ),
-    // Gable ends.
-    ...[-1, 1].map(
-      (sx): Part => ({
-        geo: gable(D, R, 0.02),
-        color: PALETTE.barnRed,
-        pos: [(sx * (W - 0.02)) / 2, 0.05 + H, 0],
-        rot: [0, Math.PI / 2, 0],
-      }),
-    ),
-    ...pitchedRoof({
-      width: D,
-      length: W,
-      rise: R,
-      y: 0.05 + H,
-      roof: PALETTE.roofSlate,
-      snow: PALETTE.snow,
-    }),
-    // Ridge snow bead.
-    { geo: box(W + 0.1, 0.07, 0.1), color: PALETTE.snow, pos: [0, 0.05 + H + R + 0.04, 0] },
-    // Stone chimney.
-    { geo: box(0.16, 0.6, 0.16), color: PALETTE.stone, pos: [0.42, 0.05 + H + R * 0.55 + 0.1, -0.18] },
-    { geo: box(0.2, 0.05, 0.2), color: PALETTE.snow, pos: [0.42, 0.05 + H + R * 0.55 + 0.42, -0.18] },
-    // Front deck with posts and rail (faces the road).
-    { geo: box(W + 0.2, 0.05, 0.42), color: PALETTE.deckWood, pos: [0, 0.16, D / 2 + 0.21] },
-    { geo: box(W + 0.2, 0.025, 0.4), color: PALETTE.snow, pos: [0, 0.195, D / 2 + 0.21] },
-    { geo: box(W + 0.2, 0.03, 0.03), color: trim, pos: [0, 0.38, D / 2 + 0.41] },
-    ...[-0.8, -0.27, 0.27, 0.8].map(
-      (x): Part => ({ geo: box(0.03, 0.22, 0.03), color: trim, pos: [x, 0.27, D / 2 + 0.41] }),
-    ),
-    // Door.
-    { geo: box(0.2, 0.36, 0.02), color: PALETTE.doorWood, pos: [-0.12, 0.05 + 0.2, D / 2 + 0.01] },
-    // Shutters beside front windows.
-    ...[-0.52, 0.32].flatMap((x) =>
-      [-1, 1].map(
-        (s): Part => ({
-          geo: box(0.07, 0.24, 0.02),
-          color: PALETTE.shutter,
-          pos: [x + s * 0.15, 0.4, D / 2 + 0.012],
-        }),
-      ),
-    ),
-    // Sign board over the deck.
-    { geo: box(0.7, 0.14, 0.03), color: PALETTE.clapboard, pos: [0.1, 0.05 + H + 0.02, D / 2 + 0.06] },
-    { geo: box(0.6, 0.05, 0.035), color: PALETTE.barnRed, pos: [0.1, 0.05 + H + 0.02, D / 2 + 0.065] },
-  ];
-  const windows: Part[] = [
-    ...[-0.52, 0.32].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: PALETTE.white, pos: [x, 0.4, D / 2 + 0.008] })),
-    ...[-0.4, 0.05, 0.45].map((x): Part => ({ geo: box(0.2, 0.22, 0.02), color: PALETTE.white, pos: [x, 0.4, -D / 2 - 0.008] })),
-    ...[-1, 1].map((sx): Part => ({ geo: box(0.02, 0.2, 0.16), color: PALETTE.white, pos: [(sx * W) / 2 + sx * 0.008, 0.82, 0] })),
-  ];
-  return { body, windows };
-}
-
-function cafe(): Building {
-  const W = 0.78;
-  const D = 0.6;
-  const H = 0.46;
-  return {
-    body: [
-      { geo: box(W, H, D), color: PALETTE.clapboard, pos: [0, H / 2, 0] },
-      ...[-1, 1].map(
-        (sx): Part => ({
-          geo: gable(D, 0.36, 0.02),
-          color: PALETTE.clapboard,
-          pos: [(sx * (W - 0.02)) / 2, H, 0],
-          rot: [0, Math.PI / 2, 0],
-        }),
-      ),
-      ...pitchedRoof({ width: D, length: W, rise: 0.36, y: H, roof: PALETTE.cafeRoof, snow: PALETTE.snow }),
-      // Striped awning.
-      ...[0, 1, 2, 3, 4].map(
-        (i): Part => ({
-          geo: box(0.13, 0.03, 0.22),
-          color: i % 2 ? PALETTE.clapboard : PALETTE.amber,
-          pos: [-0.26 + i * 0.13, 0.36, D / 2 + 0.1],
-          rot: [0.35, 0, 0],
-        }),
-      ),
-      { geo: box(0.16, 0.3, 0.02), color: PALETTE.doorWood, pos: [0.24, 0.15, D / 2 + 0.01] },
-      // Stovepipe.
-      { geo: cyl(0.035, 0.035, 0.3, 6), color: PALETTE.ink, pos: [-0.22, H + 0.32, -0.12] },
-    ],
-    windows: [
-      { geo: box(0.3, 0.18, 0.02), color: PALETTE.white, pos: [-0.12, 0.24, D / 2 + 0.008] },
-      { geo: box(0.02, 0.16, 0.2), color: PALETTE.white, pos: [W / 2 + 0.008, 0.26, 0] },
-    ],
-  };
-}
-
-function shop(): Building {
-  const W = 0.62;
-  const D = 0.5;
-  const H = 0.42;
-  return {
-    body: [
-      { geo: box(W, H, D), color: PALETTE.shopBlue, pos: [0, H / 2, 0] },
-      ...[-1, 1].map(
-        (sx): Part => ({
-          geo: gable(D, 0.3, 0.02),
-          color: PALETTE.shopBlue,
-          pos: [(sx * (W - 0.02)) / 2, H, 0],
-          rot: [0, Math.PI / 2, 0],
-        }),
-      ),
-      ...pitchedRoof({ width: D, length: W, rise: 0.3, y: H, roof: PALETTE.roofSlate, snow: PALETTE.snow }),
-      { geo: box(0.46, 0.1, 0.03), color: PALETTE.amber, pos: [0, H + 0.02, D / 2 + 0.03] },
-      { geo: box(0.15, 0.28, 0.02), color: PALETTE.clapboard, pos: [-0.18, 0.14, D / 2 + 0.01] },
-      // Ski rack with skis.
-      { geo: box(0.3, 0.02, 0.04), color: PALETTE.doorWood, pos: [0.12, 0.2, D / 2 + 0.12] },
-      ...[0, 1, 2, 3].map(
-        (i): Part => ({
-          geo: box(0.02, 0.32, 0.015),
-          color: ["#d7263d", "#f2c014", "#0fa3a3", "#7b4fc9"][i],
-          pos: [0.0 + i * 0.07, 0.16, D / 2 + 0.13],
-          rot: [-0.15, 0, 0],
-        }),
-      ),
-    ],
-    windows: [{ geo: box(0.2, 0.16, 0.02), color: PALETTE.white, pos: [0.12, 0.25, D / 2 + 0.008] }],
-  };
-}
 
 function car(color: string): Part[] {
   return [
@@ -189,46 +64,73 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
   return tex;
 }
 
-const WINDOW_DAY = new THREE.Color("#d9a35a");
-const WINDOW_NIGHT = new THREE.Color(PALETTE.window).multiplyScalar(1.6);
+type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number };
+
+/** Kit buildings and props for the current purchases, in world placements. */
+function villagePlacements(owned: { cafe: boolean; shop: boolean; hut: boolean }): Placement[] {
+  const B = METERS_TO_WORLD;
+  const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
+  const list: Placement[] = [
+    { name: "base-lodge", x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B },
+    ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
+    { name: "snowcat", ...SNOWCAT_POS, scale: B * 1.25 },
+    ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
+  ];
+  if (owned.cafe) list.push({ name: "cafe", ...CAFE_POS, yaw: -0.15, scale: B * 1.05 });
+  if (owned.shop) list.push({ name: "ski-shop", ...SHOP_POS, yaw: -0.35, scale: B * 1.05 });
+  if (owned.hut) list.push({ name: "warming-hut", ...WARMING_HUT_POS, yaw: 0.35, scale: B * 1.1 });
+  return list;
+}
 
 /**
- * Base village: lodge, optional café and shop, cars, lamp posts. Static
- * bodies merge into one mesh; windows and lamp heads share a glow material.
+ * Base village: kit lodge, houses, optional café / shop / warming hut, snowcat,
+ * lamp posts and procedural cars. Bodies merge into one mesh; window and lamp
+ * glass share an untonemapped glow material so the amber stays warm at night.
  */
 export function Village({ buildings }: { buildings: string[] }) {
   const hasCafe = buildings.includes("cafe");
   const hasShop = buildings.includes("shop");
+  const hasHut = buildings.includes("warming_hut");
+
+  const lodgeKit = useKit("base-lodge");
+  const houseKit = useKit("clapboard-house");
+  const cafeKit = useKit("cafe");
+  const shopKit = useKit("ski-shop");
+  const hutKit = useKit("warming-hut");
+  const catKit = useKit("snowcat");
+  const lampKit = useKit("lamp-post");
 
   const { body, glow } = useMemo(() => {
-    const bodyParts: Part[] = [];
-    const glowParts: Part[] = [];
-    const add = (b: Building, x: number, z: number, yaw = 0) => {
-      const y = terrainHeight(x, z) - 0.02;
-      bodyParts.push(...placeParts(b.body, x, y, z, yaw));
-      glowParts.push(...placeParts(b.windows, x, y, z, yaw));
+    const scenes: Partial<Record<KitAsset, THREE.Object3D>> = {
+      "base-lodge": lodgeKit,
+      "clapboard-house": houseKit,
+      cafe: cafeKit,
+      "ski-shop": shopKit,
+      "warming-hut": hutKit,
+      snowcat: catKit,
+      "lamp-post": lampKit,
     };
-    add(lodge(), LODGE.x, LODGE.z + 0.05);
-    if (hasCafe) add(cafe(), CAFE_POS.x, CAFE_POS.z, -0.15);
-    if (hasShop) add(shop(), SHOP_POS.x, SHOP_POS.z, -0.35);
+    const bodies: THREE.BufferGeometry[] = [];
+    const glows: THREE.BufferGeometry[] = [];
+    for (const p of villagePlacements({ cafe: hasCafe, shop: hasShop, hut: hasHut })) {
+      const scene = scenes[p.name];
+      if (!scene) continue;
+      const kit = bakeKit(scene);
+      const y = terrainHeight(p.x, p.z) - 0.02;
+      bodies.push(placeKit(kit.body, p.x, y, p.z, p.yaw, p.scale));
+      if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
+    }
 
+    const carParts: Part[] = [];
     const cars = ["#2f7de1", "#a8382b", "#e8e4dc", "#3f6b4a"];
     cars.forEach((c, i) => {
       const x = 2.9 + i * 0.32;
       const z = 3.62;
-      bodyParts.push(...placeParts(car(c), x, terrainHeight(x, z), z, Math.PI / 2 + 0.06 * i));
+      carParts.push(...placeParts(car(c), x, terrainHeight(x, z), z, Math.PI / 2 + 0.06 * i));
     });
-
-    for (const [x, z] of LAMPS) {
-      const y = terrainHeight(x, z);
-      bodyParts.push(
-        { geo: cyl(0.018, 0.025, 0.55, 5), color: "#1e252e", pos: [x, y + 0.275, z] },
-        { geo: box(0.09, 0.02, 0.09), color: PALETTE.snow, pos: [x, y + 0.62, z] },
-      );
-      glowParts.push({ geo: box(0.06, 0.07, 0.06), color: PALETTE.white, pos: [x, y + 0.57, z] });
-    }
-    return { body: merge(bodyParts), glow: merge(glowParts) };
-  }, [hasCafe, hasShop]);
+    bodies.push(merge(carParts));
+    return { body: mergePlaced(bodies), glow: mergePlaced(glows) };
+  }, [hasCafe, hasShop, hasHut, lodgeKit, houseKit, cafeKit, shopKit, hutKit, catKit, lampKit]);
 
   useEffect(
     () => () => {
@@ -265,7 +167,7 @@ export function Village({ buildings }: { buildings: string[] }) {
 
   useFrame(() => {
     const k = Math.max(sceneMood.night, sceneMood.dusk * 0.6);
-    if (glowMat.current) glowMat.current.color.copy(WINDOW_DAY).lerp(WINDOW_NIGHT, k);
+    if (glowMat.current) glowMat.current.color.setScalar(GLOW_DAY + (GLOW_NIGHT - GLOW_DAY) * k);
     if (poolMat.current) poolMat.current.opacity = 0.05 + k * 0.75;
   });
 

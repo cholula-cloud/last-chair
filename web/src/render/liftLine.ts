@@ -1,5 +1,5 @@
 import type { LiftAnchor } from "@/game/descent";
-import { LIFT_BASE, LIFT_TOWER_H } from "./layout";
+import { LIFT_BASE, LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
 import { clamp01 } from "./math";
 import { terrainHeight } from "./terrainShape";
 
@@ -26,17 +26,24 @@ export function liftTowers(anchor: LiftAnchor): LiftPoint[] {
     const x = LIFT_BASE.x + (anchor.x - LIFT_BASE.x) * t;
     const z = LIFT_BASE.z + (anchor.z - LIFT_BASE.z) * t;
     const ground = terrainHeight(x, z);
-    pts.push({ x, z, ground, top: ground + LIFT_TOWER_H });
+    const terminal = i === 0 || i === n - 1;
+    pts.push({ x, z, ground, top: ground + (terminal ? LIFT_TERMINAL_H : LIFT_TOWER_H) });
   }
-  // Keep each span clear of the snow at its midpoint.
-  for (let pass = 0; pass < 3; pass++) {
+  // Keep each span clear of the snow at its midpoint. Terminals keep their
+  // bullwheel height, so a span touching one raises only its tower end.
+  for (let pass = 0; pass < 4; pass++) {
     for (let i = 0; i < n - 1; i++) {
       const a = pts[i];
       const b = pts[i + 1];
       const mx = (a.x + b.x) / 2;
       const mz = (a.z + b.z) / 2;
       const need = terrainHeight(mx, mz) + 0.7 - (a.top + b.top) / 2;
-      if (need > 0) {
+      if (need <= 0) continue;
+      const aFixed = i === 0;
+      const bFixed = i + 1 === n - 1;
+      if (aFixed && !bFixed) b.top += need * 2;
+      else if (bFixed && !aFixed) a.top += need * 2;
+      else {
         a.top += need;
         b.top += need;
       }

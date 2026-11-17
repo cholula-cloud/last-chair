@@ -273,6 +273,7 @@ Goal: a codebase where rules are testable and known bugs are gone.
 | 4b | ☑ | Phone HUD fixes from the M0 smoke check | Portrait ops strip no longer overlapped by Home / Close hill; one mood number (ops strip and recap show the same satisfaction); money formats as −$104; Sleep explains why it is disabled while a radio beat waits | Playwright screenshot at 390×844 shows no overlap; unit test for money format |
 | 4c | ☑ | Art pass 1 (procedural diorama) | Readable cozy diorama: real hill shape, light and shadows, trail, lift towers and cable, lodge, skier figures, per-aspect camera | Screenshots at phone sizes read at a glance |
 | 4d | ☑ | UI pass 1 (lodge paperwork) | Paper-card sheets, ticket-strip HUD, conditions board with SVG icons, serif type, Route 100 Radio rename, title screen | Screenshots at phone sizes; no overlaps; targets ≥44 px |
+| 4e | ☑ | Art pass 2 (Blender kit) | Modelled lodge, village, lift, skiers, pines in-game; forest triangles cut; trail readability | Screenshots; triangles < 150k |
 
 **Gate M0:** `npm run check` green in CI; sim runs headless from a test.
 
