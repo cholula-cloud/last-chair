@@ -14,9 +14,13 @@ export type PersonaDef = {
   skiMin: number;
   /** Runs wanted before heading home, drawn uniformly (inclusive). */
   targetRuns: [min: number, max: number];
+  /** Multipliers on the satisfaction terms (see SIMULATION_SPEC, Satisfaction). */
+  queueWeight: number;
+  snowWeight: number;
+  valueWeight: number;
 };
 
-/** Behaviour numbers per persona (see SIMULATION_SPEC, Personas). Satisfaction weights land in PR 7. */
+/** Behaviour numbers per persona (see SIMULATION_SPEC, Personas). Satisfaction weights apply in `satisfaction.ts`. */
 export const PERSONAS: Record<PersonaId, PersonaDef> = {
   first_timer: {
     id: "first_timer",
@@ -27,6 +31,9 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     energyPerRun: 0.18,
     skiMin: 14,
     targetRuns: [3, 6],
+    queueWeight: 1.2,
+    snowWeight: 1.0,
+    valueWeight: 0.8,
   },
   regular: {
     id: "regular",
@@ -37,6 +44,9 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     energyPerRun: 0.11,
     skiMin: 8,
     targetRuns: [6, 10],
+    queueWeight: 1.5,
+    snowWeight: 1.1,
+    valueWeight: 1.3,
   },
 };
 

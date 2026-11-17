@@ -282,7 +282,7 @@ Goal: every number on the recap is caused by something visible on the hill.
 |---|---|---|---|---|
 | 5 | ☑ | Lift as a server | Capacity per hour, ride time, FIFO queue; wait measured in game minutes | Test: doubling arrivals at fixed capacity raises average wait |
 | 6 | ☑ | Guest day script | Arrival curve 08:00–14:00 (smoke check: today everyone arrives at 6 AM, giving a 4.6 min opening queue); energy; laps; departure; real run count; First-Timer + Saturday Regular personas | Test: guest count, runs per guest, all depart by close |
-| 7 | ☐ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
+| 7 | ☑ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
 | 8 | ☐ | Snow per trail segment | Depth / quality / coverage per segment; thaw hits low elevation first; overnight presets per spec; terrain tint reads real values | Test: High beats Mid beats Minimal on quality after one night; a phone tester can see the difference next morning |
 | 9 | ☐ | Levers you can feel | Fare judged against what the hill offered that day (snow, queues, venues), with elasticity by persona; "Why?" breakdown on the recap; today-vs-yesterday deltas | Player can see what fare did to arrivals and mood |
 | 10 | ☐ | Balance harness + P0 re-sign | Headless season runner over N seeds × fixed strategies (always cheap, always expensive, adaptive); P0 device playtest | No single fixed strategy dominates; P0 script passes on iPhone |

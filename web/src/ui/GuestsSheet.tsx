@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import { satisfactionContext } from "@/game/rules";
+import { guestSatisfaction } from "@/game/satisfaction";
 import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
 import { PaperSheet } from "@/ui/kit/PaperSheet";
@@ -15,6 +17,12 @@ const STATE_WORD: Record<GuestState, string> = {
   depart: "Heading home",
 };
 
+function moodWord(score: number): string {
+  if (score >= 70) return "Happy";
+  if (score >= 50) return "Okay";
+  return "Unhappy";
+}
+
 export function GuestsSheet({
   open,
   onClose,
@@ -28,10 +36,16 @@ export function GuestsSheet({
     () => allGuests.filter((g) => g.state !== "pending" && g.state !== "gone"),
     [allGuests],
   );
+  const fare = useGameStore((s) => s.fare);
+  const buildings = useGameStore((s) => s.buildings);
+  const founderId = useGameStore((s) => s.founderId);
+  const weather = useGameStore((s) => s.weather);
+  const clockMin = useGameStore((s) => s.clockMin);
   const followId = useGameStore((s) => s.followId);
   const setFollowId = useGameStore((s) => s.setFollowId);
 
   if (!open) return null;
+  const ctx = satisfactionContext({ fare, buildings, founderId, weather, clockMin });
 
   return (
     <PaperSheet
@@ -55,7 +69,7 @@ export function GuestsSheet({
                   {g.label}
                 </p>
                 <p className="text-[0.8rem] text-ink-soft">
-                  {STATE_WORD[g.state]}
+                  {STATE_WORD[g.state]} · {moodWord(guestSatisfaction(g, ctx))}
                 </p>
               </div>
               <button
