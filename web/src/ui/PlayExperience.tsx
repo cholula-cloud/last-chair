@@ -13,10 +13,13 @@ import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { GuestsSheet } from "@/ui/GuestsSheet";
+import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
   ConditionsBoard,
   MorningNote,
+  RecenterButton,
+  ResumeFollowChip,
   StartCallout,
   TopBar,
 } from "@/ui/Hud";
@@ -49,6 +52,11 @@ export default function PlayExperience() {
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
   const togglePause = useGameStore((s) => s.togglePause);
+  const setFollowId = useGameStore((s) => s.setFollowId);
+  const resumeFollowId = useCameraUi((s) => s.resumeFollowId);
+  const canResume = useGameStore(
+    (s) => !!resumeFollowId && !s.followId && s.guests.some((g) => g.id === resumeFollowId && isOnHill(g)),
+  );
   const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
@@ -94,6 +102,13 @@ export default function PlayExperience() {
   const showStartHint = hydrated && notStarted;
   const showNote = phase === "day" && noteDismissedDay !== dayIndex;
 
+  // The morning note clears itself after 6 seconds, or as soon as play is pressed.
+  useEffect(() => {
+    if (!showNote) return;
+    const t = window.setTimeout(() => setNoteDismissedDay(dayIndex), 6000);
+    return () => window.clearTimeout(t);
+  }, [showNote, dayIndex]);
+
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink">
       <Canvas
@@ -120,7 +135,10 @@ export default function PlayExperience() {
             cash={cash}
             paused={paused}
             notStarted={notStarted}
-            onTogglePause={togglePause}
+            onTogglePause={() => {
+              setNoteDismissedDay(dayIndex);
+              togglePause();
+            }}
           />
           {showStartHint && <StartCallout />}
         </div>
@@ -141,7 +159,18 @@ export default function PlayExperience() {
 
       {phase === "day" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
-          <div className="w-full sm:max-w-[400px]">
+          <div className="flex w-full flex-col gap-2 sm:max-w-[400px]">
+            <div className="flex items-center justify-end gap-2">
+              {canResume && (
+                <ResumeFollowChip
+                  onClick={() => {
+                    setFollowId(resumeFollowId);
+                    useCameraUi.setState({ resumeFollowId: null });
+                  }}
+                />
+              )}
+              <RecenterButton onClick={requestRecenter} />
+            </div>
             <ConditionsBoard
               avgQueue={avgQueue}
               snowQuality={snowQuality}

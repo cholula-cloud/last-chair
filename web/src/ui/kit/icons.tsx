@@ -89,6 +89,14 @@ export const HomeIcon = (p: P) => (
   </Icon>
 );
 
+export const RecenterIcon = (p: P) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="1.5" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </Icon>
+);
+
 export const CloseIcon = (p: P) => (
   <Icon {...p}>
     <path d="M6 6l12 12M18 6 6 18" />
