@@ -1,5 +1,12 @@
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
+import { PERSONAS, skiMinutes } from "./personas";
 import {
+  ARRIVAL_EARLIEST_MIN,
+  ARRIVAL_LATEST_MIN,
+  ARRIVAL_PEAK_MIN,
+  ARRIVE_WALK_MIN,
+  DEPART_WALK_MIN,
+  LIFT_CLOSE_MIN,
   DAILY_FIXED_COST,
   DAY_END_MIN,
   DAY_START_MIN,
@@ -12,7 +19,7 @@ import {
   type FarePreset,
   type FounderId,
   type Guest,
-  type GuestState,
+  type PersonaId,
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
@@ -38,46 +45,150 @@ export function isWeekend(dayIndex: number): boolean {
 
 export type Rand = () => number;
 
+/**
+ * Arrival minute from a triangular curve over the arrival window, peaking at
+ * ARRIVAL_PEAK_MIN: a slow trickle from 08:00, a mid-morning rush, a long tail to 14:00.
+ */
+export function drawArrivalMin(rand: Rand): number {
+  return (triangular(rand) + triangular(rand)) / 2;
+}
+
+function triangular(rand: Rand): number {
+  const a = ARRIVAL_EARLIEST_MIN;
+  const b = ARRIVAL_LATEST_MIN;
+  const c = ARRIVAL_PEAK_MIN;
+  const u = rand();
+  const split = (c - a) / (b - a);
+  return u < split
+    ? a + Math.sqrt(u * (b - a) * (c - a))
+    : b - Math.sqrt((1 - u) * (b - a) * (b - c));
+}
+
+/** A guest at the car park door with the given persona; `over` overrides any field (tests, migration). */
+export function makeGuest(over: Partial<Guest> = {}): Guest {
+  const persona = over.persona ?? "regular";
+  const def = PERSONAS[persona];
+  return {
+    id: "g",
+    label: "Guest",
+    state: "arrive",
+    progress: 0,
+    mood: 0.8,
+    persona,
+    energy: def.startEnergy,
+    runs: 0,
+    targetRuns: def.targetRuns[1],
+    arriveAtMin: DAY_START_MIN,
+    stateSinceMin: DAY_START_MIN,
+    ...over,
+  };
+}
+
+/**
+ * The whole day's roster, all "pending", sorted by arrival time. Persona, target
+ * runs and arrival minute are drawn per guest from `rand`.
+ */
 export function createInitialGuests(
   count: number,
   rand: Rand = Math.random,
+  weekend = false,
 ): Guest[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `g-${daySeed(rand)}-${i}`,
-    label: i % 3 === 0 ? `Regular #${i + 1}` : `Guest ${i + 1}`,
-    state: "arrive" as GuestState,
-    progress: rand() * 0.3,
-    mood: 0.7 + rand() * 0.2,
-  }));
+  const seed = daySeed(rand);
+  const firstShare = weekend
+    ? PERSONAS.first_timer.weekendShare
+    : PERSONAS.first_timer.weekdayShare;
+  const drawn = Array.from({ length: count }, (_, i) => {
+    const persona: PersonaId = rand() < firstShare ? "first_timer" : "regular";
+    const [lo, hi] = PERSONAS[persona].targetRuns;
+    const targetRuns = lo + Math.floor(rand() * (hi - lo + 1));
+    const arriveAtMin = drawArrivalMin(rand);
+    const mood = 0.7 + rand() * 0.2;
+    return { i, persona, targetRuns, arriveAtMin, mood };
+  });
+  drawn.sort((x, y) => x.arriveAtMin - y.arriveAtMin);
+  return drawn.map((d, rank) =>
+    makeGuest({
+      id: `g-${seed}-${d.i}`,
+      label: `${PERSONAS[d.persona].label} ${rank + 1}`,
+      state: "pending",
+      mood: d.mood,
+      persona: d.persona,
+      targetRuns: d.targetRuns,
+      arriveAtMin: d.arriveAtMin,
+      stateSinceMin: d.arriveAtMin,
+    }),
+  );
 }
 
 function daySeed(rand: Rand): string {
   return rand().toString(36).slice(2, 7);
 }
 
+/** Guests on the hill: walking in, in a line, on a lift or skiing. */
+export function isOnHill(g: Guest): boolean {
+  return g.state === "arrive" || g.state === "queue" || g.state === "ride" || g.state === "ski";
+}
+
+export type GuestClock = {
+  /** Game clock minute at the end of this step. */
+  now: number;
+  snowQuality: number;
+  /** Expected wait plus ride time for the next lap at the best open lift (Infinity with none). */
+  lapOverheadMin: number;
+};
+
 /**
- * Advance guests that move on their own clock (arriving, skiing, departing).
- * Queueing and riding belong to the lifts (`stepLifts` in lifts.ts), so those
- * guests are returned untouched.
+ * Advance guests that move on their own clock: pending guests arrive on their
+ * minute, arrivals walk to the line, skiers finish runs, departers walk to the
+ * car park. Queueing and riding belong to the lifts (`stepLifts`). Each timed
+ * state's `progress` is elapsed / duration. At the bottom of a run the guest
+ * goes home if tired, if they have done their runs, or if another lap cannot
+ * finish before the lifts close; otherwise they queue again. Lifts stop
+ * loading at LIFT_CLOSE_MIN, so anyone still in a line goes home.
  */
-export function tickGuests(
-  guests: Guest[],
-  dt: number,
-  rand: Rand = Math.random,
-): Guest[] {
-  const stateRate = { arrive: 0.35, ski: 0.5, depart: 0.2 } as const;
+export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
+  const { now } = clock;
+  const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => ({
+    ...g,
+    ...over,
+    state: "depart",
+    progress: 0,
+    stateSinceMin: now,
+  });
 
   return guests.map((g) => {
-    if (g.state === "depart" || g.state === "queue" || g.state === "ride") return g;
-    let progress = g.progress + dt * stateRate[g.state];
-    let state: GuestState = g.state;
-    if (progress >= 1) {
-      progress = 0;
-      // One lap-or-leave draw per guest, only when that guest finishes a run.
-      state =
-        g.state === "ski" ? (rand() > 0.35 ? "queue" : "depart") : "queue";
+    switch (g.state) {
+      case "pending":
+        return now >= g.arriveAtMin
+          ? { ...g, state: "arrive", progress: 0, stateSinceMin: now }
+          : g;
+      case "arrive": {
+        const progress = (now - g.stateSinceMin) / ARRIVE_WALK_MIN;
+        if (progress < 1) return { ...g, progress };
+        return now >= LIFT_CLOSE_MIN ? goHome(g) : { ...g, state: "queue", progress: 0 };
+      }
+      case "queue":
+        return now >= LIFT_CLOSE_MIN ? goHome(g) : g;
+      case "ski": {
+        const duration = skiMinutes(g.persona, clock.snowQuality);
+        const progress = (now - g.stateSinceMin) / duration;
+        if (progress < 1) return { ...g, progress };
+        const runs = g.runs + 1;
+        const energy = g.energy - PERSONAS[g.persona].energyPerRun;
+        const done = { runs, energy };
+        const lapEnds = now + clock.lapOverheadMin + duration;
+        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
+          return goHome(g, done);
+        }
+        return { ...g, ...done, state: "queue", progress: 0 };
+      }
+      case "depart": {
+        const progress = (now - g.stateSinceMin) / DEPART_WALK_MIN;
+        return progress >= 1 ? { ...g, state: "gone", progress: 0 } : { ...g, progress };
+      }
+      default:
+        return g;
     }
-    return { ...g, progress, state };
   });
 }
 
@@ -345,7 +456,11 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
 export function emptyDayStats(): DayStats {
   return {
     arrivals: 0,
+    guestsArrived: 0,
     completedRuns: 0,
+    runsPerGuest: 0,
+    turnedAway: 0,
+    peakOnHill: 0,
     avgQueueMin: 0,
     dispatched: 0,
     waitSumMin: 0,

@@ -215,7 +215,6 @@ The loop is clickable end to end and deployed, but most of the simulation is cos
 
 | Issue | Where |
 |---|---|
-| Guests arrive, ski and depart on a random state machine (lifts are real servers since PR 5) | `sim.ts` `tickGuests` |
 | 8 of 12 crew talents and 3 of 6 founder modifiers do nothing | `content.ts`, `sim.ts` |
 | Weather is `(day*17+3) % 10` (fixed in PR 18). Other randomness comes from an injected seeded RNG whose state lives in `GameState` | `sim.ts` |
 | Season is 14 days (spec 28) | `types.ts` |
@@ -282,7 +281,7 @@ Goal: every number on the recap is caused by something visible on the hill.
 | # | Status | PR | Accomplishes | Done when |
 |---|---|---|---|---|
 | 5 | ☑ | Lift as a server | Capacity per hour, ride time, FIFO queue; wait measured in game minutes | Test: doubling arrivals at fixed capacity raises average wait |
-| 6 | ☐ | Guest day script | Arrival curve 08:00–14:00 (smoke check: today everyone arrives at 6 AM, giving a 4.6 min opening queue); energy; laps; departure; real run count; First-Timer + Saturday Regular personas | Test: guest count, runs per guest, all depart by close |
+| 6 | ☑ | Guest day script | Arrival curve 08:00–14:00 (smoke check: today everyone arrives at 6 AM, giving a 4.6 min opening queue); energy; laps; departure; real run count; First-Timer + Saturday Regular personas | Test: guest count, runs per guest, all depart by close |
 | 7 | ☐ | Satisfaction from causes | Per-guest terms (queue, snow, value, arrival mood) → day score; recap "problem" = largest negative term | Test: each term moves the score in the right direction |
 | 8 | ☐ | Snow per trail segment | Depth / quality / coverage per segment; thaw hits low elevation first; overnight presets per spec; terrain tint reads real values | Test: High beats Mid beats Minimal on quality after one night; a phone tester can see the difference next morning |
 | 9 | ☐ | Levers you can feel | Fare judged against what the hill offered that day (snow, queues, venues), with elasticity by persona; "Why?" breakdown on the recap; today-vs-yesterday deltas | Player can see what fare did to arrivals and mood |

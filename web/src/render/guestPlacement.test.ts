@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIFT_PREVIEW_SLOTS } from "@/game/descent";
+import { makeGuest } from "@/game/sim";
 import type { GuestState } from "@/game/types";
 import { guestWorldPosition, placeGuests } from "./guestPlacement";
 import { LIFT_BASE, LODGE } from "./layout";
@@ -7,7 +8,7 @@ import { cableHeightAt, liftTowers } from "./liftLine";
 import { terrainHeight } from "./terrainShape";
 import { trailPoint } from "./trail";
 
-const STATES: GuestState[] = ["arrive", "queue", "ride", "ski", "depart"];
+const STATES: GuestState[] = ["arrive", "queue", "ride", "ski", "depart"]; // pending and gone are never drawn
 const PROGRESS = [0, 0.5, 1];
 const EPS = 1e-9;
 
@@ -79,13 +80,8 @@ describe("guest placement", () => {
   });
 
   it("ranks queued guests front-to-back by progress, ties by list order", () => {
-    const g = (id: string, state: GuestState, progress: number) => ({
-      id,
-      label: id,
-      state,
-      progress,
-      mood: 0.5,
-    });
+    const g = (id: string, state: GuestState, progress: number) =>
+      makeGuest({ id, label: id, state, progress, mood: 0.5 });
     const guests = [g("a", "queue", 0.2), g("b", "ski", 0.9), g("c", "queue", 0.8), g("d", "queue", 0.2)];
     const anchor = LIFT_PREVIEW_SLOTS[1];
     const placed = placeGuests(guests, [{ anchor, type: "surface" }]);
@@ -97,14 +93,8 @@ describe("guest placement", () => {
   });
 
   it("places each guest on their own lift and ranks queues per lift", () => {
-    const g = (id: string, liftIndex: number | undefined, progress: number) => ({
-      id,
-      label: id,
-      state: "queue" as const,
-      progress,
-      mood: 0.5,
-      liftIndex,
-    });
+    const g = (id: string, liftIndex: number | undefined, progress: number) =>
+      makeGuest({ id, label: id, state: "queue", progress, mood: 0.5, liftIndex });
     const lifts = [
       { anchor: LIFT_PREVIEW_SLOTS[0], type: "surface" as const },
       { anchor: LIFT_PREVIEW_SLOTS[1], type: "chair" as const },

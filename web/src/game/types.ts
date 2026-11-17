@@ -7,11 +7,16 @@ export type GamePhase =
   | "winter_review"
   | "mountain2";
 export type GuestState =
+  /** On the day's roster but not at the hill yet; not drawn. */
+  | "pending"
   | "arrive"
   | "queue"
   | "ride"
   | "ski"
-  | "depart";
+  | "depart"
+  /** Left the car park for home; terminal, not drawn. */
+  | "gone";
+export type PersonaId = "first_timer" | "regular";
 export type LiftType = "surface" | "chair";
 export type WeatherKind = "snow" | "clear" | "thaw";
 export type BuildingId = "warming_hut" | "lodge" | "cafe" | "shop" | "snow_guns";
@@ -42,11 +47,32 @@ export type Guest = {
   joinedQueueAtMin?: number;
   /** Game clock minute at which the guest was dispatched onto the lift. */
   rideStartMin?: number;
+  persona: PersonaId;
+  /** 1 = fresh, 0 or below = done for the day. */
+  energy: number;
+  /** Finished ski runs today. */
+  runs: number;
+  /** Runs this guest wants before heading home. */
+  targetRuns: number;
+  /** Game clock minute at which the guest reaches the hill. */
+  arriveAtMin: number;
+  /** Game clock minute at which the guest entered their current timed state (arrive, ski, depart). */
+  stateSinceMin: number;
 };
 
 export type DayStats = {
+  /** Guests on today's roster (planned by `planArrivals`). */
   arrivals: number;
+  /** Roster guests who have reached the hill so far. */
+  guestsArrived: number;
+  /** Finished ski runs today. */
   completedRuns: number;
+  /** `completedRuns / guestsArrived`; 0 before anyone arrives. */
+  runsPerGuest: number;
+  /** Guests sent home from the lift line at closing without a single ride. */
+  turnedAway: number;
+  /** Most guests on the hill (arriving, queueing, riding or skiing) at once. */
+  peakOnHill: number;
   /** Mean measured wait (game minutes) of guests dispatched today; 0 before the first dispatch. */
   avgQueueMin: number;
   /** Guests dispatched onto a lift today. */
@@ -115,8 +141,8 @@ export const LIFT_SPECS: Record<
   LiftType,
   { capacityPerHour: number; rideMinutes: number }
 > = {
-  surface: { capacityPerHour: 70, rideMinutes: 4 },
-  chair: { capacityPerHour: 110, rideMinutes: 3 },
+  surface: { capacityPerHour: 46, rideMinutes: 4 },
+  chair: { capacityPerHour: 70, rideMinutes: 3 },
 };
 
 export const LIFT_BUILD_COST: Record<LiftType, number> = {
@@ -140,8 +166,17 @@ export const BUILDING_COSTS: Record<BuildingId, number> = {
   snow_guns: 2200,
 };
 
-export const DAY_START_MIN = 6 * 60;
+export const DAY_START_MIN = 7 * 60 + 30;
 export const DAY_END_MIN = 16 * 60;
+/** Lifts stop loading; anyone still in a line goes home. */
+export const LIFT_CLOSE_MIN = 15 * 60 + 45;
+/** Guests reach the hill between these clock minutes, most around the peak. */
+export const ARRIVAL_EARLIEST_MIN = 8 * 60;
+export const ARRIVAL_PEAK_MIN = 10 * 60;
+export const ARRIVAL_LATEST_MIN = 14 * 60;
+/** Walk between the car park and the lift line (arriving) or the lodge and the car park (departing). */
+export const ARRIVE_WALK_MIN = 3;
+export const DEPART_WALK_MIN = 3;
 export const MS_PER_GAME_MINUTE = 500;
 /** Internal P1 shortcut; scale to 28 for ship. */
 export const SEASON_LENGTH = 14;

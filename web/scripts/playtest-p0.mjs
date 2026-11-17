@@ -38,8 +38,22 @@ await page.getByRole("button", { name: /Elena Vargas/i }).click();
 await page.getByText(/Day 1\/14/).waitFor({ timeout: 10000 });
 await page.screenshot({ path: path.join(outDir, "day1-hud.png") });
 
+// Guests arrive from 8 AM and the day starts at 6, so seed the saved clock at 9:30, when the hill has
+// people, instead of waiting a real minute. The init script runs once, before the app reads its save.
+const saved = await page.evaluate(() => localStorage.getItem("last-chair-v1"));
+const seeded = JSON.parse(saved);
+seeded.state.clockMin = 9 * 60 + 30;
+await page.addInitScript((json) => {
+  if (!sessionStorage.getItem("seeded-clock")) {
+    sessionStorage.setItem("seeded-clock", "1");
+    localStorage.setItem("last-chair-v1", json);
+  }
+}, JSON.stringify(seeded));
+await page.reload({ waitUntil: "networkidle" });
+await page.getByText(/Day 1\/14/).waitFor({ timeout: 10000 });
+
 await page.getByLabel("Resume day").click();
-await page.waitForTimeout(600);
+await page.waitForTimeout(4000);
 await page.getByLabel("Pause day").click();
 
 await page.getByRole("button", { name: "Guests", exact: true }).click();

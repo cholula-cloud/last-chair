@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
-import { planArrivals } from "./sim";
+import { makeGuest, planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
   createInitialState,
@@ -155,21 +155,16 @@ describe("tick", () => {
   });
 });
 
-const guestAt = (over: Partial<Guest>): Guest => ({
-  id: "g",
-  label: "Guest",
-  state: "ski",
-  progress: 0,
-  mood: 0.8,
-  ...over,
-});
+const MORNING = 10 * 60;
+/** A skier whose run ended long ago, so the next tick counts it. */
+const guestAt = (over: Partial<Guest>): Guest =>
+  makeGuest({ state: "ski", stateSinceMin: MORNING - 30, targetRuns: 9, ...over });
 
-/** A running day with exactly the given guests. */
+/** A running mid-morning day with exactly the given guests. */
 function runningWith(guests: Guest[], seed = 7): GameState {
-  return { ...rules.togglePause(started()), guests, rngState: seed };
+  return { ...rules.togglePause(started()), guests, rngState: seed, clockMin: MORNING };
 }
 
-// One tick of 1000 ms = 2 game minutes = dt 0.25; a skier at 0.99 finishes (rate 0.5).
 const TICK_MS = 1000;
 
 describe("night reload", () => {
@@ -191,10 +186,13 @@ describe("night reload", () => {
 describe("completedRuns", () => {
   it("counts a finishing skier once, whether they lap or leave", () => {
     for (let seed = 1; seed <= 25; seed++) {
-      const out = rules.tick(runningWith([guestAt({ progress: 0.99 })], seed), TICK_MS);
-      // A guest who laps joins the lift line and may be dispatched within the same tick.
-      expect(["queue", "ride", "depart"]).toContain(out.guests[0].state);
-      expect(out.dayStats.completedRuns).toBe(1);
+      for (const targetRuns of [1, 9]) {
+        const out = rules.tick(runningWith([guestAt({ targetRuns })], seed), TICK_MS);
+        // A guest who laps joins the lift line and may be dispatched within the same tick.
+        expect(["queue", "ride", "depart"]).toContain(out.guests[0].state);
+        expect(out.guests[0].runs).toBe(1);
+        expect(out.dayStats.completedRuns).toBe(1);
+      }
     }
   });
 
@@ -202,10 +200,10 @@ describe("completedRuns", () => {
     for (let seed = 1; seed <= 25; seed++) {
       const s = runningWith(
         [
-          guestAt({ state: "depart", progress: 0.5 }),
-          guestAt({ state: "queue", progress: 0.99 }),
-          guestAt({ state: "ski", progress: 0 }),
-          guestAt({ state: "ski", progress: 0.99 }),
+          guestAt({ state: "depart", stateSinceMin: MORNING }),
+          guestAt({ state: "queue" }),
+          guestAt({ state: "ski", stateSinceMin: MORNING }),
+          guestAt({ state: "ski" }),
         ],
         seed,
       );
@@ -213,17 +211,21 @@ describe("completedRuns", () => {
     }
   });
 
-  it("accumulates across ticks and resets on the next day", () => {
-    let s = runningWith([guestAt({ progress: 0.99 }), guestAt({ progress: 0.99 })]);
+  it("equals the sum of per-guest runs after a full day, and resets on the next day", () => {
+    const night = rules.skipToClose(rules.togglePause(started()));
+    const sum = night.guests.reduce((n, g) => n + g.runs, 0);
+    expect(night.dayStats.completedRuns).toBe(sum);
+    expect(sum).toBeGreaterThan(0);
+    const next = rules.sleep(rules.acknowledgeBeat(night));
+    expect(next.dayStats.completedRuns).toBe(0);
+  });
+
+  it("accumulates across ticks without recounting departed guests", () => {
+    let s = runningWith([guestAt({ targetRuns: 1 }), guestAt({ targetRuns: 1 })]);
     s = rules.tick(s, TICK_MS);
     expect(s.dayStats.completedRuns).toBe(2);
-    // Guests who departed on that tick add nothing on later ticks.
-    const departed = s.guests.filter((g) => g.state === "depart").length;
     const later = rules.tick(s, 1);
     expect(later.dayStats.completedRuns).toBe(2);
-    expect(later.guests.filter((g) => g.state === "depart").length).toBe(departed);
-    const next = rules.sleep(rules.skipToClose({ ...later, paused: false }));
-    expect(next.dayStats.completedRuns).toBe(0);
   });
 });
 
