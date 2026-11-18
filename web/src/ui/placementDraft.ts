@@ -13,6 +13,7 @@ export type PlacementFocus = {
   nonce: number;
 };
 
+/** Kept for saved drafts and callers that read it. A lift is now placed in one drag, so it is always "top". */
 export type PlacementStep = "top" | "bottom";
 type PlacementKind = "lift" | "trail" | "asset" | "gun";
 

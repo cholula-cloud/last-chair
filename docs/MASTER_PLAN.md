@@ -46,7 +46,7 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Menu and saves | One save key, no title screen | Title screen, three slots, throttled autosave | 39, 40 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** the builder pass (L-A lift tool, L-B trail painting, L-C lease boundary and forest), then the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
+**Next up:** the builder pass (L-A lift tool is built; L-B trail painting, L-C lease boundary and forest), then the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
 
 ---
 
@@ -433,7 +433,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
 | 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
-| L-A | ☐ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
+| L-A | ☑ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
 | L-B | ☐ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☐ | The lease and a continuous world | A lease boundary per mountain that every placement checks. Outside it the world continues in lower detail. A forest fixed in world space that no longer swaps style around the camera |
 | L-D | ☐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
