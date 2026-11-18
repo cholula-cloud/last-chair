@@ -6,6 +6,10 @@ import type { TerrainDef } from "../terrain";
  * Distances uphill (`d`) are measured from the apron edge, z = 2.1.
  */
 export const DUTCH_HILL: TerrainDef = {
+  // Design units equal world units until the world-scale work lands; 6/3 is the planned scale.
+  scale: { horizontal: 1, vertical: 1 },
+  // 70 ft per world unit at 6x horizontal.
+  horizontalFeetPerUnit: 420,
   bounds: { xMin: -24, xMax: 24, zMin: -20, zMax: 20 },
   base: { x: 0.45, z: 2.55 },
   verticalFeet: 570,

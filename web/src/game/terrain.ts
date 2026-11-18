@@ -3,7 +3,10 @@ import { DUTCH_HILL } from "./mountains/dutchHill";
 
 // Terrain is one analytic heightfield shared by the sim and the renderer.
 // Units: x and z are world units; height is world units; grade is rise over
-// run (dimensionless). Feet appear only through `feetPerUnit`.
+// run (dimensionless). Feet appear only through `feetPerUnit` (vertical) and
+// `horizontalFeetPerUnit`. A TerrainDef is written in DESIGN units; a scale
+// {horizontal H, vertical V} maps it to world units: world x,z = H * design,
+// world height = V * design height, so world grade = (V / H) * design grade.
 
 // Deterministic, cheap noise for terrain bumps, snow patches and scatter.
 
@@ -41,7 +44,16 @@ export type XZ = { x: number; z: number };
 /** Gaussian bump: `xDenom` and `zDenom` are the 2σ² terms of each axis. */
 export type DomeDef = { x: number; z: number; height: number; xDenom: number; zDenom: number };
 
+/** Per-mountain scale from design units to world units. */
+export type MountainScale = { horizontal: number; vertical: number };
+
+export const UNIT_SCALE: MountainScale = { horizontal: 1, vertical: 1 };
+
 export type TerrainDef = {
+  /** Design to world scale; defaults to 1/1. */
+  scale?: MountainScale;
+  /** Real feet per DESIGN horizontal unit; the world value divides by `scale.horizontal`. */
+  horizontalFeetPerUnit?: number;
   bounds: { xMin: number; xMax: number; zMin: number; zMax: number };
   /** Lift loading point; its height is the reference for "vertical". */
   base: XZ;
@@ -88,12 +100,21 @@ export type TerrainDef = {
 
 export interface Terrain {
   readonly def: TerrainDef;
+  readonly scale: MountainScale;
+  /** World bounds (design bounds times H). */
   readonly bounds: TerrainDef["bounds"];
+  /** World base (design base times H). */
   readonly base: Readonly<XZ>;
   /** Feet of real vertical per world unit of height: feet = units * feetPerUnit. */
   readonly feetPerUnit: number;
+  /** Feet of real horizontal distance per world unit: def value divided by H. */
+  readonly horizontalFeetPerUnit: number;
+  /** Design point to world point (x, z times H). */
+  toWorld(p: XZ): XZ;
+  /** World point to design point (x, z divided by H). */
+  toDesign(p: XZ): XZ;
   height(x: number, z: number): number;
-  /** Central-difference gradient, h = 0.01. */
+  /** Central-difference gradient, h = 0.01 * H (the same design points at any scale). */
   gradient(x: number, z: number): { dx: number; dz: number };
   /** Steepness |gradient|, rise over run. */
   grade(x: number, z: number): number;
@@ -106,6 +127,7 @@ export interface Terrain {
   sustainedPitch(path: readonly XZ[], window?: number): number;
 }
 
+/** Central-difference step in design units; the world step is this times H. */
 const GRADIENT_H = 0.01;
 
 /** Monotone cubic (PCHIP) through ascending control points; flat outside them. */
@@ -158,7 +180,10 @@ function monotoneCubic(points: readonly (readonly [number, number])[]): (t: numb
   };
 }
 
-export function createTerrain(def: TerrainDef): Terrain {
+export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale ?? UNIT_SCALE): Terrain {
+  const H = scale.horizontal;
+  const V = scale.vertical;
+  if (!(H > 0) || !(V > 0)) throw new RangeError(`createTerrain: scale must be > 0, got ${H}/${V}`);
   const apronZ = def.apron?.z ?? 0;
   const profilePoints: [number, number][] = [];
   if (def.apron) {
@@ -173,7 +198,7 @@ export function createTerrain(def: TerrainDef): Terrain {
   for (const p of def.face) profilePoints.push([p[0], p[1]]);
   const profile = monotoneCubic(profilePoints);
 
-  const height = (x: number, z: number): number => {
+  const designHeight = (x: number, z: number): number => {
     const d = apronZ - z; // distance uphill from the apron edge
     let h = profile(d);
 
@@ -210,9 +235,14 @@ export function createTerrain(def: TerrainDef): Terrain {
     return h;
   };
 
+  const height = (x: number, z: number): number => V * designHeight(x / H, z / H);
+  const toWorld = (p: XZ): XZ => ({ x: p.x * H, z: p.z * H });
+  const toDesign = (p: XZ): XZ => ({ x: p.x / H, z: p.z / H });
+
+  const gh = GRADIENT_H * H;
   const gradient = (x: number, z: number) => ({
-    dx: (height(x + GRADIENT_H, z) - height(x - GRADIENT_H, z)) / (2 * GRADIENT_H),
-    dz: (height(x, z + GRADIENT_H) - height(x, z - GRADIENT_H)) / (2 * GRADIENT_H),
+    dx: (height(x + gh, z) - height(x - gh, z)) / (2 * gh),
+    dz: (height(x, z + gh) - height(x, z - gh)) / (2 * gh),
   });
 
   const grade = (x: number, z: number) => {
@@ -220,7 +250,7 @@ export function createTerrain(def: TerrainDef): Terrain {
     return Math.hypot(g.dx, g.dz);
   };
 
-  const gradeAlong = (a: XZ, b: XZ, step = 0.05): number[] => {
+  const gradeAlong = (a: XZ, b: XZ, step = 0.05 * H): number[] => {
     if (!(step > 0)) throw new RangeError(`gradeAlong: step must be > 0, got ${step}`);
     const len = Math.hypot(b.x - a.x, b.z - a.z);
     if (len === 0) return [0];
@@ -236,7 +266,7 @@ export function createTerrain(def: TerrainDef): Terrain {
     return out;
   };
 
-  const sustainedPitch = (path: readonly XZ[], window = 0.6): number => {
+  const sustainedPitch = (path: readonly XZ[], window = 0.6 * H): number => {
     if (path.length < 2) return 0;
     const s: number[] = [0];
     const y: number[] = [height(path[0].x, path[0].z)];
@@ -258,14 +288,19 @@ export function createTerrain(def: TerrainDef): Terrain {
     return best;
   };
 
-  const baseH = height(def.base.x, def.base.z);
-  const summitH = height(def.summit.x, def.summit.z);
+  const baseH = height(def.base.x * H, def.base.z * H);
+  const summitH = height(def.summit.x * H, def.summit.z * H);
+  const db = def.bounds;
 
   return {
     def,
-    bounds: def.bounds,
-    base: def.base,
+    scale,
+    bounds: { xMin: db.xMin * H, xMax: db.xMax * H, zMin: db.zMin * H, zMax: db.zMax * H },
+    base: toWorld(def.base),
     feetPerUnit: def.verticalFeet / (summitH - baseH),
+    horizontalFeetPerUnit: (def.horizontalFeetPerUnit ?? 1) / H,
+    toWorld,
+    toDesign,
     height,
     gradient,
     grade,

@@ -12,9 +12,13 @@ export type LiftLine = { bottom: XZ; top: XZ };
 /** A named top terminal used as a reference point (default lift, interim build buttons, tests). */
 export type ReferenceTop = LiftAnchor & { label: string };
 
-/** Least height (world units) the top terminal must stand above the bottom. */
+// The constants below are DESIGN values (Dutch Hill at 1/1). `rulesFor(terrain)`
+// turns them into world limits: lengths and spacings times H, vertical times V,
+// grade times V / H.
+
+/** Least height (design units) the top terminal must stand above the bottom. */
 export const MIN_LIFT_VERTICAL = 0.85;
-/** Longest lift, horizontal distance bottom to top (world units). */
+/** Longest lift, horizontal distance bottom to top (design units). */
 export const MAX_LIFT_LENGTH = 3.4;
 /**
  * Steepest ground a terminal may stand on (rise over run). The toy hill
@@ -29,6 +33,28 @@ export const MAX_LIFTS = 3;
 export const MIN_TOP_SPACING = 0.8;
 /** Least distance between a top terminal and any other lift's line. */
 export const MIN_LINE_CLEARANCE = 0.4;
+
+export type PlacementRules = {
+  minLiftVertical: number;
+  maxLiftLength: number;
+  maxLoadGrade: number;
+  baseAreaRadius: number;
+  minTopSpacing: number;
+  minLineClearance: number;
+};
+
+/** Placement limits in the terrain's world units. Equals the constants at scale 1/1. */
+export function rulesFor(terrain: Terrain = TERRAIN): PlacementRules {
+  const { horizontal: H, vertical: V } = terrain.scale;
+  return {
+    minLiftVertical: MIN_LIFT_VERTICAL * V,
+    maxLiftLength: MAX_LIFT_LENGTH * H,
+    maxLoadGrade: (MAX_LOAD_GRADE * V) / H,
+    baseAreaRadius: BASE_AREA_RADIUS * H,
+    minTopSpacing: MIN_TOP_SPACING * H,
+    minLineClearance: MIN_LINE_CLEARANCE * H,
+  };
+}
 
 export type PlacementReason =
   | "max_lifts"
@@ -68,17 +94,18 @@ function onMap(p: XZ, terrain: Terrain): boolean {
 /** Terrain-only checks, in reason order: off_map, bottom_far, too_steep, too_low, too_long. */
 export function checkLiftLine(line: LiftLine, terrain: Terrain = TERRAIN): LineCheck {
   const { bottom, top } = line;
+  const r = rulesFor(terrain);
   if (!onMap(bottom, terrain) || !onMap(top, terrain)) return { ok: false, reason: "off_map" };
-  if (Math.hypot(bottom.x - terrain.base.x, bottom.z - terrain.base.z) > BASE_AREA_RADIUS) {
+  if (Math.hypot(bottom.x - terrain.base.x, bottom.z - terrain.base.z) > r.baseAreaRadius) {
     return { ok: false, reason: "bottom_far" };
   }
-  if (terrain.grade(bottom.x, bottom.z) > MAX_LOAD_GRADE || terrain.grade(top.x, top.z) > MAX_LOAD_GRADE) {
+  if (terrain.grade(bottom.x, bottom.z) > r.maxLoadGrade || terrain.grade(top.x, top.z) > r.maxLoadGrade) {
     return { ok: false, reason: "too_steep" };
   }
   const vertical = liftVertical(line, terrain);
-  if (vertical < MIN_LIFT_VERTICAL) return { ok: false, reason: "too_low" };
+  if (vertical < r.minLiftVertical) return { ok: false, reason: "too_low" };
   const length = liftLength(line);
-  if (length > MAX_LIFT_LENGTH) return { ok: false, reason: "too_long" };
+  if (length > r.maxLiftLength) return { ok: false, reason: "too_long" };
   return { ok: true, length, vertical };
 }
 
@@ -118,19 +145,20 @@ export function checkSpacing(
   others: readonly { line: LiftLine; type: LiftType }[],
   terrain: Terrain = TERRAIN,
 ): SpacingConflict | null {
+  const r = rulesFor(terrain);
   for (const o of others) {
     const apart = Math.hypot(line.top.x - o.line.top.x, line.top.z - o.line.top.z);
     if (
-      apart < MIN_TOP_SPACING ||
-      distToSegment(line.top, o.line.bottom, o.line.top) < MIN_LINE_CLEARANCE ||
-      distToSegment(o.line.top, line.bottom, line.top) < MIN_LINE_CLEARANCE
+      apart < r.minTopSpacing ||
+      distToSegment(line.top, o.line.bottom, o.line.top) < r.minLineClearance ||
+      distToSegment(o.line.top, line.bottom, line.top) < r.minLineClearance
     ) {
       return { reason: "too_close", type: o.type };
     }
   }
   for (const o of others) {
     const at = properCrossing(line, o.line);
-    if (at && Math.hypot(at.x - terrain.base.x, at.z - terrain.base.z) > BASE_AREA_RADIUS) {
+    if (at && Math.hypot(at.x - terrain.base.x, at.z - terrain.base.z) > r.baseAreaRadius) {
       return { reason: "crosses", type: o.type };
     }
   }
