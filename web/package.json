@@ -10,9 +10,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "balance": "BALANCE_REPORT=1 vitest run src/game/balance.report.test.ts",
+    "balance": "BALANCE_REPORT=1 vitest run --reporter=default src/game/balance.report.test.ts",
+    "m2-gate": "M2_ACCEPTANCE=1 vitest run --reporter=default src/game/m2gate.test.ts",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "playtest:p0": "node scripts/playtest-p0.mjs",
+    "playtest:m2": "node scripts/playtest-m2.mjs",
     "phone-check": "node scripts/phone-check.mjs"
   },
   "dependencies": {

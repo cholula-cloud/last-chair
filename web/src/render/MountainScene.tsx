@@ -6,10 +6,9 @@ import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
-import { checkPlacement, liftLineOf } from "@/game/rules";
+import { liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
 import { snowCarriers, trailsOnLift } from "@/game/trails";
-import { useTrailPreview } from "@/ui/trailPreview";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
@@ -20,6 +19,7 @@ import { scaledTickMs, useSpeed } from "@/ui/speed";
 
 const PLACEMENT_MAX_DISTANCE = 90;
 import { Atmosphere } from "./Atmosphere";
+import { BuildScenePreview } from "./BuildScenePreview";
 import {
   cameraPosition,
   frameView,
@@ -203,6 +203,7 @@ function CameraRig({
       glideTo(new THREE.Vector3(snapped.x, TERRAIN.height(snapped.x, snapped.z), snapped.z), FOCUS_DISTANCE);
     };
     const onDown = (e: PointerEvent) => {
+      if (usePlacementDraft.getState().active) return;
       if (active.size === 0) {
         events = [];
         panEnded = false;
@@ -427,7 +428,7 @@ function PlacementOrbitCap({
   return null;
 }
 
-export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void }) {
+export function MountainScene() {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
@@ -437,17 +438,10 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
   const lifts = useGameStore((s) => s.lifts);
   const trailRuns = useGameStore((s) => s.trails);
   const placementActive = usePlacementDraft((s) => s.active);
-  const draftTop = usePlacementDraft((s) => s.top);
-  const draftBottom = usePlacementDraft((s) => s.bottom);
-  const draftType = usePlacementDraft((s) => s.type);
-  const cash = useGameStore((s) => s.cash);
-  const buildings = useGameStore((s) => s.buildings);
-  const gunsVisible = useGameStore((s) => s.gunsVisible);
-  const gunReach = useGameStore((s) => s.gunReach);
   // Snapped trail snow: changes only when the look does, so the terrain repaints rarely.
   const trailKey = useGameStore((s) => snowKey(snowCarriers(s.trails)));
   const trailSnow = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
-  const groomVisible = useGameStore((s) => s.groomVisible);
+  const canvas = useThree((s) => s.gl.domElement);
   // Orbit stays within about a quarter turn either side of the home heading.
   const azimuth = useThree((s) => homeAzimuth(s.size.width / Math.max(1, s.size.height)));
 
@@ -477,34 +471,19 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
         : [{ line: primaryLine, type: "surface" as LiftType, path: trailRuns[0]?.path }],
     [lifts, primaryLine, trailRuns],
   );
-  const previewCutPath = useTrailPreview((s) => s.path);
-  const previewLine = useMemo(
-  () =>
-    draftTop
-      ? { bottom: draftBottom ?? TERRAIN.base, top: draftTop }
-      : null,
-  [draftTop, draftBottom],
-);
-  const previewCheck = useMemo(
-    () =>
-      previewLine
-        ? checkPlacement({ lifts, cash }, draftType, previewLine)
-        : null,
-    [previewLine, lifts, cash, draftType],
-  );
-  const previewValid = previewCheck?.ok === true;
-  const showPreview = placementActive && !!previewLine;
-
   const orbitMax = placementActive ? PLACEMENT_MAX_DISTANCE : MAX_DISTANCE;
-  const clearingLines = useMemo(() => {
-    const list: LiftLine[] = confirmedLifts.map((l) => liftLineOf(l));
-    if (confirmedLifts.length === 0) list.push(primaryLine);
-    if (showPreview && previewValid) list.push(previewLine);
-    return list;
-  }, [confirmedLifts, primaryLine, showPreview, previewValid, previewLine]);
+  const clearingLines = useMemo(
+    () => confirmedLifts.length ? confirmedLifts.map(liftLineOf) : [primaryLine],
+    [confirmedLifts, primaryLine],
+  );
+  const forestPaths = useMemo(
+    () => trailRuns.filter((run) => run.open && run.builtDay === undefined).map((run) => run.path),
+    [trailRuns],
+  );
 
   useFrame((_, delta) => {
-    useGameStore.getState().tick(scaledTickMs(delta, speed));
+    const game = useGameStore.getState();
+    if (game.phase === "day" && !game.paused) game.tick(scaledTickMs(delta, speed));
   });
 
   const terrainSnow = Math.min(1, snowQuality * 0.75 + snowDepth * 0.25);
@@ -517,22 +496,22 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
         snowQuality={terrainSnow}
         snowDepth={snowDepth}
         trails={trailSnow}
-        paths={trailRuns.map((t) => t.path)}
-        lines={confirmedLifts.map((l) => liftLineOf(l))}
+        paths={trailRuns.map((t) => t.open ? t.path : [])}
+        pathWidths={trailRuns.map((t) => t.widths)}
+        forestPaths={forestPaths}
+        lines={clearingLines}
       />
       <Road />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>
-        <Village buildings={buildings} onLodgeSelect={onLodgeSelect} />
+        <Village />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
-        {(gunsVisible || buildings.includes("snow_guns")) && (
-          <SnowGuns reach={gunReach} line={primaryLine} />
-        )}
-        <Trees lines={clearingLines} paths={trailRuns.map((t) => t.path)} />
+        <SnowGuns />
+        <Trees lines={clearingLines} paths={forestPaths} />
 
         {trailRuns.map((run, ti) => {
           const lift = lifts[run.liftIndex];
-          if (!lift?.confirmed) return null;
+          if (!run.open || !lift?.confirmed) return null;
           const line = liftLineOf(lift);
           return (
             <TrailRibbon
@@ -540,7 +519,8 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
               kind="built"
               line={line}
               path={run.path}
-              groomed={groomVisible}
+              widths={run.widths}
+              groomed={run.groomed ?? false}
               trail={trailSnow[ti] ?? trailSnow[0]}
             />
           );
@@ -548,31 +528,11 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
 
         {confirmedLifts.map((lift, i) => (
           <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
-            <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} />
+            <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} closing={lift.closing} />
           </group>
         ))}
 
-        {showPreview && previewLine && (
-          <>
-            <TrailRibbon kind="preview" line={previewLine} valid={previewValid} />
-            <Lift
-              line={previewLine}
-              preview
-              previewInvalid={!previewValid}
-              type={draftType}
-            />
-          </>
-        )}
-
-        {previewCutPath && previewCutPath.length > 1 && (
-          <TrailRibbon
-            kind="preview"
-            line={{ bottom: TERRAIN.base, top: previewCutPath[0] }}
-            path={previewCutPath}
-            valid
-          />
-        )}
-
+        <BuildScenePreview />
         <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
       </Suspense>
       <PlacementController />
@@ -580,6 +540,7 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
       <CameraRig followId={followId} followedRef={followedRef} />
       <OrbitControls
         makeDefault
+        domElement={canvas}
         enablePan
         enableZoom
         enableRotate
@@ -587,9 +548,12 @@ export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void })
         dampingFactor={0.08}
         screenSpacePanning={false}
         zoomToCursor
-        touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
+        touches={{
+          ONE: placementActive ? -1 as THREE.TOUCH : THREE.TOUCH.PAN,
+          TWO: placementActive ? THREE.TOUCH.DOLLY_PAN : THREE.TOUCH.DOLLY_ROTATE,
+        }}
         mouseButtons={{
-          LEFT: THREE.MOUSE.PAN,
+          LEFT: placementActive ? -1 as THREE.MOUSE : THREE.MOUSE.PAN,
           MIDDLE: THREE.MOUSE.DOLLY,
           RIGHT: THREE.MOUSE.ROTATE,
         }}

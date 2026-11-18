@@ -1,3 +1,6 @@
+import { ASSET_CATALOG } from "./base";
+import { REFERENCE_TOPS } from "./descent";
+import { TERRAIN } from "./terrain";
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
 import { makeGuest, planArrivals } from "./sim";
@@ -9,7 +12,7 @@ import {
   toPersisted,
   type GameState,
 } from "./state";
-import { BUILDING_COSTS, SNOW_NIGHT_COST, type BuildingId, type Guest } from "./types";
+import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
 
 const started = () => rules.pickFounder(createInitialState(7), "elena");
 
@@ -106,11 +109,10 @@ describe("buyBuilding", () => {
     expect(rules.buyBuilding(poor, "cafe")).toBe(poor);
   });
 
-  it("starts with a fixed lodge that does not charge a build cost", () => {
+  it("starts with a fixed Tier 1 lodge and no lodge purchase", () => {
     const state = started();
     expect(state.lodgeTier).toBe(1);
-    expect(state.buildings).not.toContain("lodge");
-    expect(rules.buyBuilding(state, "lodge" as BuildingId)).toBe(state);
+    expect(rules.buyBuilding(state, "lodge")).toBe(state);
   });
 });
 
@@ -275,31 +277,6 @@ describe("save migration", () => {
     expect(migrated.phase).toBe("night");
     expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
-
-  it("folds a purchased v10 lodge into the fixed Tier 1 headquarters without changing the rest of the save", () => {
-    const state = atNight();
-    const { lodgeTier, ...persisted } = toPersisted(state);
-    const saved = { ...persisted, buildings: ["warming_hut", "lodge", "cafe"], cash: 4590 };
-    const migrated = migrate(saved, 10);
-    expect(lodgeTier).toBe(1);
-    expect(migrated).toEqual({ ...saved, buildings: ["warming_hut", "cafe"], lodgeTier });
-    expect(toPersisted(hydrate(migrated, createInitialState(2)))).toEqual(migrated);
-  });
-
-  it("gives a v11 trail a Standard width per saved point without changing its path or snow", () => {
-    const persisted = toPersisted(atNight());
-    const legacy = {
-      ...persisted,
-      trails: persisted.trails.map(({ widths, ...trail }) => {
-        expect(widths).toHaveLength(trail.path.length);
-        return trail;
-      }),
-    };
-    const migrated = migrate(legacy, 11);
-    expect(migrated).toEqual(persisted);
-    expect(migrated.trails.every((trail) => trail.widths.length === trail.path.length &&
-      trail.widths.every((width) => width === 60))).toBe(true);
-  });
 });
 
 describe("liveSatisfaction", () => {
@@ -418,5 +395,99 @@ describe("lastDay", () => {
     expect(migrated.phase).toBe("night");
     expect(migrated.nightRecap!.facts.farePrice).toBeGreaterThan(0);
     expect(migrated.lastDay).toBeNull();
+  });
+});
+
+describe("M2 building and save compatibility", () => {
+  const chair = { type: "chair" as const, top: REFERENCE_TOPS[1], bottom: TERRAIN.base };
+  const overnight = (state: GameState) => rules.sleep(rules.acknowledgeBeat(rules.skipToClose(state)));
+
+  it("finishes a saved lodge upgrade after exactly two nights and gates chairs and guns", () => {
+    const base = started();
+    expect(rules.placeLift(base, chair)).toBe(base);
+    expect(rules.placeGun(base, TERRAIN.base)).toBe(base);
+
+    const upgrading = rules.beginLodgeUpgrade(base);
+    expect(upgrading.cash).toBe(base.cash - 3500);
+    const first = overnight(upgrading);
+    expect(first.lodgeTier).toBe(1);
+    expect(first.lodgeUpgrade?.nightsRemaining).toBe(1);
+    const resumed = hydrate(toPersisted(first), createInitialState());
+    const second = overnight(resumed);
+    expect(second.lodgeTier).toBe(2);
+    expect(second.lodgeUpgrade).toBeNull();
+    expect(second.morningHeadline).toContain("Lodge Tier 2");
+    expect(rules.placeLift(second, chair).lifts).toHaveLength(2);
+    const guns = rules.placeGun(second, TERRAIN.base);
+    expect(guns.guns).toHaveLength(1);
+    expect(guns.cash).toBe(second.cash - ASSET_CATALOG.snow_guns.cost);
+  });
+
+  it("migrates a v10 lodge purchase and snow gun to the new layout without charging again", () => {
+    const state = started();
+    const saved = {
+      ...toPersisted(state), buildings: ["warming_hut", "lodge", "cafe", "snow_guns"],
+      trails: state.trails.map((trail) => ({ ...trail, widths: undefined })),
+    };
+    const migrated = migrate(saved, 10);
+    expect(migrated.cash).toBe(state.cash);
+    expect(migrated.lodgeTier).toBe(1);
+    expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe"]);
+    expect(migrated.guns.length).toBeGreaterThan(0);
+    expect(migrated.trails[0].widths?.every((width) => width === 60)).toBe(true);
+    expect(migrated.clearedCells.length).toBeGreaterThan(0);
+  });
+
+  it.each([11, 12])("loads a shipped v%i day save without losing purchased venues or crashing", (version) => {
+    const initial = started();
+    const saved = JSON.parse(JSON.stringify(toPersisted(initial)));
+    saved.buildings = ["warming_hut", "cafe", "shop"];
+    for (const key of ["assets", "guns", "clearedCells", "lodgeUpgrade"]) delete saved[key];
+    for (const key of ["byLift", "runsByTrail", "venueRevenue", "refuels", "balked", "seatsFullMin"]) {
+      delete saved.dayStats[key];
+    }
+    const path = saved.trails[0].path;
+    const widths = path.map((_: unknown, i: number) => i % 2 ? 30 : 60);
+    if (version === 11) delete saved.trails[0].widths;
+    else saved.trails[0].widths = widths;
+
+    const migrated = migrate(saved, version);
+    expect(migrated.cash).toBe(initial.cash);
+    expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe", "shop"]);
+    expect(migrated.trails[0].path).toEqual(path);
+    expect(migrated.trails[0].widths).toEqual(version === 12 ? widths : path.map(() => 60));
+    expect(migrated.clearedCells.length).toBeGreaterThan(0);
+
+    const resumed = hydrate(migrated, initial);
+    const ticked = rules.tick({ ...resumed, paused: false }, 500);
+    expect(ticked.clockMin).toBeGreaterThan(resumed.clockMin);
+    expect(ticked.dayStats.byLift).toHaveLength(resumed.lifts.length);
+  });
+
+  it("rolls back the exact cash and cells of a same-minute trail undo", () => {
+    const before = started();
+    const top = before.trails[0].path[0];
+    const painted = rules.commitPaint(before, [{
+      widthFt: 60,
+      points: [top, { x: top.x - 1.6, z: top.z + 2.5 }, { x: top.x - 2, z: top.z + 6 },
+        { x: -3, z: 11 }, TERRAIN.base],
+    }]);
+    expect(painted.cash).toBeLessThan(before.cash);
+    expect(painted.clearedCells.length).toBeGreaterThan(before.clearedCells.length);
+    const undone = rules.undoTrail(painted);
+    expect(undone.cash).toBe(before.cash);
+    expect(undone.clearedCells).toEqual(before.clearedCells);
+    expect(undone.trails).toEqual(before.trails);
+  });
+
+  it("keeps a lift running until Sleep when closing during the day", () => {
+    const built = rules.placeLift({ ...started(), lodgeTier: 2 }, chair);
+    const midday = { ...built, clockMin: 600 };
+    const closing = rules.closeLift(midday, 1);
+    expect(closing.lifts[1]).toMatchObject({ confirmed: true, closing: true });
+    expect(rules.closeLift(closing, 0)).toBe(closing);
+    const nextDay = overnight(closing);
+    expect(nextDay.lifts[1]).toMatchObject({ confirmed: false, closing: false });
+    expect(nextDay.trails.every((trail) => trail.liftIndex !== 1 || !trail.open)).toBe(true);
   });
 });

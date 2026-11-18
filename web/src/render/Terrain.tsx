@@ -15,12 +15,17 @@ import { buildGeometry } from "./terrainMesh";
 import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
 import type { XZ } from "@/game/terrain";
 
-/** Cheap cache key: full polylines on every trail would stringify thousands of points per frame. */
-function pathSignature(path: readonly XZ[] | undefined): string {
-  if (!path?.length) return "";
-  const a = path[0];
-  const b = path[path.length - 1];
-  return `${path.length}:${a.x},${a.z}|${b.x},${b.z}`;
+// Paths and widths are immutable. Key by array identity so an edit with the
+// same endpoints still updates the terrain without serializing every point.
+const shapeKeys = new WeakMap<object, number>();
+let nextShapeKey = 1;
+function shapeKey(points: readonly unknown[] | undefined): number {
+  if (!points?.length) return 0;
+  const known = shapeKeys.get(points);
+  if (known) return known;
+  const key = nextShapeKey++;
+  shapeKeys.set(points, key);
+  return key;
 }
 
 const CANOPY = new THREE.Color(PALETTE.pineDeep);
@@ -47,14 +52,12 @@ function paint(
   snowDepth: number,
   trails: readonly Trail[],
   influence: readonly TrailInfluence[],
-  lines: readonly LiftLine[],
-  paths?: readonly (readonly XZ[])[],
+  canGrow: ReturnType<typeof forestMask>,
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
   const nor = g.attributes.normal as THREE.BufferAttribute;
   const col = g.attributes.color as THREE.BufferAttribute;
   const c = new THREE.Color();
-  const isForested = forestMask({ lines, paths });
   for (let i = 0; i < pos.count; i++) {
     // Near a trail the segment values replace the hill-wide means (strongest trail wins).
     let w = 0;
@@ -111,7 +114,7 @@ function paint(
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
     const distCam = Math.hypot(x - sceneCameraTarget.x, z - sceneCameraTarget.z);
-    if (distCam > 45 && isForested(x, z)) {
+    if (distCam > 45 && canGrow(x, z)) {
       c.lerp(CANOPY, 0.5);
     }
 
@@ -126,6 +129,8 @@ export function Terrain({
   trails,
   lines,
   paths,
+  pathWidths,
+  forestPaths,
 }: {
   snowQuality: number;
   snowDepth: number;
@@ -133,6 +138,8 @@ export function Terrain({
   trails: readonly Trail[];
   lines: readonly LiftLine[];
   paths?: readonly (readonly XZ[])[];
+  pathWidths?: readonly (readonly number[] | undefined)[];
+  forestPaths?: readonly (readonly XZ[])[];
 }) {
   const geometry = useMemo(() => buildGeometry(), []);
   const q = Math.round(snowQuality * 20) / 20;
@@ -140,7 +147,13 @@ export function Terrain({
   const lineKey = lines
     .map((l) => `${l.bottom.x},${l.bottom.z}|${l.top.x},${l.top.z}`)
     .join(";");
-  const pathKey = paths?.map((p) => pathSignature(p)).join("|") ?? "";
+  const pathKey = paths?.map((p, i) => `${shapeKey(p)}:${shapeKey(pathWidths?.[i])}`).join("|") ?? "";
+  const forestKey = forestPaths?.map(shapeKey).join("|") ?? "";
+  const canGrow = useMemo(() => forestMask({ lines, paths: forestPaths }),
+    // Keys reflect the world-space lift and forest path geometry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lineKey, forestKey],
+  );
   const positions = geometry.attributes.position.array;
   const influence = useMemo(() => {
     const n = Math.max(trails.length, paths?.length ?? 0, lines.length);
@@ -148,7 +161,10 @@ export function Terrain({
     for (let i = 0; i < n; i++) {
       const path = paths?.[i];
       if (path?.length) {
-        out.push(pathInfluence(path, positions));
+        out.push(pathInfluence(path, positions, undefined, undefined, undefined, pathWidths?.[i]));
+      } else if (path) {
+        const count = positions.length / 3;
+        out.push({ w: new Float32Array(count), t: new Float32Array(count) });
       } else if (lines[i]) {
         out.push(trailInfluence(lines[i], positions));
       } else if (lines[0]) {
@@ -164,14 +180,14 @@ export function Terrain({
 
   // Repaints when snow changes and when the camera pans enough to move the canopy band.
   useLayoutEffect(() => {
-    paint(geometry, q, d, trails, influence, lines, paths);
-  }, [geometry, q, d, trails, influence, lineKey, lines, paths]);
+    paint(geometry, q, d, trails, influence, canGrow);
+  }, [geometry, q, d, trails, influence, canGrow]);
 
   useFrame(() => {
     const band = `${Math.round(sceneCameraTarget.x / 6)},${Math.round(sceneCameraTarget.z / 6)}`;
     if (band === camBand.current) return;
     camBand.current = band;
-    paint(geometry, q, d, trails, influence, lines, paths);
+    paint(geometry, q, d, trails, influence, canGrow);
   });
 
   useEffect(() => () => geometry.dispose(), [geometry]);

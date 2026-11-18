@@ -1,5 +1,6 @@
 import type { Guest, GuestState, LiftType } from "@/game/types";
 import type { LiftLine } from "@/game/descent";
+import { ASSET_CATALOG, type PlacedAsset } from "@/game/base";
 import { cableHeightAt, liftFrame, liftTowers, type LiftPoint } from "./liftLine";
 import { pathPoint as sitePathPoint } from "@/game/site";
 import { LIFT_CABLE_OFFSET, LODGE, PARKING, SITE } from "./layout";
@@ -26,6 +27,7 @@ type PlaceOpts = {
   liftType?: LiftType;
   towers?: LiftPoint[];
   stall?: { x: number; z: number };
+  venue?: PlacedAsset;
 };
 
 const CHAIR_DROP = 0.44;
@@ -108,6 +110,27 @@ function depart(t: number, stall: { x: number; z: number }): GuestPlacement {
   return onGround(p.x, p.z, p.yaw, "walk");
 }
 
+function visitVenue(index: number, t: number, line: LiftLine, asset?: PlacedAsset): GuestPlacement {
+  const queueEnd = queueSpot(8, line);
+  if (!asset) return onGround(LODGE.x, LODGE.z + 0.75, queueEnd.yaw, "stand");
+
+  const { width, depth } = ASSET_CATALOG[asset.id].footprint;
+  const side = queueEnd.z >= asset.at.z ? 1 : -1;
+  const spot = {
+    x: asset.at.x + width * ((index % 5) / 5 - 0.4),
+    z: asset.at.z + side * (depth / 2 + 0.18 + (Math.floor(index / 5) % 3) * 0.15),
+  };
+  const walkFraction = 0.2;
+  if (t >= walkFraction && t <= 1 - walkFraction) {
+    return onGround(spot.x, spot.z, Math.atan2(asset.at.x - spot.x, asset.at.z - spot.z), "stand");
+  }
+  const returning = t > 1 - walkFraction;
+  const path = returning ? [spot, queueEnd] : [queueEnd, spot];
+  const progress = returning ? (t - (1 - walkFraction)) / walkFraction : t / walkFraction;
+  const p = sitePathPoint(path, progress);
+  return onGround(p.x, p.z, p.yaw, "walk");
+}
+
 export function guestWorldPosition(
   index: number,
   state: GuestState,
@@ -126,6 +149,8 @@ export function guestWorldPosition(
       return ride(t, line, opts.liftType, opts.towers);
     case "ski":
       return ski(index, t, line, opts.path);
+    case "refuel":
+      return visitVenue(index, t, line, opts.venue);
     default:
       return depart(t, stall);
   }
@@ -138,6 +163,7 @@ export function placeGuests(
   lifts: PlacedLift[],
   stalls: Map<string, StallSlot> = new Map(),
   trailPaths?: readonly (readonly XZ[] | undefined)[],
+  assets: readonly PlacedAsset[] = [],
 ): GuestPlacement[] {
   const primary = lifts[0];
   return guests.map((g, i) => {
@@ -166,6 +192,7 @@ export function placeGuests(
       stall,
       towers: lift.towers ?? liftTowers(lift.line),
       path: skiPath ?? lift.path,
+      venue: g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined,
     });
   });
 }

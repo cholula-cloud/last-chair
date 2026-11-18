@@ -20,6 +20,7 @@ export type ReferenceTop = LiftAnchor & { label: string };
 export const MIN_LIFT_VERTICAL = 0.85;
 /** Longest lift, horizontal distance bottom to top (design units). */
 export const MAX_LIFT_LENGTH = 3.4;
+export const MAX_SURFACE_LIFT_LENGTH = 3;
 /**
  * Steepest ground a terminal may stand on (rise over run). The toy hill
  * exaggerates vertical, so its face runs near 1.0; the rollover band is about 1.8.
@@ -44,11 +45,11 @@ export type PlacementRules = {
 };
 
 /** Placement limits in the terrain's world units. Equals the constants at scale 1/1. */
-export function rulesFor(terrain: Terrain = TERRAIN): PlacementRules {
+export function rulesFor(terrain: Terrain = TERRAIN, type: LiftType = "chair"): PlacementRules {
   const { horizontal: H, vertical: V } = terrain.scale;
   return {
     minLiftVertical: MIN_LIFT_VERTICAL * V,
-    maxLiftLength: MAX_LIFT_LENGTH * H,
+    maxLiftLength: (type === "surface" ? MAX_SURFACE_LIFT_LENGTH : MAX_LIFT_LENGTH) * H,
     maxLoadGrade: (MAX_LOAD_GRADE * V) / H,
     baseAreaRadius: BASE_AREA_RADIUS * H,
     minTopSpacing: MIN_TOP_SPACING * H,
@@ -57,9 +58,11 @@ export function rulesFor(terrain: Terrain = TERRAIN): PlacementRules {
 }
 
 export type PlacementReason =
+  | "lodge_tier"
   | "max_lifts"
   | "off_map"
   | "bottom_far"
+  | "base_occupied"
   | "too_steep"
   | "too_low"
   | "too_long"
@@ -92,9 +95,13 @@ function onMap(p: XZ, terrain: Terrain): boolean {
 }
 
 /** Terrain-only checks, in reason order: off_map, bottom_far, too_steep, too_low, too_long. */
-export function checkLiftLine(line: LiftLine, terrain: Terrain = TERRAIN): LineCheck {
+export function checkLiftLine(
+  line: LiftLine,
+  terrain: Terrain = TERRAIN,
+  type: LiftType = "chair",
+): LineCheck {
   const { bottom, top } = line;
-  const r = rulesFor(terrain);
+  const r = rulesFor(terrain, type);
   if (!onMap(bottom, terrain) || !onMap(top, terrain)) return { ok: false, reason: "off_map" };
   if (Math.hypot(bottom.x - terrain.base.x, bottom.z - terrain.base.z) > r.baseAreaRadius) {
     return { ok: false, reason: "bottom_far" };
@@ -168,21 +175,26 @@ export function checkSpacing(
 /** Player-facing copy for a reason code. `type` fills too_close; `need` fills cash. */
 export function placementReason(
   code: PlacementReason,
-  ctx: { type?: LiftType; need?: number } = {},
+  ctx: { type?: LiftType; need?: number; liftType?: LiftType } = {},
 ): string {
   switch (code) {
+    case "lodge_tier": return "Requires Lodge Tier 2.";
     case "max_lifts":
       return `Dutch Hill has room for ${MAX_LIFTS} lifts.`;
     case "off_map":
       return "That spot is off the map.";
     case "bottom_far":
       return "Start the lift near the base lodge.";
+    case "base_occupied":
+      return "Leave room between the terminal and base buildings.";
     case "too_steep":
       return "Too steep for a terminal here.";
     case "too_low":
       return "Not enough drop for a run. Pick a higher top.";
     case "too_long":
-      return "Too long for one lift. Pick a closer top.";
+      return ctx.liftType === "surface"
+        ? "Too long for a surface lift. Try a chair or a closer top."
+        : "Too long for one lift. Pick a closer top.";
     case "too_close":
       return `Too close to the ${ctx.type ?? "other"} lift.`;
     case "crosses":

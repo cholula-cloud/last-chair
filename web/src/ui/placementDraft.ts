@@ -2,6 +2,8 @@
 
 import { create } from "zustand";
 import type { LiftType } from "@/game/types";
+import type { AssetId } from "@/game/base";
+import { STANDARD_BRUSH_WIDTH, type PaintStroke } from "@/game/paintedTrail";
 import { useGameStore } from "@/game/store";
 import { useCameraUi } from "@/ui/cameraUi";
 import type { XZ } from "@/game/terrain";
@@ -12,10 +14,14 @@ export type PlacementFocus = {
 };
 
 export type PlacementStep = "top" | "bottom";
+type PlacementKind = "lift" | "trail" | "asset" | "gun";
 
-/** Session-only lift placement draft; never saved. */
+/** Session-only build drafts. The game state changes only on confirmation. */
 export const usePlacementDraft = create<{
   active: boolean;
+  kind: PlacementKind;
+  asset?: AssetId;
+  review: boolean;
   type: LiftType;
   step: PlacementStep;
   top?: XZ;
@@ -23,13 +29,31 @@ export const usePlacementDraft = create<{
   snapped: boolean;
   tapPoint?: XZ;
   focus: PlacementFocus | null;
+  brushWidth: number;
+  erasing: boolean;
+  strokes: PaintStroke[];
+  redo: PaintStroke[];
+  activeStroke: PaintStroke | null;
+  lodgeRequested: number;
 }>(() => ({
   active: false,
+  kind: "lift",
+  review: false,
   type: "surface",
   step: "top",
   snapped: false,
   focus: null,
+  brushWidth: STANDARD_BRUSH_WIDTH,
+  erasing: false,
+  strokes: [],
+  redo: [],
+  activeStroke: null,
+  lodgeRequested: 0,
 }));
+
+export function requestLodge() {
+  usePlacementDraft.setState((s) => s.active ? {} : { lodgeRequested: s.lodgeRequested + 1 });
+}
 
 export function requestFocus(points: XZ[]) {
   usePlacementDraft.setState((s) => ({
@@ -39,42 +63,77 @@ export function requestFocus(points: XZ[]) {
 
 export function startPlacement(type: LiftType) {
   useGameStore.getState().setSelectedLiftType(type);
+  startDraft("lift", type);
+}
+
+export function startPaintPlacement() {
+  startDraft("trail");
+}
+
+export function startAssetPlacement(asset: AssetId) {
+  startDraft("asset", undefined, asset);
+}
+
+export function startGunPlacement() {
+  startDraft("gun");
+}
+
+function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
   useGameStore.getState().setBuildMode(true);
   useGameStore.getState().setFollowId(null);
   useCameraUi.setState({ resumeFollowId: null });
   usePlacementDraft.setState({
     active: true,
-    type,
+    kind,
+    asset,
+    ...(type ? { type } : {}),
+    review: false,
     step: "top",
     top: undefined,
     bottom: undefined,
     snapped: false,
     tapPoint: undefined,
     focus: null,
+    brushWidth: STANDARD_BRUSH_WIDTH,
+    erasing: false,
+    strokes: [],
+    redo: [],
+    activeStroke: null,
   });
 }
 
 export function cancelPlacement() {
-  usePlacementDraft.setState({
-    active: false,
-    step: "top",
-    top: undefined,
-    bottom: undefined,
-    snapped: false,
-    tapPoint: undefined,
-    focus: null,
-  });
-  useGameStore.getState().setBuildMode(false);
+  finishPlacement();
 }
 
 export function finishPlacement() {
   usePlacementDraft.setState({
     active: false,
+    review: false,
+    asset: undefined,
     step: "top",
     top: undefined,
     bottom: undefined,
     snapped: false,
     tapPoint: undefined,
     focus: null,
+    strokes: [],
+    redo: [],
+    activeStroke: null,
+  });
+  useGameStore.getState().setBuildMode(false);
+}
+
+export function undoStroke() {
+  usePlacementDraft.setState(({ strokes, redo }) => {
+    const last = strokes.at(-1);
+    return last ? { strokes: strokes.slice(0, -1), redo: [...redo, last] } : {};
+  });
+}
+
+export function redoStroke() {
+  usePlacementDraft.setState(({ strokes, redo }) => {
+    const last = redo.at(-1);
+    return last ? { strokes: [...strokes, last], redo: redo.slice(0, -1) } : {};
   });
 }

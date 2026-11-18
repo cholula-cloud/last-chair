@@ -1,180 +1,145 @@
 "use client";
 
+import { useState } from "react";
+import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
-import { checkPlacement } from "@/game/rules";
+import { MAX_LIFTS } from "@/game/descent";
 import { useGameStore } from "@/game/store";
-import { TERRAIN } from "@/game/terrain";
-import {
-  BUILDING_COSTS,
-  BUILDING_LABELS,
-  LIFT_LABELS,
-  type BuildingId,
-  type LiftType,
-} from "@/game/types";
-import { startPlacement } from "@/ui/placementDraft";
-import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
+import { LIFT_LABELS, type LiftType } from "@/game/types";
+import { BuildImpactCard } from "@/ui/BuildImpactCard";
+import { startAssetPlacement, startGunPlacement, startPlacement } from "@/ui/placementDraft";
 import { Sheet } from "@/ui/kit/Sheet";
+import { PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 import { TrailsPanel } from "@/ui/TrailsPanel";
-import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 
-const BUILD_OPTIONS: BuildingId[] = ["cafe", "shop", "snow_guns"];
+function LodgeCard() {
+  const tier = useGameStore((s) => s.lodgeTier);
+  const construction = useGameStore((s) => s.lodgeUpgrade);
+  const cash = useGameStore((s) => s.cash);
+  const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
+  const [review, setReview] = useState(false);
+  const next = nextLodgeTier(tier);
+  const unlocks = next ? lodgeTierUnlocks(next) : [];
 
-const BUILDING_NOTES: Record<BuildingId, string> = {
-  warming_hut: "Somewhere to thaw out",
-  cafe: "Hot food between laps",
-  shop: "Wax, gloves, souvenirs",
-  snow_guns: "Make snow on dry weeks",
-};
+  return (
+    <div className="panel px-3.5 pb-4 pt-3.5" data-lodge-card>
+      <SectionHeading aside={`Tier ${tier}`}>{LODGE_TIERS[tier].label}</SectionHeading>
+      <p className="text-sm font-bold">{LODGE_TIERS[tier].pads} attachment pads</p>
+      {construction ? (
+        <p role="status" className="mt-2 font-bold">
+          Tier {construction.toTier} under construction · {construction.nightsRemaining} {construction.nightsRemaining === 1 ? "night" : "nights"} left
+        </p>
+      ) : next && (
+        <>
+          <p className="mt-2 text-sm font-bold">
+            Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
+          </p>
+          {review ? (
+            <BuildImpactCard
+              title={`Upgrade to ${LODGE_TIERS[next].label}`}
+              facts={[
+                { label: "Cost", value: formatMoney(LODGE_TIERS[next].cost) },
+                { label: "Construction", value: "Two nights" },
+                { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
+                ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
+              ]}
+              problem={cash < LODGE_TIERS[next].cost ? "Not enough cash." : null}
+              confirmLabel="Start lodge upgrade"
+              onCancel={() => setReview(false)}
+              onConfirm={() => { upgrade(); setReview(false); }}
+            />
+          ) : (
+            <PrimaryButton className="mt-2 min-h-11" onClick={() => setReview(true)}>
+              Review Tier {next} upgrade
+            </PrimaryButton>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
-const LIFT_NOTES: Record<LiftType, string> = {
-  surface: "T-bar up the hill",
-  chair: "Seats two, gentler ride",
-};
+const BASE_ASSETS = (Object.keys(ASSET_CATALOG) as AssetId[])
+  .filter((id) => ASSET_CATALOG[id].placementZone === "base");
 
 export function BuildSheet({
   open,
   onClose,
   onStartPlacement,
-  onShowLodge,
-  lodgeButtonRef,
 }: {
   open: boolean;
   onClose: () => void;
   onStartPlacement: () => void;
-  onShowLodge: () => void;
-  lodgeButtonRef: (button: HTMLButtonElement | null) => void;
 }) {
-  const selectedLiftType = useGameStore((s) => s.selectedLiftType);
+  const selected = useGameStore((s) => s.selectedLiftType);
+  const select = useGameStore((s) => s.setSelectedLiftType);
   const lifts = useGameStore((s) => s.lifts);
-  const buildings = useGameStore((s) => s.buildings);
   const cash = useGameStore((s) => s.cash);
-  const lodgeTier = useGameStore((s) => s.lodgeTier);
-  const setSelectedLiftType = useGameStore((s) => s.setSelectedLiftType);
-  const buyBuilding = useGameStore((s) => s.buyBuilding);
+  const tier = useGameStore((s) => s.lodgeTier);
+  const closeLift = useGameStore((s) => s.closeLift);
+  const activeLifts = lifts.filter((lift) => lift.confirmed && !lift.closing).length;
+  const selectedLift = selected === "chair" && tier < 2 ? "surface" : selected;
 
-  if (!open) return null;
+  const buildAsset = (id: AssetId) => {
+    if (id === "snow_guns") startGunPlacement();
+    else startAssetPlacement(id);
+    onStartPlacement();
+  };
 
-  const atMax = checkPlacement({ lifts, cash }, selectedLiftType, {
-    bottom: TERRAIN.base,
-    top: TERRAIN.toWorld({ x: 0.8, z: 0.6 }),
-  });
-
-  return (
-    <Sheet
-      title="Build"
-      subtitle={
-        <>
-          Cash on hand{" "}
-          <span className="display text-[1.05rem] tabular-nums">
-            {formatMoney(cash)}
-          </span>
-        </>
-      }
-      onClose={onClose}
-      closeLabel="Close build sheet"
-      dataMarker="build-sheet"
-      wide
-    >
-      <button
-        ref={lodgeButtonRef}
-        type="button"
-        className="key press mb-4 flex min-h-11 w-full items-center justify-between gap-3 px-3 text-left font-extrabold"
-        onClick={onShowLodge}
-      >
-        Lodge <span className="text-sm text-ink-soft">Tier {lodgeTier}</span>
-      </button>
-      <div className="short:grid short:grid-cols-2 short:gap-4">
-        <div className="panel px-3.5 pb-4 pt-3.5 short:self-start">
-          <SectionHeading>Lift</SectionHeading>
-          <div className="grid grid-cols-2 gap-2.5">
-            {(["surface", "chair"] as LiftType[]).map((t) => {
-              const on = selectedLiftType === t;
+  return open ? (
+    <Sheet title="Build" subtitle={<>Cash on hand <b>{formatMoney(cash)}</b></>} onClose={onClose}
+      closeLabel="Close build sheet" dataMarker="build-sheet" focusClose wide>
+      <div className="grid gap-3 short:grid-cols-2 short:items-start">
+        <LodgeCard />
+        <div className="panel px-3.5 pb-4 pt-3.5">
+          <SectionHeading>Lifts</SectionHeading>
+          <div className="grid grid-cols-2 gap-2">
+            {(["surface", "chair"] as const).map((type: LiftType) => (
+              <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
+                disabled={type === "chair" && tier < 2} aria-pressed={selectedLift === type} onClick={() => select(type)}>
+                {LIFT_LABELS[type]}
+                {type === "chair" && tier < 2 && <small className="block">Lodge Tier 2</small>}
+              </button>
+            ))}
+          </div>
+          <PrimaryButton className="mt-2 min-h-11"
+            disabled={lifts.filter((lift) => lift.confirmed).length >= MAX_LIFTS || lifts.length >= 12}
+            onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
+            Place lift
+          </PrimaryButton>
+          {lifts.map((lift, i) => lift.confirmed && (
+            <div key={i} className="mt-2 flex items-center justify-between gap-2 text-sm font-bold">
+              <span>{LIFT_LABELS[lift.type]} {i + 1}</span>
+              {lift.closing ? "Closing tonight" : (
+                <button className="key min-h-11 px-2" disabled={activeLifts <= 1} type="button"
+                  aria-label={`Close lift ${i + 1}`} onClick={() => closeLift(i)}>Close lift</button>
+              )}
+            </div>
+          ))}
+        </div>
+        <TrailsPanel onStartPlacement={onStartPlacement} />
+        <div className="panel px-3.5 pb-4 pt-3.5">
+          <SectionHeading>Base</SectionHeading>
+          <div className="grid grid-cols-2 gap-2">
+            {BASE_ASSETS.map((id) => {
+              const asset = ASSET_CATALOG[id];
+              const locked = tier < asset.opensAtTier;
               return (
-                <button
-                  key={t}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setSelectedLiftType(t)}
-                  className="key press flex min-h-[92px] flex-col items-start justify-between gap-1.5 p-2.5 text-left"
-                >
-                  <span className="flex items-center gap-1.5 text-[1rem] font-extrabold">
-                    <LiftIcon size={20} />
-                    {LIFT_LABELS[t]}
-                    {on && <CheckIcon size={16} />}
-                  </span>
-                  <span data-muted className="text-[0.8rem] font-bold leading-tight">
-                    {LIFT_NOTES[t]}
-                  </span>
+                <button key={id} type="button" disabled={locked} onClick={() => buildAsset(id)}
+                  className="key press min-h-14 p-2 text-left font-extrabold">
+                  {asset.label}
+                  <small className="block">{locked ? `Lodge Tier ${asset.opensAtTier}` : formatMoney(asset.cost)}</small>
                 </button>
               );
             })}
           </div>
-
-          <p className="mt-4 text-[0.9rem] font-bold text-ink-soft">
-            Place a new lift by tapping the hill. Skiers need a run from the top
-            back to the base.
-          </p>
-
-          <PrimaryButton
-            className="mt-4 min-h-11"
-            disabled={atMax.ok === false && atMax.reason === "max_lifts"}
-            onClick={() => {
-              startPlacement(selectedLiftType);
-              onStartPlacement();
-            }}
-          >
-            Place on the hill
-          </PrimaryButton>
-          {atMax.ok === false && atMax.reason === "max_lifts" && (
-            <p className="mt-2 text-center text-[0.85rem] font-extrabold text-barn-deep">
-              The hill already has the maximum number of lifts.
-            </p>
-          )}
+          <SectionHeading>Snow</SectionHeading>
+          <button type="button" className="key press min-h-11 px-3 font-extrabold"
+            disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
+            Snow gun {tier < 2 ? "· Lodge Tier 2" : `· ${formatMoney(ASSET_CATALOG.snow_guns.cost)}`}
+          </button>
         </div>
-        <div className="mt-4 panel px-3.5 pb-4 pt-3.5 short:mt-0 short:self-start">
-          <SectionHeading>Village &amp; snow</SectionHeading>
-          <ul className="space-y-2.5">
-            {BUILD_OPTIONS.map((id) => {
-              const owned = buildings.includes(id);
-              const cost = BUILDING_COSTS[id];
-              const need = cost - cash;
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    disabled={owned || need > 0}
-                    onClick={() => buyBuilding(id)}
-                    className="key press flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[1rem] font-extrabold">
-                        {BUILDING_LABELS[id]}
-                      </span>
-                      <span
-                        className={`block text-[0.82rem] ${owned ? "font-extrabold text-sign-green" : need > 0 ? "font-extrabold text-barn-deep" : "font-bold text-ink-soft"}`}
-                      >
-                        {owned
-                          ? "Built"
-                          : need > 0
-                            ? `Need ${formatMoney(need)} more`
-                            : BUILDING_NOTES[id]}
-                      </span>
-                    </span>
-                    {owned ? (
-                      <span className="flex size-8 items-center justify-center rounded-full border-2 border-ink bg-sign-green text-white">
-                        <CheckIcon size={18} />
-                      </span>
-                    ) : (
-                      <PriceTag muted={need > 0}>{formatMoney(cost)}</PriceTag>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-        <TrailsPanel />
       </div>
     </Sheet>
-  );
+  ) : null;
 }

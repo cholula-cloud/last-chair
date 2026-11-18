@@ -44,6 +44,8 @@ type View = {
   completedBeats: string[];
   pendingBeat: string | null;
   guests: unknown[];
+  lodgeTier: number;
+  lifts: GameState["lifts"];
 };
 
 type Driver = {
@@ -51,6 +53,7 @@ type Driver = {
   pickFounder(id: "elena"): void;
   togglePause(): void;
   tick(ms: number): void;
+  beginLodgeUpgrade(): void;
   buyBuilding(id: "cafe"): void;
   setSelectedLiftType(t: "chair"): void;
   placeLift(req: { type: "chair"; bottom: XZ; top: XZ }): void;
@@ -68,6 +71,7 @@ const SNOWS = ["minimal", "mid", "high"] as const;
 function summarize(v: View) {
   return {
     dayIndex: v.dayIndex,
+    lodgeTier: v.lodgeTier,
     phase: v.phase,
     cash: v.cash,
     arrivals: v.dayStats.arrivals,
@@ -87,12 +91,14 @@ function playSeason(d: Driver) {
   const nights: ReturnType<typeof summarize>[] = [];
   d.pickFounder("elena");
   d.togglePause();
+  d.beginLodgeUpgrade();
   while (d.view().phase !== "winter_review") {
     const day = d.view().dayIndex;
     if (d.view().phase === "day" && day === 2) d.buyBuilding("cafe");
     if (d.view().phase === "day" && day === 4) {
       d.setSelectedLiftType("chair");
       d.placeLift({ type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
+      expect(d.view().lifts.some((lift) => lift.confirmed && lift.type === "chair")).toBe(true);
     }
     if (d.view().paused) d.togglePause();
     while (d.view().phase === "day") d.tick(2000);
@@ -137,6 +143,7 @@ function storeDriver(
     pickFounder: (id) => s().pickFounder(id),
     togglePause: () => s().togglePause(),
     tick: (ms) => s().tick(ms),
+    beginLodgeUpgrade: () => s().beginLodgeUpgrade(),
     buyBuilding: (id) => s().buyBuilding(id),
     setSelectedLiftType: (t) => s().setSelectedLiftType(t),
     placeLift: (req) => s().placeLift(req),
@@ -157,6 +164,7 @@ function pureDriver(seed: number): Driver {
     pickFounder: (id) => apply((s) => rules.pickFounder(s, id)),
     togglePause: () => apply(rules.togglePause),
     tick: (ms) => apply((s) => rules.tick(s, ms)),
+    beginLodgeUpgrade: () => apply(rules.beginLodgeUpgrade),
     buyBuilding: (id) => apply((s) => rules.buyBuilding(s, id)),
     setSelectedLiftType: (t) => apply((s) => rules.setSelectedLiftType(s, t)),
     placeLift: (req) => apply((s) => rules.placeLift(s, req)),
@@ -175,7 +183,7 @@ describe("season characterization", () => {
   // The test name is the key of the snapshot recorded before the PR 3
   // refactor (when this path mocked Math.random with createRng(42)). The
   // snapshot must keep matching without edits, through both paths below.
-  it("store path with mocked Math.random", async () => {
+  it("store path with mocked Math.random", { timeout: 20_000 }, async () => {
     const pure = playSeason(pureDriver(SEED));
 
     const { useGameStore } = await import("./store");

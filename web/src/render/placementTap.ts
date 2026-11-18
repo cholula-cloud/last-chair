@@ -1,5 +1,12 @@
 import * as THREE from "three";
+import { REFERENCE_TOPS } from "@/game/descent";
+import { DUTCH_HILL_SHOULDERS } from "@/game/mountains/dutchHill";
 import { TERRAIN } from "@/game/terrain";
+
+export const LIFT_BUILD_ANCHORS = [
+  ...REFERENCE_TOPS,
+  ...DUTCH_HILL_SHOULDERS.map((point) => TERRAIN.toWorld(point)),
+];
 
 /** World-space snap radius from one CSS pixel at the hit point. */
 export function snapRadiusAtHit(
@@ -14,8 +21,4 @@ export function snapRadiusAtHit(
   );
   const w = (2 * d * Math.tan((camera.fov * Math.PI) / 360)) / Math.max(1, viewportHeightPx);
   return Math.min(4.8, Math.max(0.5, 22 * w));
-}
-
-export function heightAt(x: number, z: number) {
-  return TERRAIN.height(x, z);
 }

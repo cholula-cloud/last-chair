@@ -4,7 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftLine } from "@/game/descent";
-import { LIFT_SPECS, MS_PER_GAME_MINUTE, type LiftType } from "@/game/types";
+import { rideMinutes } from "@/game/lifts";
+import { MS_PER_GAME_MINUTE, type LiftType } from "@/game/types";
 import { useSpeed } from "@/ui/speed";
 import { sceneMood } from "./Atmosphere";
 import { cyl, merge, type Part } from "./geo";
@@ -129,11 +130,13 @@ export function Lift({
   line,
   previewInvalid,
   preview = false,
+  closing = false,
   type = "surface",
 }: {
   line: LiftLine;
   previewInvalid: boolean;
   preview?: boolean;
+  closing?: boolean;
   type?: LiftType;
 }) {
   const structure = useLiftStructure(line);
@@ -145,11 +148,11 @@ export function Lift({
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
   const speed = useSpeed((s) => s.speed);
+  const rideMs = rideMinutes(type, line) * MS_PER_GAME_MINUTE;
 
   useFrame((_, delta) => {
     const mesh = carriers.current;
     if (!mesh) return;
-    const rideMs = LIFT_SPECS[type].rideMinutes * MS_PER_GAME_MINUTE;
     const rate = rideMs > 0 ? (1000 / rideMs) * speed : 0;
     phase.current = (phase.current + delta * rate) % 1;
     const off = LIFT_CABLE_OFFSET;
@@ -194,7 +197,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors />
+          <meshLambertMaterial vertexColors color={closing ? "#e8b46a" : "white"} />
         )}
       </mesh>
       <instancedMesh
@@ -211,7 +214,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors />
+          <meshLambertMaterial vertexColors color={closing ? "#e8b46a" : "white"} />
         )}
       </instancedMesh>
     </group>

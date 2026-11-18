@@ -189,19 +189,23 @@ export function overnightTrail(
   trail: Trail,
   o: NightInputs,
   elevations?: readonly number[],
+  gunCoverage?: readonly boolean[],
+  groomCoverage?: readonly boolean[],
+  exposure?: readonly number[],
 ): Trail {
   const n = trail.length;
-  const reach = gunReach(o);
-  const groomed = o.snow !== "minimal";
+  const reach = gunCoverage ? 0 : gunReach(o);
   const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0);
 
   return trail.map((seg, i) => {
     const e = elevationAt(i, n, elevations);
     let { depth, quality, coverage } = seg;
 
-    // Player's night.
-    if (groomed) {
-      depth += GROOM_PUSH[o.snow] + (inReach(i, reach, n, elevations) ? GUN_DEPTH[o.snow] : 0);
+    // Gun coverage and grooming use separate segment budgets.
+    const guns = gunCoverage ? gunCoverage[i] : reach > 0 && inReach(i, reach, n, elevations);
+    if (guns) depth += GUN_DEPTH[o.snow];
+    if (groomCoverage ? groomCoverage[i] : o.snow !== "minimal") {
+      depth += GROOM_PUSH[o.snow];
       quality = Math.min(QUALITY_CAP, Math.max(quality, target) + GROOM_CRISP[o.snow]);
       if (depth >= COVER_MIN) {
         coverage = o.snow === "high" ? 1 : Math.min(1, coverage + MID_COVERAGE_RECOVERY);
@@ -213,15 +217,16 @@ export function overnightTrail(
 
     // Weather.
     const low = (1 - e) * (1 - e);
+    const exposed = 1 + 0.3 * (exposure?.[i] ?? 0);
     if (o.weather === "snow") {
       depth = clamp01(depth + 0.12 + 0.08 * e);
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.06 + 0.04 * e);
       if (depth >= COVER_MIN) coverage = 1;
     } else if (o.weather === "thaw") {
-      depth = Math.max(0.02, depth - (0.02 + 0.12 * low));
-      quality = Math.max(0.1, quality - (0.04 + 0.16 * low));
+      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed);
+      quality = Math.max(0.1, quality - (0.04 + 0.16 * low) * exposed);
     } else {
-      depth = Math.max(0.02, depth - 0.01);
+      depth = Math.max(0.02, depth - 0.01 * exposed);
       quality = Math.max(0.1, quality - 0.02);
     }
     return settleCoverage({ depth, quality, coverage });
@@ -249,12 +254,13 @@ export function softenTrail(
   trail: Trail,
   minutes: number,
   elevations?: readonly number[],
+  exposure?: readonly number[],
 ): Trail {
   if (minutes <= 0) return trail;
   const n = trail.length;
   return trail.map((s, i) => {
     const low = (1 - elevationAt(i, n, elevations)) ** 2;
-    return { ...s, quality: Math.max(0.1, s.quality - THAW_PER_MIN * minutes * (0.15 + low)) };
+    return { ...s, quality: Math.max(0.1, s.quality - THAW_PER_MIN * minutes * (0.15 + low) * (1 + 0.3 * (exposure?.[i] ?? 0))) };
   });
 }
 

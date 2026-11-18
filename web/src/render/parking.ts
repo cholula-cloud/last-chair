@@ -1,5 +1,6 @@
 import type { Guest } from "@/game/types";
-import type { XZ } from "@/game/site";
+import { stallCenters, type SiteDef, type XZ } from "@/game/site";
+import { lodgeParkingLots, type LodgeTier } from "@/game/base";
 
 export type StallSlot =
   | { kind: "stall"; index: number; x: number; z: number }
@@ -21,6 +22,21 @@ function slotAt(
   return { kind, index, x: p.x, z: p.z };
 }
 
+export function expandedStallCenters(site: SiteDef, tier: LodgeTier): XZ[] {
+  const original = stallCenters(site);
+  for (const lot of lodgeParkingLots(tier, site).slice(1)) {
+    const rows = site.arrival.rows;
+    const perRow = Math.ceil(lot.stalls / rows);
+    for (let i = 0; i < lot.stalls; i++) {
+      original.push({
+        x: lot.center.x + (((i % perRow) + 0.5) / perRow - 0.5) * lot.size.w,
+        z: lot.center.z + ((Math.floor(i / perRow) + 0.5) / rows - 0.5) * lot.size.d,
+      });
+    }
+  }
+  return original;
+}
+
 /**
  * Stable stall assignment: one slot per guest who has arrived and not gone.
  * New guests probe from hash(id) % stalls; overflow uses shoulder spots in order.
@@ -30,6 +46,7 @@ export function assignStalls(
   guests: readonly Guest[],
   stalls: readonly XZ[],
   shoulder: readonly XZ[],
+  originalCount = stalls.length,
 ): Map<string, StallSlot> {
   const next = new Map<string, StallSlot>();
   const takenStall = new Set<number>();
@@ -51,10 +68,10 @@ export function assignStalls(
   let shoulderCursor = 0;
   for (const g of active) {
     if (next.has(g.id)) continue;
-    const start = stalls.length ? hashGuest(g.id) % stalls.length : 0;
+    const start = originalCount ? hashGuest(g.id) % originalCount : 0;
     let placed: StallSlot | null = null;
     for (let k = 0; k < stalls.length; k++) {
-      const idx = (start + k) % stalls.length;
+      const idx = k < originalCount ? (start + k) % originalCount : k;
       if (!takenStall.has(idx)) {
         placed = slotAt("stall", idx, stalls, shoulder);
         takenStall.add(idx);

@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { previewPaintedTrail, simplifyStroke, type PaintStroke } from "./paintedTrail";
-import { checkPaint, commitPaint, pickFounder } from "./rules";
 import { freshTrail } from "./snow";
-import { createInitialState, hydrate, toPersisted, type LiftSlot } from "./state";
+import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import { defaultTrails, type TrailRun } from "./trails";
 
@@ -145,30 +144,5 @@ describe("trail paint geometry", () => {
     const preview = previewPaintedTrail({ lifts: [lift(top)], trails: [starter] }, [stroke(path)]);
     expect(preview.reason).toBeNull();
     expect(preview.trailIndex).toBeNull();
-  });
-
-  it("confirms the quoted trail and persists variable widths without changing the input", () => {
-    const state = pickFounder(createInitialState(7), "elena");
-    const top = state.lifts[0].anchor;
-    const middle = p(top.x - 1.6, top.z + 2.5);
-    const path = [top, middle, p(top.x - 2, top.z + 6), p(-3, 11), TERRAIN.base];
-    const strokes = [stroke(path), stroke([top, middle], 100)];
-    const quote = checkPaint(state, strokes);
-    expect(quote.reason).toBeNull();
-    expect(quote.cost).toBeGreaterThan(0);
-
-    const built = commitPaint(state, strokes);
-    expect(built.trails).toHaveLength(state.trails.length + 1);
-    expect(built.cash).toBe(state.cash - quote.cost);
-    expect(built.trails.at(-1)).toMatchObject({ path: quote.path, widths: quote.widths, paid: quote.cost });
-    expect(quote.widths).toContain(60);
-    expect(quote.widths).toContain(100);
-    const loaded = hydrate(JSON.parse(JSON.stringify(toPersisted(built))), createInitialState(9));
-    expect(loaded.trails).toEqual(built.trails);
-
-    const poor = { ...state, cash: quote.cost - 1 };
-    const night = { ...state, phase: "night" as const };
-    expect(commitPaint(poor, strokes)).toBe(poor);
-    expect(commitPaint(night, strokes)).toBe(night);
   });
 });

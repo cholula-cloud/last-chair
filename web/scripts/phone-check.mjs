@@ -1,6 +1,8 @@
 /**
  * Phone viewport checks: screenshots, touch (Chromium CDP), fps and render stats.
  * Usage: PLAY_URL=http://127.0.0.1:3000 npm run phone-check
+ * Set PLAYTEST_ENGINES=chromium or webkit to check a single installed engine.
+ * Set PHONE_CHECK_VIEWPORTS=390x844 for a focused run.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,19 +21,27 @@ const VIEWPORTS = [
   { w: 820, h: 1180, dpr: 2, tag: "820x1180" },
   { w: 375, h: 667, dpr: 2, tag: "375x667" },
 ];
-
-const engines = (process.env.PHONE_CHECK_ENGINES ?? "chromium,webkit").split(",");
-const viewportTags = (process.env.PHONE_CHECK_VIEWPORTS ?? VIEWPORTS.map((vp) => vp.tag).join(",")).split(",");
-const browsers = { chromium, webkit };
-if (!engines.every((engine) => Object.hasOwn(browsers, engine))) {
-  throw new Error("PHONE_CHECK_ENGINES contains an unknown engine.");
-}
-if (!viewportTags.every((tag) => VIEWPORTS.some((vp) => vp.tag === tag))) {
+const viewportTags = (process.env.PHONE_CHECK_VIEWPORTS ?? VIEWPORTS.map((v) => v.tag).join(","))
+  .split(",").map((value) => value.trim());
+if (viewportTags.some((tag) => !VIEWPORTS.some((vp) => vp.tag === tag))) {
   throw new Error("PHONE_CHECK_VIEWPORTS contains an unknown viewport.");
 }
 
 const FAILURES = [];
 const SHOTS = [];
+const engines = (process.env.PHONE_CHECK_ENGINES ?? process.env.PLAYTEST_ENGINES ?? "chromium,webkit").split(",").map((value) => value.trim());
+const launchers = {
+  chromium: () => chromium.launch({
+    headless: true,
+    ...(process.env.CHROMIUM_EXECUTABLE
+      ? { executablePath: process.env.CHROMIUM_EXECUTABLE, args: ["--enable-unsafe-swiftshader"] }
+      : {}),
+  }),
+  webkit: () => webkit.launch({ headless: true }),
+};
+if (engines.some((engine) => !Object.hasOwn(launchers, engine))) {
+  throw new Error("PHONE_CHECK_ENGINES must contain chromium, webkit, or both.");
+}
 
 function fail(msg) {
   FAILURES.push(msg);
@@ -63,8 +73,9 @@ async function startPlay(page) {
 async function shot(page, engine, tag, name) {
   const file = `${engine}-${tag}-${name}.png`;
   const p = path.join(outRoot, file);
-  await page.screenshot({ path: p });
+  const png = await page.screenshot({ path: p });
   SHOTS.push(file);
+  return png;
 }
 
 /** Chromium CDP one-finger pan on the canvas. */
@@ -80,7 +91,7 @@ async function cdpPan(cdp, w, h, dx, dy) {
       i === 0 ? "touchStart" : i === steps ? "touchEnd" : "touchMove";
     await cdp.send("Input.dispatchTouchEvent", {
       type,
-      touchPoints: [{ x, y }],
+      touchPoints: i === steps ? [] : [{ x, y }],
     });
   }
 }
@@ -125,7 +136,7 @@ async function measureFps(page, ms = 5000) {
  * (nothing drawn). Samples a real screenshot of the canvas: reading the WebGL buffer
  * directly returns zeros after a present because preserveDrawingBuffer is off.
  */
-async function assertMountainVisible(page, engine, tag) {
+async function assertMountainVisible(page, engine, tag, screenshot) {
   const size = await page.evaluate(() => {
     const c = document.querySelector("canvas");
     if (!c) return { ok: false, reason: "no canvas" };
@@ -134,22 +145,27 @@ async function assertMountainVisible(page, engine, tag) {
     if (r.width < min || r.height < min) {
       return { ok: false, reason: `canvas ${r.width.toFixed(0)}x${r.height.toFixed(0)} vs min ${min.toFixed(0)}` };
     }
-    return { ok: true };
+    return {
+      ok: true,
+      x: r.x / window.innerWidth, y: r.y / window.innerHeight,
+      w: r.width / window.innerWidth, h: r.height / window.innerHeight,
+    };
   });
   if (!size.ok) {
     fail(`${engine} ${tag}: mountain not visible — ${size.reason}`);
     return;
   }
-  const png = (await page.locator("canvas").screenshot()).toString("base64");
-  const check = await page.evaluate(async (b64) => {
+  const check = await page.evaluate(async ({ b64, crop }) => {
     const img = new Image();
     img.src = `data:image/png;base64,${b64}`;
     await img.decode();
     const c = document.createElement("canvas");
-    c.width = img.width;
-    c.height = img.height;
-    const ctx = c.getContext("2d");
-    ctx.drawImage(img, 0, 0);
+    c.width = 100;
+    c.height = 100;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, crop.x * img.width, crop.y * img.height,
+      crop.w * img.width, crop.h * img.height, 0, 0, c.width, c.height);
+    const pixels = ctx.getImageData(0, 0, c.width, c.height).data;
     // Page background (--ink #1b3a57); a blank WebGL canvas shows this through.
     const ink = [0x1b, 0x3a, 0x57];
     let total = 0;
@@ -157,14 +173,14 @@ async function assertMountainVisible(page, engine, tag) {
     // Rows 30% to 80% of the height: clear of the top bar, morning note and bottom HUD.
     for (let gy = 3; gy <= 8; gy++) {
       for (let gx = 1; gx < 10; gx++) {
-        const d = ctx.getImageData(Math.floor((gx / 10) * c.width), Math.floor((gy / 10) * c.height), 1, 1).data;
+        const i = (gy * 10 * c.width + gx * 10) * 4;
         total++;
-        const diff = Math.abs(d[0] - ink[0]) + Math.abs(d[1] - ink[1]) + Math.abs(d[2] - ink[2]);
+        const diff = Math.abs(pixels[i] - ink[0]) + Math.abs(pixels[i + 1] - ink[1]) + Math.abs(pixels[i + 2] - ink[2]);
         if (diff > 40) drawn++;
       }
     }
     return { share: drawn / total };
-  }, png);
+  }, { b64: screenshot.toString("base64"), crop: size });
   if (check.share < 0.5) {
     fail(`${engine} ${tag}: mountain not visible — only ${(check.share * 100).toFixed(0)}% of canvas samples differ from the ink background`);
   }
@@ -199,11 +215,11 @@ async function runViewport(engine, launch, vp) {
 
   try {
     await startPlay(page);
-    await shot(page, engine, tag, "home");
+    const home = await shot(page, engine, tag, "home");
 
     const canvas = page.locator("canvas").first();
     await canvas.waitFor({ timeout: 10_000 });
-    await assertMountainVisible(page, engine, tag);
+    await assertMountainVisible(page, engine, tag, home);
 
     if (engine === "chromium") {
       const cdp = await context.newCDPSession(page);
@@ -261,7 +277,7 @@ async function runViewport(engine, launch, vp) {
 
     await page.getByRole("button", { name: "Build", exact: true }).click();
     await page.getByRole("heading", { name: "Build" }).waitFor();
-    await page.getByRole("button", { name: /Place on the hill/i }).click();
+    await page.getByRole("button", { name: "Place lift", exact: true }).click();
     await page.getByText(/Tap where the lift should unload/i).waitFor({ timeout: 5000 });
     await shot(page, engine, tag, "placement-bar");
 
@@ -282,9 +298,14 @@ async function runViewport(engine, launch, vp) {
 }
 
 const results = [];
-for (const vp of VIEWPORTS.filter((entry) => viewportTags.includes(entry.tag))) {
+for (const vp of VIEWPORTS) {
+  if (!viewportTags.includes(vp.tag)) continue;
   for (const engine of engines) {
-    results.push(await runViewport(engine, () => browsers[engine].launch({ headless: true }), vp));
+    try {
+      results.push(await runViewport(engine, launchers[engine], vp));
+    } catch (e) {
+      fail(`${engine} ${vp.tag}: ${e.message ?? e}`);
+    }
   }
 }
 

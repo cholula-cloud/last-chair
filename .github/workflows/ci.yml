@@ -29,4 +29,5 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
+      - run: npm run m2-gate
       - run: npm run build

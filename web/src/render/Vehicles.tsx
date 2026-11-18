@@ -3,10 +3,12 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Guest } from "@/game/types";
+import { lodgeParkingLots, type LodgeTier } from "@/game/base";
+import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { merge, type Part } from "./geo";
 import { SITE } from "./layout";
-import type { StallSlot } from "./parking";
+import { expandedStallCenters, type StallSlot } from "./parking";
 import { PALETTE } from "./palette";
 import { useStallMap } from "./useStallMap";
 
@@ -48,18 +50,35 @@ function spotsFromGuests(guests: Guest[], map: Map<string, StallSlot>): CarSpot[
   return out;
 }
 
-function GravelLot() {
-  const { center, size } = SITE.arrival;
+function GravelLot({ tier }: { tier: LodgeTier }) {
   const geometry = useMemo(() => {
-    const g = new THREE.PlaneGeometry(size.w + 1.2, size.d + 1.4, 1, 1);
-    g.rotateX(-Math.PI / 2);
-    return g;
-  }, [SITE.arrival.size.d, SITE.arrival.size.w]);
+    const lots = lodgeParkingLots(tier, SITE);
+    const first = lots[0];
+    const last = lots[lots.length - 1];
+    const left = first.center.x - first.size.w / 2;
+    const right = last.center.x + last.size.w / 2;
+    const x = (left + right) / 2;
+    const z = first.center.z;
+    const parts: Part[] = [{
+      geo: new THREE.PlaneGeometry(right - left + 0.55, first.size.d + 1.15),
+      pos: [x, TERRAIN.height(x, z) + 0.022, z],
+      rot: [-Math.PI / 2, 0, 0],
+      color: PALETTE.earth,
+    }];
+    for (const { x, z } of expandedStallCenters(SITE, tier)) {
+      parts.push({
+        geo: new THREE.PlaneGeometry(0.22, 0.025),
+        pos: [x, TERRAIN.height(x, z) + 0.03, z + (z > SITE.arrival.center.z ? 0.32 : -0.32)],
+        rot: [-Math.PI / 2, 0, 0],
+        color: PALETTE.snowOld,
+      });
+    }
+    return merge(parts);
+  }, [tier]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  const y = TERRAIN.height(center.x, center.z) + 0.02;
   return (
-    <mesh position={[center.x, y, center.z]} geometry={geometry} receiveShadow rotation={[0, SITE.arrival.yaw, 0]}>
-      <meshLambertMaterial color={PALETTE.earth} />
+    <mesh geometry={geometry} receiveShadow>
+      <meshLambertMaterial vertexColors />
     </mesh>
   );
 }
@@ -67,14 +86,14 @@ function GravelLot() {
 function CarInstances({ kind, list }: { kind: 0 | 1 | 2; list: CarSpot[] }) {
   const geo = useMemo(() => carGeo(kind), [kind]);
   const ref = useRef<THREE.InstancedMesh>(null);
-  const subset = list.filter((c) => c.kind === kind);
+  const subset = useMemo(() => list.filter((c) => c.kind === kind), [list, kind]);
   const max = Math.max(1, subset.length);
-  const dummy = new THREE.Object3D();
-  const tint = new THREE.Color();
 
   useLayoutEffect(() => {
     const mesh = ref.current;
     if (!mesh) return;
+    const dummy = new THREE.Object3D();
+    const tint = new THREE.Color();
     for (let i = 0; i < subset.length; i++) {
       const c = subset[i];
       dummy.position.set(c.x, TERRAIN.height(c.x, c.z) + 0.02, c.z);
@@ -101,12 +120,13 @@ function CarInstances({ kind, list }: { kind: 0 | 1 | 2; list: CarSpot[] }) {
 
 /** Gravel lot and guest cars (visual only; arrivals are not capped). */
 export function ArrivalArea({ guests, dayIndex }: { guests: Guest[]; dayIndex: number }) {
+  const tier = useGameStore((s) => s.lodgeTier);
   const map = useStallMap(guests, dayIndex);
   const cars = useMemo(() => spotsFromGuests(guests, map), [guests, map]);
 
   return (
     <group>
-      <GravelLot />
+      <GravelLot tier={tier} />
       <CarInstances kind={0} list={cars} />
       <CarInstances kind={1} list={cars} />
       <CarInstances kind={2} list={cars} />

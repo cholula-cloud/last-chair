@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.0 · **Updated:** 2026-11-16
+**Version:** 1.0 · **Updated:** 2026-11-18
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -67,6 +67,22 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 - [ ] Player C finished winter 1
 
 ---
+
+## M2 build gate and brief playtest
+
+Run `npm run m2-gate` from `web/` for the 40-seed numerical comparison. Run `npm run playtest:m2` with the local game running to exercise the opening and prepared-save routes at 390×844. Playwright Chromium and WebKit are the default engines. Screenshots and the result summary go to `web/playtest-artifacts/m2/` unless `PLAYTEST_OUT` points elsewhere.
+
+**November 18, 2026.** Scripted Chromium touch input placed a paid lift, painted and cut a trail, and verified both in the save in 106.2 seconds from the playable opening. The starter and new trail corridors rendered without dark shards at this viewport. A prepared-save run completed the Tier 2 lodge upgrade after two Sleeps, placed Rentals, and displayed a $144 Rentals receipt in the closing recap. The next morning, a new trail was cut and the following closing recap rendered with updated queue and satisfaction figures. The two browser days have different rosters, so the paired simulation gate measures causality separately. Testing exposed crowded clock and undo/recenter controls at phone size. The working branch adjusts their layout.
+
+WebKit could not run because its browser download returned HTTP 403. The Chromium phone check also verified scene visibility and four pan gestures. Its pinch and frame-rate checks remain unverified. The opening time is a scripted measurement. First-time player usability remains unverified.
+
+Follow-up review checked the new build cues at 390×844 and 844×390 in Chromium. Lift sites and the finish of the painted trail are marked on the map, and the landscape build card leaves the markers clear. Regression tests cover a brush stroke that would otherwise stall input, construction beside a moved lift terminal, and clearing a lift corridor without moving the camera.
+
+For the first-time check, use a fresh save. Ask the player to add a lift and paint a new trail without explaining the controls. Start the timer at the first playable frame after founder selection. Record the saved builds, elapsed time, and where the player hesitated or asked for help.
+
+The follow-up Chromium touch opening completed in 92.6 seconds with the updated builder controls. This run also used scripted input. GitHub's WebKit portrait check passed for the standalone B1 PR.
+
+The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.08 minutes, improved satisfaction by 7.97 points, and increased distinct beginner chair boardings in all 40 seeds. Moving the developed chair met both mean floors and changed completed-run counts in 39 of 40 seeds. See the [calibration table](./SIMULATION_SPEC.md#m2-acceptance-calibration).
 
 ## Sign-off log
 

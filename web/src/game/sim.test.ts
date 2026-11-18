@@ -1,3 +1,4 @@
+import { freshBaseAssets } from "./base";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatMoney } from "./format";
 import { CREW_TALENTS } from "./content";
@@ -169,6 +170,12 @@ describe("buildNightRecap", () => {
       waitSumMin: 0,
       maxQueueLength: 0,
       peakWaitMin: 0,
+      byLift: [],
+      runsByTrail: [],
+      venueRevenue: {},
+      refuels: 0,
+      balked: 0,
+      seatsFullMin: 0,
     });
   });
 });
@@ -542,6 +549,18 @@ describe("tickGuests", () => {
     expect(g.state).toBe("queue");
   });
 
+  it("spends more stamina on a longer descent without making a short lap free", () => {
+    const reference = defaultTrails()[0];
+    const regular = PERSONAS.regular.energyPerRun;
+    const finish = (lengthScale: number) => tickGuests(
+      [skier({ targetRuns: 9 })],
+      clock(T0 + 60, { trails: [{ ...reference, lengthFt: reference.lengthFt * lengthScale }] }),
+    )[0];
+    expect(finish(0.25).energy).toBeCloseTo(1 - regular * 0.5, 10);
+    expect(finish(1).energy).toBeCloseTo(1 - regular, 10);
+    expect(finish(1.75).energy).toBeCloseTo(1 - regular * 1.75, 10);
+  });
+
   it("goes home when energy runs out, when the target is reached, or when a lap cannot finish", () => {
     const end = T0 + skiMinutes("regular", 1);
     expect(tickGuests([skier({ energy: 0.05, targetRuns: 9 })], clock(end))[0].state).toBe("depart");
@@ -553,13 +572,21 @@ describe("tickGuests", () => {
     expect(tickGuests([lateSkier], clock(lateEnd))[0].state).toBe("depart");
     expect(
       tickGuests([lateSkier], clock(lateEnd, { lapOverheadMin: 1, lifts: [] }))[0].state,
-    ).toBe("queue");
+    ).toBe("depart");
     // No open lift at all: nobody laps.
     const noLift = defaultLifts().map((l) => ({ ...l, confirmed: false }));
     expect(
       tickGuests([skier({ targetRuns: 9 })], clock(end, { lapOverheadMin: Infinity, lifts: noLift }))[0]
         .state,
     ).toBe("depart");
+  });
+
+  it("lets a guest leave an existing long line for a venue and retains their measured wait", () => {
+    const guest = makeGuest({ state: "queue", joinedQueueAtMin: 585 });
+    const [visited] = tickGuests([guest], clock(600, { assets: freshBaseAssets() }));
+    expect(visited).toMatchObject({
+      state: "refuel", visitMinutes: 15, balks: 1, waitMin: 15, waitCount: 1,
+    });
   });
 
   it("sends everyone still in line home when the lifts close, and counts nobody's run for it", () => {

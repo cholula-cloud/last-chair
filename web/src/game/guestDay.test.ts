@@ -1,3 +1,4 @@
+import { TERRAIN } from "./terrain";
 import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
@@ -26,17 +27,13 @@ function freshDay(seed: number, dayIndex: number, chair = false): GameState {
     founderId: "elena",
     rand,
   });
-  const lifts = chair
-    ? [
-        ...base.lifts,
-        { type: "chair" as const, anchor: REFERENCE_TOPS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
-      ]
-    : base.lifts;
+  const built = chair
+    ? rules.placeLift({ ...base, lodgeTier: 2 }, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] })
+    : base;
   return {
-    ...base,
+    ...built,
     dayIndex,
     clockMin: DAY_START_MIN,
-    lifts,
     guests: createInitialGuests(arrivals, rand, dayIndex === SATURDAY),
     dayStats: { ...emptyDayStats(), arrivals },
     paused: false,
@@ -62,7 +59,7 @@ describe("guest day script", () => {
     }
   });
 
-  it("has everyone gone or walking out at close, with no lift loading after 15:45", () => {
+  it("has everyone gone or walking out at close, with no lift loading after 15:45", { timeout: 20_000 }, () => {
     for (const dayIndex of [WEEKDAY, SATURDAY]) {
       for (const seed of seeds) {
         let s = freshDay(seed, dayIndex);

@@ -40,9 +40,18 @@ jobs:
           trap 'kill "$!"' EXIT
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
           npm run phone-check
+      - name: Play through the M2 opening and lodge
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+          PLAYTEST_ENGINES: webkit
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run playtest:m2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: webkit-phone-check
-          path: web/playtest-artifacts/phone-check/
+          path: web/playtest-artifacts/
           if-no-files-found: ignore

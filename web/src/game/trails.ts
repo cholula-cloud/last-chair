@@ -1,3 +1,4 @@
+import type { ClearingCell } from "./clearing";
 import { PERSONAS } from "./personas";
 import type { PersonaId, TrailDifficulty } from "./types";
 import { REFERENCE_TOPS, rulesFor } from "./descent";
@@ -146,12 +147,20 @@ export function runSkiMinutes(
   return base * snow * skill;
 }
 
+/** Active skiing uses more energy on longer runs. Short runs still require starting and stopping. */
+export function runEnergyCost(persona: PersonaId, trail?: Pick<TrailRun, "lengthFt">): number {
+  const distanceRatio = trail ? trail.lengthFt / REF_TRAIL_FT : 1;
+  return PERSONAS[persona].energyPerRun * Math.max(0.5, distanceRatio);
+}
+
 export type TrailRun = {
+  widths?: number[];
+  paidClearing?: ClearingCell[];
+  groomed?: boolean[];
+  gunCovered?: boolean[];
   liftIndex: number;
   name: string;
   path: XZ[];
-  /** Width in feet at each path point. */
-  widths: number[];
   lengthFt: number;
   pitch: number;
   difficulty: Difficulty;
