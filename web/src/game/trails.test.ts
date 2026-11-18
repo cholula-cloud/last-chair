@@ -17,6 +17,7 @@ import {
   routePath,
   runSkiMinutes,
   REF_TRAIL_FT,
+  segmentElevationsForPath,
 } from "./trails";
 
 describe("trails", () => {
@@ -93,6 +94,20 @@ describe("trails", () => {
     const d = defaultTrails()[0];
     expect(runSkiMinutes("regular", d, 1)).toBeCloseTo(PERSONAS.regular.skiMin, 10);
     expect(REF_TRAIL_FT).toBe(d.lengthFt);
+  });
+
+  it("segment elevations follow real height along the path", () => {
+    const d = defaultTrails()[0];
+    expect(d.elevations[0]).toBeGreaterThan(0.85);
+    expect(d.elevations[d.elevations.length - 1]).toBeLessThan(0.15);
+    const midFall = fallLineTrailForLift(
+      1,
+      { type: "chair", anchor: REFERENCE_TOPS[1], confirmed: true, queue: [], dispatchCredit: 0 },
+      d.snow,
+    );
+    expect(midFall.elevations[0]).toBeGreaterThan(0.5);
+    expect(midFall.elevations[0]).toBeLessThan(0.75);
+    expect(segmentElevationsForPath(d.path)).toEqual(d.elevations);
   });
 
   it("cutTrail spends cash and refuses at night", () => {

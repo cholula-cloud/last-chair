@@ -2,7 +2,7 @@ import { PERSONAS } from "./personas";
 import type { PersonaId, TrailDifficulty } from "./types";
 import { REFERENCE_TOPS, rulesFor } from "./descent";
 import type { LiftSlot } from "./state";
-import { freshTrail, type Trail } from "./snow";
+import { freshTrail, segmentElevation, TRAIL_SEGMENTS, type Trail } from "./snow";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 
 export type Difficulty = TrailDifficulty;
@@ -154,6 +154,8 @@ export type TrailRun = {
   difficulty: Difficulty;
   open: boolean;
   snow: Trail;
+  /** Normalised height 0–1 per snow segment (stored at creation for overnight/thaw). */
+  elevations: number[];
   builtDay?: number;
   builtAtMin?: number;
   paid?: number;
@@ -184,6 +186,55 @@ export function pathLengthWorld(path: readonly XZ[]): number {
 
 export function pathLengthFt(path: readonly XZ[], terrain: Terrain = TERRAIN): number {
   return Math.round(pathLengthWorld(path) * terrain.horizontalFeetPerUnit);
+}
+
+const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+
+/** Ridge top height — reference for normalising segment elevation (M2 calibration). */
+export function refSnowHeight(terrain: Terrain = TERRAIN): number {
+  const ridge = REFERENCE_TOPS[0];
+  return terrain.height(ridge.x, ridge.z);
+}
+
+function sampleAlongPath(path: readonly XZ[], frac: number): XZ {
+  if (path.length === 0) return { x: 0, z: 0 };
+  if (path.length === 1 || frac <= 0) return path[0];
+  const cum: number[] = [0];
+  for (let i = 1; i < path.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z));
+  }
+  const total = cum[cum.length - 1];
+  if (total < 1e-9) return path[0];
+  const d = clamp01(frac) * total;
+  let i = 0;
+  while (i < cum.length - 1 && cum[i + 1] < d - 1e-9) i++;
+  if (i >= path.length - 1) return path[path.length - 1];
+  const segLen = cum[i + 1] - cum[i];
+  const t = segLen < 1e-9 ? 0 : (d - cum[i]) / segLen;
+  return {
+    x: path[i].x + (path[i + 1].x - path[i].x) * t,
+    z: path[i].z + (path[i + 1].z - path[i].z) * t,
+  };
+}
+
+/** Real-height elevation per segment midpoint along `path` (1 ≈ Ridge top, 0 ≈ base). */
+export function segmentElevationsForPath(
+  path: readonly XZ[],
+  terrain: Terrain = TERRAIN,
+  n: number = TRAIL_SEGMENTS,
+): number[] {
+  const refH = refSnowHeight(terrain);
+  const base = terrain.base;
+  const baseH = terrain.height(base.x, base.z);
+  const denom = refH - baseH;
+  if (Math.abs(denom) < 1e-9) {
+    return Array.from({ length: n }, (_, i) => segmentElevation(i, n));
+  }
+  return Array.from({ length: n }, (_, s) => {
+    const p = sampleAlongPath(path, (s + 0.5) / n);
+    const h = terrain.height(p.x, p.z);
+    return clamp01((h - baseH) / denom);
+  });
 }
 
 const STEP_DIRS: XZ[] = (() => {
@@ -363,6 +414,7 @@ export function buildTrailRun(
     difficulty: classifyPitch(pitch),
     open: opts.open ?? true,
     snow,
+    elevations: segmentElevationsForPath(path, terrain),
   };
 }
 
@@ -388,5 +440,5 @@ export function fallLineTrailForLift(
 
 /** Map trail runs for snow aggregation (same shape `deriveSnow` / `readSnow` expect). */
 export function snowCarriers(trails: readonly TrailRun[]) {
-  return trails.map((t) => ({ confirmed: t.open, trail: t.snow }));
+  return trails.map((t) => ({ confirmed: t.open, trail: t.snow, elevations: t.elevations }));
 }

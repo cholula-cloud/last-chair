@@ -16,8 +16,8 @@
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); tap placement UI PR 12b–c; trail path test PR 13 | 12–13 |
-| Trail graph | 🟡 | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length (PR 13a–b, #42–#43). 13c elevation on segments next | 13c |
-| Snow | 🟡 | Six segments per `TrailRun` (PR 8, moved to trails in 13a). Multi-trail wear per run index (13b) | 13c |
+| Trail graph | ✅ | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length; `elevations[]` per run from path height (13a–c) | — |
+| Snow | ✅ | Six segments per `TrailRun`; thaw/overnight/gun reach use stored segment `elevations` (13c) | — |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
@@ -223,13 +223,13 @@ A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale
 
 ### Trail graph (P0)
 
-Through PR 13b: each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. PR 13c will tie segment elevation to real height along each path. P1: glade flag and more choice rules (PR 14).
+Each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. Segment `elevations[]` are derived from terrain height along each path (normalised to the Ridge top). P1: glade flag and more choice rules (PR 14).
 
 ---
 
 ## Snow (PR 8)
 
-Each confirmed lift has one trail of 6 segments from the top (index 0, elevation 1) to the bottom (index 5, elevation 0), stored as `lift.trail` (`game/snow.ts`). Each segment has `depth`, `quality` and `coverage` in 0–1. `snowQuality` and `snowDepth` in game state are derived: the means over every open segment (`deriveSnow`).
+Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `coverage` in 0–1, plus `elevations[]` (0 = base, 1 ≈ Ridge top) for weather and gun reach. `snowQuality` and `snowDepth` in game state are derived: the means over every open segment (`deriveSnow`).
 
 | Field | Meaning |
 |-------|---------|
