@@ -39,6 +39,8 @@ type GameActions = {
   setSelectedLiftType: (t: LiftType) => void;
   placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
   undoLift: () => void;
+  cutTrail: (liftIndex: number, optionIndex: number) => void;
+  undoTrail: () => void;
   buyBuilding: (id: BuildingId) => void;
   pickFounder: (id: FounderId) => void;
   acknowledgeBeat: () => void;
@@ -70,6 +72,9 @@ export const useGameStore = create<GameStore>()(
       setSelectedLiftType: (t) => set((s) => rules.setSelectedLiftType(s, t)),
       placeLift: (req) => set((s) => rules.placeLift(s, req)),
       undoLift: () => set((s) => rules.undoLift(s)),
+      cutTrail: (liftIndex, optionIndex) =>
+        set((s) => rules.cutTrail(s, liftIndex, optionIndex)),
+      undoTrail: () => set((s) => rules.undoTrail(s)),
       buyBuilding: (id) => set((s) => rules.buyBuilding(s, id)),
       pickFounder: (id) => set((s) => rules.pickFounder(s, id)),
       acknowledgeBeat: () => set((s) => rules.acknowledgeBeat(s)),

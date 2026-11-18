@@ -1,4 +1,5 @@
 import type { LiftSlot } from "./state";
+import { pickTrailIndex, type TrailRun } from "./trails";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
@@ -24,6 +25,18 @@ export function currentWaitMin(state: {
     if (l.confirmed) worst = Math.max(worst, liftWaitMin(l, state.talentsOwned));
   }
   return worst;
+}
+
+/** Wait plus ride for another lap on a specific lift. */
+export function lapOverheadForLift(
+  lifts: LiftSlot[],
+  talentsOwned: string[],
+  liftIndex: number,
+): number {
+  const lift = lifts[liftIndex];
+  if (!lift?.confirmed) return Infinity;
+  const perGuestMin = 60 / liftCapacityPerHour(lift.type, talentsOwned);
+  return liftWaitMin(lift, talentsOwned) + perGuestMin + LIFT_SPECS[lift.type].rideMinutes;
 }
 
 /** Lift with the shortest expected wait; ties go to the higher capacity, then the lower index. -1 if none is open. */
@@ -70,6 +83,7 @@ export type LiftStepResult = {
 export function stepLifts(
   guests: Guest[],
   lifts: LiftSlot[],
+  trails: readonly TrailRun[],
   talentsOwned: string[],
   now: number,
   addMin: number,
@@ -142,7 +156,9 @@ export function stepLifts(
     if (elapsed >= rideMin - 1e-9) {
       const rest = { ...g };
       delete rest.rideStartMin;
-      out[i] = { ...rest, state: "ski", progress: 0, stateSinceMin: now };
+      const li = g.liftIndex ?? 0;
+      const trailIndex = pickTrailIndex(g.persona, trails, li, g.id, g.runs);
+      out[i] = { ...rest, state: "ski", trailIndex, progress: 0, stateSinceMin: now };
     } else {
       out[i] = { ...g, rideStartMin: start, progress: elapsed / rideMin };
     }

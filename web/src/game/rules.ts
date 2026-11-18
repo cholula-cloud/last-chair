@@ -10,8 +10,7 @@ import {
 import {
   chooseLift,
   currentWaitMin,
-  liftCapacityPerHour,
-  liftWaitMin,
+  lapOverheadForLift,
   longestQueue,
   resetLiftQueues,
   stepLifts,
@@ -47,12 +46,16 @@ import { defaultLifts, type GameState, type LiftSlot } from "./state";
 import {
   defaultTrails,
   fallLineTrailForLift,
+  routeOptions,
   snowCarriers,
+  trailCost,
+  trailsOnLift,
+  type RouteOption,
+  type TrailRun,
 } from "./trails";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
   BUILDING_COSTS,
-  LIFT_SPECS,
   MS_PER_GAME_MINUTE,
   liftCost,
   type BuildingId,
@@ -171,9 +174,7 @@ export function openNight(state: GameState): GameState {
 function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[]): number {
   const li = chooseLift(lifts, talentsOwned);
   if (li < 0) return Infinity;
-  const lift = lifts[li];
-  const perGuestMin = 60 / liftCapacityPerHour(lift.type, talentsOwned);
-  return liftWaitMin(lift, talentsOwned) + perGuestMin + LIFT_SPECS[lift.type].rideMinutes;
+  return lapOverheadForLift(lifts, talentsOwned, li);
 }
 
 /** Longest slice of game time simulated in one step, so coarse ticks still measure waits to within it. */
@@ -202,16 +203,19 @@ export function tick(state: GameState, deltaMs: number): GameState {
     const moved = tickGuests(guests, {
       now: clockMin,
       snowQuality: state.snowQuality,
-      snowByLift: trails.map((t) => experiencedSnow(t.snow)),
+      snowByTrail: trails.map((t) => experiencedSnow(t.snow)),
+      trails,
+      lifts,
+      talentsOwned: state.talentsOwned,
       lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned),
     });
-    const runsByLift = lifts.map(() => 0);
+    const runsByTrail = trails.map(() => 0);
     moved.forEach((g, i) => {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
       if (g.runs > was.runs) {
-        const li = Math.min(lifts.length - 1, was.liftIndex ?? 0);
-        runsByLift[li] += g.runs - was.runs;
+        const ti = was.trailIndex ?? was.liftIndex ?? 0;
+        if (ti < runsByTrail.length) runsByTrail[ti] += g.runs - was.runs;
       }
       if (was.state === "pending" && g.state !== "pending") guestsArrived += 1;
       // Sent home from the line at closing before a single ride.
@@ -219,12 +223,12 @@ export function tick(state: GameState, deltaMs: number): GameState {
     });
     // Traffic scrapes the trail of the lift each run came down; thaw afternoons soften the low end.
     const thawing = state.weather === "thaw" && clockMin >= THAW_START_MIN;
-    trails = trails.map((t, li) => {
-      let snow = wearTrail(t.snow, runsByLift[li]);
+    trails = trails.map((t, ti) => {
+      let snow = wearTrail(t.snow, runsByTrail[ti]);
       if (thawing) snow = softenTrail(snow, stepMin);
       return snow === t.snow ? t : { ...t, snow };
     });
-    const step = stepLifts(moved, lifts, state.talentsOwned, clockMin, stepMin);
+    const step = stepLifts(moved, lifts, trails, state.talentsOwned, clockMin, stepMin);
     guests = step.guests;
     lifts = step.lifts;
     for (const w of step.waits) {
@@ -446,8 +450,81 @@ export function undoLift(state: GameState): GameState {
   return {
     ...state,
     lifts: state.lifts.slice(0, i),
-    trails: state.trails.slice(0, i),
+    trails: state.trails.filter((t) => t.liftIndex !== i),
     cash: state.cash + (state.lifts[i].paid ?? 0),
+  };
+}
+
+export type TrailOffer = RouteOption & { cost: number };
+
+export function trailOptions(
+  state: Pick<GameState, "lifts" | "trails">,
+  liftIndex: number,
+  terrain: Terrain = TERRAIN,
+): TrailOffer[] {
+  const lift = state.lifts[liftIndex];
+  if (!lift?.confirmed) return [];
+  const existing = trailsOnLift(state.trails, liftIndex).map(({ trail }) => trail.path);
+  return routeOptions(lift.anchor, existing, terrain).map((opt) => ({
+    ...opt,
+    cost: trailCost(opt.lengthFt),
+  }));
+}
+
+export function cutTrail(
+  state: GameState,
+  liftIndex: number,
+  optionIndex: number,
+  terrain: Terrain = TERRAIN,
+): GameState {
+  if (state.phase !== "day") return state;
+  const lift = state.lifts[liftIndex];
+  if (!lift?.confirmed) return state;
+  if (trailsOnLift(state.trails, liftIndex).length >= 3) return state;
+  if (state.trails.length >= 8) return state;
+  const opts = trailOptions(state, liftIndex, terrain);
+  const opt = opts[optionIndex];
+  if (!opt) return state;
+  if (state.cash < opt.cost) return state;
+  const snow = averageTrail(state.trails.filter((t) => t.open).map((t) => t.snow));
+  const run: TrailRun = {
+    liftIndex,
+    name: opt.name,
+    path: opt.path,
+    lengthFt: opt.lengthFt,
+    pitch: opt.pitch,
+    difficulty: opt.difficulty,
+    open: true,
+    snow,
+    builtDay: state.dayIndex,
+    builtAtMin: state.clockMin,
+    paid: opt.cost,
+  };
+  return {
+    ...state,
+    trails: [...state.trails, run],
+    cash: state.cash - opt.cost,
+    buildMode: false,
+  };
+}
+
+export function undoableTrailIndex(
+  state: Pick<GameState, "trails" | "dayIndex" | "clockMin" | "phase">,
+): number {
+  const i = state.trails.length - 1;
+  const last = state.trails[i];
+  if (!last?.paid || state.phase !== "day") return -1;
+  return last.builtDay === state.dayIndex && last.builtAtMin === state.clockMin ? i : -1;
+}
+
+export function undoTrail(state: GameState): GameState {
+  const i = undoableTrailIndex(state);
+  if (i < 0) return state;
+  const last = state.trails[i];
+  return {
+    ...state,
+    trails: state.trails.slice(0, i),
+    cash: state.cash + (last.paid ?? 0),
   };
 }
 

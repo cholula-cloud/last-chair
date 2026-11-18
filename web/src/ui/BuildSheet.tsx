@@ -14,6 +14,7 @@ import {
 import { startPlacement } from "@/ui/placementDraft";
 import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
 import { Sheet } from "@/ui/kit/Sheet";
+import { TrailsPanel } from "@/ui/TrailsPanel";
 import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 
 const BUILD_OPTIONS: BuildingId[] = ["lodge", "cafe", "shop", "snow_guns"];
@@ -160,6 +161,7 @@ export function BuildSheet({
             })}
           </ul>
         </div>
+        <TrailsPanel />
       </div>
     </Sheet>
   );

@@ -1,5 +1,9 @@
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
+import { lapOverheadForLift } from "./lifts";
+import { runSkiMinutes } from "./trails";
+import type { LiftSlot } from "./state";
+import type { TrailRun } from "./trails";
 import {
   deriveSnow,
   gunReach,
@@ -151,9 +155,12 @@ export type GuestClock = {
   /** Game clock minute at the end of this step. */
   now: number;
   snowQuality: number;
-  /** Experienced snow per lift index (see snow.ts `experiencedSnow`); falls back to `snowQuality`. */
-  snowByLift?: number[];
-  /** Expected wait plus ride time for the next lap at the best open lift (Infinity with none). */
+  /** Experienced snow per trail index; falls back to `snowQuality`. */
+  snowByTrail?: number[];
+  trails: readonly TrailRun[];
+  lifts: readonly LiftSlot[];
+  talentsOwned: string[];
+  /** Expected wait plus ride at the best open lift (fallback lap time). */
   lapOverheadMin: number;
 };
 
@@ -180,6 +187,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const joinLine = (g: Guest, over: Partial<Guest> = {}): Guest => {
     const next: Guest = { ...g, ...over, state: "queue", progress: 0 };
     delete next.joinedQueueAtMin;
+    delete next.trailIndex;
     return next;
   };
 
@@ -197,14 +205,23 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "queue":
         return now >= LIFT_CLOSE_MIN ? goHome(g) : g;
       case "ski": {
-        const q = clock.snowByLift?.[g.liftIndex ?? 0] ?? clock.snowQuality;
-        const duration = skiMinutes(g.persona, q);
+        const ti = g.trailIndex ?? g.liftIndex ?? 0;
+        const trail = clock.trails[ti];
+        const q = clock.snowByTrail?.[ti] ?? clock.snowQuality;
+        const duration = trail
+          ? runSkiMinutes(g.persona, trail, q)
+          : skiMinutes(g.persona, q);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
         const runs = g.runs + 1;
         const energy = g.energy - PERSONAS[g.persona].energyPerRun;
         const done = { runs, energy, snowSum: g.snowSum + q };
-        const lapEnds = now + clock.lapOverheadMin + duration;
+        const li = g.liftIndex ?? 0;
+        const lapOverhead =
+          clock.lifts[li]?.confirmed
+            ? lapOverheadForLift([...clock.lifts], clock.talentsOwned, li)
+            : clock.lapOverheadMin;
+        const lapEnds = now + lapOverhead + duration;
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
           return goHome(g, done);
         }

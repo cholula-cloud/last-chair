@@ -8,7 +8,8 @@ import * as THREE from "three";
 import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
 import { checkPlacement, liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
-import { snowCarriers } from "@/game/trails";
+import { snowCarriers, trailsOnLift } from "@/game/trails";
+import { useTrailPreview } from "@/ui/trailPreview";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
@@ -461,17 +462,22 @@ export function MountainScene() {
         : { bottom: TERRAIN.base, top: FALLBACK_ANCHOR },
     [confirmedLifts],
   );
+  const trailPaths = useMemo(
+    () => trailRuns.map((t) => t.path),
+    [trailRuns],
+  );
   const guestLifts = useMemo(
     () =>
       lifts.length > 0
-        ? lifts.map((l, i) => ({
-            line: liftLineOf(l),
-            type: l.type,
-            path: trailRuns[i]?.path,
-          }))
+        ? lifts.map((l, i) => {
+            const onLift = trailsOnLift(trailRuns, i);
+            const path = onLift[0]?.trail.path ?? trailRuns[i]?.path;
+            return { line: liftLineOf(l), type: l.type, path };
+          })
         : [{ line: primaryLine, type: "surface" as LiftType, path: trailRuns[0]?.path }],
     [lifts, primaryLine, trailRuns],
   );
+  const previewCutPath = useTrailPreview((s) => s.path);
   const previewLine = useMemo(
   () =>
     draftTop
@@ -524,15 +530,24 @@ export function MountainScene() {
         )}
         <Trees lines={clearingLines} paths={trailRuns.map((t) => t.path)} />
 
+        {trailRuns.map((run, ti) => {
+          const lift = lifts[run.liftIndex];
+          if (!lift?.confirmed) return null;
+          const line = liftLineOf(lift);
+          return (
+            <TrailRibbon
+              key={`trail-${ti}-${run.name}`}
+              kind="built"
+              line={line}
+              path={run.path}
+              groomed={groomVisible}
+              trail={trailSnow[ti] ?? trailSnow[0]}
+            />
+          );
+        })}
+
         {confirmedLifts.map((lift, i) => (
           <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
-            <TrailRibbon
-              kind="built"
-              line={liftLineOf(lift)}
-              path={trailRuns[i]?.path}
-              groomed={groomVisible}
-              trail={trailSnow[i] ?? trailSnow[0]}
-            />
             <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} />
           </group>
         ))}
@@ -549,7 +564,16 @@ export function MountainScene() {
           </>
         )}
 
-        <Guests lifts={guestLifts} followedRef={followedRef} />
+        {previewCutPath && previewCutPath.length > 1 && (
+          <TrailRibbon
+            kind="preview"
+            line={{ bottom: TERRAIN.base, top: previewCutPath[0] }}
+            path={previewCutPath}
+            valid
+          />
+        )}
+
+        <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
       </Suspense>
       <PlacementController />
       <PlacementOrbitCap active={placementActive} maxDistance={orbitMax} />

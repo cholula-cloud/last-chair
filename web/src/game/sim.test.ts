@@ -22,6 +22,8 @@ import {
   type GuestClock,
 } from "./sim";
 import { PERSONAS, skiMinutes } from "./personas";
+import { defaultTrails } from "./trails";
+import { defaultLifts } from "./state";
 import { ZERO_TERMS, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import { createRng } from "./rng";
 import { freshTrail, type Trail } from "./snow";
@@ -494,10 +496,20 @@ describe("tickGuests", () => {
     now,
     snowQuality: 1,
     lapOverheadMin: 5,
+    trails: defaultTrails(),
+    lifts: defaultLifts(),
+    talentsOwned: [],
     ...over,
   });
   const skier = (over: Partial<Guest> = {}) =>
-    makeGuest({ state: "ski", stateSinceMin: T0, persona: "regular", ...over });
+    makeGuest({
+      state: "ski",
+      stateSinceMin: T0,
+      persona: "regular",
+      trailIndex: 0,
+      liftIndex: 0,
+      ...over,
+    });
 
   it("keeps a pending guest at home until their arrival minute, then starts the walk in", () => {
     const g = makeGuest({ state: "pending", arriveAtMin: T0 + 5 });
@@ -544,10 +556,14 @@ describe("tickGuests", () => {
     const lateEnd = late + skiMinutes("regular", 1);
     const lateSkier = skier({ stateSinceMin: late, targetRuns: 9 });
     expect(tickGuests([lateSkier], clock(lateEnd))[0].state).toBe("depart");
-    expect(tickGuests([lateSkier], clock(lateEnd, { lapOverheadMin: 1 }))[0].state).toBe("queue");
-    // No open lift at all: nobody laps.
     expect(
-      tickGuests([skier({ targetRuns: 9 })], clock(end, { lapOverheadMin: Infinity }))[0].state,
+      tickGuests([lateSkier], clock(lateEnd, { lapOverheadMin: 1, lifts: [] }))[0].state,
+    ).toBe("queue");
+    // No open lift at all: nobody laps.
+    const noLift = defaultLifts().map((l) => ({ ...l, confirmed: false }));
+    expect(
+      tickGuests([skier({ targetRuns: 9 })], clock(end, { lapOverheadMin: Infinity, lifts: noLift }))[0]
+        .state,
     ).toBe("depart");
   });
 

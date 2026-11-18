@@ -44,9 +44,11 @@ export type GuestLift = { line: LiftLine; type: LiftType; path?: readonly import
 
 export function Guests({
   lifts,
+  trailPaths,
   followedRef,
 }: {
   lifts: GuestLift[];
+  trailPaths?: readonly (readonly import("@/game/terrain").XZ[] | undefined)[];
   followedRef: FollowedRef;
 }) {
   const guests = useGameStore((s) => s.guests);
@@ -89,8 +91,8 @@ export function Guests({
   const markerRef = useRef<THREE.Mesh>(null);
 
   const placements = useMemo(
-    () => placeGuests(guests, placedLifts, stallMap),
-    [guests, placedLifts, stallMap],
+    () => placeGuests(guests, placedLifts, stallMap, trailPaths),
+    [guests, placedLifts, stallMap, trailPaths],
   );
 
   useLayoutEffect(() => {

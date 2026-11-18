@@ -264,15 +264,29 @@ describe("problem line", () => {
 });
 
 describe("guest tallies", () => {
+  const guestClock = (now: number, over: Partial<import("./sim").GuestClock> = {}) => {
+    const base = createInitialState(1);
+    return {
+      now,
+      snowQuality: 0.8,
+      lapOverheadMin: 3,
+      trails: base.trails,
+      lifts: base.lifts,
+      talentsOwned: [],
+      ...over,
+    };
+  };
+
   it("adds a wait to the guest each time a lift dispatches them", () => {
-    const lifts = createInitialState(1).lifts;
+    const base = createInitialState(1);
+    const lifts = base.lifts;
     const g = makeGuest({ id: "a", state: "queue" });
     let guests = [g];
     let l = lifts;
     let now = 600;
     for (let i = 0; i < 20 && guests[0].state === "queue"; i++) {
       now += 0.5;
-      const r = stepLifts(guests, l, [], now, 0.5);
+      const r = stepLifts(guests, l, base.trails, [], now, 0.5);
       guests = r.guests;
       l = r.lifts;
     }
@@ -282,16 +296,21 @@ describe("guest tallies", () => {
   });
 
   it("adds the snow quality under each finished run", () => {
-    const skier = makeGuest({ state: "ski", stateSinceMin: 600, targetRuns: 9 });
-    const clock = { now: 700, snowQuality: 0.8, lapOverheadMin: 3 };
-    const [done] = tickGuests([skier], clock);
+    const skier = makeGuest({
+      state: "ski",
+      stateSinceMin: 600,
+      targetRuns: 9,
+      trailIndex: 0,
+      liftIndex: 0,
+    });
+    const [done] = tickGuests([skier], guestClock(700));
     expect(done.runs).toBe(1);
     expect(done.snowSum).toBeCloseTo(0.8, 10);
   });
 
   it("counts the wait of a guest sent home from a line at close", () => {
     const stuck = makeGuest({ state: "queue", joinedQueueAtMin: LIFT_CLOSE_MIN - 20 });
-    const [home] = tickGuests([stuck], { now: LIFT_CLOSE_MIN, snowQuality: 0.6, lapOverheadMin: 3 });
+    const [home] = tickGuests([stuck], guestClock(LIFT_CLOSE_MIN, { snowQuality: 0.6 }));
     expect(home.state).toBe("depart");
     expect(home.waitCount).toBe(1);
     expect(home.waitMin).toBeCloseTo(20, 10);
@@ -299,8 +318,15 @@ describe("guest tallies", () => {
   });
 
   it("a guest returning to the line starts a fresh wait", () => {
-    const skier = makeGuest({ state: "ski", stateSinceMin: 600, joinedQueueAtMin: 500, targetRuns: 9 });
-    const [back] = tickGuests([skier], { now: 700, snowQuality: 0.6, lapOverheadMin: 3 });
+    const skier = makeGuest({
+      state: "ski",
+      stateSinceMin: 600,
+      joinedQueueAtMin: 500,
+      targetRuns: 9,
+      trailIndex: 0,
+      liftIndex: 0,
+    });
+    const [back] = tickGuests([skier], guestClock(700, { snowQuality: 0.6 }));
     expect(back.state).toBe("queue");
     expect(back.joinedQueueAtMin).toBeUndefined();
   });

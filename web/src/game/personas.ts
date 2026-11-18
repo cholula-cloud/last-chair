@@ -1,8 +1,10 @@
-import type { PersonaId } from "./types";
+import type { PersonaId, TrailDifficulty } from "./types";
 
 export type PersonaDef = {
   id: PersonaId;
   label: string;
+  maxDifficulty: TrailDifficulty;
+  preferred: TrailDifficulty;
   /** Share of a weekday / weekend roster. */
   weekdayShare: number;
   weekendShare: number;
@@ -25,6 +27,8 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
   first_timer: {
     id: "first_timer",
     label: "First-timer",
+    maxDifficulty: "green",
+    preferred: "green",
     weekdayShare: 0.6,
     weekendShare: 0.4,
     startEnergy: 1,
@@ -38,6 +42,8 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
   regular: {
     id: "regular",
     label: "Regular",
+    maxDifficulty: "black",
+    preferred: "blue",
     weekdayShare: 0.4,
     weekendShare: 0.6,
     startEnergy: 1,
@@ -50,7 +56,7 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
   },
 };
 
-/** Minutes one run takes: worse snow is a bit slower (quality 1 = base, 0.55 = +13%). */
+/** Minutes one run takes at the reference trail length; worse snow is a bit slower. */
 export function skiMinutes(persona: PersonaId, snowQuality: number): number {
   const q = Math.max(0, Math.min(1, snowQuality));
   return PERSONAS[persona].skiMin * (1 + 0.3 * (1 - q));
