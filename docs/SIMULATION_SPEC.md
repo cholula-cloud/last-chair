@@ -3,7 +3,7 @@
 **Version:** 0.4 · **Updated:** 2026-11-17  
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
-## Implementation status (2026-11-16 audit)
+## Implementation status (2026-11-18 audit)
 
 ✅ implemented as written · 🟡 partial or approximated · ❌ not implemented. Update this table in the same PR that changes the code.
 
@@ -21,10 +21,10 @@
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
 | Lodge tiers | ❌ | Spec only: fixed HQ, tier gates assets, attach bonus. The lodge is still a buildable item | L1, 16a–16d |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
-| Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
+| Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key `last-chair-v1`, schema version 7 with migration; cloud later | 25 |
+| Save format | 🟡 | Key `last-chair-v1`, schema version 10 with migrations; cloud later | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
