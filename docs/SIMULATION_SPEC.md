@@ -36,7 +36,7 @@
 | Day start | 07:30 (first arrivals 08:00; moved from 06:00 in PR 6 to remove an empty two hours) |
 | Day end (close) | 16:00 |
 | Realtime 1× | 1 in-game minute ≈ 0.5 s (tunable) |
-| Speed | 1× default; 2× after tutorial beat |
+| Speed | 1×, 2×, 3× chip in the top bar (session-only, resets at night and on founder pick); 1× default |
 | Season | 28 days (internal test: 14) |
 
 **Pause:** `dayClock` frozen; build allowed.  

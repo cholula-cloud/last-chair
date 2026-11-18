@@ -25,6 +25,7 @@ import {
 } from "@/ui/Hud";
 import { tidy } from "@/ui/kit/parts";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
+import { useSpeed } from "@/ui/speed";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience() {
@@ -85,6 +86,10 @@ export default function PlayExperience() {
   useEffect(() => {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
+
+  useEffect(() => {
+    if (phase === "night") useSpeed.getState().reset();
+  }, [phase]);
 
   useEffect(() => {
     if (!talentToast) return;

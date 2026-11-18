@@ -13,7 +13,8 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
 | Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the 12-strategy table over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
-| Phone viewport | Playwright iPhone viewport, `npm run playtest:p0` (Chromium from `npx playwright install chromium`; screenshots to `PLAYTEST_OUT`, default `web/playtest-artifacts/`) | P0 script steps in Chromium at iPhone size | Local, before merge | Exists |
+| Phone check | Playwright Chromium + WebKit, `npm run phone-check` (viewports 390×844, 844×390, 820×1180, 375×667; waits on `[data-scene-ready="true"]`; screenshots and perf gates to `PLAYTEST_OUT/phone-check/`, default `web/playtest-artifacts/phone-check/`) | Home pan/zoom, Build feet, speed chip, optional `?stats=1` draw-call budget (Chromium) | Local, before merge | Exists |
+| Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Milestone gates | Scripts below |
 
 `npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
@@ -32,7 +33,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | 2 | Read top HUD | Day, time, cash visible without zoom |
 | 3 | Read the ops strip | Queue, snow %, mood hint visible |
 | 4 | **Guests** → **Follow** one guest | List works; camera follows |
-| 5 | **Build** → pick a blocked top (Ridge, Creek) → pick a valid top (Mid) → **Place lift** (then **Undo last lift** before resuming) | Reason text names why a top is blocked; place only when valid and affordable; undo refunds the price until the clock moves |
+| 5 | **Build** → pick a blocked top (Ridge, Creek) → pick a valid top (Mid) → **Place lift** (then **Undo last lift** before resuming) | Reason text names why a top is blocked; length and vertical show in **ft** for the selected top; place only when valid and affordable; undo refunds the price until the clock moves |
 | 6 | **Close hill** (or wait until 4 PM) | Night sheet opens |
 | 7 | Change **Fare** and **Snow & service** | Full-width tiles, no pinch to read |
 | 8 | **Sleep** | Morning; snow look changes with tier |

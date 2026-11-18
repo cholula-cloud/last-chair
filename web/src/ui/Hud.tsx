@@ -22,6 +22,7 @@ import {
   ThawIcon,
 } from "@/ui/kit/icons";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
+import { useSpeed } from "@/ui/speed";
 
 /** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
 export function TopBar({
@@ -41,8 +42,10 @@ export function TopBar({
   notStarted: boolean;
   onTogglePause: () => void;
 }) {
+  const speed = useSpeed((s) => s.speed);
+  const cycleSpeed = useSpeed((s) => s.cycle);
   return (
-    <div className="flex w-full items-center gap-2 sm:w-[420px]">
+    <div className="flex w-full items-center gap-2 sm:w-[min(28rem,100%)]">
       <button
         type="button"
         onClick={onTogglePause}
@@ -64,8 +67,16 @@ export function TopBar({
         </div>
         <ClockText text={formatClock(clockMin)} />
       </div>
+      <button
+        type="button"
+        onClick={cycleSpeed}
+        aria-label={`Game speed ${speed}x, tap to change`}
+        className="chip flex size-12 shrink-0 items-center justify-center text-[0.95rem] font-extrabold tabular-nums"
+      >
+        {speed}x
+      </button>
       <span
-        className={`chip display flex h-12 min-w-[5.6rem] shrink-0 items-center justify-center px-3 text-[1.3rem] tabular-nums ${
+        className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
           cash < 0 ? "bg-barn-deep text-white" : "bg-gold"
         }`}
       >

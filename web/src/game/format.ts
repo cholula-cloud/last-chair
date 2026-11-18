@@ -1,3 +1,9 @@
+/** Whole feet from terrain/lift world units. */
+export function formatFeet(units: number, feetPerUnit: number): string {
+  const ft = Math.round(units * feetPerUnit);
+  return `${ft.toLocaleString("en-US")} ft`;
+}
+
 /** Formats whole-dollar amounts; negatives use U+2212 so the sign lines up with "+". */
 export function formatMoney(
   n: number,

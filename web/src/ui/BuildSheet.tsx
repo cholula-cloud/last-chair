@@ -1,7 +1,14 @@
 "use client";
 
-import { formatMoney } from "@/game/format";
-import { REFERENCE_TOPS, placementReason, type PlacementReason, type ReferenceTop } from "@/game/descent";
+import { formatFeet, formatMoney } from "@/game/format";
+import {
+  REFERENCE_TOPS,
+  liftLength,
+  liftVertical,
+  placementReason,
+  type PlacementReason,
+  type ReferenceTop,
+} from "@/game/descent";
 import { checkPlacement, undoableLiftIndex } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
@@ -13,7 +20,7 @@ import {
   type BuildingId,
   type LiftType,
 } from "@/game/types";
-import { usePlacementDraft } from "@/ui/placementDraft";
+import { requestFocus, usePlacementDraft } from "@/ui/placementDraft";
 import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
 import { Sheet } from "@/ui/kit/Sheet";
 import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
@@ -58,6 +65,14 @@ export function BuildSheet({
   if (!open) return null;
 
   const lineFor = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
+  const feetFor = (top: { x: number; z: number }) => {
+    const line = lineFor(top);
+    return {
+      length: formatFeet(liftLength(line), TERRAIN.horizontalFeetPerUnit),
+      vertical: formatFeet(liftVertical(line), TERRAIN.feetPerUnit),
+    };
+  };
+  const selectedFeet = feetFor(candidateTop);
   const check = checkPlacement({ lifts, cash }, selectedLiftType, lineFor(candidateTop));
   const costFor = (t: LiftType) => liftCost(t, lineFor(candidateTop));
   const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
@@ -76,6 +91,7 @@ export function BuildSheet({
       }
       onClose={onClose}
       closeLabel="Close build sheet"
+      dataMarker="build-sheet"
       wide
     >
       <div className="short:grid short:grid-cols-2 short:gap-4">
@@ -125,11 +141,18 @@ export function BuildSheet({
                   top={t}
                   selected={t.x === candidateTop.x && t.z === candidateTop.z}
                   reason={c.ok ? null : c.reason}
-                  onPick={() => usePlacementDraft.setState({ candidateTop: t })}
+                  feet={feetFor(t)}
+                  onPick={() => {
+                    usePlacementDraft.setState({ candidateTop: t });
+                    requestFocus([TERRAIN.base, t]);
+                  }}
                 />
               );
             })}
           </div>
+          <p className="mt-2 text-center text-[0.85rem] font-extrabold text-ink-soft" aria-live="polite">
+            {selectedFeet.length} long, {selectedFeet.vertical} vertical
+          </p>
 
           <PrimaryButton
             className="mt-4"
@@ -221,12 +244,14 @@ function TopButton({
   top,
   selected,
   reason,
+  feet,
   onPick,
 }: {
   top: ReferenceTop;
   selected: boolean;
   /** Null when the lift can be placed here. */
   reason: PlacementReason | null;
+  feet: { length: string; vertical: string };
   onPick: () => void;
 }) {
   const ok = reason === null;
@@ -246,7 +271,7 @@ function TopButton({
         data-muted
         className={`text-[0.78rem] font-extrabold ${selected ? "" : ok ? "!text-sign-green" : "!text-barn-deep"}`}
       >
-        {ok ? "Valid run" : "Blocked"}
+        {selected ? `${feet.length} · ${feet.vertical}` : ok ? "Valid run" : "Blocked"}
       </span>
     </button>
   );
