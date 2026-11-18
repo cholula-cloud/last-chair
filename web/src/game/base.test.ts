@@ -1,3 +1,4 @@
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it } from "vitest";
 import {
   advanceLodgeUpgrade,
@@ -16,7 +17,6 @@ import {
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { REFERENCE_TOPS } from "./descent";
 import { checkAssetPlacement, checkPlacement, closeLift, pickFounder, placeAsset, placeLift } from "./rules";
-import { createInitialState } from "./state";
 import { TERRAIN } from "./terrain";
 
 describe("lodge progression", () => {
@@ -91,7 +91,7 @@ describe("venue placement", () => {
 });
 
 describe("lift and venue clearance", () => {
-  const started = () => ({ ...pickFounder(createInitialState(7), "elena"), lodgeTier: 2 as const, cash: 20000 });
+  const started = () => ({ ...pickFounder(createBuiltHill(7), "elena"), lodgeTier: 2 as const, cash: 20000 });
   const top = REFERENCE_TOPS[1];
 
   it("protects the fixed lodge without blocking the canonical shared lift base", () => {

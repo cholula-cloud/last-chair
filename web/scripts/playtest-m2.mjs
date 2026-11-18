@@ -25,8 +25,10 @@ registerHooks({
       : context);
   },
 });
-const [{ TERRAIN }, { createInitialState, SAVE_KEY, SAVE_VERSION, toPersisted }, { pickFounder }] =
-  await Promise.all([import("../src/game/terrain.ts"), import("../src/game/state.ts"), import("../src/game/rules.ts")]);
+const [{ TERRAIN }, { createInitialState, SAVE_KEY, SAVE_VERSION, toPersisted },
+  { checkPaint, commitPaint, pickFounder, placeLift, trailOptions }, { REFERENCE_TOPS }, { STANDARD_BRUSH_WIDTH }] =
+  await Promise.all([import("../src/game/terrain.ts"), import("../src/game/state.ts"), import("../src/game/rules.ts"),
+    import("../src/game/descent.ts"), import("../src/game/paintedTrail.ts")]);
 
 const browserTypes = { chromium, webkit };
 const engines = (process.env.PLAYTEST_ENGINES ?? "chromium,webkit").split(",");
@@ -180,20 +182,29 @@ async function opening(page, cdp, engine) {
   await page.getByText(/Day 1\/\d+/).waitFor();
   const started = Date.now();
   const initial = (await save(page)).state;
+  assert.equal(initial.lodgeTier, 1);
+  for (const kind of ["lifts", "trails", "assets", "guns"]) assert.equal(initial[kind].length, 0);
+  assert(await button(page, "Resume day").isDisabled());
   await buildMenu(page);
   await click(page, "Place lift");
   await page.locator('[data-placement-kind="lift"]').waitFor();
-  await drag(page, cdp, [world(9, -0.2), world(10, -0.5)]);
+  await drag(page, cdp, [world(REFERENCE_TOPS[0].x, REFERENCE_TOPS[0].z)]);
   await confirmDraft(page, "lift", /^Place for /);
   const withLift = (await save(page)).state;
   assert.equal(withLift.lifts.length, initial.lifts.length + 1, "The lift needs to be saved");
   assert(withLift.cash < initial.cash, "The lift needs to be paid for");
+  assert.equal(withLift.trails.length, 0, "The game must not generate a free trail");
+  assert(await button(page, "Resume day").isDisabled());
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.locator('[data-scene-ready="true"]').waitFor();
+  assert.deepEqual((await save(page)).state.lifts, withLift.lifts, "Reloading must keep the new lift");
 
-  const top = initial.lifts[0].anchor;
+  const top = withLift.lifts[0].anchor;
   await paintTrail(page, cdp, top);
   const built = (await save(page)).state;
   assert.equal(built.trails.length, withLift.trails.length + 1, "The painted trail needs to be saved");
   assert(built.cash < withLift.cash, "The trail needs to be paid for");
+  assert(await button(page, "Resume day").isEnabled());
   const scriptedSeconds = Math.round((Date.now() - started) / 100) / 10;
   assert(scriptedSeconds < 180, "The scripted opening exceeded three minutes");
   await screenshot(page, engine, "opening");
@@ -216,7 +227,13 @@ async function sleep(page) {
 }
 
 async function upgrade(page, cdp, engine) {
-  const prepared = { ...pickFounder(createInitialState(42), "elena"), cash: 25000 };
+  const withLift = placeLift({ ...pickFounder(createInitialState(42), "elena"), cash: 25000 }, {
+    type: "surface", bottom: TERRAIN.base, top: REFERENCE_TOPS[0],
+  });
+  const strokes = trailOptions(withLift, 0).map((option) => [{ points: option.path, widthFt: STANDARD_BRUSH_WIDTH }]);
+  const valid = strokes.find((draft) => checkPaint(withLift, draft).reason === null);
+  assert.ok(valid, "A painted route is needed for the lodge scenario");
+  const prepared = commitPaint(withLift, valid);
   await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
     key: SAVE_KEY,
     value: JSON.stringify({ state: toPersisted(prepared), version: SAVE_VERSION }),

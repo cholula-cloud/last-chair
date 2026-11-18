@@ -1,4 +1,4 @@
-import { migrate } from "./migrations";
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import * as rules from "./rules";
@@ -18,7 +18,7 @@ import {
   wearTrail,
   type Trail,
 } from "./snow";
-import { createInitialState, toPersisted, type GameState } from "./state";
+import { type GameState } from "./state";
 import type { BuildingId, SnowPreset, WeatherKind } from "./types";
 
 const night = (
@@ -162,7 +162,7 @@ describe("reading the trail", () => {
 });
 
 describe("state integration", () => {
-  const started = (): GameState => rules.pickFounder(createInitialState(7), "elena");
+  const started = (): GameState => rules.pickFounder(createBuiltHill(7), "elena");
   const atNight = (s: GameState, snow: SnowPreset, weather: WeatherKind): GameState => {
     const base: GameState = { ...s, weather: "clear" };
     const n = rules.openNight({ ...base, clockMin: 16 * 60, phase: "day" });
@@ -215,19 +215,6 @@ describe("state integration", () => {
       daysWithoutSnow: 0,
     });
     expect(r.trails).toHaveLength(2);
-  });
-
-  it("migrates a v4 save: every lift gets segments at the old global values", () => {
-    const v4 = JSON.parse(JSON.stringify(toPersisted(started())));
-    v4.snowQuality = 0.4;
-    v4.snowDepth = 0.3;
-    for (const l of v4.lifts) delete l.trail;
-    delete v4.gunReach;
-    const m = migrate(v4, 4).state;
-    expect(m.trails[0].snow).toHaveLength(TRAIL_SEGMENTS);
-    expect(m.trails[0].snow.every((s) => s.quality === 0.4 && s.depth === 0.3)).toBe(true);
-    expect(m.snowQuality).toBeCloseTo(0.4, 10);
-    expect(m.gunReach).toBe(0);
   });
 
   it("segment elevation runs 1 at the top to 0 at the bottom", () => {

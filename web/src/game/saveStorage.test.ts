@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createInitialState, SAVE_KEY, SAVE_VERSION, toPersisted } from "./state";
 import { useGameStore } from "./store";
 
-const BACKUP_KEY = "last-chair-v1-backup";
+const BACKUP_KEY = `${SAVE_KEY}-backup`;
 
 describe("browser save storage", () => {
   let data: Map<string, string>;
@@ -38,6 +38,23 @@ describe("browser save storage", () => {
     await useGameStore.persist.rehydrate();
     expect(useGameStore.getState().saveNotice).toBeNull();
     expect(data.get(BACKUP_KEY)).toBe(raw);
+  });
+
+  it("erases only M2 keys on startup and resumes a current lodge-only save", async () => {
+    const saved = { ...toPersisted(createInitialState()), cash: 9160, founderId: "riley", phase: "day" };
+    const serialized = JSON.stringify({ state: saved, version: SAVE_VERSION });
+    data.set("last-chair-v1", "old save");
+    data.set("last-chair-v1-backup", "old backup");
+    data.set("unrelated", "keep");
+    data.set(SAVE_KEY, serialized);
+
+    vi.resetModules();
+    const { useGameStore: freshStore } = await import("./store");
+    expect(freshStore.getState()).toMatchObject({ ...saved, saveNotice: null });
+    expect(data.get(SAVE_KEY)).toBe(serialized);
+    expect(data.get("unrelated")).toBe("keep");
+    expect(data.has("last-chair-v1")).toBe(false);
+    expect(data.has("last-chair-v1-backup")).toBe(false);
   });
 
   it("keeps the unreadable save if the backup cannot be written", async () => {

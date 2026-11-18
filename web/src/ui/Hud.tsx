@@ -32,6 +32,7 @@ export function TopBar({
   cash,
   paused,
   notStarted,
+  openingBlocked = false,
   onTogglePause,
 }: {
   dayIndex: number;
@@ -40,6 +41,7 @@ export function TopBar({
   cash: number;
   paused: boolean;
   notStarted: boolean;
+  openingBlocked?: boolean;
   onTogglePause: () => void;
 }) {
   const speed = useSpeed((s) => s.speed);
@@ -49,9 +51,10 @@ export function TopBar({
       <button
         type="button"
         onClick={onTogglePause}
+        disabled={openingBlocked}
         aria-label={paused ? "Resume day" : "Pause day"}
         className={`sign sign-btn press flex size-12 shrink-0 items-center justify-center [--lift:4px] ${
-          notStarted ? "pulse-ring" : ""
+          notStarted && !openingBlocked ? "pulse-ring" : ""
         }`}
       >
         {paused ? <PlayIcon size={22} /> : <PauseIcon size={22} />}
@@ -164,14 +167,17 @@ export function MorningNote({
 }
 
 /** Small navy callout under the play key on the very first morning. */
-export function StartCallout() {
+export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
+  const instruction = step === "lift" ? "Build your first lift"
+    : step === "trail" ? "Paint a trail from the lift to the base"
+      : "Tap the play key to open the hill";
   return (
-    <p className="callout-in pointer-events-none relative ml-2 mt-2.5 w-max rounded-xl border-[3px] border-ink bg-ink px-3 py-1.5 text-[0.88rem] font-extrabold text-white">
+    <p role="status" className="callout-in pointer-events-none relative ml-2 mt-2.5 w-fit max-w-[calc(100%-0.5rem)] rounded-xl border-[3px] border-ink bg-ink px-3 py-1.5 text-[0.88rem] font-extrabold text-white">
       <span
         className="absolute -top-2 left-[1.15rem] size-3 rotate-45 bg-ink"
         aria-hidden="true"
       />
-      <span className="relative">Tap the play key to open the hill</span>
+      <span className="relative">{instruction}</span>
     </p>
   );
 }
@@ -365,6 +371,7 @@ export function ActionBar({
   onBuild,
   onGuests,
   onCloseHill,
+  openingBlocked = false,
   confirmMenu = false,
   onConfirmMenuChange,
 }: {
@@ -372,6 +379,7 @@ export function ActionBar({
   onBuild: () => void;
   onGuests: () => void;
   onCloseHill: () => void;
+  openingBlocked?: boolean;
   confirmMenu?: boolean;
   onConfirmMenuChange?: (open: boolean) => void;
 }) {
@@ -444,6 +452,7 @@ export function ActionBar({
       <button
         type="button"
         onClick={onCloseHill}
+        disabled={openingBlocked}
         className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"
       >
         <MountainMoonIcon size={22} />

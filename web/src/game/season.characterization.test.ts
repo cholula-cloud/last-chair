@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import * as rules from "./rules";
 import { REFERENCE_TOPS } from "./descent";
 import { createInitialState, type GameState } from "./state";
+import { referencePaint } from "./__fixtures__/built-hill";
+import type { PaintStroke } from "./paintedTrail";
 import { TERRAIN, type XZ } from "./terrain";
 
 const SEED = 42;
@@ -29,24 +31,7 @@ function installLocalStorage() {
 const round = (n: number | undefined) =>
   n === undefined ? undefined : Math.round(n * 10000) / 10000;
 
-type View = {
-  paused: boolean;
-  dayIndex: number;
-  phase: string;
-  cash: number;
-  dayStats: { arrivals: number };
-  nightRecap: { satisfaction: number; cashDelta: number } | null;
-  snowQuality: number;
-  snowDepth: number;
-  weather: string;
-  reputation: number;
-  talentsOwned: string[];
-  completedBeats: string[];
-  pendingBeat: string | null;
-  guests: unknown[];
-  lodgeTier: number;
-  lifts: GameState["lifts"];
-};
+type View = GameState;
 
 type Driver = {
   view(): View;
@@ -56,7 +41,8 @@ type Driver = {
   beginLodgeUpgrade(): void;
   buyBuilding(id: "cafe"): void;
   setSelectedLiftType(t: "chair"): void;
-  placeLift(req: { type: "chair"; bottom: XZ; top: XZ }): void;
+  placeLift(req: { type: "surface" | "chair"; bottom: XZ; top: XZ }): void;
+  commitPaint(strokes: readonly PaintStroke[]): void;
   setPendingFare(f: "cheap" | "balanced" | "expensive"): void;
   setPendingSnow(s: "minimal" | "mid" | "high"): void;
   acknowledgeBeat(): void;
@@ -90,6 +76,9 @@ function summarize(v: View) {
 function playSeason(d: Driver) {
   const nights: ReturnType<typeof summarize>[] = [];
   d.pickFounder("elena");
+  d.placeLift({ type: "surface", bottom: TERRAIN.base, top: REFERENCE_TOPS[0] });
+  d.commitPaint(referencePaint(d.view(), 0, "green"));
+  expect(rules.openingStep(d.view())).toBeNull();
   d.togglePause();
   d.beginLodgeUpgrade();
   while (d.view().phase !== "winter_review") {
@@ -99,6 +88,7 @@ function playSeason(d: Driver) {
       d.setSelectedLiftType("chair");
       d.placeLift({ type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
       expect(d.view().lifts.some((lift) => lift.confirmed && lift.type === "chair")).toBe(true);
+      d.commitPaint(referencePaint(d.view(), 1));
     }
     if (d.view().paused) d.togglePause();
     while (d.view().phase === "day") d.tick(2000);
@@ -147,6 +137,7 @@ function storeDriver(
     buyBuilding: (id) => s().buyBuilding(id),
     setSelectedLiftType: (t) => s().setSelectedLiftType(t),
     placeLift: (req) => s().placeLift(req),
+    commitPaint: (strokes) => s().commitPaint(strokes),
     setPendingFare: (f) => s().setPendingFare(f),
     setPendingSnow: (x) => s().setPendingSnow(x),
     acknowledgeBeat: () => s().acknowledgeBeat(),
@@ -168,6 +159,7 @@ function pureDriver(seed: number): Driver {
     buyBuilding: (id) => apply((s) => rules.buyBuilding(s, id)),
     setSelectedLiftType: (t) => apply((s) => rules.setSelectedLiftType(s, t)),
     placeLift: (req) => apply((s) => rules.placeLift(s, req)),
+    commitPaint: (strokes) => apply((s) => rules.commitPaint(s, strokes)),
     setPendingFare: (f) => apply((s) => rules.setPendingFare(s, f)),
     setPendingSnow: (x) => apply((s) => rules.setPendingSnow(s, x)),
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),
@@ -180,9 +172,7 @@ function pureDriver(seed: number): Driver {
 describe("season characterization", () => {
   beforeAll(installLocalStorage);
 
-  // The test name is the key of the snapshot recorded before the PR 3
-  // refactor (when this path mocked Math.random with createRng(42)). The
-  // snapshot must keep matching without edits, through both paths below.
+  // Both drivers start at the lodge, build their lifts and paint their descents.
   it("store path with mocked Math.random", { timeout: 20_000 }, async () => {
     const pure = playSeason(pureDriver(SEED));
 

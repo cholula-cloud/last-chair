@@ -1,9 +1,9 @@
-import { migrate } from "./migrations";
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it } from "vitest";
 import { MAX_LIFTS, REFERENCE_TOPS, type LiftLine } from "./descent";
 import * as rules from "./rules";
 import { projectLiftBottom, snapTop } from "./rules";
-import { createInitialState, defaultLifts, toPersisted, type GameState, type LiftSlot } from "./state";
+import { type GameState, type LiftSlot } from "./state";
 import { makeGuest } from "./sim";
 import { freshTrail } from "./snow";
 import { fallLineTrailForLift } from "./trails";
@@ -11,7 +11,7 @@ import { TERRAIN } from "./terrain";
 import { LIFT_COST_PARAMS, liftCost, type LiftType } from "./types";
 
 const MID = REFERENCE_TOPS[1];
-const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createInitialState(7), "elena"), cash, lodgeTier: 2 });
+const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createBuiltHill(7), "elena"), cash, lodgeTier: 2 });
 const chairReq = { type: "chair" as const, bottom: TERRAIN.base, top: MID };
 /** A top on the crest between Ridge and Mid (at least the spacing from each) that the terrain rules accept from the base. */
 const FAR_TOP = { x: 10, z: -0.5 };
@@ -180,7 +180,7 @@ describe("sim parity", () => {
       dispatchCredit: 0,
     };
     const handTrail = fallLineTrailForLift(1, hand, freshTrail());
-    const a = tickDay(rules.placeLift(base, chairReq));
+    const a = tickDay(addReferenceDescent(rules.placeLift(base, chairReq), 1));
     const b = tickDay({
       ...base,
       lifts: [...base.lifts, hand],
@@ -197,60 +197,12 @@ describe("sim parity", () => {
     let s = rules.placeLift(started(), chairReq);
     s = rules.placeLift(s, { type: "surface", bottom: TERRAIN.base, top: FAR_TOP });
     expect(s.lifts).toHaveLength(3);
+    s = addReferenceDescent(addReferenceDescent(s, 1), 2);
     const crowd = Array.from({ length: 30 }, (_, i) => makeGuest({ id: `q${i}`, label: `q${i}`, state: "queue" }));
     s = rules.tick(rules.togglePause({ ...s, guests: crowd }), 500);
     expect(s.lifts.map((l) => l.queue.length)).toSatisfy((n: number[]) => n.every((q) => q > 0));
     const ids = s.lifts.flatMap((l) => l.queue);
     expect(new Set(ids).size).toBe(ids.length);
-  });
-});
-
-describe("save v7", () => {
-  const v6 = () => ({ ...toPersisted(createInitialState(3)), selectedSlotIndex: 1 });
-
-  it("drops selectedSlotIndex and keeps lifts", () => {
-    const saved = v6();
-    const m = migrate(saved, 6).state as unknown as Record<string, unknown>;
-    expect("selectedSlotIndex" in m).toBe(false);
-    expect(m.lifts).toEqual(saved.lifts);
-    expect(toPersisted(createInitialState(1))).not.toHaveProperty("selectedSlotIndex");
-  });
-
-  it("keeps a two-lift v6 save as it was", () => {
-    const base = v6();
-    const extra: LiftSlot = {
-      type: "chair",
-      anchor: TERRAIN.toWorld({ x: 0.8, z: 0.6 }),
-      confirmed: true,
-      queue: [],
-      dispatchCredit: 0,
-    };
-    const lifts = [...base.lifts, extra];
-    const legacy = {
-      ...base,
-      lifts: [
-        ...base.lifts.map((l) => ({ ...l, trail: freshTrail() })),
-        { ...extra, trail: freshTrail() },
-      ],
-    };
-    expect(migrate(legacy, 6).state.lifts).toEqual(lifts);
-  });
-
-  it("resets corrupt lifts to the default lift", () => {
-    const fresh = defaultLifts();
-    const good = defaultLifts()[0];
-    for (const lifts of [
-      undefined,
-      "nope",
-      [],
-      [{ ...good, anchor: { x: Number.NaN, z: 0 } }],
-      [good, good, good, good],
-    ]) {
-      const result = migrate({ ...v6(), cash: 8172, lifts }, 6);
-      expect(result.reset).toBe(false);
-      expect(result.state.cash).toBe(8172);
-      expect(result.state.lifts).toEqual(fresh);
-    }
   });
 });
 
@@ -293,36 +245,5 @@ describe("snapTop", () => {
     expect(r.top).toEqual(steep);
     expect(r.check.ok).toBe(false);
     if (!r.check.ok) expect(r.check.reason).toBe("too_steep");
-  });
-});
-
-describe("save v8", () => {
-  const v7 = () => toPersisted(createInitialState(3));
-
-  it("scales lift anchors and bottoms from v7 design units by frozen H = 6", () => {
-    const ridge = { x: -1.2, z: 0.2 };
-    const mid = { x: 0.8, z: 0.6 };
-    const customBottom = { x: 0.5, z: 2.6 };
-    const lifts: LiftSlot[] = [
-      { type: "surface", anchor: ridge, confirmed: true, queue: [], dispatchCredit: 0 },
-      {
-        type: "chair",
-        anchor: mid,
-        bottom: customBottom,
-        confirmed: true,
-        queue: [],
-        dispatchCredit: 0,
-        paid: 2500,
-      },
-    ];
-    const saved = {
-      ...v7(),
-      lifts: lifts.map((l) => ({ ...l, trail: freshTrail() })),
-    };
-    const m = migrate(saved, 7).state;
-    expect(m.lifts[0].anchor).toEqual({ x: -7.2, z: 1.2 });
-    expect(m.lifts[1].anchor).toEqual({ x: 4.8, z: 3.6 });
-    expect(m.lifts[1].bottom).toEqual({ x: 3, z: 15.6 });
-    expect(liftCost("chair", { bottom: m.lifts[1].bottom!, top: m.lifts[1].anchor })).toBe(2500);
   });
 });

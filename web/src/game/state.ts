@@ -1,12 +1,11 @@
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
-import { placedAssetsFromLegacy, type LodgeTier, type LodgeUpgrade, type PlacedAsset } from "./base";
-import { clearingCells, type ClearingCell } from "./clearing";
+import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
+import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
-import { STANDARD_BRUSH_WIDTH } from "./paintedTrail";
-import { REFERENCE_TOPS, type LiftAnchor } from "./descent";
+import type { LiftAnchor } from "./descent";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY } from "./snow";
-import { defaultTrails, type TrailRun } from "./trails";
+import type { TrailRun } from "./trails";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, type NightRecap } from "./sim";
 import type {
   BuildingId,
@@ -114,20 +113,9 @@ export type GameState = PersistedState & {
 
 export const DEFAULT_SEED = 1;
 
-export function defaultLifts(): LiftSlot[] {
-  return [
-    {
-      type: "surface",
-      anchor: REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 },
-      confirmed: true,
-      queue: [],
-      dispatchCredit: 0,
-    },
-  ];
-}
+export const OPENING_HEADLINE = "Dutch Hill has a lodge. Build a lift and paint a trail to open.";
 
 export function createInitialState(seed: number = DEFAULT_SEED): GameState {
-  const trails = defaultTrails();
   return {
     dayIndex: 1,
     clockMin: DAY_START_MIN,
@@ -148,21 +136,21 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     pendingSnow: "mid",
     buildMode: false,
     founderId: null,
-    buildings: ["warming_hut"],
+    buildings: [],
     lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
     lodgeUpgrade: null,
-    assets: placedAssetsFromLegacy(["warming_hut"]),
+    assets: [],
     guns: [],
-    clearedCells: trails.flatMap((trail) => clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH))),
-    lifts: defaultLifts(),
-    trails,
+    clearedCells: [],
+    lifts: [],
+    trails: [],
     selectedLiftType: "surface",
     talentsOwned: [],
     completedBeats: [],
     pendingBeat: null,
     beatAcknowledged: true,
     weather: "clear",
-    morningHeadline: "Dutch Hill opens — one limping surface lift.",
+    morningHeadline: OPENING_HEADLINE,
     daysWithoutSnow: 0,
     reputation: 40,
     gunsVisible: false,
@@ -227,6 +215,6 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
   return { ...current, ...p };
 }
 
-/** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
-export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 14;
+/** M3 starts with a clean hill and a separate save slot. */
+export const SAVE_KEY = "last-chair-m3";
+export const SAVE_VERSION = 1;

@@ -1791,6 +1791,8 @@ Open decisions:
 
 ## PR 25: Save versioning
 
+The M3 opening starts a new save under `last-chair-m3` and clears the M2 save and backup. The legacy migration plan below describes the previous format. Apply future schema changes to the M3 save format.
+
 **Goal:** replace the single growing `migrate()` with a versioned migration registry, a validation step and a clean reset path, with a fixture save for every version.
 
 **Depends on:** nothing in M3. Land it first.
