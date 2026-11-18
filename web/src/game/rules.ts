@@ -79,7 +79,6 @@ export function arrivalMood(
   if (weather === "snow") mood += 0.06;
   if (weather === "thaw") mood -= 0.08;
   if (buildings.includes("warming_hut")) mood += 0.05;
-  if (buildings.includes("lodge")) mood += 0.08;
   if (buildings.includes("cafe")) mood += 0.04;
   const founder = founderById(founderId);
   if (founder) mood += founder.arrivalMoodBonus;
@@ -150,7 +149,6 @@ export function openNight(state: GameState): GameState {
     snowDepth: state.snowDepth,
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: rawReputation,
-    buildings: state.buildings,
     lessonsBooked: state.talentsOwned.includes("school_day"),
     completedBeats: state.completedBeats,
   });
@@ -532,10 +530,9 @@ export function undoTrail(state: GameState): GameState {
 
 export function buyBuilding(state: GameState, id: BuildingId): GameState {
   if (state.buildings.includes(id)) return state;
-  if (id === "lodge" && !state.buildings.includes("warming_hut")) return state;
   if (id === "warming_hut") return state;
   const cost = BUILDING_COSTS[id];
-  if (state.cash < cost) return state;
+  if (!Number.isFinite(cost) || state.cash < cost) return state;
   return {
     ...state,
     buildings: [...state.buildings, id],

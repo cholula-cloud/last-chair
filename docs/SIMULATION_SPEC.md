@@ -19,12 +19,12 @@
 | Trail graph | ✅ | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length; `elevations[]` per run from path height (13a–c) | — |
 | Snow | ✅ | Six segments per `TrailRun`; thaw/overnight/gun reach use stored segment `elevations` (13c) | — |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
-| Lodge tiers | ❌ | Spec only: fixed HQ, tier gates assets, attach bonus. The lodge is still a buildable item | L1, 16a–16d |
+| Lodge tiers | 🟡 | Fixed Tier 1 HQ, per-site footprint and card. Upgrades, asset gates and attachment pads follow in 16a–16d | 16a–16d |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key `last-chair-v1`, schema version 10 with migrations; cloud later | 25 |
+| Save format | 🟡 | Key `last-chair-v1`, schema version 11 with migrations; cloud later | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
@@ -289,7 +289,9 @@ The default surface lift is pre-built and free. The cost is deducted when the li
 
 **Fail soft:** cash &lt; 0 → warning + loan offer $10k (interest stub P1).
 
-### Lodge tiers (spec, not implemented; rows L1 and 16a to 16d)
+### Lodge tiers (L1 implemented, upgrades specified in rows 16a to 16d)
+
+Dutch Hill has one fixed Tier 1 lodge from day 1. The card opens from Build or the lodge on the hill. Saves at v10 or older retain cash, layout and other buildings. v11 removes a prior lodge purchase flag and initializes the fixed lodge at its starting tier.
 
 The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`lodgeTier`, 1 to 3). A tier gates assets and changes the lodge's look; it adds no seats, no venue and no arrival cap. All values are placeholders until the balance harness tunes them.
 

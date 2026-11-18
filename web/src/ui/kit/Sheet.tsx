@@ -74,6 +74,7 @@ export function Sheet({
   subtitle,
   onClose,
   closeLabel,
+  focusClose = false,
   modal = false,
   footer,
   children,
@@ -88,6 +89,8 @@ export function Sheet({
   subtitle?: ReactNode;
   onClose?: () => void;
   closeLabel?: string;
+  /** Move focus to Close after opening from another sheet. */
+  focusClose?: boolean;
   /** Dim the scene behind the sheet (night recap, founder pick, review). */
   modal?: boolean;
   footer?: ReactNode;
@@ -112,7 +115,12 @@ export function Sheet({
 }) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [state, setState] = useState<SheetState>("enter");
+
+  useEffect(() => {
+    if (focusClose) closeButtonRef.current?.focus({ preventScroll: true });
+  }, [focusClose]);
 
   // data-state fallback for browsers without @starting-style: render off
   // screen, then flip to "open" on the next frame so the transition runs.
@@ -238,6 +246,7 @@ export function Sheet({
               </div>
               {onClose && (
                 <button
+                  ref={closeButtonRef}
                   type="button"
                   onClick={close}
                   aria-label={closeLabel ?? "Close"}

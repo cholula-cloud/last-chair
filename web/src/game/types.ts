@@ -23,7 +23,7 @@ export type PersonaId = "first_timer" | "regular";
 export type TrailDifficulty = "green" | "blue" | "black";
 export type LiftType = "surface" | "chair";
 export type WeatherKind = "snow" | "clear" | "thaw";
-export type BuildingId = "warming_hut" | "lodge" | "cafe" | "shop" | "snow_guns";
+export type BuildingId = "warming_hut" | "cafe" | "shop" | "snow_guns";
 export type FounderId =
   | "elena"
   | "tom"
@@ -177,7 +177,6 @@ export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERR
 
 export const BUILDING_LABELS: Record<BuildingId, string> = {
   warming_hut: "Warming hut",
-  lodge: "Lodge (step 1)",
   cafe: "Café",
   shop: "Shop",
   snow_guns: "Snow guns",
@@ -185,7 +184,6 @@ export const BUILDING_LABELS: Record<BuildingId, string> = {
 
 export const BUILDING_COSTS: Record<BuildingId, number> = {
   warming_hut: 0,
-  lodge: 1800,
   cafe: 1200,
   shop: 900,
   snow_guns: 2200,

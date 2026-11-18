@@ -406,7 +406,6 @@ describe("readyStoryBeat", () => {
     snowDepth: 1,
     daysWithoutSnow: 0,
     reputation: 0,
-    buildings: [],
     lessonsBooked: false,
     completedBeats: [],
   };
@@ -430,15 +429,11 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat({ ...at, dayIndex: 5 })).toBeNull();
   });
 
-  it("school_bus fires on lessons, 28 weekday arrivals, or a lodge", () => {
+  it("school_bus fires on lessons or 28 weekday arrivals", () => {
     expect(readyStoryBeat({ ...quiet, lessonsBooked: true })).toBe("school_bus");
-    expect(readyStoryBeat({ ...quiet, buildings: ["lodge"] })).toBe(
-      "school_bus",
-    );
     const weekday = { ...quiet, dayIndex: 2, arrivals: 28 };
     expect(readyStoryBeat(weekday)).toBe("school_bus");
     expect(readyStoryBeat({ ...weekday, arrivals: 27 })).toBeNull();
-    expect(readyStoryBeat({ ...quiet, buildings: ["cafe"] })).toBeNull();
   });
 
   it("dry_week fires at 3 dry days and depth under 0.35, not at the edge", () => {

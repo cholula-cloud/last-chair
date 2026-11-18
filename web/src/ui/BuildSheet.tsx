@@ -17,11 +17,10 @@ import { Sheet } from "@/ui/kit/Sheet";
 import { TrailsPanel } from "@/ui/TrailsPanel";
 import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 
-const BUILD_OPTIONS: BuildingId[] = ["lodge", "cafe", "shop", "snow_guns"];
+const BUILD_OPTIONS: BuildingId[] = ["cafe", "shop", "snow_guns"];
 
 const BUILDING_NOTES: Record<BuildingId, string> = {
   warming_hut: "Somewhere to thaw out",
-  lodge: "Bigger base, warmer guests",
   cafe: "Hot food between laps",
   shop: "Wax, gloves, souvenirs",
   snow_guns: "Make snow on dry weeks",
@@ -36,15 +35,20 @@ export function BuildSheet({
   open,
   onClose,
   onStartPlacement,
+  onShowLodge,
+  lodgeButtonRef,
 }: {
   open: boolean;
   onClose: () => void;
   onStartPlacement: () => void;
+  onShowLodge: () => void;
+  lodgeButtonRef: (button: HTMLButtonElement | null) => void;
 }) {
   const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const lifts = useGameStore((s) => s.lifts);
   const buildings = useGameStore((s) => s.buildings);
   const cash = useGameStore((s) => s.cash);
+  const lodgeTier = useGameStore((s) => s.lodgeTier);
   const setSelectedLiftType = useGameStore((s) => s.setSelectedLiftType);
   const buyBuilding = useGameStore((s) => s.buyBuilding);
 
@@ -71,6 +75,14 @@ export function BuildSheet({
       dataMarker="build-sheet"
       wide
     >
+      <button
+        ref={lodgeButtonRef}
+        type="button"
+        className="key press mb-4 flex min-h-11 w-full items-center justify-between gap-3 px-3 text-left font-extrabold"
+        onClick={onShowLodge}
+      >
+        Lodge <span className="text-sm text-ink-soft">Tier {lodgeTier}</span>
+      </button>
       <div className="short:grid short:grid-cols-2 short:gap-4">
         <div className="panel px-3.5 pb-4 pt-3.5 short:self-start">
           <SectionHeading>Lift</SectionHeading>

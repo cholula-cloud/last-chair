@@ -36,7 +36,7 @@ export const DUTCH_HILL_SITE: SiteDef = {
     },
   ],
   buildings: {
-    lodge: { x: 5.3, z: 15.1 },
+    lodge: { x: 5.3, z: 15.1, footprint: { width: 1.5, depth: 1.35 }, startingTier: 1 },
     warmingHut: { x: 3.6, z: 14.5 },
     cafe: { x: 7.7, z: 14.7 },
     shop: { x: 8.9, z: 15.9 },

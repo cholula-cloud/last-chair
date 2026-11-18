@@ -3,7 +3,7 @@ import Link from "next/link";
 const FEATURES = [
   "Dutch Hill, Vermont: one tired surface lift, one trail, a 14-day winter.",
   "Run or pause the day. Follow any skier from car park to lift line to the bottom.",
-  "Build a double chair, a lodge, a café, a shop and snow guns when cash allows.",
+  "Open your own ski hill and build lifts, a café, a shop and snow guns.",
   "Each night, set tomorrow’s fare and how hard the crew works the snow, then sleep.",
   "Six founders, a crew that learns one trick a night, and Route 100 Radio.",
 ];

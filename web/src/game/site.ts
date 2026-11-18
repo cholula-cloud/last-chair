@@ -3,6 +3,7 @@
 export type XZ = { x: number; z: number };
 
 export type ArrivalKind = "gravel_lot" | "roadside" | "paved_lot";
+export type LodgeTier = 1 | 2 | 3;
 
 export type SiteDef = {
   arrival: {
@@ -17,7 +18,7 @@ export type SiteDef = {
   road: { z: number; xFrom: number; xTo: number; spur: XZ[] };
   paths: { id: "lot_lodge" | "lodge_lift"; points: XZ[] }[];
   buildings: {
-    lodge: XZ;
+    lodge: XZ & { footprint: { width: number; depth: number }; startingTier: LodgeTier };
     warmingHut: XZ;
     cafe: XZ;
     shop: XZ;
