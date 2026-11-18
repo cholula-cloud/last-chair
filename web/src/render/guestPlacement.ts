@@ -1,7 +1,9 @@
 import type { Guest, GuestState, LiftType } from "@/game/types";
 import type { LiftAnchor } from "@/game/descent";
 import { cableHeightAt, liftFrame, liftTowers, type LiftPoint } from "./liftLine";
-import { LIFT_BASE, LIFT_CABLE_OFFSET, LODGE, PARKING } from "./layout";
+import { pathPoint } from "@/game/site";
+import { LIFT_BASE, LIFT_CABLE_OFFSET, LODGE, PARKING, SITE } from "./layout";
+import type { StallSlot } from "./parking";
 import { clamp01, lerp } from "./math";
 import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
@@ -21,7 +23,12 @@ export type GuestPlacement = {
   roll: number;
 };
 
-type PlaceOpts = { queueRank?: number; liftType?: LiftType; towers?: LiftPoint[] };
+type PlaceOpts = {
+  queueRank?: number;
+  liftType?: LiftType;
+  towers?: LiftPoint[];
+  stall?: { x: number; z: number };
+};
 
 /**
  * Rider's feet sit this far below the cable on a chair: kit chair seat 1.75 m
@@ -54,22 +61,14 @@ function queueSpot(rank: number, anchor: LiftAnchor) {
   return { x, z, yaw: Math.atan2(fx, fz) };
 }
 
-/** Walk from the car park along the front of the lodge, then to the line. */
-function arrive(index: number, t: number, anchor: LiftAnchor): GuestPlacement {
-  const row = index % 5;
-  const col = Math.floor(index / 5);
-  const sx = PARKING.x + col * 0.22;
-  const sz = PARKING.z + 0.3 + row * 0.12;
-  const q = queueSpot(Math.min(20, 8 + (index % 6)), anchor);
-  const wx = LODGE.x - 0.2 + row * 0.1;
-  const wz = LODGE.z + 1.05 + (index % 3) * 0.1;
-  const firstLeg = t < 0.45;
-  const u = firstLeg ? t / 0.45 : (t - 0.45) / 0.55;
-  const ax = firstLeg ? sx : wx;
-  const az = firstLeg ? sz : wz;
-  const bx = firstLeg ? wx : q.x + 0.3;
-  const bz = firstLeg ? wz : q.z + 0.1;
-  return onGround(lerp(ax, bx, u), lerp(az, bz, u), Math.atan2(bx - ax, bz - az), "walk");
+/** Walk stall → lot path → lodge → lift queue. */
+function arrive(t: number, anchor: LiftAnchor, stall: { x: number; z: number }): GuestPlacement {
+  const lotLodge = SITE.paths.find((p) => p.id === "lot_lodge")!.points;
+  const lodgeLift = SITE.paths.find((p) => p.id === "lodge_lift")!.points;
+  const q = queueSpot(8, anchor);
+  const points = [stall, ...lotLodge, ...lodgeLift, { x: q.x + 0.3, z: q.z + 0.1 }];
+  const p = pathPoint(points, t);
+  return onGround(p.x, p.z, p.yaw, "walk");
 }
 
 function queue(rank: number, anchor: LiftAnchor): GuestPlacement {
@@ -109,13 +108,12 @@ function ski(index: number, t: number, anchor: LiftAnchor): GuestPlacement {
   };
 }
 
-function depart(index: number, t: number): GuestPlacement {
-  const col = Math.floor(index / 5);
-  const ex = PARKING.x + (index % 3) * 0.3;
-  const ez = PARKING.z + 0.2 + col * 0.12;
-  const x = lerp(LODGE.x - 0.1, ex, t);
-  const z = lerp(LODGE.z + 0.75, ez, t);
-  return onGround(x, z, Math.atan2(ex - LODGE.x, ez - LODGE.z), "walk");
+function depart(t: number, stall: { x: number; z: number }): GuestPlacement {
+  const lodgeLift = [...SITE.paths.find((p) => p.id === "lodge_lift")!.points].reverse();
+  const lotLodge = [...SITE.paths.find((p) => p.id === "lot_lodge")!.points].reverse();
+  const points = [{ x: LODGE.x - 0.1, z: LODGE.z + 0.75 }, ...lodgeLift, ...lotLodge, stall];
+  const p = pathPoint(points, t);
+  return onGround(p.x, p.z, p.yaw, "walk");
 }
 
 export function guestWorldPosition(
@@ -126,9 +124,10 @@ export function guestWorldPosition(
   opts: PlaceOpts = {},
 ): GuestPlacement {
   const t = clamp01(Number.isFinite(progress) ? progress : 0);
+  const stall = opts.stall ?? PARKING;
   switch (state) {
     case "arrive":
-      return arrive(index, t, anchor);
+      return arrive(t, anchor, stall);
     case "queue":
       return queue(opts.queueRank ?? index % 14, anchor);
     case "ride":
@@ -136,7 +135,7 @@ export function guestWorldPosition(
     case "ski":
       return ski(index, t, anchor);
     default:
-      return depart(index, t);
+      return depart(t, stall);
   }
 }
 
@@ -148,9 +147,15 @@ export type PlacedLift = { anchor: LiftAnchor; type: LiftType; towers?: LiftPoin
  * Queued guests get a tidy rank within their lift: front of the line is the
  * guest with the most progress, ties broken by list order.
  */
-export function placeGuests(guests: Guest[], lifts: PlacedLift[]): GuestPlacement[] {
+export function placeGuests(
+  guests: Guest[],
+  lifts: PlacedLift[],
+  stalls: Map<string, StallSlot> = new Map(),
+): GuestPlacement[] {
   const primary = lifts[0];
   return guests.map((g, i) => {
+    const slot = stalls.get(g.id);
+    const stall = slot ? { x: slot.x, z: slot.z } : PARKING;
     const lift = lifts[g.liftIndex ?? 0] ?? primary;
     const liftKey = lifts[g.liftIndex ?? 0] ? (g.liftIndex ?? 0) : 0;
     let queueRank: number | undefined;
@@ -167,6 +172,7 @@ export function placeGuests(guests: Guest[], lifts: PlacedLift[]): GuestPlacemen
     return guestWorldPosition(i, g.state, g.progress, lift.anchor, {
       queueRank,
       liftType: lift.type,
+      stall,
       towers: lift.towers ?? liftTowers(lift.anchor),
     });
   });

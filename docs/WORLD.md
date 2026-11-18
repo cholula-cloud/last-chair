@@ -61,6 +61,7 @@ Real arc (public record):
 | Start state | **One limping surface lift**, partial trail, **no guns** |
 | Archetypes | `rural_sticks`, `natural_snow_only`, `weekends_family`, `no_snowmaking_start` |
 | Weather | Southern VT snow belt — good winters **or** 1970s-style drought arcs |
+| Arrival | Gravel lot off Route 100, 30 stalls, shoulder overflow (visual; no cap) |
 
 Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**, not claiming USFS lease.
 

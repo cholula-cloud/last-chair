@@ -3,7 +3,8 @@
 import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { DUTCH_HILL } from "@/game/mountains/dutchHill";
-import { HOUSES, LIFT_TERMINAL_H, LODGE, SHOP_POS } from "./layout";
+import { lotFarCorner } from "@/game/site";
+import { HOUSES, LIFT_TERMINAL_H, LODGE, SHOP_POS, SITE } from "./layout";
 import { trailPoint } from "./trail";
 
 export type Vec3 = { x: number; y: number; z: number };
@@ -119,8 +120,11 @@ export function keyPoints(): Vec3[] {
     y: TERRAIN.height(x, z) + lift,
     z,
   });
+  const lot = lotFarCorner(SITE);
   const pts: Vec3[] = [
     onTerrain(TERRAIN.base.x, TERRAIN.base.z, LIFT_TERMINAL_H),
+    onTerrain(lot.x, lot.z, 0),
+    onTerrain(SITE.arrival.center.x, SITE.arrival.center.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0.9),
     onTerrain(TERRAIN.toWorld(DUTCH_HILL.summit).x, TERRAIN.toWorld(DUTCH_HILL.summit).z, 0),

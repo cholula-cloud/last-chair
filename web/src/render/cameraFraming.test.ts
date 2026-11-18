@@ -12,8 +12,10 @@ import {
 } from "./cameraFraming";
 import { liftTowers } from "./liftLine";
 import { trailPolyline } from "./trail";
+import { lotFarCorner } from "@/game/site";
 import { TERRAIN } from "@/game/terrain";
 import { MAX_DISTANCE } from "./cameraControls";
+import { SITE } from "./layout";
 
 /** Independent perspective projection: lookAt from the camera position to the target. */
 function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: number) {
@@ -129,6 +131,12 @@ describe("home view", () => {
       expect(framingAspect(a)).toBeLessThanOrEqual(a);
       expect(a - framingAspect(a)).toBeLessThan(0.05 + 1e-12);
     }
+  });
+
+  it("includes the gravel lot far corner in key points", () => {
+    const lot = lotFarCorner(SITE);
+    const pts = keyPoints();
+    expect(pts.some((p) => Math.hypot(p.x - lot.x, p.z - lot.z) < 0.05)).toBe(true);
   });
 
   it("fits portrait within the orbit camera's maximum distance", () => {

@@ -4,7 +4,6 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { sceneMood } from "./Atmosphere";
-import { box, merge, placeParts, type Part } from "./geo";
 import {
   bakeKit,
   GLOW_DAY,
@@ -25,16 +24,7 @@ import {
   SNOWCAT_POS,
   WARMING_HUT_POS,
 } from "./layout";
-import { PALETTE } from "./palette";
 import { TERRAIN } from "@/game/terrain";
-
-function car(color: string): Part[] {
-  return [
-    { geo: box(0.36, 0.1, 0.18), color, pos: [0, 0.08, 0] },
-    { geo: box(0.2, 0.08, 0.16), color: "#cfd8e3", pos: [-0.02, 0.17, 0] },
-    { geo: box(0.21, 0.025, 0.17), color: PALETTE.snow, pos: [-0.02, 0.22, 0] },
-  ];
-}
 
 /** Lamp posts along the road and around the base, with soft light pools. */
 const LAMPS: [number, number][] = [
@@ -84,7 +74,7 @@ function villagePlacements(owned: { cafe: boolean; shop: boolean; hut: boolean }
 
 /**
  * Base village: kit lodge, houses, optional café / shop / warming hut, snowcat,
- * lamp posts and procedural cars. Bodies merge into one mesh; window and lamp
+ * lamp posts. Bodies merge into one mesh; window and lamp
  * glass share an untonemapped glow material so the amber stays warm at night.
  */
 export function Village({ buildings }: { buildings: string[] }) {
@@ -121,14 +111,6 @@ export function Village({ buildings }: { buildings: string[] }) {
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
     }
 
-    const carParts: Part[] = [];
-    const cars = ["#2f7de1", "#a8382b", "#e8e4dc", "#3f6b4a"];
-    cars.forEach((c, i) => {
-      const x = 2.9 + i * 0.32;
-      const z = 3.62;
-      carParts.push(...placeParts(car(c), x, TERRAIN.height(x, z), z, Math.PI / 2 + 0.06 * i));
-    });
-    bodies.push(merge(carParts));
     return { body: mergePlaced(bodies), glow: mergePlaced(glows) };
   }, [hasCafe, hasShop, hasHut, lodgeKit, houseKit, cafeKit, shopKit, hutKit, catKit, lampKit]);
 
