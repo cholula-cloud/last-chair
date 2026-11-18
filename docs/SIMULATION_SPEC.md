@@ -14,19 +14,19 @@
 | Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
-| Lift types / capacity | 🟡 | Types differ in capacity, line length, ride time and beginner appeal. Skill-aware queues, per-lift waits and player closures are implemented. Wind holds follow M3 weather | 18 |
+| Lift types / capacity | ✅ | Types differ in capacity, line length, ride time and beginner appeal. Queues account for trail difficulty, closures and chair wind holds | 18 |
 | Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); drag and snap placement checks include lift type and lodge tier | 12–13 |
 | Trail graph | ✅ | `GameState.trails[]`, painted width and sustained pitch, guest choice by skill, ski time by length, and segment elevations from the path | — |
 | Snow | ✅ | Six segments per trail; elevations, pipe-connected gun coverage, nightly grooming budgets and measured tree clearing influence snow | — |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
 | Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
-| Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
+| Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
 | Save format | ✅ | Key `last-chair-m3`, validation and recovery | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
-| Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
+| Randomness | ✅ | Weather draws use a separate seeded stream from daily guest draws | 18 |
 
 ---
 
@@ -250,6 +250,10 @@ Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `co
 
 **Weather** (`e` = elevation, `low = (1 − e)²`): snow day depth +0.12 + 0.08e, quality +0.06 + 0.04e, coverage restored where depth ≥ 0.15. Thaw depth −(0.02 + 0.12·low), quality −(0.04 + 0.16·low): the bottom takes 0.14 / 0.20, the top 0.02 / 0.04. Clear: depth −0.01, quality −0.02.
 
+Storms add 0.22 + 0.10e depth and 0.10 quality. Storm roads reduce turnout, while snowfall usually brings more people. Typical days start with a base demand of 22 skiers on weekdays and 28 on weekends before weather, pricing, random variation and other adjustments.
+
+The season stores one seeded weather outcome per day. Conditions influence the next day's odds, with fewer early thaws and more late thaws. Forecast odds weight all four conditions when estimating turnout and snow quality. On gusty days, chairs stop boarding from 10:30 AM to 1 PM. Riders already on the chair finish their ride, and guests in line can move to a running surface lift.
+
 **Day.** Each finished run takes 0.0006 quality off every segment of that lift's trail (a 150-run day costs about 0.09). On a thaw day from 11:00 the low segments lose a further 0.0007 × (0.15 + low) per game minute (about 0.2 at the bottom by close). The tick aggregates runs per lift per step; nothing is per guest per frame.
 
 **Guests.** The snow a guest feels on a run is `0.5 × worst + 0.5 × mean` segment quality of that lift's trail, minus 0.10 if any segment has coverage < 0.3 (thin) and a further 0.15 if the bottom has coverage < 0.1 (bare; they still ski it). This value feeds `snowSum` (satisfaction) and the run time multiplier.
@@ -373,6 +377,8 @@ Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 ---
 
 ## Balance (PR 10)
+
+The figures below describe the earlier 14-day balance baseline. The seeded-weather build uses the thaw forecast at 50% or above for its adaptive strategy. Higher turnout improves cash across several strategies, so the passive profit and losing-strategy thresholds will be tuned with operating costs in row 20.
 
 `web/src/game/balance.ts` `runSeason(seed, strategy, founder = Elena)` plays a 14-day winter headlessly through the real rules: `pickFounder`, then each day optional builds, `skipToClose`, `acknowledgeBeat`, the two night presets, `sleep`. It returns end and minimum cash, end reputation, mean satisfaction, arrivals, runs, mean wait, problem days, a went-negative flag, beats, talents and a per-day record. Same seed and strategy give the same result.
 

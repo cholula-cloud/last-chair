@@ -1,10 +1,15 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import * as rules from "./rules";
+import * as sim from "./sim";
+import * as weather from "./weather";
+import { founderById } from "./content";
 import { REFERENCE_TOPS } from "./descent";
+import { expectedHillValue } from "./satisfaction";
 import { createInitialState, type GameState } from "./state";
 import { referencePaint } from "./__fixtures__/built-hill";
 import type { PaintStroke } from "./paintedTrail";
 import { TERRAIN, type XZ } from "./terrain";
+import type { WeatherKind } from "./types";
 
 const SEED = 42;
 
@@ -169,6 +174,31 @@ function pureDriver(seed: number): Driver {
   };
 }
 
+// M2 opening day was always clear. The remaining entries record its gunless formula.
+const LEGACY_WEATHER: WeatherKind[] = [
+  "clear", "clear", "thaw", "snow", "thaw", "thaw", "snow", "thaw", "clear", "thaw",
+  "snow", "clear", "thaw", "snow", "thaw", "thaw", "snow", "thaw", "clear", "thaw",
+  "snow", "clear", "thaw", "snow", "thaw", "thaw", "snow", "thaw",
+];
+
+// Pin the former attendance calibration while this case checks downstream simulation.
+function legacyArrivals(opts: Parameters<typeof sim.planArrivals>[0]): number {
+  const weekend = sim.isWeekend(opts.dayIndex);
+  const noise = Math.floor(opts.rand!() * 5);
+  const base = weekend ? Math.round((24 + noise) * 1.3) : 18 + noise;
+  const value = expectedHillValue(opts.reputation ?? sim.DEMAND.START_REPUTATION, opts.buildings);
+  let arrivals = Math.round(base * sim.fareDemandMultiplier(opts.fare, value, weekend));
+  if (opts.weather === "snow") arrivals += 3;
+  if (opts.weather === "thaw") arrivals -= 4;
+  if (opts.snowQuality < 0.4) arrivals -= 3;
+  if (opts.buildings.includes("cafe")) arrivals += 1;
+  if (opts.talentsOwned.includes("ticket_booth") && weekend) arrivals += 1;
+  if (opts.talentsOwned.includes("school_day") && !weekend) arrivals += 2;
+  const founder = founderById(opts.founderId);
+  if (founder) arrivals += Math.round(founder.arrivalMoodBonus * 20);
+  return Math.max(12, Math.min(48, arrivals));
+}
+
 describe("season characterization", () => {
   beforeAll(installLocalStorage);
 
@@ -177,10 +207,23 @@ describe("season characterization", () => {
     const pure = playSeason(pureDriver(SEED));
 
     const { useGameStore } = await import("./store");
-    useGameStore.setState({ rngState: SEED });
+    useGameStore.setState(createInitialState(SEED));
     const viaStore = playSeason(storeDriver(useGameStore));
 
     expect(pure).toEqual(viaStore);
     expect(viaStore).toMatchSnapshot();
+  });
+
+  it("legacy formula weather and attendance", { timeout: 20_000 }, () => {
+    const arrivals = vi.spyOn(sim, "planArrivals").mockImplementation(legacyArrivals);
+    const schedule = vi.spyOn(weather, "generateSeasonWeather").mockImplementation((_, length) =>
+      LEGACY_WEATHER.slice(0, length).map((kind) => ({ kind, wind: "calm" })),
+    );
+    try {
+      expect(playSeason(pureDriver(SEED))).toMatchSnapshot();
+    } finally {
+      arrivals.mockRestore();
+      schedule.mockRestore();
+    }
   });
 });

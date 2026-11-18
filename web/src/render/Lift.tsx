@@ -6,7 +6,8 @@ import * as THREE from "three";
 import type { LiftLine } from "@/game/descent";
 import { rideMinutes } from "@/game/lifts";
 import { useGameStore } from "@/game/store";
-import type { LiftType } from "@/game/types";
+import { LIFT_SPECS, type LiftType } from "@/game/types";
+import { weatherForDay, WIND_HOLD } from "@/game/weather";
 import { sceneMood } from "./Atmosphere";
 import { cyl, merge, type Part } from "./geo";
 import {
@@ -151,7 +152,10 @@ export function Lift({
   useFrame(() => {
     const mesh = carriers.current;
     if (!mesh) return;
-    const phase = preview ? 0 : carrierLoopPhase(useGameStore.getState().clockMin, rideMin);
+    const state = useGameStore.getState();
+    const minutesHeld = LIFT_SPECS[type].windHold && weatherForDay(state).wind === "gusty"
+      ? Math.max(0, Math.min(state.clockMin, WIND_HOLD.toMin) - WIND_HOLD.fromMin) : 0;
+    const phase = preview ? 0 : carrierLoopPhase(state.clockMin - minutesHeld, rideMin);
     const off = LIFT_CABLE_OFFSET;
     for (let i = 0; i < CARRIERS; i++) {
       const s = (phase + i / CARRIERS) % 1;

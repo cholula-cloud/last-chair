@@ -160,6 +160,12 @@ export const ThawIcon = (p: P) => (
   </Icon>
 );
 
+export const WindIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M3 8h12a2 2 0 1 0-2-2M3 12h16a2 2 0 1 1-2 2M3 16h8a2 2 0 1 1-2 2" />
+  </Icon>
+);
+
 export const CheckIcon = (p: P) => (
   <Icon {...p}>
     <path d="M5 12.5 10 17 19 7" />

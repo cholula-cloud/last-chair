@@ -17,8 +17,10 @@ import {
   SNOW_NIGHT_COST,
   type FarePreset,
   type SnowPreset,
+  type WeatherKind,
 } from "@/game/types";
-import { CocoaIcon, PeaksGlyph } from "@/ui/kit/icons";
+import { outlookFor } from "@/game/weather";
+import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
 import {
   ChoiceTiles,
@@ -46,6 +48,33 @@ const WEEKDAY_FULL: Record<string, string> = {
 
 const FARES: FarePreset[] = ["cheap", "balanced", "expensive"];
 const SNOWS: SnowPreset[] = ["minimal", "mid", "high"];
+
+const FORECAST = {
+  clear: { name: "Clear", Icon: SunIcon },
+  snow: { name: "Snow", Icon: SnowfallIcon },
+  storm: { name: "Storm", Icon: WindIcon },
+  thaw: { name: "Thaw", Icon: ThawIcon },
+};
+
+function Forecast({ state, ahead }: { state: GameState; ahead: 1 | 2 }) {
+  const outlook = outlookFor(state, ahead);
+  if (!outlook) return null;
+  const odds = (Object.keys(FORECAST) as WeatherKind[]).sort((a, b) => outlook[b] - outlook[a]);
+  const title = ahead === 1 ? "Tomorrow’s forecast" : "Two-day forecast";
+  return (
+    <div className="mt-1.5" aria-label={title} role="group">
+      <p className="text-sm font-extrabold">{title}</p>
+      <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold">
+        {odds.map((kind) => {
+          const { name, Icon } = FORECAST[kind];
+          return <li key={kind} className="inline-flex items-center gap-1"><Icon size={14} />
+            {name} {Math.round(outlook[kind] * 100)}%
+          </li>;
+        })}
+      </ul>
+    </div>
+  );
+}
 
 function moodWord(score: number): { word: string; tone: Tone } {
   if (score >= 75) return { word: "Happy", tone: "good" };
@@ -158,6 +187,8 @@ function Choices({
   const chosen = previews[pendingSnow];
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
+      <Forecast state={night} ahead={1} />
+      <Forecast state={night} ahead={2} />
       <SectionHeading aside="Tomorrow’s ticket">Fare</SectionHeading>
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
@@ -210,13 +241,13 @@ export function NightRecapSheet() {
       title="Closing recap"
       aside={
         <>
-          <Choices
+          {dayIndex < night.seasonLength && <Choices
             night={night}
             setPendingFare={setPendingFare}
             setPendingSnow={setPendingSnow}
-          />
+          />}
 
-          {nextTalent && (
+          {dayIndex < night.seasonLength && nextTalent && (
             <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
               Tomorrow the crew learns{" "}
               <span className="font-extrabold text-sign-green">{nextTalent}</span>
@@ -241,7 +272,7 @@ export function NightRecapSheet() {
             onClick={sleep}
           >
             <CocoaIcon size={24} />
-            Sleep until morning
+            {dayIndex < night.seasonLength ? "Sleep until morning" : "Finish the winter"}
           </PrimaryButton>
         </div>
       }

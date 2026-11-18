@@ -222,6 +222,10 @@ export function overnightTrail(
       depth = clamp01(depth + 0.12 + 0.08 * e);
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.06 + 0.04 * e);
       if (depth >= COVER_MIN) coverage = 1;
+    } else if (o.weather === "storm") {
+      depth = clamp01(depth + 0.22 + 0.10 * e);
+      quality = Math.min(QUALITY_CAP + 0.02, quality + 0.10);
+      if (depth >= COVER_MIN) coverage = 1;
     } else if (o.weather === "thaw") {
       depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed);
       quality = Math.max(0.1, quality - (0.04 + 0.16 * low) * exposed);

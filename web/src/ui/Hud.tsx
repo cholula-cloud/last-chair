@@ -20,6 +20,7 @@ import {
   SnowfallIcon,
   SunIcon,
   ThawIcon,
+  WindIcon,
 } from "@/ui/kit/icons";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 import { useSpeed } from "@/ui/speed";
@@ -106,9 +107,19 @@ function ClockText({ text }: { text: string }) {
 
 const WEATHER: Record<WeatherKind, { label: string; icon: ReactNode }> = {
   snow: { label: "Fresh snow", icon: <SnowfallIcon size={20} /> },
+  storm: { label: "Snowstorm", icon: <WindIcon size={20} /> },
   clear: { label: "Clear skies", icon: <SunIcon size={20} /> },
   thaw: { label: "Thaw", icon: <ThawIcon size={20} /> },
 };
+
+export function WindHoldCallout() {
+  return (
+    <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
+      <WindIcon size={18} />
+      Chair on wind hold until 1 PM
+    </p>
+  );
+}
 
 /** Morning note: weather + headline (+ what the crew learned overnight). */
 export function MorningNote({

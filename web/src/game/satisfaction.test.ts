@@ -158,9 +158,11 @@ describe("guest satisfaction terms", () => {
     expect(at(0.5)).toBeLessThan(at(0.7));
     const b = ["warming_hut"] as const;
     const snow = rules.arrivalMood([...b], null, "snow");
+    const storm = rules.arrivalMood([...b], null, "storm");
     const clear = rules.arrivalMood([...b], null, "clear");
     const thaw = rules.arrivalMood([...b], null, "thaw");
     expect(snow).toBeGreaterThan(clear);
+    expect(storm).toBe(snow);
     expect(clear).toBeGreaterThan(thaw);
     expect(rules.arrivalMood([...b, "cafe"], null)).toBeGreaterThan(clear);
   });
@@ -356,9 +358,12 @@ describe("whole days", () => {
     const trails = extraLift
       ? [...base.trails, fallLineTrailForLift(base.lifts.length, extraLift, freshTrail())]
       : base.trails;
+    const weather = over.weather ?? "clear";
     const s: GameState = {
       ...base,
       dayIndex,
+      weather,
+      weatherDays: base.weatherDays.map((day, i) => i === dayIndex - 1 ? { kind: weather, wind: "calm" } : day),
       clockMin: DAY_START_MIN,
       lifts,
       trails,
@@ -401,8 +406,8 @@ describe("whole days", () => {
     for (const seed of seeds) {
       const thin = playDay(seed, WEEKDAY, { snowQuality: 0.3 }, true).nightRecap!;
       expect(thin.problem).toContain("bump Snow & service tonight");
-      // The day's traffic wears the 30% trail a little, so the quoted mean is a bit under 30%.
-      expect(thin.problem).toMatch(/\(mean quality (2\d|30)%\)/);
+      expect(thin.facts.snowQuality).toBeLessThan(0.3);
+      expect(thin.problem).toContain(`(mean quality ${Math.round(thin.facts.snowQuality * 100)}%)`);
       const steep = playDay(seed, WEEKDAY, { fare: "expensive" }, true).nightRecap!;
       expect(steep.problem).toContain("steep");
       expect(steep.problem).toContain("$62");

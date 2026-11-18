@@ -2,7 +2,8 @@ import { liftLength, type LiftLine } from "./descent";
 import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain } from "./terrain";
 import { isOverSkill, pickTrailIndex, type TrailRun } from "./trails";
-import { LIFT_SPECS, type Guest, type LiftType } from "./types";
+import { LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
+import { isWindHeld, WIND_HOLD } from "./weather";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
 export const PATROL_RADIO_CAPACITY = 1.05;
@@ -76,13 +77,15 @@ export function chooseLift(
   talentsOwned: string[],
   trails: readonly TrailRun[],
   guest?: LiftGuest,
+  wind: Wind = "calm",
+  now = 0,
 ): number {
   let best = -1;
   let bestScore = Infinity;
   let bestCap = 0;
   const parity = guest ? preferredParity(guest) : 0;
   lifts.forEach((l, i) => {
-    if (!isLiftOperational(l, i, trails)) return;
+    if (!isLiftOperational(l, i, trails) || isWindHeld(l.type, wind, now)) return;
     const hasSuitableTrail = guest && trails.some((trail) =>
       trail.open && trail.liftIndex === i && !isOverSkill(guest.persona, trail.difficulty),
     );
@@ -132,11 +135,12 @@ export function stepLifts(
   talentsOwned: string[],
   now: number,
   addMin: number,
+  wind: Wind = "calm",
 ): LiftStepResult {
   const index = new Map(guests.map((g, i) => [g.id, i]));
   const out = guests.slice();
   const seen = new Set<string>();
-  const operational = lifts.map((lift, i) => isLiftOperational(lift, i, trails));
+  const operational = lifts.map((lift, i) => isLiftOperational(lift, i, trails) && !isWindHeld(lift.type, wind, now));
   const next: LiftSlot[] = lifts.map((l, i) => ({
     ...l,
     queue: operational[i] ? l.queue.filter((id) => {
@@ -150,11 +154,11 @@ export function stepLifts(
   // Join.
   out.forEach((g, i) => {
     if (g.state !== "queue" || seen.has(g.id)) return;
-    const li = chooseLift(next, talentsOwned, trails, g);
+    const li = chooseLift(next, talentsOwned, trails, g, wind, now);
     if (li < 0) return;
     next[li].queue.push(g.id);
     seen.add(g.id);
-    out[i] = { ...g, liftIndex: li, joinedQueueAtMin: now };
+    out[i] = { ...g, liftIndex: li, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
   });
 
   // Dispatch.
@@ -165,8 +169,11 @@ export function stepLifts(
       lift.dispatchCredit = 0;
       return;
     }
-    let credit =
-      lift.dispatchCredit + (addMin * liftCapacityPerHour(lift.type, talentsOwned)) / 60;
+    const reopened = wind === "gusty" && LIFT_SPECS[lift.type].windHold &&
+      now >= WIND_HOLD.toMin && now - addMin < WIND_HOLD.toMin;
+    const loadingMin = reopened ? now - WIND_HOLD.toMin : addMin;
+    let credit = (reopened ? 0 : lift.dispatchCredit) +
+      loadingMin * liftCapacityPerHour(lift.type, talentsOwned) / 60;
     while (credit >= 1 && lift.queue.length > 0) {
       const id = lift.queue.shift() as string;
       const gi = index.get(id) as number;

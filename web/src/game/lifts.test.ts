@@ -11,11 +11,12 @@ import {
   stepLifts,
 } from "./lifts";
 import * as rules from "./rules";
-import { makeGuest } from "./sim";
+import { makeGuest, tickGuests } from "./sim";
 import { type GameState, type LiftSlot } from "./state";
 import { defaultTrails } from "./trails";
 import { TERRAIN } from "./terrain";
-import { LIFT_SPECS, type Guest, type LiftType } from "./types";
+import { ARRIVE_WALK_MIN, LIFT_SPECS, MS_PER_GAME_MINUTE, type Guest, type LiftType } from "./types";
+import { WIND_HOLD, isWindHeld } from "./weather";
 
 const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
   type,
@@ -68,6 +69,72 @@ function run(o: RunOpts) {
 const burst = (perMin: number) => (t: number) => (t <= 7 ? perMin : 0);
 
 describe("lift server", () => {
+  it("holds chairs only from 10:30 until 13:00 on gusty days", () => {
+    expect(isWindHeld("chair", "gusty", WIND_HOLD.fromMin - 0.5)).toBe(false);
+    expect(isWindHeld("chair", "gusty", WIND_HOLD.fromMin)).toBe(true);
+    expect(isWindHeld("chair", "gusty", WIND_HOLD.toMin - 0.5)).toBe(true);
+    expect(isWindHeld("chair", "gusty", WIND_HOLD.toMin)).toBe(false);
+    expect(isWindHeld("surface", "gusty", WIND_HOLD.fromMin)).toBe(false);
+    expect(isWindHeld("chair", "calm", WIND_HOLD.fromMin)).toBe(false);
+  });
+
+  it("reroutes a chair queue to the surface lift until gusts ease", () => {
+    const started = rules.pickFounder(createBuiltHill(7), "elena");
+    const hill = addReferenceDescent(rules.placeLift({ ...started, lodgeTier: 2 }, {
+      type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1],
+    }), 1);
+    expect(hill.lifts[1]?.confirmed).toBe(true);
+    const guests = Array.from({ length: 45 }, (_, n) => makeGuest({
+      id: `g${n}`, state: "queue", liftIndex: 1, targetRuns: 20,
+      joinedQueueAtMin: WIND_HOLD.fromMin - 0.5,
+    }));
+    const start = {
+      ...hill,
+      paused: false,
+      clockMin: WIND_HOLD.fromMin - 0.5,
+      guests,
+      lifts: hill.lifts.map((lift, n) => n === 1 ? { ...lift, queue: guests.map((guest) => guest.id) } : lift),
+    };
+    const calm = { ...start, weatherDays: [{ kind: started.weather, wind: "calm" } as const] };
+    const gusty = { ...start, weatherDays: [{ kind: started.weather, wind: "gusty" } as const] };
+    const firstStep = rules.tick(gusty, 0.5 * MS_PER_GAME_MINUTE);
+    expect(firstStep.lifts[1].queue).toEqual([]);
+    expect(firstStep.lifts[1].confirmed).toBe(true);
+    expect(firstStep.lifts[0].queue.length).toBeGreaterThan(0);
+
+    const windowMs = (WIND_HOLD.toMin - WIND_HOLD.fromMin) * MS_PER_GAME_MINUTE;
+    const endGusty = rules.tick(gusty, windowMs);
+    const endCalm = rules.tick(calm, windowMs);
+    expect(endGusty.dayStats.byLift[1].rides).toBe(0);
+    expect(endCalm.dayStats.byLift[1].rides).toBeGreaterThan(0);
+    const surfaceWait = (end: GameState) => {
+      const { rides, waitSumMin } = end.dayStats.byLift[0];
+      expect(rides).toBeGreaterThan(0);
+      return waitSumMin / rides;
+    };
+    expect(surfaceWait(endGusty)).toBeGreaterThan(surfaceWait(endCalm));
+    const reopened = rules.tick(endGusty, 30 * MS_PER_GAME_MINUTE);
+    expect(reopened.dayStats.byLift[1].rides).toBeGreaterThan(0);
+  });
+
+  it("counts time spent waiting when a held chair is the only lift", () => {
+    const { fromMin, toMin } = WIND_HOLD;
+    const guest = makeGuest({ state: "arrive", stateSinceMin: fromMin - ARRIVE_WALK_MIN });
+    const lifts = [slot("chair")];
+    const trails = [trail(0, "green")];
+    const clock = {
+      now: fromMin, snowQuality: 0.55, lapOverheadMin: Infinity, lifts, trails,
+      talentsOwned: [], wind: "gusty" as const,
+    };
+    const waiting = tickGuests([guest], clock);
+    expect(waiting[0]).toMatchObject({ state: "queue", joinedQueueAtMin: fromMin });
+    const held = stepLifts(waiting, lifts, trails, [], toMin - 0.5, 0.5, "gusty");
+    const opened = stepLifts(held.guests, held.lifts, trails, [], toMin + 1.5, 2, "gusty");
+    expect(held.byLift[0].rides).toBe(0);
+    expect(opened.byLift[0].rides).toBe(1);
+    expect(opened.guests[0].waitMin).toBe(toMin + 1.5 - fromMin);
+  });
+
   it("dispatches in FIFO order", () => {
     let guests = Array.from({ length: 10 }, (_, i) => queued(`q${i}`));
     let lifts = [slot("surface")];

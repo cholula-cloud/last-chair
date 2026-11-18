@@ -4,12 +4,14 @@ import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
+import { isLiftOperational } from "@/game/lifts";
 import { liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { snowCarriers } from "@/game/trails";
 import { useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
+import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
@@ -24,6 +26,7 @@ import {
   ResumeFollowChip,
   StartCallout,
   TopBar,
+  WindHoldCallout,
 } from "@/ui/Hud";
 import { PlacementBar } from "@/ui/PlacementBar";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
@@ -55,6 +58,9 @@ export default function PlayExperience() {
   const avgQueue = useGameStore((s) => currentWaitMin(s));
   const anyOnHill = useGameStore((s) => s.guests.some(isOnHill));
   const weather = useGameStore((s) => s.weather);
+  const chairHeld = useGameStore((s) => s.phase === "day" && s.lifts.some((lift, i) =>
+    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin) && isLiftOperational(lift, i, s.trails),
+  ));
   const morningHeadline = useGameStore((s) => s.morningHeadline);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
@@ -199,6 +205,7 @@ export default function PlayExperience() {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
+          {chairHeld && <WindHoldCallout />}
         </div>
         {showNote && !placementActive && (
           <MorningNote

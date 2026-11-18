@@ -1,11 +1,27 @@
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
 import { validateSave } from "./saveValidation";
+import { mix32 } from "./rng";
+import { resumeSeasonWeather } from "./weather";
 
 export type Raw = Record<string, unknown>;
 export type Migration = { to: number; note: string; up: (p: Raw) => Raw };
 
 /** Schema 1 is the M3 baseline. Append one step for each later schema. */
-export const MIGRATIONS: readonly Migration[] = [];
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    to: 2,
+    note: "Seed a weather schedule and keep today's recorded conditions.",
+    up(raw) {
+      const { rngState, seasonLength, dayIndex, weather } = raw;
+      if (typeof rngState !== "number" || !Number.isFinite(rngState) ||
+          typeof seasonLength !== "number" || !Number.isInteger(seasonLength) || seasonLength < 1 || seasonLength > 28 ||
+          typeof dayIndex !== "number" || !Number.isInteger(dayIndex) || dayIndex < 1 || dayIndex > seasonLength ||
+          (weather !== "clear" && weather !== "snow" && weather !== "thaw")) throw new Error("Invalid saved weather");
+      const seasonSeed = mix32(rngState);
+      return { ...raw, seasonSeed, weatherDays: resumeSeasonWeather(seasonSeed, seasonLength, dayIndex, weather) };
+    },
+  },
+];
 
 type MigrationResult =
   | { state: PersistedState; reset: false }

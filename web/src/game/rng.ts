@@ -21,3 +21,18 @@ export function createRng(seed: number): Rng {
     },
   };
 }
+
+/** A fixed integer avalanche for deriving seeds without drawing from a stream. */
+export function mix32(value: number): number {
+  let mixed = value >>> 0;
+  mixed = Math.imul(mixed ^ (mixed >>> 16), 0x7feb352d);
+  mixed = Math.imul(mixed ^ (mixed >>> 15), 0x846ca68b);
+  return (mixed ^ (mixed >>> 16)) >>> 0;
+}
+
+/** Fixed stream salts. Keep these stable so old seeds reproduce their weather. */
+export const STREAM = { WEATHER: 0x57ea7e2, RADIO: 0x4ad10 } as const;
+
+export function streamFor(seed: number, stream: number): Rng {
+  return createRng(mix32(seed ^ stream));
+}

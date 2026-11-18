@@ -14,7 +14,6 @@ import {
   meanArrivals,
   planArrivals,
   readyStoryBeat,
-  rollMorningWeather,
   createInitialGuests,
   makeGuest,
   tickGuests,
@@ -43,7 +42,9 @@ import {
   type FarePreset,
   type Guest,
   type SnowPreset,
+  type DayWeather,
 } from "./types";
+import { generateSeasonWeather } from "./weather";
 
 // Characterization tests: they pin what sim.ts does today. Tests marked
 // "Pinned" record a simplification that a later roadmap PR replaces.
@@ -180,25 +181,13 @@ describe("buildNightRecap", () => {
   });
 });
 
-describe("rollMorningWeather", () => {
-  it("follows the deterministic day-index roll", () => {
-    // roll = (day * 17 + 3) % 10
-    expect(rollMorningWeather(1, false)).toBe("snow"); // 0
-    expect(rollMorningWeather(3, false)).toBe("thaw"); // 4
-    expect(rollMorningWeather(3, true)).toBe("clear"); // 4, guns
-    expect(rollMorningWeather(2, false)).toBe("clear"); // 7
-    expect(rollMorningWeather(8, false)).toBe("thaw"); // 9
-  });
-});
-
 describe("applyOvernight", () => {
   // Snow numbers per segment are tested in snow.test.ts; this block covers the
   // cash, talent, weather and visibility parts of the night.
   const start = {
     cash: 1000,
     trails: [freshTrail(0.3, 0.5)],
-    // next day is 2 -> clear
-    dayIndex: 1,
+    weatherTomorrow: { kind: "clear", wind: "calm" } as DayWeather,
     buildings: [] as BuildingId[],
     talentsOwned: [] as string[],
     daysWithoutSnow: 0,
@@ -244,22 +233,29 @@ describe("applyOvernight", () => {
     expect(r.nextTalentHint).toBeNull();
   });
 
-  it("takes next-morning weather from rollMorningWeather", () => {
-    for (const day of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
-      expect(run("mid", { dayIndex: day }).weather).toBe(rollMorningWeather(day + 1, false));
-    }
+  it("snow guns do not affect the scheduled weather", () => {
+    const weatherTomorrow = { kind: "thaw", wind: "gusty" } as const;
+    expect(run("mid", { weatherTomorrow }).weather).toBe("thaw");
+    expect(run("mid", { weatherTomorrow, buildings: ["snow_guns"] }).weather).toBe("thaw");
   });
 
   it("a snow morning resets daysWithoutSnow and adds depth", () => {
-    const r = run("minimal", { dayIndex: 3, daysWithoutSnow: 4 }); // next day 4 -> snow
+    const r = run("minimal", { weatherTomorrow: { kind: "snow", wind: "calm" }, daysWithoutSnow: 4 });
     expect(r.weather).toBe("snow");
     expect(r.daysWithoutSnow).toBe(0);
     expect(r.snowDepth).toBeGreaterThan(0.3);
     expect(r.morningHeadline).toContain("Overnight squall");
   });
 
+  it("a storm morning resets daysWithoutSnow and names the storm", () => {
+    const r = run("minimal", { weatherTomorrow: { kind: "storm", wind: "gusty" }, daysWithoutSnow: 4 });
+    expect(r.weather).toBe("storm");
+    expect(r.daysWithoutSnow).toBe(0);
+    expect(r.morningHeadline).toMatch(/storm/i);
+  });
+
   it("a thaw morning removes depth and counts a dry day", () => {
-    const r = run("minimal", { dayIndex: 7, daysWithoutSnow: 1 }); // next day 8 -> thaw
+    const r = run("minimal", { weatherTomorrow: { kind: "thaw", wind: "calm" }, daysWithoutSnow: 1 });
     expect(r.weather).toBe("thaw");
     expect(r.daysWithoutSnow).toBe(2);
     expect(r.snowDepth).toBeLessThan(0.3);
@@ -267,7 +263,7 @@ describe("applyOvernight", () => {
   });
 
   it("a clear morning counts a dry day", () => {
-    const r = run("minimal", { dayIndex: 1, daysWithoutSnow: 1 });
+    const r = run("minimal", { daysWithoutSnow: 1 });
     expect(r.weather).toBe("clear");
     expect(r.daysWithoutSnow).toBe(2);
     expect(r.morningHeadline).toContain("Clear and cold");
@@ -285,12 +281,12 @@ describe("planArrivals", () => {
     founderId: null,
   };
 
-  it("gives weekends more arrivals than weekdays at the same inputs", () => {
+  it("has busier typical weekdays and weekends at the same starting fare", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const weekday = planArrivals({ ...base, dayIndex: 2 });
     const weekend = planArrivals({ ...base, dayIndex: 6 });
-    expect(weekday).toBe(18);
-    expect(weekend).toBe(31);
+    expect(weekday).toBe(22);
+    expect(weekend).toBe(36);
     expect(weekend).toBeGreaterThan(weekday);
   });
 
@@ -298,28 +294,30 @@ describe("planArrivals", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     const cheap = planArrivals({ ...base, fare: "cheap" });
     const expensive = planArrivals({ ...base, fare: "expensive" });
-    expect(cheap).toBeGreaterThanOrEqual(expensive);
-    expect(planArrivals({ ...base, fare: "balanced" })).toBe(20);
-    expect(cheap).toBe(25);
-    expect(expensive).toBe(17);
+    const balanced = planArrivals({ ...base, fare: "balanced" });
+    expect(cheap).toBeGreaterThan(balanced);
+    expect(balanced).toBe(24);
+    expect(expensive).toBeLessThan(balanced);
   });
 
   it("applies weather, thin snow, building and talent modifiers", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
-    expect(planArrivals({ ...base, weather: "snow" })).toBe(21);
-    expect(planArrivals({ ...base, weather: "thaw" })).toBe(14);
-    expect(planArrivals({ ...base, snowQuality: 0.3 })).toBe(15);
+    const clear = planArrivals(base);
+    expect(planArrivals({ ...base, weather: "snow" })).toBe(clear + 3);
+    expect(planArrivals({ ...base, weather: "thaw" })).toBe(clear - 4);
+    expect(planArrivals({ ...base, weather: "storm" })).toBe(clear - 5);
+    expect(planArrivals({ ...base, snowQuality: 0.3 })).toBe(clear - 3);
     // +1 for the café itself, +1 because a café raises what the town expects a day to be worth.
-    expect(planArrivals({ ...base, buildings: ["cafe"] })).toBe(20);
-    expect(planArrivals({ ...base, talentsOwned: ["school_day"] })).toBe(20);
+    expect(planArrivals({ ...base, buildings: ["cafe"] })).toBe(clear + 2);
+    expect(planArrivals({ ...base, talentsOwned: ["school_day"] })).toBe(clear + 2);
     expect(
       planArrivals({ ...base, dayIndex: 6, talentsOwned: ["ticket_booth"] }),
-    ).toBe(32);
+    ).toBe(planArrivals({ ...base, dayIndex: 6 }) + 1);
     // elena: round(0.08 * 20) = 2
-    expect(planArrivals({ ...base, founderId: "elena" })).toBe(20);
+    expect(planArrivals({ ...base, founderId: "elena" })).toBe(clear + 2);
   });
 
-  it("clamps to 12..48", () => {
+  it("keeps a minimum roster of 12 and lets busy weekends exceed 48", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     expect(
       planArrivals({
@@ -341,7 +339,7 @@ describe("planArrivals", () => {
         reputation: 100,
         rand: () => 0.99,
       }),
-    ).toBe(48);
+    ).toBe(62);
   });
 });
 
@@ -397,7 +395,7 @@ describe("fare elasticity of arrivals", () => {
           planArrivals({ ...base, dayIndex, fare, rand: () => r }),
         );
         const avg = draws.reduce((a, b) => a + b, 0) / draws.length;
-        expect(Math.abs(mean({ dayIndex, fare }) - avg)).toBeLessThanOrEqual(1);
+        expect(mean({ dayIndex, fare })).toBeCloseTo(avg, 12);
       }
     }
   });
@@ -684,7 +682,8 @@ describe("headless season", () => {
     let snowQuality = 0.6;
     let snowDepth = 0.5;
     let daysWithoutSnow = 0;
-    let weather: "snow" | "clear" | "thaw" = "clear";
+    const weatherDays = generateSeasonWeather(7, SEASON_LENGTH + 1);
+    let weather = weatherDays[0].kind;
     const talentsOwned: string[] = [];
     const buildings: BuildingId[] = [];
     let nights = 0;
@@ -700,7 +699,7 @@ describe("headless season", () => {
         founderId: null,
       });
       expect(arrivals).toBeGreaterThanOrEqual(12);
-      expect(arrivals).toBeLessThanOrEqual(40);
+      expect(arrivals).toBeLessThanOrEqual(64);
 
       const recap = buildNightRecap({
         stats: { ...emptyDayStats(), arrivals },
@@ -717,7 +716,7 @@ describe("headless season", () => {
         snow: "mid",
         cash,
         trails,
-        dayIndex: day,
+        weatherTomorrow: weatherDays[day],
         buildings,
         talentsOwned,
         daysWithoutSnow,

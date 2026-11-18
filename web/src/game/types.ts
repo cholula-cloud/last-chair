@@ -23,7 +23,10 @@ export type GuestState =
 export type PersonaId = "first_timer" | "regular";
 export type TrailDifficulty = "green" | "blue" | "black";
 export type LiftType = "surface" | "chair";
-export type WeatherKind = "snow" | "clear" | "thaw";
+export type WeatherKind = "clear" | "snow" | "storm" | "thaw";
+export type Wind = "calm" | "gusty";
+export type DayWeather = { kind: WeatherKind; wind: Wind };
+export type Outlook = Record<WeatherKind, number>;
 export type BuildingId = "warming_hut" | "cafe" | "shop" | "snow_guns";
 export type FounderId =
   | "elena"
@@ -165,10 +168,10 @@ export const LIFT_LABELS: Record<LiftType, string> = {
 /** Game-scaled lift server numbers (see SIMULATION_SPEC, Lifts). */
 export const LIFT_SPECS: Record<
   LiftType,
-  { capacityPerHour: number; rideMinutes: number }
+  { capacityPerHour: number; rideMinutes: number; windHold: boolean }
 > = {
-  surface: { capacityPerHour: 47, rideMinutes: 4 },
-  chair: { capacityPerHour: 50, rideMinutes: 3 },
+  surface: { capacityPerHour: 47, rideMinutes: 4, windHold: false },
+  chair: { capacityPerHour: 50, rideMinutes: 3, windHold: true },
 };
 
 /**
