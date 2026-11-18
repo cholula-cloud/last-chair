@@ -8,19 +8,22 @@ import { cableHeightAt, liftTowers } from "./liftLine";
 import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
 
-const STATES: GuestState[] = ["arrive", "queue", "ride", "ski", "depart"]; // pending and gone are never drawn
+const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
+
+const STATES: GuestState[] = ["arrive", "queue", "ride", "ski", "depart"];
 const PROGRESS = [0, 0.5, 1];
 const EPS = 1e-9;
 
 describe("guest placement", () => {
   for (const slot of REFERENCE_TOPS) {
+    const line = lineAt(slot);
     describe(`lift slot ${slot.label}`, () => {
       it("yields finite coordinates above the terrain in every state", () => {
         for (const liftType of ["surface", "chair"] as const) {
           for (const state of STATES) {
             for (const progress of PROGRESS) {
               for (let index = 0; index < 48; index++) {
-                const p = guestWorldPosition(index, state, progress, slot, { liftType });
+                const p = guestWorldPosition(index, state, progress, line, { liftType });
                 const where = `${slot.label}/${liftType}/${state}/${progress}/#${index}`;
                 for (const v of [p.x, p.y, p.z, p.yaw, p.lean, p.roll]) {
                   expect(Number.isFinite(v), where).toBe(true);
@@ -33,36 +36,41 @@ describe("guest placement", () => {
       });
 
       it("keeps chair riders clear of the snow and under the cable", () => {
-        const towers = liftTowers(slot);
+        const towers = liftTowers(line);
         for (const progress of PROGRESS) {
-          const p = guestWorldPosition(0, "ride", progress, slot, { liftType: "chair", towers });
+          const p = guestWorldPosition(0, "ride", progress, line, { liftType: "chair", towers });
           expect(p.y).toBeGreaterThan(TERRAIN.height(p.x, p.z));
           expect(p.y).toBeLessThanOrEqual(cableHeightAt(progress, towers));
         }
       });
 
       it("starts the ski trail at the lift top and ends it at the lodge", () => {
-        const start = trailPoint(0, slot);
-        const end = trailPoint(1, slot);
+        const start = trailPoint(0, line);
+        const end = trailPoint(1, line);
         expect([start.x, start.z]).toEqual([slot.x, slot.z]);
         expect(end.x).toBeCloseTo(LODGE.x, 9);
         expect(end.z).toBeCloseTo(LODGE.z, 9);
       });
 
       it("runs the lift from the base up to the lift top", () => {
-        const towers = liftTowers(slot);
+        const towers = liftTowers(line);
         const base = towers[0];
         const top = towers[towers.length - 1];
         expect([base.x, base.z]).toEqual([LIFT_BASE.x, LIFT_BASE.z]);
         expect(top.x).toBeCloseTo(slot.x, 9);
         expect(top.z).toBeCloseTo(slot.z, 9);
         expect(top.top).toBeGreaterThan(base.top);
-        // Cable meets the terminals at their tower tops.
         expect(cableHeightAt(0, towers)).toBe(base.top);
         expect(cableHeightAt(1, towers)).toBe(top.top);
       });
     });
   }
+
+  it("places queue spots within 2 u of the lift bottom", () => {
+    const line = lineAt(REFERENCE_TOPS[1]);
+    const q = guestWorldPosition(0, "queue", 0, line);
+    expect(Math.hypot(q.x - line.bottom.x, q.z - line.bottom.z)).toBeLessThanOrEqual(2);
+  });
 
   it("places the three lift slots higher than the lift base", () => {
     expect(REFERENCE_TOPS).toHaveLength(3);
@@ -73,8 +81,9 @@ describe("guest placement", () => {
   });
 
   it("survives out-of-range or non-finite progress", () => {
+    const line = lineAt(REFERENCE_TOPS[0]);
     for (const progress of [-1, 2, Number.NaN]) {
-      const p = guestWorldPosition(3, "ski", progress, REFERENCE_TOPS[0]);
+      const p = guestWorldPosition(3, "ski", progress, line);
       expect(Number.isFinite(p.x + p.y + p.z)).toBe(true);
     }
   });
@@ -83,10 +92,10 @@ describe("guest placement", () => {
     const g = (id: string, state: GuestState, progress: number) =>
       makeGuest({ id, label: id, state, progress, mood: 0.5 });
     const guests = [g("a", "queue", 0.2), g("b", "ski", 0.9), g("c", "queue", 0.8), g("d", "queue", 0.2)];
-    const anchor = REFERENCE_TOPS[1];
-    const placed = placeGuests(guests, [{ anchor, type: "surface" }]);
+    const line = lineAt(REFERENCE_TOPS[1]);
+    const placed = placeGuests(guests, [{ line, type: "surface" }]);
     const rankOf = (i: number, rank: number) =>
-      guestWorldPosition(i, "queue", 0, anchor, { queueRank: rank });
+      guestWorldPosition(i, "queue", 0, line, { queueRank: rank });
     expect(placed[2]).toEqual(rankOf(2, 0));
     expect(placed[0]).toEqual(rankOf(0, 1));
     expect(placed[3]).toEqual(rankOf(3, 2));
@@ -96,14 +105,13 @@ describe("guest placement", () => {
     const g = (id: string, liftIndex: number | undefined, progress: number) =>
       makeGuest({ id, label: id, state: "queue", progress, mood: 0.5, liftIndex });
     const lifts = [
-      { anchor: REFERENCE_TOPS[0], type: "surface" as const },
-      { anchor: REFERENCE_TOPS[1], type: "chair" as const },
+      { line: lineAt(REFERENCE_TOPS[0]), type: "surface" as const },
+      { line: lineAt(REFERENCE_TOPS[1]), type: "chair" as const },
     ];
-    // a and c queue at lift 1; b at lift 0; d has no lift and falls back to lift 0.
     const guests = [g("a", 1, 0.2), g("b", 0, 0.9), g("c", 1, 0.8), g("d", undefined, 0.1)];
     const placed = placeGuests(guests, lifts);
     const at = (i: number, liftIdx: number, rank: number) =>
-      guestWorldPosition(i, "queue", 0, lifts[liftIdx].anchor, { queueRank: rank });
+      guestWorldPosition(i, "queue", 0, lifts[liftIdx].line, { queueRank: rank });
     expect(placed[2]).toEqual(at(2, 1, 0));
     expect(placed[0]).toEqual(at(0, 1, 1));
     expect(placed[1]).toEqual(at(1, 0, 0));

@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { sceneMood } from "./Atmosphere";
 import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
@@ -15,18 +15,18 @@ const TRAIL_WIDTH = 5.2;
 const PREVIEW_WIDTH = TRAIL_WIDTH + 0.5;
 
 /** Ribbon that hugs the terrain; u runs across the trail, v along it. */
-function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {
+function ribbonGeometry(line: LiftLine, width: number, segments: number) {
   const across = ACROSS;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
   let travelled = 0;
-  let prev = trailPoint(0, anchor);
+  let prev = trailPoint(0, line);
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
-    const c = trailPoint(t, anchor);
-    const a = trailPoint(Math.max(0, t - 0.01), anchor);
-    const b = trailPoint(Math.min(1, t + 0.01), anchor);
+    const c = trailPoint(t, line);
+    const a = trailPoint(Math.max(0, t - 0.01), line);
+    const b = trailPoint(Math.min(1, t + 0.01), line);
     travelled += Math.hypot(c.x - prev.x, c.z - prev.z);
     prev = c;
     const dx = b.x - a.x;
@@ -151,14 +151,13 @@ function paintRibbon(base: THREE.BufferGeometry, stripes: THREE.BufferGeometry, 
   stripes.setAttribute("color", new THREE.BufferAttribute(sc, 4));
 }
 
-type TrailRibbonProps = { anchor: LiftAnchor } & (
+type TrailRibbonProps = { line: LiftLine } & (
   | { kind: "built"; groomed: boolean; trail: Trail }
   | { kind: "preview"; valid: boolean }
 );
 
 /** The corduroy ribbon of a built run, or the green / red ghost while placing a lift. */
 export function TrailRibbon(props: TrailRibbonProps) {
-  const { x, z } = props.anchor;
   const built = props.kind === "built";
   const groomed = props.kind === "built" && props.groomed;
   const trail = props.kind === "built" ? props.trail : null;
@@ -166,9 +165,9 @@ export function TrailRibbon(props: TrailRibbonProps) {
   const geometry = useMemo(
     () =>
       built
-        ? ribbonGeometry({ x, z }, TRAIL_WIDTH, SEGMENTS)
-        : ribbonGeometry({ x, z }, PREVIEW_WIDTH, 40),
-    [x, z, built],
+        ? ribbonGeometry(props.line, TRAIL_WIDTH, SEGMENTS)
+        : ribbonGeometry(props.line, PREVIEW_WIDTH, 40),
+    [props.line, built],
   );
   const stripeGeo = useMemo(() => (built ? geometry.clone() : null), [built, geometry]);
   const stripeMap = useMemo(() => (built ? corduroyTexture(groomed ? 30 : 14) : null), [built, groomed]);

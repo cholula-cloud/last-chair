@@ -1,14 +1,14 @@
-import type { LiftAnchor } from "@/game/descent";
-import { LIFT_BASE, LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
+import type { LiftLine } from "@/game/descent";
+import { LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
 import { clamp01 } from "./math";
 import { TERRAIN } from "@/game/terrain";
 
 export type LiftPoint = { x: number; z: number; ground: number; top: number };
 
-/** Unit vector along the lift (base → top) and its right-hand perpendicular. */
-export function liftFrame(anchor: LiftAnchor) {
-  const dx = anchor.x - LIFT_BASE.x;
-  const dz = anchor.z - LIFT_BASE.z;
+/** Unit vector along the lift (bottom → top) and its right-hand perpendicular. */
+export function liftFrame(line: LiftLine) {
+  const dx = line.top.x - line.bottom.x;
+  const dz = line.top.z - line.bottom.z;
   const len = Math.hypot(dx, dz) || 1;
   const fx = dx / len;
   const fz = dz / len;
@@ -16,21 +16,19 @@ export function liftFrame(anchor: LiftAnchor) {
 }
 
 /** Terminals + intermediate towers along the lift line, base first. */
-export function liftTowers(anchor: LiftAnchor): LiftPoint[] {
-  const { len } = liftFrame(anchor);
+export function liftTowers(line: LiftLine): LiftPoint[] {
+  const { len } = liftFrame(line);
   const inner = Math.max(3, Math.min(10, Math.round(len / 3)));
   const n = inner + 2;
   const pts: LiftPoint[] = [];
   for (let i = 0; i < n; i++) {
     const t = i / (n - 1);
-    const x = LIFT_BASE.x + (anchor.x - LIFT_BASE.x) * t;
-    const z = LIFT_BASE.z + (anchor.z - LIFT_BASE.z) * t;
+    const x = line.bottom.x + (line.top.x - line.bottom.x) * t;
+    const z = line.bottom.z + (line.top.z - line.bottom.z) * t;
     const ground = TERRAIN.height(x, z);
     const terminal = i === 0 || i === n - 1;
     pts.push({ x, z, ground, top: ground + (terminal ? LIFT_TERMINAL_H : LIFT_TOWER_H) });
   }
-  // Keep each span clear of the snow at its midpoint. Terminals keep their
-  // bullwheel height, so a span touching one raises only its tower end.
   for (let pass = 0; pass < 4; pass++) {
     for (let i = 0; i < n - 1; i++) {
       const a = pts[i];

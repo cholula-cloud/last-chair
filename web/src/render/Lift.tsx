@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { LIFT_SPECS, MS_PER_GAME_MINUTE, type LiftType } from "@/game/types";
 import { useSpeed } from "@/ui/speed";
 import { sceneMood } from "./Atmosphere";
@@ -22,7 +22,7 @@ import {
   TOY_SCALE,
   useKit,
 } from "./kit";
-import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
+import { LIFT_CABLE_OFFSET } from "./layout";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 import { PALETTE } from "./palette";
 
@@ -49,9 +49,9 @@ function segmentPart(
 }
 
 /** Up and return cables between tower tops (procedural, thin). */
-function cableGeometry(anchor: LiftAnchor): THREE.BufferGeometry {
-  const towers = liftTowers(anchor);
-  const { px, pz } = liftFrame(anchor);
+function cableGeometry(line: LiftLine): THREE.BufferGeometry {
+  const towers = liftTowers(line);
+  const { px, pz } = liftFrame(line);
   const off = LIFT_CABLE_OFFSET;
   const parts: Part[] = [];
   for (const s of [-1, 1]) {
@@ -74,14 +74,14 @@ function cableGeometry(anchor: LiftAnchor): THREE.BufferGeometry {
 const S = METERS_TO_WORLD * LIFT_TOY_SCALE;
 
 /** Kit towers and terminals placed along the line; returns body + window glow. */
-function useLiftStructure(anchor: LiftAnchor) {
+function useLiftStructure(line: LiftLine) {
   const tower = bakeKit(useKit("lift-tower"));
   const bottom = bakeKit(useKit("lift-terminal-bottom"));
   const top = bakeKit(useKit("lift-terminal-top"));
-  const cables = useMemo(() => cableGeometry(anchor), [anchor]);
+  const cables = useMemo(() => cableGeometry(line), [line]);
   const built = useMemo(() => {
-    const towers = liftTowers(anchor);
-    const { yaw } = liftFrame(anchor);
+    const towers = liftTowers(line);
+    const { yaw } = liftFrame(line);
     const body: THREE.BufferGeometry[] = [cables.clone()];
     const glow: THREE.BufferGeometry[] = [];
     towers.forEach((t, i) => {
@@ -100,7 +100,7 @@ function useLiftStructure(anchor: LiftAnchor) {
       }
     });
     return { body: mergePlaced(body), glow: glow.length ? mergePlaced(glow) : null };
-  }, [anchor, cables, tower, bottom, top]);
+  }, [line, cables, tower, bottom, top]);
   useEffect(() => () => cables.dispose(), [cables]);
   useEffect(
     () => () => {
@@ -126,18 +126,16 @@ export function useCarrierGeometry(type: LiftType): THREE.BufferGeometry {
 }
 
 export function Lift({
-  anchor,
+  line,
   previewInvalid,
   preview = false,
   type = "surface",
 }: {
-  anchor: LiftAnchor;
+  line: LiftLine;
   previewInvalid: boolean;
   preview?: boolean;
   type?: LiftType;
 }) {
-  const { x, z } = anchor;
-  const line = useMemo(() => ({ x, z }), [x, z]);
   const structure = useLiftStructure(line);
   const towers = useMemo(() => liftTowers(line), [line]);
   const frame = useMemo(() => liftFrame(line), [line]);
@@ -160,8 +158,8 @@ export function Lift({
       const up = s < 0.5;
       const t = up ? s * 2 : 1 - (s - 0.5) * 2;
       const side = up ? 1 : -1;
-      const lx = LIFT_BASE.x + (x - LIFT_BASE.x) * t + frame.px * off * side;
-      const lz = LIFT_BASE.z + (z - LIFT_BASE.z) * t + frame.pz * off * side;
+      const lx = line.bottom.x + (line.top.x - line.bottom.x) * t + frame.px * off * side;
+      const lz = line.bottom.z + (line.top.z - line.bottom.z) * t + frame.pz * off * side;
       dummy.position.set(lx, cableHeightAt(t, towers) - 0.03, lz);
       dummy.rotation.set(0, frame.yaw + (up ? 0 : Math.PI), 0);
       dummy.updateMatrix();

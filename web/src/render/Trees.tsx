@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { merge, type Part } from "./geo";
 import { bakeKit, SHADOW_LAYER_MASK, useKit } from "./kit";
 import {
@@ -109,7 +109,7 @@ function TreeInstances({
  * Tiered forest around the camera target: kit pines and birch nearby, a
  * low-poly stand-in farther out, and shadow proxies on the near tier only.
  */
-export function Trees({ anchors }: { anchors: LiftAnchor[] }) {
+export function Trees({ lines }: { lines: LiftLine[] }) {
   const a = bakeKit(useKit("pine-a")).body;
   const b = bakeKit(useKit("pine-b")).body;
   const c = bakeKit(useKit("pine-c")).body;
@@ -126,7 +126,7 @@ export function Trees({ anchors }: { anchors: LiftAnchor[] }) {
   );
 
   const [forest, setForest] = useState<ForestTiers>(() =>
-    forestForTarget(sceneCameraTarget, { anchors }),
+    forestForTarget(sceneCameraTarget, { lines }),
   );
   const lastTarget = useRef({ ...sceneCameraTarget });
 
@@ -134,7 +134,7 @@ export function Trees({ anchors }: { anchors: LiftAnchor[] }) {
     const t = sceneCameraTarget;
     if (!shouldRebuildForest(t, lastTarget.current)) return;
     lastTarget.current = { x: t.x, z: t.z };
-    setForest(forestForTarget(t, { anchors }));
+    setForest(forestForTarget(t, { lines }));
   });
 
   const nearAll = useMemo(

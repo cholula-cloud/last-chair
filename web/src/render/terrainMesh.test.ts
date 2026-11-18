@@ -37,7 +37,7 @@ describe("terrain mesh and sim share one heightfield", () => {
 
   it("lift tower ground equals TERRAIN.height at the tower position", () => {
     for (const slot of REFERENCE_TOPS) {
-      for (const t of liftTowers(slot)) {
+      for (const t of liftTowers({ bottom: TERRAIN.base, top: slot })) {
         expect(t.ground).toBe(TERRAIN.height(t.x, t.z));
       }
     }

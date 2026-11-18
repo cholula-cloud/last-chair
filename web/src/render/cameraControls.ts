@@ -1,5 +1,7 @@
 /** Pure camera-control helpers: the play area, a soft target clamp and a tap/drag classifier. */
 
+import { marchToTerrain as marchTerrainCore } from "./terrainPick";
+
 export type XZ = { x: number; z: number };
 export type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
 
@@ -123,6 +125,7 @@ export function classifyPointer(events: readonly PointerEv[], prevTap?: TapRecor
   return "TAP";
 }
 
+
 /** First point along a ray that is at or below the terrain, found by marching then bisecting. */
 export function marchToTerrain(
   origin: { x: number; y: number; z: number },
@@ -131,22 +134,5 @@ export function marchToTerrain(
   maxDist = MARCH_MAX_DIST,
   step = 0.25,
 ): XZ | null {
-  const at = (d: number) => ({ x: origin.x + dir.x * d, y: origin.y + dir.y * d, z: origin.z + dir.z * d });
-  const below = (d: number) => {
-    const p = at(d);
-    return p.y <= height(p.x, p.z);
-  };
-  for (let d = 0; d < maxDist; d += step) {
-    if (!below(d + step)) continue;
-    let lo = d;
-    let hi = d + step;
-    for (let i = 0; i < 12; i++) {
-      const mid = (lo + hi) / 2;
-      if (below(mid)) hi = mid;
-      else lo = mid;
-    }
-    const p = at(hi);
-    return { x: p.x, z: p.z };
-  }
-  return null;
+  return marchTerrainCore(origin, dir, height, maxDist, step);
 }

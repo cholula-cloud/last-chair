@@ -5,7 +5,8 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
-import { REFERENCE_TOPS, checkLiftLine, type LiftAnchor } from "@/game/descent";
+import { REFERENCE_TOPS, checkLiftLine, type LiftAnchor, type LiftLine } from "@/game/descent";
+import { liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
@@ -420,13 +421,19 @@ export function MountainScene() {
   const followedRef = useRef<GuestPlacement | null>(null);
 
   const confirmedLifts = useMemo(() => lifts.filter((l) => l.confirmed), [lifts]);
-  const primaryAnchor = confirmedLifts[0]?.anchor ?? FALLBACK_ANCHOR;
+  const primaryLine = useMemo(
+    (): LiftLine =>
+      confirmedLifts[0]
+        ? liftLineOf(confirmedLifts[0])
+        : { bottom: TERRAIN.base, top: FALLBACK_ANCHOR },
+    [confirmedLifts],
+  );
   const guestLifts = useMemo(
     () =>
       lifts.length > 0
-        ? lifts
-        : [{ anchor: FALLBACK_ANCHOR, type: "surface" as LiftType }],
-    [lifts],
+        ? lifts.map((l) => ({ line: liftLineOf(l), type: l.type }))
+        : [{ line: primaryLine, type: "surface" as LiftType }],
+    [lifts, primaryLine],
   );
   const previewSlot = candidateTop ?? REFERENCE_TOPS[0];
   const previewValid = previewSlot
@@ -434,12 +441,16 @@ export function MountainScene() {
     : false;
   const showPreview = buildMode && !!previewSlot;
 
-  const clearings = useMemo(() => {
-    const list: LiftAnchor[] = confirmedLifts.map((l) => l.anchor);
-    if (confirmedLifts.length === 0) list.push(primaryAnchor);
-    if (showPreview && previewValid) list.push(previewSlot);
+  const previewLine = useMemo(
+    () => ({ bottom: TERRAIN.base, top: previewSlot }),
+    [previewSlot],
+  );
+  const clearingLines = useMemo(() => {
+    const list: LiftLine[] = confirmedLifts.map((l) => liftLineOf(l));
+    if (confirmedLifts.length === 0) list.push(primaryLine);
+    if (showPreview && previewValid) list.push(previewLine);
     return list;
-  }, [confirmedLifts, primaryAnchor, showPreview, previewValid, previewSlot]);
+  }, [confirmedLifts, primaryLine, showPreview, previewValid, previewLine]);
 
   useFrame((_, delta) => {
     useGameStore.getState().tick(scaledTickMs(delta, speed));
@@ -455,7 +466,7 @@ export function MountainScene() {
         snowQuality={terrainSnow}
         snowDepth={snowDepth}
         trails={trails}
-        anchors={confirmedLifts.map((l) => l.anchor)}
+        lines={confirmedLifts.map((l) => liftLineOf(l))}
       />
       <Road />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
@@ -463,27 +474,27 @@ export function MountainScene() {
         <Village buildings={buildings} />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
         {(gunsVisible || buildings.includes("snow_guns")) && (
-          <SnowGuns reach={gunReach} anchor={primaryAnchor} />
+          <SnowGuns reach={gunReach} line={primaryLine} />
         )}
-        <Trees anchors={clearings} />
+        <Trees lines={clearingLines} />
 
         {confirmedLifts.map((lift, i) => (
           <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
             <TrailRibbon
               kind="built"
-              anchor={lift.anchor}
+              line={liftLineOf(lift)}
               groomed={groomVisible}
               trail={trails[i] ?? trails[0]}
             />
-            <Lift anchor={lift.anchor} previewInvalid={false} type={lift.type} />
+            <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} />
           </group>
         ))}
 
         {showPreview && (
           <>
-            <TrailRibbon kind="preview" anchor={previewSlot} valid={previewValid} />
+            <TrailRibbon kind="preview" line={previewLine} valid={previewValid} />
             <Lift
-              anchor={previewSlot}
+              line={previewLine}
               preview
               previewInvalid={!previewValid}
               type={selectedLiftType}

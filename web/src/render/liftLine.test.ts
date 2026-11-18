@@ -1,23 +1,46 @@
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "@/game/descent";
+import { liftLineOf } from "@/game/rules";
+import { defaultLifts } from "@/game/state";
 import { TERRAIN } from "@/game/terrain";
-import { LIFT_BASE } from "./layout";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
+
+const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
 
 describe("lift cable clearance", () => {
   it("keeps at least 0.5 u above terrain along each span", () => {
     for (const slot of REFERENCE_TOPS.slice(0, 2)) {
-      const towers = liftTowers(slot);
-      const { fx, fz, len } = liftFrame(slot);
+      const line = lineAt(slot);
+      const towers = liftTowers(line);
+      const { fx, fz, len } = liftFrame(line);
       for (let span = 0; span < towers.length - 1; span++) {
         for (let s = 0; s <= 20; s++) {
           const t = (span + (s / 20) * (span + 1 === towers.length - 1 ? 1 : 1)) / (towers.length - 1);
-          const x = LIFT_BASE.x + fx * len * t;
-          const z = LIFT_BASE.z + fz * len * t;
+          const x = line.bottom.x + fx * len * t;
+          const z = line.bottom.z + fz * len * t;
           const ground = TERRAIN.height(x, z);
           expect(cableHeightAt(t, towers) - ground).toBeGreaterThanOrEqual(0.5);
         }
       }
     }
+  });
+
+  it("matches towers for lifts stored with only a top anchor", () => {
+    const lift = defaultLifts()[0];
+    const fromRules = liftLineOf(lift);
+    const legacy = lineAt(lift.anchor);
+    expect(liftTowers(fromRules).map((p) => [p.x, p.z, p.top])).toEqual(
+      liftTowers(legacy).map((p) => [p.x, p.z, p.top]),
+    );
+  });
+
+  it("puts the first tower at a custom bottom", () => {
+    const line = {
+      bottom: { x: 0.9, z: 15.3 },
+      top: REFERENCE_TOPS[1],
+    };
+    const towers = liftTowers(line);
+    expect(towers[0].x).toBeCloseTo(0.9, 5);
+    expect(towers[0].z).toBeCloseTo(15.3, 5);
   });
 });
