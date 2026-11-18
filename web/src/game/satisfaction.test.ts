@@ -1,3 +1,4 @@
+import { migrate } from "./migrations";
 import { freshTrail } from "./snow";
 import { fallLineTrailForLift } from "./trails";
 import { describe, expect, it } from "vitest";
@@ -19,7 +20,7 @@ import {
   type SatisfactionContext,
 } from "./satisfaction";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals, tickGuests } from "./sim";
-import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
+import { createInitialState, toPersisted, type GameState, type LiftSlot } from "./state";
 import { stepLifts } from "./lifts";
 import { DAY_START_MIN, LIFT_CLOSE_MIN, type Guest } from "./types";
 
@@ -480,7 +481,7 @@ describe("save migration to v4", () => {
       delete g.snowSum;
     }
     delete saved.nightRecap.breakdown;
-    const m = migrate(saved, 3);
+    const m = migrate(saved, 3).state;
     expect(m.guests.every((g) => g.waitMin === 0 && g.waitCount === 0 && g.snowSum === 0)).toBe(true);
     expect(m.nightRecap?.breakdown).toEqual(ZERO_TERMS);
     expect(Number.isFinite(rules.liveSatisfaction({ ...createInitialState(1), ...m }))).toBe(true);

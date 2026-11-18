@@ -1,3 +1,4 @@
+import { migrate } from "./migrations";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import * as rules from "./rules";
@@ -17,7 +18,7 @@ import {
   wearTrail,
   type Trail,
 } from "./snow";
-import { createInitialState, migrate, toPersisted, type GameState } from "./state";
+import { createInitialState, toPersisted, type GameState } from "./state";
 import type { BuildingId, SnowPreset, WeatherKind } from "./types";
 
 const night = (
@@ -222,7 +223,7 @@ describe("state integration", () => {
     v4.snowDepth = 0.3;
     for (const l of v4.lifts) delete l.trail;
     delete v4.gunReach;
-    const m = migrate(v4, 4);
+    const m = migrate(v4, 4).state;
     expect(m.trails[0].snow).toHaveLength(TRAIL_SEGMENTS);
     expect(m.trails[0].snow.every((s) => s.quality === 0.4 && s.depth === 0.3)).toBe(true);
     expect(m.snowQuality).toBeCloseTo(0.4, 10);

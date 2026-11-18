@@ -1,8 +1,9 @@
+import { migrate } from "./migrations";
 import { describe, expect, it } from "vitest";
 import { MAX_LIFTS, REFERENCE_TOPS, type LiftLine } from "./descent";
 import * as rules from "./rules";
 import { projectLiftBottom, snapTop } from "./rules";
-import { createInitialState, defaultLifts, migrate, toPersisted, SAVE_VERSION, type GameState, type LiftSlot } from "./state";
+import { createInitialState, defaultLifts, toPersisted, type GameState, type LiftSlot } from "./state";
 import { makeGuest } from "./sim";
 import { freshTrail } from "./snow";
 import { fallLineTrailForLift } from "./trails";
@@ -208,9 +209,8 @@ describe("save v7", () => {
   const v6 = () => ({ ...toPersisted(createInitialState(3)), selectedSlotIndex: 1 });
 
   it("drops selectedSlotIndex and keeps lifts", () => {
-    expect(SAVE_VERSION).toBe(14);
     const saved = v6();
-    const m = migrate(saved, 6) as unknown as Record<string, unknown>;
+    const m = migrate(saved, 6).state as unknown as Record<string, unknown>;
     expect("selectedSlotIndex" in m).toBe(false);
     expect(m.lifts).toEqual(saved.lifts);
     expect(toPersisted(createInitialState(1))).not.toHaveProperty("selectedSlotIndex");
@@ -233,7 +233,7 @@ describe("save v7", () => {
         { ...extra, trail: freshTrail() },
       ],
     };
-    expect(migrate(legacy, 6).lifts).toEqual(lifts);
+    expect(migrate(legacy, 6).state.lifts).toEqual(lifts);
   });
 
   it("resets corrupt lifts to the default lift", () => {
@@ -246,8 +246,10 @@ describe("save v7", () => {
       [{ ...good, anchor: { x: Number.NaN, z: 0 } }],
       [good, good, good, good],
     ]) {
-      const m = migrate({ ...v6(), lifts }, 6);
-      expect(m.lifts).toEqual(fresh);
+      const result = migrate({ ...v6(), cash: 8172, lifts }, 6);
+      expect(result.reset).toBe(false);
+      expect(result.state.cash).toBe(8172);
+      expect(result.state.lifts).toEqual(fresh);
     }
   });
 });
@@ -317,7 +319,7 @@ describe("save v8", () => {
       ...v7(),
       lifts: lifts.map((l) => ({ ...l, trail: freshTrail() })),
     };
-    const m = migrate(saved, 7);
+    const m = migrate(saved, 7).state;
     expect(m.lifts[0].anchor).toEqual({ x: -7.2, z: 1.2 });
     expect(m.lifts[1].anchor).toEqual({ x: 4.8, z: 3.6 });
     expect(m.lifts[1].bottom).toEqual({ x: 3, z: 15.6 });

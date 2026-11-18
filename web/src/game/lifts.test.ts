@@ -1,3 +1,4 @@
+import { migrate } from "./migrations";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import {
@@ -11,7 +12,7 @@ import {
 } from "./lifts";
 import * as rules from "./rules";
 import { makeGuest } from "./sim";
-import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
+import { createInitialState, toPersisted, type GameState, type LiftSlot } from "./state";
 import { defaultTrails } from "./trails";
 import { TERRAIN } from "./terrain";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
@@ -306,7 +307,7 @@ describe("saves from before the lift server", () => {
     }
     old.dayStats = { arrivals: 20, completedRuns: 3, avgQueueMin: 2.5 };
     old.guests = [{ ...old.guests[0], state: "queue", progress: 0.4 }];
-    const m = migrate(old, 1);
+    const m = migrate(old, 1).state;
     expect(m.lifts.every((l) => l.queue.length === 0 && l.dispatchCredit === 0)).toBe(true);
     expect(m.dayStats).toMatchObject({
       arrivals: 20,

@@ -48,7 +48,7 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 | Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** Run the first-time player check in M2, then start M3 with row 25 for save compatibility. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
+**Next up:** Run the first-time player check for M2. With save recovery in place, M3 continues with the lodge-only opening and builder refinements, then the season systems. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
 
 ---
 
@@ -417,7 +417,7 @@ Land row 25 first; every other M3 row adds saved fields.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 25 | ◐ | Save versioning | Schema version + migrations; old saves load or reset cleanly |
+| 25 | ☑ | Save versioning | Version registry and fixtures, validation, recovery notice and backup |
 | 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |

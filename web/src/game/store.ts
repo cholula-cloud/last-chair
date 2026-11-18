@@ -1,7 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { persist, type PersistStorage } from "zustand/middleware";
+import { migrate } from "./migrations";
 import type { AssetId } from "./base";
 import type { PaintStroke } from "./paintedTrail";
 import { STORY_BEATS } from "./content";
@@ -11,7 +12,6 @@ import {
   SAVE_KEY,
   SAVE_VERSION,
   hydrate,
-  migrate,
   toPersisted,
   type GameState,
   type PersistedState,
@@ -54,9 +54,66 @@ type GameActions = {
   finishWinterReview: () => void;
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
+  dismissSaveNotice: () => void;
 };
 
-type GameStore = GameState & GameActions;
+type GameStore = GameState & GameActions & { saveNotice: string | null };
+type SavedRead = PersistedState & { saveNotice?: string };
+
+const SAVE_BACKUP_KEY = "last-chair-v1-backup";
+const SAVE_NOTICE = "Your last winter couldn’t be loaded on this version. Starting fresh.";
+
+/** Read the raw envelope so even malformed JSON can be backed up. */
+function saveStorage(): PersistStorage<SavedRead> {
+  let unbackedSave: string | null = null;
+  const write: PersistStorage<SavedRead>["setItem"] = (key, value) => {
+    try {
+      if (unbackedSave !== null) {
+        localStorage.setItem(SAVE_BACKUP_KEY, unbackedSave);
+        unbackedSave = null;
+      }
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      // Storage can be denied or full. Keep playing in memory and retry on the next write.
+    }
+  };
+
+  return {
+    getItem(key) {
+      let raw: string | null;
+      try {
+        raw = localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+      if (raw === null) return null;
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
+      const envelope = parsed && typeof parsed === "object" && "state" in parsed ? parsed : null;
+      const version = envelope && "version" in envelope
+        ? (typeof envelope.version === "number" ? envelope.version : Number.NaN)
+        : 0;
+      const result = migrate(envelope ? envelope.state : parsed, version);
+      const state = result.reset ? toPersisted(createInitialState(freshSeed())) : result.state;
+      if (result.reset) unbackedSave = raw;
+      if (result.reset || version !== SAVE_VERSION) write(key, { state, version: SAVE_VERSION });
+      return { state: result.reset ? { ...state, saveNotice: SAVE_NOTICE } : state, version: SAVE_VERSION };
+    },
+    setItem: write,
+    removeItem(key) {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Persistence is optional when browser storage is unavailable.
+      }
+    },
+  };
+}
 
 /** Each fresh game gets its own seed; saved games resume from their stored RNG state. */
 function freshSeed(): number {
@@ -64,9 +121,11 @@ function freshSeed(): number {
 }
 
 export const useGameStore = create<GameStore>()(
-  persist<GameStore, [], [], PersistedState>(
+  persist<GameStore, [], [], SavedRead>(
     (set, get) => ({
       ...createInitialState(freshSeed()),
+      saveNotice: null,
+      dismissSaveNotice: () => set({ saveNotice: null }),
       tick: (deltaMs) => set((s) => rules.tick(s, deltaMs)),
       togglePause: () => set((s) => rules.togglePause(s)),
       skipToClose: () => set((s) => rules.skipToClose(s)),
@@ -97,10 +156,9 @@ export const useGameStore = create<GameStore>()(
     {
       name: SAVE_KEY,
       version: SAVE_VERSION,
-      migrate: (persisted, fromVersion) => migrate(persisted, fromVersion),
-      storage: createJSONStorage(() => localStorage),
+      storage: saveStorage(),
       partialize: toPersisted,
-      merge: hydrate,
+      merge: (persisted, current) => hydrate(persisted as SavedRead | undefined, current),
     },
   ),
 );

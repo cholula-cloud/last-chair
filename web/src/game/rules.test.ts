@@ -1,3 +1,4 @@
+import { migrate } from "./migrations";
 import { ASSET_CATALOG } from "./base";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
@@ -8,7 +9,6 @@ import { createRng } from "./rng";
 import {
   createInitialState,
   hydrate,
-  migrate,
   toPersisted,
   type GameState,
 } from "./state";
@@ -260,7 +260,7 @@ describe("save migration", () => {
     delete v0.nightRecap;
     delete v0.dayStats;
     expect(v0.phase).toBe("night");
-    const migrated = migrate(v0, 0);
+    const migrated = migrate(v0, 0).state;
     // A v0 night save has no recap to restore, so it resumes as a day.
     expect(migrated.phase).toBe("day");
     expect(migrated.nightRecap).toBeNull();
@@ -273,7 +273,7 @@ describe("save migration", () => {
 
   it("keeps a v1 night save in the night with its recap", () => {
     const night = atNight();
-    const migrated = migrate(JSON.parse(JSON.stringify(toPersisted(night))), 1);
+    const migrated = migrate(JSON.parse(JSON.stringify(toPersisted(night))), 1).state;
     expect(migrated.phase).toBe("night");
     expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
@@ -381,9 +381,9 @@ describe("lastDay", () => {
     const night = atNight();
     const next = rules.sleep(night);
     const saved = JSON.parse(JSON.stringify(toPersisted(next)));
-    expect(migrate(saved, 6).lastDay).toEqual(next.lastDay);
+    expect(migrate(saved, 6).state.lastDay).toEqual(next.lastDay);
     delete saved.lastDay;
-    expect(migrate(saved, 5).lastDay).toBeNull();
+    expect(migrate(saved, 5).state.lastDay).toBeNull();
   });
 
   it("a v5 night save gains recap facts so the Why? list can render", () => {
@@ -391,7 +391,7 @@ describe("lastDay", () => {
     const saved = JSON.parse(JSON.stringify(toPersisted(night)));
     delete saved.nightRecap.facts;
     delete saved.lastDay;
-    const migrated = migrate(saved, 5);
+    const migrated = migrate(saved, 5).state;
     expect(migrated.phase).toBe("night");
     expect(migrated.nightRecap!.facts.farePrice).toBeGreaterThan(0);
     expect(migrated.lastDay).toBeNull();
@@ -429,7 +429,7 @@ describe("M2 building and save compatibility", () => {
       ...toPersisted(state), buildings: ["warming_hut", "lodge", "cafe", "snow_guns"],
       trails: state.trails.map((trail) => ({ ...trail, widths: undefined })),
     };
-    const migrated = migrate(saved, 10);
+    const migrated = migrate(saved, 10).state;
     expect(migrated.cash).toBe(state.cash);
     expect(migrated.lodgeTier).toBe(1);
     expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe"]);
@@ -451,7 +451,7 @@ describe("M2 building and save compatibility", () => {
     if (version === 11) delete saved.trails[0].widths;
     else saved.trails[0].widths = widths;
 
-    const migrated = migrate(saved, version);
+    const migrated = migrate(saved, version).state;
     expect(migrated.cash).toBe(initial.cash);
     expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe", "shop"]);
     expect(migrated.trails[0].path).toEqual(path);

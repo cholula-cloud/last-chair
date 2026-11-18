@@ -30,6 +30,8 @@ export const MAX_LOAD_GRADE = 1.25;
 export const BASE_AREA_RADIUS = 0.6;
 /** Most lifts on the hill, the default surface lift included. */
 export const MAX_LIFTS = 3;
+/** Lifetime slot cap, including permanently closed lifts. */
+export const MAX_LIFT_SLOTS = 12;
 /** Least distance between two top terminals. */
 export const MIN_TOP_SPACING = 0.8;
 /** Least distance between a top terminal and any other lift's line. */

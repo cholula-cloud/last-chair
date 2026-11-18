@@ -124,11 +124,11 @@ function roundDeep(v: unknown): unknown {
   return v;
 }
 
-/** Whole state minus functions, guest contents and the RNG bookkeeping field. */
+/** Whole simulation state minus functions, guest contents and RNG bookkeeping. */
 function finalState(v: View) {
   const rest: Record<string, unknown> = {};
   for (const [k, x] of Object.entries(v)) {
-    if (typeof x === "function" || k === "guests" || k === "rngState") continue;
+    if (typeof x === "function" || k === "guests" || k === "rngState" || k === "saveNotice") continue;
     rest[k] = x;
   }
   return { ...(roundDeep(rest) as object), guestCount: v.guests.length };
