@@ -576,9 +576,10 @@ export function closeLift(state: GameState, index: number): GameState {
   return { ...state, lifts: state.lifts.map((item, i) => i === index ? { ...item, closing: true } : item) };
 }
 
-export function checkPaint(state: GameState, strokes: readonly PaintStroke[]) {
+export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false) {
   const preview = previewPaintedTrail(state, strokes);
-  const cleared = preview.path.length < 2 || preview.deleteTrail
+  const isGlade = preview.trailIndex == null ? glade : !!state.trails[preview.trailIndex]?.glade;
+  const cleared = isGlade || preview.path.length < 2 || preview.deleteTrail
     ? { newCells: [], acres: 0, cost: 0 }
     : clearingQuote(preview.path, preview.widths, clearedLand(state));
   // The prepared trail costs money even when no new trees need to come out.
@@ -586,11 +587,11 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[]) {
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
   const reason = preview.reason ?? (state.phase !== "day" ? "Build during the day."
     : state.cash < cost ? "Not enough cash." : null);
-  return { ...preview, cost, reason, cleared };
+  return { ...preview, cost, reason, cleared, glade: isGlade };
 }
 
-export function commitPaint(state: GameState, strokes: readonly PaintStroke[]): GameState {
-  const preview = checkPaint(state, strokes);
+export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false): GameState {
+  const preview = checkPaint(state, strokes, glade);
   if (preview.reason || preview.liftIndex == null || preview.liftIndex < 0) return state;
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
   const snow = original?.snow ?? averageTrail(state.trails.filter((trail) => trail.open).map((trail) => trail.snow));
@@ -598,7 +599,8 @@ export function commitPaint(state: GameState, strokes: readonly PaintStroke[]): 
     original.builtDay === state.dayIndex && original.builtAtMin === state.clockMin;
   const trail: TrailRun = {
     liftIndex: preview.liftIndex,
-    name: original?.name ?? `Painted trail ${state.trails.length + 1}`,
+    ...(preview.glade ? { glade: true } : {}),
+    name: original?.name ?? `${preview.glade ? "Glade" : "Painted trail"} ${state.trails.length + 1}`,
     path: preview.deleteTrail && original ? original.path : preview.path,
     widths: preview.deleteTrail ? original?.widths : preview.widths,
     lengthFt: preview.deleteTrail && original ? original.lengthFt : preview.lengthFt,

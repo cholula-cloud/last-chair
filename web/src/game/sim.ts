@@ -1,3 +1,4 @@
+import { TERRAIN } from "./terrain";
 import { morningWeatherHeadline } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
@@ -152,7 +153,7 @@ function daySeed(rand: Rand): string {
 
 /** Guests on the hill: walking in, in a line, on a lift or skiing. */
 export function isOnHill(g: Guest): boolean {
-  return g.state === "arrive" || g.state === "refuel" || g.state === "queue" || g.state === "ride" || g.state === "ski";
+  return g.state === "arrive" || g.state === "refuel" || g.state === "queue" || g.state === "ride" || g.state === "ski" || g.state === "walk_lift" || g.state === "walk_out";
 }
 
 export type GuestClock = {
@@ -269,6 +270,16 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         }
         return g;
       }
+      case "walk_lift":
+      case "walk_out": {
+        const from = clock.trails[g.trailIndex ?? -1]?.path.at(-1) ?? TERRAIN.base;
+        const to = g.state === "walk_lift" ? (clock.lifts[g.liftIndex ?? -1]?.bottom ?? TERRAIN.base) : TERRAIN.base;
+        const duration = Math.max(0.1, Math.hypot(from.x - to.x, from.z - to.z) * TERRAIN.horizontalFeetPerUnit / 250);
+        const progress = (now - g.stateSinceMin) / duration;
+        if (progress < 1) return { ...g, progress };
+        if (g.state === "walk_out") return goHome(g);
+        return now >= LIFT_CLOSE_MIN ? goHome(g) : { ...joinLine(g), trailIndex: g.trailIndex };
+      }
       case "ski": {
         const ti = g.trailIndex ?? g.liftIndex ?? 0;
         const trail = clock.trails[ti];
@@ -291,13 +302,19 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const nextQuality = nextTrailIndex == null ? clock.snowQuality : clock.snowByTrail?.[nextTrailIndex] ?? clock.snowQuality;
         const nextRun = nextTrail ? runSkiMinutes(g.persona, nextTrail, nextQuality) : duration;
         const lapEnds = now + lapOverhead + nextRun;
-        if (energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
+        const end = trail?.path.at(-1);
+        const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
+        const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
+        const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
+        if (!remote && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
-        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
-          return goHome(g, done);
+        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin > LIFT_CLOSE_MIN || li < 0) {
+          const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > 0.5;
+          return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
         }
+        if (remote) return { ...g, ...done, state: "walk_lift", liftIndex: li, progress: 0, stateSinceMin: now };
         return chooseQueue({ ...g, ...done });
       }
       case "depart": {

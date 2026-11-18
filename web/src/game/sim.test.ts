@@ -511,6 +511,19 @@ describe("tickGuests", () => {
       ...over,
     });
 
+  it("walks from a remote trail end before joining the selected lift", () => {
+    const trail = { ...defaultTrails()[0], path: [defaultTrails()[0].path[0], { x: 10, z: 0 }] };
+    const options = { trails: [trail] };
+    const [walking] = tickGuests([skier({ targetRuns: 9, energy: 1 })], clock(T0 + 30, options));
+    expect(walking.state).toBe("walk_lift");
+    expect(walking.liftIndex).toBe(0);
+    const [halfway] = tickGuests([walking], clock(T0 + 31, options));
+    expect(halfway.state).toBe("walk_lift");
+    const [queued] = tickGuests([walking], clock(T0 + 40, options));
+    expect(queued.state).toBe("queue");
+    expect(queued.liftIndex).toBe(0);
+  });
+
   it("keeps a pending guest at home until their arrival minute, then starts the walk in", () => {
     const g = makeGuest({ state: "pending", arriveAtMin: T0 + 5 });
     expect(tickGuests([g], clock(T0 + 4.5))[0]).toBe(g);

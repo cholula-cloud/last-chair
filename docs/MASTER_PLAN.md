@@ -422,6 +422,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | — | ☑ | Trail planning and signs | Resume a draft across brush strokes, move the map before finishing, use the downhill grid, and read difficulty at each built trail entrance. |
 | — | ☑ | Placement and base polish | Move the camera without losing a placement. Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. |
 | 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
+| — | ◐ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends; implementation under review. |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |

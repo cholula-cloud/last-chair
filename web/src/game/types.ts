@@ -16,6 +16,8 @@ export type GuestState =
   | "queue"
   | "ride"
   | "ski"
+  | "walk_lift"
+  | "walk_out"
   | "refuel"
   | "depart"
   /** Left the car park for home; terminal, not drawn. */

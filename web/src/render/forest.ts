@@ -17,7 +17,7 @@ export const NEAR_DENSITY = 1.5;
 export const MID_KEEP_MAX = 0.36;
 export const GRID_SPACING = 0.82;
 
-export const LIFT_CLEAR = 3.0;
+export const LIFT_CLEAR = 0.9;
 export const TRAIL_CLEAR = 3.84;
 export const ROAD_HALF_WIDTH = 1.5;
 export const APRON_PAD = 2;
@@ -163,19 +163,17 @@ function inMeadow(x: number, z: number) {
 
 /** Prepare trail coordinates once before checking the forest or tinting the terrain. */
 export function forestMask(clearings: ForestClearings) {
-  const trails = clearings.lines.map((line, i) =>
-    clearings.paths?.[i]?.length ? pathPolyline(clearings.paths[i], 28) : trailPolyline(line, 28),
-  );
+  const trails = clearings.paths
+    ? clearings.paths.filter((path) => path.length > 1).map((path) => pathPolyline(path, 28))
+    : clearings.lines.map((line) => trailPolyline(line, 28));
   const liftSq = LIFT_CLEAR ** 2;
   const trailSq = TRAIL_CLEAR ** 2;
   return (x: number, z: number) => {
     if (inLot(x, z) || onSpur(x, z) || inApron(x, z) || inMeadow(x, z)) return false;
     if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
     if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
-    for (let i = 0; i < clearings.lines.length; i++) {
-      if (distSqToPolyline(x, z, trails[i]) < trailSq) return false;
-      if (distSqToLiftLine(x, z, clearings.lines[i]) < liftSq) return false;
-    }
+    for (const trail of trails) if (distSqToPolyline(x, z, trail) < trailSq) return false;
+    for (const line of clearings.lines) if (distSqToLiftLine(x, z, line) < liftSq) return false;
     return TERRAIN.height(x, z) <= 10.65;
   };
 }

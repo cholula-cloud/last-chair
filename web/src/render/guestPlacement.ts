@@ -28,6 +28,8 @@ type PlaceOpts = {
   towers?: LiftPoint[];
   stall?: { x: number; z: number };
   venue?: PlacedAsset;
+  walkFrom?: XZ;
+  walkTo?: XZ;
 };
 
 const CHAIR_DROP = 0.44;
@@ -149,6 +151,11 @@ export function guestWorldPosition(
       return ride(t, line, opts.liftType, opts.towers);
     case "ski":
       return ski(index, t, line, opts.path);
+    case "walk_lift":
+    case "walk_out": {
+      const p = sitePathPoint([opts.walkFrom ?? line.bottom, opts.walkTo ?? line.bottom], t);
+      return onGround(p.x, p.z, p.yaw, "walk");
+    }
     case "refuel":
       return visitVenue(index, t, line, opts.venue);
     default:
@@ -193,6 +200,8 @@ export function placeGuests(
       towers: lift.towers ?? liftTowers(lift.line),
       path: skiPath ?? lift.path,
       venue: g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined,
+      walkFrom: g.trailIndex == null ? undefined : trailPaths?.[g.trailIndex]?.at(-1),
+      walkTo: g.state === "walk_lift" ? lift.line.bottom : TERRAIN.base,
     });
   });
 }

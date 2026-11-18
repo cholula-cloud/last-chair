@@ -58,14 +58,14 @@ describe("Dutch Hill opening", () => {
     expect(rules.skipToClose(painted).dayStats.completedRuns).toBeGreaterThan(0);
   });
 
-  it("charges for the full draft only after its final stroke and refunds the same clearing on undo", () => {
+  it("charges for a completed multi-stroke draft and refunds the same clearing on undo", () => {
     const lift = rules.placeLift(lease(), tow);
     const [reference] = referencePaint(lift, 0, "green");
     const seam = Math.floor(reference.points.length / 2);
     const first = { ...reference, points: reference.points.slice(0, seam + 1) };
     const second = { ...reference, widthFt: 100, points: reference.points.slice(seam) };
 
-    expect(rules.commitPaint(lift, [first])).toBe(lift);
+    expect(rules.checkPaint(lift, [first]).reason).toBeNull();
     const quote = rules.checkPaint(lift, [first, second]);
     expect(quote.reason).toBeNull();
     const cut = rules.commitPaint(lift, [first, second]);
@@ -86,6 +86,20 @@ describe("Dutch Hill opening", () => {
     expect(rules.checkPaint(opened, edits.slice(0, 1)).cost).toBeGreaterThan(0);
     expect(rules.checkPaint(opened, edits).reason).toMatch(/over the same trail/i);
     expect(rules.commitPaint(opened, edits)).toBe(opened);
+  });
+
+  it("marks a glade without clearing trees and preserves it in a save", () => {
+    const lift = rules.placeLift(lease(), tow);
+    const strokes = referencePaint(lift, 0, "green");
+    const quote = rules.checkPaint(lift, strokes, true);
+    expect(quote.reason).toBeNull();
+    expect(quote.cleared.newCells).toEqual([]);
+    const marked = rules.commitPaint(lift, strokes, true);
+    expect(marked.trails[0].glade).toBe(true);
+    expect(marked.clearedCells).toEqual(lift.clearedCells);
+    expect(marked.cash).toBe(lift.cash - quote.cost);
+    expect(migrate(toPersisted(marked), SAVE_VERSION)).toMatchObject({ reset: false, state: { trails: [{ glade: true }] } });
+    expect(rules.undoTrail(marked)).toEqual(lift);
   });
 
   it("opens a new winter with the same founder and the original undeveloped hill", () => {

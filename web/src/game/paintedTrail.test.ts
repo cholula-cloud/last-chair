@@ -50,9 +50,10 @@ describe("trail paint geometry", () => {
     expect(wide.verticalFt).toBe(300);
   });
 
-  it("shows an incomplete trail while rejecting its confirmation", () => {
+  it("allows a trail to finish away from the base", () => {
     const draft = previewPaintedTrail(plain, [stroke(meander.slice(0, 3))], slope);
-    expect(draft.reason).toMatch(/finish at the base/i);
+    expect(draft.reason).toBeNull();
+    expect(draft.path.at(-1)).toEqual(meander[2]);
     expect(draft.lengthFt).toBeGreaterThan(0);
     expect(draft.acres).toBeGreaterThan(0);
   });

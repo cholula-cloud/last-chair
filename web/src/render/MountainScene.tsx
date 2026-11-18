@@ -1,5 +1,7 @@
 "use client";
 
+import { BuildGrid } from "./BuildGrid";
+
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
@@ -477,6 +479,7 @@ export function MountainScene() {
         lines={clearingLines}
       />
       <Road />
+      <BuildGrid />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>
         <Village />

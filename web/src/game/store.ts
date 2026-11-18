@@ -42,7 +42,7 @@ type GameActions = {
   placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
   undoLift: () => void;
   closeLift: (index: number) => void;
-  commitPaint: (strokes: readonly PaintStroke[]) => void;
+  commitPaint: (strokes: readonly PaintStroke[], glade?: boolean) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
   placeGun: (at: XZ) => void;
   beginLodgeUpgrade: () => void;
@@ -144,7 +144,7 @@ export const useGameStore = create<GameStore>()(
       placeLift: (req) => set((s) => rules.placeLift(s, req)),
       undoLift: () => set((s) => rules.undoLift(s)),
       closeLift: (index) => set((s) => rules.closeLift(s, index)),
-      commitPaint: (strokes) => set((s) => rules.commitPaint(s, strokes)),
+      commitPaint: (strokes, glade) => set((s) => rules.commitPaint(s, strokes, glade)),
       placeAsset: (id, at) => set((s) => rules.placeAsset(s, id, at)),
       placeGun: (at) => set((s) => rules.placeGun(s, at)),
       beginLodgeUpgrade: () => set((s) => rules.beginLodgeUpgrade(s)),

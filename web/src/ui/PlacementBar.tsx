@@ -77,8 +77,8 @@ function TrailBar() {
     [draft.activeStroke, draft.strokes],
   );
   const preview = useMemo(
-    () => strokes.length > 0 ? checkPaint(state, strokes) : null,
-    [state, strokes],
+    () => strokes.length > 0 ? checkPaint(state, strokes, draft.glade) : null,
+    [state, strokes, draft.glade],
   );
   const guests = preview ? Object.values(PERSONAS)
     .filter(({ id }) => !isOverSkill(id, preview.difficulty))
@@ -87,7 +87,7 @@ function TrailBar() {
     const existing = preview.trailIndex == null ? null : state.trails[preview.trailIndex];
     return (
       <BuildImpactCard
-        title={preview.trailIndex !== null ? "Review trail changes" : "Review painted trail"}
+        title={preview.trailIndex !== null ? "Review trail changes" : preview.glade ? "Review glade" : "Review painted trail"}
         facts={[
           { label: "Trail", value: existing?.name ?? `Painted trail ${state.trails.length + 1}` },
           { label: "Cost", value: formatMoney(preview.cost) },
@@ -97,13 +97,13 @@ function TrailBar() {
           { label: "Area", value: acres(preview.acres) },
           { label: "Who can ski", value: guests || "None" },
           { label: "Lodge tier", value: "1" },
-          ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes)) }] : []),
+          ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade)) }] : []),
         ]}
-        confirmLabel={preview.deleteTrail ? "Close trail" : preview.trailIndex !== null ? "Apply changes" : "Cut trail"}
+        confirmLabel={preview.deleteTrail ? "Close trail" : preview.trailIndex !== null ? "Apply changes" : preview.glade ? "Mark glade" : "Cut trail"}
         problem={preview.reason}
         onCancel={backToDraft}
         onConfirm={() => {
-          state.commitPaint(strokes);
+          state.commitPaint(strokes, draft.glade);
           if (useGameStore.getState().trails !== state.trails) finishPlacement();
         }}
       />
@@ -118,7 +118,7 @@ function TrailBar() {
           ? "Drag over a trail to erase paint."
           : draft.strokes.length
             ? "Start the next stroke at the marked end, or review when finished."
-            : "Drag from a green lift ring to the amber base ring. You can also connect to an open trail."}
+            : "Drag from a green lift ring downhill. End anywhere, or connect to an open trail."}
       </p>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
         <span>Downhill slope</span>
@@ -128,6 +128,10 @@ function TrailBar() {
             {label}
           </span>
         ))}
+      </div>
+      <div className="grid grid-cols-2 gap-1" aria-label="Trail type">
+        <button type="button" className={actionClass} aria-pressed={!draft.glade} onClick={() => usePlacementDraft.setState({ glade: false })}>Cleared trail</button>
+        <button type="button" className={actionClass} aria-pressed={draft.glade} onClick={() => usePlacementDraft.setState({ glade: true })}>Glade · keep trees</button>
       </div>
       <div className="grid grid-cols-4 gap-1" aria-label="Brush width">
         {BRUSH_WIDTHS.map((width, i) => (
@@ -278,6 +282,7 @@ export function PlacementBar() {
   if (!active) return null;
   return (
     <div className="pointer-events-auto max-h-[65dvh] w-full max-w-[440px] overflow-y-auto px-1 short:max-w-[270px]" data-placement-kind={kind}>
+      {kind !== "trail" && <p className="key mb-1 px-2 py-1 text-xs font-bold">Grid: green can build · red cannot. Check the final preview.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
   );

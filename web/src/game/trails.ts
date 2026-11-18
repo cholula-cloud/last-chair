@@ -154,6 +154,8 @@ export function runEnergyCost(persona: PersonaId, trail?: Pick<TrailRun, "length
 }
 
 export type TrailRun = {
+  /** Glades retain existing trees; absence means a cleared trail. */
+  glade?: boolean;
   widths?: number[];
   paidClearing?: ClearingCell[];
   groomed?: boolean[];
