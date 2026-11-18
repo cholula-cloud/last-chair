@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
+import { DUTCH_HILL } from "@/game/mountains/dutchHill";
 import {
   cameraBasis,
   cameraPosition,
   frameView,
   homeView,
+  isPortraitAspect,
   framingAspect,
   keyPoints,
   type SafeRect,
@@ -43,8 +45,8 @@ function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: numbe
 }
 
 /** Everything the home view promises to show: key points, every trail sample, every lift tower top. */
-function allPoints(): Vec3[] {
-  const pts = [...keyPoints()];
+function allPoints(aspect: number): Vec3[] {
+  const pts = keyPoints(isPortraitAspect(aspect));
   for (const slot of REFERENCE_TOPS) {
     for (const q of trailPolyline({ bottom: TERRAIN.base, top: slot })) {
       pts.push({ x: q.x, y: TERRAIN.height(q.x, q.z), z: q.z });
@@ -60,7 +62,7 @@ function expectInside(aspect: number) {
   const view = homeView(aspect);
   const cam = cameraPosition(view.target, view.distance, view.azimuth, view.elevation);
   const eps = 1e-6;
-  for (const [i, p] of allPoints().entries()) {
+  for (const [i, p] of allPoints(aspect).entries()) {
     const n = project(p, cam, view.target, view.fov, aspect);
     const where = `aspect ${aspect.toFixed(3)} point ${i}`;
     expect(n.depth, where).toBeGreaterThan(0);
@@ -144,5 +146,16 @@ describe("home view", () => {
     expect(homeView(390 / 844).distance).toBeLessThanOrEqual(55);
     expect(homeView(375 / 667).distance).toBeLessThanOrEqual(55);
     expect(homeView(390 / 844).distance).toBeLessThanOrEqual(MAX_DISTANCE);
+  });
+
+  it("uses at least half the phone screen height for the base-to-summit slope", () => {
+    const aspect = 390 / 844;
+    const view = homeView(aspect);
+    const cam = cameraPosition(view.target, view.distance, view.azimuth, view.elevation);
+    const onHill = ({ x, z }: { x: number; z: number }) => {
+      const p = { x, z, y: TERRAIN.height(x, z) };
+      return project(p, cam, view.target, view.fov, aspect).y;
+    };
+    expect(onHill(TERRAIN.toWorld(DUTCH_HILL.summit)) - onHill(TERRAIN.base)).toBeGreaterThan(1);
   });
 });

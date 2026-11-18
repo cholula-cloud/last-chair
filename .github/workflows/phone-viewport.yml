@@ -1,0 +1,48 @@
+name: WebKit phone viewport
+
+on:
+  pull_request:
+    paths:
+      - "web/**"
+      - ".github/workflows/phone-viewport.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webkit-phone-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portrait:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - run: npm run build
+      - name: Test the exported game at 390×844
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+          PHONE_CHECK_ENGINES: webkit
+          PHONE_CHECK_VIEWPORTS: 390x844
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run phone-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: webkit-phone-check
+          path: web/playtest-artifacts/phone-check/
+          if-no-files-found: ignore

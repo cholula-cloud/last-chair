@@ -20,6 +20,16 @@ const VIEWPORTS = [
   { w: 375, h: 667, dpr: 2, tag: "375x667" },
 ];
 
+const engines = (process.env.PHONE_CHECK_ENGINES ?? "chromium,webkit").split(",");
+const viewportTags = (process.env.PHONE_CHECK_VIEWPORTS ?? VIEWPORTS.map((vp) => vp.tag).join(",")).split(",");
+const browsers = { chromium, webkit };
+if (!engines.every((engine) => Object.hasOwn(browsers, engine))) {
+  throw new Error("PHONE_CHECK_ENGINES contains an unknown engine.");
+}
+if (!viewportTags.every((tag) => VIEWPORTS.some((vp) => vp.tag === tag))) {
+  throw new Error("PHONE_CHECK_VIEWPORTS contains an unknown viewport.");
+}
+
 const FAILURES = [];
 const SHOTS = [];
 
@@ -272,9 +282,10 @@ async function runViewport(engine, launch, vp) {
 }
 
 const results = [];
-for (const vp of VIEWPORTS) {
-  results.push(await runViewport("chromium", () => chromium.launch({ headless: true }), vp));
-  results.push(await runViewport("webkit", () => webkit.launch({ headless: true }), vp));
+for (const vp of VIEWPORTS.filter((entry) => viewportTags.includes(entry.tag))) {
+  for (const engine of engines) {
+    results.push(await runViewport(engine, () => browsers[engine].launch({ headless: true }), vp));
+  }
 }
 
 const summary = {

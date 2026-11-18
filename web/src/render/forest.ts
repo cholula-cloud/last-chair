@@ -14,7 +14,7 @@ export const CACHE_DROP_RADIUS = 77;
 export const REBUILD_MOVE = 6;
 
 export const NEAR_DENSITY = 1.5;
-export const MID_KEEP_MAX = 0.4;
+export const MID_KEEP_MAX = 0.36;
 export const GRID_SPACING = 0.82;
 
 export const LIFT_CLEAR = 3.0;
@@ -142,25 +142,28 @@ function inMeadow(x: number, z: number) {
   return dx * dx + dz * dz <= 1;
 }
 
-/** True when a tree may stand at (x, z). Same logic tints canopy beyond mid tier. */
-export function forested(x: number, z: number, clearings: ForestClearings): boolean {
-  if (inLot(x, z) || onSpur(x, z)) return false;
-  if (inApron(x, z)) return false;
-  if (inMeadow(x, z)) return false;
-  if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
-  if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
+/** Prepare trail coordinates once before checking the forest or tinting the terrain. */
+export function forestMask(clearings: ForestClearings) {
   const trails = clearings.lines.map((line, i) =>
     clearings.paths?.[i]?.length ? pathPolyline(clearings.paths[i], 28) : trailPolyline(line, 28),
   );
   const liftSq = LIFT_CLEAR ** 2;
   const trailSq = TRAIL_CLEAR ** 2;
-  for (let i = 0; i < clearings.lines.length; i++) {
-    if (distSqToPolyline(x, z, trails[i]) < trailSq) return false;
-    if (distSqToLiftLine(x, z, clearings.lines[i]) < liftSq) return false;
-  }
-  const h = TERRAIN.height(x, z);
-  if (h > 10.65) return false;
-  return true;
+  return (x: number, z: number) => {
+    if (inLot(x, z) || onSpur(x, z) || inApron(x, z) || inMeadow(x, z)) return false;
+    if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
+    if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
+    for (let i = 0; i < clearings.lines.length; i++) {
+      if (distSqToPolyline(x, z, trails[i]) < trailSq) return false;
+      if (distSqToLiftLine(x, z, clearings.lines[i]) < liftSq) return false;
+    }
+    return TERRAIN.height(x, z) <= 10.65;
+  };
+}
+
+/** True when a tree may stand at (x, z). */
+export function forested(x: number, z: number, clearings: ForestClearings): boolean {
+  return forestMask(clearings)(x, z);
 }
 
 function spotFrom(c: Candidate, dist: number): TreeSpot {
@@ -197,12 +200,13 @@ export function forestForTarget(target: XZ, clearings: ForestClearings): ForestT
   const maxCx = Math.floor((target.x + MID_RADIUS) / CHUNK_SIZE);
   const minCz = Math.floor((target.z - MID_RADIUS) / CHUNK_SIZE);
   const maxCz = Math.floor((target.z + MID_RADIUS) / CHUNK_SIZE);
+  const canGrow = forestMask(clearings);
   for (let cz = minCz; cz <= maxCz; cz++) {
     for (let cx = minCx; cx <= maxCx; cx++) {
       for (const c of getChunk(cx, cz)) {
-        if (!forested(c.x, c.z, clearings)) continue;
         const dist = Math.hypot(c.x - target.x, c.z - target.z);
-        if (dist > MID_RADIUS) continue;
+        if (dist > MID_RADIUS || (dist > NEAR_RADIUS && c.keep >= MID_KEEP_MAX)) continue;
+        if (!canGrow(c.x, c.z)) continue;
         if (dist <= NEAR_RADIUS && c.keep < 1) {
           const p = spotFrom(c, dist);
           if (p.birch) birch.push(p);

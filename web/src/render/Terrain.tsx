@@ -9,7 +9,7 @@ import { PALETTE, SUN_DIR } from "./palette";
 import type { Trail } from "@/game/snow";
 import type { LiftLine } from "@/game/descent";
 import { TERRAIN, fbm } from "@/game/terrain";
-import { forested } from "./forest";
+import { forestMask } from "./forest";
 import { sceneCameraTarget } from "./sceneCamera";
 import { buildGeometry } from "./terrainMesh";
 import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
@@ -54,6 +54,7 @@ function paint(
   const nor = g.attributes.normal as THREE.BufferAttribute;
   const col = g.attributes.color as THREE.BufferAttribute;
   const c = new THREE.Color();
+  const isForested = forestMask({ lines, paths });
   for (let i = 0; i < pos.count; i++) {
     // Near a trail the segment values replace the hill-wide means (strongest trail wins).
     let w = 0;
@@ -110,7 +111,7 @@ function paint(
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
     const distCam = Math.hypot(x - sceneCameraTarget.x, z - sceneCameraTarget.z);
-    if (distCam > 45 && forested(x, z, { lines, paths })) {
+    if (distCam > 45 && isForested(x, z)) {
       c.lerp(CANOPY, 0.5);
     }
 

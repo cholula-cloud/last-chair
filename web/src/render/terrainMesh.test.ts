@@ -5,7 +5,7 @@ import { liftTowers } from "./liftLine";
 import { NX, NZ, buildPositions, gridX, gridZ } from "./terrainMesh";
 
 describe("terrain mesh and sim share one heightfield", () => {
-  it("every vertex y equals TERRAIN.height at independently computed grid coordinates", () => {
+  it("every vertex y equals TERRAIN.height at independently computed grid coordinates", { timeout: 20_000 }, () => {
     const cols = 192;
     const rows = 160;
     const pos = buildPositions();

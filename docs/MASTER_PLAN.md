@@ -21,7 +21,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-Verified 2026-11-18 against `main` at PR 53 by reading the code. Every PR updates this section with its row (rule 5 in §8). Tests: 40-seed balance harness, unit tests and `phone-check` run in CI; real-device and external playtests have not been run.
+Updated 2026-11-18 for B1 on top of PR 54. Every PR updates this section with its row (rule 5 in §8). Unit tests and the production build run in CI. Run the 40-seed balance report and `phone-check` separately; real-device and external playtests have not been run.
 
 **Built and merged**
 
@@ -29,7 +29,7 @@ Verified 2026-11-18 against `main` at PR 53 by reading the code. Every PR update
 |---|---|
 | Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, save schema v10 with migrations |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
-| Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, tap placement of lifts with validity checks, trail graph with cut trails, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
+| Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, tap placement of lifts with validity checks, trail graph with cut trails, guests choose trails by skill, convex hill (#50) with wider shoulders for six viable routes (B1), trail ribbon fix (#49), render fix (#48) |
 | Buildings | Warming hut, lodge (still buildable), café, shop, snow guns (one building), each as a flat bonus |
 | Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
@@ -38,7 +38,6 @@ Verified 2026-11-18 against `main` at PR 53 by reading the code. Every PR update
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
-| Trail shards | Ribbon folds fixed in #49 | A look at phone size to confirm no jagged corridors remain, then tick | 13e |
 | Multi-lift choice | `chooseLift` exists in `lifts.ts` | Confirm whether guests pick by queue and skill before writing the spec | 14 |
 | Lift types | Surface and double chair differ in capacity and ride time | Wind, closures, Tier 2 gate | 15 |
 | Venues | Hut, café and shop give flat bonuses | Refuel stop, seats, revenue, the catalog, rentals | 16 |
@@ -53,9 +52,9 @@ Verified 2026-11-18 against `main` at PR 53 by reading the code. Every PR update
 | Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Not started:** B1, L1, B3, B4, B5, 16a to 16d, 26, 27, M4 audio and polish (28 to 33), M4b, M5, M6, M7, M8. B2 has a spec and no code.
+**Not started:** L1, B3, B4, B5, 16a to 16d, 26, 27, M4 audio and polish (28 to 33), M4b, M5, M6, M7, M8. B2 has a spec and no code.
 
-**Next up:** 13e check, then specs for B1 and L1 (docs only), then B1, L1, B2. See §9.
+**Next up:** L1, then B2. See §9.
 
 ---
 
@@ -401,8 +400,8 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 13 | ☑ | Trail graph (13a to 13c) | Trails from lift top to base; sustained pitch; guests choose by skill; snow by elevation |
 | — | ☑ | Render fix (#48), trail ribbon folds (#49) | Scene blank on every browser since #39; restored |
 | 13d | ☑ | Hill shape (#50) | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
-| 13e | ◐ | Trail corridor shards | Fix the jagged dark triangles in cut trail corridors. #49 fixed the ribbon folds; confirm at phone size, then tick |
-| B1 | ☐ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
+| 13e | ☑ | Trail corridor shards | #49 fixed the ribbon folds. Starter and painted corridors checked in the integrated 390×844 Chromium playtest |
+| B1 | ☑ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
 | L1 | ☐ | Fixed lodge | The lodge exists from day 1 on every mountain, cannot be built, moved or demolished, and leaves the Build menu. `lodgeTier` in state (1), save migration (an old save that built the lodge keeps Tier 1), lodge card shell, lot-to-lodge path kept. The $1,800 option is removed |
 | B2 | ☐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |
 | B3 | ☐ | Drag lifts | Drag the top terminal with live snapping to anchor points; ghost line; live cost, vertical and capacity |

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { DUTCH_HILL } from "./mountains/dutchHill";
+import { checkLiftLine, checkSpacing, REFERENCE_TOPS, type LiftLine } from "./descent";
+import { DUTCH_HILL, DUTCH_HILL_SHOULDERS } from "./mountains/dutchHill";
 import { TERRAIN, createTerrain, fbm, type TerrainDef } from "./terrain";
+import { defaultTrails, routeOptions } from "./trails";
 
 const { xMin: X_MIN, xMax: X_MAX, zMin: Z_MIN, zMax: Z_MAX } = TERRAIN.bounds;
 
@@ -118,6 +120,44 @@ describe("Dutch Hill silhouette", () => {
     const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
     const units = TERRAIN.height(summit.x, summit.z) - baseH;
     expect(TERRAIN.feetPerUnit * units).toBeCloseTo(570, 6);
+  });
+});
+
+describe("Dutch Hill builder terrain", () => {
+  const crestOnly = createTerrain({
+    ...DUTCH_HILL,
+    flanks: { ...DUTCH_HILL.flanks!, outerShoulder: undefined },
+  });
+  const [ridge, mid] = REFERENCE_TOPS;
+  const lineAt = (top: LiftLine["top"]): LiftLine => ({ bottom: TERRAIN.base, top });
+  const existingLifts = [
+    { type: "surface" as const, line: lineAt(ridge) },
+    { type: "chair" as const, line: lineAt(mid) },
+  ];
+
+  it("keeps the base, starter route and reference terminal heights from older saves", () => {
+    expect(TERRAIN.base).toEqual(crestOnly.base);
+    expect(defaultTrails()).toEqual(defaultTrails(crestOnly));
+    for (const { x, z } of REFERENCE_TOPS) {
+      expect(TERRAIN.height(x, z)).toBe(crestOnly.height(x, z));
+    }
+  });
+
+  it("allows terminal sites on both shoulders and six routes from a three-lift layout", () => {
+    for (const site of DUTCH_HILL_SHOULDERS) {
+      const line = lineAt(TERRAIN.toWorld(site));
+      expect(checkLiftLine(line, crestOnly).ok).toBe(false);
+      expect(checkLiftLine(line).ok).toBe(true);
+      expect(checkSpacing(line, existingLifts)).toBeNull();
+    }
+
+    const east = TERRAIN.toWorld(DUTCH_HILL_SHOULDERS[1]);
+    const runs = [ridge, mid, east].flatMap((top) => routeOptions(top));
+    const skiable = runs.filter(({ difficulty, path }) => {
+      const end = path.at(-1)!;
+      return difficulty !== "black" && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) < 0.5;
+    });
+    expect(skiable.length).toBeGreaterThanOrEqual(6);
   });
 });
 
