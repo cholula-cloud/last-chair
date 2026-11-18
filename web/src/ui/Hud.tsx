@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import { MOUNTAIN_CALENDARS, dayLabel, type MountainId } from "@/game/calendar";
 import { LOW_CASH } from "@/game/economy";
@@ -402,6 +401,7 @@ export function ActionBar({
   openingBlocked = false,
   confirmMenu = false,
   onConfirmMenuChange,
+  onLeave,
 }: {
   buildActive: boolean;
   onBuild: () => void;
@@ -410,6 +410,8 @@ export function ActionBar({
   openingBlocked?: boolean;
   confirmMenu?: boolean;
   onConfirmMenuChange?: (open: boolean) => void;
+  /** Saves and returns to the title screen. */
+  onLeave?: () => void;
 }) {
   const menuRef = useRef<HTMLButtonElement>(null);
   const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
@@ -450,12 +452,13 @@ export function ActionBar({
             >
               Stay
             </button>
-            <Link
-              href="/"
+            <button
+              type="button"
+              onClick={onLeave}
               className="key key-solid press flex h-11 flex-1 items-center justify-center text-[0.9rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
             >
               Leave
-            </Link>
+            </button>
           </div>
         </div>
       )}

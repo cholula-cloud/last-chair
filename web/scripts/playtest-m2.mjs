@@ -46,7 +46,8 @@ const press = (locator) => mouseOnly
   ? locator.click({ timeout: BUTTON_TIMEOUT })
   : locator.tap({ timeout: BUTTON_TIMEOUT });
 const click = (page, name) => press(button(page, name));
-const save = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "null"), SAVE_KEY);
+// A save written under the old single key moves into slot 1 on load.
+const save = (page) => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "null"), "last-chair-m3-slot-1");
 const screenshot = (page, engine, name) => page.screenshot({ path: path.join(output, engine + "-" + name + ".png"), timeout: 12000 });
 
 const world = (x, z) => [x, TERRAIN.height(x, z), z];
@@ -74,9 +75,18 @@ async function confirmDraft(page, kind, action) {
   }
 }
 
+/** /play opens on the title screen; Continue resumes the active slot, otherwise start a new winter. */
+async function enterGame(page) {
+  const continueButton = button(page, /^Continue/);
+  const newWinter = button(page, "New winter");
+  await newWinter.waitFor({ timeout: 20000 });
+  await press((await continueButton.count()) > 0 ? continueButton : newWinter);
+  await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
+}
+
 async function openPlay(page) {
   await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
-  await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
+  await enterGame(page);
 }
 
 async function buildMenu(page) {
@@ -227,7 +237,7 @@ async function opening(page, cdp, engine) {
   assert.equal(withLift.trails.length, 0, "The game must not generate a free trail");
   assert(await button(page, "Resume day").isDisabled());
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator('[data-scene-ready="true"]').waitFor();
+  await enterGame(page);
   assert.deepEqual((await save(page)).state.lifts, withLift.lifts, "Reloading must keep the new lift");
 
   const top = withLift.lifts[0].anchor;
