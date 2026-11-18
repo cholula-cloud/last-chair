@@ -5,8 +5,8 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftLine } from "@/game/descent";
 import { rideMinutes } from "@/game/lifts";
-import { MS_PER_GAME_MINUTE, type LiftType } from "@/game/types";
-import { useSpeed } from "@/ui/speed";
+import { useGameStore } from "@/game/store";
+import type { LiftType } from "@/game/types";
 import { sceneMood } from "./Atmosphere";
 import { cyl, merge, type Part } from "./geo";
 import {
@@ -24,7 +24,7 @@ import {
   useKit,
 } from "./kit";
 import { LIFT_CABLE_OFFSET } from "./layout";
-import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
+import { cableHeightAt, carrierLoopPhase, liftFrame, liftTowers } from "./liftLine";
 import { PALETTE } from "./palette";
 
 const CARRIERS = 16;
@@ -144,20 +144,17 @@ export function Lift({
   const frame = useMemo(() => liftFrame(line), [line]);
   const carrierGeo = useCarrierGeometry(type);
   const carriers = useRef<THREE.InstancedMesh>(null);
-  const phase = useRef(0);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
-  const speed = useSpeed((s) => s.speed);
-  const rideMs = rideMinutes(type, line) * MS_PER_GAME_MINUTE;
+  const rideMin = rideMinutes(type, line);
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const mesh = carriers.current;
     if (!mesh) return;
-    const rate = rideMs > 0 ? (1000 / rideMs) * speed : 0;
-    phase.current = (phase.current + delta * rate) % 1;
+    const phase = preview ? 0 : carrierLoopPhase(useGameStore.getState().clockMin, rideMin);
     const off = LIFT_CABLE_OFFSET;
     for (let i = 0; i < CARRIERS; i++) {
-      const s = (phase.current + i / CARRIERS) % 1;
+      const s = (phase + i / CARRIERS) % 1;
       const up = s < 0.5;
       const t = up ? s * 2 : 1 - (s - 0.5) * 2;
       const side = up ? 1 : -1;

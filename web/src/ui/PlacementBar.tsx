@@ -9,7 +9,7 @@ import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import { PERSONAS } from "@/game/personas";
 import {
   checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement,
-  commitPaint, placeLift,
+  commitPaint,
 } from "@/game/rules";
 import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
@@ -56,6 +56,17 @@ function DraftActions({ canReview }: { canReview: boolean }) {
 
 function backToDraft() {
   usePlacementDraft.setState({ review: false });
+}
+
+function MoveMapButton({ resumeLabel }: { resumeLabel: string }) {
+  const moving = usePlacementDraft((s) => s.moveCamera);
+  const painting = usePlacementDraft((s) => s.activeStroke !== null);
+  return (
+    <button type="button" className={actionClass} disabled={painting}
+      onClick={() => usePlacementDraft.setState({ moveCamera: !moving })}>
+      {moving ? resumeLabel : "Move map"}
+    </button>
+  );
 }
 
 function TrailBar() {
@@ -129,10 +140,7 @@ function TrailBar() {
         ))}
       </div>
       <div className="grid grid-cols-4 gap-1">
-        <button type="button" className={actionClass} disabled={!!draft.activeStroke}
-          onClick={() => usePlacementDraft.setState({ moveCamera: !draft.moveCamera })}>
-          {draft.moveCamera ? "Paint" : "Move map"}
-        </button>
+        <MoveMapButton resumeLabel="Paint" />
         <button type="button" className={actionClass} aria-pressed={draft.erasing}
           onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}>Erase</button>
         <button type="button" className={actionClass} disabled={!draft.strokes.length} onClick={undoStroke}>Undo</button>
@@ -165,10 +173,6 @@ function LiftBar() {
   const length = line ? feet(liftLength(line) * TERRAIN.horizontalFeetPerUnit) : null;
   const vertical = line ? feet(liftVertical(line) * TERRAIN.feetPerUnit) : null;
   if (draft.review && line && check) {
-    const after = check.ok ? placeLift(state, { type, ...line }) : state;
-    const fallLine = after !== state ? after.trails.at(-1) : null;
-    const guests = fallLine ? Object.values(PERSONAS).filter(({ id }) => !isOverSkill(id, fallLine.difficulty))
-      .map(({ label }) => label).join(", ") : "";
     return (
       <BuildImpactCard
         title={`Review ${LIFT_LABELS[type]}`}
@@ -179,8 +183,7 @@ function LiftBar() {
           { label: "Capacity", value: `${capacity} skiers/hour` },
           { label: "Ride time", value: `${ride?.toFixed(1)} min` },
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
-          ...(fallLine ? [{ label: "Who can ski", value: guests || "None" }] : []),
-          ...(check.ok ? [{ label: "Queue estimate", value: queueImpact(state, after) }] : []),
+          { label: "Opens", value: "After you cut a trail" },
         ]}
         confirmLabel={`Place for ${formatMoney(cost)}`}
         problem={problem}
@@ -195,7 +198,8 @@ function LiftBar() {
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold" aria-live="polite">
-        {step === "bottom" ? "Tap the lift bottom inside the base area"
+        {draft.moveCamera ? "Move the map, then tap Place lift to continue."
+          : step === "bottom" ? "Tap the lift bottom inside the base area"
           : top ? "Drag the top terminal to adjust the lift. Use two fingers to move the map."
           : "Tap where the lift should unload. Green rings mark buildable spots."}
       </p>
@@ -206,10 +210,13 @@ function LiftBar() {
         </p>
       )}
       {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
-      <button type="button" className={actionClass}
-        onClick={() => usePlacementDraft.setState({ step: step === "bottom" ? "top" : "bottom" })}>
-        {step === "bottom" ? "Keep bottom" : "Move bottom"}
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <MoveMapButton resumeLabel="Place lift" />
+        <button type="button" className={actionClass} disabled={draft.moveCamera}
+          onClick={() => usePlacementDraft.setState({ step: step === "bottom" ? "top" : "bottom" })}>
+          {step === "bottom" ? "Keep bottom" : "Move bottom"}
+        </button>
+      </div>
       <DraftActions canReview={!!check && step === "top"} />
     </div>
   );
@@ -253,11 +260,13 @@ function SiteBar() {
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold">
-        {gun ? "Place the gun within pipe reach of the base or another gun."
+        {draft.moveCamera ? "Move the map, then tap Place to continue."
+          : gun ? "Place the gun within pipe reach of the base or another gun."
           : `Choose a spot for ${item.label} near the lodge.`}
       </p>
       {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
       {check?.ok && <p className="text-xs font-bold">{formatMoney(check.cost)}{check.attached ? " · +5% attached" : ""}</p>}
+      <MoveMapButton resumeLabel="Place" />
       <DraftActions canReview={!!tapPoint} />
     </div>
   );

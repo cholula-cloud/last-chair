@@ -17,7 +17,6 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import { PlacementController } from "./PlacementController";
 import { scaledTickMs, useSpeed } from "@/ui/speed";
 
-const PLACEMENT_MAX_DISTANCE = 90;
 import { Atmosphere } from "./Atmosphere";
 import { BuildScenePreview } from "./BuildScenePreview";
 import {
@@ -188,7 +187,8 @@ function CameraRig({
       prevTap = kind === "TAP" ? { x: e.clientX, y: e.clientY, t: e.timeStamp } : null;
       events = [];
       panEnded = false;
-      if (usePlacementDraft.getState().active) return;
+      const { active: building, moveCamera } = usePlacementDraft.getState();
+      if (building && !moveCamera) return;
       if (kind !== "DOUBLE_TAP") return;
       const rect = dom.getBoundingClientRect();
       RAY.setFromCamera(
@@ -203,7 +203,8 @@ function CameraRig({
       glideTo(new THREE.Vector3(snapped.x, TERRAIN.height(snapped.x, snapped.z), snapped.z), FOCUS_DISTANCE);
     };
     const onDown = (e: PointerEvent) => {
-      if (usePlacementDraft.getState().active) return;
+      const { active: building, moveCamera } = usePlacementDraft.getState();
+      if (building && !moveCamera) return;
       if (active.size === 0) {
         events = [];
         panEnded = false;
@@ -403,31 +404,6 @@ function CameraRig({
   return null;
 }
 
-/** While placing, cap zoom-out and ease in when the camera is beyond the cap. */
-function PlacementOrbitCap({
-  active,
-  maxDistance,
-}: {
-  active: boolean;
-  maxDistance: number;
-}) {
-  const controls = useThree((s) => s.controls as OrbitControlsImpl | null);
-  const camera = useThree((s) => s.camera);
-
-  useEffect(() => {
-    if (!controls || !active) return;
-    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
-    const len = offset.length();
-    if (len > maxDistance + 0.05) {
-      offset.setLength(maxDistance);
-      camera.position.copy(controls.target).add(offset);
-      controls.update();
-    }
-  }, [active, maxDistance, controls, camera]);
-
-  return null;
-}
-
 export function MountainScene() {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
@@ -437,7 +413,6 @@ export function MountainScene() {
   const snowDepth = useGameStore((s) => s.snowDepth);
   const lifts = useGameStore((s) => s.lifts);
   const trailRuns = useGameStore((s) => s.trails);
-  const placementActive = usePlacementDraft((s) => s.active);
   const usingBuildTool = usePlacementDraft((s) => s.active && !s.moveCamera);
   // Snapped trail snow: changes only when the look does, so the terrain repaints rarely.
   const trailKey = useGameStore((s) => snowKey(snowCarriers(s.trails)));
@@ -472,7 +447,6 @@ export function MountainScene() {
         : [{ line: primaryLine, type: "surface" as LiftType, path: trailRuns[0]?.path }],
     [lifts, primaryLine, trailRuns],
   );
-  const orbitMax = placementActive ? PLACEMENT_MAX_DISTANCE : MAX_DISTANCE;
   const clearingLines = useMemo(
     () => confirmedLifts.map(liftLineOf),
     [confirmedLifts],
@@ -528,7 +502,6 @@ export function MountainScene() {
         <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
       </Suspense>
       <PlacementController />
-      <PlacementOrbitCap active={placementActive} maxDistance={orbitMax} />
       <CameraRig followId={followId} followedRef={followedRef} />
       <OrbitControls
         makeDefault
@@ -552,7 +525,7 @@ export function MountainScene() {
         minAzimuthAngle={azimuth - AZIMUTH_RANGE}
         maxAzimuthAngle={azimuth + AZIMUTH_RANGE}
         minDistance={MIN_DISTANCE}
-        maxDistance={orbitMax}
+        maxDistance={MAX_DISTANCE}
         minPolarAngle={Math.PI / 2 - MAX_ELEVATION}
         maxPolarAngle={Math.PI / 2 - MIN_ELEVATION}
       />

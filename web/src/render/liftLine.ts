@@ -2,8 +2,14 @@ import type { LiftLine } from "@/game/descent";
 import { LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
 import { clamp01 } from "./math";
 import { TERRAIN } from "@/game/terrain";
+import { DAY_START_MIN } from "@/game/types";
 
 export type LiftPoint = { x: number; z: number; ground: number; top: number };
+
+/** A carrier travels up and back in two one-way rides. */
+export function carrierLoopPhase(clockMin: number, rideMin: number): number {
+  return (Math.max(0, clockMin - DAY_START_MIN) / (2 * rideMin)) % 1;
+}
 
 /** Unit vector along the lift (bottom → top) and its right-hand perpendicular. */
 export function liftFrame(line: LiftLine) {
