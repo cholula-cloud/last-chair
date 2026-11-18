@@ -42,6 +42,25 @@ export type ForestClearings = {
   paths?: readonly (readonly XZ[])[];
 };
 
+const samePoint = (a: XZ, b: XZ) => a.x === b.x && a.z === b.z;
+
+/** Sim ticks replace lift and trail records even when their geometry stays fixed. */
+export function sameForestClearings(a: ForestClearings, b: ForestClearings): boolean {
+  if (a.lines.length !== b.lines.length) return false;
+  if (!a.lines.every((line, i) => {
+    const other = b.lines[i];
+    return samePoint(line.bottom, other.bottom) && samePoint(line.top, other.top);
+  })) return false;
+
+  const otherPaths = b.paths;
+  if ((a.paths?.length ?? 0) !== (otherPaths?.length ?? 0)) return false;
+  if (!a.paths || !otherPaths) return true;
+  return a.paths.every((path, i) => {
+    const other = otherPaths[i];
+    return path === other || (path.length === other.length && path.every((point, j) => samePoint(point, other[j])));
+  });
+}
+
 function hash32(a: number, b: number, c = 0, d = 0): number {
   let h = (a * 374761393 + b * 668265263 + c * 1274126177 + d * 1058862743) | 0;
   h = (h ^ (h >>> 13)) * 1274126177;

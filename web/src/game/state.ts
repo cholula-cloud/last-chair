@@ -1,8 +1,11 @@
-import { MAX_LIFTS, REFERENCE_TOPS, type LiftAnchor } from "./descent";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
+import { placedAssetsFromLegacy, type LodgeTier, type LodgeUpgrade, type PlacedAsset } from "./base";
+import { clearingCells, type ClearingCell } from "./clearing";
+import { migrateLegacyGuns, type SnowGun } from "./guns";
+import { STANDARD_BRUSH_WIDTH } from "./paintedTrail";
+import { MAX_LIFTS, REFERENCE_TOPS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
 import { VALUE, ZERO_TERMS } from "./satisfaction";
-import type { LodgeTier } from "./site";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY, deriveSnow, trailFromGlobals } from "./snow";
 import {
@@ -10,7 +13,6 @@ import {
   defaultTrails,
   fallLineTrailForLift,
   segmentElevationsForPath,
-  STANDARD_TRAIL_WIDTH_FT,
   type TrailRun,
 } from "./trails";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
@@ -45,6 +47,7 @@ export type LiftSlot = {
   /** What the player paid, refunded exactly by undo. */
   paid?: number;
   confirmed: boolean;
+  closing?: boolean;
   /** FIFO queue of guest ids waiting at this lift, front first. */
   queue: string[];
   /** Dispatch accumulator: whole units dispatch one guest each (see lifts.ts). */
@@ -86,6 +89,10 @@ export type PersistedState = {
   founderId: FounderId | null;
   buildings: BuildingId[];
   lodgeTier: LodgeTier;
+  lodgeUpgrade: LodgeUpgrade | null;
+  assets: PlacedAsset[];
+  guns: SnowGun[];
+  clearedCells: ClearingCell[];
   lifts: LiftSlot[];
   trails: TrailRun[];
   selectedLiftType: LiftType;
@@ -129,6 +136,7 @@ export function defaultLifts(): LiftSlot[] {
 }
 
 export function createInitialState(seed: number = DEFAULT_SEED): GameState {
+  const trails = defaultTrails();
   return {
     dayIndex: 1,
     clockMin: DAY_START_MIN,
@@ -151,8 +159,12 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     founderId: null,
     buildings: ["warming_hut"],
     lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
+    lodgeUpgrade: null,
+    assets: placedAssetsFromLegacy(["warming_hut"]),
+    guns: [],
+    clearedCells: trails.flatMap((trail) => clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH))),
     lifts: defaultLifts(),
-    trails: defaultTrails(),
+    trails,
     selectedLiftType: "surface",
     talentsOwned: [],
     completedBeats: [],
@@ -190,6 +202,10 @@ export function toPersisted(state: PersistedState): PersistedState {
     founderId: state.founderId,
     buildings: state.buildings,
     lodgeTier: state.lodgeTier,
+    lodgeUpgrade: state.lodgeUpgrade,
+    assets: state.assets,
+    guns: state.guns,
+    clearedCells: state.clearedCells,
     lifts: state.lifts,
     trails: state.trails,
     selectedLiftType: state.selectedLiftType,
@@ -223,7 +239,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 14;
 
 /** Frozen horizontal scale for v7 saves (Dutch Hill only). */
 const V7_DUTCH_HILL_H = 6;
@@ -398,16 +414,30 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       elevations: t.elevations ?? segmentElevationsForPath(t.path),
     }));
   }
-  if (fromVersion < 11) {
+  if (fromVersion < 14) {
+    // Shipped v11 and v12 saves predate the asset catalog and the new day stats.
     const legacy = persisted as { buildings?: (BuildingId | "lodge")[] };
-    p.buildings = (legacy.buildings ?? fresh.buildings).filter((id): id is BuildingId => id !== "lodge");
-    p.lodgeTier = fresh.lodgeTier;
-  }
-  if (fromVersion < 12) {
+    p.lodgeTier ??= fresh.lodgeTier;
+    p.lodgeUpgrade ??= null;
+    p.assets ??= placedAssetsFromLegacy(legacy.buildings ?? fresh.buildings);
+    p.buildings = (legacy.buildings ?? fresh.buildings)
+      .filter((id): id is BuildingId => id !== "lodge" && id !== "snow_guns");
+    p.dayStats = { ...emptyDayStats(), ...p.dayStats };
     p.trails = (p.trails ?? fresh.trails).map((trail) => ({
       ...trail,
-      widths: trail.path.map(() => STANDARD_TRAIL_WIDTH_FT),
+      widths: trail.widths ?? trail.path.map(() => STANDARD_BRUSH_WIDTH),
     }));
+    if (!p.guns) {
+      p.guns = legacy.buildings?.includes("snow_guns")
+        ? migrateLegacyGuns(p.trails, p.dayIndex ?? 1)
+        : [];
+      p.gunsVisible = false;
+    }
+  }
+  if (fromVersion < 14) {
+    p.clearedCells = [...new Set((p.trails ?? fresh.trails).flatMap((trail) =>
+      clearingCells(trail.path, trail.widths ?? trail.path.map(() => STANDARD_BRUSH_WIDTH)),
+    ))].sort();
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

@@ -10,21 +10,21 @@
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
 | Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
-| Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure are real (PR 6). No refuel stop | 16 |
+| Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
 | Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
-| Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
-| Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); tap placement UI PR 12b–c; trail path test PR 13 | 12–13 |
-| Trail graph | ✅ | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length, segment elevations, and per-point brush widths. The B2 touch UI follows | — |
-| Snow | ✅ | Six segments per `TrailRun`; thaw/overnight/gun reach use stored segment `elevations` (13c) | — |
+| Lift types / capacity | 🟡 | Types differ in capacity, line length, ride time and beginner appeal. Skill-aware queues, per-lift waits and player closures are implemented. Wind holds follow M3 weather | 18 |
+| Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); drag and snap placement checks include lift type and lodge tier | 12–13 |
+| Trail graph | ✅ | `GameState.trails[]`, painted width and sustained pitch, guest choice by skill, ski time by length, and segment elevations from the path | — |
+| Snow | ✅ | Six segments per trail; elevations, pipe-connected gun coverage, nightly grooming budgets and measured tree clearing influence snow | — |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
-| Lodge tiers | 🟡 | Fixed Tier 1 HQ, per-site footprint and card. Upgrades, asset gates and attachment pads follow in 16a–16d | 16a–16d |
+| Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key `last-chair-v1`, schema version 12 with migrations; cloud later | 25 |
+| Save format | 🟡 | Key `last-chair-v1`, schema version 14 with migrations; cloud later | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
@@ -58,7 +58,7 @@ Implemented in `sim.ts` `tickGuests` and `lifts.ts` `stepLifts`. The whole roste
 - **Arrive:** at the guest's arrival minute they walk from parking to the lift line (3 game minutes), then join the line.
 - **QueueAtLift:** FIFO per lift; wait time affects satisfaction.
 - **RideLift:** fixed ride duration by lift type.
-- **SkiRun:** duration from the persona table, scaled by snow quality (`× (1 + 0.3 × (1 − quality))`, so Mid snow at 0.55 is +13%). At the bottom the run is counted and energy drops by the persona's cost. The guest laps unless energy ≤ 0, runs reach their target, or `now + expected wait + ride + next run > 15:45`.
+- **SkiRun:** duration from the persona table, scaled by snow quality (`× (1 + 0.3 × (1 − quality))`, so Mid snow at 0.55 is +13%). At the bottom the run is counted. Stamina cost is the persona's per-run cost multiplied by the trail length relative to Dutch Meadows, with a 0.5 minimum multiplier for short runs. The guest laps unless energy ≤ 0, runs reach their target, or `now + expected wait + ride + next run > 15:45`.
 - **Refuel:** optional café if energy low and venue exists (P1, PR 16). Not built.
 - **Depart:** 3 game minutes to the car park, then `gone`. Lifts stop loading at 15:45: everyone still in a line leaves it and departs, and counts in `turnedAway` if they had not ridden yet. By 16:00 every guest is `gone` or `depart`.
 
@@ -163,10 +163,6 @@ Sweep that led to 46 per hour (surface capacity, avg wait weekday / Saturday): 3
 
 Talent **Patrol Radio** adds 5% to every lift's capacity. The HUD queue reading is the expected wait at the busiest lift (queue length ÷ capacity per minute); the day average (`avgQueueMin`) is the measured mean wait of guests dispatched today, alongside `maxQueueLength` and `peakWaitMin`.
 
-### Bigger Dutch Hill (B1)
-
-The wider shoulders make room for six viable runs in a three-lift layout. Dutch Hill retains the 6×/3× scale, 570-foot vertical, starter route, and existing terminal and base coordinates. The wider camera bounds and portrait framing keep the lodge and arrival lot accessible.
-
 ### Viability rule (build preview)
 
 A lift placement is **valid** iff:
@@ -227,9 +223,6 @@ A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale
 `checkLiftLine`, `checkSpacing` and `checkPlacement` use `rulesFor(terrain)`. `LIFT_COST_PARAMS` stays in design units: `liftCost(type, line, terrain)` divides world length by H and world vertical by V before pricing, then rounds to $50, so a chair at Mid costs $2,500 at any scale. `REFERENCE_TOPS` are world literals at Dutch Hill 6/3 (Ridge, Mid, Creek).
 
 ### Trail graph (P0)
-
-B2a stores brush widths in feet alongside each point of a painted trail. Existing v11 trail saves load at the 60-foot Standard width with their routes and snow preserved. The pure brush rules validate the path and limit the samples generated by a stroke so even invalid gestures stay bounded.
-
 
 Each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. Segment `elevations[]` are derived from terrain height along each path (normalised to the Ridge top). P1: glade flag and more choice rules (PR 14). **B2 (brush trails, spec):** a trail becomes a painted centreline with a width per point (`widths[]`, design feet). Width sets acres cleared (clearing cost per acre), grooming and snowmaking cost (scale with acres) and crowding (skiers per acre on a busy day). Difficulty stays sustained pitch along the centreline. Save version bumps when it lands.
 
@@ -292,9 +285,7 @@ The default surface lift is pre-built and free. The cost is deducted when the li
 
 **Fail soft:** cash &lt; 0 → warning + loan offer $10k (interest stub P1).
 
-### Lodge tiers (L1 implemented, upgrades specified in rows 16a to 16d)
-
-Dutch Hill has one fixed Tier 1 lodge from day 1. The card opens from Build or the lodge on the hill. Saves at v10 or older retain cash, layout and other buildings. v11 removes a prior lodge purchase flag and initializes the fixed lodge at its starting tier.
+### Lodge tiers (rows L1 and 16a to 16d)
 
 The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`lodgeTier`, 1 to 3). A tier gates assets and changes the lodge's look; it adds no seats, no venue and no arrival cap. All values are placeholders until the balance harness tunes them.
 
@@ -311,6 +302,12 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 - **Replaces** the old `lodge` building: its +$4 `venueValue` and +0.08 `arrivalMood` leave with it, and the $1,800 cost is removed. Row L1 sets the replacement values so Tier 1 matches today's season.
 
 ---
+
+### M2 build and operations
+
+- The build rules quote survey and preparation at $150 for a new painted trail. Clearing is $300 per acre of new 15-foot cells. Repainting charges only for newly cleared ground. Erasing a route leaves its clearing in place. The clear proportion within 90 ft of each snow segment raises thaw losses by up to 30%.
+- The warming hut charges $2 per stop and runs at $45 per day. Café, shop, rentals and lessons record receipts from actual visits. First-timers can visit rentals and lessons before their first lift. After tiring or facing a long queue, guests can stop in the café or hut if seats are available. Attach pads add 5% to the venue's effects and receipts.
+- Snow guns cost $400 each in Tier 2. They extend pipe reach from the base or an existing gun. Mid and High groom 3,000 and 5,000 ft respectively, busiest trails first. The Groom Pass adds 20%. Actual segments drive groomed stripes and covered trails.
 
 ## Night choices (ICR Simple mapping)
 
@@ -367,11 +364,9 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ---
 
-## Save format (v1)
+## Save format (v14)
 
-JSON blob in localStorage under the key `last-chair-v1`, written by zustand `persist` with `version: 7` (v2 lift queues, v3 guest day script, v4 satisfaction tallies, v5 trail snow segments, v6 `lastDay` and recap `facts`, v7 free lift placement: `selectedSlotIndex` is removed and a lift may carry `bottom`, `builtDay`, `builtAtMin` and `paid`; v7 keeps saved lifts unless they are missing, empty, hold a non-finite terminal or number more than `MAX_LIFTS`, which reset to the default lift; each older save migrates forward in `migrate()`). The key kept its name so earlier saves still load. The blob is `PersistedState` (`game/state.ts`): clock, phase, cash, presets, snow, guests, lifts, buildings, talents, beats, weather, reputation, `rngState`, plus `nightRecap` and `dayStats` so a reload during the night restores the night sheet exactly.
-
-`migrate(persisted, fromVersion)` fills fields missing from older saves from a fresh state. An unversioned (v0) save has no `rngState`, `nightRecap` or `dayStats`; a v0 save made during the night has no recap to restore and loads as a day.
+Zustand saves `PersistedState` under `last-chair-v1` in localStorage. `migrate()` in `game/state.ts` keeps old cash, builds, guest rosters, random seeds, and night recaps where valid. The shipped v11 save introduced the permanent lodge, and v12 introduced saved brush widths. The v14 loader backfills catalog placements and newer day statistics for both of those versions, converts old snow guns to pipe-connected guns, and records prior clearing without charging the player. Existing widths and cash are preserved. Saves made during a lodge upgrade persist the target and nights remaining.
 
 Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 
@@ -449,6 +444,18 @@ Saturday mean wait, minutes, before → after: Balanced / Mid without a chair 10
 **Limitations.** The season is 14 days, so no fixed combination goes below $0: the worst, Cheap / Minimal, loses about $190 a day and ends near $9,400, which a 28-day season (state `seasonLength`) would deepen to about $6,800 without emptying the bank. "At risk of going negative" is tested as a combination ending more than 10% below the starting cash. Adaptive earns 8% more than passive Balanced / Mid and 4% less than Expensive / Mid; its edge is satisfaction and reputation, which the score weights equally with cash. Saturdays without a chair now average 15 minutes in line (Cheap fares 19), where the satisfaction queue term is capped at −35 points, so the line costs revenue through the 0.5 + 0.7 s multiplier more than through mood. Only Elena is run. Persona and snow numbers outside the table above are untouched and still uncalibrated against play.
 
 ---
+
+### M2 acceptance calibration
+
+The 40-seed paired weekend check kept guest IDs and arrival counts equal within each comparison. The scenario upgrades to Tier 2 through the normal rules, replaces the original surface lift with a short practice tow, and builds a chair on the east shoulder. The new green uses a legal 3,122-foot painted route. The relocation comparison starts with that developed chair and green trail, then closes the chair and builds its replacement on a shorter line. A separate Tier 2 check confirms that rentals unlock and earn revenue.
+
+| Weekend layout | Mean wait (minutes) | Mean satisfaction |
+|---|---:|---:|
+| East chair, before green trail | 2.645 | 83.342 |
+| East chair, added green trail | 1.563 | 91.313 |
+| Relocated chair | 2.783 | 82.439 |
+
+Adding the green reduced mean wait by 1.08 minutes and raised satisfaction by 7.97 points. More distinct first-timers boarded the chair in all 40 seeds, confirmed at dispatch. The mean rose from zero to 19.52. Total chair rides also increased in all 40 seeds on this layout. Moving the developed chair changed mean wait by 1.22 minutes and satisfaction by 8.87 points, and changed completed run counts in 39 of 40 seeds. `npm run m2-gate` passed with distinct beginner boardings as the trail access criterion.
 
 ## Implementation map
 

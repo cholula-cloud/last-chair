@@ -2,7 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
 import { liveSatisfaction, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
@@ -14,7 +14,6 @@ import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { GuestsSheet } from "@/ui/GuestsSheet";
-import { LodgeSheet } from "@/ui/LodgeSheet";
 import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
@@ -27,8 +26,7 @@ import {
   TopBar,
 } from "@/ui/Hud";
 import { PlacementBar } from "@/ui/PlacementBar";
-import { usePlacementDraft } from "@/ui/placementDraft";
-import { setTrailPreview } from "@/ui/trailPreview";
+import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { useSpeed } from "@/ui/speed";
@@ -37,15 +35,7 @@ import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 export default function PlayExperience() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [buildOpen, setBuildOpen] = useState(false);
-  const [lodgeOpenedDay, setLodgeOpenedDay] = useState<number | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const restoreLodgeTriggerFocus = useRef(false);
-  const lodgeButtonRef = useCallback((button: HTMLButtonElement | null) => {
-    if (button && restoreLodgeTriggerFocus.current) {
-      restoreLodgeTriggerFocus.current = false;
-      button.focus({ preventScroll: true });
-    }
-  }, []);
 
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
@@ -53,7 +43,6 @@ export default function PlayExperience() {
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
   const phase = useGameStore((s) => s.phase);
-  const lodgeOpen = phase === "day" && lodgeOpenedDay === dayIndex;
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   // "tone|label" of the worst trail segment, as a string so the HUD re-renders only when it changes.
@@ -78,11 +67,26 @@ export default function PlayExperience() {
   const setBuildMode = useGameStore((s) => s.setBuildMode);
   const lifts = useGameStore((s) => s.lifts);
   const undoLift = useGameStore((s) => s.undoLift);
+  const buildTrigger = useRef<HTMLElement | null>(null);
   const placementActive = usePlacementDraft((s) => s.active);
   const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
   const undoRefund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
+
+  useEffect(() => usePlacementDraft.subscribe((next, prev) => {
+    if (next.lodgeRequested !== prev.lodgeRequested && useGameStore.getState().phase === "day") {
+      setBuildOpen(true);
+    }
+  }), []);
+
+  useEffect(() => useGameStore.subscribe((next, prev) => {
+    if (prev.phase === "day" && next.phase !== "day") {
+      if (usePlacementDraft.getState().active) finishPlacement();
+      setBuildOpen(false);
+      buildTrigger.current = null;
+    }
+  }), []);
 
   useEffect(() => {
     const persist = useGameStore.persist;
@@ -106,10 +110,6 @@ export default function PlayExperience() {
   useEffect(() => {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
-
-  useEffect(() => useGameStore.subscribe((next, previous) => {
-    if (previous.phase === "day" && next.phase !== "day") setLodgeOpenedDay(null);
-  }), []);
 
   useEffect(() => {
     if (phase === "night") useSpeed.getState().reset();
@@ -175,7 +175,7 @@ export default function PlayExperience() {
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene onLodgeSelect={phase === "day" && !placementActive ? () => setLodgeOpenedDay(dayIndex) : undefined} />
+        <MountainScene />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
@@ -193,9 +193,9 @@ export default function PlayExperience() {
               togglePause();
             }}
           />
-          {showStartHint && <StartCallout />}
+          {showStartHint && !placementActive && <StartCallout />}
         </div>
-        {showNote && (
+        {showNote && !placementActive && (
           <MorningNote
             weather={weather}
             headline={tidy(morningHeadline)}
@@ -215,6 +215,22 @@ export default function PlayExperience() {
       {phase === "day" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
           {!placementActive && (
+            <div className="pointer-events-auto absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex flex-wrap items-center justify-end gap-2">
+              {undoIndex >= 0 && (
+                <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
+              )}
+              {canResume && (
+                <ResumeFollowChip
+                  onClick={() => {
+                    setFollowId(resumeFollowId);
+                    useCameraUi.setState({ resumeFollowId: null });
+                  }}
+                />
+              )}
+              <RecenterButton onClick={requestRecenter} />
+            </div>
+          )}
+          {!placementActive && (
           <div className="w-full sm:max-w-[400px]">
             <ConditionsBoard
               avgQueue={avgQueue}
@@ -230,23 +246,12 @@ export default function PlayExperience() {
             <PlacementBar />
           ) : (
           <div ref={actionBarWrapRef} className="relative w-full sm:max-w-[400px]">
-            <div className="pointer-events-auto absolute right-0 bottom-full mb-2 flex flex-wrap items-center justify-end gap-2">
-              {undoIndex >= 0 && (
-                <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
-              )}
-              {canResume && (
-                <ResumeFollowChip
-                  onClick={() => {
-                    setFollowId(resumeFollowId);
-                    useCameraUi.setState({ resumeFollowId: null });
-                  }}
-                />
-              )}
-              <RecenterButton onClick={requestRecenter} />
-            </div>
             <ActionBar
               buildActive={buildMode}
-              onBuild={() => setBuildOpen(true)}
+              onBuild={() => {
+                buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                setBuildOpen(true);
+              }}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
               confirmMenu={menuConfirmOpen}
@@ -259,23 +264,19 @@ export default function PlayExperience() {
 
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
-        open={buildOpen && !lodgeOpen}
+        open={buildOpen}
         onClose={() => {
           setBuildOpen(false);
-          setTrailPreview(null);
           if (!usePlacementDraft.getState().active) setBuildMode(false);
+          const trigger = buildTrigger.current;
+          buildTrigger.current = null;
+          if (trigger?.isConnected) trigger.focus({ preventScroll: true });
         }}
-        onStartPlacement={() => setBuildOpen(false)}
-        onShowLodge={() => setLodgeOpenedDay(dayIndex)}
-        lodgeButtonRef={lodgeButtonRef}
+        onStartPlacement={() => {
+          buildTrigger.current = null;
+          setBuildOpen(false);
+        }}
       />
-      {lodgeOpen && (
-        <LodgeSheet onClose={() => {
-          const game = useGameStore.getState();
-          restoreLodgeTriggerFocus.current = buildOpen && game.phase === "day" && game.dayIndex === dayIndex;
-          setLodgeOpenedDay(null);
-        }} />
-      )}
       <NightRecapSheet />
       <FounderPick />
       <WinterReviewSheet />

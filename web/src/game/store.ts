@@ -2,6 +2,8 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { AssetId } from "./base";
+import type { PaintStroke } from "./paintedTrail";
 import { STORY_BEATS } from "./content";
 import * as rules from "./rules";
 import {
@@ -39,6 +41,11 @@ type GameActions = {
   setSelectedLiftType: (t: LiftType) => void;
   placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
   undoLift: () => void;
+  closeLift: (index: number) => void;
+  commitPaint: (strokes: readonly PaintStroke[]) => void;
+  placeAsset: (id: AssetId, at: XZ) => void;
+  placeGun: (at: XZ) => void;
+  beginLodgeUpgrade: () => void;
   cutTrail: (liftIndex: number, optionIndex: number) => void;
   undoTrail: () => void;
   buyBuilding: (id: BuildingId) => void;
@@ -72,6 +79,11 @@ export const useGameStore = create<GameStore>()(
       setSelectedLiftType: (t) => set((s) => rules.setSelectedLiftType(s, t)),
       placeLift: (req) => set((s) => rules.placeLift(s, req)),
       undoLift: () => set((s) => rules.undoLift(s)),
+      closeLift: (index) => set((s) => rules.closeLift(s, index)),
+      commitPaint: (strokes) => set((s) => rules.commitPaint(s, strokes)),
+      placeAsset: (id, at) => set((s) => rules.placeAsset(s, id, at)),
+      placeGun: (at) => set((s) => rules.placeGun(s, at)),
+      beginLodgeUpgrade: () => set((s) => rules.beginLodgeUpgrade(s)),
       cutTrail: (liftIndex, optionIndex) =>
         set((s) => rules.cutTrail(s, liftIndex, optionIndex)),
       undoTrail: () => set((s) => rules.undoTrail(s)),

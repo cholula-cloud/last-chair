@@ -1,3 +1,19 @@
+import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
+import {
+  ASSET_CATALOG,
+  assetRevenue,
+  assetEffect,
+  advanceLodgeUpgrade,
+  LODGE_TIERS,
+  nextLodgeTier,
+  placedAssetsFromLegacy,
+  previewAssetPlacement,
+  terminalOverlapsBuilding,
+  type AssetId,
+} from "./base";
+import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
+import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST } from "./guns";
+import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
 import {
   checkLiftLine,
@@ -15,7 +31,6 @@ import {
   resetLiftQueues,
   stepLifts,
 } from "./lifts";
-import { previewPaintedTrail, type PaintStroke } from "./paintedTrail";
 import { createRng } from "./rng";
 import {
   THAW_START_MIN,
@@ -50,7 +65,6 @@ import {
   routeOptions,
   segmentElevationsForPath,
   snowCarriers,
-  STANDARD_TRAIL_WIDTH_FT,
   trailCost,
   trailsOnLift,
   type RouteOption,
@@ -58,8 +72,8 @@ import {
 } from "./trails";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
-  BUILDING_COSTS,
   MS_PER_GAME_MINUTE,
+  LIFT_LABELS,
   liftCost,
   type BuildingId,
   type FarePreset,
@@ -69,6 +83,28 @@ import {
   type SnowPreset,
   type WeatherKind,
 } from "./types";
+
+const includedClearings = new WeakMap<XZ[], ClearingCell[]>();
+
+/** Starter corridors come with their lifts. A same-minute lift undo removes its included clearing. */
+function clearedLand(state: Pick<GameState, "trails"> & Partial<Pick<GameState, "clearedCells">>): Set<ClearingCell> {
+  const cells = new Set(state.clearedCells);
+  for (const trail of state.trails) {
+    if (trail.paid !== undefined) continue;
+    let included = includedClearings.get(trail.path);
+    if (!included) {
+      included = clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH));
+      includedClearings.set(trail.path, included);
+    }
+    for (const cell of included) cells.add(cell);
+  }
+  return cells;
+}
+
+function exposureFor(state: GameState): number[][] {
+  const cleared = clearedLand(state);
+  return state.trails.map((trail) => trailExposure(trail, cleared));
+}
 
 /** Every rule is pure: `(state, ...args) => state`. It returns the same object when nothing changes. */
 
@@ -101,13 +137,16 @@ export function satisfactionContext(
   state: Pick<
     GameState,
     "fare" | "buildings" | "founderId" | "weather" | "clockMin"
-  >,
+  > & Partial<Pick<GameState, "assets">>,
 ): SatisfactionContext {
   const founder = founderById(state.founderId);
   return {
     fare: state.fare,
-    arrivalMood: arrivalMood(state.buildings, state.founderId, state.weather),
-    venueValue: venueValue(state.buildings),
+    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) +
+      (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
+    venueValue: state.assets
+      ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
+      : venueValue(state.buildings),
     snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
     now: state.clockMin,
   };
@@ -137,6 +176,12 @@ export function openNight(state: GameState): GameState {
     arrivalMood: ctx.arrivalMood,
     openLiftCount: openLifts,
     founderFixedDelta: founder?.fixedCostDelta ?? 0,
+    busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
+      const min = record.rides ? record.waitSumMin / record.rides : 0;
+      const lift = state.lifts[i];
+      return min > (busiest?.min ?? 0) && lift ? { min, label: `${LIFT_LABELS[lift.type]} ${i + 1}` } : busiest;
+    }, undefined),
+    venueUpkeep: state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0),
   });
   const rawReputation = Math.round(
     state.reputation * 0.85 + recap.satisfaction * 0.15,
@@ -151,7 +196,7 @@ export function openNight(state: GameState): GameState {
     snowDepth: state.snowDepth,
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: rawReputation,
-    lessonsBooked: state.talentsOwned.includes("school_day"),
+    lessonsBooked: (stats.venueRevenue.ski_school ?? 0) > 0 || state.talentsOwned.includes("school_day"),
     completedBeats: state.completedBeats,
   });
   return {
@@ -198,7 +243,18 @@ export function tick(state: GameState, deltaMs: number): GameState {
     guestsArrived,
     turnedAway,
     peakOnHill,
+    refuels,
+    balked,
+    seatsFullMin,
   } = state.dayStats;
+  const byLift = lifts.map((_, i) => ({ ...(state.dayStats.byLift[i] ?? { rides: 0, waitSumMin: 0 }) }));
+  const totalRunsByTrail = trails.map((_, i) => state.dayStats.runsByTrail[i] ?? 0);
+  const venueRevenue = { ...state.dayStats.venueRevenue };
+  const seats = state.assets.reduce((sum, asset) =>
+    sum + ((asset.id === "cafe" || asset.id === "warming_hut") ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
+  const exposure = state.weather === "thaw" && clockMin + addMin >= THAW_START_MIN
+    ? exposureFor(state)
+    : [];
   for (let k = 0; k < steps; k++) {
     clockMin += stepMin;
     const moved = tickGuests(guests, {
@@ -209,27 +265,53 @@ export function tick(state: GameState, deltaMs: number): GameState {
       lifts,
       talentsOwned: state.talentsOwned,
       lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned),
+      assets: state.assets,
     });
     const runsByTrail = trails.map(() => 0);
+    let occupiedSeats = 0;
     moved.forEach((g, i) => {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
       if (g.runs > was.runs) {
         const ti = was.trailIndex ?? was.liftIndex ?? 0;
-        if (ti < runsByTrail.length) runsByTrail[ti] += g.runs - was.runs;
+        if (ti < runsByTrail.length) {
+          runsByTrail[ti] += g.runs - was.runs;
+          totalRunsByTrail[ti] += g.runs - was.runs;
+        }
+      }
+      const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
+      if (asset?.id === "cafe" || asset?.id === "warming_hut") occupiedSeats += 1;
+      if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
+        const rate = assetRevenue(asset);
+        venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
+        if (asset.id === "cafe" || asset.id === "warming_hut") {
+          if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
+          else refuels += 1;
+          const shop = state.assets.find((item) => item.id === "shop");
+          if (shop && !was.refuelled && g.refuelled) {
+            venueRevenue.shop = (venueRevenue.shop ?? 0) + assetRevenue(shop);
+          }
+        }
       }
       if (was.state === "pending" && g.state !== "pending") guestsArrived += 1;
       // Sent home from the line at closing before a single ride.
       if (was.state === "queue" && g.state === "depart" && g.runs === 0) turnedAway += 1;
     });
+    if (seats > 0 && occupiedSeats >= seats) {
+      seatsFullMin += stepMin;
+    }
     // Traffic scrapes the trail of the lift each run came down; thaw afternoons soften the low end.
     const thawing = state.weather === "thaw" && clockMin >= THAW_START_MIN;
     trails = trails.map((t, ti) => {
       let snow = wearTrail(t.snow, runsByTrail[ti]);
-      if (thawing) snow = softenTrail(snow, stepMin, t.elevations);
+      if (thawing) snow = softenTrail(snow, stepMin, t.elevations, exposure[ti]);
       return snow === t.snow ? t : { ...t, snow };
     });
     const step = stepLifts(moved, lifts, trails, state.talentsOwned, clockMin, stepMin);
+    step.byLift.forEach((stats, i) => {
+      byLift[i].rides += stats.rides;
+      byLift[i].waitSumMin += stats.waitSumMin;
+    });
     guests = step.guests;
     lifts = step.lifts;
     for (const w of step.waits) {
@@ -255,6 +337,12 @@ export function tick(state: GameState, deltaMs: number): GameState {
     ...deriveSnow(snowCarriers(trails)),
     dayStats: {
       ...state.dayStats,
+      byLift,
+      runsByTrail: totalRunsByTrail,
+      venueRevenue,
+      refuels,
+      balked,
+      seatsFullMin,
       guestsArrived,
       runsPerGuest: guestsArrived > 0 ? completedRuns / guestsArrived : 0,
       turnedAway,
@@ -325,16 +413,25 @@ export function liftLineOf(lift: LiftSlot): LiftLine {
   return { bottom: lift.bottom ?? TERRAIN.base, top: lift.anchor };
 }
 
-/** Terrain checks plus lift count, spacing, crossing and cash, in `PlacementReason` order. */
+type LiftPlacementState = Pick<GameState, "lifts" | "cash"> &
+  Partial<Pick<GameState, "assets" | "lodgeTier">>;
+
+/** Terrain, buildings, lift count, spacing, crossing and cash checks. */
 export function checkPlacement(
-  state: Pick<GameState, "lifts" | "cash">,
+  state: LiftPlacementState,
   type: LiftType,
   line: LiftLine,
 ): PlacementCheck {
+  line = { bottom: roundXZ(line.bottom), top: roundXZ(line.top) };
   const open = state.lifts.filter((l) => l.confirmed);
-  if (open.length >= MAX_LIFTS) return { ok: false, reason: "max_lifts" };
-  const terrain = checkLiftLine(line);
+  if (type === "chair" && state.lodgeTier === 1) return { ok: false, reason: "lodge_tier" };
+  if (open.length >= MAX_LIFTS || state.lifts.length >= 12) return { ok: false, reason: "max_lifts" };
+  const terrain = checkLiftLine(line, TERRAIN, type);
   if (!terrain.ok) return terrain;
+  const assets = state.assets ?? [];
+  if (terminalOverlapsBuilding(line.bottom, assets) || terminalOverlapsBuilding(line.top, assets)) {
+    return { ok: false, reason: "base_occupied" };
+  }
   const conflict = checkSpacing(
     line,
     open.map((l) => ({ line: liftLineOf(l), type: l.type })),
@@ -368,7 +465,7 @@ export type SnapTopResult = {
 
 /** Snap a top tap to the nearest valid placement within radius r (world units). */
 export function snapTop(
-  state: Pick<GameState, "lifts" | "cash">,
+  state: LiftPlacementState,
   type: LiftType,
   line: LiftLine,
   radius: number,
@@ -441,7 +538,8 @@ export function undoableLiftIndex(
 ): number {
   const i = state.lifts.length - 1;
   const last = state.lifts[i];
-  if (i < 1 || !last || state.phase !== "day") return -1;
+  if (i < 1 || !last?.confirmed || last.closing || state.phase !== "day" ||
+      state.lifts.filter((lift) => lift.confirmed && !lift.closing).length <= 1) return -1;
   return last.builtDay === state.dayIndex && last.builtAtMin === state.clockMin ? i : -1;
 }
 
@@ -456,45 +554,83 @@ export function undoLift(state: GameState): GameState {
   };
 }
 
-export type TrailOffer = RouteOption & { cost: number };
-
-export function checkPaint(state: GameState, strokes: readonly PaintStroke[], terrain: Terrain = TERRAIN) {
-  const draft = previewPaintedTrail(state, strokes, terrain);
-  const reason = draft.reason ?? (state.phase !== "day" ? "Build during the day."
-    : state.cash < draft.cost ? "Not enough cash." : null);
-  return { ...draft, reason };
+function closeLiftsNow(state: GameState, indices: ReadonlySet<number>): GameState {
+  if (!indices.size) return state;
+  return {
+    ...state,
+    lifts: state.lifts.map((lift, i) => indices.has(i)
+      ? { ...lift, confirmed: false, closing: false, queue: [], dispatchCredit: 0 }
+      : lift),
+    trails: state.trails.map((trail) => indices.has(trail.liftIndex)
+      ? { ...trail, open: false }
+      : trail),
+  };
 }
 
-export function commitPaint(state: GameState, strokes: readonly PaintStroke[], terrain: Terrain = TERRAIN): GameState {
-  const draft = checkPaint(state, strokes, terrain);
-  if (draft.reason || draft.liftIndex < 0) return state;
-  const original = draft.trailIndex === null ? undefined : state.trails[draft.trailIndex];
-  const trail: TrailRun = draft.deleteTrail && original ? { ...original, open: false } : {
-    liftIndex: draft.liftIndex,
+export function closeLift(state: GameState, index: number): GameState {
+  const lift = state.lifts[index];
+  if (state.phase !== "day" || !lift?.confirmed || lift.closing ||
+      state.lifts.filter((item) => item.confirmed && !item.closing).length <= 1) return state;
+  if (state.clockMin === DAY_START_MIN && !state.guests.some(isOnHill)) {
+    const next = closeLiftsNow(state, new Set([index]));
+    return { ...next, ...deriveSnow(snowCarriers(next.trails)) };
+  }
+  return { ...state, lifts: state.lifts.map((item, i) => i === index ? { ...item, closing: true } : item) };
+}
+
+export function checkPaint(state: GameState, strokes: readonly PaintStroke[]) {
+  const preview = previewPaintedTrail(state, strokes);
+  const cleared = preview.path.length < 2 || preview.deleteTrail
+    ? { newCells: [], acres: 0, cost: 0 }
+    : clearingQuote(preview.path, preview.widths, clearedLand(state));
+  // The prepared trail costs money even when no new trees need to come out.
+  const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
+  const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
+  const reason = preview.reason ?? (state.phase !== "day" ? "Build during the day."
+    : state.cash < cost ? "Not enough cash." : null);
+  return { ...preview, cost, reason, cleared };
+}
+
+export function commitPaint(state: GameState, strokes: readonly PaintStroke[]): GameState {
+  const preview = checkPaint(state, strokes);
+  if (preview.reason || preview.liftIndex == null || preview.liftIndex < 0) return state;
+  const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
+  const snow = original?.snow ?? averageTrail(state.trails.filter((trail) => trail.open).map((trail) => trail.snow));
+  const undoable = original?.paid !== undefined &&
+    original.builtDay === state.dayIndex && original.builtAtMin === state.clockMin;
+  const trail: TrailRun = {
+    liftIndex: preview.liftIndex,
     name: original?.name ?? `Painted trail ${state.trails.length + 1}`,
-    path: draft.path,
-    widths: draft.widths,
-    lengthFt: draft.lengthFt,
-    pitch: draft.pitch,
-    difficulty: draft.difficulty,
-    open: true,
-    snow: original?.snow ?? averageTrail(state.trails.filter((item) => item.open).map((item) => item.snow)),
-    elevations: segmentElevationsForPath(draft.path, terrain),
-    builtDay: original ? original.builtDay : state.dayIndex,
-    builtAtMin: original ? original.builtAtMin : state.clockMin,
-    paid: (original?.paid ?? 0) + draft.cost,
+    path: preview.deleteTrail && original ? original.path : preview.path,
+    widths: preview.deleteTrail ? original?.widths : preview.widths,
+    lengthFt: preview.deleteTrail && original ? original.lengthFt : preview.lengthFt,
+    pitch: preview.deleteTrail && original ? original.pitch : preview.pitch,
+    difficulty: preview.difficulty,
+    open: !preview.deleteTrail,
+    snow,
+    elevations: preview.deleteTrail && original ? original.elevations : segmentElevationsForPath(preview.path),
+    builtDay: original?.builtDay ?? state.dayIndex,
+    builtAtMin: original?.builtAtMin ?? state.clockMin,
+    paid: original ? (undoable ? (original.paid ?? 0) + preview.cost : original.paid) : preview.cost,
+    paidClearing: original
+      ? (undoable ? [...(original.paidClearing ?? []), ...preview.cleared.newCells] : original.paidClearing)
+      : preview.cleared.newCells,
   };
   return {
     ...state,
-    trails: draft.trailIndex === null ? [...state.trails, trail]
-      : state.trails.map((item, i) => i === draft.trailIndex ? trail : item),
-    cash: state.cash - draft.cost,
+    trails: preview.trailIndex == null
+      ? [...state.trails, trail]
+      : state.trails.map((item, i) => i === preview.trailIndex ? trail : item),
+    cash: state.cash - preview.cost,
+    clearedCells: [...state.clearedCells, ...preview.cleared.newCells].sort(),
     buildMode: false,
   };
 }
 
+export type TrailOffer = RouteOption & { cost: number };
+
 export function trailOptions(
-  state: Pick<GameState, "lifts" | "trails">,
+  state: Pick<GameState, "lifts" | "trails"> & Partial<Pick<GameState, "clearedCells">>,
   liftIndex: number,
   terrain: Terrain = TERRAIN,
 ): TrailOffer[] {
@@ -503,7 +639,9 @@ export function trailOptions(
   const existing = trailsOnLift(state.trails, liftIndex).map(({ trail }) => trail.path);
   return routeOptions(lift.anchor, existing, terrain).map((opt) => ({
     ...opt,
-    cost: trailCost(opt.lengthFt),
+    cost: state.clearedCells
+      ? 150 + clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost
+      : trailCost(opt.lengthFt),
   }));
 }
 
@@ -523,11 +661,14 @@ export function cutTrail(
   if (!opt) return state;
   if (state.cash < opt.cost) return state;
   const snow = averageTrail(state.trails.filter((t) => t.open).map((t) => t.snow));
+  const widths = opt.path.map(() => STANDARD_BRUSH_WIDTH);
+  const clearing = clearingQuote(opt.path, widths, clearedLand(state), terrain);
   const run: TrailRun = {
     liftIndex,
     name: opt.name,
     path: opt.path,
-    widths: opt.path.map(() => STANDARD_TRAIL_WIDTH_FT),
+    widths,
+    paidClearing: clearing.newCells,
     lengthFt: opt.lengthFt,
     pitch: opt.pitch,
     difficulty: opt.difficulty,
@@ -541,6 +682,7 @@ export function cutTrail(
   return {
     ...state,
     trails: [...state.trails, run],
+    clearedCells: [...state.clearedCells, ...clearing.newCells].sort(),
     cash: state.cash - opt.cost,
     buildMode: false,
   };
@@ -551,7 +693,7 @@ export function undoableTrailIndex(
 ): number {
   const i = state.trails.length - 1;
   const last = state.trails[i];
-  if (!last?.paid || state.phase !== "day") return -1;
+  if (!last?.paid || !last.open || state.phase !== "day") return -1;
   return last.builtDay === state.dayIndex && last.builtAtMin === state.clockMin ? i : -1;
 }
 
@@ -559,24 +701,68 @@ export function undoTrail(state: GameState): GameState {
   const i = undoableTrailIndex(state);
   if (i < 0) return state;
   const last = state.trails[i];
+  const rolledBack = new Set(last.paidClearing);
   return {
     ...state,
     trails: state.trails.slice(0, i),
+    clearedCells: state.clearedCells.filter((cell) => !rolledBack.has(cell)),
     cash: state.cash + (last.paid ?? 0),
   };
 }
 
-export function buyBuilding(state: GameState, id: BuildingId): GameState {
-  if (state.buildings.includes(id)) return state;
-  if (id === "warming_hut") return state;
-  const cost = BUILDING_COSTS[id];
-  if (!Number.isFinite(cost) || state.cash < cost) return state;
+export function checkAssetPlacement(state: GameState, id: AssetId, at: XZ) {
+  if (state.phase !== "day") return { ok: false as const, reason: "Build during the day." };
+  if (id === "snow_guns") return { ok: false as const, reason: "Place snow guns from the Snow section." };
+  const terminals = state.lifts.flatMap((lift) => {
+    if (!lift.confirmed) return [];
+    const { bottom, top } = liftLineOf(lift);
+    return [bottom, top];
+  });
+  const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
+  if (preview.ok && preview.cost > state.cash) return { ok: false as const, reason: "Not enough cash." };
+  return preview;
+}
+
+export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
+  const preview = checkAssetPlacement(state, id, at);
+  if (!preview.ok) return state;
+  const buildings = id === "cafe" || id === "shop" || id === "warming_hut"
+    ? Array.from(new Set([...state.buildings, id])) : state.buildings;
+  return { ...state, cash: state.cash - preview.cost, buildings, assets: [...state.assets, preview.placement] };
+}
+
+/** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */
+export function buyBuilding(state: GameState, id: BuildingId | "lodge"): GameState {
+  if (id === "lodge" || id === "snow_guns" || id === "warming_hut" || state.buildings.includes(id)) return state;
+  const at = id === "shop" ? { x: 12.5, z: 15.5 } : placedAssetsFromLegacy([id])[0]?.at;
+  return at ? placeAsset(state, id, at) : state;
+}
+
+export function beginLodgeUpgrade(state: GameState): GameState {
+  const tier = nextLodgeTier(state.lodgeTier);
+  if (state.phase !== "day" || state.lodgeUpgrade || tier == null) return state;
+  const cost = LODGE_TIERS[tier].cost;
+  if (state.cash < cost) return state;
+  return { ...state, cash: state.cash - cost, lodgeUpgrade: { toTier: tier, nightsRemaining: 2 } };
+}
+
+export function checkGunPlacement(state: GameState, at: XZ) {
+  const point = roundXZ(at);
+  const reason = state.phase !== "day" ? "Build during the day."
+    : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
+    : gunPlacementReason(point, state.guns) ?? (state.cash < GUN_COST ? "Not enough cash." : null);
+  if (reason) return { ok: false as const, reason };
   return {
-    ...state,
-    buildings: [...state.buildings, id],
-    cash: state.cash - cost,
-    gunsVisible: id === "snow_guns" ? true : state.gunsVisible,
+    ok: true as const, cost: GUN_COST, acres: 0, attached: false,
+    placement: { at: point, builtDay: state.dayIndex, paid: GUN_COST },
   };
+}
+
+export function placeGun(state: GameState, at: XZ): GameState {
+  const preview = checkGunPlacement(state, at);
+  return preview.ok
+    ? { ...state, cash: state.cash - preview.cost, guns: [...state.guns, preview.placement] }
+    : state;
 }
 
 export function pickFounder(state: GameState, id: FounderId): GameState {
@@ -621,10 +807,17 @@ export function acknowledgeBeat(state: GameState): GameState {
 
 /** One night's overnight result and the crew talents owned in the morning (the learned talent counts). */
 function nightFor(state: GameState, snow: SnowPreset, cash: number) {
+  const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
+  state = closeLiftsNow(state, closing);
   const overnight = applyOvernight({
     snow,
     cash,
     trails: state.trails.map((t) => t.snow),
+    openTrails: state.trails.map((t) => t.open),
+    gunCoverage: state.trails.map((t) => t.open ? gunCoverage(t, state.guns, state.talentsOwned) : []),
+    groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
+    exposure: exposureFor(state),
+    hasPlacedGuns: state.guns.length > 0,
     trailElevations: state.trails.map((t) => t.elevations),
     dayIndex: state.dayIndex,
     buildings: state.buildings,
@@ -651,7 +844,7 @@ export type OvernightPreview = {
 export function previewOvernight(state: GameState, snow: SnowPreset): OvernightPreview {
   const { overnight } = nightFor(state, snow, state.cash);
   const carriers = state.trails.map((t, i) => ({
-    confirmed: t.open,
+    confirmed: t.open && !state.lifts[t.liftIndex]?.closing,
     trail: overnight.trails[i] ?? t.snow,
     elevations: t.elevations,
   }));
@@ -688,14 +881,19 @@ export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
   if (state.pendingBeat && !state.beatAcknowledged) return state;
 
+  const recap = state.nightRecap;
+  state = closeLiftsNow(state, new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : [])));
+  const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
+  const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
   const { overnight, talentsOwned } = nightFor(
     state,
     state.pendingSnow,
-    state.cash + state.nightRecap.cashDelta,
+    state.cash + recap.cashDelta,
   );
-  const recap = state.nightRecap;
   const carried: GameState = {
     ...state,
+    lodgeUpgrade: upgrade,
+    lodgeTier: completedTier ?? state.lodgeTier,
     lastDay: {
       arrivals: recap.arrivals,
       satisfaction: recap.satisfaction,
@@ -711,13 +909,17 @@ export function sleep(state: GameState): GameState {
     trails: state.trails.map((t, i) => ({
       ...t,
       snow: overnight.trails[i] ?? t.snow,
+      gunCovered: overnight.gunCoverage?.[i],
+      groomed: overnight.groomCoverage?.[i],
     })),
     snowQuality: overnight.snowQuality,
     snowDepth: overnight.snowDepth,
     gunReach: overnight.gunReach,
     groomVisible: overnight.groomVisible,
     weather: overnight.weather,
-    morningHeadline: overnight.morningHeadline,
+    morningHeadline: completedTier
+      ? `Route 100 Radio: Lodge Tier ${completedTier} is open. ${overnight.morningHeadline}`
+      : overnight.morningHeadline,
     daysWithoutSnow: overnight.daysWithoutSnow,
     talentsOwned,
     nightRecap: null,
@@ -729,7 +931,7 @@ export function sleep(state: GameState): GameState {
     return {
       ...carried,
       phase: "winter_review",
-      gunsVisible: overnight.gunsFired || state.gunsVisible,
+      gunsVisible: overnight.gunsFired,
       talentToast: overnight.talentLearned
         ? `Crew learned: ${overnight.talentLearned}`
         : null,
@@ -756,7 +958,7 @@ export function sleep(state: GameState): GameState {
   return {
     ...carried,
     phase: "day",
-    gunsVisible: overnight.gunsFired || state.buildings.includes("snow_guns"),
+    gunsVisible: overnight.gunsFired,
     talentToast: overnight.talentLearned
       ? `Crew learned: ${overnight.talentLearned}. Next: ${overnight.nextTalentHint ?? "—"}`
       : overnight.nextTalentHint
@@ -805,6 +1007,12 @@ export function startNewSeason(state: GameState): GameState {
     lifts: defaultLifts(),
     trails: defaultTrails(),
     buildings: ["warming_hut"],
+    lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
+    lodgeUpgrade: null,
+    assets: placedAssetsFromLegacy(["warming_hut"]),
+    guns: [],
+    clearedCells: defaultTrails().flatMap((trail) =>
+      clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH))),
     talentsOwned: [],
     completedBeats: [],
     pendingBeat: null,

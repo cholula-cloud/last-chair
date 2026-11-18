@@ -1,22 +1,16 @@
 # Last Chair roadmap handoff: next PRs and M2 to M7
 
-> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review). v2.1 adds the fixed lodge (L1), splits row 16 into 16a to 16d, adds M4b (styles S1 to S3, activities A1 to A5) and turns M8 Rival Mode into Capitalist Mode (rows 41 to 48). Row B2 (brush trails) has a section below; the others have none yet, so write one before building each.
+The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This document records the implementation briefs and acceptance criteria for individual roadmap rows. Use the current A.0 for M2 and treat the [world scale 2b handoff](./Last%20Chair%20World%20Scale%202b%20Handoff%20and%20Full%20Plan.md) as historical.
 
-Written 2026-11-17 for handoff to Cursor. This file specifies every PR after world scale 2b, from the rest of M2 through M7. It is the companion to `docs/Last Chair World Scale 2b Handoff and Full Plan.md`, which records the current state and fully specifies PR 2b. `docs/MASTER_PLAN.md` stays the authority for what the game is; where this file and MASTER_PLAN disagree on a number or an order, MASTER_PLAN wins until someone changes it in a PR.
+1. Read the master plan's status snapshot and roadmap before picking a row.
+2. For M2, use A.0 for dependencies and save compatibility. Historical sections retain their original assumptions.
+3. Use `SIMULATION_SPEC.md` and the code for implemented values. Tune proposed numbers in the balance harness and document the results.
 
-## How to use this file
-
-1. Read the 2b handoff doc first (state, conventions, the PR 31 fix list).
-2. Read A.0 in Part A for the order and the safety nets (snapshot, save version, determinism).
-3. Open the section for the PR you are about to build. Each PR section has the same layout: Goal, Depends on, Player-visible result, Design, Files, Tests, Verification, Acceptance criteria, Risks, Out of scope, Docs to update, Size, Open decisions.
-4. Numbers labelled "proposed" are first values invented for this plan. Numbers without that label come from `docs/SIMULATION_SPEC.md`, `docs/WORLD.md`, `docs/ART_DIRECTION.md` or the code. Tune proposed numbers on screen or in the balance harness.
-5. "Open decisions" belong to the owner. Each has a recommended default; use it unless the owner says otherwise.
-
-| Part | Covers | Length |
-|---|---|---|
-| Part A | PR 31 finish, 2c, 2d, camera part 3, 12b, 12c, rows 13 to 17, the M2 gate test | about 11,000 words |
-| Part B | M3, rows 18 to 27, the Gate M3 test plan | about 14,000 words |
-| Part C | M4 to M7, rows 28 to 40, the 110% pass, cross-cutting engineering tasks | about 15,500 words |
+| Part | Covers |
+|---|---|
+| Part A | Foundation briefs, M2 builder and operations rows, M2 gate |
+| Part B | M3, rows 18 to 27, M3 gate |
+| Part C | M4 to M7, rows 28 to 40, 110% pass and cross-cutting work |
 
 ## Numbering
 
@@ -24,38 +18,19 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 
 ## Where things stand (updated 2026-11-18)
 
-- `main` includes **12c** (#41), **13a** (#42), **13b** (#43), **phone mountain fix attempt** (#44), **M2 polish** (#45), and **13c** elevation snow (#46, save v10). Dutch Hill at H = 6, V = 3. Row **13** (trail graph) is complete. The 3D scene was blank from #39 until the fix below.
-- Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
+- The starting point for the M2 finish work was `main` through #54. It included two-tap lift placement, the trail graph (13a to 13c, save v10), the restored 3D scene (#48), the smoothed trail ribbon (#49), and the convex Dutch Hill crest (#50).
+- The M2 release integrates the remaining builder features, lodge tiers, venue visits, lift operations, and snow and clearing rules. The automated gates pass on the integrated version. First-time player sign-off remains open.
+- The live game is https://cholula-cloud.github.io/last-chair/play/. GitHub Pages serves a static export.
 
-### Resolved blocker: 3D hill not visible
+### Render verification
 
-From camera part 3 (#39) until this fix, `/play/` drew the HUD and ran the sim but never rendered the 3D scene, on every device and browser, desktop included. The owner first saw it on an iPhone, so #44 and #45 chased mobile causes and did not fix it.
+From #39 until #48, the HUD and simulation ran but the 3D scene stayed blank. `RenderStats` passed a positive priority to React Three Fiber's `useFrame`, taking over rendering without drawing. The hook now uses default priority. The phone check samples a canvas screenshot to confirm the scene actually drew.
 
-- **Cause:** `RenderStats` registered `useFrame(cb, 50)`. In React Three Fiber a positive `useFrame` priority hands rendering to that component, so R3F stopped calling `gl.render`. The canvas stayed clear and the ink page background showed through.
-- **Fix:** `RenderStats` runs at the default priority. No component in `web/src/render/` may pass a positive `useFrame` priority unless it calls `gl.render` itself.
-- **Why CI missed it:** `phone-check` read the WebGL buffer with `readPixels`, which cannot tell a blank canvas from a drawn one when `preserveDrawingBuffer` is off. The gate now samples a real canvas screenshot and fails when fewer than half the mid-screen samples differ from `--ink`.
-- **Open:** with the scene visible again, the trail corridor on the default hill shows jagged dark shards where 2d showed a soft corridor. This likely comes from the 13a–13c per-trail terrain paint and needs its own fix.
+PR #49 smoothed the rendered ribbon where tight path turns folded quads into dark shards. The starter and painted corridors passed the 390×844 Chromium review. PR 55 records row 13e.
 
-### Next roadmap work
+### Roadmap order
 
-Follow MASTER_PLAN §9. B1 widens the shoulders, preserves saved X/Z coordinates, reference terminal heights, and the starter route, and frames both buildable shoulders at phone size. On the final B1 terrain, use tests to verify six distinct viable routes in a three-lift layout. The separate integrated 390×844 Chromium review found smooth starter and painted corridors after the #49 fix. L1 removes the lodge purchase and its mood and value bonuses, introduces a Tier 1 lodge card and migrates old saves to the fixed lodge. B2a adds the pure geometry and v12 width migration. Continue with the B2b touch controls and B2c review UI.
-
-## Recommended build order
-
-| Step | Work | Where specified |
-|---|---|---|
-| 1 | Finish PR 31 (nine review findings, finding 6 first) | 2b doc section 1.3; Part A, "PR 31 finish" |
-| 2 | World scale 2b (Dutch Hill to H = 6, V = 3, save v8) | 2b doc section 4 |
-| 3 | 2c forest and ridges, 2d arrival area and parked cars, camera part 3, 12b, 12c | Part A, in A.0 table order; 12b needs only 2b, camera part 3 needs 2b and PR 31, 12c needs 12b and PR 31 |
-| 4 | Rows 13 (13a, 13b, 13c), 14, 15, 16, 17 | Part A |
-| 5 | M2 gate test | Part A, "M2 gate: the headless test" |
-| 6 | Row 25 (save versioning) first, then rows 18 to 24, 26, 27 | Part B, "Rules for every M3 PR" |
-| 7 | Gate M3: three outside players sign the P1 script | Part B, "Gate M3 test plan" |
-| 8 | M4 (rows 28 to 33), M5 (rows 34 to 38), M6 (rows 39 and 40), M7 | Part C |
-
-MASTER_PLAN section 8 says each milestone ends with a gate and the next milestone does not start until the gate passes. Parts A to C follow that.
-
-Save versions expected through M2: 2b makes v8, 13a v9, row 14 v10, row 16 v11, row 17 v12. Part B writes M3 versions as "next version" because the M2 numbers can shift.
+Complete M2 and its gate before starting M3. The current sequence is **13e → B1 → L1 → B2 → B3 → B4 → 14 → 16a → 16b → 16c → 16d → 15 → 17 → B5**. Row 25 leads M3 save work. Wind holds belong to row 18.
 
 ## Corrections to earlier documents
 
@@ -73,7 +48,7 @@ The agents that drafted Parts A to C checked the plan against the repo and found
 
 ## Conventions that apply to every PR
 
-These are stated in full in section 6 of the 2b doc and in MASTER_PLAN section 7. In short:
+These are stated in full in section 6 of the 2b doc and in MASTER_PLAN section 8. In short:
 
 - One goal per PR, about 400 changed lines of non-test code or fewer; each section says where to cut.
 - `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included.
@@ -83,52 +58,34 @@ These are stated in full in section 6 of the 2b doc and in MASTER_PLAN section 7
 - File names have no underscores.
 - Merge with a merge commit after CI is green (`gh pr merge <n> --merge`); GitHub auto-merge is disabled on the repo.
 
-## What was not verified
-
-Part A: PR 31's uncommitted fixes are summarised from a diff of the working tree and were never run. Route lengths, pitches and the M2 gate's valid east top come from a throwaway prototype on `main`'s terrain at 6/3; no sim code exists for them. Snapshot predictions assume the characterization scenario stays as written.
-
-Part B: nothing PRs 12b to 17 add was checked, and the 28-day balance numbers are untested.
-
-Part C: Tenney Mountain's status after 2015, its access road and horizontal run; the career map pin coordinates and one-line histories; the current bundle size (taken from an `out/` build of unknown date); and iOS Safari audio and storage behaviour.
-
-Every "proposed" number is a design value. The three parts total about 40,000 words and were drafted by separate agents, so wording and level of detail vary between parts.
-
 ---
 
-# Part A: next PRs and the rest of M2
-
-This part specifies every PR after world scale 2b through the M2 gate. PR 2b itself is fully specified in `docs/Last Chair World Scale 2b Handoff and Full Plan.md` section 4; this part assumes it has merged, so Dutch Hill runs at H = 6, V = 3, the world base is (2.7, 15.3), the play area is x -33 to 39 and z -33 to 27, `rulesFor(TERRAIN)` returns `maxLiftLength` 20.4 and `maxLoadGrade` 0.625, `REFERENCE_TOPS` are world literals (Ridge (-7.2, 1.2), Mid (4.8, 3.6), Creek (-1.2, 6.0)) and `SAVE_VERSION` is 8.
-
-Paths are relative to the repo root. "Exists" means the file is on `main` at `407848e` (checked in the `last-chair-scale` worktree); "new" means it does not exist yet; "PR 31" means it exists only on branch `claude/camera-controls`.
+# Part A: Build the mountain
 
 ## A.0 Order, dependencies and safety nets
 
-| PR | Depends on | Characterization snapshot | Save version | Non-test lines (estimate) |
-|---|---|---|---|---|
-| PR 31 finish | none | no change | 7 | about 700 already written; review only |
-| 2c forest, ridges, shadows | 2b | no change | 8 | 350 |
-| 2d arrival area and site data | 2b, 2c (forest mask) | no change | 8 | 380 |
-| Camera and playability part 3 | 2b, PR 31 | no change | 8 | 200 |
-| 12b render reads lift lines | 2b | no change | 8 | 250 |
-| 12c two-tap placement | 12b, PR 31 | no change | 8 | 300 |
-| 13a trail data and routes | 12b | final block only | 9 | 380 |
-| 13b guests ski trails | 13a | nights 4 to 14 | 9 | 300 |
-| 13c snow elevation from height | 13b | all nights | 9 | 60 |
-| 14 multi-lift choice | 13b | nights 4 to 14, final `dayStats` | 10 | 250 |
-| 15 lift types matter | 14 | no change expected | 10 | 150 |
-| 16 village venues | 14 | all nights | 11 | 380 |
-| 17 snowmaking and grooming | 12c, 13b | final block only | 12 | 380 |
-| M2 gate test | 13b, 14, 15 (written), 16 and 17 (rerun) | no change | none | 120 (test helpers) |
+Write the row brief before implementation and use current `main` as the checkout baseline. Follow the finish order in the master plan.
 
-Two rules apply to every row.
+- **Snapshot:** Review changes to `season.characterization.test.ts.snap` against the intended gameplay changes. The fixture must buy Tier 2 before placing its chair. Explain the rebaseline in terms of changed costs, guest choices, and snow.
+- **Save:** v10 is the pre-M2-finish format. Shipped v11 saves start with the fixed lodge, and v12 adds widths. The v14 migration backfills catalog assets, stats, guns and the clearing grid on those saves. Check the code for the current version before further changes. Populate nested fields explicitly because shallow hydration cannot fill them in.
+- **Determinism:** The day simulation must not draw from the seeded RNG for choices that depend on the player's build. Derive guest variety from the guest ID and run count. Branch from the same morning state to keep the roster fixed for the M2 gate.
+- **Verification:** Run `npm run check` and `npm run phone-check` for player-facing changes. Record phone coverage and gate results in `TESTING.md`.
 
-**Snapshot rule.** `web/src/game/__snapshots__/season.characterization.test.ts.snap` changes only where the table says. Its season (seed 42, Elena) buys the café on day 2, places a chair at `REFERENCE_TOPS[1]` (Mid) from `TERRAIN.base` on day 4, cycles fare and snow by `day % 3`, then starts a new season and snapshots the whole state ("final block"). Each night records `dayIndex`, `phase`, `cash`, `arrivals`, `satisfaction`, `cashDelta`, `snowQuality`, `snowDepth`, `weather`, `reputation`, `talents`, `beats`, `pendingBeat`. `dayIndex`, `phase`, `weather` and `talents` never change in a re-baseline (weather is a formula of the day; one talent per night). Run the test, check `git diff` on the `.snap` against the prediction, update with `npx vitest run -u src/game/season.characterization.test.ts` in its own commit, and summarise the diff (nights, keys, largest cash move) in the PR description. Any change outside the prediction is a bug.
+## Current briefs for the remaining M2 rows
 
-**Save rule.** `migrate()` in `web/src/game/state.ts` returns `{ ...fresh, ...p }`, which fills missing top-level fields only. A new key inside a nested object (`dayStats`, `nightRecap.facts`, a lift, a trail) arrives as `undefined` in an old save, so any PR that adds one bumps `SAVE_VERSION` and fills it in `migrate()`, following the v4 and v6 precedents. Optional top-level fields and optional fields that mean "absent equals default" need no bump.
+| Row | Implementation and acceptance |
+|---|---|
+| **B1 — Bigger mountain** | Preserve the 6× horizontal and 3× vertical coordinate system, reference terminals, 570-foot vertical, starter run and base path. Widen the outer shoulders while keeping the lift crest convex. Check six viable routes in a three-lift layout and fit both shoulders, the lodge, and arrival lot inside the upright phone's safe frame. Use instanced and distance-tiered forest within the existing mesh budget. |
+| **L1 — Fixed lodge** | The lodge occupies its mountain site from day one, remains reachable from the car park, and has no purchase or demolition action. An old lodge purchase maps to the single Tier 1 HQ. Show its card from the scene and at the top of Build. |
+| **B3 — Drag lifts** | Start from a base terminal the player can move within its valid zone. Drag or tap the top with a ghost line, snapping, and live length, vertical, price, ride time and capacity. Two fingers retain camera control. Review and commit use the same placement checks and line coordinates. |
+| **B4 — Build impact** | Reuse one review card for lifts, trails, venues, guns and lodge upgrades. Give cost, area, vertical, difficulty and guest skill where applicable, plus tier, attachment bonus and queue effects for builds that change them. Derive quotes and estimates from build and sim rules. Invalid drafts show the reason and cannot commit. |
+| **16a — Catalog** | Define hut, café, shop, rentals, ski school and guns in one table with category, footprint, price, upkeep, effect, opening tier, placement zone, attachment eligibility and default style ID. Persist the style per venue and cap the base at 12 placed assets. Preserve existing venues at their legacy locations. |
+| **16b — Lodge tiers** | Tier 2 costs $3,500 and Tier 3 costs $9,000. Advance construction through two Sleeps, show scaffolding while the old tier keeps operating, and announce completion in the morning. Show greyed assets with the opening tier and list the next unlocks on the lodge card. Tier 2 opens the double chair, guns, rentals and ski school. The tiers have 2/4/6 attach pads and 30/50/80 visual stalls. Ticket availability is independent of parking and tier. Tier 3 venues and styles belong to M4b. |
+| **16c — Place and attach venues** | Pick flat ground inside the base zone. Validate footprints against assets, walking paths, the lift, snowcat and future parking. Snap eligible venues to free lodge pads, show **+5% attached** in review, and apply the bonus once to effects and revenue. A free-standing venue has its base effect regardless of distance from the lift. |
+| **16d — Guest reasons and revenue** | Simulate refuelling and services with guest visits, seating and elapsed time. Give First-Timers a reason to use rentals and lessons, and give impatient guests a way to leave a long queue for the village. Credit each visit once and show takings per venue in the recap. |
+| **B5 — Clearing** | Store the union of cleared 15-foot grid cells. At confirmation, charge $300 per acre of newly cleared ground and retain clearings when a trail is erased. Use nearby cleared area to change snow exposure. Remove trees once the cut is confirmed and verify that overlapping strokes cannot charge twice for the same ground. |
 
-**Determinism rule (from PR 13 on).** The day simulation must not draw from the seeded RNG. Any per-guest variety (which trail, which tie-break) comes from a hash of `guest.id` and `guest.runs`. The roster is rolled at Sleep, so two states forked at a morning share the same roster; the M2 gate test depends on this.
-
----
+Historical briefs for PR 31 through 13c follow. Their original paths, numbers, and preconditions describe the older checkout. The older briefs for 14, 15 and 17 still explain the mechanics. Use A.0 and the simulation spec for current save versions, tier dependencies, and test fixtures.
 
 ## PR 31 finish: camera part 1
 
@@ -839,7 +796,7 @@ About 150 lines.
 
 ## PR 16: village venues
 
-> **Superseded 2026-11-18.** MASTER_PLAN v2.1 replaces this row with 16a asset catalog, 16b lodge tiers, 16c free venue placement and attach, and 16d venues with guest reasons. The lodge is now a fixed HQ whose tiers gate what can be built and earned from; it no longer adds seats (§3 of the plan). Rewrite this section as four sections, and add one for L1, before building any of them. The text below is the old design and is kept only for its guest-state and revenue detail.
+> **Superseded 2026-11-18.** MASTER_PLAN v2.1 replaces this row with 16a asset catalog, 16b lodge tiers, 16c free venue placement and attach, and 16d venues with guest reasons. The lodge is now a fixed HQ whose tiers gate what can be built and earned from; it no longer adds seats (§3 of the plan). Use the L1 and 16a to 16d briefs in A.0. The text below preserves the original guest-state and revenue design.
 
 ### Goal
 The warming hut, lodge and café give guests somewhere to refuel and to sit out a long line, and village spending becomes real revenue.
@@ -972,54 +929,21 @@ About 380 lines. Cut: grooming capacity can ship before placed guns.
 
 ---
 
-## M2 gate: the headless test
+## M2 gate: simulation and phone playtest
 
-MASTER_PLAN Gate M2: "moving a lift or adding a trail measurably changes queues and satisfaction next day." The test lives in game, runs in CI and uses only real rules.
+### Headless comparisons
 
-### Helpers (add to `web/src/game/balance.ts`)
+Run `npm test -- src/game/m2gate.test.ts` for six deterministic seeds and the Tier 2 revenue check. For milestone acceptance, run `npm run m2-gate` with the numerical floors on 40 paired seeds. Pick Elena and reach Tier 2 through the normal lodge upgrade before placing the second lift. Use a weekend morning fixture with legal terminals on final terrain. Fork that morning into three scenarios and run each through the real closing rules.
 
-```ts
-/** Skip to close and acknowledge any beat; returns the night state. */
-export function playDay(state: GameState): GameState
-/** Sleep with the given presets; returns the next morning (clock 07:30, paused). */
-export function nightThen(state: GameState, plan: NightPlan): GameState
-/** Pick Elena, build a chair at Mid on day 1, play days 1 to 5 at Balanced / Mid; returns the day-6 morning. */
-export function gateSetup(seed: number): GameState
-```
+1. **Control.** Repeat the unchanged day and expect equal results.
+2. **Add a trail.** Paint and commit a usable green serving the second lift. Require at least one minute less mean waiting, two points more satisfaction, and more distinct first-timers actually boarding the chair in each seed. Track total chair rides as a diagnostic.
+3. **Move a lift.** Start with the developed chair serving both the original route and the new green. Close it before guests arrive and build a legal replacement. Compare against the developed chair. Require at least half a minute of absolute mean wait difference and one satisfaction point. Completed runs must differ in at least five sixths of seeds.
 
-Day 6 is a Saturday (`isWeekend(6)` is true), so the surface lift is under weekend pressure.
+Check equal guest IDs and arrival counts per seed. After B5, report the same comparisons over 40 seeds via `npm run m2-gate` (the balance report also includes the means) and record measured effects in `SIMULATION_SPEC.md`. Calibrate thresholds to half the 40-seed effect without lowering the floors. Separately check that upgrading to Tier 2 unlocks rentals and that guest visits earn revenue.
 
-### File
-`web/src/game/m2gate.test.ts` (new).
+### Closing phone viewport playtest
 
-### Scenarios
-Seeds: `seedList(6)`. For each seed, `s0 = gateSetup(seed)`; every branch below starts from `s0` and ends with `playDay`. Read `nightRecap.facts.avgWaitMin` (wait), `nightRecap.satisfaction` (sat), `dayStats.byLift` and `dayStats.arrivals`.
-
-1. **Control.** `playDay(s0)` twice gives deep-equal results (determinism).
-2. **Adding a trail.** A = `s0`. B = `cutTrail(s0, 1, i)` where `i` is the index of the green option in `trailOptions(s0, 1)` (assert it exists). Both played.
-3. **Moving a lift.** A = `s0`. B = `placeLift(closeLift(s0, 1), { type: "chair", bottom: TERRAIN.base, top: EAST_TOP })` with `EAST_TOP = { x: 12, z: 0 }`. A probe on `main`'s terrain at 6/3 found this top valid beside the default lift (about 1,253 ft long, 276 ft vertical, no spacing conflict with Ridge); assert `checkPlacement` passes inside the test so a terrain change fails loudly. Both played.
-
-### Assertions
-- Per seed, in every scenario: `A.dayStats.arrivals === B.dayStats.arrivals` and the guest id lists are equal (same roster, so differences come from the change).
-- Scenario 2, means over seeds: `wait(A) - wait(B) >= 1.0` minutes and `sat(B) - sat(A) >= 2.0` points; per seed, chair rides in B exceed chair rides in A (`byLift[1].rides`).
-- Scenario 3, means over seeds: `|wait(A) - wait(B)| >= 0.5` minutes and `|sat(A) - sat(B)| >= 1.0` points; `dayStats.completedRuns` differs in at least 5 of 6 seeds. The direction is not asserted; it depends on ride and ski times and is recorded in SIMULATION_SPEC.
-- Runtime under 2 s (6 seeds × (5 setup days + 6 played days) = 66 simulated days; the existing balance test runs 924 days in about 4 s).
-
-All thresholds are proposed floors. Calibrate once: add a gate block to `balance.report.test.ts` that prints the scenario deltas over 40 seeds under `npm run balance`, record them in SIMULATION_SPEC, and set each threshold to half the 40-seed mean effect, never below the floors above. If a measured effect falls below its floor, the gate has failed and the fix is in the sim (for example the skill penalty or ride-time numbers), never in the threshold.
-
-### When it runs
-Write it after PR 15 (all mechanisms exist: trails and ski time from 13b, skill-aware choice and `closeLift` from 14, ride time from length from 15). It stays in CI; after PRs 16 and 17 rerun the 40-seed calibration. Gate M2 passes when the test is green on `main` after PR 17 and the owner has seen one phone-viewport playthrough of each scenario.
-
-### Snapshot impact
-None. The test adds helpers to `balance.ts` without changing existing exports.
-
-### Docs to update
-`docs/MASTER_PLAN.md` Gate M2: status and a link to the test. `docs/SIMULATION_SPEC.md` Balance: gate table (scenario, mean wait A and B, mean satisfaction A and B, 40 seeds). `docs/TESTING.md` test layers: "Gate tests" row.
-
-### Open decision
-Fork at the morning versus "decide tonight, see tomorrow". Recommended: morning fork. Placement is a day-phase rule, the roster for day 6 is fixed at Sleep, and a morning change with the clock at 07:30 is the same as an overnight change for every quantity the gate measures.
-
----
+After the headless gate passes, use fresh saves at 390×844 in mobile WebKit and Chromium. Time a first-time tester placing a lift and painting a trail, using the game's own cues, from the first playable frame. The target is three minutes. Use a prepared save to exercise a lodge upgrade, an unlocked revenue source, and the recap after changing the hill. Document results, friction, and screenshots in `TESTING.md`. Scripted checks can verify interactions. Record first-time usability separately.
 
 ## Limitations
 

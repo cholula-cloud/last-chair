@@ -45,7 +45,7 @@ export function TopBar({
   const speed = useSpeed((s) => s.speed);
   const cycleSpeed = useSpeed((s) => s.cycle);
   return (
-    <div className="flex w-full items-center gap-2 sm:w-[min(28rem,100%)]">
+    <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
       <button
         type="button"
         onClick={onTogglePause}
@@ -56,7 +56,7 @@ export function TopBar({
       >
         {paused ? <PlayIcon size={22} /> : <PauseIcon size={22} />}
       </button>
-      <div className="chip flex h-12 min-w-0 flex-1 items-center gap-2 px-3">
+      <div className="chip flex h-12 min-w-0 flex-1 items-center gap-1 px-2 sm:gap-2 sm:px-3">
         <div className="flex flex-col leading-tight">
           <span className="whitespace-nowrap text-[0.9rem] font-extrabold tabular-nums">
             Day {dayIndex}/{seasonLength}
@@ -86,14 +86,14 @@ export function TopBar({
   );
 }
 
-/** "6:00 am" with the meridiem set small, so the time never wraps. */
+/** Stack the meridiem on phones where the clock shares a chip with the day. */
 function ClockText({ text }: { text: string }) {
   const [time, meridiem] = text.split(" ");
   return (
-    <span className="display ml-auto min-w-[4.6rem] whitespace-nowrap text-right text-[1.25rem] tabular-nums">
+    <span className="display ml-auto whitespace-nowrap text-right text-[1.15rem] leading-none tabular-nums sm:min-w-[4.6rem] sm:text-[1.25rem]">
       {time}
       {meridiem && (
-        <span className="ml-0.5 font-sans text-[0.8rem] font-extrabold text-ink-soft">
+        <span className="mt-0.5 block font-sans text-[0.65rem] font-extrabold text-ink-soft sm:mt-0 sm:ml-0.5 sm:inline sm:text-[0.8rem]">
           {meridiem.toLowerCase()}
         </span>
       )}

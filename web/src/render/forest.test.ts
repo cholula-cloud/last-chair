@@ -14,6 +14,7 @@ import {
   forestForTarget,
   forested,
   getChunk,
+  sameForestClearings,
   shouldRebuildForest,
   hash01,
 } from "./forest";
@@ -86,6 +87,26 @@ describe("forested and forestForTarget", () => {
     expect(REBUILD_MOVE).toBe(6);
     expect(NEAR_RADIUS).toBe(12);
     expect(MID_RADIUS).toBe(45);
+  });
+
+  it("invalidates stationary-camera trees when a lift or starter path changes", () => {
+    const firstLift = DEFAULT_LINES[0];
+    const placedLift = DEFAULT_LINES[1];
+    const firstPath = trailPolyline(firstLift, 28);
+    const previous = { lines: [firstLift], paths: [firstPath] };
+    const next = { lines: [firstLift, placedLift], paths: [firstPath, trailPolyline(placedLift, 28)] };
+    expect(sameForestClearings(previous, structuredClone(previous))).toBe(true);
+    expect(sameForestClearings(previous, next)).toBe(false);
+    expect(sameForestClearings(next, { ...next, paths: [firstPath, firstPath] })).toBe(false);
+
+    const spots = (trees: ReturnType<typeof forestForTarget>) => [...trees.near.flat(), ...trees.birch, ...trees.mid];
+    const target = placedLift.top;
+    const coordinates = (spot: { x: number; z: number }) => `${spot.x}:${spot.z}`;
+    const before = spots(forestForTarget(target, previous));
+    const after = new Set(spots(forestForTarget(target, next)).map(coordinates));
+    const corridorTrees = before.filter((spot) => distSqToLiftLine(spot.x, spot.z, placedLift) < LIFT_CLEAR ** 2);
+    expect(corridorTrees.length).toBeGreaterThan(0);
+    expect(corridorTrees.some((spot) => after.has(coordinates(spot)))).toBe(false);
   });
 });
 

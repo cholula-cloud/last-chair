@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultTrails } from "@/game/trails";
-import { pathPoint, smoothPath } from "./trail";
+import { pathInfluence, pathPoint, smoothPath } from "./trail";
 
 type XZ = { x: number; z: number };
 
@@ -58,4 +58,12 @@ describe("smoothPath", () => {
     expect(foldedQuads(path)).toBeGreaterThan(0);
     expect(foldedQuads(smoothPath(path, WIDTH * 0.6))).toBe(0);
   });
+});
+
+it("keeps terrain snow tint near the brush width at each end of a painted trail", () => {
+  const path = [{ x: 0, z: 0 }, { x: 0, z: 5 }, { x: 0, z: 10 }];
+  const positions = [1, 0, 0.1, 1, 0, 9.9];
+  const influence = pathInfluence(path, positions, undefined, undefined, undefined, [30, 60, 150]);
+  expect(influence.w[0]).toBe(0);
+  expect(influence.w[1]).toBeGreaterThan(0);
 });

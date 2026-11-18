@@ -1,9 +1,25 @@
+import { liftLength, type LiftLine } from "./descent";
 import type { LiftSlot } from "./state";
-import { pickTrailIndex, type TrailRun } from "./trails";
+import { TERRAIN, type Terrain } from "./terrain";
+import { isOverSkill, pickTrailIndex, type TrailRun } from "./trails";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
 export const PATROL_RADIO_CAPACITY = 1.05;
+const LOAD_MIN = 0.5;
+const SPEED_FPM: Record<LiftType, number> = { surface: 345, chair: 333 };
+const SKILL_AVOID_MIN = 30;
+const SURFACE_BEGINNER_MIN = 2;
+
+/** Game minutes to load and ride this line, rounded to the nearest tenth. */
+export function rideMinutes(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN): number {
+  const lengthFt = liftLength(line) * terrain.horizontalFeetPerUnit;
+  return Math.round(10 * (LOAD_MIN + lengthFt / SPEED_FPM[type])) / 10;
+}
+
+export function rideMinutesForLift(lift: LiftSlot): number {
+  return rideMinutes(lift.type, { bottom: lift.bottom ?? TERRAIN.base, top: lift.anchor });
+}
 
 export function liftCapacityPerHour(type: LiftType, talentsOwned: string[]): number {
   const base = LIFT_SPECS[type].capacityPerHour;
@@ -29,28 +45,51 @@ export function currentWaitMin(state: {
 
 /** Wait plus ride for another lap on a specific lift. */
 export function lapOverheadForLift(
-  lifts: LiftSlot[],
+  lifts: readonly LiftSlot[],
   talentsOwned: string[],
   liftIndex: number,
 ): number {
   const lift = lifts[liftIndex];
   if (!lift?.confirmed) return Infinity;
   const perGuestMin = 60 / liftCapacityPerHour(lift.type, talentsOwned);
-  return liftWaitMin(lift, talentsOwned) + perGuestMin + LIFT_SPECS[lift.type].rideMinutes;
+  return liftWaitMin(lift, talentsOwned) + perGuestMin + rideMinutesForLift(lift);
 }
 
-/** Lift with the shortest expected wait; ties go to the higher capacity, then the lower index. -1 if none is open. */
-export function chooseLift(lifts: LiftSlot[], talentsOwned: string[]): number {
+type LiftGuest = Pick<Guest, "id" | "persona" | "runs">;
+
+function preferredParity(guest: LiftGuest): number {
+  let hash = guest.runs;
+  for (let i = 0; i < guest.id.length; i++) {
+    hash = Math.imul(hash, 31) + guest.id.charCodeAt(i);
+  }
+  return hash & 1;
+}
+
+/** Choose by expected queue and ride time, adjusted for the guest's skiable trails. */
+export function chooseLift(
+  lifts: readonly LiftSlot[],
+  talentsOwned: string[],
+  guest?: LiftGuest,
+  trails: readonly TrailRun[] = [],
+): number {
   let best = -1;
-  let bestWait = Infinity;
+  let bestScore = Infinity;
   let bestCap = 0;
+  const parity = guest ? preferredParity(guest) : 0;
   lifts.forEach((l, i) => {
     if (!l.confirmed) return;
-    const wait = liftWaitMin(l, talentsOwned);
+    const hasSuitableTrail = guest && trails.some((trail) =>
+      trail.open && trail.liftIndex === i && !isOverSkill(guest.persona, trail.difficulty),
+    );
+    const skillPenalty = guest && !hasSuitableTrail ? SKILL_AVOID_MIN : 0;
+    const surfacePenalty = guest?.persona === "first_timer" && l.type === "surface"
+      ? SURFACE_BEGINNER_MIN : 0;
+    const score = liftWaitMin(l, talentsOwned) + rideMinutesForLift(l) + skillPenalty + surfacePenalty;
     const cap = liftCapacityPerHour(l.type, talentsOwned);
-    if (wait < bestWait || (wait === bestWait && cap > bestCap)) {
+    const winsTie = cap > bestCap || (cap === bestCap && i % 2 === parity && best % 2 !== parity);
+    if (score < bestScore || (score === bestScore && winsTie)) {
       best = i;
-      bestWait = wait;
+      bestScore = score;
       bestCap = cap;
     }
   });
@@ -71,12 +110,13 @@ export type LiftStepResult = {
   lifts: LiftSlot[];
   /** Measured waits (game minutes) of the guests dispatched in this step. */
   waits: number[];
+  byLift: { rides: number; waitSumMin: number }[];
 };
 
 /**
  * Advance every lift by `addMin` game minutes ending at clock `now`.
  * Guests in state "queue" that are in no lift queue join the lift with the
- * shortest expected wait. Each lift then dispatches from the front of its
+ * lowest expected time and skill cost. Each lift then dispatches from the front of its
  * FIFO queue as its credit allows, and riders who have ridden long enough
  * move on to "ski". Pure: inputs are not mutated.
  */
@@ -93,18 +133,18 @@ export function stepLifts(
   const seen = new Set<string>();
   const next: LiftSlot[] = lifts.map((l) => ({
     ...l,
-    queue: l.queue.filter((id) => {
+    queue: l.confirmed ? l.queue.filter((id) => {
       const i = index.get(id);
       if (i === undefined || out[i].state !== "queue" || seen.has(id)) return false;
       seen.add(id);
       return true;
-    }),
+    }) : [],
   }));
 
   // Join.
   out.forEach((g, i) => {
     if (g.state !== "queue" || seen.has(g.id)) return;
-    const li = chooseLift(next, talentsOwned);
+    const li = chooseLift(next, talentsOwned, g, trails);
     if (li < 0) return;
     next[li].queue.push(g.id);
     seen.add(g.id);
@@ -113,6 +153,7 @@ export function stepLifts(
 
   // Dispatch.
   const waits: number[] = [];
+  const byLift = next.map(() => ({ rides: 0, waitSumMin: 0 }));
   next.forEach((lift, li) => {
     if (!lift.confirmed) return;
     let credit =
@@ -121,14 +162,17 @@ export function stepLifts(
       const id = lift.queue.shift() as string;
       const gi = index.get(id) as number;
       const g = out[gi];
-      waits.push(now - (g.joinedQueueAtMin ?? now));
+      const wait = now - (g.joinedQueueAtMin ?? now);
+      waits.push(wait);
+      byLift[li].rides += 1;
+      byLift[li].waitSumMin += wait;
       out[gi] = {
         ...g,
         state: "ride",
         liftIndex: li,
         rideStartMin: now,
         progress: 0,
-        waitMin: g.waitMin + waits[waits.length - 1],
+        waitMin: g.waitMin + wait,
         waitCount: g.waitCount + 1,
       };
       credit -= 1;
@@ -147,10 +191,10 @@ export function stepLifts(
   });
 
   // Rides end after the lift's ride time.
+  const rideTimes = next.map(rideMinutesForLift);
   out.forEach((g, i) => {
     if (g.state !== "ride") return;
-    const type = (next[g.liftIndex ?? 0] ?? next[0])?.type ?? "surface";
-    const rideMin = LIFT_SPECS[type].rideMinutes;
+    const rideMin = rideTimes[g.liftIndex ?? 0] ?? rideTimes[0] ?? LOAD_MIN;
     const start = g.rideStartMin ?? now - g.progress * rideMin;
     const elapsed = now - start;
     if (elapsed >= rideMin - 1e-9) {
@@ -164,5 +208,5 @@ export function stepLifts(
     }
   });
 
-  return { guests: out, lifts: next, waits };
+  return { guests: out, lifts: next, waits, byLift };
 }

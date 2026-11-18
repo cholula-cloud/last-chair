@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { Guest } from "@/game/types";
 import { makeGuest } from "@/game/sim";
-import { assignStalls, stallsEqual } from "./parking";
+import { DUTCH_HILL_SITE } from "@/game/mountains/dutchHill.site";
+import { assignStalls, expandedStallCenters, stallsEqual } from "./parking";
 
 const stalls = Array.from({ length: 30 }, (_, i) => ({ x: i, z: 0 }));
 const shoulder = Array.from({ length: 12 }, (_, i) => ({ x: 100 + i, z: 24 }));
@@ -11,6 +12,22 @@ function g(id: string, state: Guest["state"], arriveAtMin: number): Guest {
 }
 
 describe("assignStalls", () => {
+  it("expands parking to 50 and 80 visual slots while preserving previous stall locations", () => {
+    const first = expandedStallCenters(DUTCH_HILL_SITE, 1);
+    const second = expandedStallCenters(DUTCH_HILL_SITE, 2);
+    const third = expandedStallCenters(DUTCH_HILL_SITE, 3);
+    expect([first.length, second.length, third.length]).toEqual([30, 50, 80]);
+    expect(second.slice(0, first.length)).toEqual(first);
+    expect(third.slice(0, second.length)).toEqual(second);
+    expect(third.every(({ z }) => z < DUTCH_HILL_SITE.road.z - 0.8)).toBe(true);
+
+    const guests = Array.from({ length: 31 }, (_, i) => g(`grow-${i}`, "queue", i));
+    const before = assignStalls(new Map(), guests, first, shoulder);
+    const after = assignStalls(new Map(), guests, second, shoulder, first.length);
+    for (const guest of guests.slice(0, 30)) expect(after.get(guest.id)).toEqual(before.get(guest.id));
+    expect(after.get(guests[30].id)).toMatchObject({ kind: "stall", index: 30 });
+  });
+
   it("gives each arriving guest a distinct stall up to 30", () => {
     const guests = Array.from({ length: 30 }, (_, i) => g(`g${i}`, "queue", i));
     const map = assignStalls(new Map(), guests, stalls, shoulder);

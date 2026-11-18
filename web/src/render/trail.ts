@@ -22,24 +22,56 @@ function arcLengths(path: readonly XZ[]): { total: number; cum: number[] } {
   return { total: cum[cum.length - 1], cum };
 }
 
+function distanceSpan(cum: number[], target: number) {
+  let i = 0;
+  let end = cum.length - 2;
+  while (i < end) {
+    const mid = (i + end) >>> 1;
+    if (cum[mid + 1] < target) i = mid + 1;
+    else end = mid;
+  }
+  return i;
+}
+
+/** Stored brush width interpolated by distance rather than by point index. */
+export function pathWidthSampler(path: readonly XZ[], widths: readonly number[]) {
+  const { total, cum } = arcLengths(path);
+  const convert = (ft: number) => ft / TERRAIN.horizontalFeetPerUnit;
+  return (t: number) => {
+    if (path.length < 2) return convert(widths[0] ?? 0);
+    const target = Math.max(0, Math.min(1, t)) * total;
+    const i = distanceSpan(cum, target);
+    const u = (target - cum[i]) / (cum[i + 1] - cum[i] || 1);
+    const a = widths[i] ?? 0;
+    return convert(lerp(a, widths[i + 1] ?? a, u));
+  };
+}
+
 /** Point at normalized arc length t ∈ [0,1] along a stored trail path. */
 export function pathPoint(path: readonly XZ[], t: number): { x: number; y: number; z: number } {
-  if (path.length === 0) return { x: 0, y: 0, z: 0 };
+  return pathSampler(path)(t);
+}
+
+/** Reuse arc lengths when sampling the same path at many points. */
+export function pathSampler(path: readonly XZ[]): (t: number) => { x: number; y: number; z: number } {
+  if (path.length === 0) return () => ({ x: 0, y: 0, z: 0 });
   if (path.length === 1) {
     const p = path[0];
-    return { x: p.x, y: TERRAIN.height(p.x, p.z) + TRAIL_LIFT, z: p.z };
+    const y = TERRAIN.height(p.x, p.z) + TRAIL_LIFT;
+    return () => ({ x: p.x, y, z: p.z });
   }
   const { total, cum } = arcLengths(path);
-  const target = Math.max(0, Math.min(1, t)) * total;
-  let i = 0;
-  while (i < cum.length - 2 && cum[i + 1] < target) i++;
-  const a = path[i];
-  const b = path[Math.min(i + 1, path.length - 1)];
-  const seg = cum[i + 1] - cum[i] || 1;
-  const u = (target - cum[i]) / seg;
-  const x = a.x + (b.x - a.x) * u;
-  const z = a.z + (b.z - a.z) * u;
-  return { x, y: TERRAIN.height(x, z) + TRAIL_LIFT, z };
+  return (t) => {
+    const target = Math.max(0, Math.min(1, t)) * total;
+    const i = distanceSpan(cum, target);
+    const a = path[i];
+    const b = path[i + 1];
+    const seg = cum[i + 1] - cum[i] || 1;
+    const u = (target - cum[i]) / seg;
+    const x = a.x + (b.x - a.x) * u;
+    const z = a.z + (b.z - a.z) * u;
+    return { x, y: TERRAIN.height(x, z) + TRAIL_LIFT, z };
+  };
 }
 
 /**
@@ -85,8 +117,9 @@ export function smoothPath(path: readonly XZ[], radius: number, step = 0.25, pas
 /** Path sampled as a polyline (for tree clearing). */
 export function pathPolyline(path: readonly XZ[], n = 24): XZ[] {
   const pts: XZ[] = [];
+  const sample = pathSampler(path);
   for (let i = 0; i <= n; i++) {
-    const p = pathPoint(path, i / n);
+    const p = sample(i / n);
     pts.push({ x: p.x, z: p.z });
   }
   return pts;
@@ -104,9 +137,11 @@ export function pathInfluence(
   core = 3.0,
   fade = 6.3,
   n = 40,
+  widths?: readonly number[],
 ): TrailInfluence {
   const pts = pathPolyline(path, n);
-  return trailInfluencePolyline(pts, positions, core, fade, n);
+  return trailInfluencePolyline(pts, positions, core, fade, n,
+    widths?.length ? pathWidthSampler(path, widths) : undefined);
 }
 
 function trailInfluencePolyline(
@@ -115,6 +150,7 @@ function trailInfluencePolyline(
   core: number,
   fade: number,
   n: number,
+  widthAt?: (t: number) => number,
 ): TrailInfluence {
   const count = positions.length / 3;
   const w = new Float32Array(count);
@@ -138,7 +174,10 @@ function trailInfluencePolyline(
       }
     }
     const d = Math.sqrt(best);
-    const k = Math.max(0, Math.min(1, (d - core) / (fade - core)));
+    const localWidth = widthAt?.(bestT);
+    const inner = localWidth === undefined ? core : localWidth * 0.35;
+    const outer = localWidth === undefined ? fade : localWidth * 0.5 + 0.14;
+    const k = Math.max(0, Math.min(1, (d - inner) / (outer - inner)));
     w[v] = 1 - k * k * (3 - 2 * k);
     t[v] = bestT;
   }

@@ -1,8 +1,10 @@
 import {
   acknowledgeBeat,
+  beginLodgeUpgrade,
   buyBuilding,
   cutTrail,
   pickFounder,
+  placeAsset,
   placeLift,
   previewOvernight,
   setPendingFare,
@@ -11,6 +13,7 @@ import {
   sleep,
   trailOptions,
 } from "./rules";
+import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
 import { trailsOnLift } from "./trails";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
@@ -27,7 +30,7 @@ import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPr
  * the same result.
  */
 
-export type BuildAction = "chair" | BuildingId;
+export type BuildAction = "chair" | "upgrade_lodge" | "rentals" | "ski_school" | BuildingId;
 
 export type StrategyContext = {
   /** The game at the decision point: start of a day (builds) or the night sheet (presets). */
@@ -68,7 +71,12 @@ export const CHAIR_COST = liftCost("chair", { bottom: TERRAIN.base, top: REFEREN
 export const CASH_RESERVE = 2500;
 
 function canAffordChair(state: GameState): boolean {
-  return !hasChair(state) && state.cash >= CHAIR_COST + CASH_RESERVE;
+  return state.lodgeTier >= 2 && !hasChair(state) && state.cash >= CHAIR_COST + CASH_RESERVE;
+}
+
+function canStartChairUpgrade(state: GameState): boolean {
+  return state.lodgeTier === 1 && !state.lodgeUpgrade &&
+    state.cash >= LODGE_TIERS[2].cost + CHAIR_COST + CASH_RESERVE;
 }
 
 function chairLiftIndex(state: GameState): number {
@@ -108,15 +116,30 @@ export const FIXED_STRATEGIES: Strategy[] = FARES.flatMap((fare) =>
 );
 
 /**
- * Reads last night's recap. Queue problem: buy a chair at the start of the
- * next day if the bank allows, otherwise go Cheap. Snow problem: High. Value
+ * Builds a café and prepares the lodge upgrade on opening day. Adds skill
+ * services in Tier 2 and a chair when queues warrant it. Snow problem: High. Value
  * problem: fare one step down. A good day: fare one step up. Snow is High only
  * on a thaw morning or after thin cover, otherwise Mid.
  */
 export const ADAPTIVE: Strategy = {
   id: "adaptive",
   label: "Adaptive",
-  build: ({ state, problem }) => (problem === "queue" && canAffordChair(state) ? ["chair"] : []),
+  build: ({ state, problem }) => {
+    if (state.dayIndex === 1 && canStartChairUpgrade(state)) return ["upgrade_lodge", "cafe"];
+    if (state.lodgeTier < 2) return [];
+    const actions: BuildAction[] = [];
+    const buyingChair = problem === "queue" && canAffordChair(state);
+    if (buyingChair) actions.push("chair");
+    let cash = state.cash - (buyingChair ? CHAIR_COST : 0);
+    for (const id of ["rentals", "ski_school"] as const) {
+      if (state.assets.some((asset) => asset.id === id)) continue;
+      const { cost } = ASSET_CATALOG[id];
+      if (cash < cost + CASH_RESERVE) continue;
+      actions.push(id);
+      cash -= cost;
+    }
+    return actions;
+  },
   night: ({ state, problem }) => {
     let fare: FarePreset = state.fare;
     if (problem === "queue") fare = hasChair(state) || state.cash < CHAIR_COST + CASH_RESERVE ? "cheap" : fare;
@@ -129,11 +152,14 @@ export const ADAPTIVE: Strategy = {
   },
 };
 
-/** Buys the chair on day 1 to 3 as soon as it can, then Balanced / Mid. */
+/** Starts the lodge upgrade on day 1, then builds its first chair at Tier 2. */
 export const BUILDER: Strategy = {
   id: "builder",
   label: "Builder",
-  build: ({ state }) => (state.dayIndex <= 3 && canAffordChair(state) ? ["chair"] : []),
+  build: ({ state }) => {
+    if (state.dayIndex === 1 && canStartChairUpgrade(state)) return ["upgrade_lodge"];
+    return canAffordChair(state) ? ["chair"] : [];
+  },
   night: () => ({ fare: "balanced", snow: "mid" }),
 };
 
@@ -190,6 +216,14 @@ export type SeasonResult = {
 };
 
 function applyBuild(state: GameState, action: BuildAction): GameState {
+  if (action === "upgrade_lodge") return beginLodgeUpgrade(state);
+  if (action === "rentals" || action === "ski_school") {
+    for (const pad of lodgeAttachPads(state.lodgeTier)) {
+      const next = placeAsset(state, action, pad);
+      if (next !== state) return next;
+    }
+    return state;
+  }
   if (action === "chair") {
     return placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
   }
@@ -220,6 +254,7 @@ export function runSeason(
     if (strategy.id === "builder" || strategy.id === "adaptive") {
       state = maybeCutChairGreen(state);
     }
+    minCash = Math.min(minCash, state.cash);
     const fare = state.fare;
     const snow = state.snow;
     const chair = hasChair(state);

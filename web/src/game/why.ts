@@ -23,7 +23,7 @@ const LABEL: Record<keyof SatTerms, string> = {
 function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]): string {
   switch (key) {
     case "queue":
-      return `waited ${f.avgWaitMin.toFixed(1)} min a ride`;
+      return `waited ${f.avgWaitMin.toFixed(1)} min a ride${f.busiestLift ? `, longest at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}`;
     case "snow":
       return `Today's average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%`;
     case "value": {

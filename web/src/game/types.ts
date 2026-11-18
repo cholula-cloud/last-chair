@@ -16,6 +16,7 @@ export type GuestState =
   | "queue"
   | "ride"
   | "ski"
+  | "refuel"
   | "depart"
   /** Left the car park for home; terminal, not drawn. */
   | "gone";
@@ -46,6 +47,12 @@ export type Guest = {
   progress: number;
   /** Starting disposition drawn with the roster (0–1). The live score is derived: see satisfaction.ts. */
   mood: number;
+  venueIndex?: number;
+  visitMinutes?: number;
+  refuelled?: boolean;
+  rented?: boolean;
+  lesson?: boolean;
+  balks?: number;
   /** Index into `GameState.lifts` of the lift this guest last queued for or rode. */
   liftIndex?: number;
   /** Index into `GameState.trails` for the run in progress (set when unloading). */
@@ -96,6 +103,12 @@ export type DayStats = {
   maxQueueLength: number;
   /** Longest measured wait of any dispatched guest today, in game minutes. */
   peakWaitMin: number;
+  byLift: { rides: number; waitSumMin: number }[];
+  runsByTrail: number[];
+  venueRevenue: Partial<Record<import("./base").AssetId, number>>;
+  refuels: number;
+  balked: number;
+  seatsFullMin: number;
 };
 
 export type FounderDef = {

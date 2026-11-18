@@ -1,7 +1,8 @@
+import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
-import { lapOverheadForLift } from "./lifts";
-import { runSkiMinutes } from "./trails";
+import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
+import { pickTrailIndex, runEnergyCost, runSkiMinutes } from "./trails";
 import type { LiftSlot } from "./state";
 import type { TrailRun } from "./trails";
 import {
@@ -148,7 +149,7 @@ function daySeed(rand: Rand): string {
 
 /** Guests on the hill: walking in, in a line, on a lift or skiing. */
 export function isOnHill(g: Guest): boolean {
-  return g.state === "arrive" || g.state === "queue" || g.state === "ride" || g.state === "ski";
+  return g.state === "arrive" || g.state === "refuel" || g.state === "queue" || g.state === "ride" || g.state === "ski";
 }
 
 export type GuestClock = {
@@ -162,6 +163,7 @@ export type GuestClock = {
   talentsOwned: string[];
   /** Expected wait plus ride at the best open lift (fallback lap time). */
   lapOverheadMin: number;
+  assets?: readonly PlacedAsset[];
 };
 
 /**
@@ -191,6 +193,40 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     return next;
   };
 
+  const assets = clock.assets ?? [];
+  const occupied = assets.map(() => 0);
+  for (const guest of guests) {
+    if (guest.state === "refuel" && guest.venueIndex != null &&
+        now - guest.stateSinceMin < (guest.visitMinutes ?? 20)) occupied[guest.venueIndex]++;
+  }
+  const visit = (guest: Guest, ids: readonly AssetId[], balk = false): Guest | null => {
+    if (now >= LIFT_CLOSE_MIN) return null;
+    const index = ids.flatMap((id) => assets.map((asset, i) => asset.id === id ? i : -1)).find((i) =>
+      i >= 0 && occupied[i] < Math.floor(assetEffect(assets[i], "seats")));
+    if (index === undefined) return null;
+    const id = assets[index].id;
+    occupied[index]++;
+    return {
+      ...guest, state: "refuel", progress: 0, stateSinceMin: now, venueIndex: index,
+      visitMinutes: balk ? 15 : ASSET_CATALOG[id].visitMinutes,
+      ...(id === "rentals" ? { rented: true } : id === "ski_school" ? { lesson: true }
+        : balk ? { balks: (guest.balks ?? 0) + 1 } : { refuelled: true }),
+    };
+  };
+  const chooseQueue = (guest: Guest): Guest => {
+    const index = chooseLift(clock.lifts, clock.talentsOwned, guest, clock.trails);
+    if (index < 0 || now >= LIFT_CLOSE_MIN) return goHome(guest);
+    if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
+      const stop = visit(guest, ["cafe", "warming_hut"], true);
+      if (stop) return stop;
+    }
+    return joinLine(guest);
+  };
+  const beginnerService = (guest: Guest): Guest | null => {
+    if (guest.persona !== "first_timer") return null;
+    return (!guest.rented ? visit(guest, ["rentals"]) : null) ??
+      (!guest.lesson ? visit(guest, ["ski_school"]) : null);
+  };
   return guests.map((g) => {
     switch (g.state) {
       case "pending":
@@ -200,10 +236,31 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "arrive": {
         const progress = (now - g.stateSinceMin) / ARRIVE_WALK_MIN;
         if (progress < 1) return { ...g, progress };
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : joinLine(g);
+        return now >= LIFT_CLOSE_MIN ? goHome(g) : beginnerService(g) ?? chooseQueue(g);
       }
-      case "queue":
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : g;
+      case "refuel": {
+        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        const progress = (now - g.stateSinceMin) / (g.visitMinutes ?? 20);
+        if (progress < 1) return { ...g, progress };
+        const asset = assets[g.venueIndex ?? -1];
+        const returning = {
+          ...g,
+          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut") && g.visitMinutes !== 15
+            ? Math.min(1, g.energy + 0.35 * (asset.attachPad == null ? 1 : 1.05)) : g.energy,
+        };
+        return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
+      }
+      case "queue": {
+        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        const waited = g.joinedQueueAtMin == null ? 0 : now - g.joinedQueueAtMin;
+        if (waited > 12 && (g.balks ?? 0) < 2) {
+          const next = visit({
+            ...g, waitMin: g.waitMin + waited, waitCount: g.waitCount + 1, joinedQueueAtMin: undefined,
+          }, ["cafe", "warming_hut"], true);
+          if (next) return next;
+        }
+        return g;
+      }
       case "ski": {
         const ti = g.trailIndex ?? g.liftIndex ?? 0;
         const trail = clock.trails[ti];
@@ -214,18 +271,26 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
         const runs = g.runs + 1;
-        const energy = g.energy - PERSONAS[g.persona].energyPerRun;
+        const energy = g.energy - runEnergyCost(g.persona, trail);
         const done = { runs, energy, snowSum: g.snowSum + q };
-        const li = g.liftIndex ?? 0;
+        const li = chooseLift(clock.lifts, clock.talentsOwned, { ...g, runs }, clock.trails);
         const lapOverhead =
           clock.lifts[li]?.confirmed
             ? lapOverheadForLift([...clock.lifts], clock.talentsOwned, li)
             : clock.lapOverheadMin;
-        const lapEnds = now + lapOverhead + duration;
+        const nextTrailIndex = li < 0 ? undefined : pickTrailIndex(g.persona, clock.trails, li, g.id, runs);
+        const nextTrail = nextTrailIndex == null ? undefined : clock.trails[nextTrailIndex];
+        const nextQuality = nextTrailIndex == null ? clock.snowQuality : clock.snowByTrail?.[nextTrailIndex] ?? clock.snowQuality;
+        const nextRun = nextTrail ? runSkiMinutes(g.persona, nextTrail, nextQuality) : duration;
+        const lapEnds = now + lapOverhead + nextRun;
+        if (energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
+          const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
+          if (stop) return stop;
+        }
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds > LIFT_CLOSE_MIN) {
           return goHome(g, done);
         }
-        return joinLine(g, done);
+        return chooseQueue({ ...g, ...done });
       }
       case "depart": {
         const progress = (now - g.stateSinceMin) / DEPART_WALK_MIN;
@@ -262,6 +327,9 @@ export type RecapFacts = {
   turnedAway: number;
   /** Mood on arrival, 0–1. */
   arrivalMood: number;
+  venueRevenue?: DayStats["venueRevenue"];
+  balked?: number;
+  busiestLift?: { label: string; min: number };
 };
 
 export type NightRecap = {
@@ -287,14 +355,17 @@ export function buildNightRecap(opts: {
   arrivalMood: number;
   openLiftCount: number;
   founderFixedDelta: number;
+  venueUpkeep?: number;
+  busiestLift?: RecapFacts["busiestLift"];
 }): NightRecap {
   const { stats, fare, day } = opts;
   const revenue = computeDayRevenue(fare, day.score, stats.arrivals);
   const costs =
     DAILY_FIXED_COST +
     opts.founderFixedDelta +
+    (opts.venueUpkeep ?? 0) +
     LIFT_OPS_COST * Math.max(1, opts.openLiftCount);
-  const cashDelta = revenue - costs;
+  const cashDelta = Math.round(revenue + Object.values(stats.venueRevenue ?? {}).reduce((sum, amount) => sum + amount, 0) - costs);
   return {
     arrivals: stats.arrivals,
     satisfaction: day.score,
@@ -319,6 +390,9 @@ export function buildNightRecap(opts: {
       runsPerGuest: stats.runsPerGuest,
       turnedAway: stats.turnedAway,
       arrivalMood: opts.arrivalMood,
+      ...(Object.keys(stats.venueRevenue ?? {}).length ? { venueRevenue: stats.venueRevenue } : {}),
+      ...(stats.balked ? { balked: stats.balked } : {}),
+      ...(opts.busiestLift ? { busiestLift: opts.busiestLift } : {}),
     },
   };
 }
@@ -331,6 +405,8 @@ export type OvernightResult = {
   snowDepth: number;
   cash: number;
   groomVisible: boolean;
+  gunCoverage?: readonly boolean[][];
+  groomCoverage?: readonly boolean[][];
   gunsFired: boolean;
   /** Fraction of the trail from the bottom the guns covered (0 when not fired). */
   gunReach: number;
@@ -357,12 +433,17 @@ export function applyOvernight(opts: {
   cash: number;
   trails: Trail[];
   trailElevations?: readonly (readonly number[])[];
+  openTrails?: readonly boolean[];
+  gunCoverage?: readonly boolean[][];
+  groomCoverage?: readonly boolean[][];
+  exposure?: readonly (readonly number[])[];
+  hasPlacedGuns?: boolean;
   dayIndex: number;
   buildings: BuildingId[];
   talentsOwned: string[];
   daysWithoutSnow: number;
 }): OvernightResult {
-  const hasGuns = opts.buildings.includes("snow_guns");
+  const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
   const hasTrailGuns = opts.talentsOwned.includes("trail_guns");
   const hasGroom = opts.talentsOwned.includes("groom_pass") ||
     opts.talentsOwned.includes("corduroy");
@@ -370,10 +451,13 @@ export function applyOvernight(opts: {
   const nextDay = opts.dayIndex + 1;
   const weather = rollMorningWeather(nextDay, hasGuns);
   const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
-  const reach = gunReach(night);
-  const trails = opts.trails.map((t, i) => overnightTrail(t, night, opts.trailElevations?.[i]));
-  const groomVisible = opts.snow !== "minimal";
-  const gunsFired = reach > 0;
+  const gunCoverage = opts.gunCoverage?.map((coverage) =>
+    opts.snow === "minimal" ? coverage.map(() => false) : coverage);
+  const reach = gunCoverage ? 0 : gunReach(night);
+  const trails = opts.trails.map((t, i) => opts.openTrails?.[i] === false ? t :
+    overnightTrail(t, night, opts.trailElevations?.[i], gunCoverage?.[i], opts.groomCoverage?.[i], opts.exposure?.[i]));
+  const groomVisible = opts.groomCoverage ? opts.groomCoverage.some((row) => row.some(Boolean)) : opts.snow !== "minimal";
+  const gunsFired = gunCoverage ? gunCoverage.some((row) => row.some(Boolean)) : reach > 0;
   let daysWithoutSnow = opts.daysWithoutSnow;
   daysWithoutSnow = weather === "snow" ? 0 : daysWithoutSnow + 1;
 
@@ -389,9 +473,11 @@ export function applyOvernight(opts: {
 
   return {
     trails,
-    ...deriveSnow(trails.map((trail) => ({ confirmed: true, trail }))),
+    ...deriveSnow(trails.map((trail, i) => ({ confirmed: opts.openTrails?.[i] !== false, trail }))),
     cash: opts.cash - SNOW_NIGHT_COST[opts.snow],
     groomVisible,
+    gunCoverage,
+    groomCoverage: opts.groomCoverage,
     gunsFired,
     gunReach: reach,
     weather,
@@ -538,6 +624,12 @@ export function emptyDayStats(): DayStats {
     waitSumMin: 0,
     maxQueueLength: 0,
     peakWaitMin: 0,
+    byLift: [],
+    runsByTrail: [],
+    venueRevenue: {},
+    refuels: 0,
+    balked: 0,
+    seatsFullMin: 0,
   };
 }
 

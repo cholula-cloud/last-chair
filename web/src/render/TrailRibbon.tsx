@@ -8,7 +8,7 @@ import { sceneMood } from "./Atmosphere";
 import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
 import { TERRAIN } from "@/game/terrain";
-import { pathPoint, sampleSegments, smoothPath, trailPoint } from "./trail";
+import { pathSampler, pathWidthSampler, sampleSegments, smoothPath, trailPoint } from "./trail";
 import type { XZ } from "@/game/terrain";
 import type { Trail } from "@/game/snow";
 
@@ -21,18 +21,35 @@ function ribbonGeometry(
   width: number,
   segments: number,
   path?: readonly XZ[],
+  widths?: readonly number[],
+  preview?: { color: string; problemSegments: readonly number[] },
 ) {
   const across = ACROSS;
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
+  const colors: number[] = [];
   let travelled = 0;
   // Routed paths are smoothed to about the trail's half-width so rows never cross.
-  const centre = path ? smoothPath(path, width * 0.6) : null;
-  const sample = (t: number) => (centre ? pathPoint(centre, t) : trailPoint(t, line));
+  const smoothWidth = widths?.length ? Math.max(...widths) / TERRAIN.horizontalFeetPerUnit : width;
+  const centre = path ? smoothPath(path, smoothWidth * 0.6) : null;
+  const widthAt = path && widths?.length ? pathWidthSampler(path, widths) : null;
+  const lengths = [0];
+  if (path) {
+    for (let i = 1; i < path.length; i++) {
+      lengths.push(lengths[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z));
+    }
+  }
+  const total = lengths.at(-1) ?? 0;
+  let span = 0;
+  const normalColor = new THREE.Color(preview?.color);
+  const invalidColor = new THREE.Color(PALETTE.invalid);
+  const problems = new Set(preview?.problemSegments);
+  const sample = centre ? pathSampler(centre) : (t: number) => trailPoint(t, line);
   let prev = sample(0);
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
+    while (span < lengths.length - 2 && lengths[span + 1] < t * total) span++;
     const c = sample(t);
     const a = sample(Math.max(0, t - 0.01));
     const b = sample(Math.min(1, t + 0.01));
@@ -42,7 +59,8 @@ function ribbonGeometry(
     const dz = b.z - a.z;
     const len = Math.hypot(dx, dz) || 1;
     // Narrower at the very top and where it runs into the base area.
-    const w = width * (0.75 + 0.25 * Math.sin(Math.min(1, t * 1.15) * Math.PI));
+    const w = widthAt?.(t) ?? width * (0.75 + 0.25 * Math.sin(Math.min(1, t * 1.15) * Math.PI));
+    const color = problems.has(span) ? invalidColor : normalColor;
     const nx = -dz / len;
     const nz = dx / len;
     for (let k = 0; k <= across; k++) {
@@ -51,6 +69,7 @@ function ribbonGeometry(
       const z = c.z + nz * w * s;
       positions.push(x, TERRAIN.height(x, z) + 0.05, z);
       uvs.push(k / across, travelled / 0.9);
+      if (preview) colors.push(color.r, color.g, color.b);
     }
     if (i < segments) {
       const row = i * (across + 1);
@@ -65,6 +84,7 @@ function ribbonGeometry(
   geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
   geo.setIndex(indices);
+  if (preview) geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
   geo.computeVertexNormals();
   return geo;
 }
@@ -130,7 +150,12 @@ function hash(a: number, b: number): number {
  * only where quality is high, so a fresh groom reads crisp and a scraped
  * segment reads flat.
  */
-function paintRibbon(base: THREE.BufferGeometry, stripes: THREE.BufferGeometry, trail: Trail) {
+function paintRibbon(
+  base: THREE.BufferGeometry,
+  stripes: THREE.BufferGeometry,
+  trail: Trail,
+  groomed: boolean | readonly boolean[],
+) {
   const rows = SEGMENTS + 1;
   const cols = ACROSS + 1;
   const bc = new Float32Array(rows * cols * 4);
@@ -141,7 +166,8 @@ function paintRibbon(base: THREE.BufferGeometry, stripes: THREE.BufferGeometry, 
     const q = sampleSegments(trail, t, "quality");
     const cover = sampleSegments(trail, t, "coverage");
     c.copy(ICE).lerp(SNOW, smoothstep(0.3, 0.75, q));
-    const crisp = smoothstep(0.55, 0.8, q);
+    const thisSegment = typeof groomed === "boolean" ? groomed : groomed[Math.min(groomed.length - 1, Math.floor(t * groomed.length))];
+    const crisp = thisSegment ? smoothstep(0.55, 0.8, q) : 0;
     for (let k = 0; k < cols; k++) {
       const n = hash(i * 0.5, k);
       const alpha = smoothstep(0, 0.25, cover * 1.25 - n * 0.6);
@@ -160,9 +186,9 @@ function paintRibbon(base: THREE.BufferGeometry, stripes: THREE.BufferGeometry, 
   stripes.setAttribute("color", new THREE.BufferAttribute(sc, 4));
 }
 
-type TrailRibbonProps = { line: LiftLine; path?: readonly XZ[] } & (
-  | { kind: "built"; groomed: boolean; trail: Trail }
-  | { kind: "preview"; valid: boolean }
+type TrailRibbonProps = { line: LiftLine; path?: readonly XZ[]; widths?: readonly number[] } & (
+  | { kind: "built"; groomed: boolean | readonly boolean[]; trail: Trail }
+  | { kind: "preview"; valid: boolean; color?: string; problemSegments?: readonly number[] }
 );
 
 /** The corduroy ribbon of a built run, or the green / red ghost while placing a lift. */
@@ -170,16 +196,20 @@ export function TrailRibbon(props: TrailRibbonProps) {
   const built = props.kind === "built";
   const groomed = props.kind === "built" && props.groomed;
   const trail = props.kind === "built" ? props.trail : null;
+  const color = props.kind === "preview" && props.color ? props.color : null;
+  const problems = props.kind === "preview" ? props.problemSegments : undefined;
 
   const geometry = useMemo(
     () =>
       built
-        ? ribbonGeometry(props.line, TRAIL_WIDTH, SEGMENTS, props.path)
-        : ribbonGeometry(props.line, PREVIEW_WIDTH, 40, props.path),
-    [props.line, props.path, built],
+        ? ribbonGeometry(props.line, TRAIL_WIDTH, SEGMENTS, props.path, props.widths)
+        : ribbonGeometry(props.line, PREVIEW_WIDTH, 40, props.path, props.widths, color
+          ? { color, problemSegments: problems ?? [] }
+          : undefined),
+    [props.line, props.path, props.widths, built, color, problems],
   );
   const stripeGeo = useMemo(() => (built ? geometry.clone() : null), [built, geometry]);
-  const stripeMap = useMemo(() => (built ? corduroyTexture(groomed ? 30 : 14) : null), [built, groomed]);
+  const stripeMap = useMemo(() => (built ? corduroyTexture(30) : null), [built]);
   const baseMap = useMemo(() => (built ? corduroyTexture(0) : null), [built]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => stripeGeo?.dispose(), [stripeGeo]);
@@ -187,11 +217,11 @@ export function TrailRibbon(props: TrailRibbonProps) {
   useEffect(() => () => baseMap?.dispose(), [baseMap]);
   // Repaints only when the snapped trail snow changes (see `snowKey`).
   useLayoutEffect(() => {
-    if (trail && stripeGeo) paintRibbon(geometry, stripeGeo, trail);
-  }, [geometry, stripeGeo, trail]);
+    if (trail && stripeGeo) paintRibbon(geometry, stripeGeo, trail, groomed);
+  }, [geometry, stripeGeo, trail, groomed]);
   const mat = useRef<THREE.MeshLambertMaterial>(null);
   // Self-lit so the groomed corridor reads brighter than the snow by day; fades at night.
-  const glow = groomed ? 0.42 : 0.3;
+  const glow = 0.42;
   useFrame(() => {
     if (mat.current) mat.current.emissiveIntensity = glow * (1 - 0.85 * sceneMood.night);
   });
@@ -200,7 +230,8 @@ export function TrailRibbon(props: TrailRibbonProps) {
     return (
       <mesh geometry={geometry} renderOrder={2}>
         <meshBasicMaterial
-          color={props.valid ? PALETTE.valid : PALETTE.invalid}
+          color={color ? "#fff" : props.valid ? PALETTE.valid : PALETTE.invalid}
+          vertexColors={!!color}
           transparent
           opacity={0.5}
           depthWrite={false}

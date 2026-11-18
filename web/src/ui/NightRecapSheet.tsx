@@ -1,5 +1,7 @@
 "use client";
 
+import { ASSET_CATALOG, type AssetId } from "@/game/base";
+
 import { useState } from "react";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight } from "@/game/rules";
@@ -280,6 +282,14 @@ export function NightRecapSheet() {
           {tidy(recap.problem)}
         </p>
 
+        {recap.facts.venueRevenue && (
+          <ul aria-label="Venue takings" className="mt-2 space-y-1 text-sm font-bold">
+            {Object.entries(recap.facts.venueRevenue).map(([id, amount]) => (
+              <li key={id}>{ASSET_CATALOG[id as AssetId].label} took {formatMoney(amount)}</li>
+            ))}
+          </ul>
+        )}
+        {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">{recap.facts.balked} stops to sit out a line</p>}
         <WhyList key={dayIndex} recap={recap} />
 
         {beat && !beatAcknowledged && (

@@ -32,6 +32,14 @@ describe("checkLiftLine", () => {
     expect(checkLiftLine(fromBase(top("Mid"))).ok).toBe(true);
   });
 
+  it("rejects a long surface line that the double chair can serve", () => {
+    const hill = { ...TERRAIN, grade: () => 0, height: (_x: number, z: number) => -z };
+    const line = fromBase({ x: TERRAIN.base.x, z: TERRAIN.base.z - 19 });
+    expect(checkLiftLine(fromBase(top("Ridge")), TERRAIN, "surface").ok).toBe(true);
+    expect(checkLiftLine(line, hill, "surface")).toEqual({ ok: false, reason: "too_long" });
+    expect(checkLiftLine(line, hill, "chair").ok).toBe(true);
+  });
+
   it("reports length and vertical measured from the bottom", () => {
     const line = fromBase(top("Mid"));
     const c = checkLiftLine(line);

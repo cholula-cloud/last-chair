@@ -1,15 +1,17 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import type { LiftLine } from "@/game/descent";
+import { isClearedAt } from "@/game/clearing";
+import { useGameStore } from "@/game/store";
 import { merge, type Part } from "./geo";
 import { bakeKit, SHADOW_LAYER_MASK, useKit } from "./kit";
 import {
   forestForTarget,
+  sameForestClearings,
   shouldRebuildForest,
-  type ForestTiers,
+  type ForestClearings,
   type TreeSpot,
 } from "./forest";
 import { sceneCameraTarget } from "./sceneCamera";
@@ -109,13 +111,7 @@ function TreeInstances({
  * Tiered forest around the camera target: kit pines and birch nearby, a
  * low-poly stand-in farther out, and shadow proxies on the near tier only.
  */
-export function Trees({
-  lines,
-  paths,
-}: {
-  lines: LiftLine[];
-  paths?: (readonly import("@/game/terrain").XZ[])[];
-}) {
+export const Trees = memo(function Trees({ lines, paths }: ForestClearings) {
   const a = bakeKit(useKit("pine-a")).body;
   const b = bakeKit(useKit("pine-b")).body;
   const c = bakeKit(useKit("pine-c")).body;
@@ -131,31 +127,44 @@ export function Trees({
     [far, birch, proxy],
   );
 
-  const [forest, setForest] = useState<ForestTiers>(() =>
-    forestForTarget(sceneCameraTarget, { lines, paths }),
-  );
+  const [target, setTarget] = useState(() => ({ ...sceneCameraTarget }));
+  const forest = useMemo(() => forestForTarget(target, { lines, paths }), [target, lines, paths]);
+  const clearedCells = useGameStore((s) => s.clearedCells);
   const lastTarget = useRef({ ...sceneCameraTarget });
 
   useFrame(() => {
     const t = sceneCameraTarget;
     if (!shouldRebuildForest(t, lastTarget.current)) return;
     lastTarget.current = { x: t.x, z: t.z };
-    setForest(forestForTarget(t, { lines, paths }));
+    setTarget(lastTarget.current);
   });
 
+  // Filter saved clearings independently of camera movement so a confirmed cut
+  // changes the hill immediately, including the trees' shadow proxies.
+  const visibleForest = useMemo(() => {
+    if (!clearedCells.length) return forest;
+    const cut = new Set(clearedCells);
+    const keep = (spot: TreeSpot) => !isClearedAt(spot, cut);
+    return {
+      near: forest.near.map((tier) => tier.filter(keep)),
+      birch: forest.birch.filter(keep),
+      mid: forest.mid.filter(keep),
+    };
+  }, [forest, clearedCells]);
+
   const nearAll = useMemo(
-    () => [...forest.near.flat(), ...forest.birch],
-    [forest],
+    () => [...visibleForest.near.flat(), ...visibleForest.birch],
+    [visibleForest],
   );
 
   return (
     <group>
       {[a, b, c].map((g, i) => (
-        <TreeInstances key={i} geo={g} spots={forest.near[i]} scale={KIT_PINE_SCALE[i]} />
+        <TreeInstances key={i} geo={g} spots={visibleForest.near[i]} scale={KIT_PINE_SCALE[i]} />
       ))}
-      <TreeInstances geo={birch} spots={forest.birch} scale={0.12} />
-      <TreeInstances geo={far} spots={forest.mid} />
+      <TreeInstances geo={birch} spots={visibleForest.birch} scale={0.12} />
+      <TreeInstances geo={far} spots={visibleForest.mid} />
       <TreeInstances geo={proxy} spots={nearAll} shadowOnly />
     </group>
   );
-}
+}, sameForestClearings);

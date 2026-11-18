@@ -52,6 +52,7 @@ export function Guests({
   followedRef: FollowedRef;
 }) {
   const guests = useGameStore((s) => s.guests);
+  const assets = useGameStore((s) => s.assets);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const followId = useGameStore((s) => s.followId);
   const stallMap = useStallMap(guests, dayIndex);
@@ -91,8 +92,8 @@ export function Guests({
   const markerRef = useRef<THREE.Mesh>(null);
 
   const placements = useMemo(
-    () => placeGuests(guests, placedLifts, stallMap, trailPaths),
-    [guests, placedLifts, stallMap, trailPaths],
+    () => placeGuests(guests, placedLifts, stallMap, trailPaths, assets),
+    [guests, placedLifts, stallMap, trailPaths, assets],
   );
 
   useLayoutEffect(() => {
@@ -102,8 +103,7 @@ export function Guests({
     if (meshes.some((m) => !m) || !tbarMesh || !chairMesh) return;
     const [base, jacket, hat, shadow] = meshes as THREE.InstancedMesh[];
     const tgt = controls?.target;
-    const camDist =
-      tgt && camera ? camera.position.distanceTo(new THREE.Vector3(tgt.x, tgt.y, tgt.z)) : 25;
+    const camDist = tgt ? camera.position.distanceTo(tgt) : 25;
     const sizeScale = Math.max(1, camDist / 25);
     // Pending and gone guests are not drawn; the rest fill instance slots 0..n-1.
     let n = 0;
@@ -160,7 +160,7 @@ export function Guests({
     tbarMesh.instanceMatrix.needsUpdate = true;
     chairMesh.count = chairs;
     chairMesh.instanceMatrix.needsUpdate = true;
-  }, [guests, placements, followId, placedLifts, followedRef]);
+  }, [guests, placements, followId, placedLifts, followedRef, camera, controls]);
 
   useFrame(({ clock }) => {
     const p = followedRef.current;

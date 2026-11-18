@@ -21,16 +21,16 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-Updated 2026-11-18 for B2a on top of PR 57. Every PR updates this section with its row (rule 5 in §8). Unit tests and the production build run in CI. Run the 40-seed balance report and `phone-check` separately; real-device and external playtests have not been run.
+M2 code is complete through save v14. The automated simulation gate uses distinct beginner chair boardings. The remaining milestone sign-off is the three-minute opening with an uncoached first-time player. CI runs the strict simulation gate and checks the full scripted M2 flow in a WebKit phone viewport.
 
 **Built and merged**
 
 | Area | What exists |
 |---|---|
-| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, save schema v12 with migrations |
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, save schema v14 with migrations |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
-| Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, tap placement of lifts with validity checks, trail graph with cut trails, guests choose trails by skill, convex hill (#50) with wider shoulders for six viable routes (B1), trail ribbon fix (#49), render fix (#48) |
-| Buildings | Permanent Tier 1 lodge with its own card. Warming hut, café, shop and snow guns use the current building rules |
+| Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
+| Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
 | Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
@@ -38,10 +38,6 @@ Updated 2026-11-18 for B2a on top of PR 57. Every PR updates this section with i
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
-| Multi-lift choice | `chooseLift` exists in `lifts.ts` | Confirm whether guests pick by queue and skill before writing the spec | 14 |
-| Lift types | Surface and double chair differ in capacity and ride time | Wind, closures, Tier 2 gate | 15 |
-| Venues | Hut, café and shop give flat bonuses | Refuel stop, seats, revenue, the catalog, rentals | 16 |
-| Snow guns | One building with reach by elevation | Placed guns, groom capacity, visible plumes | 17 |
 | Weather | Three kinds, formula `(day × 17 + 3) % 10` | Seeded forecast, storms, wind | 18 |
 | Season | `SEASON_LENGTH = 14` | 28 days, weekends, holiday weeks | 19 |
 | Economy | Costs, revenue, lift cost by length | Loan offer, bankruptcy, construction draws | 20 |
@@ -52,9 +48,7 @@ Updated 2026-11-18 for B2a on top of PR 57. Every PR updates this section with i
 | Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Not started:** B3, B4, B5, 16a to 16d, 26, 27, M4 audio and polish (28 to 33), M4b, M5, M6, M7, M8. B2a implements brush geometry and saved widths. The touch controls and review arrive in B2b and B2c.
-
-**Next up:** B2b touch controls and B2c review and confirmation UI. See §9.
+**Next up:** Run the first-time player check in M2, then start M3 with row 25 for save compatibility. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
 
 ---
 
@@ -365,7 +359,7 @@ A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a te
 
 ## 9. Roadmap
 
-Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Rows B3 to B5, 16a to 16d, S, A and 41 to 48 still need their own detailed handoff sections.
+Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Rows B1 to B5, L1, 16a to 16d, S, A and 41 to 48 have no handoff section yet; write one before building each.
 
 ### What each milestone means
 
@@ -400,22 +394,22 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 13 | ☑ | Trail graph (13a to 13c) | Trails from lift top to base; sustained pitch; guests choose by skill; snow by elevation |
 | — | ☑ | Render fix (#48), trail ribbon folds (#49) | Scene blank on every browser since #39; restored |
 | 13d | ☑ | Hill shape (#50) | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
-| 13e | ☑ | Trail corridor shards | #49 fixed the ribbon folds. Starter and painted corridors checked in the integrated 390×844 Chromium playtest |
+| 13e | ☑ | Trail corridor shards | Starter and painted corridors reviewed at 390×844 after #49; documented in PR 55 |
 | B1 | ☑ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
 | L1 | ☑ | Fixed lodge | The lodge exists from day 1 on every mountain, cannot be built, moved or demolished, and leaves the Build menu. `lodgeTier` in state (1), save migration (an old save that built the lodge keeps Tier 1), lodge card shell, lot-to-lodge path kept. The $1,800 option is removed |
-| B2 | ◐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |
-| B3 | ☐ | Drag lifts | Drag the top terminal with live snapping to anchor points; ghost line; live cost, vertical and capacity |
-| B4 | ☐ | Build impact card | Before every confirm, for every asset: cost, acres, vertical, which skill levels can ski it, tier it needs, "+5% attached" where it applies, expected queue change. Numbers from the sim |
-| 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
-| 16a | ☐ | Asset catalog | One data table for hut, café, shop and guns (moved out of ad hoc code): category, footprint, cost, upkeep, effect, opening tier, placement zone, attachable flag, `styleId` slot. Build sheet reads it; placed-building cap per base area. Save stores `styleId` per building |
-| 16b | ☐ | Lodge tiers | Tier 2 and 3 upgrade: cost, two-night build with scaffolding, car park stalls (visual), attach pad count, tier gates in the catalog (double chair and guns move to Tier 2), greyed items that name their tier, lodge card lists what the next tier opens, tier models kit-bashed from existing GLBs, radio line per tier-up. Re-baselines the characterization snapshot and the balance harness (the chair on day 4 now needs Tier 2) |
-| 16c | ☐ | Free venue placement and attach | Place venues anywhere valid; attach pads on the lodge; `ATTACH_BONUS` 5%; attached venues drawn as wings; impact card shows the bonus |
-| 16d | ☐ | Venues with guest reasons | Refuel stop, café and shop revenue, rentals and ski school desk (First-Timers need them), guests leave a long lift line for the village; recap shows venue takings |
-| 15 | ◐ | Lift types matter | Surface vs double chair: capacity, ride time, wind, cost; double chair opens at Tier 2 |
-| 17 | ☐ | Snowmaking + grooming | Placed guns (Tier 2); nightly groom capacity; visible plumes and corduroy |
-| B5 | ☐ | Trees as a resource | Cutting costs per acre; clearings change snow (shade, wind) |
+| B2 | ☑ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. B2a geometry and saves, plus touch controls and review |
+| B3 | ☑ | Drag lifts | Drag the top terminal with live snapping to anchor points; ghost line; live cost, vertical and capacity |
+| B4 | ☑ | Build impact card | Before every confirm, for every asset: cost, acres, vertical, which skill levels can ski it, tier it needs, "+5% attached" where it applies, expected queue change. Numbers from the sim |
+| 14 | ☑ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
+| 16a | ☑ | Asset catalog | One data table for hut, café, shop and guns (moved out of ad hoc code): category, footprint, cost, upkeep, effect, opening tier, placement zone, attachable flag, `styleId` slot. Build sheet reads it; placed-building cap per base area. Save stores `styleId` per building |
+| 16b | ☑ | Lodge tiers | Tier 2 and 3 upgrade: cost, two-night build with scaffolding, car park stalls (visual), attach pad count, tier gates in the catalog (double chair and guns move to Tier 2), greyed items that name their tier, lodge card lists what the next tier opens, tier models kit-bashed from existing GLBs, radio line per tier-up. Re-baselines the characterization snapshot and the balance harness (the chair on day 4 now needs Tier 2) |
+| 16c | ☑ | Free venue placement and attach | Place venues anywhere valid; attach pads on the lodge; `ATTACH_BONUS` 5%; attached venues drawn as wings; impact card shows the bonus |
+| 16d | ☑ | Venues with guest reasons | Refuel stop, café and shop revenue, rentals and ski school desk (First-Timers need them), guests leave a long lift line for the village; recap shows venue takings |
+| 15 | ☑ | Lift types matter | Surface vs double chair: capacity, length, ride time, cost, beginner preference and Tier 2 unlock. Wind holds are part of row 18. |
+| 17 | ☑ | Snowmaking + grooming | Placed guns (Tier 2); nightly groom capacity; visible plumes and corduroy |
+| B5 | ☑ | Trees as a resource | Cutting costs per acre; clearings change snow (shade, wind) |
 
-Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder rows come first because every later row is played through them. L1 sits early so the bigger-mountain framing includes the lodge and path. The lodge rows (16a to 16d) land before lift types and guns because those open at Tier 2.
+Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder rows come first because every later row is played through them. L1 sits early so the bigger-mountain framing includes the lodge and path. Tier 2 unlocks the double chair and snow guns. The implemented rows and automated checks are complete. First-time player sign-off is pending.
 
 ### M3: One full winter (product MVP)
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import type { AssetId } from "@/game/base";
 import { satisfactionContext } from "@/game/rules";
 import { guestSatisfaction } from "@/game/satisfaction";
 import { useGameStore } from "@/game/store";
@@ -14,7 +15,15 @@ const STATE_WORD: Record<GuestState, string> = {
   queue: "In the lift line",
   ride: "Riding up",
   ski: "Skiing down",
+  refuel: "Taking a break",
   depart: "Heading home",
+};
+
+const VENUE_ACTIVITY: Partial<Record<AssetId, string>> = {
+  warming_hut: "Warming up",
+  cafe: "At the café",
+  rentals: "Picking up rentals",
+  ski_school: "Taking a lesson",
 };
 
 function moodWord(score: number): string {
@@ -38,6 +47,7 @@ export function GuestsSheet({
   );
   const fare = useGameStore((s) => s.fare);
   const buildings = useGameStore((s) => s.buildings);
+  const assets = useGameStore((s) => s.assets);
   const founderId = useGameStore((s) => s.founderId);
   const weather = useGameStore((s) => s.weather);
   const clockMin = useGameStore((s) => s.clockMin);
@@ -45,7 +55,7 @@ export function GuestsSheet({
   const setFollowId = useGameStore((s) => s.setFollowId);
 
   if (!open) return null;
-  const ctx = satisfactionContext({ fare, buildings, founderId, weather, clockMin });
+  const ctx = satisfactionContext({ fare, buildings, assets, founderId, weather, clockMin });
 
   return (
     <Sheet
@@ -63,6 +73,8 @@ export function GuestsSheet({
         <ul>
           {guests.map((g) => {
             const following = followId === g.id;
+            const venue = g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined;
+            const activity = (venue && VENUE_ACTIVITY[venue.id]) ?? STATE_WORD[g.state];
             return (
               <li
                 key={g.id}
@@ -73,7 +85,7 @@ export function GuestsSheet({
                     {g.label}
                   </p>
                   <p className="text-[0.85rem] font-bold text-ink-soft">
-                    {STATE_WORD[g.state]}, {moodWord(guestSatisfaction(g, ctx)).toLowerCase()}
+                    {activity}, {moodWord(guestSatisfaction(g, ctx)).toLowerCase()}
                   </p>
                 </div>
                 <button

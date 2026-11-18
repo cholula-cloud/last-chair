@@ -6,6 +6,7 @@ import {
   currentWaitMin,
   liftCapacityPerHour,
   resetLiftQueues,
+  rideMinutesForLift,
   stepLifts,
 } from "./lifts";
 import * as rules from "./rules";
@@ -17,7 +18,7 @@ import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
 const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
   type,
-  anchor: REFERENCE_TOPS[0],
+  anchor: REFERENCE_TOPS[type === "surface" ? 0 : 1],
   confirmed: true,
   queue,
   dispatchCredit: 0,
@@ -25,6 +26,9 @@ const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
 
 const queued = (id: string): Guest => makeGuest({ id, label: id, state: "queue" });
 const SURFACE_PER_HR = LIFT_SPECS.surface.capacityPerHour;
+const trail = (liftIndex: number, difficulty: "green" | "blue") => ({
+  ...defaultTrails()[0], liftIndex, difficulty,
+});
 
 type RunOpts = {
   types: LiftType[];
@@ -43,13 +47,14 @@ function run(o: RunOpts) {
   const waits: number[] = [];
   let carry = 0;
   let n = 0;
+  const trails = o.types.map((_, i) => trail(i, "green"));
   for (let now = step; now <= o.minutes + 1e-9; now += step) {
     carry += o.arrivals(now) * step;
     while (carry >= 1) {
       guests = [...guests, queued(`g${n++}`)];
       carry -= 1;
     }
-    const r = stepLifts(guests, lifts, defaultTrails(), o.talents ?? [], now, step);
+    const r = stepLifts(guests, lifts, trails, o.talents ?? [], now, step);
     guests = r.guests;
     lifts = r.lifts;
     waits.push(...r.waits);
@@ -126,7 +131,7 @@ describe("lift server", () => {
     const busyIds = ["a", "b", "c", "d", "e"];
     const lifts = [slot("surface"), slot("chair", busyIds)];
     const guests = [...busyIds.map(queued), queued("new")];
-    const r = stepLifts(guests, lifts, defaultTrails(), [], 1, 0);
+    const r = stepLifts(guests, lifts, [trail(0, "green"), trail(1, "green")], [], 1, 0);
     expect(r.guests.find((g) => g.id === "new")?.liftIndex).toBe(0);
     expect(r.lifts[0].queue).toEqual(["new"]);
     // Equal queue lengths: the faster chair has the shorter expected wait.
@@ -135,6 +140,31 @@ describe("lift server", () => {
     expect(chooseLift([slot("surface"), slot("chair")], [])).toBe(1);
     // No open lift.
     expect(chooseLift([{ ...slot("surface"), confirmed: false }], [])).toBe(-1);
+  });
+
+  it("weighs trail skill against the queue and ride, and changes choice when a green opens", () => {
+    const firstTimer = { ...queued("beginner"), persona: "first_timer" } as const;
+    const regular = queued("regular");
+    const lifts = [slot("surface"), slot("chair")];
+    const blueChair = [trail(0, "green"), trail(1, "blue")];
+
+    expect(chooseLift(lifts, [], firstTimer, blueChair)).toBe(0);
+    expect(chooseLift(lifts, [], regular, blueChair)).toBe(1);
+    expect(chooseLift(lifts, [], firstTimer, [...blueChair, trail(1, "green")])).toBe(1);
+    expect(chooseLift([slot("surface", Array(20).fill("q")), slot("chair")], [], firstTimer, blueChair))
+      .toBe(0);
+    expect(chooseLift([slot("surface", Array(40).fill("q")), slot("chair")], [], firstTimer, blueChair))
+      .toBe(1);
+  });
+
+  it("assigns eligible lifts on an exact tie deterministically and accounts for each dispatch", () => {
+    const lifts = [slot("surface"), slot("surface")];
+    const trails = [trail(0, "green"), trail(1, "green")];
+    const guests = [queued("a"), queued("b")];
+    const r = stepLifts(guests, lifts, trails, [], 2, 2);
+    expect(r.guests.map((guest) => guest.liftIndex)).toEqual([1, 0]);
+    expect(r.byLift).toEqual([{ rides: 1, waitSumMin: 0 }, { rides: 1, waitSumMin: 0 }]);
+    expect(stepLifts(guests, lifts, trails, [], 2, 2)).toEqual(r);
   });
 
   it("patrol_radio raises throughput by 5%", () => {
@@ -165,8 +195,12 @@ describe("lift server", () => {
         if (g.state === "ride" && rideStart === undefined) rideStart = g.rideStartMin;
         if (g.state === "ski") skiAt = now;
       }
-      expect(skiAt! - rideStart!).toBeCloseTo(LIFT_SPECS[type].rideMinutes, 9);
+      expect(skiAt! - rideStart!).toBeCloseTo(rideMinutesForLift(slot(type)), 9);
     }
+    expect(rideMinutesForLift(slot("surface"))).toBe(4);
+    expect(rideMinutesForLift(slot("chair"))).toBe(3);
+    const longerChair = { ...slot("chair"), anchor: REFERENCE_TOPS[0] };
+    expect(rideMinutesForLift(longerChair)).toBeGreaterThan(3);
   });
 
   it("rides report elapsed/rideMinutes as progress and queues rank front-first", () => {
@@ -199,7 +233,9 @@ describe("lifts in the day tick", () => {
   it("never puts a guest in two queues, and every queued guest is in exactly one", () => {
     for (let seed = 1; seed <= 4; seed++) {
       let s = rules.pickFounder(createInitialState(seed), "elena");
-      s = rules.placeLift({ ...s, cash: 99999 }, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
+      s = rules.placeLift({ ...s, cash: 99999, lodgeTier: 2 }, {
+        type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1],
+      });
       expect(s.lifts).toHaveLength(2);
       s = rules.togglePause(s);
       while (s.phase === "day") {
@@ -217,8 +253,9 @@ describe("lifts in the day tick", () => {
     s = rules.tick(s, 1000);
     // Large ticks are simulated in sub-steps, so the first guest waits one dispatch interval.
     for (let i = 0; i < 12; i++) s = rules.tick(s, 500);
-    const { dispatched, waitSumMin, avgQueueMin, peakWaitMin, maxQueueLength } = s.dayStats;
+    const { dispatched, waitSumMin, avgQueueMin, peakWaitMin, maxQueueLength, byLift } = s.dayStats;
     expect(dispatched).toBe(3);
+    expect(byLift).toEqual([{ rides: dispatched, waitSumMin }]);
     expect(avgQueueMin).toBeCloseTo(waitSumMin / dispatched, 10);
     expect(peakWaitMin).toBeGreaterThanOrEqual(avgQueueMin);
     expect(maxQueueLength).toBeGreaterThanOrEqual(1);

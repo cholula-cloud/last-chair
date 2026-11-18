@@ -10,10 +10,10 @@ import { TERRAIN } from "./terrain";
 import { LIFT_COST_PARAMS, liftCost, type LiftType } from "./types";
 
 const MID = REFERENCE_TOPS[1];
-const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createInitialState(7), "elena"), cash });
+const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createInitialState(7), "elena"), cash, lodgeTier: 2 });
 const chairReq = { type: "chair" as const, bottom: TERRAIN.base, top: MID };
 /** A top on the crest between Ridge and Mid (at least the spacing from each) that the terrain rules accept from the base. */
-const FAR_TOP = TERRAIN.toWorld({ x: -0.3, z: 0.2 });
+const FAR_TOP = { x: 10, z: -0.5 };
 const baseLine = (top: { x: number; z: number }): LiftLine => ({ bottom: TERRAIN.base, top });
 
 describe("liftCost", () => {
@@ -208,7 +208,7 @@ describe("save v7", () => {
   const v6 = () => ({ ...toPersisted(createInitialState(3)), selectedSlotIndex: 1 });
 
   it("drops selectedSlotIndex and keeps lifts", () => {
-    expect(SAVE_VERSION).toBe(12);
+    expect(SAVE_VERSION).toBe(14);
     const saved = v6();
     const m = migrate(saved, 6) as unknown as Record<string, unknown>;
     expect("selectedSlotIndex" in m).toBe(false);
