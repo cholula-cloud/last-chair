@@ -150,7 +150,7 @@ export default function PlayExperience() {
       data-scene-ready={sceneReady ? "true" : undefined}
     >
       <Canvas
-        className="touch-none"
+        className="block h-full w-full touch-none"
         shadows="percentage"
         dpr={[1, 2]}
         camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
