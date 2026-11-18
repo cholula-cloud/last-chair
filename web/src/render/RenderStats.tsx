@@ -9,7 +9,11 @@ declare global {
   }
 }
 
-/** Writes draw-call and triangle counts for `?stats=1` (phone-check and prod builds). */
+/**
+ * Writes draw-call and triangle counts for `?stats=1` (phone-check and prod builds).
+ * Runs at the default priority (0): any positive priority makes R3F skip its own
+ * `gl.render`, which leaves the canvas blank. Counts read here are the previous frame's.
+ */
 export function RenderStats() {
   const gl = useThree((s) => s.gl);
   const enabled =
@@ -24,7 +28,7 @@ export function RenderStats() {
     acc.current = 0;
     const info = gl.info.render;
     window.__lcStats = { calls: info.calls, triangles: info.triangles };
-  }, 50);
+  });
 
   return null;
 }
