@@ -44,6 +44,11 @@ import {
   tickGuests,
 } from "./sim";
 import { defaultLifts, type GameState, type LiftSlot } from "./state";
+import {
+  defaultTrails,
+  fallLineTrailForLift,
+  snowCarriers,
+} from "./trails";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
   BUILDING_COSTS,
@@ -121,8 +126,8 @@ export function openNight(state: GameState): GameState {
     stats,
     fare: state.fare,
     snowQuality: state.snowQuality,
-    snowTrouble: readSnow(state.lifts).trouble,
-    snowLabel: readSnow(state.lifts).label,
+    snowTrouble: readSnow(snowCarriers(state.trails)).trouble,
+    snowLabel: readSnow(snowCarriers(state.trails)).label,
     day: daySatisfaction(state.guests, ctx),
     arrivalMood: ctx.arrivalMood,
     openLiftCount: openLifts,
@@ -181,7 +186,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
   const steps = Math.max(1, Math.ceil(addMin / MAX_STEP_MIN));
   const stepMin = addMin / steps;
 
-  let { clockMin, guests, lifts } = state;
+  let { clockMin, guests, lifts, trails } = state;
   let {
     completedRuns,
     dispatched,
@@ -197,7 +202,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
     const moved = tickGuests(guests, {
       now: clockMin,
       snowQuality: state.snowQuality,
-      snowByLift: lifts.map((l) => experiencedSnow(l.trail)),
+      snowByLift: trails.map((t) => experiencedSnow(t.snow)),
       lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned),
     });
     const runsByLift = lifts.map(() => 0);
@@ -214,10 +219,10 @@ export function tick(state: GameState, deltaMs: number): GameState {
     });
     // Traffic scrapes the trail of the lift each run came down; thaw afternoons soften the low end.
     const thawing = state.weather === "thaw" && clockMin >= THAW_START_MIN;
-    lifts = lifts.map((l, li) => {
-      let trail = wearTrail(l.trail, runsByLift[li]);
-      if (thawing) trail = softenTrail(trail, stepMin);
-      return trail === l.trail ? l : { ...l, trail };
+    trails = trails.map((t, li) => {
+      let snow = wearTrail(t.snow, runsByLift[li]);
+      if (thawing) snow = softenTrail(snow, stepMin);
+      return snow === t.snow ? t : { ...t, snow };
     });
     const step = stepLifts(moved, lifts, state.talentsOwned, clockMin, stepMin);
     guests = step.guests;
@@ -240,8 +245,9 @@ export function tick(state: GameState, deltaMs: number): GameState {
     clockMin,
     guests,
     lifts,
+    trails,
     followId: followed && followed.state !== "gone" ? state.followId : null,
-    ...deriveSnow(lifts),
+    ...deriveSnow(snowCarriers(trails)),
     dayStats: {
       ...state.dayStats,
       guestsArrived,
@@ -408,15 +414,17 @@ export function placeLift(
     confirmed: true,
     queue: [],
     dispatchCredit: 0,
-    // A new run starts with the hill's average snow, so the means do not jump.
-    trail: averageTrail(state.lifts.filter((l) => l.confirmed).map((l) => l.trail)),
     builtDay: state.dayIndex,
     builtAtMin: state.clockMin,
     paid: check.cost,
   };
+  const idx = state.lifts.length;
+  const snow = averageTrail(state.trails.filter((t) => t.open).map((t) => t.snow));
+  const run = fallLineTrailForLift(idx, lift, snow);
   return {
     ...state,
     lifts: [...state.lifts, lift],
+    trails: [...state.trails, run],
     cash: state.cash - check.cost,
     buildMode: false,
   };
@@ -435,7 +443,12 @@ export function undoableLiftIndex(
 export function undoLift(state: GameState): GameState {
   const i = undoableLiftIndex(state);
   if (i < 0) return state;
-  return { ...state, lifts: state.lifts.slice(0, i), cash: state.cash + (state.lifts[i].paid ?? 0) };
+  return {
+    ...state,
+    lifts: state.lifts.slice(0, i),
+    trails: state.trails.slice(0, i),
+    cash: state.cash + (state.lifts[i].paid ?? 0),
+  };
 }
 
 export function buyBuilding(state: GameState, id: BuildingId): GameState {
@@ -497,7 +510,7 @@ function nightFor(state: GameState, snow: SnowPreset, cash: number) {
   const overnight = applyOvernight({
     snow,
     cash,
-    trails: state.lifts.map((l) => l.trail),
+    trails: state.trails.map((t) => t.snow),
     dayIndex: state.dayIndex,
     buildings: state.buildings,
     talentsOwned: state.talentsOwned,
@@ -522,8 +535,11 @@ export type OvernightPreview = {
 /** Tomorrow morning's snow if the crew works the night at `snow`. Pure: no RNG, no state change. */
 export function previewOvernight(state: GameState, snow: SnowPreset): OvernightPreview {
   const { overnight } = nightFor(state, snow, state.cash);
-  const lifts = state.lifts.map((l, i) => ({ confirmed: l.confirmed, trail: overnight.trails[i] ?? l.trail }));
-  const reading = readSnow(lifts);
+  const carriers = state.trails.map((t, i) => ({
+    confirmed: t.open,
+    trail: overnight.trails[i] ?? t.snow,
+  }));
+  const reading = readSnow(carriers);
   return {
     label: reading.label,
     tone: reading.tone,
@@ -576,7 +592,10 @@ export function sleep(state: GameState): GameState {
     cash: overnight.cash,
     fare: state.pendingFare,
     snow: state.pendingSnow,
-    lifts: state.lifts.map((l, i) => ({ ...l, trail: overnight.trails[i] ?? l.trail })),
+    trails: state.trails.map((t, i) => ({
+      ...t,
+      snow: overnight.trails[i] ?? t.snow,
+    })),
     snowQuality: overnight.snowQuality,
     snowDepth: overnight.snowDepth,
     gunReach: overnight.gunReach,
@@ -668,6 +687,7 @@ export function startNewSeason(state: GameState): GameState {
     snowDepth: 0.45,
     gunReach: 0,
     lifts: defaultLifts(),
+    trails: defaultTrails(),
     buildings: ["warming_hut"],
     talentsOwned: [],
     completedBeats: [],

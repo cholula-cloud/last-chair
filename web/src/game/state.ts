@@ -2,7 +2,8 @@ import { MAX_LIFTS, REFERENCE_TOPS, type LiftAnchor } from "./descent";
 import { PERSONAS } from "./personas";
 import { VALUE, ZERO_TERMS } from "./satisfaction";
 import type { XZ } from "./terrain";
-import { START_DEPTH, START_QUALITY, deriveSnow, freshTrail, trailFromGlobals, type Trail } from "./snow";
+import { START_DEPTH, START_QUALITY, deriveSnow, trailFromGlobals } from "./snow";
+import { buildTrailRun, defaultTrails, fallLineTrailForLift, type TrailRun } from "./trails";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import {
   FARE_PRICES,
@@ -39,8 +40,6 @@ export type LiftSlot = {
   queue: string[];
   /** Dispatch accumulator: whole units dispatch one guest each (see lifts.ts). */
   dispatchCredit: number;
-  /** Snow on this lift's trail, top (index 0) to bottom (see snow.ts). */
-  trail: Trail;
 };
 
 /** What yesterday looked like, kept so tonight's recap can show the change. Null on day 1 and after a new season. */
@@ -78,6 +77,7 @@ export type PersistedState = {
   founderId: FounderId | null;
   buildings: BuildingId[];
   lifts: LiftSlot[];
+  trails: TrailRun[];
   selectedLiftType: LiftType;
   talentsOwned: string[];
   completedBeats: StoryBeatId[];
@@ -114,7 +114,6 @@ export function defaultLifts(): LiftSlot[] {
       confirmed: true,
       queue: [],
       dispatchCredit: 0,
-      trail: freshTrail(),
     },
   ];
 }
@@ -142,6 +141,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     founderId: null,
     buildings: ["warming_hut"],
     lifts: defaultLifts(),
+    trails: defaultTrails(),
     selectedLiftType: "surface",
     talentsOwned: [],
     completedBeats: [],
@@ -179,6 +179,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     founderId: state.founderId,
     buildings: state.buildings,
     lifts: state.lifts,
+    trails: state.trails,
     selectedLiftType: state.selectedLiftType,
     talentsOwned: state.talentsOwned,
     completedBeats: state.completedBeats,
@@ -210,7 +211,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** Frozen horizontal scale for v7 saves (Dutch Hill only). */
 const V7_DUTCH_HILL_H = 6;
@@ -304,12 +305,17 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
   if (fromVersion < 5) {
     const depth = p.snowDepth ?? START_DEPTH;
     const quality = p.snowQuality ?? START_QUALITY;
-    p.lifts = (p.lifts ?? fresh.lifts).map((l) => ({
-      ...l,
+    type Legacy = LiftSlot & { trail?: import("./snow").Trail };
+    p.lifts = (p.lifts ?? fresh.lifts).map((l) => {
+      const leg = l as Legacy;
+      return { ...l, trail: leg.trail ?? trailFromGlobals(depth, quality) } as Legacy;
+    });
+    p.gunReach = p.gunReach ?? 0;
+    const snowLifts = (p.lifts as Legacy[]).map((l) => ({
+      confirmed: l.confirmed,
       trail: l.trail ?? trailFromGlobals(depth, quality),
     }));
-    p.gunReach = p.gunReach ?? 0;
-    Object.assign(p, deriveSnow(p.lifts));
+    Object.assign(p, deriveSnow(snowLifts));
   }
   if (fromVersion < 6) {
     p.lastDay = p.lastDay ?? null;
@@ -351,6 +357,27 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       p.lifts = fresh.lifts;
       p.guests = (p.guests ?? []).map((g) => ({ ...g, liftIndex: undefined }));
     }
+  }
+  if (fromVersion < 9) {
+    type LegacyLift = LiftSlot & { trail?: import("./snow").Trail };
+    const lifts = (p.lifts ?? fresh.lifts) as LegacyLift[];
+    const trails: TrailRun[] = lifts.map((l, i) => {
+      const snow = l.trail ?? trailFromGlobals(START_DEPTH, START_QUALITY);
+      if (i === 0) {
+        return buildTrailRun(0, l.anchor, snow, {
+          name: "Dutch Meadows",
+          gentle: true,
+          open: l.confirmed,
+        });
+      }
+      return fallLineTrailForLift(i, l, snow);
+    });
+    p.trails = trails;
+    p.lifts = lifts.map((l) => {
+      const { trail: _unused, ...rest } = l as LegacyLift;
+      void _unused;
+      return rest;
+    });
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

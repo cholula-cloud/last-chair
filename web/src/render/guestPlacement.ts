@@ -1,12 +1,13 @@
 import type { Guest, GuestState, LiftType } from "@/game/types";
 import type { LiftLine } from "@/game/descent";
 import { cableHeightAt, liftFrame, liftTowers, type LiftPoint } from "./liftLine";
-import { pathPoint } from "@/game/site";
+import { pathPoint as sitePathPoint } from "@/game/site";
 import { LIFT_CABLE_OFFSET, LODGE, PARKING, SITE } from "./layout";
 import type { StallSlot } from "./parking";
 import { clamp01, lerp } from "./math";
 import { TERRAIN } from "@/game/terrain";
-import { trailPoint } from "./trail";
+import { pathPoint as trailPathPoint, trailPoint } from "./trail";
+import type { XZ } from "@/game/terrain";
 
 type GuestPose = "stand" | "walk" | "ride" | "ski";
 
@@ -55,7 +56,7 @@ function arrive(t: number, line: LiftLine, stall: { x: number; z: number }): Gue
   const lodgeLift = SITE.paths.find((p) => p.id === "lodge_lift")!.points;
   const q = queueSpot(8, line);
   const points = [stall, ...lotLodge, ...lodgeLift, { x: q.x + 0.3, z: q.z + 0.1 }];
-  const p = pathPoint(points, t);
+  const p = sitePathPoint(points, t);
   return onGround(p.x, p.z, p.yaw, "walk");
 }
 
@@ -75,10 +76,14 @@ function ride(t: number, line: LiftLine, type: LiftType | undefined, towers?: Li
   return { x, y, z, yaw, pose: "ride" as const, lean: 0.12, roll: 0 };
 }
 
-function ski(index: number, t: number, line: LiftLine): GuestPlacement {
-  const p = trailPoint(t, line);
-  const n = trailPoint(Math.min(1, t + 0.02), line);
-  const b = trailPoint(Math.max(0, t - 0.02), line);
+function ski(index: number, t: number, line: LiftLine, path?: readonly XZ[]): GuestPlacement {
+  const p = path?.length ? trailPathPoint(path, t) : trailPoint(t, line);
+  const n = path?.length
+    ? trailPathPoint(path, Math.min(1, t + 0.02))
+    : trailPoint(Math.min(1, t + 0.02), line);
+  const b = path?.length
+    ? trailPathPoint(path, Math.max(0, t - 0.02))
+    : trailPoint(Math.max(0, t - 0.02), line);
   const yaw = Math.atan2(n.x - b.x, n.z - b.z);
   const phase = t * Math.PI * 9 + index * 1.7;
   const w = Math.sin(phase) * 0.16;
@@ -99,7 +104,7 @@ function depart(t: number, stall: { x: number; z: number }): GuestPlacement {
   const lodgeLift = [...SITE.paths.find((p) => p.id === "lodge_lift")!.points].reverse();
   const lotLodge = [...SITE.paths.find((p) => p.id === "lot_lodge")!.points].reverse();
   const points = [{ x: LODGE.x - 0.1, z: LODGE.z + 0.75 }, ...lodgeLift, ...lotLodge, stall];
-  const p = pathPoint(points, t);
+  const p = sitePathPoint(points, t);
   return onGround(p.x, p.z, p.yaw, "walk");
 }
 
@@ -108,7 +113,7 @@ export function guestWorldPosition(
   state: GuestState,
   progress: number,
   line: LiftLine,
-  opts: PlaceOpts = {},
+  opts: PlaceOpts & { path?: readonly XZ[] } = {},
 ): GuestPlacement {
   const t = clamp01(Number.isFinite(progress) ? progress : 0);
   const stall = opts.stall ?? PARKING;
@@ -120,13 +125,13 @@ export function guestWorldPosition(
     case "ride":
       return ride(t, line, opts.liftType, opts.towers);
     case "ski":
-      return ski(index, t, line);
+      return ski(index, t, line, opts.path);
     default:
       return depart(t, stall);
   }
 }
 
-export type PlacedLift = { line: LiftLine; type: LiftType; towers?: LiftPoint[] };
+export type PlacedLift = { line: LiftLine; type: LiftType; towers?: LiftPoint[]; path?: readonly XZ[] };
 
 export function placeGuests(
   guests: Guest[],
@@ -155,6 +160,7 @@ export function placeGuests(
       liftType: lift.type,
       stall,
       towers: lift.towers ?? liftTowers(lift.line),
+      path: lift.path,
     });
   });
 }

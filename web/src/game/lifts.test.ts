@@ -1,4 +1,3 @@
-import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import {
@@ -21,7 +20,6 @@ const slot = (type: LiftType, queue: string[] = []): LiftSlot => ({
   confirmed: true,
   queue,
   dispatchCredit: 0,
-  trail: freshTrail(),
 });
 
 const queued = (id: string): Guest => makeGuest({ id, label: id, state: "queue" });

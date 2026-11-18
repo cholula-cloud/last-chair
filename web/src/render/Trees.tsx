@@ -109,7 +109,13 @@ function TreeInstances({
  * Tiered forest around the camera target: kit pines and birch nearby, a
  * low-poly stand-in farther out, and shadow proxies on the near tier only.
  */
-export function Trees({ lines }: { lines: LiftLine[] }) {
+export function Trees({
+  lines,
+  paths,
+}: {
+  lines: LiftLine[];
+  paths?: (readonly import("@/game/terrain").XZ[])[];
+}) {
   const a = bakeKit(useKit("pine-a")).body;
   const b = bakeKit(useKit("pine-b")).body;
   const c = bakeKit(useKit("pine-c")).body;
@@ -126,7 +132,7 @@ export function Trees({ lines }: { lines: LiftLine[] }) {
   );
 
   const [forest, setForest] = useState<ForestTiers>(() =>
-    forestForTarget(sceneCameraTarget, { lines }),
+    forestForTarget(sceneCameraTarget, { lines, paths }),
   );
   const lastTarget = useRef({ ...sceneCameraTarget });
 
@@ -134,7 +140,7 @@ export function Trees({ lines }: { lines: LiftLine[] }) {
     const t = sceneCameraTarget;
     if (!shouldRebuildForest(t, lastTarget.current)) return;
     lastTarget.current = { x: t.x, z: t.z };
-    setForest(forestForTarget(t, { lines }));
+    setForest(forestForTarget(t, { lines, paths }));
   });
 
   const nearAll = useMemo(

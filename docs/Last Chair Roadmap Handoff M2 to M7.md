@@ -23,7 +23,7 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 ## Where things stand at writing
 
 - `main` is at `32affa5` (Nov 18, 2026). Merged through world scale 2b–2d, camera playability parts 1–3 (PRs 34–40), 12b (`terrainPick`, lift line render), and **12c** two-tap placement (PR #41). Dutch Hill runs at H = 6, V = 3, save version 8.
-- **In flight:** **13a** trail graph data (save v9, Dutch Meadows path) on `cursor/pr-13a-trail-data-4a7d`; then 13b guest trail picks, 13c elevation snow.
+- **In flight:** **13a** trail graph (save v9, `trails.ts`, Dutch Meadows path) on `cursor/pr-13a-trail-data-4a7d`; next: 13b guest trail picks, 13c elevation snow.
 - Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
 
 ## Recommended build order
