@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
-import { liveSatisfaction } from "@/game/rules";
+import { liveSatisfaction, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { useGameStore } from "@/game/store";
@@ -17,12 +17,15 @@ import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
   ConditionsBoard,
+  LiftUndoChip,
   MorningNote,
   RecenterButton,
   ResumeFollowChip,
   StartCallout,
   TopBar,
 } from "@/ui/Hud";
+import { PlacementBar } from "@/ui/PlacementBar";
+import { usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { useSpeed } from "@/ui/speed";
@@ -61,6 +64,11 @@ export default function PlayExperience() {
   const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
+  const lifts = useGameStore((s) => s.lifts);
+  const undoLift = useGameStore((s) => s.undoLift);
+  const placementActive = usePlacementDraft((s) => s.active);
+  const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
+  const undoRefund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
 
@@ -190,6 +198,7 @@ export default function PlayExperience() {
 
       {phase === "day" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
+          {!placementActive && (
           <div className="w-full sm:max-w-[400px]">
             <ConditionsBoard
               avgQueue={avgQueue}
@@ -200,8 +209,15 @@ export default function PlayExperience() {
               anyOnHill={anyOnHill}
             />
           </div>
+          )}
+          {placementActive ? (
+            <PlacementBar />
+          ) : (
           <div ref={actionBarWrapRef} className="relative w-full sm:max-w-[400px]">
-            <div className="pointer-events-auto absolute right-0 bottom-full mb-2 flex items-center gap-2">
+            <div className="pointer-events-auto absolute right-0 bottom-full mb-2 flex flex-wrap items-center justify-end gap-2">
+              {undoIndex >= 0 && (
+                <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
+              )}
               {canResume && (
                 <ResumeFollowChip
                   onClick={() => {
@@ -221,6 +237,7 @@ export default function PlayExperience() {
               onConfirmMenuChange={setMenuConfirmOpen}
             />
           </div>
+          )}
         </div>
       )}
 
@@ -229,8 +246,9 @@ export default function PlayExperience() {
         open={buildOpen}
         onClose={() => {
           setBuildOpen(false);
-          setBuildMode(false);
+          if (!usePlacementDraft.getState().active) setBuildMode(false);
         }}
+        onStartPlacement={() => setBuildOpen(false)}
       />
       <NightRecapSheet />
       <FounderPick />

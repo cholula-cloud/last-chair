@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_LIFTS, REFERENCE_TOPS, type LiftLine } from "./descent";
 import * as rules from "./rules";
+import { projectLiftBottom, snapTop } from "./rules";
 import { createInitialState, defaultLifts, migrate, toPersisted, SAVE_VERSION, type GameState, type LiftSlot } from "./state";
 import { makeGuest } from "./sim";
 import { freshTrail } from "./snow";
@@ -231,6 +232,48 @@ describe("save v7", () => {
       const m = migrate({ ...v6(), lifts }, 6);
       expect(m.lifts).toEqual(fresh);
     }
+  });
+});
+
+describe("snapTop", () => {
+  it("returns Mid unchanged when the hit is Mid", () => {
+    const s = started();
+    const r = snapTop(s, "chair", baseLine(MID), 2);
+    expect(r.top.x).toBeCloseTo(MID.x, 2);
+    expect(r.top.z).toBeCloseTo(MID.z, 2);
+    expect(r.snapped).toBe(false);
+    expect(r.check.ok).toBe(true);
+  });
+
+  it("projects an out-of-disc bottom tap toward the base", () => {
+    const b = projectLiftBottom({ x: 10, z: 15.3 });
+    expect(b.x).toBeCloseTo(6.29, 2);
+    expect(b.z).toBeCloseTo(15.3, 2);
+  });
+
+  it("returns tops that still pass checkPlacement against the default lift", () => {
+    const s = started();
+    let ok = 0;
+    for (let dx = -2; dx <= 2; dx += 0.55) {
+      for (let dz = -2; dz <= 2; dz += 0.55) {
+        const hit = { x: MID.x + dx, z: MID.z + dz };
+        const r = snapTop(s, "chair", baseLine(hit), 2.2);
+        if (!r.check.ok) continue;
+        ok += 1;
+        expect(rules.checkPlacement(s, "chair", { bottom: TERRAIN.base, top: r.top }).ok).toBe(true);
+      }
+    }
+    expect(ok).toBeGreaterThan(3);
+  });
+
+  it("returns the raw hit with too_steep when nothing valid lies within r", () => {
+    const s = started();
+    const steep = TERRAIN.toWorld({ x: -0.5, z: -0.8 });
+    const r = snapTop(s, "chair", baseLine(steep), 0.5);
+    expect(r.snapped).toBe(false);
+    expect(r.top).toEqual(steep);
+    expect(r.check.ok).toBe(false);
+    if (!r.check.ok) expect(r.check.reason).toBe("too_steep");
   });
 });
 

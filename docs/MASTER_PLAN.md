@@ -298,7 +298,7 @@ Goal: where you put things matters.
 |---|---|---|---|
 | 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
 | 12-pre | ☑ | Camera, scale and playability (parts 1 to 3) | Parts 1–3 merged (PRs 34–35, 37–40): scale, forest/lot, speed, Build focus, feet, `phone-check` |
-| 12 | ◐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots. 12a and 12b merged; **12c tap UI next** |
+| 12 | ☑ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots (12a–12c merged) |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
 | 15 | ☐ | Lift types matter | Surface vs double chair: capacity, ride time, wind sensitivity, cost |

@@ -3,6 +3,7 @@ import {
   checkLiftLine,
   checkSpacing,
   MAX_LIFTS,
+  rulesFor,
   type LiftLine,
   type PlacementReason,
 } from "./descent";
@@ -43,7 +44,7 @@ import {
   tickGuests,
 } from "./sim";
 import { defaultLifts, type GameState, type LiftSlot } from "./state";
-import { TERRAIN, type XZ } from "./terrain";
+import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
   BUILDING_COSTS,
   LIFT_SPECS,
@@ -335,6 +336,61 @@ export function checkPlacement(
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const roundXZ = (p: XZ): XZ => ({ x: round2(p.x), z: round2(p.z) });
+
+/** Clamp a tap in the base disc to a legal lift bottom. */
+export function projectLiftBottom(hit: XZ, terrain: Terrain = TERRAIN): XZ {
+  const base = terrain.base;
+  const r = rulesFor(terrain).baseAreaRadius;
+  const dx = hit.x - base.x;
+  const dz = hit.z - base.z;
+  const len = Math.hypot(dx, dz);
+  if (len <= r) return roundXZ(hit);
+  const k = (r - 0.01) / len;
+  return roundXZ({ x: base.x + dx * k, z: base.z + dz * k });
+}
+
+export type SnapTopResult = {
+  top: XZ;
+  snapped: boolean;
+  check: PlacementCheck;
+};
+
+/** Snap a top tap to the nearest valid placement within radius r (world units). */
+export function snapTop(
+  state: Pick<GameState, "lifts" | "cash">,
+  type: LiftType,
+  line: LiftLine,
+  radius: number,
+): SnapTopResult {
+  const hit = line.top;
+  const direct = checkPlacement(state, type, { bottom: line.bottom, top: hit });
+  if (direct.ok) return { top: hit, snapped: false, check: direct };
+
+  let best: { top: XZ; check: Extract<PlacementCheck, { ok: true }> } | null = null;
+  let bestD = Infinity;
+  let bestV = -Infinity;
+  const rings = [radius / 4, radius / 2, (3 * radius) / 4, radius];
+  const dirs = [8, 12, 16, 24];
+  for (let ri = 0; ri < rings.length; ri++) {
+    const ring = rings[ri];
+    const n = dirs[ri];
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      const top = { x: hit.x + Math.cos(a) * ring, z: hit.z + Math.sin(a) * ring };
+      const check = checkPlacement(state, type, { bottom: line.bottom, top });
+      if (!check.ok) continue;
+      const d = Math.hypot(top.x - hit.x, top.z - hit.z);
+      if (d > bestD) continue;
+      if (d < bestD - 1e-9 || check.vertical > bestV) {
+        bestD = d;
+        bestV = check.vertical;
+        best = { top, check };
+      }
+    }
+  }
+  if (best) return { top: best.top, snapped: true, check: best.check };
+  return { top: hit, snapped: false, check: direct };
+}
 
 /** Build a lift during the day; invalid input returns `state` unchanged. */
 export function placeLift(

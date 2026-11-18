@@ -108,12 +108,16 @@ export function exceedsTapSlop(dx: number, dy: number) {
  * under the move and time limits is a TAP; a TAP near and soon after `prevTap`
  * (the previous tap's up) is a DOUBLE_TAP. Everything else is a DRAG.
  */
-export function classifyPointer(events: readonly PointerEv[], prevTap?: TapRecord | null): GestureKind {
+export function classifyPointer(
+  events: readonly PointerEv[],
+  prevTap?: TapRecord | null,
+  maxTapMs: number = TAP_MAX_MS,
+): GestureKind {
   const first = events[0];
   const last = events[events.length - 1];
   if (!first || first.type !== "down" || last.type !== "up") return "DRAG";
   if (events.some((e) => e.id !== first.id)) return "DRAG";
-  if (last.t - first.t >= TAP_MAX_MS) return "DRAG";
+  if (last.t - first.t >= maxTapMs) return "DRAG";
   if (events.some((e) => exceedsTapSlop(e.x - first.x, e.y - first.y))) return "DRAG";
   if (
     prevTap &&
