@@ -163,6 +163,10 @@ Sweep that led to 46 per hour (surface capacity, avg wait weekday / Saturday): 3
 
 Talent **Patrol Radio** adds 5% to every lift's capacity. The HUD queue reading is the expected wait at the busiest lift (queue length ÷ capacity per minute); the day average (`avgQueueMin`) is the measured mean wait of guests dispatched today, alongside `maxQueueLength` and `peakWaitMin`.
 
+### Bigger Dutch Hill (B1)
+
+The wider shoulders make room for six viable runs in a three-lift layout. Dutch Hill retains the 6×/3× scale, 570-foot vertical, starter route, and existing terminal and base coordinates. The wider camera bounds and portrait framing keep the lodge and arrival lot accessible.
+
 ### Viability rule (build preview)
 
 A lift placement is **valid** iff:

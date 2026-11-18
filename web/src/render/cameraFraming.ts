@@ -2,7 +2,7 @@
 
 import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
-import { DUTCH_HILL } from "@/game/mountains/dutchHill";
+import { DUTCH_HILL, DUTCH_HILL_SHOULDERS } from "@/game/mountains/dutchHill";
 import { lotFarCorner } from "@/game/site";
 import { HOUSES, LIFT_TERMINAL_H, LODGE, SHOP_POS, SITE } from "./layout";
 import { trailPoint } from "./trail";
@@ -110,27 +110,31 @@ export function frameView(input: FrameInput): FrameResult {
 }
 
 /**
- * Points the home view must keep on screen: base, each lift top, the lodge and
- * each trail's middle, plus context so the hill still reads as a hill: the
- * summit, the east end of the village and the houses across the road.
+ * Points the home view must keep on screen: the buildable slopes, base lodge,
+ * and parking lot. Give the houses across the road room in landscape.
  */
-export function keyPoints(): Vec3[] {
+export function keyPoints(portrait = false): Vec3[] {
   const onTerrain = (x: number, z: number, lift: number): Vec3 => ({
     x,
     y: TERRAIN.height(x, z) + lift,
     z,
   });
   const lot = lotFarCorner(SITE);
+  const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
   const pts: Vec3[] = [
     onTerrain(TERRAIN.base.x, TERRAIN.base.z, LIFT_TERMINAL_H),
     onTerrain(lot.x, lot.z, 0),
     onTerrain(SITE.arrival.center.x, SITE.arrival.center.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0.9),
-    onTerrain(TERRAIN.toWorld(DUTCH_HILL.summit).x, TERRAIN.toWorld(DUTCH_HILL.summit).z, 0),
+    onTerrain(summit.x, summit.z, 0),
+    ...DUTCH_HILL_SHOULDERS.map((point) => {
+      const { x, z } = TERRAIN.toWorld(point);
+      return onTerrain(x, z, 0);
+    }),
     onTerrain(SHOP_POS.x, SHOP_POS.z, 0.5),
-    ...HOUSES.map((h) => onTerrain(h.x, h.z, 0.5)),
   ];
+  if (!portrait) pts.push(...HOUSES.map((h) => onTerrain(h.x, h.z, 0.5)));
   for (const slot of REFERENCE_TOPS) {
     pts.push(onTerrain(slot.x, slot.z, LIFT_TERMINAL_H));
     pts.push(trailPoint(0.5, { bottom: TERRAIN.base, top: slot }));
@@ -143,10 +147,10 @@ export const PORTRAIT_ASPECT = 0.9;
 
 const PORTRAIT = {
   fov: 50,
-  azimuth: -0.15,
-  elevation: 0.62,
+  azimuth: 0.4,
+  elevation: 0.8,
   // Clear of the top HUD strip and the bottom action bar.
-  safe: { xMin: -0.9, xMax: 0.9, yMin: -0.55, yMax: 0.72 },
+  safe: { xMin: -0.95, xMax: 0.95, yMin: -0.58, yMax: 0.74 },
 } as const;
 
 const LANDSCAPE = {
@@ -178,8 +182,9 @@ export function homeAzimuth(aspect: number) {
 
 export function homeView(aspect: number) {
   const framedAspect = framingAspect(aspect);
-  const params = framedAspect < PORTRAIT_ASPECT ? PORTRAIT : LANDSCAPE;
-  const framed = frameView({ points: keyPoints(), aspect: framedAspect, ...params });
+  const portrait = framedAspect < PORTRAIT_ASPECT;
+  const params = portrait ? PORTRAIT : LANDSCAPE;
+  const framed = frameView({ points: keyPoints(portrait), aspect: framedAspect, ...params });
   return { ...params, ...framed, aspect: framedAspect };
 }
 

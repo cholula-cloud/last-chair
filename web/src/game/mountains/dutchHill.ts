@@ -1,12 +1,18 @@
 import type { TerrainDef } from "../terrain";
 
+/** Landmarks on the new shoulders, in design units. */
+export const DUTCH_HILL_SHOULDERS = [
+  { x: -12.5 / 6, z: 2 / 6 },
+  { x: 10 / 6, z: -0.5 / 6 },
+] as const;
+
 /**
  * Dutch Hill: a Vermont hill rising toward -Z from a flat village apron at +Z,
  * with a broad rounded summit and a crest the lift runs up; the ground falls away to both sides.
  * Distances uphill (`d`) are measured from the apron edge, z = 2.1.
  */
 export const DUTCH_HILL: TerrainDef = {
-  // Design units equal world units until the world-scale work lands; 6/3 is the planned scale.
+  // Keep existing lift and trail coordinates at the established 6×/3× scale.
   scale: { horizontal: 6, vertical: 3 },
   // 70 ft per world unit at 6x horizontal.
   horizontalFeetPerUnit: 420,
@@ -44,6 +50,7 @@ export const DUTCH_HILL: TerrainDef = {
     crown: 0.03,
     drop: 3.6,
     sharpness: 0.15,
+    outerShoulder: { start: 0.45, slope: 0.3 },
     rampFrom: 0.2,
     rampTo: 2.2,
     floorMargin: 0.15,

@@ -88,6 +88,8 @@ export type TerrainDef = {
     crown: number;
     drop: number;
     sharpness: number;
+    /** Widen the outer shoulder without changing the crest and its existing routes. */
+    outerShoulder?: { start: number; slope: number };
     rampFrom: number;
     rampTo: number;
     floorMargin: number;
@@ -222,8 +224,15 @@ export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale 
       crestOffset = Math.abs(x - (fl.centerX + fl.centerXPerD * d));
       side = Math.max(0, crestOffset - fl.halfWidth);
       const across = Math.min(crestOffset, fl.halfWidth) / fl.halfWidth;
+      const shoulder = fl.outerShoulder;
+      let falloff = side;
+      if (shoulder && side > shoulder.start) {
+        const outer = side - shoulder.start;
+        // Ease from full slope at the join toward the gentler outer shoulder.
+        falloff = shoulder.start + outer * (shoulder.slope + (1 - shoulder.slope) / (1 + outer));
+      }
       const drop =
-        (fl.crown * across * across + fl.drop * (1 - Math.exp(-side * side * fl.sharpness))) *
+        (fl.crown * across * across + fl.drop * (1 - Math.exp(-falloff * falloff * fl.sharpness))) *
         smoothstep(fl.rampFrom, fl.rampTo, d);
       const floor = (def.apron?.height ?? 0) - fl.floorMargin;
       h = Math.max(h - drop, Math.min(h, floor));

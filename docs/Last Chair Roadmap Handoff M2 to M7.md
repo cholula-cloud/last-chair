@@ -38,7 +38,7 @@ From camera part 3 (#39) until this fix, `/play/` drew the HUD and ran the sim b
 
 ### Next roadmap work
 
-Per MASTER_PLAN v2.0 §8: 13d hill shape merged (#50); 13e trail corridor shards, then builder rows B1 to B4, then rows **14–17**, B5, M2 gate.
+Follow MASTER_PLAN §9. B1 widens the shoulders, preserves saved X/Z coordinates, reference terminal heights, and the starter route, and frames both buildable shoulders at phone size. On the final B1 terrain, use tests to verify six distinct viable routes in a three-lift layout. The separate integrated 390×844 Chromium review found smooth starter and painted corridors after the #49 fix. The next row is L1, then the B2 brush work.
 
 ## Recommended build order
 
