@@ -1,9 +1,149 @@
+import { PERSONAS } from "./personas";
+import type { PersonaId, TrailDifficulty } from "./types";
 import { REFERENCE_TOPS, rulesFor } from "./descent";
 import type { LiftSlot } from "./state";
 import { freshTrail, type Trail } from "./snow";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 
-export type Difficulty = "green" | "blue" | "black";
+export type Difficulty = TrailDifficulty;
+
+export const OVER_SKILL_MULT = 1.6;
+export const MAX_TRAILS_PER_LIFT = 3;
+export const MAX_TRAILS_TOTAL = 8;
+
+const DIFF_RANK: Record<Difficulty, number> = { green: 0, blue: 1, black: 2 };
+
+export function roundTrailCost(raw: number): number {
+  return Math.round(raw / 50) * 50;
+}
+
+export function trailCost(lengthFt: number): number {
+  return roundTrailCost(150 + 0.4 * lengthFt);
+}
+
+export type RouteOption = {
+  name: string;
+  path: XZ[];
+  lengthFt: number;
+  pitch: number;
+  difficulty: Difficulty;
+};
+
+function optionName(targetPitch: number | null, difficulty: Difficulty, index: number): string {
+  if (targetPitch !== null && targetPitch <= 0.23) return index === 0 ? "Dutch Meadows" : "Meadow Run";
+  if (targetPitch !== null && targetPitch < 0.4) return "Cruiser";
+  return difficulty === "blue" ? "Fall Line" : "Steep";
+}
+
+function pathOverlapShare(a: readonly XZ[], b: readonly XZ[], terrain: Terrain): number {
+  const cell = terrain.scale.horizontal / 6;
+  const key = (p: XZ) => `${Math.round(p.x / cell)}:${Math.round(p.z / cell)}`;
+  const setB = new Set(b.map(key));
+  let hit = 0;
+  for (const p of a) if (setB.has(key(p))) hit++;
+  return a.length < 2 ? 0 : hit / a.length;
+}
+
+function pathsTooSimilar(a: readonly XZ[], b: readonly XZ[], terrain: Terrain): boolean {
+  return pathOverlapShare(a, b, terrain) > 0.8 || pathOverlapShare(b, a, terrain) > 0.8;
+}
+
+function buildRouteOption(
+  top: XZ,
+  targetPitch: number | null,
+  nameHint: string | null,
+  terrain: Terrain,
+): RouteOption {
+  const path = routePath(top, targetPitch, terrain);
+  const pitch = terrain.sustainedPitch(path) * realGradeFactor(terrain);
+  const difficulty = classifyPitch(pitch);
+  const name = nameHint ?? optionName(targetPitch, difficulty, 0);
+  return {
+    name,
+    path,
+    lengthFt: pathLengthFt(path, terrain),
+    pitch,
+    difficulty,
+  };
+}
+
+/** Three route targets (gentle, cruiser, fall line), dropping near-duplicates. */
+export function routeOptions(
+  top: XZ,
+  existing: readonly (readonly XZ[])[] = [],
+  terrain: Terrain = TERRAIN,
+): RouteOption[] {
+  const targets: (number | null)[] = [0.22, 0.36, null];
+  const names = ["Dutch Meadows", null, null] as const;
+  const raw = targets.map((t, i) => buildRouteOption(top, t, names[i] ?? null, terrain));
+  const out: RouteOption[] = [];
+  for (const opt of raw) {
+    if (existing.some((e) => pathsTooSimilar(opt.path, e, terrain))) continue;
+    if (out.some((o) => pathsTooSimilar(opt.path, o.path, terrain))) continue;
+    out.push(opt);
+  }
+  return out;
+}
+
+export function trailsOnLift(trails: readonly TrailRun[], liftIndex: number): { index: number; trail: TrailRun }[] {
+  const out: { index: number; trail: TrailRun }[] = [];
+  trails.forEach((t, index) => {
+    if (t.liftIndex === liftIndex && t.open) out.push({ index, trail: t });
+  });
+  return out;
+}
+
+function hashPick(id: string, runs: number, n: number): number {
+  let h = 0;
+  const s = `${id}:${runs}`;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % Math.max(1, n);
+}
+
+export function isOverSkill(persona: PersonaId, difficulty: Difficulty): boolean {
+  return DIFF_RANK[difficulty] > DIFF_RANK[PERSONAS[persona].maxDifficulty];
+}
+
+/** Which trail a guest skis from this lift on this run (global trail index). */
+export function pickTrailIndex(
+  persona: PersonaId,
+  trails: readonly TrailRun[],
+  liftIndex: number,
+  guestId: string,
+  runs: number,
+): number {
+  const open = trailsOnLift(trails, liftIndex);
+  if (open.length === 0) return Math.min(liftIndex, trails.length - 1);
+  const maxRank = DIFF_RANK[PERSONAS[persona].maxDifficulty];
+  const pref = PERSONAS[persona].preferred;
+  const within = open.filter(({ trail }) => DIFF_RANK[trail.difficulty] <= maxRank);
+  let pool = within;
+  if (within.length > 0) {
+    const prefMatches = within.filter(({ trail }) => trail.difficulty === pref);
+    if (prefMatches.length > 0) pool = prefMatches;
+    else {
+      const hardest = Math.max(...within.map(({ trail }) => DIFF_RANK[trail.difficulty]));
+      pool = within.filter(({ trail }) => DIFF_RANK[trail.difficulty] === hardest);
+    }
+  } else {
+    const easiest = Math.min(...open.map(({ trail }) => DIFF_RANK[trail.difficulty]));
+    pool = open.filter(({ trail }) => DIFF_RANK[trail.difficulty] === easiest);
+  }
+  return pool[hashPick(guestId, runs, pool.length)].index;
+}
+
+export function runSkiMinutes(
+  persona: PersonaId,
+  trail: Pick<TrailRun, "lengthFt" | "difficulty">,
+  snowQuality: number,
+  overSkill?: boolean,
+): number {
+  const q = Math.max(0, Math.min(1, snowQuality));
+  const base = PERSONAS[persona].skiMin * (trail.lengthFt / REF_TRAIL_FT);
+  const snow = 1 + 0.3 * (1 - q);
+  const skill = (overSkill ?? isOverSkill(persona, trail.difficulty)) ? OVER_SKILL_MULT : 1;
+  return base * snow * skill;
+}
 
 export type TrailRun = {
   liftIndex: number;
@@ -15,6 +155,7 @@ export type TrailRun = {
   open: boolean;
   snow: Trail;
   builtDay?: number;
+  builtAtMin?: number;
   paid?: number;
 };
 
@@ -231,6 +372,9 @@ export function defaultTrails(terrain: Terrain = TERRAIN): TrailRun[] {
     buildTrailRun(0, ridge, freshTrail(), { name: "Dutch Meadows", gentle: true, open: true }, terrain),
   ];
 }
+
+/** Reference run length (Dutch Meadows); fixed at load so ski ticks do not regenerate routes. */
+export const REF_TRAIL_FT = defaultTrails()[0].lengthFt;
 
 export function fallLineTrailForLift(
   liftIndex: number,

@@ -1,6 +1,7 @@
 import {
   acknowledgeBeat,
   buyBuilding,
+  cutTrail,
   pickFounder,
   placeLift,
   previewOvernight,
@@ -8,7 +9,9 @@ import {
   setPendingSnow,
   skipToClose,
   sleep,
+  trailOptions,
 } from "./rules";
+import { trailsOnLift } from "./trails";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import { isWeekend, type NightRecap } from "./sim";
@@ -66,6 +69,33 @@ export const CASH_RESERVE = 2500;
 
 function canAffordChair(state: GameState): boolean {
   return !hasChair(state) && state.cash >= CHAIR_COST + CASH_RESERVE;
+}
+
+function chairLiftIndex(state: GameState): number {
+  return state.lifts.findIndex((l, i) => i > 0 && l.confirmed && l.type === "chair");
+}
+
+/** Balance harness: cut the cheapest green on the chair the morning after it opens. */
+export function maybeCutChairGreen(state: GameState): GameState {
+  const chairI = chairLiftIndex(state);
+  if (chairI < 0) return state;
+  const built = state.lifts[chairI].builtDay ?? 0;
+  if (state.dayIndex !== built + 1) return state;
+  if (state.cash <= CASH_RESERVE) return state;
+  const hasGreen = trailsOnLift(state.trails, chairI).some(
+    ({ trail }) => trail.difficulty === "green",
+  );
+  if (hasGreen) return state;
+  const opts = trailOptions(state, chairI);
+  let greenI = -1;
+  let cheapest = Infinity;
+  opts.forEach((o, i) => {
+    if (o.difficulty !== "green" || o.cost >= cheapest) return;
+    cheapest = o.cost;
+    greenI = i;
+  });
+  if (greenI < 0) return state;
+  return cutTrail(state, chairI, greenI);
 }
 
 /** The nine fixed combinations: one fare and one snow preset all winter, no building. */
@@ -187,6 +217,9 @@ export function runSeason(
   let guard = 0;
   while (state.phase === "day" && guard++ < 400) {
     for (const action of strategy.build?.(ctxOf()) ?? []) state = applyBuild(state, action);
+    if (strategy.id === "builder" || strategy.id === "adaptive") {
+      state = maybeCutChairGreen(state);
+    }
     const fare = state.fare;
     const snow = state.snow;
     const chair = hasChair(state);

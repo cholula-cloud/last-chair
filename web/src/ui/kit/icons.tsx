@@ -216,6 +216,35 @@ export const CocoaIcon = (p: P) => (
   </Icon>
 );
 
+/** Green circle, blue square, or black diamond trail difficulty. */
+export function DifficultyIcon({
+  difficulty,
+  size = 18,
+}: {
+  difficulty: "green" | "blue" | "black";
+  size?: number;
+}) {
+  if (difficulty === "green") {
+    return (
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+        <circle cx="12" cy="12" r="9" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (difficulty === "blue") {
+    return (
+      <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+        <rect x="4.5" y="4.5" width="15" height="15" rx="1.2" fill="currentColor" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path d="M12 3.5 20.5 20.5H3.5z" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** Elevation glyph: one, two or three peaks. Decorative, takes currentColor. */
 export function PeaksGlyph({ peaks }: { peaks: 1 | 2 | 3 }) {
   const d = {

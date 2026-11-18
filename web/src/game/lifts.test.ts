@@ -11,6 +11,7 @@ import {
 import * as rules from "./rules";
 import { makeGuest } from "./sim";
 import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
+import { defaultTrails } from "./trails";
 import { TERRAIN } from "./terrain";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
 
@@ -48,7 +49,7 @@ function run(o: RunOpts) {
       guests = [...guests, queued(`g${n++}`)];
       carry -= 1;
     }
-    const r = stepLifts(guests, lifts, o.talents ?? [], now, step);
+    const r = stepLifts(guests, lifts, defaultTrails(), o.talents ?? [], now, step);
     guests = r.guests;
     lifts = r.lifts;
     waits.push(...r.waits);
@@ -66,7 +67,7 @@ describe("lift server", () => {
     let lifts = [slot("surface")];
     const order: string[] = [];
     for (let now = 0.5; now <= 20; now += 0.5) {
-      const r = stepLifts(guests, lifts, [], now, 0.5);
+      const r = stepLifts(guests, lifts, defaultTrails(), [], now, 0.5);
       for (const g of r.guests) {
         const before = guests.find((x) => x.id === g.id);
         if (before?.state === "queue" && g.state === "ride") order.push(g.id);
@@ -125,7 +126,7 @@ describe("lift server", () => {
     const busyIds = ["a", "b", "c", "d", "e"];
     const lifts = [slot("surface"), slot("chair", busyIds)];
     const guests = [...busyIds.map(queued), queued("new")];
-    const r = stepLifts(guests, lifts, [], 1, 0);
+    const r = stepLifts(guests, lifts, defaultTrails(), [], 1, 0);
     expect(r.guests.find((g) => g.id === "new")?.liftIndex).toBe(0);
     expect(r.lifts[0].queue).toEqual(["new"]);
     // Equal queue lengths: the faster chair has the shorter expected wait.
@@ -157,7 +158,7 @@ describe("lift server", () => {
       let rideStart: number | undefined;
       let skiAt: number | undefined;
       for (let now = 0.5; now <= 20 && skiAt === undefined; now += 0.5) {
-        const r = stepLifts(guests, lifts, [], now, 0.5);
+        const r = stepLifts(guests, lifts, defaultTrails(), [], now, 0.5);
         guests = r.guests;
         lifts = r.lifts;
         const g = guests[0];
@@ -170,13 +171,13 @@ describe("lift server", () => {
 
   it("rides report elapsed/rideMinutes as progress and queues rank front-first", () => {
     let guests = ["a", "b", "c", "d"].map(queued);
-    const r0 = stepLifts(guests, [slot("surface")], [], 0.1, 0.1);
+    const r0 = stepLifts(guests, [slot("surface")], defaultTrails(), [], 0.1, 0.1);
     const p = r0.guests.map((g) => g.progress);
     expect(p[0]).toBeGreaterThan(p[1]);
     expect(p[1]).toBeGreaterThan(p[2]);
     expect(p[2]).toBeGreaterThan(p[3]);
     guests = [{ ...queued("r"), state: "ride", rideStartMin: 10, liftIndex: 0 }];
-    const r1 = stepLifts(guests, [slot("surface")], [], 12, 0);
+    const r1 = stepLifts(guests, [slot("surface")], defaultTrails(), [], 12, 0);
     expect(r1.guests[0].progress).toBeCloseTo(0.5, 10);
   });
 
@@ -184,7 +185,7 @@ describe("lift server", () => {
     const guests = [queued("a"), queued("b")];
     const lifts = [slot("surface")];
     const before = structuredClone({ guests, lifts });
-    stepLifts(guests, lifts, [], 5, 1);
+    stepLifts(guests, lifts, defaultTrails(), [], 5, 1);
     expect({ guests, lifts }).toEqual(before);
   });
 });

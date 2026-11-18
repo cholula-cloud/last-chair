@@ -22,8 +22,8 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 
 ## Where things stand at writing
 
-- `main` includes **12c** (PR #41) and **13a** trail data (PR #42, save v9). Dutch Hill at H = 6, V = 3.
-- **Next:** **13b** guest trail choice + cut-trail UI; then **13c** elevation snow; rows 14–17; M2 gate.
+- `main` includes **12c** (#41), **13a** (#42, save v9), and **13b** guest trail choice + cut-trail UI (pending merge on branch `cursor/pr-13b-trail-guests-4a7d`). Dutch Hill at H = 6, V = 3.
+- **Next:** **13c** elevation snow; then row **14** multi-lift choice; rows 15–17; M2 gate.
 - Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
 
 ## Recommended build order

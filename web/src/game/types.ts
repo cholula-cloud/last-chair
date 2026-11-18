@@ -20,6 +20,7 @@ export type GuestState =
   /** Left the car park for home; terminal, not drawn. */
   | "gone";
 export type PersonaId = "first_timer" | "regular";
+export type TrailDifficulty = "green" | "blue" | "black";
 export type LiftType = "surface" | "chair";
 export type WeatherKind = "snow" | "clear" | "thaw";
 export type BuildingId = "warming_hut" | "lodge" | "cafe" | "shop" | "snow_guns";
@@ -47,6 +48,8 @@ export type Guest = {
   mood: number;
   /** Index into `GameState.lifts` of the lift this guest last queued for or rode. */
   liftIndex?: number;
+  /** Index into `GameState.trails` for the run in progress (set when unloading). */
+  trailIndex?: number;
   /** Game clock minute at which the guest joined the lift queue. */
   joinedQueueAtMin?: number;
   /** Game clock minute at which the guest was dispatched onto the lift. */

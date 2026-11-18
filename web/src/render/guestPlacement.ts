@@ -137,6 +137,7 @@ export function placeGuests(
   guests: Guest[],
   lifts: PlacedLift[],
   stalls: Map<string, StallSlot> = new Map(),
+  trailPaths?: readonly (readonly XZ[] | undefined)[],
 ): GuestPlacement[] {
   const primary = lifts[0];
   return guests.map((g, i) => {
@@ -155,12 +156,16 @@ export function placeGuests(
         if (o.progress > g.progress || (o.progress === g.progress && j < i)) queueRank++;
       }
     }
+    const skiPath =
+      g.state === "ski" && g.trailIndex != null
+        ? trailPaths?.[g.trailIndex]
+        : lift.path;
     return guestWorldPosition(i, g.state, g.progress, lift.line, {
       queueRank,
       liftType: lift.type,
       stall,
       towers: lift.towers ?? liftTowers(lift.line),
-      path: lift.path,
+      path: skiPath ?? lift.path,
     });
   });
 }
