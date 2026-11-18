@@ -3,12 +3,17 @@ import { homeView } from "./cameraFraming";
 import {
   DOUBLE_TAP_MAX_DIST_PX,
   DOUBLE_TAP_MAX_GAP_MS,
+  FOCUS_DISTANCE,
   HARD_MARGIN_FRACTION,
+  MAX_DISTANCE,
+  MIN_DISTANCE,
   PLAY_AREA as A,
+  SOFT_MARGIN,
   TAP_MAX_MOVE_PX,
   TAP_MAX_MS,
   classifyPointer,
   clampTarget,
+  hardLimitOnAxis,
   insideArea,
   marchToTerrain,
   type PointerEv,
@@ -40,11 +45,13 @@ describe("clampTarget", () => {
     }
   });
 
-  it("clamps hard beyond area + 15% of its size", () => {
-    const a = clampTarget({ x: A.xMax + hardX + 1, z: cz }, A, 0.6);
-    const b = clampTarget({ x: A.xMax + 500, z: cz }, A, 0.6);
+  it("clamps hard beyond area + soft margin + 15% of its size", () => {
+    const { x: limitX } = hardLimitOnAxis(A, SOFT_MARGIN);
+    const a = clampTarget({ x: A.xMax + limitX + 1, z: cz }, A, SOFT_MARGIN);
+    const b = clampTarget({ x: A.xMax + 500, z: cz }, A, SOFT_MARGIN);
     expect(a.x).toBe(b.x);
-    expect(b.x).toBeLessThanOrEqual(A.xMax + hardX);
+    expect(b.x).toBeLessThanOrEqual(A.xMax + limitX + 1e-6);
+    expect(a.x).toBeGreaterThan(A.xMax);
   });
 
   it("is symmetric on all four sides", () => {
@@ -73,8 +80,11 @@ describe("clampTarget", () => {
 
   it("keeps the home view target inside the play area in both orientations", () => {
     for (const aspect of [0.46, 1.0, 2.17]) {
-      const t = homeView(aspect).target;
-      expect(clampTarget(t, A, 0.6)).toEqual({ x: t.x, z: t.z });
+      const v = homeView(aspect);
+      expect(clampTarget(v.target, A, SOFT_MARGIN)).toEqual({ x: v.target.x, z: v.target.z });
+      expect(v.distance).toBeGreaterThanOrEqual(MIN_DISTANCE);
+      expect(v.distance).toBeLessThanOrEqual(MAX_DISTANCE);
+      expect(v.distance).toBeLessThanOrEqual(FOCUS_DISTANCE * 5);
     }
   });
 });

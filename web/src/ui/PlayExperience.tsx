@@ -2,7 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
 import { liveSatisfaction } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
@@ -96,18 +96,33 @@ export default function PlayExperience() {
   }, [talentToast]);
 
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
+  const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
+  const noteExpanded = noteExpandedDay === dayIndex;
+  const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
+  const actionBarWrapRef = useRef<HTMLDivElement>(null);
 
   const notStarted =
     phase === "day" && paused && dayIndex === 1 && clockMin <= DAY_START_MIN;
   const showStartHint = hydrated && notStarted;
   const showNote = phase === "day" && noteDismissedDay !== dayIndex;
 
-  // The morning note clears itself after 6 seconds, or as soon as play is pressed.
+  // Auto-dismiss only while the hill day clock is running (not paused, not before first play).
   useEffect(() => {
-    if (!showNote) return;
+    if (!showNote || paused || notStarted) return;
     const t = window.setTimeout(() => setNoteDismissedDay(dayIndex), 6000);
     return () => window.clearTimeout(t);
-  }, [showNote, dayIndex]);
+  }, [showNote, dayIndex, paused, notStarted]);
+
+  useEffect(() => {
+    if (!menuConfirmOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      const wrap = actionBarWrapRef.current;
+      if (wrap && e.target instanceof Node && wrap.contains(e.target)) return;
+      setMenuConfirmOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointer);
+    return () => window.removeEventListener("pointerdown", onPointer);
+  }, [menuConfirmOpen]);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink">
@@ -152,6 +167,8 @@ export default function PlayExperience() {
                 ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
                 : null
             }
+            expanded={noteExpanded}
+            onExpand={() => setNoteExpandedDay(dayIndex)}
             onDismiss={() => setNoteDismissedDay(dayIndex)}
           />
         )}
@@ -159,8 +176,18 @@ export default function PlayExperience() {
 
       {phase === "day" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex w-full flex-col gap-2 sm:max-w-[400px]">
-            <div className="flex items-center justify-end gap-2">
+          <div className="w-full sm:max-w-[400px]">
+            <ConditionsBoard
+              avgQueue={avgQueue}
+              snowQuality={snowQuality}
+              snowDepth={snowDepth}
+              snowRead={snowRead}
+              mood={mood}
+              anyOnHill={anyOnHill}
+            />
+          </div>
+          <div ref={actionBarWrapRef} className="relative w-full sm:max-w-[400px]">
+            <div className="pointer-events-auto absolute right-0 bottom-full mb-2 flex items-center gap-2">
               {canResume && (
                 <ResumeFollowChip
                   onClick={() => {
@@ -171,21 +198,13 @@ export default function PlayExperience() {
               )}
               <RecenterButton onClick={requestRecenter} />
             </div>
-            <ConditionsBoard
-              avgQueue={avgQueue}
-              snowQuality={snowQuality}
-              snowDepth={snowDepth}
-              snowRead={snowRead}
-              mood={mood}
-              anyOnHill={anyOnHill}
-            />
-          </div>
-          <div className="w-full sm:max-w-[400px]">
             <ActionBar
               buildActive={buildMode}
               onBuild={() => setBuildOpen(true)}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
+              confirmMenu={menuConfirmOpen}
+              onConfirmMenuChange={setMenuConfirmOpen}
             />
           </div>
         </div>

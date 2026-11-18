@@ -15,7 +15,12 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import { Atmosphere } from "./Atmosphere";
 import { cameraPosition, framingAspect, homeAzimuth, homeView, isPortraitAspect } from "./cameraFraming";
 import {
+  FOCUS_DISTANCE,
+  GLIDE_MAX_FRAMES,
+  MAX_DISTANCE,
+  MIN_DISTANCE,
   PLAY_AREA,
+  TARGET_Y_MAX,
   classifyPointer,
   clampTarget,
   exceedsTapSlop,
@@ -38,10 +43,6 @@ import { useCameraKeys } from "./useCameraKeys";
 const MIN_ELEVATION = 0.35;
 const MAX_ELEVATION = 1.25;
 const AZIMUTH_RANGE = 1.4;
-const MIN_DISTANCE = 4;
-const MAX_DISTANCE = 34;
-const FOCUS_DISTANCE = 12;
-const TARGET_Y_MAX = 6;
 
 const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 const GOAL = new THREE.Vector3();
@@ -88,6 +89,7 @@ function CameraRig({
   const rawReady = useRef(false);
   // A camera glide (double-tap focus, recenter, F): target and camera position goals.
   const glide = useRef<{ target: THREE.Vector3; position: THREE.Vector3 } | null>(null);
+  const glideFrames = useRef(0);
 
   const glideTo = useCallback(
     (target: THREE.Vector3, distance?: number) => {
@@ -95,6 +97,7 @@ function CameraRig({
       const cam = get().camera;
       AWAY.copy(cam.position).sub(controls.target);
       const dist = Math.min(distance ?? Infinity, AWAY.length());
+      glideFrames.current = 0;
       glide.current = {
         target: target.clone(),
         position: target.clone().add(AWAY.setLength(dist)),
@@ -110,7 +113,13 @@ function CameraRig({
     if (pos) glideTo(new THREE.Vector3(pos.x, pos.y + 0.35, pos.z), FOCUS_DISTANCE);
     else goHome();
   }, [followedRef, glideTo, goHome]);
-  useCameraKeys({ onFocus: focus, onHome: goHome });
+  useCameraKeys({
+    onFocus: focus,
+    onHome: goHome,
+    onUserMoved: () => {
+      userMoved.current = true;
+    },
+  });
 
   // Pan drag ends follow (the chip offers to resume); zoom and rotate keep following.
   const endFollow = useCallback(() => {
@@ -146,36 +155,20 @@ function CameraRig({
   useEffect(() => {
     if (!controls) return;
     let events: PointerEv[] = [];
-    let down = 0;
+    const active = new Set<number>();
     let panEnded = false;
     let prevTap: TapRecord | null = null;
     const push = (e: PointerEvent, type: PointerEv["type"]) =>
       events.push({ id: e.pointerId, type, x: e.clientX, y: e.clientY, t: e.timeStamp });
-    const onDown = (e: PointerEvent) => {
-      if (down === 0) {
-        events = [];
-        panEnded = false;
-      }
-      down++;
-      push(e, "down");
-    };
-    const onMove = (e: PointerEvent) => {
-      if (down === 0) return;
-      push(e, "move");
-      const first = events[0];
-      const rotates = e.ctrlKey || e.metaKey || e.shiftKey || (e.pointerType === "mouse" && e.buttons > 1);
-      if (!panEnded && !rotates && down === 1 && events.every((v) => v.id === e.pointerId) && exceedsTapSlop(e.clientX - first.x, e.clientY - first.y)) {
-        panEnded = true;
-        endFollow();
-      }
-    };
-    const onUp = (e: PointerEvent) => {
-      if (down === 0) return;
-      down--;
+    const finishGesture = (e: PointerEvent) => {
+      if (!active.has(e.pointerId)) return;
+      active.delete(e.pointerId);
       push(e, "up");
-      if (down > 0) return;
+      if (active.size > 0) return;
       const kind = classifyPointer(events, prevTap);
       prevTap = kind === "TAP" ? { x: e.clientX, y: e.clientY, t: e.timeStamp } : null;
+      events = [];
+      panEnded = false;
       if (kind !== "DOUBLE_TAP") return;
       const rect = dom.getBoundingClientRect();
       RAY.setFromCamera(
@@ -186,21 +179,48 @@ function CameraRig({
       if (!hit) return;
       endFollow();
       userMoved.current = true;
-      glideTo(new THREE.Vector3(hit.x, TERRAIN.height(hit.x, hit.z), hit.z), FOCUS_DISTANCE);
+      const snapped = insideArea(hit, PLAY_AREA);
+      glideTo(new THREE.Vector3(snapped.x, TERRAIN.height(snapped.x, snapped.z), snapped.z), FOCUS_DISTANCE);
     };
-    const onCancel = () => {
-      down = 0;
+    const onDown = (e: PointerEvent) => {
+      if (active.size === 0) {
+        events = [];
+        panEnded = false;
+      }
+      active.add(e.pointerId);
+      push(e, "down");
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!active.has(e.pointerId)) return;
+      push(e, "move");
+      const first = events[0];
+      const rotates = e.ctrlKey || e.metaKey || e.shiftKey || (e.pointerType === "mouse" && e.buttons > 1);
+      if (
+        !panEnded &&
+        !rotates &&
+        active.size === 1 &&
+        events.every((v) => v.id === e.pointerId) &&
+        exceedsTapSlop(e.clientX - first.x, e.clientY - first.y)
+      ) {
+        panEnded = true;
+        endFollow();
+      }
+    };
+    const onUp = (e: PointerEvent) => finishGesture(e);
+    const onCancel = (e: PointerEvent) => {
+      active.delete(e.pointerId);
       events = [];
+      panEnded = false;
     };
     dom.addEventListener("pointerdown", onDown);
     dom.addEventListener("pointermove", onMove);
-    dom.addEventListener("pointerup", onUp);
-    dom.addEventListener("pointercancel", onCancel);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
     return () => {
       dom.removeEventListener("pointerdown", onDown);
       dom.removeEventListener("pointermove", onMove);
-      dom.removeEventListener("pointerup", onUp);
-      dom.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
     };
   }, [controls, dom, get, endFollow, glideTo]);
 
@@ -250,13 +270,19 @@ function CameraRig({
     if (g) {
       controls.target.lerp(g.target, 0.14);
       cam.position.lerp(g.position, 0.14);
-      if (controls.target.distanceTo(g.target) < 0.02 && cam.position.distanceTo(g.position) < 0.05) {
+      glideFrames.current += 1;
+      if (
+        glideFrames.current >= GLIDE_MAX_FRAMES ||
+        (controls.target.distanceTo(g.target) < 0.02 && cam.position.distanceTo(g.position) < 0.05)
+      ) {
         glide.current = null;
+        glideFrames.current = 0;
       }
       moved = true;
     }
     const pos = useGameStore.getState().followId ? followedRef.current : null;
     if (pos) {
+      if (glide.current) glide.current = null;
       wasFollowing.current = true;
       GOAL.set(pos.x, pos.y + 0.35, pos.z);
       controls.target.lerp(GOAL, 0.12);
@@ -279,6 +305,11 @@ function CameraRig({
       rawReady.current = true;
     }
     const r = raw.current;
+    if (!Number.isFinite(r.x) || !Number.isFinite(r.y) || !Number.isFinite(r.z)) {
+      rawReady.current = false;
+      r.copy(controls.target);
+      applied.current.copy(controls.target);
+    }
     r.add(GOAL.copy(controls.target).sub(applied.current));
     if (!interacting.current) {
       const inside = insideArea(r, PLAY_AREA);

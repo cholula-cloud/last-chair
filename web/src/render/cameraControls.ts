@@ -4,15 +4,44 @@ export type XZ = { x: number; z: number };
 export type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
 
 /**
- * The ground rectangle the camera target may roam, in world units. Part 1 covers
- * the village and hill; the scale change in part 2 replaces this one constant.
+ * Horizontal scale of the playable map. Part 1 uses 1; world scale 2b sets this to 6.
+ * Camera limits and play area derive from this single source.
  */
-export const PLAY_AREA: Rect = { xMin: -5.5, xMax: 6.5, zMin: -5.5, zMax: 4.5 };
+export const WORLD_SCALE = 1;
+
+/** Design play rectangle before horizontal scale (village + hill at 1x). */
+const BASE_PLAY_AREA: Rect = { xMin: -5.5, xMax: 6.5, zMin: -5.5, zMax: 4.5 };
+
+/** Scaled ground rectangle the camera target may roam, in world units. */
+export function playArea(scale = WORLD_SCALE): Rect {
+  return {
+    xMin: BASE_PLAY_AREA.xMin * scale,
+    xMax: BASE_PLAY_AREA.xMax * scale,
+    zMin: BASE_PLAY_AREA.zMin * scale,
+    zMax: BASE_PLAY_AREA.zMax * scale,
+  };
+}
+
+/** Play area at the current {@link WORLD_SCALE}. */
+export const PLAY_AREA: Rect = playArea();
 
 /** Overshoot zone (world units) where panning meets resistance. */
-export const SOFT_MARGIN = 0.6;
+export const SOFT_MARGIN = 0.6 * WORLD_SCALE;
 /** Hard limit beyond the area, as a fraction of the area's size. */
 export const HARD_MARGIN_FRACTION = 0.15;
+
+/** Ray march budget for double-tap terrain focus. */
+export const MARCH_MAX_DIST = 120 * WORLD_SCALE;
+/** Cap on orbit target Y while panning. */
+export const TARGET_Y_MAX = 6 * WORLD_SCALE;
+
+export const MIN_DISTANCE = 4;
+export const MAX_DISTANCE = 34;
+export const FOCUS_DISTANCE = 12;
+
+/** Maximum glide animation frames (~1.5 s at 60 fps). */
+export const GLIDE_MAX_FRAMES = 90;
+
 const SOFT_RESIST = 0.5;
 const FAR_RESIST = 0.25;
 
@@ -47,6 +76,15 @@ export function insideArea(p: XZ, area: Rect): XZ {
     x: Math.min(area.xMax, Math.max(area.xMin, p.x)),
     z: Math.min(area.zMax, Math.max(area.zMin, p.z)),
   };
+}
+
+/** World-space hard pan limit on one axis (area edge plus soft margin). */
+export function hardLimitOnAxis(area: Rect, softMargin = SOFT_MARGIN): { x: number; z: number } {
+  const w = area.xMax - area.xMin;
+  const d = area.zMax - area.zMin;
+  const hX = w * HARD_MARGIN_FRACTION + softMargin;
+  const hZ = d * HARD_MARGIN_FRACTION + softMargin;
+  return { x: hX, z: hZ };
 }
 
 export const TAP_MAX_MOVE_PX = 8;
@@ -90,7 +128,7 @@ export function marchToTerrain(
   origin: { x: number; y: number; z: number },
   dir: { x: number; y: number; z: number },
   height: (x: number, z: number) => number,
-  maxDist = 120,
+  maxDist = MARCH_MAX_DIST,
   step = 0.25,
 ): XZ | null {
   const at = (d: number) => ({ x: origin.x + dir.x * d, y: origin.y + dir.y * d, z: origin.z + dir.z * d });
