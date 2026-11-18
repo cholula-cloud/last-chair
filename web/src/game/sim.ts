@@ -356,6 +356,7 @@ export function applyOvernight(opts: {
   snow: SnowPreset;
   cash: number;
   trails: Trail[];
+  trailElevations?: readonly (readonly number[])[];
   dayIndex: number;
   buildings: BuildingId[];
   talentsOwned: string[];
@@ -370,7 +371,7 @@ export function applyOvernight(opts: {
   const weather = rollMorningWeather(nextDay, hasGuns);
   const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
   const reach = gunReach(night);
-  const trails = opts.trails.map((t) => overnightTrail(t, night));
+  const trails = opts.trails.map((t, i) => overnightTrail(t, night, opts.trailElevations?.[i]));
   const groomVisible = opts.snow !== "minimal";
   const gunsFired = reach > 0;
   let daysWithoutSnow = opts.daysWithoutSnow;

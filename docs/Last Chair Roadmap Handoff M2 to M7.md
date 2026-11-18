@@ -22,8 +22,9 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 
 ## Where things stand at writing
 
-- `main` includes **12c** (#41), **13a** (#42), **13b** (#43), and **phone mountain fix** (#44). Dutch Hill at H = 6, V = 3.
-- **Next:** **13c** elevation snow; then row **14** multi-lift choice; rows 15–17; M2 gate.
+- `main` includes **12c** (#41), **13a** (#42), **13b** (#43), **phone mountain fix** (#44), and **M2 polish** (#45). Dutch Hill at H = 6, V = 3.
+- **13c** (elevation snow, save v10) lands on branch `cursor/pr-13c-snow-elevation-4a7d` — merge before row **14**.
+- **Next after 13c:** row **14** multi-lift choice; rows 15–17; M2 gate.
 - Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
 
 ## Recommended build order

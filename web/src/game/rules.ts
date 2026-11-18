@@ -47,6 +47,7 @@ import {
   defaultTrails,
   fallLineTrailForLift,
   routeOptions,
+  segmentElevationsForPath,
   snowCarriers,
   trailCost,
   trailsOnLift,
@@ -225,7 +226,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
     const thawing = state.weather === "thaw" && clockMin >= THAW_START_MIN;
     trails = trails.map((t, ti) => {
       let snow = wearTrail(t.snow, runsByTrail[ti]);
-      if (thawing) snow = softenTrail(snow, stepMin);
+      if (thawing) snow = softenTrail(snow, stepMin, t.elevations);
       return snow === t.snow ? t : { ...t, snow };
     });
     const step = stepLifts(moved, lifts, trails, state.talentsOwned, clockMin, stepMin);
@@ -496,6 +497,7 @@ export function cutTrail(
     difficulty: opt.difficulty,
     open: true,
     snow,
+    elevations: segmentElevationsForPath(opt.path, terrain),
     builtDay: state.dayIndex,
     builtAtMin: state.clockMin,
     paid: opt.cost,
@@ -588,6 +590,7 @@ function nightFor(state: GameState, snow: SnowPreset, cash: number) {
     snow,
     cash,
     trails: state.trails.map((t) => t.snow),
+    trailElevations: state.trails.map((t) => t.elevations),
     dayIndex: state.dayIndex,
     buildings: state.buildings,
     talentsOwned: state.talentsOwned,
@@ -615,6 +618,7 @@ export function previewOvernight(state: GameState, snow: SnowPreset): OvernightP
   const carriers = state.trails.map((t, i) => ({
     confirmed: t.open,
     trail: overnight.trails[i] ?? t.snow,
+    elevations: t.elevations,
   }));
   const reading = readSnow(carriers);
   return {

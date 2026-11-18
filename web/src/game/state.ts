@@ -3,7 +3,13 @@ import { PERSONAS } from "./personas";
 import { VALUE, ZERO_TERMS } from "./satisfaction";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY, deriveSnow, trailFromGlobals } from "./snow";
-import { buildTrailRun, defaultTrails, fallLineTrailForLift, type TrailRun } from "./trails";
+import {
+  buildTrailRun,
+  defaultTrails,
+  fallLineTrailForLift,
+  segmentElevationsForPath,
+  type TrailRun,
+} from "./trails";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
 import {
   FARE_PRICES,
@@ -211,7 +217,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** Frozen horizontal scale for v7 saves (Dutch Hill only). */
 const V7_DUTCH_HILL_H = 6;
@@ -378,6 +384,13 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       void _unused;
       return rest;
     });
+  }
+  if (fromVersion < 10) {
+    type MaybeTrail = TrailRun & { elevations?: number[] };
+    p.trails = (p.trails ?? fresh.trails).map((t: MaybeTrail) => ({
+      ...t,
+      elevations: t.elevations ?? segmentElevationsForPath(t.path),
+    }));
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

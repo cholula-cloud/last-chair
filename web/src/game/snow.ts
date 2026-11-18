@@ -30,9 +30,19 @@ export const START_QUALITY = 0.55;
 
 const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
-/** 1 at the top of the trail, 0 at the bottom. */
+/** 1 at the top of the trail, 0 at the bottom (index-based fallback). */
 export function segmentElevation(i: number, n: number = TRAIL_SEGMENTS): number {
   return n <= 1 ? 0.5 : 1 - i / (n - 1);
+}
+
+export function elevationAt(
+  i: number,
+  n: number,
+  elevations?: readonly number[],
+): number {
+  const e = elevations?.[i];
+  if (e !== undefined) return clamp01(e);
+  return segmentElevation(i, n);
 }
 
 export function freshTrail(
@@ -57,11 +67,15 @@ export function trailFromGlobals(depth: number, quality: number): Trail {
   return freshTrail(clamp01(depth), clamp01(quality));
 }
 
-type HasTrail = { confirmed: boolean; trail: Trail };
+type HasTrail = { confirmed: boolean; trail: Trail; elevations?: readonly number[] };
+
+function openCarriers(lifts: readonly HasTrail[]): HasTrail[] {
+  const open = lifts.filter((l) => l.confirmed);
+  return open.length > 0 ? open : [...lifts];
+}
 
 function openTrails(lifts: readonly HasTrail[]): Trail[] {
-  const open = lifts.filter((l) => l.confirmed).map((l) => l.trail);
-  return open.length > 0 ? open : lifts.map((l) => l.trail);
+  return openCarriers(lifts).map((l) => l.trail);
 }
 
 function meanOf(trails: readonly Trail[], key: keyof Segment): number {
@@ -155,8 +169,13 @@ export function gunReach(o: Pick<NightInputs, "snow" | "hasGuns" | "hasTrailGuns
 }
 
 /** Whether a segment is within a reach measured from the bottom of the trail. */
-export function inReach(i: number, reach: number, n: number = TRAIL_SEGMENTS): boolean {
-  return segmentElevation(i, n) <= reach + 1e-9;
+export function inReach(
+  i: number,
+  reach: number,
+  n: number = TRAIL_SEGMENTS,
+  elevations?: readonly number[],
+): boolean {
+  return elevationAt(i, n, elevations) <= reach + 1e-9;
 }
 
 function settleCoverage(s: Segment): Segment {
@@ -166,19 +185,23 @@ function settleCoverage(s: Segment): Segment {
 }
 
 /** One night on one trail: the player's preset first, then the weather. Pure. */
-export function overnightTrail(trail: Trail, o: NightInputs): Trail {
+export function overnightTrail(
+  trail: Trail,
+  o: NightInputs,
+  elevations?: readonly number[],
+): Trail {
   const n = trail.length;
   const reach = gunReach(o);
   const groomed = o.snow !== "minimal";
   const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0);
 
   return trail.map((seg, i) => {
-    const e = segmentElevation(i, n);
+    const e = elevationAt(i, n, elevations);
     let { depth, quality, coverage } = seg;
 
     // Player's night.
     if (groomed) {
-      depth += GROOM_PUSH[o.snow] + (inReach(i, reach, n) ? GUN_DEPTH[o.snow] : 0);
+      depth += GROOM_PUSH[o.snow] + (inReach(i, reach, n, elevations) ? GUN_DEPTH[o.snow] : 0);
       quality = Math.min(QUALITY_CAP, Math.max(quality, target) + GROOM_CRISP[o.snow]);
       if (depth >= COVER_MIN) {
         coverage = o.snow === "high" ? 1 : Math.min(1, coverage + MID_COVERAGE_RECOVERY);
@@ -222,11 +245,15 @@ export function wearTrail(trail: Trail, runs: number): Trail {
 }
 
 /** Thaw softening over `minutes` of afternoon: the bottom loses most. Same trail when nothing changed. */
-export function softenTrail(trail: Trail, minutes: number): Trail {
+export function softenTrail(
+  trail: Trail,
+  minutes: number,
+  elevations?: readonly number[],
+): Trail {
   if (minutes <= 0) return trail;
   const n = trail.length;
   return trail.map((s, i) => {
-    const low = (1 - segmentElevation(i, n)) ** 2;
+    const low = (1 - elevationAt(i, n, elevations)) ** 2;
     return { ...s, quality: Math.max(0.1, s.quality - THAW_PER_MIN * minutes * (0.15 + low)) };
   });
 }
@@ -263,19 +290,22 @@ export function readSnow(lifts: readonly HasTrail[]): SnowReading {
   let worstIndex = 0;
   let best = -Infinity;
   let n = TRAIL_SEGMENTS;
-  for (const trail of openTrails(lifts)) {
+  let worstElevations: readonly number[] | undefined;
+  for (const carrier of openCarriers(lifts)) {
+    const trail = carrier.trail;
     trail.forEach((s, i) => {
       best = Math.max(best, segmentScore(s));
       if (worst === null || segmentScore(s) < segmentScore(worst)) {
         worst = s;
         worstIndex = i;
         n = trail.length;
+        worstElevations = carrier.elevations;
       }
     });
   }
   const seg: Segment = worst ?? { depth: START_DEPTH, quality: START_QUALITY, coverage: 1 };
   const even = best - segmentScore(seg) < 0.08;
-  const where = even ? "even" : whereOf(segmentElevation(worstIndex, n));
+  const where = even ? "even" : whereOf(elevationAt(worstIndex, n, worstElevations));
   if (even && seg.coverage >= THIN_COVERAGE && seg.quality < 0.45) {
     return {
       label: "Icy trail",
