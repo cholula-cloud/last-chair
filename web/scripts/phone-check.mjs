@@ -110,6 +110,38 @@ async function measureFps(page, ms = 5000) {
   }, ms);
 }
 
+/** Fail when the canvas is missing, tiny, or the center pixel is still ink-black (no hill). */
+async function assertMountainVisible(page, engine, tag) {
+  const check = await page.evaluate(() => {
+    const c = document.querySelector("canvas");
+    if (!c) return { ok: false, reason: "no canvas" };
+    const r = c.getBoundingClientRect();
+    const min = Math.min(window.innerWidth, window.innerHeight) * 0.55;
+    if (r.width < min || r.height < min) {
+      return { ok: false, reason: `canvas ${r.width.toFixed(0)}x${r.height.toFixed(0)} vs min ${min.toFixed(0)}` };
+    }
+    const gl = c.getContext("webgl2") || c.getContext("webgl");
+    if (!gl) return { ok: false, reason: "no webgl context" };
+    gl.finish();
+    const x = Math.floor(c.width / 2);
+    const y = Math.floor(c.height / 2);
+    const px = new Uint8Array(4);
+    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    const lum = 0.299 * px[0] + 0.587 * px[1] + 0.114 * px[2];
+    const spread = [0, 1, -1].flatMap((dx) =>
+      [0, 1, -1].map((dy) => {
+        const s = new Uint8Array(4);
+        gl.readPixels(x + dx * 40, y + dy * 40, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, s);
+        return 0.299 * s[0] + 0.587 * s[1] + 0.114 * s[2];
+      }),
+    );
+    const maxLum = Math.max(lum, ...spread);
+    if (maxLum < 35) return { ok: false, reason: `center too dark (lum ${maxLum.toFixed(0)})` };
+    return { ok: true, lum: maxLum };
+  });
+  if (!check.ok) fail(`${engine} ${tag}: mountain not visible — ${check.reason}`);
+}
+
 async function readRenderStats(page) {
   return page.evaluate(async () => {
     for (let i = 0; i < 30; i++) {
@@ -143,6 +175,7 @@ async function runViewport(engine, launch, vp) {
 
     const canvas = page.locator("canvas").first();
     await canvas.waitFor({ timeout: 10_000 });
+    await assertMountainVisible(page, engine, tag);
 
     if (engine === "chromium") {
       const cdp = await context.newCDPSession(page);

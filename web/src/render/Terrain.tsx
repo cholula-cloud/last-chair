@@ -15,6 +15,14 @@ import { buildGeometry } from "./terrainMesh";
 import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
 import type { XZ } from "@/game/terrain";
 
+/** Cheap cache key: full polylines on every trail would stringify thousands of points per frame. */
+function pathSignature(path: readonly XZ[] | undefined): string {
+  if (!path?.length) return "";
+  const a = path[0];
+  const b = path[path.length - 1];
+  return `${path.length}:${a.x},${a.z}|${b.x},${b.z}`;
+}
+
 const CANOPY = new THREE.Color(PALETTE.pineDeep);
 
 const C = {
@@ -120,7 +128,7 @@ export function Terrain({
 }: {
   snowQuality: number;
   snowDepth: number;
-  /** Trail snow, one per lift line (already snapped, see `snowKey`). */
+  /** Trail snow, one entry per run (see `snowKey`). */
   trails: readonly Trail[];
   lines: readonly LiftLine[];
   paths?: readonly (readonly XZ[])[];
@@ -131,17 +139,25 @@ export function Terrain({
   const lineKey = lines
     .map((l) => `${l.bottom.x},${l.bottom.z}|${l.top.x},${l.top.z}`)
     .join(";");
-  const pathKey = paths?.map((p) => p.map((q) => `${q.x},${q.z}`).join(";")).join("|") ?? "";
-  const influence = useMemo(
-    () =>
-      lines.map((line, i) =>
-        paths?.[i]?.length
-          ? pathInfluence(paths[i], geometry.attributes.position.array)
-          : trailInfluence(line, geometry.attributes.position.array),
-      ),
+  const pathKey = paths?.map((p) => pathSignature(p)).join("|") ?? "";
+  const positions = geometry.attributes.position.array;
+  const influence = useMemo(() => {
+    const n = Math.max(trails.length, paths?.length ?? 0, lines.length);
+    const out: TrailInfluence[] = [];
+    for (let i = 0; i < n; i++) {
+      const path = paths?.[i];
+      if (path?.length) {
+        out.push(pathInfluence(path, positions));
+      } else if (lines[i]) {
+        out.push(trailInfluence(lines[i], positions));
+      } else if (lines[0]) {
+        out.push(trailInfluence(lines[0], positions));
+      }
+    }
+    return out;
+    // paths/lines from closure; pathKey and lineKey capture geometry changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [geometry, lineKey, pathKey],
-  );
+  }, [geometry, lineKey, pathKey, trails.length]);
 
   const camBand = useRef("");
 
