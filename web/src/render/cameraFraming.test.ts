@@ -13,8 +13,7 @@ import {
 import { liftTowers } from "./liftLine";
 import { trailPolyline } from "./trail";
 import { TERRAIN } from "@/game/terrain";
-
-const MAX_DISTANCE = 34; // OrbitControls maxDistance in MountainScene
+import { MAX_DISTANCE } from "./cameraControls";
 
 /** Independent perspective projection: lookAt from the camera position to the target. */
 function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: number) {
@@ -133,7 +132,8 @@ describe("home view", () => {
   });
 
   it("fits portrait within the orbit camera's maximum distance", () => {
+    expect(homeView(390 / 844).distance).toBeLessThanOrEqual(55);
+    expect(homeView(375 / 667).distance).toBeLessThanOrEqual(55);
     expect(homeView(390 / 844).distance).toBeLessThanOrEqual(MAX_DISTANCE);
-    expect(homeView(375 / 667).distance).toBeLessThanOrEqual(MAX_DISTANCE);
   });
 });

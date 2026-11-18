@@ -1,6 +1,7 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import type { LiftType } from "@/game/types";
@@ -49,6 +50,8 @@ export function Guests({
 }) {
   const guests = useGameStore((s) => s.guests);
   const followId = useGameStore((s) => s.followId);
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
 
   const skier = bakeKit(useKit("skier"), SPLIT);
   const geos = { base: skier.body, jacket: skier.split.jacket, hat: skier.split.helmet };
@@ -88,6 +91,10 @@ export function Guests({
     const chairMesh = chairRef.current;
     if (meshes.some((m) => !m) || !tbarMesh || !chairMesh) return;
     const [base, jacket, hat, shadow] = meshes as THREE.InstancedMesh[];
+    const tgt = controls?.target;
+    const camDist =
+      tgt && camera ? camera.position.distanceTo(new THREE.Vector3(tgt.x, tgt.y, tgt.z)) : 25;
+    const sizeScale = Math.max(1, camDist / 25);
     // Pending and gone guests are not drawn; the rest fill instance slots 0..n-1.
     let n = 0;
     let tbars = 0;
@@ -102,7 +109,7 @@ export function Guests({
       const i = n++;
       dummy.position.set(p.x, p.y, p.z);
       dummy.rotation.set(p.lean * 0.6, p.yaw, p.roll * 0.6, "YXZ");
-      dummy.scale.setScalar(SCALE * (isFollowed ? 1.25 : 1));
+      dummy.scale.setScalar(SCALE * sizeScale * (isFollowed ? 1.25 : 1));
       dummy.updateMatrix();
       base.setMatrixAt(i, dummy.matrix);
       jacket.setMatrixAt(i, dummy.matrix);

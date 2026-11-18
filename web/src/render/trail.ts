@@ -77,8 +77,8 @@ export type TrailInfluence = {
 export function trailInfluence(
   anchor: LiftAnchor,
   positions: ArrayLike<number>,
-  core = 0.5,
-  fade = 1.05,
+  core = 3.0,
+  fade = 6.3,
   n = 40,
 ): TrailInfluence {
   const pts = trailPolyline(anchor, n);

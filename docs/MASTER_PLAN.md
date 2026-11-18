@@ -297,7 +297,7 @@ Goal: where you put things matters.
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
-| 12-pre | ◐ | Camera, scale and playability (parts 1 to 3) | Part 1 is free camera controls: ground-plane pan with momentum, pinch zoom, two-finger orbit and tilt, double-tap focus, keyboard, recenter button, Resume follow chip, Menu confirm, shorter morning note; parts 2 and 3 follow |
+| 12-pre | ◐ | Camera, scale and playability (parts 1 to 3) | Part 1: free camera + review fixes (PR 34). Part 2a: scale as data. Part 2b: Dutch Hill 6/3, save v8, village layout, mesh, camera fog and render scale (merged). Part 2c–d and part 3 follow |
 | 12 | ◐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots. 12a rules merged (game rules, cost, undo, save v7, interim Build buttons); 12b render helpers and 12c tap UI to follow |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |

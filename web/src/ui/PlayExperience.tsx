@@ -99,6 +99,7 @@ export default function PlayExperience() {
   const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
   const noteExpanded = noteExpandedDay === dayIndex;
   const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
+  const [sceneReady, setSceneReady] = useState(false);
   const actionBarWrapRef = useRef<HTMLDivElement>(null);
 
   const notStarted =
@@ -124,13 +125,21 @@ export default function PlayExperience() {
     return () => window.removeEventListener("pointerdown", onPointer);
   }, [menuConfirmOpen]);
 
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSceneReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink">
+    <div
+      className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink"
+      data-scene-ready={sceneReady ? "true" : undefined}
+    >
       <Canvas
         className="touch-none"
         shadows="percentage"
         dpr={[1, 2]}
-        camera={{ position: [8, 13, 22], fov: 45, near: 0.1, far: 220 }}
+        camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
         gl={{
           antialias: true,
           powerPreference: "high-performance",

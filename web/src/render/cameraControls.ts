@@ -7,7 +7,7 @@ export type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
  * Horizontal scale of the playable map. Part 1 uses 1; world scale 2b sets this to 6.
  * Camera limits and play area derive from this single source.
  */
-export const WORLD_SCALE = 1;
+export const WORLD_SCALE = 6;
 
 /** Design play rectangle before horizontal scale (village + hill at 1x). */
 const BASE_PLAY_AREA: Rect = { xMin: -5.5, xMax: 6.5, zMin: -5.5, zMax: 4.5 };
@@ -32,12 +32,12 @@ export const HARD_MARGIN_FRACTION = 0.15;
 
 /** Ray march budget for double-tap terrain focus. */
 export const MARCH_MAX_DIST = 120 * WORLD_SCALE;
-/** Cap on orbit target Y while panning. */
-export const TARGET_Y_MAX = 6 * WORLD_SCALE;
+/** Cap on orbit target Y while panning (14 at 6× play area, 6 at 1×). */
+export const TARGET_Y_MAX = WORLD_SCALE >= 6 ? 14 : 6 * WORLD_SCALE;
 
-export const MIN_DISTANCE = 4;
-export const MAX_DISTANCE = 34;
-export const FOCUS_DISTANCE = 12;
+export const MIN_DISTANCE = 6;
+export const MAX_DISTANCE = 170;
+export const FOCUS_DISTANCE = 18;
 
 /** Maximum glide animation frames (~1.5 s at 60 fps). */
 export const GLIDE_MAX_FRAMES = 90;

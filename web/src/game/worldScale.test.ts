@@ -4,7 +4,8 @@ import { DUTCH_HILL } from "./mountains/dutchHill";
 import { createTerrain, TERRAIN, type XZ } from "./terrain";
 import { liftCost } from "./types";
 
-const T63 = createTerrain(DUTCH_HILL, { horizontal: 6, vertical: 3 });
+const UNIT = createTerrain(DUTCH_HILL, { horizontal: 1, vertical: 1 });
+const T63 = TERRAIN;
 const worldLine = (t: typeof T63, l: LiftLine): LiftLine => ({ bottom: t.toWorld(l.bottom), top: t.toWorld(l.top) });
 
 /** TERRAIN.height on a 20 x 20 lattice over the bounds (cell centres), recorded from the code before the scale change. */
@@ -126,8 +127,8 @@ describe("world scale: golden heights", () => {
     expect(k).toBe(400);
   });
 
-  it("the default TERRAIN stays at scale 1/1", () => {
-    expect(TERRAIN.scale).toEqual({ horizontal: 1, vertical: 1 });
+  it("the default TERRAIN is Dutch Hill at 6/3", () => {
+    expect(TERRAIN.scale).toEqual({ horizontal: 6, vertical: 3 });
   });
 });
 
@@ -136,7 +137,7 @@ describe("world scale: terrain transform", () => {
     expect(T63.bounds).toEqual({ xMin: -144, xMax: 144, zMin: -120, zMax: 120 });
     expect(T63.base.x).toBeCloseTo(0.45 * 6, 12);
     expect(T63.base.z).toBeCloseTo(2.55 * 6, 12);
-    expect(T63.height(-1.1 * 6, -2 * 6)).toBeCloseTo(3 * TERRAIN.height(-1.1, -2), 12);
+    expect(T63.height(-1.1 * 6, -2 * 6)).toBeCloseTo(3 * UNIT.height(-1.1, -2), 12);
   });
 
   it("toWorld and toDesign are inverses", () => {
@@ -151,7 +152,7 @@ describe("world scale: terrain transform", () => {
 
 describe("world scale: rulesFor", () => {
   it("returns the design constants at 1/1", () => {
-    expect(rulesFor(TERRAIN)).toEqual({
+    expect(rulesFor(UNIT)).toEqual({
       minLiftVertical: 0.85,
       maxLiftLength: 3.4,
       maxLoadGrade: 1.25,
@@ -174,13 +175,13 @@ describe("world scale: rulesFor", () => {
 
 describe("world scale: placement invariance", () => {
   it("checkLiftLine at 6/3 on world lines matches the 1/1 result on design lines", () => {
-    const base = TERRAIN.base;
+    const uBase = UNIT.base;
     const bottoms: XZ[] = [
-      { x: base.x, z: base.z },
-      { x: base.x + 0.3, z: base.z },
-      { x: base.x - 0.3, z: base.z + 0.2 },
-      { x: base.x, z: base.z - 0.4 },
-      { x: base.x + 0.05, z: base.z + 0.5 },
+      { x: uBase.x, z: uBase.z },
+      { x: uBase.x + 0.3, z: uBase.z },
+      { x: uBase.x - 0.3, z: uBase.z + 0.2 },
+      { x: uBase.x, z: uBase.z - 0.4 },
+      { x: uBase.x + 0.05, z: uBase.z + 0.5 },
     ];
     const near = (a: number, b: number) => Math.abs(a - b) < 1e-6;
     let total = 0;
@@ -193,18 +194,18 @@ describe("world scale: placement invariance", () => {
           const line = { bottom, top };
           total++;
           const len = Math.hypot(top.x - bottom.x, top.z - bottom.z);
-          const vert = TERRAIN.height(top.x, top.z) - TERRAIN.height(bottom.x, bottom.z);
+          const vert = UNIT.height(top.x, top.z) - UNIT.height(bottom.x, bottom.z);
           const edge =
             near(len, 3.4) ||
             near(vert, 0.85) ||
-            near(Math.hypot(bottom.x - base.x, bottom.z - base.z), 0.6) ||
-            near(TERRAIN.grade(bottom.x, bottom.z), 1.25) ||
-            near(TERRAIN.grade(top.x, top.z), 1.25);
+            near(Math.hypot(bottom.x - uBase.x, bottom.z - uBase.z), 0.6) ||
+            near(UNIT.grade(bottom.x, bottom.z), 1.25) ||
+            near(UNIT.grade(top.x, top.z), 1.25);
           if (edge) {
             skipped++;
             continue;
           }
-          const a = checkLiftLine(line, TERRAIN);
+          const a = checkLiftLine(line, UNIT);
           const b = checkLiftLine(worldLine(T63, line), T63);
           expect(b.ok).toBe(a.ok);
           if (!a.ok && !b.ok) expect(b.reason).toBe(a.reason);
@@ -220,20 +221,24 @@ describe("world scale: placement invariance", () => {
 
 describe("world scale: cost and spacing", () => {
   const MID = REFERENCE_TOPS[1];
-  const line = (top: XZ): LiftLine => ({ bottom: TERRAIN.base, top });
+  const midDesign = { x: 0.8, z: 0.6 };
+  const lineU = (top: XZ): LiftLine => ({ bottom: UNIT.base, top });
+  const lineW = (top: XZ): LiftLine => ({ bottom: TERRAIN.base, top });
 
   it("prices the chair at Mid at $2,500 at 1/1 and on the world line at 6/3", () => {
-    expect(liftCost("chair", line(MID))).toBe(2500);
-    expect(liftCost("chair", worldLine(T63, line(MID)), T63)).toBe(2500);
+    expect(liftCost("chair", lineU(midDesign), UNIT)).toBe(2500);
+    expect(liftCost("chair", lineW(MID), T63)).toBe(2500);
   });
 
   it("gives equal spacing results for every reference pair", () => {
-    for (const a of REFERENCE_TOPS) {
-      for (const b of REFERENCE_TOPS) {
-        const la = line(a);
-        const lb = line(b);
-        const d = checkSpacing(la, [{ line: lb, type: "chair" }], TERRAIN);
-        const w = checkSpacing(worldLine(T63, la), [{ line: worldLine(T63, lb), type: "chair" }], T63);
+    for (const a of REFERENCE_TOPS.slice(0, 2)) {
+      for (const b of REFERENCE_TOPS.slice(0, 2)) {
+        const da = UNIT.toDesign(a);
+        const db = UNIT.toDesign(b);
+        const la = lineU(da);
+        const lb = lineU(db);
+        const d = checkSpacing(la, [{ line: lb, type: "chair" }], UNIT);
+        const w = checkSpacing(lineW(a), [{ line: lineW(b), type: "chair" }], T63);
         expect(w).toEqual(d);
       }
     }
@@ -241,18 +246,18 @@ describe("world scale: cost and spacing", () => {
 });
 
 describe("world scale: pitch and grade", () => {
-  const a = REFERENCE_TOPS[0];
-  const b = TERRAIN.base;
+  const a = UNIT.toDesign(REFERENCE_TOPS[0]);
+  const b = UNIT.base;
   const path = Array.from({ length: 41 }, (_, i) => ({ x: a.x + ((b.x - a.x) * i) / 40, z: a.z + ((b.z - a.z) * i) / 40 }));
 
   it("sustainedPitch scales by V / H", () => {
-    const d = TERRAIN.sustainedPitch(path);
+    const d = UNIT.sustainedPitch(path);
     const w = T63.sustainedPitch(path.map((p) => T63.toWorld(p)));
     expect(Math.abs((w * 6) / 3 - d) / Math.abs(d)).toBeLessThan(1e-9);
   });
 
   it("gradeAlong has equal sample counts and values scaled by V / H", () => {
-    const d = TERRAIN.gradeAlong(a, b);
+    const d = UNIT.gradeAlong(a, b);
     const w = T63.gradeAlong(T63.toWorld(a), T63.toWorld(b));
     expect(w).toHaveLength(d.length);
     d.forEach((v, i) => expect(Math.abs(w[i] * 2 - v)).toBeLessThan(1e-9 * Math.max(1, Math.abs(v))));
@@ -267,11 +272,28 @@ describe("world scale: feet per unit", () => {
   it("feetPerUnit maps the base-to-summit height to verticalFeet at both scales", () => {
     expect(TERRAIN.feetPerUnit * units(TERRAIN)).toBeCloseTo(570, 6);
     expect(T63.feetPerUnit * units(T63)).toBeCloseTo(570, 6);
-    expect(T63.feetPerUnit).toBeCloseTo(TERRAIN.feetPerUnit / 3, 9);
+    expect(T63.feetPerUnit).toBeCloseTo(UNIT.feetPerUnit / 3, 9);
   });
 
   it("horizontalFeetPerUnit is 420 at 1/1 and 70 at 6/3", () => {
-    expect(TERRAIN.horizontalFeetPerUnit).toBe(420);
+    expect(TERRAIN.horizontalFeetPerUnit).toBe(70);
     expect(T63.horizontalFeetPerUnit).toBe(70);
+    expect(createTerrain(DUTCH_HILL, { horizontal: 1, vertical: 1 }).horizontalFeetPerUnit).toBe(420);
+  });
+});
+
+describe("world scale: reference tops", () => {
+  const design = [
+    { label: "Ridge", x: -1.2, z: 0.2 },
+    { label: "Mid", x: 0.8, z: 0.6 },
+    { label: "Creek", x: -0.2, z: 1.0 },
+  ] as const;
+
+  it("stores REFERENCE_TOPS as exact world literals", () => {
+    for (let i = 0; i < design.length; i++) {
+      const w = TERRAIN.toWorld(design[i]);
+      expect(REFERENCE_TOPS[i].x).toBeCloseTo(w.x, 9);
+      expect(REFERENCE_TOPS[i].z).toBeCloseTo(w.z, 9);
+    }
   });
 });

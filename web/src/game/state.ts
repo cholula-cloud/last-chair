@@ -210,7 +210,10 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
+
+/** Frozen horizontal scale for v7 saves (Dutch Hill only). */
+const V7_DUTCH_HILL_H = 6;
 
 const finiteXZ = (p: unknown): boolean =>
   !!p &&
@@ -330,6 +333,20 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
   }
   if (fromVersion < 7) {
     delete (p as Record<string, unknown>).selectedSlotIndex;
+    if (!liftsUsable(p.lifts)) {
+      p.lifts = fresh.lifts;
+      p.guests = (p.guests ?? []).map((g) => ({ ...g, liftIndex: undefined }));
+    }
+  }
+  if (fromVersion === 7) {
+    const scaleXZ = (v: number) => Math.round(v * V7_DUTCH_HILL_H * 1e6) / 1e6;
+    p.lifts = (p.lifts ?? fresh.lifts).map((l) => ({
+      ...l,
+      anchor: { x: scaleXZ(l.anchor.x), z: scaleXZ(l.anchor.z) },
+      ...(l.bottom
+        ? { bottom: { x: scaleXZ(l.bottom.x), z: scaleXZ(l.bottom.z) } }
+        : {}),
+    }));
     if (!liftsUsable(p.lifts)) {
       p.lifts = fresh.lifts;
       p.guests = (p.guests ?? []).map((g) => ({ ...g, liftIndex: undefined }));

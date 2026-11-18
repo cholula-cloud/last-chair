@@ -38,12 +38,12 @@ function car(color: string): Part[] {
 
 /** Lamp posts along the road and around the base, with soft light pools. */
 const LAMPS: [number, number][] = [
-  [-1.2, ROAD_Z - 0.55],
-  [1.0, ROAD_Z - 0.55],
-  [3.0, ROAD_Z - 0.55],
-  [5.0, ROAD_Z - 0.55],
-  [1.15, 2.9],
-  [3.05, 2.3],
+  [-7.2, ROAD_Z - 3.3],
+  [6.0, ROAD_Z - 3.3],
+  [18.0, ROAD_Z - 3.3],
+  [30.0, ROAD_Z - 3.3],
+  [6.9, LODGE.z + 2.1],
+  [18.3, LODGE.z + 0.9],
 ];
 
 /** Soft amber radial gradient used for the lamp light pools. */

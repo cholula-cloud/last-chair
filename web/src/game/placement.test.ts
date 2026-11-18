@@ -11,7 +11,7 @@ const MID = REFERENCE_TOPS[1];
 const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createInitialState(7), "elena"), cash });
 const chairReq = { type: "chair" as const, bottom: TERRAIN.base, top: MID };
 /** A top far from Ridge and Mid that the terrain rules accept from the base. */
-const FAR_TOP = { x: 1.6, z: 0.4 };
+const FAR_TOP = TERRAIN.toWorld({ x: 1.6, z: 0.4 });
 const baseLine = (top: { x: number; z: number }): LiftLine => ({ bottom: TERRAIN.base, top });
 
 describe("liftCost", () => {
@@ -52,8 +52,8 @@ describe("placeLift", () => {
     const lift = s.lifts[1];
     expect(lift).toMatchObject({
       type: "chair",
-      anchor: { x: 0.8, z: 0.6 },
-      bottom: TERRAIN.base,
+      anchor: { x: MID.x, z: MID.z },
+      bottom: { x: TERRAIN.base.x, z: 15.3 },
       confirmed: true,
       queue: [],
       dispatchCredit: 0,
@@ -66,8 +66,8 @@ describe("placeLift", () => {
   });
 
   it("rounds coordinates to 0.01", () => {
-    const s = rules.placeLift(started(), { ...chairReq, top: { x: 0.8004, z: 0.5996 } });
-    expect(s.lifts[1].anchor).toEqual({ x: 0.8, z: 0.6 });
+    const s = rules.placeLift(started(), { ...chairReq, top: { x: MID.x + 0.0004, z: MID.z - 0.0004 } });
+    expect(s.lifts[1].anchor).toEqual({ x: MID.x, z: MID.z });
   });
 
   it("is deterministic", () => {
@@ -96,9 +96,10 @@ describe("placeLift", () => {
     let s = rules.placeLift(started(), chairReq);
     s = rules.placeLift(s, { type: "surface", bottom: TERRAIN.base, top: FAR_TOP });
     expect(s.lifts).toHaveLength(MAX_LIFTS);
-    const c = rules.checkPlacement(s, "chair", baseLine({ x: -0.2, z: -1.2 }));
+    const extra = TERRAIN.toWorld({ x: -0.2, z: -1.2 });
+    const c = rules.checkPlacement(s, "chair", baseLine(extra));
     expect(c).toEqual({ ok: false, reason: "max_lifts" });
-    expect(rules.placeLift(s, { type: "chair", bottom: TERRAIN.base, top: { x: -0.2, z: -1.2 } })).toBe(s);
+    expect(rules.placeLift(s, { type: "chair", bottom: TERRAIN.base, top: extra })).toBe(s);
   });
 
   it("rejects a top too close to an existing lift, naming its type", () => {
@@ -200,7 +201,7 @@ describe("save v7", () => {
   const v6 = () => ({ ...toPersisted(createInitialState(3)), selectedSlotIndex: 1 });
 
   it("drops selectedSlotIndex and keeps lifts", () => {
-    expect(SAVE_VERSION).toBe(7);
+    expect(SAVE_VERSION).toBe(8);
     const saved = v6();
     const m = migrate(saved, 6) as unknown as Record<string, unknown>;
     expect("selectedSlotIndex" in m).toBe(false);
@@ -210,7 +211,10 @@ describe("save v7", () => {
 
   it("keeps a two-lift v6 save as it was", () => {
     const base = v6();
-    const lifts: LiftSlot[] = [...base.lifts, { type: "chair", anchor: { x: 0.8, z: 0.6 }, confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() }];
+    const lifts: LiftSlot[] = [
+      ...base.lifts,
+      { type: "chair", anchor: TERRAIN.toWorld({ x: 0.8, z: 0.6 }), confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
+    ];
     expect(migrate({ ...base, lifts }, 6).lifts).toEqual(lifts);
   });
 
@@ -227,5 +231,34 @@ describe("save v7", () => {
       const m = migrate({ ...v6(), lifts }, 6);
       expect(m.lifts).toEqual(fresh);
     }
+  });
+});
+
+describe("save v8", () => {
+  const v7 = () => toPersisted(createInitialState(3));
+
+  it("scales lift anchors and bottoms from v7 design units by frozen H = 6", () => {
+    const ridge = { x: -1.2, z: 0.2 };
+    const mid = { x: 0.8, z: 0.6 };
+    const customBottom = { x: 0.5, z: 2.6 };
+    const lifts: LiftSlot[] = [
+      { type: "surface", anchor: ridge, confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
+      {
+        type: "chair",
+        anchor: mid,
+        bottom: customBottom,
+        confirmed: true,
+        queue: [],
+        dispatchCredit: 0,
+        trail: freshTrail(),
+        paid: 2500,
+      },
+    ];
+    const saved = { ...v7(), lifts };
+    const m = migrate(saved, 7);
+    expect(m.lifts[0].anchor).toEqual({ x: -7.2, z: 1.2 });
+    expect(m.lifts[1].anchor).toEqual({ x: 4.8, z: 3.6 });
+    expect(m.lifts[1].bottom).toEqual({ x: 3, z: 15.6 });
+    expect(liftCost("chair", { bottom: m.lifts[1].bottom!, top: m.lifts[1].anchor })).toBe(2500);
   });
 });

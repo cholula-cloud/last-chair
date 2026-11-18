@@ -18,7 +18,7 @@ export function liftFrame(anchor: LiftAnchor) {
 /** Terminals + intermediate towers along the lift line, base first. */
 export function liftTowers(anchor: LiftAnchor): LiftPoint[] {
   const { len } = liftFrame(anchor);
-  const inner = Math.max(3, Math.min(5, Math.round(len / 0.7)));
+  const inner = Math.max(3, Math.min(10, Math.round(len / 3)));
   const n = inner + 2;
   const pts: LiftPoint[] = [];
   for (let i = 0; i < n; i++) {

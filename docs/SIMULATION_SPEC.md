@@ -209,7 +209,7 @@ Dutch Hill's features are named in the data: base apron (flat village ground at 
 
 #### World scale (part 2a, no visible change)
 
-A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale ?? {1, 1})` maps it to world units with `scale = { horizontal: H, vertical: V }`: world x, z = H * design, world height = V * design height, so world grade = (V / H) * design grade. Bounds and `base` scale by H. `toWorld` and `toDesign` convert points (x, z only). The central-difference step and the default `gradeAlong` step and `sustainedPitch` window scale by H, so they sample the same design points. `gradeAlong`, `grade` and `sustainedPitch` return world grades. Dutch Hill stays at 1/1 in this PR; tests build a 6/3 terrain.
+A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale ?? {1, 1})` maps it to world units with `scale = { horizontal: H, vertical: V }`: world x, z = H * design, world height = V * design height, so world grade = (V / H) * design grade. Bounds and `base` scale by H. `toWorld` and `toDesign` convert points (x, z only). The central-difference step and the default `gradeAlong` step and `sustainedPitch` window scale by H, so they sample the same design points. `gradeAlong`, `grade` and `sustainedPitch` return world grades. Dutch Hill is 6× horizontal and 3× vertical in part 2b (save v8 migrates v7 lift anchors and bottoms by frozen H = 6); tests still build an explicit 1/1 terrain where needed.
 
 `rulesFor(terrain)` (`game/descent.ts`) derives the placement limits from the scale. The named constants stay design values:
 
@@ -219,7 +219,7 @@ A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale
 | V | `MIN_LIFT_VERTICAL` |
 | V / H | `MAX_LOAD_GRADE` |
 
-`checkLiftLine`, `checkSpacing` and `checkPlacement` use `rulesFor(terrain)`. `LIFT_COST_PARAMS` stays in design units: `liftCost(type, line, terrain)` divides world length by H and world vertical by V before pricing, then rounds to $50, so a chair at Mid costs $2,500 at any scale. `REFERENCE_TOPS` stay design coordinates (equal to world at 1/1) until part 2b.
+`checkLiftLine`, `checkSpacing` and `checkPlacement` use `rulesFor(terrain)`. `LIFT_COST_PARAMS` stays in design units: `liftCost(type, line, terrain)` divides world length by H and world vertical by V before pricing, then rounds to $50, so a chair at Mid costs $2,500 at any scale. `REFERENCE_TOPS` are world literals at Dutch Hill 6/3 (Ridge, Mid, Creek).
 
 ### Trail graph (P0)
 
