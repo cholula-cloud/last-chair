@@ -47,7 +47,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 ## P1 device playtest (~45–60 min) — gate for M3 (product MVP)
 
-**Devices:** iPhone or iPad Safari (required for sign-off). If an incompatible save triggers the recovery notice, dismiss it and start a fresh winter. The game keeps a backup of the original save when storage is available.
+**Devices:** iPhone or iPad Safari (required for sign-off). Opening M3 clears M2 progress and starts a fresh winter. The browser check verifies that further reloads keep M3 progress.
 
 | Step | Action | Pass if |
 |---|---|---|

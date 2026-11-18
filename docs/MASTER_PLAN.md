@@ -48,7 +48,7 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 | Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** Run the first-time player check for M2. With save recovery in place, M3 continues with the lodge-only opening and builder refinements, then the season systems. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
+**Next up:** M3 begins with the lodge-only opening and builder refinements, followed by the season systems. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
 
 ---
 
@@ -413,11 +413,12 @@ Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder 
 
 ### M3: One full winter (product MVP)
 
-Land row 25 first; every other M3 row adds saved fields.
+M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements land ahead of the season systems.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 25 | ☑ | Save versioning | Version registry and fixtures, validation, recovery notice and backup |
+| 25 | ☑ | Save recovery | Validate M3 saves and recover unreadable progress. The M3 opening clears M2 saves and backups. |
+| — | ☑ | Lodge-only opening | The player's first paid lift and ski trail open Dutch Hill. |
 | 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |

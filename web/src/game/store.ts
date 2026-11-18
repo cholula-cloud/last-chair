@@ -46,7 +46,6 @@ type GameActions = {
   placeAsset: (id: AssetId, at: XZ) => void;
   placeGun: (at: XZ) => void;
   beginLodgeUpgrade: () => void;
-  cutTrail: (liftIndex: number, optionIndex: number) => void;
   undoTrail: () => void;
   buyBuilding: (id: BuildingId) => void;
   pickFounder: (id: FounderId) => void;
@@ -60,12 +59,14 @@ type GameActions = {
 type GameStore = GameState & GameActions & { saveNotice: string | null };
 type SavedRead = PersistedState & { saveNotice?: string };
 
-const SAVE_BACKUP_KEY = "last-chair-v1-backup";
+const SAVE_BACKUP_KEY = `${SAVE_KEY}-backup`;
+const M2_SAVE_KEYS = ["last-chair-v1", "last-chair-v1-backup"];
 const SAVE_NOTICE = "Your last winter couldn’t be loaded on this version. Starting fresh.";
 
 /** Read the raw envelope so even malformed JSON can be backed up. */
 function saveStorage(): PersistStorage<SavedRead> {
   let unbackedSave: string | null = null;
+  let clearedM2Save = false;
   const write: PersistStorage<SavedRead>["setItem"] = (key, value) => {
     try {
       if (unbackedSave !== null) {
@@ -82,6 +83,10 @@ function saveStorage(): PersistStorage<SavedRead> {
     getItem(key) {
       let raw: string | null;
       try {
+        if (!clearedM2Save) {
+          M2_SAVE_KEYS.forEach((oldKey) => localStorage.removeItem(oldKey));
+          clearedM2Save = true;
+        }
         raw = localStorage.getItem(key);
       } catch {
         return null;
@@ -95,10 +100,10 @@ function saveStorage(): PersistStorage<SavedRead> {
         parsed = null;
       }
       const envelope = parsed && typeof parsed === "object" && "state" in parsed ? parsed : null;
-      const version = envelope && "version" in envelope
-        ? (typeof envelope.version === "number" ? envelope.version : Number.NaN)
-        : 0;
-      const result = migrate(envelope ? envelope.state : parsed, version);
+      const version = envelope && "version" in envelope && typeof envelope.version === "number"
+        ? envelope.version
+        : Number.NaN;
+      const result = migrate(envelope?.state, version);
       const state = result.reset ? toPersisted(createInitialState(freshSeed())) : result.state;
       if (result.reset) unbackedSave = raw;
       if (result.reset || version !== SAVE_VERSION) write(key, { state, version: SAVE_VERSION });
@@ -143,8 +148,6 @@ export const useGameStore = create<GameStore>()(
       placeAsset: (id, at) => set((s) => rules.placeAsset(s, id, at)),
       placeGun: (at) => set((s) => rules.placeGun(s, at)),
       beginLodgeUpgrade: () => set((s) => rules.beginLodgeUpgrade(s)),
-      cutTrail: (liftIndex, optionIndex) =>
-        set((s) => rules.cutTrail(s, liftIndex, optionIndex)),
       undoTrail: () => set((s) => rules.undoTrail(s)),
       buyBuilding: (id) => set((s) => rules.buyBuilding(s, id)),
       pickFounder: (id) => set((s) => rules.pickFounder(s, id)),

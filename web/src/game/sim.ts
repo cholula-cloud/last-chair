@@ -214,7 +214,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     };
   };
   const chooseQueue = (guest: Guest): Guest => {
-    const index = chooseLift(clock.lifts, clock.talentsOwned, guest, clock.trails);
+    const index = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, guest);
     if (index < 0 || now >= LIFT_CLOSE_MIN) return goHome(guest);
     if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
       const stop = visit(guest, ["cafe", "warming_hut"], true);
@@ -273,7 +273,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const runs = g.runs + 1;
         const energy = g.energy - runEnergyCost(g.persona, trail);
         const done = { runs, energy, snowSum: g.snowSum + q };
-        const li = chooseLift(clock.lifts, clock.talentsOwned, { ...g, runs }, clock.trails);
+        const li = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, { ...g, runs });
         const lapOverhead =
           clock.lifts[li]?.confirmed
             ? lapOverheadForLift([...clock.lifts], clock.talentsOwned, li)

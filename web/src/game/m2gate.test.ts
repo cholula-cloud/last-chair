@@ -1,10 +1,11 @@
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it, vi } from "vitest";
 import { seedList } from "./balance";
 import { lodgeAttachPads } from "./base";
 import * as liftRules from "./lifts";
 import { gateBuilds, gateMetrics, gateRevenue, gateScenarios, gateSetup, playGateDay } from "./m2gate";
 import { pickFounder, placeAsset } from "./rules";
-import { createInitialState, type GameState } from "./state";
+import { type GameState } from "./state";
 
 describe("M2 build gate", () => {
   it("plays legal build alternatives against the same guest roster", { timeout: 30_000 }, () => {
@@ -24,7 +25,7 @@ describe("M2 build gate", () => {
 
   it("unlocks a new source of revenue after the lodge upgrade", { timeout: 15_000 }, () => {
     const at = lodgeAttachPads(2)[0];
-    const tier1 = pickFounder(createInitialState(1), "elena");
+    const tier1 = pickFounder(createBuiltHill(1), "elena");
     expect(placeAsset(tier1, "rentals", at)).toBe(tier1);
     const tier2 = gateSetup(1);
     expect(tier2.lodgeTier).toBe(2);

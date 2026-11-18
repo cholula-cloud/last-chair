@@ -1,3 +1,4 @@
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { freshTrail } from "./snow";
 import { describe, expect, it } from "vitest";
@@ -6,7 +7,7 @@ import { PERSONAS } from "./personas";
 import { createRng } from "./rng";
 import * as rules from "./rules";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals } from "./sim";
-import { createInitialState, type GameState } from "./state";
+import { type GameState } from "./state";
 import { DAY_END_MIN, DAY_START_MIN, LIFT_CLOSE_MIN } from "./types";
 
 const WEEKDAY = 2;
@@ -14,7 +15,7 @@ const SATURDAY = 6;
 
 /** A fresh day at 06:00 with the whole roster pending, for a given weekday index and lift set. */
 function freshDay(seed: number, dayIndex: number, chair = false): GameState {
-  const base = rules.pickFounder(createInitialState(seed), "elena");
+  const base = rules.pickFounder(createBuiltHill(seed), "elena");
   const rng = createRng(seed * 7919 + 13);
   const rand = () => rng.next();
   const arrivals = planArrivals({
@@ -31,7 +32,7 @@ function freshDay(seed: number, dayIndex: number, chair = false): GameState {
     ? rules.placeLift({ ...base, lodgeTier: 2 }, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] })
     : base;
   return {
-    ...built,
+    ...(chair ? addReferenceDescent(built, 1) : built),
     dayIndex,
     clockMin: DAY_START_MIN,
     guests: createInitialGuests(arrivals, rand, dayIndex === SATURDAY),

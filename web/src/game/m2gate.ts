@@ -16,7 +16,8 @@ import {
   sleep,
   trailOptions,
 } from "./rules";
-import { createInitialState, type GameState } from "./state";
+import type { GameState } from "./state";
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import type { LiftType } from "./types";
 
@@ -41,7 +42,7 @@ function balancedNight(state: GameState): GameState {
 function buildLift(state: GameState, type: LiftType, top: { x: number; z: number }): GameState {
   const next = placeLift(state, { type, bottom: TERRAIN.base, top });
   if (next === state) throw new Error(`Gate ${type} at (${top.x}, ${top.z}) is not placeable`);
-  return next;
+  return addReferenceDescent(next, next.lifts.length - 1);
 }
 
 function prepareTrainingTow(state: GameState): GameState {
@@ -65,7 +66,7 @@ function prepareTrainingTow(state: GameState): GameState {
 }
 
 export function gateSetup(seed: number): GameState {
-  const initial = pickFounder(createInitialState(seed), "elena");
+  const initial = pickFounder(createBuiltHill(seed), "elena");
   let state = beginLodgeUpgrade(initial);
   if (state === initial) throw new Error("Gate lodge upgrade did not start");
   while (state.dayIndex < WEEKEND_DAY) {

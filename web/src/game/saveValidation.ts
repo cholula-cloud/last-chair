@@ -91,7 +91,7 @@ const fields: Record<keyof PersistedState, Check> = {
   assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index) })),
   guns: array(shape({ at: point, builtDay: number, paid: number })),
   clearedCells: array(cell),
-  lifts: (value) => Array.isArray(value) && value.length > 0 && value.length <= MAX_LIFT_SLOTS && value.every(lift) &&
+  lifts: (value) => Array.isArray(value) && value.length <= MAX_LIFT_SLOTS && value.every(lift) &&
     value.filter((slot) => slot.confirmed).length <= MAX_LIFTS,
   trails: array((value) => trailShape(value) && record(value) && Array.isArray(value.path) && value.path.length >= 2 &&
     Array.isArray(value.snow) && value.snow.length > 0),

@@ -31,8 +31,8 @@ const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
 /** Estimate the wait the current queues would offer an approaching guest of each skill. */
 function queueImpact(before: GameState, after: GameState): string {
   const expectedWait = (state: GameState) => Object.values(PERSONAS).reduce((total, persona) => {
-    const index = chooseLift(state.lifts, state.talentsOwned,
-      { id: persona.id, persona: persona.id, runs: 0 }, state.trails);
+    const index = chooseLift(state.lifts, state.talentsOwned, state.trails,
+      { id: persona.id, persona: persona.id, runs: 0 });
     return total + (index < 0 ? 0 : liftWaitMin(state.lifts[index], state.talentsOwned));
   }, 0) / Object.keys(PERSONAS).length;
   const delta = expectedWait(after) - expectedWait(before);

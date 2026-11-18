@@ -24,7 +24,7 @@ import {
 } from "./sim";
 import { PERSONAS, skiMinutes } from "./personas";
 import { defaultTrails } from "./trails";
-import { defaultLifts } from "./state";
+import { starterLifts } from "./__fixtures__/built-hill";
 import { ZERO_TERMS, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import { createRng } from "./rng";
 import { freshTrail, type Trail } from "./snow";
@@ -499,7 +499,7 @@ describe("tickGuests", () => {
     snowQuality: 1,
     lapOverheadMin: 5,
     trails: defaultTrails(),
-    lifts: defaultLifts(),
+    lifts: starterLifts(),
     talentsOwned: [],
     ...over,
   });
@@ -574,7 +574,7 @@ describe("tickGuests", () => {
       tickGuests([lateSkier], clock(lateEnd, { lapOverheadMin: 1, lifts: [] }))[0].state,
     ).toBe("depart");
     // No open lift at all: nobody laps.
-    const noLift = defaultLifts().map((l) => ({ ...l, confirmed: false }));
+    const noLift = starterLifts().map((l) => ({ ...l, confirmed: false }));
     expect(
       tickGuests([skier({ targetRuns: 9 })], clock(end, { lapOverheadMin: Infinity, lifts: noLift }))[0]
         .state,

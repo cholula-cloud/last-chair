@@ -1,4 +1,4 @@
-import { migrate } from "./migrations";
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { freshTrail } from "./snow";
 import { fallLineTrailForLift } from "./trails";
 import { describe, expect, it } from "vitest";
@@ -20,7 +20,7 @@ import {
   type SatisfactionContext,
 } from "./satisfaction";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals, tickGuests } from "./sim";
-import { createInitialState, toPersisted, type GameState, type LiftSlot } from "./state";
+import { type GameState, type LiftSlot } from "./state";
 import { stepLifts } from "./lifts";
 import { DAY_START_MIN, LIFT_CLOSE_MIN, type Guest } from "./types";
 
@@ -266,7 +266,7 @@ describe("problem line", () => {
 
 describe("guest tallies", () => {
   const guestClock = (now: number, over: Partial<import("./sim").GuestClock> = {}) => {
-    const base = createInitialState(1);
+    const base = createBuiltHill(1);
     return {
       now,
       snowQuality: 0.8,
@@ -279,7 +279,7 @@ describe("guest tallies", () => {
   };
 
   it("adds a wait to the guest each time a lift dispatches them", () => {
-    const base = createInitialState(1);
+    const base = createBuiltHill(1);
     const lifts = base.lifts;
     const g = makeGuest({ id: "a", state: "queue" });
     let guests = [g];
@@ -336,7 +336,7 @@ describe("guest tallies", () => {
 describe("whole days", () => {
   /** Play a day to close from 07:30 with the whole roster pending. */
   function playDay(seed: number, dayIndex: number, over: Partial<GameState> = {}, chair = false) {
-    const base = rules.pickFounder(createInitialState(seed), "elena");
+    const base = rules.pickFounder(createBuiltHill(seed), "elena");
     const rng = createRng(seed * 7919 + 13);
     const rand = () => rng.next();
     const arrivals = planArrivals({
@@ -453,7 +453,7 @@ describe("whole days", () => {
     const lined = Array.from({ length: 20 }, (_, i) =>
       makeGuest({ id: `q${i}`, state: "queue", persona: "regular", targetRuns: 8, arriveAtMin: 15 * 60 }),
     );
-    const base = rules.pickFounder(createInitialState(1), "elena");
+    const base = rules.pickFounder(createBuiltHill(1), "elena");
     const night = rules.skipToClose({
       ...base,
       clockMin: 15 * 60 + 40,
@@ -469,27 +469,6 @@ describe("whole days", () => {
     expect(daySatisfaction(night.guests, c).score).toBeLessThan(daySatisfaction(rest, c).score);
     expect(night.nightRecap!.breakdown.runs).toBeLessThan(0);
   });
-});
-
-describe("save migration to v4", () => {
-  it("gives mid-day guests zeroed tallies and a night recap an empty breakdown", () => {
-    const night = playDayNight();
-    const saved = JSON.parse(JSON.stringify(toPersisted(night)));
-    for (const g of saved.guests) {
-      delete g.waitMin;
-      delete g.waitCount;
-      delete g.snowSum;
-    }
-    delete saved.nightRecap.breakdown;
-    const m = migrate(saved, 3).state;
-    expect(m.guests.every((g) => g.waitMin === 0 && g.waitCount === 0 && g.snowSum === 0)).toBe(true);
-    expect(m.nightRecap?.breakdown).toEqual(ZERO_TERMS);
-    expect(Number.isFinite(rules.liveSatisfaction({ ...createInitialState(1), ...m }))).toBe(true);
-  });
-
-  function playDayNight(): GameState {
-    return rules.skipToClose(rules.togglePause(rules.pickFounder(createInitialState(7), "elena")));
-  }
 });
 
 describe("ticket value is judged against what the hill offered", () => {

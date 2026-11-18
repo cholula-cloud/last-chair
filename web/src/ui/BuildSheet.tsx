@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
-import { MAX_LIFTS } from "@/game/descent";
+import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
+import { openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
@@ -77,6 +78,7 @@ export function BuildSheet({
   const cash = useGameStore((s) => s.cash);
   const tier = useGameStore((s) => s.lodgeTier);
   const closeLift = useGameStore((s) => s.closeLift);
+  const opening = useGameStore(openingStep);
   const activeLifts = lifts.filter((lift) => lift.confirmed && !lift.closing).length;
   const selectedLift = selected === "chair" && tier < 2 ? "surface" : selected;
 
@@ -89,8 +91,12 @@ export function BuildSheet({
   return open ? (
     <Sheet title="Build" subtitle={<>Cash on hand <b>{formatMoney(cash)}</b></>} onClose={onClose}
       closeLabel="Close build sheet" dataMarker="build-sheet" focusClose wide>
+      {opening && <p className="mb-3 text-sm font-bold">
+        {opening === "lift" ? "Place a surface lift at one of the marked sites."
+          : "Paint a trail from the lift’s top station down to the base."}
+      </p>}
       <div className="grid gap-3 short:grid-cols-2 short:items-start">
-        <LodgeCard />
+        {!opening && <LodgeCard />}
         <div className="panel px-3.5 pb-4 pt-3.5">
           <SectionHeading>Lifts</SectionHeading>
           <div className="grid grid-cols-2 gap-2">
@@ -103,7 +109,7 @@ export function BuildSheet({
             ))}
           </div>
           <PrimaryButton className="mt-2 min-h-11"
-            disabled={lifts.filter((lift) => lift.confirmed).length >= MAX_LIFTS || lifts.length >= 12}
+            disabled={opening === "trail" || lifts.filter((lift) => lift.confirmed).length >= MAX_LIFTS || lifts.length >= MAX_LIFT_SLOTS}
             onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
             Place lift
           </PrimaryButton>
@@ -118,7 +124,7 @@ export function BuildSheet({
           ))}
         </div>
         <TrailsPanel onStartPlacement={onStartPlacement} />
-        <div className="panel px-3.5 pb-4 pt-3.5">
+        {!opening && <div className="panel px-3.5 pb-4 pt-3.5">
           <SectionHeading>Base</SectionHeading>
           <div className="grid grid-cols-2 gap-2">
             {BASE_ASSETS.map((id) => {
@@ -138,7 +144,7 @@ export function BuildSheet({
             disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
             Snow gun {tier < 2 ? "· Lodge Tier 2" : `· ${formatMoney(ASSET_CATALOG.snow_guns.cost)}`}
           </button>
-        </div>
+        </div>}
       </div>
     </Sheet>
   ) : null;

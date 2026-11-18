@@ -40,7 +40,7 @@ jobs:
           trap 'kill "$!"' EXIT
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
           npm run phone-check
-      - name: Restore historical saves and recover a corrupt save
+      - name: Reset legacy progress and reload M3
         env:
           PLAY_URL: http://127.0.0.1:3191
           PLAYTEST_ENGINE: webkit

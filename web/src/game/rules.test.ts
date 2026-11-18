@@ -1,4 +1,4 @@
-import { migrate } from "./migrations";
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG } from "./base";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
@@ -7,14 +7,13 @@ import * as rules from "./rules";
 import { makeGuest, planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
-  createInitialState,
   hydrate,
   toPersisted,
   type GameState,
 } from "./state";
 import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
 
-const started = () => rules.pickFounder(createInitialState(7), "elena");
+const started = () => rules.pickFounder(createBuiltHill(7), "elena");
 
 /** Runs the rule on a copy and checks the input state was left untouched. */
 function pure<A extends unknown[], R = GameState>(
@@ -35,7 +34,7 @@ function atNight(): GameState {
 
 describe("pickFounder", () => {
   it("starts day 1 with guests and records the founder", () => {
-    const s = pure(rules.pickFounder, createInitialState(7), "tom");
+    const s = pure(rules.pickFounder, createBuiltHill(7), "tom");
     expect(s.phase).toBe("day");
     expect(s.founderId).toBe("tom");
     expect(s.guests.length).toBe(s.dayStats.arrivals);
@@ -43,7 +42,7 @@ describe("pickFounder", () => {
   });
 
   it("advances the RNG state", () => {
-    expect(started().rngState).not.toBe(createInitialState(7).rngState);
+    expect(started().rngState).not.toBe(createBuiltHill(7).rngState);
   });
 
   it("is reproducible for the same seed", () => {
@@ -60,7 +59,7 @@ describe("skipToClose and sleep", () => {
   });
 
   it("skipToClose does nothing outside the day phase", () => {
-    const setup = createInitialState(7);
+    const setup = createBuiltHill(7);
     expect(rules.skipToClose(setup)).toBe(setup);
   });
 
@@ -144,7 +143,7 @@ describe("night reload", () => {
   it("restores the night sheet so sleeping after a reload matches sleeping without one", () => {
     const night = rules.setPendingSnow(atNight(), "high");
     const saved = JSON.parse(JSON.stringify(toPersisted(night)));
-    const reloaded = hydrate(saved, createInitialState(999));
+    const reloaded = hydrate(saved, createBuiltHill(999));
     expect(reloaded.phase).toBe("night");
     expect(reloaded.nightRecap).toEqual(night.nightRecap);
     expect(reloaded.dayStats).toEqual(night.dayStats);
@@ -242,7 +241,7 @@ describe("startNewSeason", () => {
       fare: "balanced",
       snowQuality: 0.55,
       weather: "clear",
-      buildings: ["warming_hut"],
+      buildings: [],
       talentsOwned: [],
       founderId: "riley",
       rand: () => rng.next(),
@@ -250,32 +249,6 @@ describe("startNewSeason", () => {
     const s = pure(rules.startNewSeason, base);
     expect(s.dayStats.arrivals).toBe(expected);
     expect(s.guests).toHaveLength(expected);
-  });
-});
-
-describe("save migration", () => {
-  it("loads an unversioned v0 night save as a playable day", () => {
-    const v0 = JSON.parse(JSON.stringify(toPersisted(atNight())));
-    delete v0.rngState;
-    delete v0.nightRecap;
-    delete v0.dayStats;
-    expect(v0.phase).toBe("night");
-    const migrated = migrate(v0, 0).state;
-    // A v0 night save has no recap to restore, so it resumes as a day.
-    expect(migrated.phase).toBe("day");
-    expect(migrated.nightRecap).toBeNull();
-    expect(typeof migrated.rngState).toBe("number");
-    expect(migrated.dayStats).toEqual(createInitialState().dayStats);
-    const loaded = hydrate(migrated, createInitialState(5));
-    expect(loaded.phase).toBe("day");
-    expect(rules.tick(rules.togglePause(loaded), 500)).toBeDefined();
-  });
-
-  it("keeps a v1 night save in the night with its recap", () => {
-    const night = atNight();
-    const migrated = migrate(JSON.parse(JSON.stringify(toPersisted(night))), 1).state;
-    expect(migrated.phase).toBe("night");
-    expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
 });
 
@@ -377,28 +350,14 @@ describe("lastDay", () => {
     expect(rules.startNewSeason(next).lastDay).toBeNull();
   });
 
-  it("survives a save and reload, and a v5 save loads without it", () => {
-    const night = atNight();
-    const next = rules.sleep(night);
+  it("survives a save and reload", () => {
+    const next = rules.sleep(atNight());
     const saved = JSON.parse(JSON.stringify(toPersisted(next)));
-    expect(migrate(saved, 6).state.lastDay).toEqual(next.lastDay);
-    delete saved.lastDay;
-    expect(migrate(saved, 5).state.lastDay).toBeNull();
-  });
-
-  it("a v5 night save gains recap facts so the Why? list can render", () => {
-    const night = atNight();
-    const saved = JSON.parse(JSON.stringify(toPersisted(night)));
-    delete saved.nightRecap.facts;
-    delete saved.lastDay;
-    const migrated = migrate(saved, 5).state;
-    expect(migrated.phase).toBe("night");
-    expect(migrated.nightRecap!.facts.farePrice).toBeGreaterThan(0);
-    expect(migrated.lastDay).toBeNull();
+    expect(hydrate(saved, createBuiltHill()).lastDay).toEqual(next.lastDay);
   });
 });
 
-describe("M2 building and save compatibility", () => {
+describe("building and save continuity", () => {
   const chair = { type: "chair" as const, top: REFERENCE_TOPS[1], bottom: TERRAIN.base };
   const overnight = (state: GameState) => rules.sleep(rules.acknowledgeBeat(rules.skipToClose(state)));
 
@@ -412,7 +371,7 @@ describe("M2 building and save compatibility", () => {
     const first = overnight(upgrading);
     expect(first.lodgeTier).toBe(1);
     expect(first.lodgeUpgrade?.nightsRemaining).toBe(1);
-    const resumed = hydrate(toPersisted(first), createInitialState());
+    const resumed = hydrate(toPersisted(first), createBuiltHill());
     const second = overnight(resumed);
     expect(second.lodgeTier).toBe(2);
     expect(second.lodgeUpgrade).toBeNull();
@@ -421,47 +380,6 @@ describe("M2 building and save compatibility", () => {
     const guns = rules.placeGun(second, TERRAIN.base);
     expect(guns.guns).toHaveLength(1);
     expect(guns.cash).toBe(second.cash - ASSET_CATALOG.snow_guns.cost);
-  });
-
-  it("migrates a v10 lodge purchase and snow gun to the new layout without charging again", () => {
-    const state = started();
-    const saved = {
-      ...toPersisted(state), buildings: ["warming_hut", "lodge", "cafe", "snow_guns"],
-      trails: state.trails.map((trail) => ({ ...trail, widths: undefined })),
-    };
-    const migrated = migrate(saved, 10).state;
-    expect(migrated.cash).toBe(state.cash);
-    expect(migrated.lodgeTier).toBe(1);
-    expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe"]);
-    expect(migrated.guns.length).toBeGreaterThan(0);
-    expect(migrated.trails[0].widths?.every((width) => width === 60)).toBe(true);
-    expect(migrated.clearedCells.length).toBeGreaterThan(0);
-  });
-
-  it.each([11, 12])("loads a shipped v%i day save without losing purchased venues or crashing", (version) => {
-    const initial = started();
-    const saved = JSON.parse(JSON.stringify(toPersisted(initial)));
-    saved.buildings = ["warming_hut", "cafe", "shop"];
-    for (const key of ["assets", "guns", "clearedCells", "lodgeUpgrade"]) delete saved[key];
-    for (const key of ["byLift", "runsByTrail", "venueRevenue", "refuels", "balked", "seatsFullMin"]) {
-      delete saved.dayStats[key];
-    }
-    const path = saved.trails[0].path;
-    const widths = path.map((_: unknown, i: number) => i % 2 ? 30 : 60);
-    if (version === 11) delete saved.trails[0].widths;
-    else saved.trails[0].widths = widths;
-
-    const migrated = migrate(saved, version).state;
-    expect(migrated.cash).toBe(initial.cash);
-    expect(migrated.assets.map((asset) => asset.id)).toEqual(["warming_hut", "cafe", "shop"]);
-    expect(migrated.trails[0].path).toEqual(path);
-    expect(migrated.trails[0].widths).toEqual(version === 12 ? widths : path.map(() => 60));
-    expect(migrated.clearedCells.length).toBeGreaterThan(0);
-
-    const resumed = hydrate(migrated, initial);
-    const ticked = rules.tick({ ...resumed, paused: false }, 500);
-    expect(ticked.clockMin).toBeGreaterThan(resumed.clockMin);
-    expect(ticked.dayStats.byLift).toHaveLength(resumed.lifts.length);
   });
 
   it("rolls back the exact cash and cells of a same-minute trail undo", () => {
@@ -482,7 +400,7 @@ describe("M2 building and save compatibility", () => {
 
   it("keeps a lift running until Sleep when closing during the day", () => {
     const built = rules.placeLift({ ...started(), lodgeTier: 2 }, chair);
-    const midday = { ...built, clockMin: 600 };
+    const midday = { ...addReferenceDescent(built, 1), clockMin: 600 };
     const closing = rules.closeLift(midday, 1);
     expect(closing.lifts[1]).toMatchObject({ confirmed: true, closing: true });
     expect(rules.closeLift(closing, 0)).toBe(closing);

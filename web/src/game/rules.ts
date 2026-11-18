@@ -1,4 +1,3 @@
-import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import {
   ASSET_CATALOG,
   assetRevenue,
@@ -11,7 +10,7 @@ import {
   terminalOverlapsBuilding,
   type AssetId,
 } from "./base";
-import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
+import { clearingQuote, trailExposure, type ClearingCell } from "./clearing";
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST } from "./guns";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
@@ -27,6 +26,7 @@ import {
 import {
   chooseLift,
   currentWaitMin,
+  isLiftOperational,
   lapOverheadForLift,
   longestQueue,
   resetLiftQueues,
@@ -59,10 +59,8 @@ import {
   readyStoryBeat,
   tickGuests,
 } from "./sim";
-import { defaultLifts, type GameState, type LiftSlot } from "./state";
+import { createInitialState, type GameState, type LiftSlot } from "./state";
 import {
-  defaultTrails,
-  fallLineTrailForLift,
   routeOptions,
   segmentElevationsForPath,
   snowCarriers,
@@ -85,21 +83,8 @@ import {
   type WeatherKind,
 } from "./types";
 
-const includedClearings = new WeakMap<XZ[], ClearingCell[]>();
-
-/** Starter corridors come with their lifts. A same-minute lift undo removes its included clearing. */
-function clearedLand(state: Pick<GameState, "trails"> & Partial<Pick<GameState, "clearedCells">>): Set<ClearingCell> {
-  const cells = new Set(state.clearedCells);
-  for (const trail of state.trails) {
-    if (trail.paid !== undefined) continue;
-    let included = includedClearings.get(trail.path);
-    if (!included) {
-      included = clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH));
-      includedClearings.set(trail.path, included);
-    }
-    for (const cell of included) cells.add(cell);
-  }
-  return cells;
+function clearedLand(state: Partial<Pick<GameState, "clearedCells">>): Set<ClearingCell> {
+  return new Set(state.clearedCells);
 }
 
 function exposureFor(state: GameState): number[][] {
@@ -163,7 +148,8 @@ const BEAT_REPUTATION_BONUS = 2;
 
 export function openNight(state: GameState): GameState {
   const founder = founderById(state.founderId);
-  const openLifts = state.lifts.filter((l) => l.confirmed).length;
+  if (openingStep(state)) return state;
+  const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails)).length;
   const avgQueueMin = measuredWaitMin(state);
   const ctx = satisfactionContext(state);
   const stats = { ...state.dayStats, avgQueueMin };
@@ -218,8 +204,8 @@ export function openNight(state: GameState): GameState {
  * Minutes a guest finishing a run expects before the next one starts skiing:
  * the wait at the best open lift (counting their own turn) plus its ride time.
  */
-function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[]): number {
-  const li = chooseLift(lifts, talentsOwned);
+function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[], trails: GameState["trails"]): number {
+  const li = chooseLift(lifts, talentsOwned, trails);
   if (li < 0) return Infinity;
   return lapOverheadForLift(lifts, talentsOwned, li);
 }
@@ -228,7 +214,7 @@ function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[]): numb
 const MAX_STEP_MIN = 0.5;
 
 export function tick(state: GameState, deltaMs: number): GameState {
-  if (state.phase !== "day" || state.paused) return state;
+  if (state.phase !== "day" || state.paused || openingStep(state)) return state;
 
   const addMin = deltaMs / MS_PER_GAME_MINUTE;
   const steps = Math.max(1, Math.ceil(addMin / MAX_STEP_MIN));
@@ -265,7 +251,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
       trails,
       lifts,
       talentsOwned: state.talentsOwned,
-      lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned),
+      lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned, trails),
       assets: state.assets,
     });
     const runsByTrail = trails.map(() => 0);
@@ -361,7 +347,15 @@ export function tick(state: GameState, deltaMs: number): GameState {
     : next;
 }
 
+/** The first morning waits until a surface lift has a descent. */
+export function openingStep(state: Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails">): "lift" | "trail" | null {
+  if (state.phase !== "day" || state.dayIndex !== 1 ||
+      state.lifts.some((lift, i) => isLiftOperational(lift, i, state.trails))) return null;
+  return state.lifts.some((lift) => lift.confirmed) ? "trail" : "lift";
+}
+
 export function togglePause(state: GameState): GameState {
+  if (state.paused && openingStep(state)) return state;
   return { ...state, paused: !state.paused };
 }
 
@@ -375,7 +369,7 @@ export function openNightIfReady(state: GameState): GameState {
  * produces the same kind of day (queues, waits, runs) as watching it.
  */
 export function skipToClose(state: GameState): GameState {
-  if (state.phase !== "day") return state;
+  if (state.phase !== "day" || openingStep(state)) return state;
   const STEP_MIN = 4;
   let s: GameState = { ...state, paused: false };
   while (s.phase === "day") {
@@ -506,7 +500,7 @@ export function placeLift(
   state: GameState,
   req: { type: LiftType; bottom: XZ; top: XZ },
 ): GameState {
-  if (state.phase !== "day") return state;
+  if (state.phase !== "day" || openingStep(state) === "trail") return state;
   const line: LiftLine = { bottom: roundXZ(req.bottom), top: roundXZ(req.top) };
   const check = checkPlacement(state, req.type, line);
   if (!check.ok) return state;
@@ -521,26 +515,22 @@ export function placeLift(
     builtAtMin: state.clockMin,
     paid: check.cost,
   };
-  const idx = state.lifts.length;
-  const snow = averageTrail(state.trails.filter((t) => t.open).map((t) => t.snow));
-  const run = fallLineTrailForLift(idx, lift, snow);
   return {
     ...state,
     lifts: [...state.lifts, lift],
-    trails: [...state.trails, run],
     cash: state.cash - check.cost,
     buildMode: false,
   };
 }
 
-/** The last lift while it can still be taken back: same day, clock unmoved. Else -1; the default lift never qualifies. */
+/** Undo the most recent lift at its construction minute. Remove its trails first. */
 export function undoableLiftIndex(
-  state: Pick<GameState, "lifts" | "dayIndex" | "clockMin" | "phase">,
+  state: Pick<GameState, "lifts" | "dayIndex" | "clockMin" | "phase"> & Partial<Pick<GameState, "trails">>,
 ): number {
   const i = state.lifts.length - 1;
   const last = state.lifts[i];
-  if (i < 1 || !last?.confirmed || last.closing || state.phase !== "day" ||
-      state.lifts.filter((lift) => lift.confirmed && !lift.closing).length <= 1) return -1;
+  if (!last?.confirmed || last.closing || state.phase !== "day" ||
+      state.trails?.some((trail) => trail.liftIndex === i && trail.open)) return -1;
   return last.builtDay === state.dayIndex && last.builtAtMin === state.clockMin ? i : -1;
 }
 
@@ -570,8 +560,9 @@ function closeLiftsNow(state: GameState, indices: ReadonlySet<number>): GameStat
 
 export function closeLift(state: GameState, index: number): GameState {
   const lift = state.lifts[index];
-  if (state.phase !== "day" || !lift?.confirmed || lift.closing ||
-      state.lifts.filter((item) => item.confirmed && !item.closing).length <= 1) return state;
+  if (state.phase !== "day" || !lift?.confirmed || lift.closing || openingStep(state)) return state;
+  if (isLiftOperational(lift, index, state.trails) && !state.lifts.some((other, i) =>
+    i !== index && !other.closing && isLiftOperational(other, i, state.trails))) return state;
   if (state.clockMin === DAY_START_MIN && !state.guests.some(isOnHill)) {
     const next = closeLiftsNow(state, new Set([index]));
     return { ...next, ...deriveSnow(snowCarriers(next.trails)) };
@@ -652,7 +643,7 @@ export function cutTrail(
   optionIndex: number,
   terrain: Terrain = TERRAIN,
 ): GameState {
-  if (state.phase !== "day") return state;
+  if (state.phase !== "day" || openingStep(state)) return state;
   const lift = state.lifts[liftIndex];
   if (!lift?.confirmed) return state;
   if (trailsOnLift(state.trails, liftIndex).length >= 3) return state;
@@ -713,6 +704,7 @@ export function undoTrail(state: GameState): GameState {
 
 export function checkAssetPlacement(state: GameState, id: AssetId, at: XZ) {
   if (state.phase !== "day") return { ok: false as const, reason: "Build during the day." };
+  if (openingStep(state)) return { ok: false as const, reason: "Build a lift and trail first." };
   if (id === "snow_guns") return { ok: false as const, reason: "Place snow guns from the Snow section." };
   const terminals = state.lifts.flatMap((lift) => {
     if (!lift.confirmed) return [];
@@ -740,6 +732,7 @@ export function buyBuilding(state: GameState, id: BuildingId | "lodge"): GameSta
 }
 
 export function beginLodgeUpgrade(state: GameState): GameState {
+  if (openingStep(state)) return state;
   const tier = nextLodgeTier(state.lodgeTier);
   if (state.phase !== "day" || state.lodgeUpgrade || tier == null) return state;
   const cost = LODGE_TIERS[tier].cost;
@@ -750,6 +743,7 @@ export function beginLodgeUpgrade(state: GameState): GameState {
 export function checkGunPlacement(state: GameState, at: XZ) {
   const point = roundXZ(at);
   const reason = state.phase !== "day" ? "Build during the day."
+    : openingStep(state) ? "Build a lift and trail first."
     : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
     : gunPlacementReason(point, state.guns) ?? (state.cash < GUN_COST ? "Not enough cash." : null);
   if (reason) return { ok: false as const, reason };
@@ -772,10 +766,10 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
   const rand = () => rng.next();
   const arrivals = planArrivals({
     dayIndex: 1,
-    fare: "balanced",
-    snowQuality: 0.55,
-    weather: "clear",
-    buildings: ["warming_hut"],
+    fare: state.fare,
+    snowQuality: state.snowQuality,
+    weather: state.weather,
+    buildings: state.buildings,
     talentsOwned: [],
     founderId: id,
     rand,
@@ -788,8 +782,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     guests: createInitialGuests(arrivals, rand, false),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(state.lifts),
-    morningHeadline: `${founderById(id)?.name ?? "Founder"} takes the keys to Dutch Hill.`,
-    talentToast: `Crew will learn overnight: ${nextTalentName([]) ?? "—"}`,
+    talentToast: null,
     rngState: rng.state(),
   };
 }
@@ -980,58 +973,7 @@ export function finishWinterReview(state: GameState): GameState {
 }
 
 export function startNewSeason(state: GameState): GameState {
-  const rng = createRng(state.rngState);
-  const rand = () => rng.next();
-  const founderId = state.founderId ?? "elena";
-  const arrivals = planArrivals({
-    dayIndex: 1,
-    fare: "balanced",
-    snowQuality: 0.55,
-    weather: "clear",
-    buildings: ["warming_hut"],
-    talentsOwned: [],
-    founderId,
-    rand,
-  });
-  return {
-    ...state,
-    dayIndex: 1,
-    clockMin: DAY_START_MIN,
-    phase: "day",
-    paused: true,
-    cash: 12000,
-    fare: "balanced",
-    snow: "mid",
-    snowQuality: 0.55,
-    snowDepth: 0.45,
-    gunReach: 0,
-    lifts: defaultLifts(),
-    trails: defaultTrails(),
-    buildings: ["warming_hut"],
-    lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
-    lodgeUpgrade: null,
-    assets: placedAssetsFromLegacy(["warming_hut"]),
-    guns: [],
-    clearedCells: defaultTrails().flatMap((trail) =>
-      clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH))),
-    talentsOwned: [],
-    completedBeats: [],
-    pendingBeat: null,
-    beatAcknowledged: true,
-    weather: "clear",
-    morningHeadline: "New winter — Dutch Hill again.",
-    daysWithoutSnow: 0,
-    reputation: 40,
-    gunsVisible: false,
-    groomVisible: false,
-    nightRecap: null,
-    lastDay: null,
-    founderId,
-    guests: createInitialGuests(arrivals, rand, false),
-    dayStats: { ...emptyDayStats(), arrivals },
-    talentToast: null,
-    rngState: rng.state(),
-  };
+  return pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
 }
 
 export function nextTalentHint(state: GameState): string | null {

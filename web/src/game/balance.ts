@@ -18,7 +18,8 @@ import { trailsOnLift } from "./trails";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import { isWeekend, type NightRecap } from "./sim";
-import { createInitialState, type GameState } from "./state";
+import type { GameState } from "./state";
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
 
@@ -225,7 +226,8 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
     return state;
   }
   if (action === "chair") {
-    return placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
+    const placed = placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
+    return placed === state ? state : addReferenceDescent(placed, placed.lifts.length - 1);
   }
   return buyBuilding(state, action);
 }
@@ -235,7 +237,7 @@ export function runSeason(
   strategy: Strategy,
   founderId: FounderId = "elena",
 ): SeasonResult {
-  let state = pickFounder(createInitialState(seed), founderId);
+  let state = pickFounder(createBuiltHill(seed), founderId);
   let recap: NightRecap | null = null;
   const days: DayRecord[] = [];
   let minCash = state.cash;

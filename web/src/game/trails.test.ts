@@ -1,9 +1,9 @@
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
 import { rulesFor } from "./descent";
 import { PERSONAS } from "./personas";
-import { createInitialState } from "./state";
 import * as rules from "./rules";
 import {
   classifyPitch,
@@ -75,7 +75,7 @@ describe("trails", () => {
 
   it("guests pick trails by skill", () => {
     let trails = defaultTrails();
-    const lift = createInitialState(1).lifts[0];
+    const lift = createBuiltHill(1).lifts[0];
     const blue = fallLineTrailForLift(0, { ...lift, anchor: REFERENCE_TOPS[0] }, trails[0].snow);
     trails = [
       { ...trails[0], difficulty: "green" as const },
@@ -111,7 +111,7 @@ describe("trails", () => {
   });
 
   it("cutTrail spends cash and refuses at night", () => {
-    let s = rules.pickFounder(createInitialState(3), "elena");
+    let s = rules.pickFounder(createBuiltHill(3), "elena");
     const cash0 = s.cash;
     const opts = rules.trailOptions(s, 0);
     expect(opts.length).toBeGreaterThan(0);

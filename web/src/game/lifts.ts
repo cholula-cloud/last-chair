@@ -65,19 +65,24 @@ function preferredParity(guest: LiftGuest): number {
   return hash & 1;
 }
 
+/** A constructed lift can carry guests once it serves an open descent. */
+export function isLiftOperational(lift: LiftSlot, index: number, trails: readonly TrailRun[]): boolean {
+  return lift.confirmed && trails.some((trail) => trail.liftIndex === index && trail.open && trail.path.length >= 2 && trail.lengthFt > 0);
+}
+
 /** Choose by expected queue and ride time, adjusted for the guest's skiable trails. */
 export function chooseLift(
   lifts: readonly LiftSlot[],
   talentsOwned: string[],
+  trails: readonly TrailRun[],
   guest?: LiftGuest,
-  trails: readonly TrailRun[] = [],
 ): number {
   let best = -1;
   let bestScore = Infinity;
   let bestCap = 0;
   const parity = guest ? preferredParity(guest) : 0;
   lifts.forEach((l, i) => {
-    if (!l.confirmed) return;
+    if (!isLiftOperational(l, i, trails)) return;
     const hasSuitableTrail = guest && trails.some((trail) =>
       trail.open && trail.liftIndex === i && !isOverSkill(guest.persona, trail.difficulty),
     );
@@ -131,9 +136,10 @@ export function stepLifts(
   const index = new Map(guests.map((g, i) => [g.id, i]));
   const out = guests.slice();
   const seen = new Set<string>();
-  const next: LiftSlot[] = lifts.map((l) => ({
+  const operational = lifts.map((lift, i) => isLiftOperational(lift, i, trails));
+  const next: LiftSlot[] = lifts.map((l, i) => ({
     ...l,
-    queue: l.confirmed ? l.queue.filter((id) => {
+    queue: operational[i] ? l.queue.filter((id) => {
       const i = index.get(id);
       if (i === undefined || out[i].state !== "queue" || seen.has(id)) return false;
       seen.add(id);
@@ -144,7 +150,7 @@ export function stepLifts(
   // Join.
   out.forEach((g, i) => {
     if (g.state !== "queue" || seen.has(g.id)) return;
-    const li = chooseLift(next, talentsOwned, g, trails);
+    const li = chooseLift(next, talentsOwned, trails, g);
     if (li < 0) return;
     next[li].queue.push(g.id);
     seen.add(g.id);
@@ -155,7 +161,10 @@ export function stepLifts(
   const waits: number[] = [];
   const byLift = next.map(() => ({ rides: 0, waitSumMin: 0 }));
   next.forEach((lift, li) => {
-    if (!lift.confirmed) return;
+    if (!operational[li]) {
+      lift.dispatchCredit = 0;
+      return;
+    }
     let credit =
       lift.dispatchCredit + (addMin * liftCapacityPerHour(lift.type, talentsOwned)) / 60;
     while (credit >= 1 && lift.queue.length > 0) {

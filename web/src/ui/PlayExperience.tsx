@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
-import { liveSatisfaction, undoableLiftIndex } from "@/game/rules";
+import { liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { snowCarriers } from "@/game/trails";
@@ -44,6 +44,7 @@ export default function PlayExperience() {
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
   const phase = useGameStore((s) => s.phase);
+  const opening = useGameStore(openingStep);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   // "tone|label" of the worst trail segment, as a string so the HUD re-renders only when it changes.
@@ -72,7 +73,7 @@ export default function PlayExperience() {
   const undoLift = useGameStore((s) => s.undoLift);
   const buildTrigger = useRef<HTMLElement | null>(null);
   const placementActive = usePlacementDraft((s) => s.active);
-  const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
+  const undoIndex = useGameStore(undoableLiftIndex);
   const undoRefund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
@@ -137,7 +138,7 @@ export default function PlayExperience() {
   const notStarted =
     phase === "day" && paused && dayIndex === 1 && clockMin <= DAY_START_MIN;
   const showStartHint = hydrated && notStarted;
-  const showNote = phase === "day" && noteDismissedDay !== dayIndex;
+  const showNote = phase === "day" && !opening && noteDismissedDay !== dayIndex;
 
   // Auto-dismiss only while the hill day clock is running (not paused, not before first play).
   useEffect(() => {
@@ -191,12 +192,13 @@ export default function PlayExperience() {
             cash={cash}
             paused={paused}
             notStarted={notStarted}
+            openingBlocked={opening !== null}
             onTogglePause={() => {
               setNoteDismissedDay(dayIndex);
               togglePause();
             }}
           />
-          {showStartHint && !placementActive && <StartCallout />}
+          {showStartHint && !placementActive && <StartCallout step={opening} />}
         </div>
         {showNote && !placementActive && (
           <MorningNote
@@ -257,6 +259,7 @@ export default function PlayExperience() {
               }}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
+              openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
               onConfirmMenuChange={setMenuConfirmOpen}
             />

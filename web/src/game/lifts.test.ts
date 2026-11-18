@@ -1,4 +1,4 @@
-import { migrate } from "./migrations";
+import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import {
@@ -12,7 +12,7 @@ import {
 } from "./lifts";
 import * as rules from "./rules";
 import { makeGuest } from "./sim";
-import { createInitialState, toPersisted, type GameState, type LiftSlot } from "./state";
+import { type GameState, type LiftSlot } from "./state";
 import { defaultTrails } from "./trails";
 import { TERRAIN } from "./terrain";
 import { LIFT_SPECS, type Guest, type LiftType } from "./types";
@@ -136,11 +136,11 @@ describe("lift server", () => {
     expect(r.guests.find((g) => g.id === "new")?.liftIndex).toBe(0);
     expect(r.lifts[0].queue).toEqual(["new"]);
     // Equal queue lengths: the faster chair has the shorter expected wait.
-    expect(chooseLift([slot("surface", ["x"]), slot("chair", ["y"])], [])).toBe(1);
+    expect(chooseLift([slot("surface", ["x"]), slot("chair", ["y"])], [], [trail(0, "green"), trail(1, "green")])).toBe(1);
     // Equal waits (both empty): the higher capacity wins.
-    expect(chooseLift([slot("surface"), slot("chair")], [])).toBe(1);
+    expect(chooseLift([slot("surface"), slot("chair")], [], [trail(0, "green"), trail(1, "green")])).toBe(1);
     // No open lift.
-    expect(chooseLift([{ ...slot("surface"), confirmed: false }], [])).toBe(-1);
+    expect(chooseLift([{ ...slot("surface"), confirmed: false }], [], [trail(0, "green")])).toBe(-1);
   });
 
   it("weighs trail skill against the queue and ride, and changes choice when a green opens", () => {
@@ -149,12 +149,12 @@ describe("lift server", () => {
     const lifts = [slot("surface"), slot("chair")];
     const blueChair = [trail(0, "green"), trail(1, "blue")];
 
-    expect(chooseLift(lifts, [], firstTimer, blueChair)).toBe(0);
-    expect(chooseLift(lifts, [], regular, blueChair)).toBe(1);
-    expect(chooseLift(lifts, [], firstTimer, [...blueChair, trail(1, "green")])).toBe(1);
-    expect(chooseLift([slot("surface", Array(20).fill("q")), slot("chair")], [], firstTimer, blueChair))
+    expect(chooseLift(lifts, [], blueChair, firstTimer)).toBe(0);
+    expect(chooseLift(lifts, [], blueChair, regular)).toBe(1);
+    expect(chooseLift(lifts, [], [...blueChair, trail(1, "green")], firstTimer)).toBe(1);
+    expect(chooseLift([slot("surface", Array(20).fill("q")), slot("chair")], [], blueChair, firstTimer))
       .toBe(0);
-    expect(chooseLift([slot("surface", Array(40).fill("q")), slot("chair")], [], firstTimer, blueChair))
+    expect(chooseLift([slot("surface", Array(40).fill("q")), slot("chair")], [], blueChair, firstTimer))
       .toBe(1);
   });
 
@@ -227,18 +227,18 @@ describe("lift server", () => {
 
 describe("lifts in the day tick", () => {
   const dayState = (guests: Guest[], seed = 3): GameState => ({
-    ...rules.togglePause(rules.pickFounder(createInitialState(seed), "elena")),
+    ...rules.togglePause(rules.pickFounder(createBuiltHill(seed), "elena")),
     guests,
   });
 
   it("never puts a guest in two queues, and every queued guest is in exactly one", () => {
     for (let seed = 1; seed <= 4; seed++) {
-      let s = rules.pickFounder(createInitialState(seed), "elena");
+      let s = rules.pickFounder(createBuiltHill(seed), "elena");
       s = rules.placeLift({ ...s, cash: 99999, lodgeTier: 2 }, {
         type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1],
       });
       expect(s.lifts).toHaveLength(2);
-      s = rules.togglePause(s);
+      s = rules.togglePause(addReferenceDescent(s, 1));
       while (s.phase === "day") {
         s = rules.tick(s, 500);
         const ids = s.lifts.flatMap((l) => l.queue);
@@ -273,7 +273,7 @@ describe("lifts in the day tick", () => {
   });
 
   it("HUD current wait is 0 with an empty queue, and is queue length over capacity otherwise", () => {
-    const s = createInitialState(1);
+    const s = createBuiltHill(1);
     expect(currentWaitMin(s)).toBe(0);
     const busy = { ...s, lifts: [slot("surface", ["a", "b", "c", "d", "e", "f", "g"])] };
     expect(currentWaitMin(busy)).toBeCloseTo(7 / (SURFACE_PER_HR / 60), 10);
@@ -295,38 +295,10 @@ describe("lifts in the day tick", () => {
   });
 });
 
-describe("saves from before the lift server", () => {
-  it("load with empty queues and zero accumulators, and queued guests rejoin", () => {
-    const base = toPersisted(
-      rules.togglePause(rules.pickFounder(createInitialState(9), "elena")),
-    );
-    const old = JSON.parse(JSON.stringify(base));
-    for (const l of old.lifts) {
-      delete l.queue;
-      delete l.dispatchCredit;
-    }
-    old.dayStats = { arrivals: 20, completedRuns: 3, avgQueueMin: 2.5 };
-    old.guests = [{ ...old.guests[0], state: "queue", progress: 0.4 }];
-    const m = migrate(old, 1).state;
-    expect(m.lifts.every((l) => l.queue.length === 0 && l.dispatchCredit === 0)).toBe(true);
-    expect(m.dayStats).toMatchObject({
-      arrivals: 20,
-      completedRuns: 3,
-      dispatched: 0,
-      waitSumMin: 0,
-      maxQueueLength: 0,
-      peakWaitMin: 0,
-    });
-    const s = rules.tick({ ...createInitialState(1), ...m, paused: false }, 100);
-    expect(s.lifts[0].queue.length + s.guests.filter((g) => g.state === "ride").length).toBe(1);
-  });
-});
-
 describe("skipToClose", () => {
   it("simulates the rest of the day instead of jumping the clock", async () => {
-    const { createInitialState } = await import("./state");
     const rules = await import("./rules");
-    let s = rules.pickFounder(createInitialState(7), "elena");
+    let s = rules.pickFounder(createBuiltHill(7), "elena");
     s = rules.skipToClose(s);
     expect(s.phase).toBe("night");
     expect(s.dayStats.dispatched).toBeGreaterThan(0);

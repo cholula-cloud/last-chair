@@ -473,8 +473,8 @@ export function MountainScene() {
   );
   const orbitMax = placementActive ? PLACEMENT_MAX_DISTANCE : MAX_DISTANCE;
   const clearingLines = useMemo(
-    () => confirmedLifts.length ? confirmedLifts.map(liftLineOf) : [primaryLine],
-    [confirmedLifts, primaryLine],
+    () => confirmedLifts.map(liftLineOf),
+    [confirmedLifts],
   );
   const forestPaths = useMemo(
     () => trailRuns.filter((run) => run.open && run.builtDay === undefined).map((run) => run.path),

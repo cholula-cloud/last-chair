@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "@/game/descent";
 import { liftLineOf } from "@/game/rules";
-import { defaultLifts } from "@/game/state";
+import { starterLifts } from "@/game/__fixtures__/built-hill";
 import { TERRAIN } from "@/game/terrain";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 
@@ -26,7 +26,7 @@ describe("lift cable clearance", () => {
   });
 
   it("matches towers for lifts stored with only a top anchor", () => {
-    const lift = defaultLifts()[0];
+    const lift = starterLifts()[0];
     const fromRules = liftLineOf(lift);
     const legacy = lineAt(lift.anchor);
     expect(liftTowers(fromRules).map((p) => [p.x, p.z, p.top])).toEqual(
