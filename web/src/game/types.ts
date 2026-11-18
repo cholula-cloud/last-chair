@@ -1,4 +1,5 @@
 import { liftLength, liftVertical, type LiftLine } from "./descent";
+import { TERRAIN, type Terrain } from "./terrain";
 
 export type FarePreset = "cheap" | "balanced" | "expensive";
 export type SnowPreset = "minimal" | "mid" | "high";
@@ -163,9 +164,11 @@ export const LIFT_COST_PARAMS: Record<LiftType, { base: number; perLength: numbe
   chair: { base: 1000, perLength: 500, perVertical: 500 },
 };
 
-export function liftCost(type: LiftType, line: LiftLine): number {
+/** Prices in design units: world length and vertical are divided by H and V first. */
+export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN): number {
   const { base, perLength, perVertical } = LIFT_COST_PARAMS[type];
-  const raw = base + perLength * liftLength(line) + perVertical * liftVertical(line);
+  const { horizontal: H, vertical: V } = terrain.scale;
+  const raw = base + perLength * (liftLength(line) / H) + perVertical * (liftVertical(line, terrain) / V);
   return Math.round(raw / 50) * 50;
 }
 

@@ -198,12 +198,28 @@ One heightfield serves the sim and the renderer (`game/terrain.ts`, pure TypeScr
 |--------|---------|
 | `bounds`, `base` | Map extent and the lift loading point; vertical is measured from `height(base)` |
 | `height(x, z)` | Height in world units |
-| `gradient`, `grade(x, z)` | Central difference (h = 0.01); grade is rise over run, dimensionless |
+| `gradient`, `grade(x, z)` | Central difference (h = 0.01 * H); grade is world rise over world run, dimensionless |
 | `gradeAlong(a, b, step)` | Signed downhill grade samples along a segment (positive going down) |
-| `sustainedPitch(path, window = 0.6)` | Largest mean downhill grade over any stretch at least `window` long, so one steep sample does not set it (PR 13 trail difficulty) |
-| `feetPerUnit` | `verticalFeet / (summit height - base height)`; feet appear only through this factor (Dutch Hill: 570 ft) |
+| `sustainedPitch(path, window = 0.6 * H)` | Largest mean downhill grade over any stretch at least `window` long, so one steep sample does not set it (PR 13 trail difficulty) |
+| `feetPerUnit` | Vertical feet per world unit of height: `verticalFeet / (summit world height - base world height)` (Dutch Hill: 570 ft) |
+| `horizontalFeetPerUnit` | Horizontal feet per world unit: `def.horizontalFeetPerUnit / H` (Dutch Hill def 420, so 70 at 6/3) |
+| `scale`, `toWorld(p)`, `toDesign(p)` | See world scale below |
 
 Dutch Hill's features are named in the data: base apron (flat village ground at z ≥ 2.1, height 0.1), meadow (gentle novice apron), face (fall-line control points with a monotone cubic and one steeper rollover band), summit and east shoulder domes, side ridges, bowl and noise. The characterization snapshot does not depend on terrain.
+
+#### World scale (part 2a, no visible change)
+
+A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale ?? {1, 1})` maps it to world units with `scale = { horizontal: H, vertical: V }`: world x, z = H * design, world height = V * design height, so world grade = (V / H) * design grade. Bounds and `base` scale by H. `toWorld` and `toDesign` convert points (x, z only). The central-difference step and the default `gradeAlong` step and `sustainedPitch` window scale by H, so they sample the same design points. `gradeAlong`, `grade` and `sustainedPitch` return world grades. Dutch Hill stays at 1/1 in this PR; tests build a 6/3 terrain.
+
+`rulesFor(terrain)` (`game/descent.ts`) derives the placement limits from the scale. The named constants stay design values:
+
+| Scales by | Limits |
+|-----------|--------|
+| H | `MAX_LIFT_LENGTH`, `BASE_AREA_RADIUS`, `MIN_TOP_SPACING`, `MIN_LINE_CLEARANCE` |
+| V | `MIN_LIFT_VERTICAL` |
+| V / H | `MAX_LOAD_GRADE` |
+
+`checkLiftLine`, `checkSpacing` and `checkPlacement` use `rulesFor(terrain)`. `LIFT_COST_PARAMS` stays in design units: `liftCost(type, line, terrain)` divides world length by H and world vertical by V before pricing, then rounds to $50, so a chair at Mid costs $2,500 at any scale. `REFERENCE_TOPS` stay design coordinates (equal to world at 1/1) until part 2b.
 
 ### Trail graph (P0)
 
