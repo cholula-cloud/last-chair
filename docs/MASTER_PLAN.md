@@ -19,6 +19,46 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ---
 
+## Status snapshot
+
+Verified 2026-11-18 against `main` at PR 53 by reading the code. Every PR updates this section with its row (rule 5 in §8). Tests: 40-seed balance harness, unit tests and `phone-check` run in CI; real-device and external playtests have not been run.
+
+**Built and merged**
+
+| Area | What exists |
+|---|---|
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, save schema v10 with migrations |
+| Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
+| Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, tap placement of lifts with validity checks, trail graph with cut trails, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
+| Buildings | Warming hut, lodge (still buildable), café, shop, snow guns (one building), each as a flat bonus |
+| Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
+| Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
+
+**Partly built**
+
+| Area | Built | Missing | Row |
+|---|---|---|---|
+| Trail shards | Ribbon folds fixed in #49 | A look at phone size to confirm no jagged corridors remain, then tick | 13e |
+| Multi-lift choice | `chooseLift` exists in `lifts.ts` | Confirm whether guests pick by queue and skill before writing the spec | 14 |
+| Lift types | Surface and double chair differ in capacity and ride time | Wind, closures, Tier 2 gate | 15 |
+| Venues | Hut, café and shop give flat bonuses | Refuel stop, seats, revenue, the catalog, rentals | 16 |
+| Snow guns | One building with reach by elevation | Placed guns, groom capacity, visible plumes | 17 |
+| Weather | Three kinds, formula `(day × 17 + 3) % 10` | Seeded forecast, storms, wind | 18 |
+| Season | `SEASON_LENGTH = 14` | 28 days, weekends, holiday weeks | 19 |
+| Economy | Costs, revenue, lift cost by length | Loan offer, bankruptcy, construction draws | 20 |
+| Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
+| Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
+| Radio | Beat card in the night recap | Feed UI, story log, lodge tier-up lines, SummitLink offer as a choice | 23 |
+| Winter review | Sheet with score | Beats, choices, lodge tier, carry-forward data | 24 |
+| Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
+| Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
+
+**Not started:** B1, L1, B3, B4, B5, 16a to 16d, 26, 27, M4 audio and polish (28 to 33), M4b, M5, M6, M7, M8. B2 has a spec and no code.
+
+**Next up:** 13e check, then specs for B1 and L1 (docs only), then B1, L1, B2. See §9.
+
+---
+
 ## 1. What the game is
 
 **Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **SummitLink**, tries to buy up the same coast.
@@ -303,7 +343,7 @@ web/scripts/      Playwright phone-check and playtest scripts
 2. **Branch from fresh `main`**, named for the roadmap row (`claude/row14-multi-lift`). No stacked PRs; merge one before starting the next.
 3. **Sim changes ship with unit tests.** Bug fixes ship with a regression test. The season characterization snapshot changes only when the PR says why, with the diff read line by line.
 4. **`npm run check` is green** (lint + typecheck + test + build), and `npm run phone-check` passes for anything the player sees.
-5. **Docs move with code:** mark the row's status in §9 and the SIMULATION_SPEC markers in the same PR.
+5. **Docs move with code:** mark the row's status in §9, update the Status snapshot at the top, and update the SIMULATION_SPEC markers in the same PR.
 6. **No new systems on top of a fake one.** If a feature depends on a stubbed number, make the number real first.
 7. **File names have no underscores.**
 
@@ -361,7 +401,7 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 13 | ☑ | Trail graph (13a to 13c) | Trails from lift top to base; sustained pitch; guests choose by skill; snow by elevation |
 | — | ☑ | Render fix (#48), trail ribbon folds (#49) | Scene blank on every browser since #39; restored |
 | 13d | ☑ | Hill shape (#50) | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
-| 13e | ☐ | Trail corridor shards | Fix the jagged dark triangles in cut trail corridors |
+| 13e | ◐ | Trail corridor shards | Fix the jagged dark triangles in cut trail corridors. #49 fixed the ribbon folds; confirm at phone size, then tick |
 | B1 | ☐ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
 | L1 | ☐ | Fixed lodge | The lodge exists from day 1 on every mountain, cannot be built, moved or demolished, and leaves the Build menu. `lodgeTier` in state (1), save migration (an old save that built the lodge keeps Tier 1), lodge card shell, lot-to-lodge path kept. The $1,800 option is removed |
 | B2 | ☐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |
@@ -372,7 +412,7 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 16b | ☐ | Lodge tiers | Tier 2 and 3 upgrade: cost, two-night build with scaffolding, car park stalls (visual), attach pad count, tier gates in the catalog (double chair and guns move to Tier 2), greyed items that name their tier, lodge card lists what the next tier opens, tier models kit-bashed from existing GLBs, radio line per tier-up. Re-baselines the characterization snapshot and the balance harness (the chair on day 4 now needs Tier 2) |
 | 16c | ☐ | Free venue placement and attach | Place venues anywhere valid; attach pads on the lodge; `ATTACH_BONUS` 5%; attached venues drawn as wings; impact card shows the bonus |
 | 16d | ☐ | Venues with guest reasons | Refuel stop, café and shop revenue, rentals and ski school desk (First-Timers need them), guests leave a long lift line for the village; recap shows venue takings |
-| 15 | ☐ | Lift types matter | Surface vs double chair: capacity, ride time, wind, cost; double chair opens at Tier 2 |
+| 15 | ◐ | Lift types matter | Surface vs double chair: capacity, ride time, wind, cost; double chair opens at Tier 2 |
 | 17 | ☐ | Snowmaking + grooming | Placed guns (Tier 2); nightly groom capacity; visible plumes and corduroy |
 | B5 | ☐ | Trees as a resource | Cutting costs per acre; clearings change snow (shade, wind) |
 
@@ -384,14 +424,14 @@ Land row 25 first; every other M3 row adds saved fields.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 25 | ☐ | Save versioning | Schema version + migrations; old saves load or reset cleanly |
+| 25 | ◐ | Save versioning | Schema version + migrations; old saves load or reset cleanly |
 | 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
-| 20 | ☐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |
-| 21 | ☐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
-| 22 | ☐ | Founders complete | All six modifiers live |
-| 23 | ☐ | Route 100 Radio + Act I beats | Radio feed; six beats on metric gates, delivered at night; lodge tier-up lines; the school bus beat needs the Tier 2 ski school; story log; the first SummitLink offer as a choice |
-| 24 | ☐ | Winter review | Season score, beats, choices, lodge tier, talents; carry-forward data |
+| 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |
+| 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
+| 22 | ◐ | Founders complete | All six modifiers live |
+| 23 | ◐ | Route 100 Radio + Act I beats | Radio feed; six beats on metric gates, delivered at night; lodge tier-up lines; the school bus beat needs the Tier 2 ski school; story log; the first SummitLink offer as a choice |
+| 24 | ◐ | Winter review | Season score, beats, choices, lodge tier, talents; carry-forward data |
 | 26 | ☐ | Coached first winter | The founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice; skippable |
 | 27 | ☐ | MVP balance + external playtest | Three outside players finish winter 1 without help; Dutch Hill goal (Tier 2 and the school bus) is reachable in 28 days and not trivial |
 

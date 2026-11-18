@@ -1,7 +1,7 @@
 # Last Chair — testing
 
 **Version:** 1.0 · **Updated:** 2026-11-16
-Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §7](./MASTER_PLAN.md#7-how-we-work).
+Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
 
