@@ -26,7 +26,7 @@ export type FrameInput = {
 
 export type FrameResult = { target: Vec3; distance: number };
 
-const MAX_DISTANCE = 500;
+const MAX_DISTANCE = 800;
 
 /** Unit vector from the target toward the camera, plus the camera's right and up. */
 export function cameraBasis(azimuth: number, elevation: number) {
@@ -123,7 +123,7 @@ export function keyPoints(): Vec3[] {
     onTerrain(TERRAIN.base.x, TERRAIN.base.z, LIFT_TERMINAL_H),
     onTerrain(LODGE.x, LODGE.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0.9),
-    onTerrain(DUTCH_HILL.summit.x, DUTCH_HILL.summit.z, 0),
+    onTerrain(TERRAIN.toWorld(DUTCH_HILL.summit).x, TERRAIN.toWorld(DUTCH_HILL.summit).z, 0),
     onTerrain(SHOP_POS.x, SHOP_POS.z, 0.5),
     ...HOUSES.map((h) => onTerrain(h.x, h.z, 0.5)),
   ];

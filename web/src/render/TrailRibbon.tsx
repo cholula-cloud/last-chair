@@ -11,8 +11,8 @@ import { TERRAIN } from "@/game/terrain";
 import { sampleSegments, trailPoint } from "./trail";
 import type { Trail } from "@/game/snow";
 
-const TRAIL_WIDTH = 0.86;
-const PREVIEW_WIDTH = TRAIL_WIDTH + 0.08;
+const TRAIL_WIDTH = 5.2;
+const PREVIEW_WIDTH = TRAIL_WIDTH + 0.5;
 
 /** Ribbon that hugs the terrain; u runs across the trail, v along it. */
 function ribbonGeometry(anchor: LiftAnchor, width: number, segments: number) {

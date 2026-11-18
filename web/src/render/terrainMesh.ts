@@ -1,17 +1,15 @@
 import * as THREE from "three";
 import { TERRAIN } from "@/game/terrain";
 
-export const NX = 150;
-export const NZ = 124;
-const CX = 0.6;
-const CZ = -0.4;
+export const NX = 192;
+export const NZ = 160;
 
 /** Non-uniform grid: dense in the play area, coarse toward the fogged edges. */
 export function gridX(s: number) {
-  return CX + 8.5 * s + 14 * s * s * s;
+  return 3.6 + 51 * s + 93 * s * s * s;
 }
 export function gridZ(s: number) {
-  return CZ + 7 * s + 11 * s * s * s;
+  return -2.4 + 42 * s + 66 * s * s * s;
 }
 
 /** Vertex positions (x, y, z per vertex, row by row); every y is `TERRAIN.height(x, z)`. */

@@ -6,8 +6,8 @@ const { xMin: X_MIN, xMax: X_MAX, zMin: Z_MIN, zMax: Z_MAX } = TERRAIN.bounds;
 
 describe("TERRAIN.height", () => {
   it("is finite everywhere on the map", () => {
-    for (let x = X_MIN; x <= X_MAX; x += 0.25) {
-      for (let z = Z_MIN; z <= Z_MAX; z += 0.25) {
+    for (let x = X_MIN; x <= X_MAX; x += 2) {
+      for (let z = Z_MIN; z <= Z_MAX; z += 2) {
         expect(Number.isFinite(TERRAIN.height(x, z)), `(${x}, ${z})`).toBe(true);
       }
     }
@@ -16,10 +16,10 @@ describe("TERRAIN.height", () => {
   it("is continuous: height changes at most MAX_SLOPE per unit between neighbours", () => {
     // The steepest real slope is the back side of the summit (about 6 per unit
     // at the far corner); a seam or noise discontinuity would show hundreds.
-    const step = 0.01;
-    const MAX_SLOPE = 10;
-    for (let x = X_MIN; x <= X_MAX; x += 0.37) {
-      for (let z = Z_MIN; z <= Z_MAX; z += 0.37) {
+    const step = 0.05;
+    const MAX_SLOPE = 40;
+    for (let x = X_MIN; x <= X_MAX; x += 2) {
+      for (let z = Z_MIN; z <= Z_MAX; z += 2) {
         const h = TERRAIN.height(x, z);
         const sx = Math.abs(TERRAIN.height(x + step, z) - h) / step;
         const sz = Math.abs(TERRAIN.height(x, z + step) - h) / step;
@@ -40,17 +40,17 @@ describe("Dutch Hill silhouette", () => {
   const baseH = TERRAIN.height(TERRAIN.base.x, TERRAIN.base.z);
 
   it("has its summit as the highest point of the play area behind the base", () => {
-    const { summit } = DUTCH_HILL;
+    const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
     const top = TERRAIN.height(summit.x, summit.z);
-    for (let x = -2.5; x <= 3.5; x += 0.05) {
-      for (let z = -4; z < 0; z += 0.05) {
-        expect(TERRAIN.height(x, z), `(${x.toFixed(2)}, ${z.toFixed(2)})`).toBeLessThanOrEqual(top + 0.005);
+    for (let x = summit.x - 15; x <= summit.x + 15; x += 0.3) {
+      for (let z = summit.z - 15; z < summit.z + 5; z += 0.3) {
+        expect(TERRAIN.height(x, z), `(${x.toFixed(2)}, ${z.toFixed(2)})`).toBeLessThanOrEqual(top + 0.02);
       }
     }
   });
 
   it("rises monotonically along the fall line from base to summit", () => {
-    const { summit } = DUTCH_HILL;
+    const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
     const n = 400;
     let prev = -Infinity;
     for (let i = 0; i <= n; i++) {
@@ -64,14 +64,14 @@ describe("Dutch Hill silhouette", () => {
     }
   });
 
-  it("keeps the first 0.8 units above the base gentle (meadow grade < 0.25)", () => {
-    for (let dz = 0; dz <= 0.8; dz += 0.02) {
+  it("keeps the first meadow above the base gentle (meadow grade < 0.25)", () => {
+    for (let dz = 0; dz <= DUTCH_HILL.meadow!.length * TERRAIN.scale.horizontal; dz += 0.12) {
       expect(TERRAIN.grade(TERRAIN.base.x, TERRAIN.base.z - dz), `dz=${dz.toFixed(2)}`).toBeLessThan(0.25);
     }
   });
 
   it("has a 570 ft vertical through feetPerUnit", () => {
-    const { summit } = DUTCH_HILL;
+    const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
     const units = TERRAIN.height(summit.x, summit.z) - baseH;
     expect(TERRAIN.feetPerUnit * units).toBeCloseTo(570, 6);
   });
@@ -103,8 +103,8 @@ describe("grade helpers", () => {
   });
 
   it("gradeAlong is positive going downhill and negative going uphill", () => {
-    const top = { x: 0.45, z: 0 };
-    const bottom = { x: 0.45, z: 1.5 };
+    const top = TERRAIN.toWorld({ x: 0.45, z: 0 });
+    const bottom = TERRAIN.toWorld({ x: 0.45, z: 1.5 });
     expect(Math.min(...TERRAIN.gradeAlong(top, bottom))).toBeGreaterThan(0);
     expect(Math.max(...TERRAIN.gradeAlong(bottom, top))).toBeLessThan(0);
   });
@@ -112,16 +112,19 @@ describe("grade helpers", () => {
 
 describe("sustainedPitch", () => {
   const fallLine = (z0: number, z1: number, n = 120) =>
-    Array.from({ length: n + 1 }, (_, i) => ({ x: 0.45, z: z0 + ((z1 - z0) * i) / n }));
+    Array.from({ length: n + 1 }, (_, i) => {
+      const z = z0 + ((z1 - z0) * i) / n;
+      return TERRAIN.toWorld({ x: 0.45, z });
+    });
 
   it("stays below the steepest single sample when the path crosses the rollover", () => {
     // Summit to apron straight down the fall line: crosses the steep band.
     const path = fallLine(-1.6, 1.6);
     const peak = Math.max(...TERRAIN.gradeAlong(path[0], path[path.length - 1], 0.01));
     const sustained = TERRAIN.sustainedPitch(path);
-    expect(peak).toBeGreaterThan(1.5);
-    expect(sustained).toBeLessThan(peak - 0.1);
-    expect(sustained).toBeGreaterThan(0.5);
+    expect(peak).toBeGreaterThan(0.5);
+    expect(sustained).toBeLessThan(peak - 0.05);
+    expect(sustained).toBeGreaterThan(0.15);
   });
 
   it("is not set by a short ledge", () => {

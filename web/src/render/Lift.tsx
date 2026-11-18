@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { LiftAnchor } from "@/game/descent";
-import type { LiftType } from "@/game/types";
+import { LIFT_SPECS, MS_PER_GAME_MINUTE, type LiftType } from "@/game/types";
 import { sceneMood } from "./Atmosphere";
 import { cyl, merge, type Part } from "./geo";
 import {
@@ -149,7 +149,9 @@ export function Lift({
   useFrame((_, delta) => {
     const mesh = carriers.current;
     if (!mesh) return;
-    phase.current = (phase.current + delta * 0.035) % 1;
+    const rideMs = LIFT_SPECS[type].rideMinutes * MS_PER_GAME_MINUTE;
+    const rate = rideMs > 0 ? 1000 / rideMs : 0;
+    phase.current = (phase.current + delta * rate) % 1;
     const off = LIFT_CABLE_OFFSET;
     for (let i = 0; i < CARRIERS; i++) {
       const s = (phase.current + i / CARRIERS) % 1;

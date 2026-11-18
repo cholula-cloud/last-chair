@@ -38,8 +38,8 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
       {
         "anchor": {
           "label": "Ridge",
-          "x": -1.2,
-          "z": 0.2,
+          "x": -7.2,
+          "z": 1.2,
         },
         "confirmed": true,
         "dispatchCredit": 0,

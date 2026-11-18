@@ -171,7 +171,7 @@ export function Atmosphere() {
 
   return (
     <>
-      <fog ref={fog} attach="fog" args={[PALETTE.skyHorizon, 38, 110]} />
+      <fog ref={fog} attach="fog" args={[PALETTE.skyHorizon, 140, 420]} />
       <mesh material={sky} renderOrder={-1} frustumCulled={false}>
         <sphereGeometry args={[140, 24, 12]} />
       </mesh>

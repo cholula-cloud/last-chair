@@ -7,7 +7,7 @@ import type { TerrainDef } from "../terrain";
  */
 export const DUTCH_HILL: TerrainDef = {
   // Design units equal world units until the world-scale work lands; 6/3 is the planned scale.
-  scale: { horizontal: 1, vertical: 1 },
+  scale: { horizontal: 6, vertical: 3 },
   // 70 ft per world unit at 6x horizontal.
   horizontalFeetPerUnit: 420,
   bounds: { xMin: -24, xMax: 24, zMin: -20, zMax: 20 },

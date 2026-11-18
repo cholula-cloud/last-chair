@@ -192,8 +192,9 @@ export function placementReason(
   }
 }
 
+/** World-space lift tops at Dutch Hill 6×/3×; literals match `TERRAIN.toWorld(design)`. */
 export const REFERENCE_TOPS: ReferenceTop[] = [
-  { x: -1.2, z: 0.2, label: "Ridge" },
-  { x: 0.8, z: 0.6, label: "Mid" },
-  { x: -0.2, z: 1.0, label: "Creek" },
+  { x: -7.2, z: 1.2, label: "Ridge" },
+  { x: 4.8, z: 3.6, label: "Mid" },
+  { x: -1.2, z: 6.0, label: "Creek" },
 ];
