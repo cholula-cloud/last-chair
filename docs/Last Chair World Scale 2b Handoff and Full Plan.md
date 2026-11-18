@@ -17,6 +17,8 @@ Contents
 
 ## 1. Where things stand
 
+> **Pointer (2026-11-18):** This section predates several M2 merges. For **current `main`**, merged GitHub PRs through **#46**, save **v10**, and the **unfixed mobile hill** (HUD loads, WebGL canvas blank on real iPhone — see owner screenshot), read **`docs/Last Chair Roadmap Handoff M2 to M7.md`** → *Where things stand* and *Known blocker — mobile 3D hill not visible*. Do **row 14** only after that blocker is cleared on device.
+
 ### Repo, remote, deploy
 
 | Item | Value |
