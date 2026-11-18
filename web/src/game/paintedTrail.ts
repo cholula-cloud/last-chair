@@ -364,7 +364,6 @@ export function previewPaintedTrail(
   else if (first.erase) reason = "Start over an existing trail to erase it.";
   else if (liftIndex < 0) reason = "Start at a lift top or an open trail.";
   else if (disconnected) reason = DISCONNECTED_STROKE;
-  else if (!atBase && !finish) reason = "Finish at the base or join an open trail.";
   else if (trailsOnLift(state.trails, liftIndex).length >= MAX_TRAILS_PER_LIFT) reason = "This lift has room for three trails.";
   else if (state.trails.filter((trail) => trail.open).length >= MAX_TRAILS_TOTAL) reason = "The hill has room for eight trails.";
   else if (state.trails.length >= MAX_SAVED_TRAILS) reason = "This winter has reached its trail construction limit.";

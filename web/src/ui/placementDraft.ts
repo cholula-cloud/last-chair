@@ -19,6 +19,7 @@ type PlacementKind = "lift" | "trail" | "asset" | "gun";
 /** Session-only build drafts. The game state changes only on confirmation. */
 export const usePlacementDraft = create<{
   active: boolean;
+  showBuildGrid: boolean;
   moveCamera: boolean;
   kind: PlacementKind;
   asset?: AssetId;
@@ -30,6 +31,7 @@ export const usePlacementDraft = create<{
   snapped: boolean;
   tapPoint?: XZ;
   focus: PlacementFocus | null;
+  glade: boolean;
   brushWidth: number;
   erasing: boolean;
   strokes: PaintStroke[];
@@ -38,6 +40,7 @@ export const usePlacementDraft = create<{
   lodgeRequested: number;
 }>(() => ({
   active: false,
+  showBuildGrid: false,
   moveCamera: false,
   kind: "lift",
   review: false,
@@ -45,6 +48,7 @@ export const usePlacementDraft = create<{
   step: "top",
   snapped: false,
   focus: null,
+  glade: false,
   brushWidth: STANDARD_BRUSH_WIDTH,
   erasing: false,
   strokes: [],
@@ -97,6 +101,7 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
     snapped: false,
     tapPoint: undefined,
     focus: null,
+    glade: false,
     brushWidth: STANDARD_BRUSH_WIDTH,
     erasing: false,
     strokes: [],

@@ -22,7 +22,7 @@ export function SlopeGrid() {
     const segment = (x: number, z: number, endX: number, endZ: number) => {
       const grade = TERRAIN.grade((x + endX) / 2, (z + endZ) / 2) * factor;
       const color = colors[classifyPitch(grade)];
-      positions.push(x, TERRAIN.height(x, z) + 0.1, z, endX, TERRAIN.height(endX, endZ) + 0.1, endZ);
+      positions.push(x, TERRAIN.height(x, z) + 0.14, z, endX, TERRAIN.height(endX, endZ) + 0.14, endZ);
       tints.push(color.r, color.g, color.b, color.r, color.g, color.b);
     };
     for (let x = xMin; x <= xMax; x += step) {
@@ -38,7 +38,7 @@ export function SlopeGrid() {
   }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <lineSegments geometry={geometry} renderOrder={1}>
+    <lineSegments geometry={geometry} renderOrder={2}>
       <lineBasicMaterial vertexColors transparent opacity={0.5} depthWrite={false} toneMapped={false} />
     </lineSegments>
   );

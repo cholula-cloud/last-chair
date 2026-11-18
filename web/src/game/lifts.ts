@@ -154,11 +154,12 @@ export function stepLifts(
   // Join.
   out.forEach((g, i) => {
     if (g.state !== "queue" || seen.has(g.id)) return;
-    const li = chooseLift(next, talentsOwned, trails, g, wind, now);
+    const chosen = g.trailIndex !== undefined ? g.liftIndex : undefined;
+    const li = chosen !== undefined && operational[chosen] ? chosen : chooseLift(next, talentsOwned, trails, g, wind, now);
     if (li < 0) return;
     next[li].queue.push(g.id);
     seen.add(g.id);
-    out[i] = { ...g, liftIndex: li, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
+    out[i] = { ...g, liftIndex: li, trailIndex: undefined, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
   });
 
   // Dispatch.

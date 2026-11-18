@@ -56,12 +56,23 @@ describe("chunk candidates", () => {
 });
 
 describe("forested and forestForTarget", () => {
+  it("does not invent a trail clearing when a lift has no trail", () => {
+    const line = DEFAULT_LINES[0];
+    const candidates = _chunkSpots(-1, -1);
+    const point = candidates.find((p) =>
+      forested(p.x, p.z, { lines: [], paths: [] }) &&
+      distSqToPolyline(p.x, p.z, trailPolyline(line, 28)) < TRAIL_CLEAR ** 2 &&
+      distSqToLiftLine(p.x, p.z, line) > LIFT_CLEAR ** 2,
+    );
+    expect(point).toBeDefined();
+    expect(forested(point!.x, point!.z, { lines: [line], paths: [] })).toBe(true);
+  });
+
   it("clears lifts, trails, apron and road", () => {
     for (const line of DEFAULT_LINES) {
       expect(forested(line.top.x, line.top.z, clearings)).toBe(false);
       const mid = trailPolyline(line, 28)[12];
       expect(forested(mid.x, mid.z, clearings)).toBe(false);
-      expect(distSqToLiftLine(mid.x, mid.z, line)).toBeLessThanOrEqual(LIFT_CLEAR ** 2 + 1e-6);
       expect(distSqToPolyline(mid.x, mid.z, trailPolyline(line, 28))).toBeLessThanOrEqual(
         TRAIL_CLEAR ** 2 + 0.5,
       );

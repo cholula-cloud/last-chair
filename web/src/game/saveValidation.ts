@@ -42,13 +42,13 @@ const trailShape = shape({
   liftIndex: index, name: string, path: array(point), lengthFt: number, pitch: number,
   difficulty: oneOf("green", "blue", "black"), open: boolean,
   snow: array(shape(numbers("depth", "quality", "coverage"))), elevations: array(number),
-  widths: optional(array(number)), paidClearing: optional(array(cell)),
+  glade: optional(boolean), widths: optional(array(number)), paidClearing: optional(array(cell)),
   groomed: optional(array(boolean)), gunCovered: optional(array(boolean)),
   builtDay: optional(number), builtAtMin: optional(number), paid: optional(number),
 });
 
 const guest = shape({
-  id: string, label: string, state: oneOf("pending", "arrive", "queue", "ride", "ski", "refuel", "depart", "gone"),
+  id: string, label: string, state: oneOf("pending", "arrive", "queue", "ride", "ski", "walk_lift", "walk_out", "refuel", "depart", "gone"),
   persona: oneOf("first_timer", "regular"),
   ...numbers("progress", "mood", "waitMin", "waitCount", "snowSum", "energy", "runs", "targetRuns", "arriveAtMin", "stateSinceMin"),
   liftIndex: optional(index), trailIndex: optional(index), venueIndex: optional(index),

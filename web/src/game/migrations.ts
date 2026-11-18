@@ -21,6 +21,7 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...raw, seasonSeed, weatherDays: resumeSeasonWeather(seasonSeed, seasonLength, dayIndex, weather) };
     },
   },
+  { to: 3, note: "Preserve trail types; existing runs are cleared trails.", up: (raw) => raw },
 ];
 
 type MigrationResult =

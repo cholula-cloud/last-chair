@@ -14,6 +14,8 @@ const STATE_WORD: Record<GuestState, string> = {
   arrive: "Arriving",
   queue: "In the lift line",
   ride: "Riding up",
+  walk_lift: "Walking to lift",
+  walk_out: "Walking to base",
   ski: "Skiing down",
   refuel: "Taking a break",
   depart: "Heading home",

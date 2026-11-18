@@ -38,6 +38,7 @@ import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience() {
   const [guestsOpen, setGuestsOpen] = useState(false);
+  const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -239,6 +240,8 @@ export default function PlayExperience() {
                   }}
                 />
               )}
+              <button type="button" aria-pressed={showBuildGrid} onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
+                className="key press min-h-11 px-3 text-sm font-extrabold">Grid {showBuildGrid ? "on" : "off"}</button>
               <RecenterButton onClick={requestRecenter} />
             </div>
           )}
