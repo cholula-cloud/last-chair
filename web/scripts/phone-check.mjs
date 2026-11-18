@@ -110,9 +110,13 @@ async function measureFps(page, ms = 5000) {
   }, ms);
 }
 
-/** Fail when the canvas is missing, tiny, or the center pixel is still ink-black (no hill). */
+/**
+ * Fail when the canvas is missing, tiny, or still shows the page's ink background
+ * (nothing drawn). Samples a real screenshot of the canvas: reading the WebGL buffer
+ * directly returns zeros after a present because preserveDrawingBuffer is off.
+ */
 async function assertMountainVisible(page, engine, tag) {
-  const check = await page.evaluate(() => {
+  const size = await page.evaluate(() => {
     const c = document.querySelector("canvas");
     if (!c) return { ok: false, reason: "no canvas" };
     const r = c.getBoundingClientRect();
@@ -120,26 +124,40 @@ async function assertMountainVisible(page, engine, tag) {
     if (r.width < min || r.height < min) {
       return { ok: false, reason: `canvas ${r.width.toFixed(0)}x${r.height.toFixed(0)} vs min ${min.toFixed(0)}` };
     }
-    const gl = c.getContext("webgl2") || c.getContext("webgl");
-    if (!gl) return { ok: false, reason: "no webgl context" };
-    gl.finish();
-    const x = Math.floor(c.width / 2);
-    const y = Math.floor(c.height / 2);
-    const px = new Uint8Array(4);
-    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
-    const lum = 0.299 * px[0] + 0.587 * px[1] + 0.114 * px[2];
-    const spread = [0, 1, -1].flatMap((dx) =>
-      [0, 1, -1].map((dy) => {
-        const s = new Uint8Array(4);
-        gl.readPixels(x + dx * 40, y + dy * 40, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, s);
-        return 0.299 * s[0] + 0.587 * s[1] + 0.114 * s[2];
-      }),
-    );
-    const maxLum = Math.max(lum, ...spread);
-    if (maxLum < 35) return { ok: false, reason: `center too dark (lum ${maxLum.toFixed(0)})` };
-    return { ok: true, lum: maxLum };
+    return { ok: true };
   });
-  if (!check.ok) fail(`${engine} ${tag}: mountain not visible — ${check.reason}`);
+  if (!size.ok) {
+    fail(`${engine} ${tag}: mountain not visible — ${size.reason}`);
+    return;
+  }
+  const png = (await page.locator("canvas").screenshot()).toString("base64");
+  const check = await page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    // Page background (--ink #1b3a57); a blank WebGL canvas shows this through.
+    const ink = [0x1b, 0x3a, 0x57];
+    let total = 0;
+    let drawn = 0;
+    // Rows 30% to 80% of the height: clear of the top bar, morning note and bottom HUD.
+    for (let gy = 3; gy <= 8; gy++) {
+      for (let gx = 1; gx < 10; gx++) {
+        const d = ctx.getImageData(Math.floor((gx / 10) * c.width), Math.floor((gy / 10) * c.height), 1, 1).data;
+        total++;
+        const diff = Math.abs(d[0] - ink[0]) + Math.abs(d[1] - ink[1]) + Math.abs(d[2] - ink[2]);
+        if (diff > 40) drawn++;
+      }
+    }
+    return { share: drawn / total };
+  }, png);
+  if (check.share < 0.5) {
+    fail(`${engine} ${tag}: mountain not visible — only ${(check.share * 100).toFixed(0)}% of canvas samples differ from the ink background`);
+  }
 }
 
 async function readRenderStats(page) {
