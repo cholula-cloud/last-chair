@@ -42,6 +42,46 @@ export function pathPoint(path: readonly XZ[], t: number): { x: number; y: numbe
   return { x, y: TERRAIN.height(x, z) + TRAIL_LIFT, z };
 }
 
+/**
+ * Display centreline for a routed path. Routed paths come off a grid walk and
+ * keep kinks much tighter than a trail is wide; a ribbon built straight on
+ * them folds over itself. A few box-filter passes over a dense resample bend
+ * every turn to a radius on the order of `radius`. Samples past either end are
+ * point reflections through that end, so the top and bottom stay put and the
+ * filter keeps working right up to them.
+ */
+export function smoothPath(path: readonly XZ[], radius: number, step = 0.25, passes = 3): XZ[] {
+  if (path.length < 3) return path.map((p) => ({ x: p.x, z: p.z }));
+  const { total } = arcLengths(path);
+  const n = Math.max(2, Math.ceil(total / step));
+  let pts = pathPolyline(path, n);
+  const last = pts.length - 1;
+  const half = Math.max(1, Math.min(Math.round(radius / step), last));
+  const at = (src: XZ[], j: number): XZ => {
+    if (j < 0) return { x: 2 * src[0].x - src[-j].x, z: 2 * src[0].z - src[-j].z };
+    if (j > last) {
+      const k = 2 * last - j;
+      return { x: 2 * src[last].x - src[k].x, z: 2 * src[last].z - src[k].z };
+    }
+    return src[j];
+  };
+  for (let pass = 0; pass < passes; pass++) {
+    const next: XZ[] = new Array(pts.length);
+    for (let i = 0; i <= last; i++) {
+      let sx = 0;
+      let sz = 0;
+      for (let j = i - half; j <= i + half; j++) {
+        const p = at(pts, j);
+        sx += p.x;
+        sz += p.z;
+      }
+      next[i] = { x: sx / (2 * half + 1), z: sz / (2 * half + 1) };
+    }
+    pts = next;
+  }
+  return pts;
+}
+
 /** Path sampled as a polyline (for tree clearing). */
 export function pathPolyline(path: readonly XZ[], n = 24): XZ[] {
   const pts: XZ[] = [];

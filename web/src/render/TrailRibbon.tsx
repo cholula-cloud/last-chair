@@ -8,7 +8,7 @@ import { sceneMood } from "./Atmosphere";
 import { smoothstep } from "./math";
 import { PALETTE } from "./palette";
 import { TERRAIN } from "@/game/terrain";
-import { pathPoint, sampleSegments, trailPoint } from "./trail";
+import { pathPoint, sampleSegments, smoothPath, trailPoint } from "./trail";
 import type { XZ } from "@/game/terrain";
 import type { Trail } from "@/game/snow";
 
@@ -27,7 +27,9 @@ function ribbonGeometry(
   const uvs: number[] = [];
   const indices: number[] = [];
   let travelled = 0;
-  const sample = (t: number) => (path ? pathPoint(path, t) : trailPoint(t, line));
+  // Routed paths are smoothed to about the trail's half-width so rows never cross.
+  const centre = path ? smoothPath(path, width * 0.6) : null;
+  const sample = (t: number) => (centre ? pathPoint(centre, t) : trailPoint(t, line));
   let prev = sample(0);
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
