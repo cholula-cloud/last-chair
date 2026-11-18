@@ -33,7 +33,7 @@ const [{ TERRAIN }, { createInitialState, SAVE_KEY, SAVE_VERSION, toPersisted },
 const browserTypes = { chromium, webkit };
 const engines = (process.env.PLAYTEST_ENGINES ?? "chromium,webkit").split(",");
 const scenario = process.env.PLAYTEST_SCENARIO ?? "all";
-assert(["all", "opening", "upgrade"].includes(scenario), "Unknown playtest scenario: " + scenario);
+assert(["all", "opening", "upgrade", "weather"].includes(scenario), "Unknown playtest scenario: " + scenario);
 const base = (process.env.PLAY_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 const output = path.join(process.env.PLAYTEST_OUT ?? "playtest-artifacts", "m2");
 const viewport = { width: 390, height: 844 };
@@ -248,6 +248,13 @@ async function closeHill(page) {
   await page.getByRole("heading", { name: "Closing recap" }).waitFor({ timeout: 15000 });
   const state = (await save(page)).state;
   assert.equal(state.phase, "night");
+  if (state.dayIndex < state.seasonLength) {
+    const forecast = page.getByRole("group", { name: "Tomorrow’s forecast" });
+    await forecast.waitFor();
+    const odds = await forecast.getByRole("listitem").allTextContents();
+    const sum = odds.reduce((total, item) => total + Number(item.match(/(\d+)%/)?.[1]), 0);
+    assert(odds.length === 4 && Math.abs(sum - 100) <= 2, "Forecast odds should add up to 100% after rounding");
+  }
   return state;
 }
 
@@ -325,6 +332,33 @@ async function upgrade(page, cdp, engine) {
   };
 }
 
+async function gustyDay(page, engine) {
+  const withLift = placeLift(pickFounder(createInitialState(42), "amira"), {
+    type: "surface", bottom: TERRAIN.base, top: REFERENCE_TOPS[0],
+  });
+  const brushes = trailOptions(withLift, 0).map((option) => [{ points: option.path, widthFt: STANDARD_BRUSH_WIDTH }]);
+  const brush = brushes.find((draft) => checkPaint(withLift, draft).reason === null);
+  assert.ok(brush, "Chair fixture needs an open trail");
+  const hill = commitPaint(withLift, brush);
+  const state = {
+    ...hill,
+    lodgeTier: 2,
+    clockMin: 630,
+    weather: "storm",
+    weatherDays: [{ kind: "storm", wind: "gusty" }, ...hill.weatherDays.slice(1)],
+    lifts: hill.lifts.map((lift) => ({ ...lift, type: "chair" })),
+  };
+  await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), {
+    key: SAVE_KEY, value: JSON.stringify({ state: toPersisted(state), version: SAVE_VERSION }),
+  });
+  await openPlay(page);
+  await page.getByRole("status").filter({ hasText: "Chair on wind hold until 1 PM" }).waitFor();
+  await screenshot(page, engine, "wind-hold");
+  await closeHill(page);
+  await page.getByRole("group", { name: "Two-day forecast" }).scrollIntoViewIfNeeded();
+  await screenshot(page, engine, "forecast");
+}
+
 async function play(engine) {
   const artifacts = {};
   let browser;
@@ -347,7 +381,7 @@ async function play(engine) {
       const cdp = nativeTouchDrag ? await context.newCDPSession(page) : null;
       return { context, cdp };
     };
-    if (scenario !== "upgrade") {
+    if (scenario === "all" || scenario === "opening") {
       const { context, cdp } = await newContext();
       step = "fresh opening";
       artifacts.scriptedSeconds = await opening(page, cdp, engine);
@@ -355,11 +389,18 @@ async function play(engine) {
       await context.close();
       page = undefined;
     }
-    if (scenario !== "opening") {
-      const { cdp } = await newContext();
+    if (scenario === "all" || scenario === "upgrade") {
+      const { context, cdp } = await newContext();
       step = "prepared lodge upgrade";
       Object.assign(artifacts, await upgrade(page, cdp, engine));
       console.error(engine + " Tier 2 rentals earned $" + artifacts.venueRevenue);
+      await context.close();
+      page = undefined;
+    }
+    if (scenario === "all" || scenario === "weather") {
+      await newContext();
+      step = "chair wind hold and forecast";
+      await gustyDay(page, engine);
     }
     assert.deepEqual(pageErrors, []);
     return { engine, ok: true, input: nativeTouchDrag ? "touch" : mouseOnly ? "mouse" : "mouse drag and touch tap", ...artifacts };

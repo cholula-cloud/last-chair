@@ -142,12 +142,13 @@ export function Atmosphere() {
     const dusk = smoothstep(14 * 60, 16 * 60, clockMin) * (1 - n);
     sceneMood.night = n;
     sceneMood.dusk = dusk;
-    const overcast = weather === "snow" ? 1 : 0;
+    const overcast = weather === "storm" ? 1.55 : weather === "snow" ? 1 : 0;
 
     const top = sky.uniforms.topColor.value as THREE.Color;
     const hor = sky.uniforms.horizonColor.value as THREE.Color;
     top.copy(DAY.top).lerp(DAY.overcastTop, overcast * 0.6).lerp(NIGHT.top, n);
     hor.copy(DAY.horizon).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
+    if (weather === "storm") hor.lerp(DAY.overcastTop, (1 - n) * 0.55);
     if (fog.current) fog.current.color.copy(hor);
 
     if (sun.current) {

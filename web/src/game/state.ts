@@ -2,6 +2,8 @@ import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
+import { mix32 } from "./rng";
+import { generateSeasonWeather } from "./weather";
 import type { LiftAnchor } from "./descent";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY } from "./snow";
@@ -10,6 +12,7 @@ import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, type NightRecap } from "./
 import type {
   BuildingId,
   DayStats,
+  DayWeather,
   FarePreset,
   FounderId,
   GamePhase,
@@ -91,6 +94,9 @@ export type PersistedState = {
   pendingBeat: StoryBeatId | null;
   beatAcknowledged: boolean;
   weather: WeatherKind;
+  seasonSeed: number;
+  /** One actual weather outcome per day in the current winter. */
+  weatherDays: DayWeather[];
   morningHeadline: string;
   daysWithoutSnow: number;
   reputation: number;
@@ -116,6 +122,8 @@ export const DEFAULT_SEED = 1;
 export const OPENING_HEADLINE = "Dutch Hill has a lodge. Build a lift and paint a trail to open.";
 
 export function createInitialState(seed: number = DEFAULT_SEED): GameState {
+  const seasonSeed = mix32(seed);
+  const weatherDays = generateSeasonWeather(seasonSeed, SEASON_LENGTH);
   return {
     dayIndex: 1,
     clockMin: DAY_START_MIN,
@@ -149,7 +157,9 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     completedBeats: [],
     pendingBeat: null,
     beatAcknowledged: true,
-    weather: "clear",
+    weather: weatherDays[0].kind,
+    seasonSeed,
+    weatherDays,
     morningHeadline: OPENING_HEADLINE,
     daysWithoutSnow: 0,
     reputation: 40,
@@ -193,6 +203,8 @@ export function toPersisted(state: PersistedState): PersistedState {
     pendingBeat: state.pendingBeat,
     beatAcknowledged: state.beatAcknowledged,
     weather: state.weather,
+    seasonSeed: state.seasonSeed,
+    weatherDays: state.weatherDays,
     morningHeadline: state.morningHeadline,
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: state.reputation,
@@ -217,4 +229,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;

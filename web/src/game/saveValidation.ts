@@ -23,6 +23,7 @@ const numbers = (...names: string[]): Record<string, Check> => Object.fromEntrie
 const point = (value: unknown): value is XZ => record(value) && number(value.x) && number(value.z);
 const fare = oneOf("cheap", "balanced", "expensive");
 const snow = oneOf("minimal", "mid", "high");
+const weather = oneOf("clear", "snow", "storm", "thaw");
 const liftType = oneOf("surface", "chair");
 const beat = oneOf("first_load", "saturday", "school_bus", "dry_week", "summit_link", "winter_review");
 const assetId: Check = (value) => typeof value === "string" && Object.hasOwn(ASSET_CATALOG, value);
@@ -100,7 +101,9 @@ const fields: Record<keyof PersistedState, Check> = {
   completedBeats: array(beat),
   pendingBeat: nullable(beat),
   beatAcknowledged: boolean,
-  weather: oneOf("snow", "clear", "thaw"),
+  weather,
+  seasonSeed: index,
+  weatherDays: array(shape({ kind: weather, wind: oneOf("calm", "gusty") })),
   morningHeadline: string,
   daysWithoutSnow: number,
   reputation: number,
@@ -117,6 +120,8 @@ export function validateSave(value: unknown): string[] {
   if (!record(value)) return ["invalid save"];
   const errors = Object.entries(fields).flatMap(([key, check]) => check(value[key]) ? [] : [key]);
   if (number(value.dayIndex) && number(value.seasonLength) && value.dayIndex > value.seasonLength) errors.push("dayIndex");
+  if (Array.isArray(value.weatherDays) && (value.weatherDays.length !== value.seasonLength ||
+    (integer(value.dayIndex) && value.weatherDays[value.dayIndex - 1]?.kind !== value.weather))) errors.push("weatherDays");
   if (value.phase === "night" && value.nightRecap === null) errors.push("nightRecap");
   return errors;
 }

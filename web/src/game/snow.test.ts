@@ -42,7 +42,7 @@ describe("overnight presets", () => {
   const start = freshTrail(0.4, 0.5);
 
   it("High beats Mid beats Minimal on quality after one night, on every weather", () => {
-    for (const w of ["clear", "snow", "thaw"] as const) {
+    for (const w of ["clear", "snow", "storm", "thaw"] as const) {
       const lo = mean(night(start, "minimal", w), "quality");
       const mid = mean(night(start, "mid", w), "quality");
       const hi = mean(night(start, "high", w), "quality");
@@ -93,6 +93,15 @@ describe("overnight presets", () => {
 
 describe("weather", () => {
   const start = freshTrail(0.5, 0.6);
+
+  it("a storm deepens the bottom and covers every bare patch", () => {
+    const thin = freshTrail(0.45, 0.6).map((s) => ({ ...s, coverage: 0.2 }));
+    const restored = night(thin, "minimal", "storm");
+    expect(last(restored).depth).toBeGreaterThanOrEqual(0.67);
+    expect(restored.every((segment) => segment.coverage === 1)).toBe(true);
+    expect(last(restored).quality - last(night(thin, "minimal")).quality).toBeCloseTo(0.12, 10);
+  });
+
   it("a thaw removes more depth and quality at the bottom than the top", () => {
     const t = night(start, "minimal", "thaw");
     expect(start[5].depth - t[5].depth).toBeGreaterThan(start[0].depth - t[0].depth);
@@ -209,7 +218,7 @@ describe("state integration", () => {
       snow: "mid",
       cash: 0,
       trails: [freshTrail(), freshTrail()],
-      dayIndex: 1,
+      weatherTomorrow: { kind: "clear", wind: "calm" },
       buildings: [] as BuildingId[],
       talentsOwned: [],
       daysWithoutSnow: 0,

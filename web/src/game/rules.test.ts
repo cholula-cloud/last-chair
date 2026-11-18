@@ -4,7 +4,7 @@ import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
 import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
-import { makeGuest, planArrivals } from "./sim";
+import { makeGuest, meanArrivals, planArrivals } from "./sim";
 import { createRng } from "./rng";
 import {
   hydrate,
@@ -12,6 +12,7 @@ import {
   type GameState,
 } from "./state";
 import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
+import { WEATHER_KINDS } from "./weather";
 
 const started = () => rules.pickFounder(createBuiltHill(7), "elena");
 
@@ -73,6 +74,22 @@ describe("skipToClose and sleep", () => {
     expect(next.cash).toBe(night.cash + recap.cashDelta - SNOW_NIGHT_COST.high);
     expect(next.nightRecap).toBeNull();
     expect(next.guests.length).toBe(next.dayStats.arrivals);
+  });
+
+  it("settles the final day's receipts without applying tomorrow's choices", () => {
+    const night = { ...atNight(), pendingFare: "cheap" as const, pendingSnow: "high" as const };
+    night.dayIndex = night.seasonLength;
+    night.weather = night.weatherDays[night.dayIndex - 1].kind;
+    const review = pure(rules.sleep, night);
+    expect(review.phase).toBe("winter_review");
+    expect(review.cash).toBe(night.cash + night.nightRecap!.cashDelta);
+    expect(review.lastDay?.cashDelta).toBe(night.nightRecap!.cashDelta);
+    expect(review.fare).toBe(night.fare);
+    expect(review.snow).toBe(night.snow);
+    expect(review.weather).toBe(night.weather);
+    expect(review.trails).toEqual(night.trails);
+    expect(review.talentsOwned).toEqual(night.talentsOwned);
+    expect(review.rngState).toBe(night.rngState);
   });
 
   it("sleep waits for an unacknowledged story beat", () => {
@@ -294,12 +311,26 @@ describe("night previews", () => {
     expect((["minimal", "mid", "high"] as const).map((v) => rules.previewOvernight(read, v))).toEqual(snows);
   });
 
-  it("expectedArrivals tracks what Sleep will actually plan", () => {
+  it("expectedArrivals averages the demand of each weather scenario", () => {
     const night = atNight();
-    const expected = rules.expectedArrivals(night, night.pendingFare);
+    const { outlook, results } = rules.previewOvernight(night, night.pendingSnow);
+    const inputs = (weather: typeof WEATHER_KINDS[number]) => ({
+      dayIndex: night.dayIndex + 1,
+      fare: night.pendingFare,
+      snowQuality: results[weather].overnight.snowQuality,
+      weather,
+      buildings: night.buildings,
+      talentsOwned: results[weather].talentsOwned,
+      founderId: night.founderId,
+      reputation: night.reputation,
+    });
+    const weighted = WEATHER_KINDS.reduce((sum, kind) => sum + outlook![kind] * meanArrivals(inputs(kind)), 0);
+    expect(rules.expectedArrivals(night, night.pendingFare)).toBeCloseTo(weighted, 12);
+
+    const rng = createRng(night.rngState);
+    const tomorrow = night.weatherDays[night.dayIndex].kind;
     const next = rules.sleep(night);
-    // Sleep draws day-to-day noise of 0 to 4 (mean 2) on top of the preview.
-    expect(Math.abs(next.dayStats.arrivals - expected)).toBeLessThanOrEqual(3);
+    expect(next.dayStats.arrivals).toBe(planArrivals({ ...inputs(tomorrow), rand: () => rng.next() }));
   });
 
   it("higher reputation raises expected arrivals", () => {
@@ -323,12 +354,28 @@ describe("night previews", () => {
     expect(typeof high.label).toBe("string");
   });
 
-  it("previewOvernight matches the snow Sleep produces", () => {
+  it("previewOvernight weights the snow and predicts the actual outcome for each kind", () => {
     const night = { ...atNight(), pendingSnow: "high" as const };
     const preview = rules.previewOvernight(night, "high");
+    const mean = WEATHER_KINDS.reduce((sum, kind) =>
+      sum + preview.outlook![kind] * preview.results[kind].overnight.snowQuality, 0);
+    expect(preview.meanQuality).toBeCloseTo(mean, 12);
     const next = rules.sleep(night);
-    expect(next.snowQuality).toBeCloseTo(preview.meanQuality, 10);
-    expect(next.weather).toBe(preview.weather);
+    const actual = night.weatherDays[night.dayIndex].kind;
+    expect(next.snowQuality).toBeCloseTo(preview.results[actual].overnight.snowQuality, 12);
+    expect(next.weather).toBe(actual);
+  });
+
+  it("keeps every field and the day RNG unchanged after repeated previews", () => {
+    const night = atNight();
+    const before = structuredClone(night);
+    const expected = rules.expectedArrivals(night, "cheap");
+    const forecast = rules.previewOvernight(night, "mid");
+    for (let i = 0; i < 100; i++) {
+      expect(rules.expectedArrivals(night, "cheap")).toBe(expected);
+      expect(rules.previewOvernight(night, "mid")).toEqual(forecast);
+    }
+    expect(night).toEqual(before);
   });
 });
 

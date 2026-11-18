@@ -1,3 +1,4 @@
+import { morningWeatherHeadline } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
@@ -36,6 +37,7 @@ import {
   SNOW_NIGHT_COST,
   type BuildingId,
   type DayStats,
+  type DayWeather,
   type FarePreset,
   type FounderId,
   type Guest,
@@ -43,6 +45,7 @@ import {
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
+  type Wind,
 } from "./types";
 
 export function formatClock(totalMinutes: number): string {
@@ -155,6 +158,7 @@ export function isOnHill(g: Guest): boolean {
 export type GuestClock = {
   /** Game clock minute at the end of this step. */
   now: number;
+  wind?: Wind;
   snowQuality: number;
   /** Experienced snow per trail index; falls back to `snowQuality`. */
   snowByTrail?: number[];
@@ -214,8 +218,12 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     };
   };
   const chooseQueue = (guest: Guest): Guest => {
-    const index = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, guest);
-    if (index < 0 || now >= LIFT_CLOSE_MIN) return goHome(guest);
+    if (now >= LIFT_CLOSE_MIN) return goHome(guest);
+    const index = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, guest, clock.wind, now);
+    if (index < 0) {
+      const reopensLater = clock.wind === "gusty" && chooseLift(clock.lifts, clock.talentsOwned, clock.trails) >= 0;
+      return reopensLater ? { ...joinLine(guest), joinedQueueAtMin: now } : goHome(guest);
+    }
     if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
       const stop = visit(guest, ["cafe", "warming_hut"], true);
       if (stop) return stop;
@@ -273,7 +281,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const runs = g.runs + 1;
         const energy = g.energy - runEnergyCost(g.persona, trail);
         const done = { runs, energy, snowSum: g.snowSum + q };
-        const li = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, { ...g, runs });
+        const li = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, { ...g, runs }, clock.wind, now);
         const lapOverhead =
           clock.lifts[li]?.confirmed
             ? lapOverheadForLift([...clock.lifts], clock.talentsOwned, li)
@@ -417,17 +425,6 @@ export type OvernightResult = {
   daysWithoutSnow: number;
 };
 
-export function rollMorningWeather(
-  dayIndex: number,
-  hasGuns: boolean,
-): WeatherKind {
-  const roll = (dayIndex * 17 + 3) % 10;
-  if (roll < 3) return "snow";
-  if (roll < 6) return hasGuns ? "clear" : "thaw";
-  if (roll < 8) return "clear";
-  return "thaw";
-}
-
 export function applyOvernight(opts: {
   snow: SnowPreset;
   cash: number;
@@ -438,7 +435,7 @@ export function applyOvernight(opts: {
   groomCoverage?: readonly boolean[][];
   exposure?: readonly (readonly number[])[];
   hasPlacedGuns?: boolean;
-  dayIndex: number;
+  weatherTomorrow: DayWeather;
   buildings: BuildingId[];
   talentsOwned: string[];
   daysWithoutSnow: number;
@@ -448,8 +445,7 @@ export function applyOvernight(opts: {
   const hasGroom = opts.talentsOwned.includes("groom_pass") ||
     opts.talentsOwned.includes("corduroy");
 
-  const nextDay = opts.dayIndex + 1;
-  const weather = rollMorningWeather(nextDay, hasGuns);
+  const { kind: weather } = opts.weatherTomorrow;
   const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
   const gunCoverage = opts.gunCoverage?.map((coverage) =>
     opts.snow === "minimal" ? coverage.map(() => false) : coverage);
@@ -458,18 +454,10 @@ export function applyOvernight(opts: {
     overnightTrail(t, night, opts.trailElevations?.[i], gunCoverage?.[i], opts.groomCoverage?.[i], opts.exposure?.[i]));
   const groomVisible = opts.groomCoverage ? opts.groomCoverage.some((row) => row.some(Boolean)) : opts.snow !== "minimal";
   const gunsFired = gunCoverage ? gunCoverage.some((row) => row.some(Boolean)) : reach > 0;
-  let daysWithoutSnow = opts.daysWithoutSnow;
-  daysWithoutSnow = weather === "snow" ? 0 : daysWithoutSnow + 1;
+  const daysWithoutSnow = weather === "snow" || weather === "storm" ? 0 : opts.daysWithoutSnow + 1;
 
   const talent = learnNextTalent(opts.talentsOwned);
   const nextHint = nextTalentName([...opts.talentsOwned, ...(talent ? [talent.id] : [])]);
-
-  const headline =
-    weather === "snow"
-      ? "Overnight squall — fresh on Dutch Meadows."
-      : weather === "thaw"
-        ? "Thaw watch — lower third softens by noon."
-        : "Clear and cold — corduroy holds if you groomed.";
 
   return {
     trails,
@@ -481,7 +469,7 @@ export function applyOvernight(opts: {
     gunsFired,
     gunReach: reach,
     weather,
-    morningHeadline: headline,
+    morningHeadline: morningWeatherHeadline(weather),
     talentLearned: talent?.name ?? null,
     nextTalentHint: nextHint,
     daysWithoutSnow,
@@ -539,17 +527,15 @@ export type ArrivalInputs = {
   reputation?: number;
 };
 
-/** The day-to-day noise `planArrivals` draws is floor(rand × 5); its mean is 2. */
-const MEAN_NOISE = 2;
-
 function arrivalCount(opts: ArrivalInputs, noise: number): number {
   const weekend = isWeekend(opts.dayIndex);
-  let base = weekend ? 24 : 18;
+  let base = weekend ? 28 : 22;
   base += noise;
   if (weekend) base = Math.round(base * 1.3);
   const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
   base = Math.round(base * fareDemandMultiplier(opts.fare, expected, weekend));
   if (opts.weather === "snow") base += 3;
+  if (opts.weather === "storm") base -= 5;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
   if (opts.buildings.includes("cafe")) base += 1;
@@ -557,7 +543,7 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   if (opts.talentsOwned.includes("school_day") && !weekend) base += 2;
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
-  return Math.max(12, Math.min(48, base));
+  return Math.max(12, Math.min(64, base));
 }
 
 /** Honest next-day arrivals (fare against reputation, weather, buildings, founder). */
@@ -568,7 +554,7 @@ export function planArrivals(opts: ArrivalInputs & { rand?: Rand }): number {
 
 /** Mean of `planArrivals` over the day-to-day noise, without drawing any: the UI's "~27 skiers". */
 export function meanArrivals(opts: ArrivalInputs): number {
-  return arrivalCount(opts, MEAN_NOISE);
+  return [0, 1, 2, 3, 4].reduce((sum, noise) => sum + arrivalCount(opts, noise), 0) / 5;
 }
 
 export type BeatCheckInput = {

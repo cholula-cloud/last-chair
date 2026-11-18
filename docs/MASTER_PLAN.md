@@ -38,7 +38,7 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
-| Weather | Three kinds, formula `(day × 17 + 3) % 10` | Seeded forecast, storms, wind | 18 |
+| Weather | Seeded forecasts, storms, thaw runs and chair wind holds | Tune against the full winter | 18 |
 | Season | `SEASON_LENGTH = 14` | 28 days, weekends, holiday weeks | 19 |
 | Economy | Costs, revenue, lift cost by length | Loan offer, bankruptcy, construction draws | 20 |
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
@@ -421,7 +421,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | — | ☑ | Lodge-only opening | The player's first paid lift and ski trail open Dutch Hill. |
 | — | ☑ | Trail planning and signs | Resume a draft across brush strokes, move the map before finishing, use the downhill grid, and read difficulty at each built trail entrance. |
 | — | ☑ | Placement and base polish | Move the camera without losing a placement. Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. |
-| 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
+| 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |

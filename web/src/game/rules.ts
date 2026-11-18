@@ -1,3 +1,4 @@
+import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   ASSET_CATALOG,
   assetRevenue,
@@ -75,6 +76,9 @@ import {
   LIFT_LABELS,
   liftCost,
   type BuildingId,
+  type DayWeather,
+  type Outlook,
+  type Wind,
   type FarePreset,
   type FounderId,
   type LiftType,
@@ -100,7 +104,7 @@ export function arrivalMood(
   weather: WeatherKind = "clear",
 ): number {
   let mood = 0.65;
-  if (weather === "snow") mood += 0.06;
+  if (weather === "snow" || weather === "storm") mood += 0.06;
   if (weather === "thaw") mood -= 0.08;
   if (buildings.includes("warming_hut")) mood += 0.05;
   if (buildings.includes("cafe")) mood += 0.04;
@@ -204,8 +208,8 @@ export function openNight(state: GameState): GameState {
  * Minutes a guest finishing a run expects before the next one starts skiing:
  * the wait at the best open lift (counting their own turn) plus its ride time.
  */
-function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[], trails: GameState["trails"]): number {
-  const li = chooseLift(lifts, talentsOwned, trails);
+function lapOverheadMin(lifts: GameState["lifts"], talentsOwned: string[], trails: GameState["trails"], wind: Wind, clockMin: number): number {
+  const li = chooseLift(lifts, talentsOwned, trails, undefined, wind, clockMin);
   if (li < 0) return Infinity;
   return lapOverheadForLift(lifts, talentsOwned, li);
 }
@@ -216,6 +220,7 @@ const MAX_STEP_MIN = 0.5;
 export function tick(state: GameState, deltaMs: number): GameState {
   if (state.phase !== "day" || state.paused || openingStep(state)) return state;
 
+  const wind = weatherForDay(state).wind;
   const addMin = deltaMs / MS_PER_GAME_MINUTE;
   const steps = Math.max(1, Math.ceil(addMin / MAX_STEP_MIN));
   const stepMin = addMin / steps;
@@ -246,12 +251,13 @@ export function tick(state: GameState, deltaMs: number): GameState {
     clockMin += stepMin;
     const moved = tickGuests(guests, {
       now: clockMin,
+      wind,
       snowQuality: state.snowQuality,
       snowByTrail: trails.map((t) => experiencedSnow(t.snow)),
       trails,
       lifts,
       talentsOwned: state.talentsOwned,
-      lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned, trails),
+      lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned, trails, wind, clockMin),
       assets: state.assets,
     });
     const runsByTrail = trails.map(() => 0);
@@ -294,7 +300,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
       if (thawing) snow = softenTrail(snow, stepMin, t.elevations, exposure[ti]);
       return snow === t.snow ? t : { ...t, snow };
     });
-    const step = stepLifts(moved, lifts, trails, state.talentsOwned, clockMin, stepMin);
+    const step = stepLifts(moved, lifts, trails, state.talentsOwned, clockMin, stepMin, wind);
     step.byLift.forEach((stats, i) => {
       byLift[i].rides += stats.rides;
       byLift[i].waitSumMin += stats.waitSumMin;
@@ -777,6 +783,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
   return {
     ...state,
     founderId: id,
+    morningHeadline: `${state.morningHeadline} ${morningWeatherHeadline(state.weather)}`,
     phase: "day",
     paused: true,
     guests: createInitialGuests(arrivals, rand, false),
@@ -800,7 +807,12 @@ export function acknowledgeBeat(state: GameState): GameState {
 }
 
 /** One night's overnight result and the crew talents owned in the morning (the learned talent counts). */
-function nightFor(state: GameState, snow: SnowPreset, cash: number) {
+function nightFor(
+  state: GameState,
+  snow: SnowPreset,
+  cash: number,
+  weatherTomorrow: DayWeather = state.weatherDays[state.dayIndex] ?? weatherForDay(state),
+) {
   const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
   state = closeLiftsNow(state, closing);
   const overnight = applyOvernight({
@@ -813,7 +825,7 @@ function nightFor(state: GameState, snow: SnowPreset, cash: number) {
     exposure: exposureFor(state),
     hasPlacedGuns: state.guns.length > 0,
     trailElevations: state.trails.map((t) => t.elevations),
-    dayIndex: state.dayIndex,
+    weatherTomorrow,
     buildings: state.buildings,
     talentsOwned: state.talentsOwned,
     daysWithoutSnow: state.daysWithoutSnow,
@@ -823,20 +835,33 @@ function nightFor(state: GameState, snow: SnowPreset, cash: number) {
   return { overnight, talentsOwned };
 }
 
+function forecastResults(state: GameState, snow: SnowPreset) {
+  return Object.fromEntries(WEATHER_KINDS.map((kind) =>
+    [kind, nightFor(state, snow, state.cash, { kind, wind: "calm" })],
+  )) as Record<WeatherKind, ReturnType<typeof nightFor>>;
+}
+
 export type OvernightPreview = {
-  /** Conditions board word for the worst segment tomorrow morning ("Icy bottom", "Good cover", "Fresh corduroy"). */
+  /** Snow label for the most likely morning conditions. */
   label: string;
   tone: SnowTone;
-  /** Mean snow quality over every open segment, 0–1. */
+  /** Mean snow quality weighted by the outlook. */
   meanQuality: number;
   cost: number;
-  /** Tomorrow's weather as the sim rolls it (a formula today, so the preview is exact). */
+  /** Most probable kind, or today's kind after the final day. */
   weather: WeatherKind;
+  outlook: Outlook | null;
+  results: ReturnType<typeof forecastResults>;
 };
 
-/** Tomorrow morning's snow if the crew works the night at `snow`. Pure: no RNG, no state change. */
+/** Tomorrow's snow across plausible conditions. Pure and independent of the guest RNG. */
 export function previewOvernight(state: GameState, snow: SnowPreset): OvernightPreview {
-  const { overnight } = nightFor(state, snow, state.cash);
+  const outlook = outlookFor(state, 1);
+  const results = forecastResults(state, snow);
+  const weather = outlook
+    ? WEATHER_KINDS.reduce((best, kind) => outlook[kind] > outlook[best] ? kind : best)
+    : state.weather;
+  const { overnight } = results[weather];
   const carriers = state.trails.map((t, i) => ({
     confirmed: t.open && !state.lifts[t.liftIndex]?.closing,
     trail: overnight.trails[i] ?? t.snow,
@@ -846,29 +871,34 @@ export function previewOvernight(state: GameState, snow: SnowPreset): OvernightP
   return {
     label: reading.label,
     tone: reading.tone,
-    meanQuality: overnight.snowQuality,
+    meanQuality: outlook ? WEATHER_KINDS.reduce((sum, kind) =>
+      sum + outlook[kind] * results[kind].overnight.snowQuality, 0) : overnight.snowQuality,
     cost: SNOW_NIGHT_COST[snow],
-    weather: overnight.weather,
+    weather,
+    outlook,
+    results,
   };
 }
 
-/** Mean arrivals tomorrow at `fare` (and the snow chosen tonight). Pure: the day-to-day noise is replaced by its mean. */
+/** Forecast-weighted mean attendance tomorrow, without drawing from the guest RNG. */
 export function expectedArrivals(
   state: GameState,
   fare: FarePreset,
   snow: SnowPreset = state.pendingSnow,
 ): number {
-  const { overnight, talentsOwned } = nightFor(state, snow, state.cash);
-  return meanArrivals({
+  const outlook = outlookFor(state, 1);
+  const results = forecastResults(state, snow);
+  const arrivals = (weather: WeatherKind) => meanArrivals({
     dayIndex: state.dayIndex + 1,
     fare,
-    snowQuality: overnight.snowQuality,
-    weather: overnight.weather,
+    snowQuality: results[weather].overnight.snowQuality,
+    weather,
     buildings: state.buildings,
-    talentsOwned,
+    talentsOwned: results[weather].talentsOwned,
     founderId: state.founderId,
     reputation: state.reputation,
   });
+  return outlook ? WEATHER_KINDS.reduce((sum, kind) => sum + outlook[kind] * arrivals(kind), 0) : arrivals(state.weather);
 }
 
 export function sleep(state: GameState): GameState {
@@ -877,6 +907,31 @@ export function sleep(state: GameState): GameState {
 
   const recap = state.nightRecap;
   state = closeLiftsNow(state, new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : [])));
+  const nextDay = state.dayIndex + 1;
+  const lastDay = {
+    arrivals: recap.arrivals,
+    satisfaction: recap.satisfaction,
+    cashDelta: recap.cashDelta,
+    avgWaitMin: recap.facts.avgWaitMin,
+    fare: state.fare,
+    snow: state.snow,
+  };
+  if (nextDay > state.seasonLength) {
+    return {
+      ...state,
+      phase: "winter_review",
+      paused: true,
+      cash: state.cash + recap.cashDelta,
+      lastDay,
+      nightRecap: null,
+      pendingBeat: null,
+      talentToast: null,
+      completedBeats: state.completedBeats.includes("winter_review")
+        ? state.completedBeats
+        : [...state.completedBeats, "winter_review"],
+    };
+  }
+
   const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
   const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
   const { overnight, talentsOwned } = nightFor(
@@ -888,14 +943,7 @@ export function sleep(state: GameState): GameState {
     ...state,
     lodgeUpgrade: upgrade,
     lodgeTier: completedTier ?? state.lodgeTier,
-    lastDay: {
-      arrivals: recap.arrivals,
-      satisfaction: recap.satisfaction,
-      cashDelta: recap.cashDelta,
-      avgWaitMin: recap.facts.avgWaitMin,
-      fare: state.fare,
-      snow: state.snow,
-    },
+    lastDay,
     paused: true,
     cash: overnight.cash,
     fare: state.pendingFare,
@@ -919,21 +967,6 @@ export function sleep(state: GameState): GameState {
     nightRecap: null,
     pendingBeat: null,
   };
-
-  const nextDay = state.dayIndex + 1;
-  if (nextDay > state.seasonLength) {
-    return {
-      ...carried,
-      phase: "winter_review",
-      gunsVisible: overnight.gunsFired,
-      talentToast: overnight.talentLearned
-        ? `Crew learned: ${overnight.talentLearned}`
-        : null,
-      completedBeats: state.completedBeats.includes("winter_review")
-        ? state.completedBeats
-        : [...state.completedBeats, "winter_review"],
-    };
-  }
 
   // Roll next-day arrivals at sleep (fare and weather apply).
   const rng = createRng(state.rngState);

@@ -6,7 +6,6 @@ import {
   pickFounder,
   placeAsset,
   placeLift,
-  previewOvernight,
   setPendingFare,
   setPendingSnow,
   skipToClose,
@@ -22,6 +21,7 @@ import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
+import { outlookFor } from "./weather";
 
 /**
  * Headless balance harness (see SIMULATION_SPEC, Balance (PR 10)). `runSeason`
@@ -120,7 +120,7 @@ export const FIXED_STRATEGIES: Strategy[] = FARES.flatMap((fare) =>
  * Builds a café and prepares the lodge upgrade on opening day. Adds skill
  * services in Tier 2 and a chair when queues warrant it. Snow problem: High. Value
  * problem: fare one step down. A good day: fare one step up. Snow is High only
- * on a thaw morning or after thin cover, otherwise Mid.
+ * when a thaw is forecast at 50% or higher, or after thin cover, otherwise Mid.
  */
 export const ADAPTIVE: Strategy = {
   id: "adaptive",
@@ -146,7 +146,7 @@ export const ADAPTIVE: Strategy = {
     if (problem === "queue") fare = hasChair(state) || state.cash < CHAIR_COST + CASH_RESERVE ? "cheap" : fare;
     else if (problem === "value") fare = stepFare(fare, -1);
     else if (problem === null) fare = stepFare(fare, 1);
-    const thaw = previewOvernight(state, "mid").weather === "thaw";
+    const thaw = (outlookFor(state, 1)?.thaw ?? 0) >= 0.5;
     const thin = state.snowDepth < 0.3;
     const snow: SnowPreset = problem === "snow" || thaw || thin ? "high" : "mid";
     return { fare, snow };
