@@ -478,3 +478,5 @@ Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
 ### Dutch Hill calendar
 
 New winters last 28 days, from Monday 26 January through Sunday 22 February. Presidents' Day is day 22; days 20–28 are February vacation. Holidays use weekend demand; vacation weekdays receive a 15% base demand increase and the weekend persona mix. Existing 14-day saves retain their length until the next winter.
+
+The 40-seed 28-day baseline after row 19 gives mean ending cash of $10,227 for Cheap / Minimal, $23,644 for Balanced / Mid, $41,860 for Adaptive, and $25,303 for Builder. No modeled strategy went below zero; row 20 owns the economy retune.

@@ -84,12 +84,11 @@ function TrailBar() {
     .filter(({ id }) => !isOverSkill(id, preview.difficulty))
     .map(({ label }) => label).join(", ") : "";
   if (draft.review && preview) {
-    const existing = preview.trailIndex == null ? null : state.trails[preview.trailIndex];
     return (
       <BuildImpactCard
         title={preview.trailIndex !== null ? "Review trail changes" : preview.glade ? "Review glade" : "Review painted trail"}
         facts={[
-          { label: "Trail", value: existing?.name ?? `Painted trail ${state.trails.length + 1}` },
+          { label: "Trail", value: preview.name },
           { label: "Cost", value: formatMoney(preview.cost) },
           { label: "Difficulty", value: preview.difficulty },
           { label: "Length", value: feet(preview.lengthFt) },
@@ -279,10 +278,12 @@ function SiteBar() {
 export function PlacementBar() {
   const active = usePlacementDraft((s) => s.active);
   const kind = usePlacementDraft((s) => s.kind);
+  const showPlacementColors = usePlacementDraft((s) =>
+    s.kind !== "trail" && (s.kind !== "lift" || s.step === "top" || !!s.top));
   if (!active) return null;
   return (
     <div className="pointer-events-auto max-h-[65dvh] w-full max-w-[440px] overflow-y-auto px-1 short:max-w-[270px]" data-placement-kind={kind}>
-      {kind !== "trail" && <p className="key mb-1 px-2 py-1 text-xs font-bold">Grid: green can build · red cannot. Check the final preview.</p>}
+      {showPlacementColors && <p className="key mb-1 px-2 py-1 text-xs font-bold">Green marks buildable spots. Red marks blocked spots.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
   );

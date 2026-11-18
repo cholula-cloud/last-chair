@@ -1,6 +1,6 @@
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek } from "./calendar";
+import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
-import { morningWeatherHeadline } from "./weather";
+import { isWindHeld, morningWeatherHeadline, WIND_HOLD } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
@@ -59,13 +59,12 @@ export function formatClock(totalMinutes: number): string {
 }
 
 export function weekdayLabel(dayIndex: number): string {
-  const names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  return names[(dayIndex - 1) % 7] ?? "Mon";
+  return weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
 }
 
 export function isWeekend(dayIndex: number): boolean {
-  const d = (dayIndex - 1) % 7;
-  return d === 5 || d === 6;
+  const weekday = weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
+  return weekday === "Sat" || weekday === "Sun";
 }
 
 export type Rand = () => number;
@@ -274,12 +273,16 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "walk_lift":
       case "walk_out": {
         const from = clock.trails[g.trailIndex ?? -1]?.path.at(-1) ?? TERRAIN.base;
-        const to = g.state === "walk_lift" ? (clock.lifts[g.liftIndex ?? -1]?.bottom ?? TERRAIN.base) : TERRAIN.base;
+        const lift = g.state === "walk_lift" ? clock.lifts[g.liftIndex ?? -1] : undefined;
+        const to = lift?.bottom ?? TERRAIN.base;
         const duration = Math.max(0.1, Math.hypot(from.x - to.x, from.z - to.z) * TERRAIN.horizontalFeetPerUnit / 250);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
-        if (g.state === "walk_out") return goHome(g);
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : { ...joinLine(g), trailIndex: g.trailIndex };
+        if (g.state === "walk_out" || now >= LIFT_CLOSE_MIN) return goHome(g);
+        if (lift && isWindHeld(lift.type, clock.wind ?? "calm", now)) {
+          return { ...g, progress: 1, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
+        }
+        return { ...joinLine(g), trailIndex: g.trailIndex, joinedQueueAtMin: g.joinedQueueAtMin };
       }
       case "ski": {
         const ti = g.trailIndex ?? g.liftIndex ?? 0;
@@ -293,10 +296,15 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const runs = g.runs + 1;
         const energy = g.energy - runEnergyCost(g.persona, trail);
         const done = { runs, energy, snowSum: g.snowSum + q };
-        const li = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, { ...g, runs }, clock.wind, now);
+        const returning = { ...g, runs };
+        const openLift = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, now);
+        const allHeld = openLift < 0 && clock.wind === "gusty" && now >= WIND_HOLD.fromMin && now < WIND_HOLD.toMin;
+        const li = allHeld
+          ? chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, WIND_HOLD.toMin)
+          : openLift;
         const lapOverhead =
           clock.lifts[li]?.confirmed
-            ? lapOverheadForLift([...clock.lifts], clock.talentsOwned, li)
+            ? lapOverheadForLift(clock.lifts, clock.talentsOwned, li)
             : clock.lapOverheadMin;
         const nextTrailIndex = li < 0 ? undefined : pickTrailIndex(g.persona, clock.trails, li, g.id, runs);
         const nextTrail = nextTrailIndex == null ? undefined : clock.trails[nextTrailIndex];
@@ -307,15 +315,18 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
         const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
         const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
-        if (!remote && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
+        if (!remote && !allHeld && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
-        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin > LIFT_CLOSE_MIN || li < 0) {
+        const waitForHold = allHeld ? Math.max(0, WIND_HOLD.toMin - now - walkingMin) : 0;
+        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > LIFT_CLOSE_MIN || li < 0) {
           const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > 0.5;
           return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
         }
-        if (remote) return { ...g, ...done, state: "walk_lift", liftIndex: li, progress: 0, stateSinceMin: now };
+        if (remote || allHeld) {
+          return { ...g, ...done, state: "walk_lift", liftIndex: li, progress: 0, stateSinceMin: now, joinedQueueAtMin: undefined };
+        }
         return chooseQueue({ ...g, ...done });
       }
       case "depart": {
@@ -534,6 +545,7 @@ export function fareDemandMultiplier(
 }
 
 export type ArrivalInputs = {
+  calendar?: CalendarDef;
   dayIndex: number;
   fare: FarePreset;
   snowQuality: number;
@@ -546,15 +558,15 @@ export type ArrivalInputs = {
 };
 
 function arrivalCount(opts: ArrivalInputs, noise: number): number {
-  const kind = dayKind(DUTCH_HILL_CALENDAR, opts.dayIndex);
+  const calendar = opts.calendar ?? DUTCH_HILL_CALENDAR;
+  const kind = dayKind(calendar, opts.dayIndex);
   const weekend = kind !== "weekday";
-  const vacation = inHolidayWeek(DUTCH_HILL_CALENDAR, opts.dayIndex);
   let base = weekend ? 28 : 22;
   base += noise;
   if (weekend) base = Math.round(base * 1.3);
-  else if (vacation) base = Math.round(base * 1.15);
+  else if (inHolidayWeek(calendar, opts.dayIndex)) base = Math.round(base * 1.15);
   const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
-  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, weekend || vacation));
+  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, usesWeekendGuestMix(calendar, opts.dayIndex)));
   if (opts.weather === "snow") base += 3;
   if (opts.weather === "storm") base -= 5;
   if (opts.weather === "thaw") base -= 4;
@@ -579,6 +591,7 @@ export function meanArrivals(opts: ArrivalInputs): number {
 }
 
 export type BeatCheckInput = {
+  calendar?: CalendarDef;
   dayIndex: number;
   liftsOpen: number;
   completedRuns: number;
@@ -600,19 +613,18 @@ export function readyStoryBeat(input: BeatCheckInput): StoryBeatId | null {
 }
 
 function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
+  const calendar = input.calendar ?? DUTCH_HILL_CALENDAR;
   switch (id) {
     case "first_load":
       return input.liftsOpen >= 1 && input.completedRuns >= 5;
     case "saturday":
-      return isWeekend(input.dayIndex) && input.arrivals >= 22;
+      return weekdayForDay(calendar, input.dayIndex) === "Sat" && input.arrivals >= 22;
     case "school_bus":
-      return input.lessonsBooked || (!isWeekend(input.dayIndex) && input.arrivals >= 28);
+      return input.lessonsBooked || (dayKind(calendar, input.dayIndex) === "weekday" && input.arrivals >= 28);
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
       return input.reputation >= 50;
-    case "winter_review":
-      return false;
     default:
       return false;
   }

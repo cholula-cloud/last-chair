@@ -27,6 +27,12 @@ function Icon({
 
 type P = { size?: number; className?: string };
 
+export const FlagIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M5 21V4m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0" />
+  </Icon>
+);
+
 export const PlayIcon = (p: P) => (
   <Icon {...p}>
     <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none" />

@@ -154,7 +154,7 @@ export function guestWorldPosition(
     case "walk_lift":
     case "walk_out": {
       const p = sitePathPoint([opts.walkFrom ?? line.bottom, opts.walkTo ?? line.bottom], t);
-      return onGround(p.x, p.z, p.yaw, "walk");
+      return onGround(p.x, p.z, p.yaw, state === "walk_lift" && t === 1 ? "stand" : "walk");
     }
     case "refuel":
       return visitVenue(index, t, line, opts.venue);

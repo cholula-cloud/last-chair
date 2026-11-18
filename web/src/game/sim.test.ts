@@ -2,6 +2,7 @@ import { freshBaseAssets } from "./base";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { formatMoney } from "./format";
 import { CREW_TALENTS } from "./content";
+import { stepLifts } from "./lifts";
 import {
   applyOvernight,
   buildNightRecap,
@@ -44,7 +45,7 @@ import {
   type SnowPreset,
   type DayWeather,
 } from "./types";
-import { generateSeasonWeather } from "./weather";
+import { generateSeasonWeather, WIND_HOLD } from "./weather";
 
 // Characterization tests: they pin what sim.ts does today. Tests marked
 // "Pinned" record a simplification that a later roadmap PR replaces.
@@ -522,6 +523,39 @@ describe("tickGuests", () => {
     const [queued] = tickGuests([walking], clock(T0 + 40, options));
     expect(queued.state).toBe("queue");
     expect(queued.liftIndex).toBe(0);
+  });
+
+  it("keeps a skier on the hill when the only lift is temporarily wind-held", () => {
+    const [surface] = starterLifts();
+    const lifts = [{ ...surface, type: "chair" as const }];
+    const options = { lifts, wind: "gusty" as const };
+    const [returning] = tickGuests(
+      [skier({ targetRuns: 9, joinedQueueAtMin: T0 - 5 })],
+      clock(WIND_HOLD.fromMin, options),
+    );
+    expect(returning).toMatchObject({ state: "walk_lift", runs: 1, liftIndex: 0 });
+    const [waiting] = tickGuests([returning], clock(WIND_HOLD.fromMin + 1, options));
+    expect(waiting).toMatchObject({ state: "walk_lift", progress: 1, joinedQueueAtMin: WIND_HOLD.fromMin + 1 });
+    const reopening = clock(WIND_HOLD.toMin, options);
+    const queued = tickGuests([waiting], reopening);
+    const loading = stepLifts(queued, lifts, reopening.trails, [], WIND_HOLD.toMin + 2, 2, "gusty");
+    expect(loading.guests[0]).toMatchObject({ state: "ride", runs: 1, liftIndex: 0 });
+    expect(loading.waits).toEqual([WIND_HOLD.toMin - WIND_HOLD.fromMin + 1]);
+  });
+
+  it("keeps an arriving walker at the intended lift during a wind hold", () => {
+    const [surface] = starterLifts();
+    const lifts = [surface, { ...surface, type: "chair" as const, bottom: { x: 10, z: 0 } }];
+    const [trail] = defaultTrails();
+    const options = { lifts, trails: [trail, { ...trail, liftIndex: 1 }], wind: "gusty" as const };
+    const walker = skier({ state: "walk_lift", stateSinceMin: WIND_HOLD.fromMin - 10, liftIndex: 1 });
+    const [waiting] = tickGuests([walker], clock(WIND_HOLD.fromMin, options));
+    expect(waiting).toMatchObject({ state: "walk_lift", progress: 1, liftIndex: 1 });
+    const held = stepLifts([waiting], lifts, options.trails, [], WIND_HOLD.fromMin, 0.5, "gusty");
+    expect(held.lifts[0].queue).toEqual([]);
+    const queued = tickGuests(held.guests, clock(WIND_HOLD.toMin, options));
+    const opened = stepLifts(queued, held.lifts, options.trails, [], WIND_HOLD.toMin, 0.5, "gusty");
+    expect(opened.lifts[1].queue).toEqual([walker.id]);
   });
 
   it("keeps a pending guest at home until their arrival minute, then starts the walk in", () => {

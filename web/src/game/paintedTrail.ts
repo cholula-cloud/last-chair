@@ -36,7 +36,11 @@ export type PaintStroke = {
 
 export type PaintedTrailPreview = {
   path: XZ[];
+  /** End of the authored centerline before it snaps or follows a connector. */
+  draftEnd: XZ | null;
   widths: number[];
+  /** Brush footprint, excluding any inherited links of a new run. */
+  clearing: { path: XZ[]; widths: number[]; previousWidths?: number[] };
   lengthFt: number;
   verticalFt: number;
   acres: number;
@@ -240,7 +244,9 @@ function summarize(path: XZ[], widths: number[], terrain: Terrain) {
 function rejectedPreview(reason: string): PaintedTrailPreview {
   return {
     path: [],
+    draftEnd: null,
     widths: [],
+    clearing: { path: [], widths: [] },
     pitch: 0,
     difficulty: "green",
     lengthFt: 0,
@@ -285,6 +291,8 @@ function editTrail(state: PaintState, trailIndex: number, strokes: readonly Pain
   const added = widths.map((width, i) => Math.max(0, width - before[i]));
   return {
     ...summarize(path, widths, terrain),
+    draftEnd: null,
+    clearing: { path, widths, previousWidths: before },
     cost: roundTrailCost(acresFor(path, added, terrain) * CLEARING_PER_ACRE),
     liftIndex: trail.liftIndex,
     trailIndex,
@@ -419,6 +427,8 @@ export function previewPaintedTrail(
   const acres = acresFor(painted.path, paintedWidths, terrain);
   return {
     ...summary,
+    draftEnd: end ?? null,
+    clearing: { path: painted.path, widths: paintedWidths },
     cost: painted.path.length >= 2 ? roundTrailCost(150 + acres * CLEARING_PER_ACRE) : 0,
     liftIndex,
     trailIndex: null,
