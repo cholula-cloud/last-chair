@@ -31,7 +31,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 Day:        build on the mountain (pause any time) → guests arrive, queue, ride, ski, refuel → close at 4 PM
 Night:      read a short recap → set ticket fare → set snow & service tier → answer a story beat if one fired → sleep
 Overnight:  crew makes snow, grooms, learns the next talent → morning headline + weather
-Growth:     the recap shows what held the hill back (guests turned away, a long line, an empty café); upgrade the lodge or build to fix it
+Growth:     the recap shows what held the hill back (a long line, an empty café, a missing venue); build to fix it, or upgrade the lodge to open what you need
 ```
 
 A winter is **28 days** (14 today; row 19 moves it) and ends in a **winter review**. The loop is about **diagnosis**: see a problem on the mountain, change one thing, read tomorrow. Building is how you fix problems, and it should feel good on its own.
@@ -41,7 +41,7 @@ A winter is **28 days** (14 today; row 19 moves it) and ends in a **winter revie
 1. **Fun first, depth optional.** The default path is satisfying in 10 minutes. Ledgers exist for players who want them.
 2. **Build with your hands, make it yours.** Trails are painted, lifts are dragged, and the mountain answers immediately with cost, difficulty and what the change opens up. Every building comes in cosmetic styles, so your hill looks like yours.
 3. **See it, fix it.** Queues, snow and moods are visible on the mountain; follow any guest.
-4. **The lodge is your HQ.** It is always there, and growing it is how the game opens: more tickets sold, more guests held, new things to build, new ways to earn (§3).
+4. **The lodge is your HQ.** It is always there, and growing it is how the game opens: new things to build and new ways to earn (§3).
 5. **Crew handles the boring stuff.** You build and set fare plus snow & service; the overnight crew runs operations and learns talents in a fixed order. Hiring belongs to Capitalist Mode (§4).
 6. **Pause anytime.** Planning is half the game.
 7. **Honest simulation.** Every number shown to the player comes from something that happened on the hill.
@@ -111,13 +111,12 @@ The main lodge is the one building the player never places. It is the hub of the
 
 ### Tiers
 
-An upgrade does not add seats or a café inside the lodge. It raises what the hill can handle and gates what you may build. Numbers are placeholders for SIMULATION_SPEC, tuned in the balance harness.
+An upgrade does not add seats or a café inside the lodge. It gates what you may build and earn from, and it changes how the lodge and base look. Numbers are placeholders for SIMULATION_SPEC, tuned in the balance harness.
 
 | | Tier 1 Base Lodge | Tier 2 Village Lodge | Tier 3 Grand Lodge |
 |---|---|---|---|
 | Cost | Free, on day 1 | $3,500 | $9,000 |
-| Daily ticket cap | 48 (today's ceiling) | 72 | 108 |
-| Car park | 30 stalls | 50 | 80 |
+| Car park (visual) | 30 stalls | 50 | 80 |
 | Attach pads | 2 | 4 | 6 |
 | Opens to build | Surface lift, trails, warming hut, café, shop | Double chair, snow guns, rentals, ski school desk, tubing, basic decor | Bar and après, restaurant, ice rink, events, premium decor |
 | New revenue | Day tickets, café, shop | Rentals, lessons, tubing | Bar and restaurant, events |
@@ -128,7 +127,7 @@ Later lift types and Capitalist Mode features (season passes) attach to tiers th
 ### Upgrading in play
 
 - Upgrading costs cash and takes **two nights**. The lodge shows scaffolding, keeps operating at its old tier, and the new tier takes effect the next morning with a recap line.
-- The trigger is a symptom the player can see. Guests who could not buy a ticket already count as `turnedAway`; at the cap the recap says "Turned away: 9 guests (ticket cap)" with an Upgrade button. A missing build option shows as a greyed item that names the tier that opens it.
+- The trigger is something the player wants to build. A locked item shows greyed in the Build sheet and names the tier that opens it, and the lodge card lists what the next tier opens, so the player upgrades to reach a specific thing.
 - Upgrades are the biggest capital sink, so cash pacing and the story goal pace each other (row 20).
 
 ### Attached venues
@@ -223,7 +222,7 @@ Read from the App Store screenshots and three trailer videos:
 | Trails | Cut by tapping a top point and choosing a route | Painted with a finger through the trees; brush width; live difficulty colour from sustained pitch; cost and acres while painting; Review to confirm. Row B2 |
 | Lifts | Two taps (bottom, top) with snapping | Drag the top terminal; snap to anchor points; ghost line; live cost, vertical and capacity. Row B3 |
 | Build feedback | Valid or invalid | An impact card before every confirm, for every asset: cost, acres, vertical, what it opens, expected effect on queues and tickets. Row B4 |
-| The lodge | A buildable item ("Lodge (step 1)", $1,800) with a small satisfaction bonus | A fixed HQ whose tiers raise the ticket cap and gate what you can build (§3). Rows L1, 16a to 16d |
+| The lodge | A buildable item ("Lodge (step 1)", $1,800) with a small satisfaction bonus | A fixed HQ whose tiers gate what you can build and earn from (§3). Rows L1, 16a to 16d |
 | Village | One café, one shop, one hut at fixed spots | A catalog of venues placed anywhere, with a +5% bonus on the lodge's attach pads, and cosmetic styles. Rows 16a to 16d, S, A |
 | Clearing | Trees are scenery | Trees are the thing you cut; cutting costs money and changes snow (shade, wind). Row B5 |
 
@@ -253,7 +252,7 @@ Browser-first, no app store for v1. **iPhone and iPad Safari are the primary tar
 │ [Build] [Guests] [Night▸when close] │  thumb zone
 └─────────────────────────────────────┘
 Build sheet   → Lodge card on top · Lifts · Trails · Base · Fun · Decor · Snow
-Lodge card    → tier, ticket cap, what the next tier opens, Upgrade (also opens by tapping the lodge)
+Lodge card    → tier, what the next tier opens, Upgrade (also opens by tapping the lodge)
 Guests sheet  → list + Follow (no tiny 3D picking on phone)
 Night recap   → recap + fare + snow/service tiles + Continue
 Career hub    → map · level · talents · story log · Ledger (M5)
@@ -265,7 +264,7 @@ Career hub    → map · level · talents · story log · Ledger (M5)
 
 **Speed:** 1× default, 2× after the tutorial beat. "Skip to close" after 2 PM.
 
-**Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; turned away → lodge tier). Negative cash triggers a warning and a loan offer before game over.
+**Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; wanted item locked → lodge tier). Negative cash triggers a warning and a loan offer before game over.
 
 ---
 
@@ -335,7 +334,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 |---|---|---|
 | **M0** Clean foundation | The code can be tested and known bugs are gone | CI green; the sim runs headless from a test |
 | **M1** Real core loop | Every number on the night recap is caused by something visible | 15-minute phone session; player explains a preset change |
-| **M2** Build the mountain | Building feels good, the lodge is your HQ, and where and what you build matters | Moving a lift or adding a trail measurably changes tomorrow; upgrading the lodge raises tomorrow's ticket cap and opens a build option; a new player builds a lift and paints a trail in 3 minutes |
+| **M2** Build the mountain | Building feels good, the lodge is your HQ, and where and what you build matters | Moving a lift or adding a trail measurably changes tomorrow; upgrading the lodge opens a new build option and a new revenue source; a new player builds a lift and paints a trail in 3 minutes |
 | **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Three outside players finish winter 1 on a phone without help |
 | **M4** Look and feel | Dedicated art and audio pass | Screenshots and device check |
 | **M4b** Activities and styles | Tubing, rink, bar, decor, events, and the style system | Tier 3 on Dutch Hill opens bar, rink and events; a style switch persists across reload |
@@ -367,10 +366,10 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | L1 | ☐ | Fixed lodge | The lodge exists from day 1 on every mountain, cannot be built, moved or demolished, and leaves the Build menu. `lodgeTier` in state (1), save migration (an old save that built the lodge keeps Tier 1), lodge card shell, lot-to-lodge path kept. The $1,800 option is removed |
 | B2 | ☐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |
 | B3 | ☐ | Drag lifts | Drag the top terminal with live snapping to anchor points; ghost line; live cost, vertical and capacity |
-| B4 | ☐ | Build impact card | Before every confirm, for every asset: cost, acres, vertical, which skill levels can ski it, tier it needs, "+5% attached" where it applies, expected queue and ticket change. Numbers from the sim |
+| B4 | ☐ | Build impact card | Before every confirm, for every asset: cost, acres, vertical, which skill levels can ski it, tier it needs, "+5% attached" where it applies, expected queue change. Numbers from the sim |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |
 | 16a | ☐ | Asset catalog | One data table for hut, café, shop and guns (moved out of ad hoc code): category, footprint, cost, upkeep, effect, opening tier, placement zone, attachable flag, `styleId` slot. Build sheet reads it; placed-building cap per base area. Save stores `styleId` per building |
-| 16b | ☐ | Lodge tiers | Tier 2 and 3 upgrade: cost, two-night build with scaffolding, ticket cap into `planArrivals` and `turnedAway`, car park stalls, attach pad count, tier gates in the catalog (double chair and guns move to Tier 2), recap "turned away" line with Upgrade button, tier models kit-bashed from existing GLBs, radio line per tier-up. Re-baselines the characterization snapshot and the balance harness (the chair on day 4 now needs Tier 2) |
+| 16b | ☐ | Lodge tiers | Tier 2 and 3 upgrade: cost, two-night build with scaffolding, car park stalls (visual), attach pad count, tier gates in the catalog (double chair and guns move to Tier 2), greyed items that name their tier, lodge card lists what the next tier opens, tier models kit-bashed from existing GLBs, radio line per tier-up. Re-baselines the characterization snapshot and the balance harness (the chair on day 4 now needs Tier 2) |
 | 16c | ☐ | Free venue placement and attach | Place venues anywhere valid; attach pads on the lodge; `ATTACH_BONUS` 5%; attached venues drawn as wings; impact card shows the bonus |
 | 16d | ☐ | Venues with guest reasons | Refuel stop, café and shop revenue, rentals and ski school desk (First-Timers need them), guests leave a long lift line for the village; recap shows venue takings |
 | 15 | ☐ | Lift types matter | Surface vs double chair: capacity, ride time, wind, cost; double chair opens at Tier 2 |
