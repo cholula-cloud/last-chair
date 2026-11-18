@@ -1,26 +1,17 @@
 "use client";
 
-import { formatFeet, formatMoney } from "@/game/format";
-import {
-  REFERENCE_TOPS,
-  liftLength,
-  liftVertical,
-  placementReason,
-  type PlacementReason,
-  type ReferenceTop,
-} from "@/game/descent";
-import { checkPlacement, undoableLiftIndex } from "@/game/rules";
+import { formatMoney } from "@/game/format";
+import { checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import {
   BUILDING_COSTS,
   BUILDING_LABELS,
   LIFT_LABELS,
-  liftCost,
   type BuildingId,
   type LiftType,
 } from "@/game/types";
-import { requestFocus, usePlacementDraft } from "@/ui/placementDraft";
+import { startPlacement } from "@/ui/placementDraft";
 import { CheckIcon, LiftIcon } from "@/ui/kit/icons";
 import { Sheet } from "@/ui/kit/Sheet";
 import { PriceTag, PrimaryButton, SectionHeading } from "@/ui/kit/parts";
@@ -43,40 +34,25 @@ const LIFT_NOTES: Record<LiftType, string> = {
 export function BuildSheet({
   open,
   onClose,
+  onStartPlacement,
 }: {
   open: boolean;
   onClose: () => void;
+  onStartPlacement: () => void;
 }) {
-  const buildMode = useGameStore((s) => s.buildMode);
   const selectedLiftType = useGameStore((s) => s.selectedLiftType);
   const lifts = useGameStore((s) => s.lifts);
   const buildings = useGameStore((s) => s.buildings);
   const cash = useGameStore((s) => s.cash);
-  const setBuildMode = useGameStore((s) => s.setBuildMode);
   const setSelectedLiftType = useGameStore((s) => s.setSelectedLiftType);
-  const placeLift = useGameStore((s) => s.placeLift);
-  const undoLift = useGameStore((s) => s.undoLift);
-  const dayIndex = useGameStore((s) => s.dayIndex);
-  const clockMin = useGameStore((s) => s.clockMin);
-  const phase = useGameStore((s) => s.phase);
-  const candidateTop = usePlacementDraft((s) => s.candidateTop) ?? REFERENCE_TOPS[0];
   const buyBuilding = useGameStore((s) => s.buyBuilding);
 
   if (!open) return null;
 
-  const lineFor = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
-  const feetFor = (top: { x: number; z: number }) => {
-    const line = lineFor(top);
-    return {
-      length: formatFeet(liftLength(line), TERRAIN.horizontalFeetPerUnit),
-      vertical: formatFeet(liftVertical(line), TERRAIN.feetPerUnit),
-    };
-  };
-  const selectedFeet = feetFor(candidateTop);
-  const check = checkPlacement({ lifts, cash }, selectedLiftType, lineFor(candidateTop));
-  const costFor = (t: LiftType) => liftCost(t, lineFor(candidateTop));
-  const undoIndex = undoableLiftIndex({ lifts, dayIndex, clockMin, phase });
-  const refund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
+  const atMax = checkPlacement({ lifts, cash }, selectedLiftType, {
+    bottom: TERRAIN.base,
+    top: TERRAIN.toWorld({ x: 0.8, z: 0.6 }),
+  });
 
   return (
     <Sheet
@@ -116,71 +92,30 @@ export function BuildSheet({
                   <span data-muted className="text-[0.8rem] font-bold leading-tight">
                     {LIFT_NOTES[t]}
                   </span>
-                  <PriceTag>
-                    {formatMoney(costFor(t))}
-                  </PriceTag>
                 </button>
               );
             })}
           </div>
 
           <p className="mt-4 text-[0.9rem] font-bold text-ink-soft">
-            Pick where the lift unloads. Skiers need a run from there back to
-            the base.
-          </p>
-          <div
-            role="group"
-            aria-label="Lift top"
-            className="mt-2.5 grid grid-cols-3 gap-2.5"
-          >
-            {REFERENCE_TOPS.map((t) => {
-              const c = checkPlacement({ lifts, cash }, selectedLiftType, lineFor(t));
-              return (
-                <TopButton
-                  key={`${t.x}-${t.z}`}
-                  top={t}
-                  selected={t.x === candidateTop.x && t.z === candidateTop.z}
-                  reason={c.ok ? null : c.reason}
-                  feet={feetFor(t)}
-                  onPick={() => {
-                    usePlacementDraft.setState({ candidateTop: t });
-                    requestFocus([TERRAIN.base, t]);
-                  }}
-                />
-              );
-            })}
-          </div>
-          <p className="mt-2 text-center text-[0.85rem] font-extrabold text-ink-soft" aria-live="polite">
-            {selectedFeet.length} long, {selectedFeet.vertical} vertical
+            Place a new lift by tapping the hill. Skiers need a run from the top
+            back to the base.
           </p>
 
           <PrimaryButton
-            className="mt-4"
-            disabled={!check.ok}
-            aria-describedby="lift-reason"
+            className="mt-4 min-h-11"
+            disabled={atMax.ok === false && atMax.reason === "max_lifts"}
             onClick={() => {
-              placeLift({ type: selectedLiftType, bottom: TERRAIN.base, top: candidateTop });
-              onClose();
+              startPlacement(selectedLiftType);
+              onStartPlacement();
             }}
           >
-            Place {LIFT_LABELS[selectedLiftType]} for {formatMoney(costFor(selectedLiftType))}
+            Place on the hill
           </PrimaryButton>
-          <p
-            id="lift-reason"
-            className={`mt-2.5 text-center text-[0.85rem] font-extrabold ${check.ok ? "text-sign-green" : "text-barn-deep"}`}
-          >
-            {check.ok
-              ? "Run reaches the base. Ready to place."
-              : placementReason(check.reason, check)}
-          </p>
-          {undoIndex >= 0 && (
-            <button
-              type="button"
-              onClick={undoLift}
-              className="key press mt-3 min-h-11 w-full px-3 text-[0.95rem] font-extrabold"
-            >
-              Undo last lift (+{formatMoney(refund)})
-            </button>
+          {atMax.ok === false && atMax.reason === "max_lifts" && (
+            <p className="mt-2 text-center text-[0.85rem] font-extrabold text-barn-deep">
+              The hill already has the maximum number of lifts.
+            </p>
           )}
         </div>
         <div className="mt-4 panel px-3.5 pb-4 pt-3.5 short:mt-0 short:self-start">
@@ -224,55 +159,8 @@ export function BuildSheet({
               );
             })}
           </ul>
-
-          <label className="mt-4 flex min-h-11 items-center gap-3 text-[0.92rem] font-bold">
-            <input
-              type="checkbox"
-              checked={buildMode}
-              onChange={(e) => setBuildMode(e.target.checked)}
-              className="check"
-            />
-            Show placement preview on the mountain
-          </label>
         </div>
       </div>
     </Sheet>
-  );
-}
-
-function TopButton({
-  top,
-  selected,
-  reason,
-  feet,
-  onPick,
-}: {
-  top: ReferenceTop;
-  selected: boolean;
-  /** Null when the lift can be placed here. */
-  reason: PlacementReason | null;
-  feet: { length: string; vertical: string };
-  onPick: () => void;
-}) {
-  const ok = reason === null;
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onPick}
-      data-tone={ok ? undefined : "bad"}
-      className="key press flex min-h-14 flex-col items-center justify-center px-2 py-1.5"
-    >
-      <span className="flex items-center gap-1 text-[1rem] font-extrabold">
-        {top.label}
-        {selected && <CheckIcon size={14} />}
-      </span>
-      <span
-        data-muted
-        className={`text-[0.78rem] font-extrabold ${selected ? "" : ok ? "!text-sign-green" : "!text-barn-deep"}`}
-      >
-        {selected ? `${feet.length} · ${feet.vertical}` : ok ? "Valid run" : "Blocked"}
-      </span>
-    </button>
   );
 }

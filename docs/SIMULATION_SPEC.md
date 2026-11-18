@@ -188,7 +188,7 @@ Invalid preview: red ghost; cannot confirm.
 
 `checkPlacement(state, type, line)` in `game/rules.ts` runs all nine checks (the first six and `too_close`, `crosses` through `checkSpacing`). `placementReason(code, ctx)` holds the player-facing copy. `placeLift` rounds coordinates to 0.01, appends the lift with `builtDay`, `builtAtMin` and `paid`, deducts the cost and closes build mode; it acts only in the day phase and returns the state unchanged on any failed check. `undoLift` removes the last lift and refunds `paid`, only while `builtDay` is today and `builtAtMin` equals the clock (nothing has ticked) and never for the default lift. Lift identity is the array index, so `lifts` only grows within a season: undo pops the last entry, and any later closure sets `confirmed: false`. `setBuildMode(true)` pauses the day.
 
-Thresholds are unchanged from PR 11 and calibrated on three reference tops (`REFERENCE_TOPS`: Ridge and Mid valid from the base, Creek fails `too_low`; Ridge and Mid are 2.04 apart, so both stay placeable together). The interim Build sheet offers those three tops; tapping the terrain arrives in PR 12b–c. The trail path test arrives with PR 13.
+Thresholds are unchanged from PR 11 and calibrated on three reference tops (`REFERENCE_TOPS`: Ridge and Mid valid from the base, Creek fails `too_low`; Ridge and Mid are 2.04 apart, so both stay placeable together). Lift placement is two-tap on the terrain from the Build sheet (**Place on the hill**); tops snap to the nearest valid point within a screen-pixel radius. The trail path test arrives with PR 13.
 
 ### Terrain (PR 11)
 

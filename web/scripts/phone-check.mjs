@@ -200,9 +200,9 @@ async function runViewport(engine, launch, vp) {
 
     await page.getByRole("button", { name: "Build", exact: true }).click();
     await page.getByRole("heading", { name: "Build" }).waitFor();
-    await page.getByRole("button", { name: /^Ridge$/ }).click();
-    await page.getByText(/1,206 ft/).waitFor({ timeout: 5000 });
-    await shot(page, engine, tag, "build-ridge");
+    await page.getByRole("button", { name: /Place on the hill/i }).click();
+    await page.getByText(/Tap where the lift should unload/i).waitFor({ timeout: 5000 });
+    await shot(page, engine, tag, "placement-bar");
 
     await page.getByLabel("Game speed 1x, tap to change").click();
     await page.getByLabel("Game speed 2x, tap to change").waitFor();

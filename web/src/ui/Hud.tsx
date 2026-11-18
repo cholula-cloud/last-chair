@@ -340,6 +340,25 @@ export function ResumeFollowChip({ onClick }: { onClick: () => void }) {
   );
 }
 
+/** After a lift is placed, until the clock moves. */
+export function LiftUndoChip({
+  refund,
+  onClick,
+}: {
+  refund: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="chip press pointer-events-auto flex h-11 items-center px-4 text-[0.85rem] font-extrabold"
+    >
+      Placed · Undo (+{formatMoney(refund)})
+    </button>
+  );
+}
+
 /** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and the barn-red Close hill. */
 export function ActionBar({
   buildActive,

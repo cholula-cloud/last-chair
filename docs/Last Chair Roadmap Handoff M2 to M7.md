@@ -22,8 +22,8 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 
 ## Where things stand at writing
 
-- `main` is at `d9c8fda`. It contains PR 11 (terrain as data), PR 12a (placement rules), world scale 2a (scale as data) and the 2b handoff doc. Dutch Hill still runs at scale 1/1 and save version 7.
-- GitHub PR 31 (camera part 1) is open with review fixes unfinished. Its working tree on this machine holds uncommitted partial edits.
+- `main` is at `c4fffa1` (Nov 18, 2026). Merged through world scale 2b/2c/2d, camera playability parts 1–3 (GitHub PRs 34–40), and 12b (lift line render + `terrainPick`). Dutch Hill runs at H = 6, V = 3, save version 8.
+- **In flight:** PR 12c (two-tap placement UI) on branch `cursor/pr-12c-tap-placement-4a7d`; next after merge is 13a (trail data, save v9).
 - Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
 
 ## Recommended build order

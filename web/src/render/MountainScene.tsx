@@ -5,15 +5,18 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
-import { REFERENCE_TOPS, checkLiftLine, type LiftAnchor, type LiftLine } from "@/game/descent";
-import { liftLineOf } from "@/game/rules";
+import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
+import { checkPlacement, liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
 import { useCameraUi } from "@/ui/cameraUi";
 import { usePlacementDraft } from "@/ui/placementDraft";
+import { PlacementController } from "./PlacementController";
 import { scaledTickMs, useSpeed } from "@/ui/speed";
+
+const PLACEMENT_MAX_DISTANCE = 90;
 import { Atmosphere } from "./Atmosphere";
 import {
   cameraPosition,
@@ -183,6 +186,7 @@ function CameraRig({
       prevTap = kind === "TAP" ? { x: e.clientX, y: e.clientY, t: e.timeStamp } : null;
       events = [];
       panEnded = false;
+      if (usePlacementDraft.getState().active) return;
       if (kind !== "DOUBLE_TAP") return;
       const rect = dom.getBoundingClientRect();
       RAY.setFromCamera(
@@ -396,6 +400,31 @@ function CameraRig({
   return null;
 }
 
+/** While placing, cap zoom-out and ease in when the camera is beyond the cap. */
+function PlacementOrbitCap({
+  active,
+  maxDistance,
+}: {
+  active: boolean;
+  maxDistance: number;
+}) {
+  const controls = useThree((s) => s.controls as OrbitControlsImpl | null);
+  const camera = useThree((s) => s.camera);
+
+  useEffect(() => {
+    if (!controls || !active) return;
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    const len = offset.length();
+    if (len > maxDistance + 0.05) {
+      offset.setLength(maxDistance);
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+  }, [active, maxDistance, controls, camera]);
+
+  return null;
+}
+
 export function MountainScene() {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
@@ -404,9 +433,11 @@ export function MountainScene() {
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   const lifts = useGameStore((s) => s.lifts);
-  const buildMode = useGameStore((s) => s.buildMode);
-  const candidateTop = usePlacementDraft((s) => s.candidateTop);
-  const selectedLiftType = useGameStore((s) => s.selectedLiftType);
+  const placementActive = usePlacementDraft((s) => s.active);
+  const draftTop = usePlacementDraft((s) => s.top);
+  const draftBottom = usePlacementDraft((s) => s.bottom);
+  const draftType = usePlacementDraft((s) => s.type);
+  const cash = useGameStore((s) => s.cash);
   const buildings = useGameStore((s) => s.buildings);
   const gunsVisible = useGameStore((s) => s.gunsVisible);
   const gunReach = useGameStore((s) => s.gunReach);
@@ -435,16 +466,24 @@ export function MountainScene() {
         : [{ line: primaryLine, type: "surface" as LiftType }],
     [lifts, primaryLine],
   );
-  const previewSlot = candidateTop ?? REFERENCE_TOPS[0];
-  const previewValid = previewSlot
-    ? checkLiftLine({ bottom: TERRAIN.base, top: previewSlot }).ok
-    : false;
-  const showPreview = buildMode && !!previewSlot;
-
   const previewLine = useMemo(
-    () => ({ bottom: TERRAIN.base, top: previewSlot }),
-    [previewSlot],
+  () =>
+    draftTop
+      ? { bottom: draftBottom ?? TERRAIN.base, top: draftTop }
+      : null,
+  [draftTop, draftBottom],
+);
+  const previewCheck = useMemo(
+    () =>
+      previewLine
+        ? checkPlacement({ lifts, cash }, draftType, previewLine)
+        : null,
+    [previewLine, lifts, cash, draftType],
   );
+  const previewValid = previewCheck?.ok === true;
+  const showPreview = placementActive && !!previewLine;
+
+  const orbitMax = placementActive ? PLACEMENT_MAX_DISTANCE : MAX_DISTANCE;
   const clearingLines = useMemo(() => {
     const list: LiftLine[] = confirmedLifts.map((l) => liftLineOf(l));
     if (confirmedLifts.length === 0) list.push(primaryLine);
@@ -490,20 +529,22 @@ export function MountainScene() {
           </group>
         ))}
 
-        {showPreview && (
+        {showPreview && previewLine && (
           <>
             <TrailRibbon kind="preview" line={previewLine} valid={previewValid} />
             <Lift
               line={previewLine}
               preview
               previewInvalid={!previewValid}
-              type={selectedLiftType}
+              type={draftType}
             />
           </>
         )}
 
         <Guests lifts={guestLifts} followedRef={followedRef} />
       </Suspense>
+      <PlacementController />
+      <PlacementOrbitCap active={placementActive} maxDistance={orbitMax} />
       <CameraRig followId={followId} followedRef={followedRef} />
       <OrbitControls
         makeDefault
@@ -523,7 +564,7 @@ export function MountainScene() {
         minAzimuthAngle={azimuth - AZIMUTH_RANGE}
         maxAzimuthAngle={azimuth + AZIMUTH_RANGE}
         minDistance={MIN_DISTANCE}
-        maxDistance={MAX_DISTANCE}
+        maxDistance={orbitMax}
         minPolarAngle={Math.PI / 2 - MAX_ELEVATION}
         maxPolarAngle={Math.PI / 2 - MIN_ELEVATION}
       />
