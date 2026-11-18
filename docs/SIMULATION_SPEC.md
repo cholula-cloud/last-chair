@@ -19,7 +19,7 @@
 | Trail graph | ✅ | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length; `elevations[]` per run from path height (13a–c) | — |
 | Snow | ✅ | Six segments per `TrailRun`; thaw/overnight/gun reach use stored segment `elevations` (13c) | — |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
-| Lodge tiers | ❌ | Spec only: fixed HQ, tier raises ticket cap and gates assets, attach bonus. The lodge is still a buildable item | L1, 16a–16d |
+| Lodge tiers | ❌ | Spec only: fixed HQ, tier gates assets, attach bonus. The lodge is still a buildable item | L1, 16a–16d |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
@@ -287,16 +287,15 @@ The default surface lift is pre-built and free. The cost is deducted when the li
 
 ### Lodge tiers (spec, not implemented; rows L1 and 16a to 16d)
 
-The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`lodgeTier`, 1 to 3). A tier raises capacity and gates assets; it adds no seats and no venue of its own. All values are placeholders until the balance harness tunes them.
+The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`lodgeTier`, 1 to 3). A tier gates assets and changes the lodge's look; it adds no seats, no venue and no arrival cap. All values are placeholders until the balance harness tunes them.
 
 | | Tier 1 | Tier 2 | Tier 3 |
 |---|---|---|---|
 | Upgrade cost | free | $3,500 | $9,000 |
-| Daily ticket cap (ceiling on `planArrivals`) | 48 | 72 | 108 |
 | Car park stalls | 30 | 50 | 80 |
 | Attach pads | 2 | 4 | 6 |
 
-- **Ticket cap.** `planArrivals` clamps to `[12, ticketCap(tier)]`. Guests above the cap are `turnedAway`, which the recap already counts. Tier 1's cap equals today's ceiling, so Tier 1 play does not change.
+- **No arrival cap.** Tier does not change `planArrivals`. Car park stalls are visual, as today.
 - **Upgrade timing.** Paying starts construction; the tier changes after two Sleeps and applies the next morning. The old tier operates meanwhile.
 - **Asset gates.** Each catalog row has `opensAtTier`: surface lift, trails, warming hut, café, shop at 1; double chair, snow guns, rentals, ski school desk, tubing, basic decor at 2; bar, restaurant, ice rink, events, premium decor at 3. Moving the double chair and guns to Tier 2 changes the season characterization snapshot and the balance harness (the chair on day 4 needs Tier 2); row 16b re-baselines both.
 - **Attach bonus.** A venue on a lodge attach pad earns `ATTACH_BONUS = 0.05` extra on its revenue and its effect. Lifts, guns, activities and decor cannot attach.
