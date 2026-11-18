@@ -16,8 +16,8 @@
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | 🟡 | Types differ in capacity and ride time, with a FIFO queue and measured waits (PR 5, game-scaled numbers). No wind or closures | 15 |
 | Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); tap placement UI PR 12b–c; trail path test PR 13 | 12–13 |
-| Trail graph | ❌ | Single implicit run | 13 |
-| Snow | ✅ | Six segments per lift trail with depth, quality, coverage (PR 8). One trail per lift top; no trail graph yet (PR 13). Numbers uncalibrated | — |
+| Trail graph | 🟡 | `GameState.trails[]`, cut routes, guest pick by skill, ski time by length (PR 13a–b, #42–#43). 13c elevation on segments next | 13c |
+| Snow | 🟡 | Six segments per `TrailRun` (PR 8, moved to trails in 13a). Multi-trail wear per run index (13b) | 13c |
 | Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
 | Night choices | ✅ | Fare + snow/service presets with costs. Tiles preview tomorrow's expected skiers (`expectedArrivals`) and morning cover (`previewOvernight`) before Sleep (PR 9). The weather is a formula, so the preview is exact; a seeded forecast (PR 18) turns it into an expectation | 18 |
 | Crew talents | 🟡 | 12 in order; 4 have effects (`trail_guns`, `groom_pass`/`corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
@@ -223,7 +223,7 @@ A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale
 
 ### Trail graph (P0)
 
-Single cleared run from mid-mountain to base + optional stub. P1: second run + glade flag.
+Through PR 13b: each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. PR 13c will tie segment elevation to real height along each path. P1: glade flag and more choice rules (PR 14).
 
 ---
 

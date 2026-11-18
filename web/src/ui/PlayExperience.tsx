@@ -27,6 +27,7 @@ import {
 } from "@/ui/Hud";
 import { PlacementBar } from "@/ui/PlacementBar";
 import { usePlacementDraft } from "@/ui/placementDraft";
+import { setTrailPreview } from "@/ui/trailPreview";
 import { tidy } from "@/ui/kit/parts";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { useSpeed } from "@/ui/speed";
@@ -247,6 +248,7 @@ export default function PlayExperience() {
         open={buildOpen}
         onClose={() => {
           setBuildOpen(false);
+          setTrailPreview(null);
           if (!usePlacementDraft.getState().active) setBuildMode(false);
         }}
         onStartPlacement={() => setBuildOpen(false)}
