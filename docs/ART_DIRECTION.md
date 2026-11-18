@@ -1,7 +1,7 @@
 # Last Chair — art direction
 
 **Version:** 1.0 · **Updated:** 2026-11-17  
-**Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs; the dedicated art pass is M4 in [MASTER_PLAN.md](./MASTER_PLAN.md#6-roadmap); lighting and VFX juice is M7.
+**Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs; the dedicated art pass is M4 in [MASTER_PLAN.md](./MASTER_PLAN.md#8-roadmap); lighting and VFX juice is M7.
 
 ---
 

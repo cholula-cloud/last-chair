@@ -8,7 +8,7 @@ A cozy 3D ski-hill tycoon for the browser, built for iPhone and iPad Safari firs
 
 | Doc | What it is |
 |---|---|
-| [docs/MASTER_PLAN.md](./docs/MASTER_PLAN.md) | **Start here.** What the game is, how it differs from Ice Coast Revival, architecture, PR roadmap |
+| [docs/MASTER_PLAN.md](./docs/MASTER_PLAN.md) | **Start here.** Game plan and design: story, modes, build experience, roadmap, how we work |
 | [docs/SIMULATION_SPEC.md](./docs/SIMULATION_SPEC.md) | Numbers and formulas, with implemented-vs-spec status |
 | [docs/WORLD.md](./docs/WORLD.md) | Dutch Hill, cast, founders, career mountains, lore |
 | [docs/ART_DIRECTION.md](./docs/ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |

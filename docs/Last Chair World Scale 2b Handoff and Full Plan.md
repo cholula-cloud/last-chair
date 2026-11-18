@@ -1,5 +1,7 @@
 # Last Chair: world scale 2b handoff and full plan
 
+> **Historical (2026-11-18):** everything this file specifies is merged. Current plan: `docs/MASTER_PLAN.md`.
+
 Written 2026-11-17 for handoff to Cursor. Source of truth for game rules stays `docs/MASTER_PLAN.md`; this file records the work since PR 11 and specifies PR 2b and everything after it.
 
 Contents

@@ -1,5 +1,7 @@
 # Last Chair roadmap handoff: next PRs and M2 to M7
 
+> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review) and M8 Rival Mode; they have no section here yet, so write one before building each.
+
 Written 2026-11-17 for handoff to Cursor. This file specifies every PR after world scale 2b, from the rest of M2 through M7. It is the companion to `docs/Last Chair World Scale 2b Handoff and Full Plan.md`, which records the current state and fully specifies PR 2b. `docs/MASTER_PLAN.md` stays the authority for what the game is; where this file and MASTER_PLAN disagree on a number or an order, MASTER_PLAN wins until someone changes it in a PR.
 
 ## How to use this file
@@ -36,7 +38,7 @@ From camera part 3 (#39) until this fix, `/play/` drew the HUD and ran the sim b
 
 ### Next roadmap work
 
-Row **14** multi-lift choice; rows **15–17**; M2 gate.
+Per MASTER_PLAN v2.0 §8: 13d hill shape (in flight), 13e trail corridor shards, then builder rows B1 to B4, then rows **14–17**, B5, M2 gate.
 
 ## Recommended build order
 
@@ -51,7 +53,7 @@ Row **14** multi-lift choice; rows **15–17**; M2 gate.
 | 7 | Gate M3: three outside players sign the P1 script | Part B, "Gate M3 test plan" |
 | 8 | M4 (rows 28 to 33), M5 (rows 34 to 38), M6 (rows 39 and 40), M7 | Part C |
 
-MASTER_PLAN section 6 says each milestone ends with a gate and the next milestone does not start until the gate passes. Parts A to C follow that.
+MASTER_PLAN section 8 says each milestone ends with a gate and the next milestone does not start until the gate passes. Parts A to C follow that.
 
 Save versions expected through M2: 2b makes v8, 13a v9, row 14 v10, row 16 v11, row 17 v12. Part B writes M3 versions as "next version" because the M2 numbers can shift.
 
@@ -71,7 +73,7 @@ The agents that drafted Parts A to C checked the plan against the repo and found
 
 ## Conventions that apply to every PR
 
-These are stated in full in section 6 of the 2b doc and in MASTER_PLAN section 5. In short:
+These are stated in full in section 6 of the 2b doc and in MASTER_PLAN section 7. In short:
 
 - One goal per PR, about 400 changed lines of non-test code or fewer; each section says where to cut.
 - `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included.
@@ -367,7 +369,7 @@ Triangle counts from `gl.info` include the shadow pass unless read after the mai
 About 200 lines including the script. Cut: the script can ship alone if the rest slips.
 
 ### Open decisions
-1. Speed available from day 1 or after the tutorial beat (MASTER_PLAN §3 says 2x after the tutorial). Recommended: from day 1, because PR 26 (coached winter) does not exist yet; gate it when PR 26 lands.
+1. Speed available from day 1 or after the tutorial beat (MASTER_PLAN §5 says 2x after the tutorial). Recommended: from day 1, because PR 26 (coached winter) does not exist yet; gate it when PR 26 lands.
 2. Retire `playtest:p0`. Recommended: keep it until `phone-check` has passed five clean runs, then delete it with owner approval.
 
 ---
@@ -967,7 +969,7 @@ Numbers marked proposed are design choices to be tuned with the balance harness 
 
 # Part B: M3, one full winter
 
-M3 turns Dutch Hill into a finished product: a player picks a founder, plays a 28-day winter with real weather, money pressure, crew talents and six radio beats, and ends in a winter review that records the season for the career. The gate is the P1 device playtest signed by three outside players (MASTER_PLAN section 6, Gate M3).
+M3 turns Dutch Hill into a finished product: a player picks a founder, plays a 28-day winter with real weather, money pressure, crew talents and six radio beats, and ends in a winter review that records the season for the career. The gate is the P1 device playtest signed by three outside players (MASTER_PLAN section 8, Gate M3).
 
 This part assumes M2 is merged (PRs 12b to 17, world scale 2b to 2d, camera part 3). Where an M3 PR reads something M2 adds, the dependency line says so. Every number marked "proposed" is a first value invented for this plan; numbers without that label come from SIMULATION_SPEC.md, WORLD.md or the code on `main` at `a980e31`.
 
@@ -992,7 +994,7 @@ export const STREAM = { WEATHER: 0x57ea7e2, RADIO: 0x4ad10 } as const;
 
 **Saves.** A PR that adds or reshapes a `PersistedState` field bumps `SAVE_VERSION` by one and registers one migration step with a fixture (PR 25 policy). The version numbers below are written as "next version" because M2 PRs after 2b (v8) may also bump it.
 
-**Phone verification (all PRs with visible change).** Screenshots at 390x844, 844x390, 820x1180 and 375x667, home view and with each new sheet or card open. No overlap with the HUD or safe areas; every new control at least 44x44 px; night tiles full width and at least 56 px tall; every control labelled. Accessibility from MASTER_PLAN section 7 on every new surface: state shown as icon plus colour (never colour alone), reduced motion disables new animations, radio can be off, heritage text optional. Wait on `[data-scene-ready="true"]` (2b item 12) instead of fixed sleeps. Use `web/scripts/phone-check.mjs` from camera part 3 if it has landed.
+**Phone verification (all PRs with visible change).** Screenshots at 390x844, 844x390, 820x1180 and 375x667, home view and with each new sheet or card open. No overlap with the HUD or safe areas; every new control at least 44x44 px; night tiles full width and at least 56 px tall; every control labelled. Accessibility from MASTER_PLAN section 9 on every new surface: state shown as icon plus colour (never colour alone), reduced motion disables new animations, radio can be off, heritage text optional. Wait on `[data-scene-ready="true"]` (2b item 12) instead of fixed sleeps. Use `web/scripts/phone-check.mjs` from camera part 3 if it has landed.
 
 **Size.** About 400 changed lines of non-test code per PR. Each PR names where to cut.
 
@@ -2130,7 +2132,7 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
 
-Every PR below follows MASTER_PLAN section 5: one goal, under about 400 changed lines of non-test code, `cd web && npm run check` green, phone check, docs in the same PR, merge with `gh pr merge <n> --merge` after green CI. Layering holds throughout: `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included. The season characterization snapshot (`web/src/game/__snapshots__/season.characterization.test.ts.snap`) is the sim safety net. A PR marked "no snapshot change" must leave it byte-identical; a PR that changes it pastes the exact `.snap` diff into its description and explains every line.
+Every PR below follows MASTER_PLAN section 7: one goal, under about 400 changed lines of non-test code, `cd web && npm run check` green, phone check, docs in the same PR, merge with `gh pr merge <n> --merge` after green CI. Layering holds throughout: `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included. The season characterization snapshot (`web/src/game/__snapshots__/season.characterization.test.ts.snap`) is the sim safety net. A PR marked "no snapshot change" must leave it byte-identical; a PR that changes it pastes the exact `.snap` diff into its description and explains every line.
 
 Hosting is GitHub Pages as a static export (`next.config.ts`: `output: "export"`, `basePath` from `PAGES_BASE_PATH`, `/last-chair` in the deploy workflow). There is no server code, no API routes, no runtime image optimisation. Every asset is a static file under `web/public/`, and every URL in code is built from `process.env.NEXT_PUBLIC_BASE_PATH` the way `render/kit.ts` does it (`${BASE}/models/${name}.glb`).
 
@@ -2589,7 +2591,7 @@ Loading: UI sounds (under 200 KB) fetch after start; beds fetch after `data-scen
 { "version": 1, "sounds": [ { "id": "bed-day", "file": "bed-day.m4a", "bytes": 0, "loopStart": 0.048, "loopEnd": 74.2, "license": "CC0", "source": "URL or 'original'", "author": "name" } ] }
 ```
 
-Mute and volume: preferences go in a separate localStorage key `last-chair-prefs` (`{ muted, ambient: 0..1, ui: 0..1 }`), not in the game save, so a save reset does not unmute. Default: sound on, ambient 0.5, UI 0.7. Controls: a labelled "Sound: on" or "Sound: off" key in the Menu sheet (camera PR 31 adds the Menu confirm; put it beside it), 44 px minimum, `aria-pressed`. MASTER_PLAN section 7 says radio can be turned off; add "Radio sting" as a separate toggle only if the owner wants it (open decision).
+Mute and volume: preferences go in a separate localStorage key `last-chair-prefs` (`{ muted, ambient: 0..1, ui: 0..1 }`), not in the game save, so a save reset does not unmute. Default: sound on, ambient 0.5, UI 0.7. Controls: a labelled "Sound: on" or "Sound: off" key in the Menu sheet (camera PR 31 adds the Menu confirm; put it beside it), 44 px minimum, `aria-pressed`. MASTER_PLAN section 9 says radio can be turned off; add "Radio sting" as a separate toggle only if the owner wants it (open decision).
 
 Where calls go: `ui/kit/parts.tsx` keys call `audio.play("ui-tap")` on press; `Sheet.tsx` on enter; `NightRecapSheet.tsx` cash line on reveal; `RadioCard.tsx` on arrive; store subscriptions in `PlayExperience.tsx` switch beds on phase. Sandbox mode (row 39) skips `radio-sting`.
 
@@ -2624,7 +2626,7 @@ AAC loop gaps if offsets are wrong (test by ear on device). iOS audio session AP
 Music tracks, voice-over, positional 3D audio, per-guest sounds.
 
 ### Docs to update
-ART_DIRECTION "Audio direction (stub)" becomes a real section (asset list, format, licence rule); MASTER_PLAN section 3 "Audio only after a user gesture" points to it.
+ART_DIRECTION "Audio direction (stub)" becomes a real section (asset list, format, licence rule); MASTER_PLAN section 5 "Audio only after a user gesture" points to it.
 
 ### Size
 About 280 lines.
@@ -2648,7 +2650,7 @@ When mood changes by five points or more, the mood chip on the ops strip pulses 
 
 ### Design
 
-What exists: sheets already animate with CSS driven by `data-state` (enter 360 ms `--ease-drawer`, exit 200 ms), drag-to-dismiss with flick velocity (`Sheet.tsx`: `DISMISS_DISTANCE = 110`, `DISMISS_VELOCITY = 0.11`). `globals.css` has a `prefers-reduced-motion` block for `.press`, `.sheet`, `.note-in`, `.callout-in`, `.arrive`, `.pop` and `.pulse-ring`. The `.pulse-ring` on the Play key loops forever (`animation: pulse-ring 1.8s infinite`) when not reduced. Nothing in JS reads reduced motion (`matchMedia` appears nowhere), so the follow camera swing ignores it, which contradicts MASTER_PLAN section 7.
+What exists: sheets already animate with CSS driven by `data-state` (enter 360 ms `--ease-drawer`, exit 200 ms), drag-to-dismiss with flick velocity (`Sheet.tsx`: `DISMISS_DISTANCE = 110`, `DISMISS_VELOCITY = 0.11`). `globals.css` has a `prefers-reduced-motion` block for `.press`, `.sheet`, `.note-in`, `.callout-in`, `.arrive`, `.pop` and `.pulse-ring`. The `.pulse-ring` on the Play key loops forever (`animation: pulse-ring 1.8s infinite`) when not reduced. Nothing in JS reads reduced motion (`matchMedia` appears nowhere), so the follow camera swing ignores it, which contradicts MASTER_PLAN section 9.
 
 One source of truth:
 
@@ -2707,7 +2709,7 @@ Cash count can disagree with the final value if the sheet re-renders mid-count; 
 Particle effects, queue heat shimmer (M7 art), haptics.
 
 ### Docs to update
-ART_DIRECTION Motion and Accessibility sections; MASTER_PLAN section 7.
+ART_DIRECTION Motion and Accessibility sections; MASTER_PLAN section 9.
 
 ### Size
 About 230 lines.
@@ -2839,7 +2841,7 @@ This touches 19 files; it will exceed 400 lines. Split as below. Memoised terrai
 Any second mountain; career state; the hub.
 
 ### Docs to update
-SIMULATION_SPEC Terrain and Economy (values now per mountain); WORLD.md Part 3 "Implementation order" points to `MountainDef`; MASTER_PLAN section 4 "Content is data".
+SIMULATION_SPEC Terrain and Economy (values now per mountain); WORLD.md Part 3 "Implementation order" points to `MountainDef`; MASTER_PLAN section 6 "Content is data".
 
 ### Size
 About 600 lines across all steps. Split: 34a types, registry, `mountainId` in state and save (steps 1 and 2, about 250 lines); 34b `game/` reads through `mountainOf` (step 3, about 200); 34c render and UI through `useTerrain` (step 4, about 200). Each part keeps the snapshot unchanged.
@@ -2941,7 +2943,7 @@ Facts in one-liners can be wrong; treat the table above as draft and verify each
 Maine pins, more than one playable mountain beyond Tenney, travel animations.
 
 ### Docs to update
-WORLD.md Part 3 "Map UI" and roster table (coordinates, verified lines); MASTER_PLAN section 3 screen map ("Career hub").
+WORLD.md Part 3 "Map UI" and roster table (coordinates, verified lines); MASTER_PLAN section 5 screen map ("Career hub").
 
 ### Size
 About 380 lines. Cut point: list view first (it is the accessible version), pan and zoom second.
@@ -3269,7 +3271,7 @@ Mode branches spreading through rules; the "one place each" rule and a grep test
 Imported layouts, new build tools in Sandbox, Director manual ops.
 
 ### Docs to update
-MASTER_PLAN section 1 Modes and "Sandbox flow"; SIMULATION_SPEC new "Modes" section.
+MASTER_PLAN section 3 Modes and "Sandbox settings"; SIMULATION_SPEC new "Modes" section.
 
 ### Size
 About 380 lines. Cut point: "Pick each night" talents move to a follow-up.
@@ -3358,7 +3360,7 @@ About 380 lines. Cut point: Rename and the Safari note can follow.
 
 ## M7: 110% pass
 
-M7 starts only after M3's gate and M4 to M6 are merged, and after one full winter is fun on a phone (MASTER_PLAN section 2). It has five work streams. The first decides what else gets built.
+M7 starts only after M3's gate and M4 to M6 are merged, and after one full winter is fun on a phone (MASTER_PLAN section 8, M7). It has five work streams. The first decides what else gets built.
 
 ### M7.1 Side-by-side ritual
 
@@ -3383,7 +3385,7 @@ Ranking:
 3. Any friction fixable by a constant or copy change goes into a "defaults" PR first, regardless of score, and the ritual repeats on that build before any new system is chosen.
 4. Map the top frictions onto the candidate list below; pick five whose combined score is highest; if a top friction maps to nothing, it becomes a candidate.
 
-Candidates (MASTER_PLAN section 2, "Planned improvements"), with the friction each answers:
+Candidates (MASTER_PLAN section 8, M7 candidate list), with the friction each answers:
 
 | Candidate | Answers | Depends on | Size |
 |---|---|---|---|
@@ -3433,7 +3435,7 @@ Size: about 220 lines plus icons. Open decision: precache audio beds (offline so
 
 ### M7.3 Performance budget pass
 
-Budget (MASTER_PLAN section 3, ART_DIRECTION, 2b handoff):
+Budget (MASTER_PLAN section 5, ART_DIRECTION, 2b handoff):
 
 | Item | Budget | Where it is measured |
 |---|---|---|
@@ -3478,7 +3480,7 @@ What to cut first, in order, stopping when the budget holds:
 7. Terrain grid 192 by 160 to 160 by 128.
 Never cut readability items first: skier minimum size, trail ribbon, lift line.
 
-Sim cost: profile `tick` in Web Inspector; if it exceeds 4 ms per frame at 3x speed, move the sim to a Web Worker (MASTER_PLAN section 4 allows it only on profile evidence).
+Sim cost: profile `tick` in Web Inspector; if it exceeds 4 ms per frame at 3x speed, move the sim to a Web Worker (the old MASTER_PLAN allowed it only on profile evidence; v2.0 keeps that rule).
 
 ### M7.4 Accessibility audit
 
