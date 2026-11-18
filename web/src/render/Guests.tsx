@@ -5,12 +5,12 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useLayoutEffect, useMemo, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import type { LiftType } from "@/game/types";
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { useGameStore } from "@/game/store";
 import { placeGuests, type GuestPlacement } from "./guestPlacement";
 import { useStallMap } from "./useStallMap";
 import { bakeKit, METERS_TO_WORLD, SHADOW_LAYER_MASK, TOY_SCALE, useKit } from "./kit";
-import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
+import { LIFT_CABLE_OFFSET } from "./layout";
 import { TBAR_DROP, useCarrierGeometry } from "./Lift";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 import { HATS, JACKETS, PALETTE } from "./palette";
@@ -40,7 +40,7 @@ function idHash(id: string): number {
 }
 
 /** A lift as the guests see it; the array index matches `Guest.liftIndex`. */
-export type GuestLift = { anchor: LiftAnchor; type: LiftType };
+export type GuestLift = { line: LiftLine; type: LiftType };
 
 export function Guests({
   lifts,
@@ -61,14 +61,19 @@ export function Guests({
   const tbar = useCarrierGeometry("surface");
   const chair = useCarrierGeometry("chair");
   // `lifts` changes identity on every sim tick (queues move); geometry only depends on anchor and type.
-  const liftKey = lifts.map((l) => `${l.type}:${l.anchor.x},${l.anchor.z}`).join("|");
+  const liftKey = lifts
+    .map(
+      (l) =>
+        `${l.type}:${l.line.bottom.x},${l.line.bottom.z},${l.line.top.x},${l.line.top.z}`,
+    )
+    .join("|");
   const placedLifts = useMemo(
     () =>
       lifts.map((l) => ({
-        anchor: l.anchor,
+        line: l.line,
         type: l.type,
-        towers: liftTowers(l.anchor),
-        frame: liftFrame(l.anchor),
+        towers: liftTowers(l.line),
+        frame: liftFrame(l.line),
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [liftKey],
@@ -125,10 +130,10 @@ export function Guests({
       if (g.state === "ride") {
         const lift = placedLifts[g.liftIndex ?? 0] ?? placedLifts[0];
         if (!lift) return;
-        const { anchor, towers, frame } = lift;
+        const { line, towers, frame } = lift;
         const t = g.progress;
-        const lx = LIFT_BASE.x + (anchor.x - LIFT_BASE.x) * t + frame.px * LIFT_CABLE_OFFSET;
-        const lz = LIFT_BASE.z + (anchor.z - LIFT_BASE.z) * t + frame.pz * LIFT_CABLE_OFFSET;
+        const lx = line.bottom.x + (line.top.x - line.bottom.x) * t + frame.px * LIFT_CABLE_OFFSET;
+        const lz = line.bottom.z + (line.top.z - line.bottom.z) * t + frame.pz * LIFT_CABLE_OFFSET;
         const cy = cableHeightAt(t, towers) - 0.03;
         dummy.position.set(lx, cy, lz);
         dummy.rotation.set(0, frame.yaw, 0);

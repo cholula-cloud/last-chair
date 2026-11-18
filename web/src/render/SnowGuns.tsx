@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { bakeKit, LIFT_TOY_SCALE, METERS_TO_WORLD, mergePlaced, placeKit, useKit } from "./kit";
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { trailPoint } from "./trail";
 
@@ -15,11 +15,11 @@ const GUN_SPOTS: { t: number; side: number }[] = [
 ];
 type Gun = { x: number; z: number; yaw: number; elevation: number };
 
-function placeGuns(anchor: LiftAnchor): Gun[] {
+function placeGuns(line: LiftLine): Gun[] {
   return GUN_SPOTS.map(({ t, side }) => {
-    const c = trailPoint(t, anchor);
-    const a = trailPoint(t - 0.02, anchor);
-    const b = trailPoint(t + 0.02, anchor);
+    const c = trailPoint(t, line);
+    const a = trailPoint(t - 0.02, line);
+    const b = trailPoint(t + 0.02, line);
     const len = Math.hypot(b.x - a.x, b.z - a.z) || 1;
     const nx = -(b.z - a.z) / len;
     const nz = (b.x - a.x) / len;
@@ -40,13 +40,13 @@ const NOZZLE_Y = 5.6 * SCALE;
 /** Kit tower snow guns with a plume when running. */
 export function SnowGuns({
   reach,
-  anchor,
+  line,
 }: {
   /** Fraction of the trail from the bottom the guns covered last night; 0 = off. */
   reach: number;
-  anchor: LiftAnchor;
+  line: LiftLine;
 }) {
-  const GUNS = useMemo(() => placeGuns(anchor), [anchor]);
+  const GUNS = useMemo(() => placeGuns(line), [line]);
   const gun = bakeKit(useKit("snow-gun")).body;
   const geo = useMemo(
     () =>

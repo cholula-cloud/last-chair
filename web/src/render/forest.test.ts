@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { REFERENCE_TOPS, type LiftAnchor } from "@/game/descent";
+import { REFERENCE_TOPS } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import {
   CHUNK_SIZE,
@@ -19,9 +19,9 @@ import {
 } from "./forest";
 import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
 
-const DEFAULT_ANCHORS: LiftAnchor[] = REFERENCE_TOPS.map((t) => ({ x: t.x, z: t.z }));
-
-const clearings = { anchors: DEFAULT_ANCHORS };
+const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
+const DEFAULT_LINES = REFERENCE_TOPS.map(lineAt);
+const clearings = { lines: DEFAULT_LINES };
 const home = TERRAIN.base;
 
 beforeEach(() => _clearChunkCache());
@@ -56,12 +56,12 @@ describe("chunk candidates", () => {
 
 describe("forested and forestForTarget", () => {
   it("clears lifts, trails, apron and road", () => {
-    for (const a of DEFAULT_ANCHORS) {
-      expect(forested(a.x, a.z, clearings)).toBe(false);
-      const mid = trailPolyline(a, 28)[12];
+    for (const line of DEFAULT_LINES) {
+      expect(forested(line.top.x, line.top.z, clearings)).toBe(false);
+      const mid = trailPolyline(line, 28)[12];
       expect(forested(mid.x, mid.z, clearings)).toBe(false);
-      expect(distSqToLiftLine(mid.x, mid.z, a)).toBeLessThanOrEqual(LIFT_CLEAR ** 2 + 1e-6);
-      expect(distSqToPolyline(mid.x, mid.z, trailPolyline(a, 28))).toBeLessThanOrEqual(
+      expect(distSqToLiftLine(mid.x, mid.z, line)).toBeLessThanOrEqual(LIFT_CLEAR ** 2 + 1e-6);
+      expect(distSqToPolyline(mid.x, mid.z, trailPolyline(line, 28))).toBeLessThanOrEqual(
         TRAIL_CLEAR ** 2 + 0.5,
       );
     }

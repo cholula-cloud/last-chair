@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "@/game/descent";
+import { TERRAIN } from "@/game/terrain";
 import {
   cameraBasis,
   cameraPosition,
@@ -13,7 +14,6 @@ import {
 import { liftTowers } from "./liftLine";
 import { trailPolyline } from "./trail";
 import { lotFarCorner } from "@/game/site";
-import { TERRAIN } from "@/game/terrain";
 import { MAX_DISTANCE } from "./cameraControls";
 import { SITE } from "./layout";
 
@@ -46,10 +46,11 @@ function project(p: Vec3, cam: Vec3, target: Vec3, fovDeg: number, aspect: numbe
 function allPoints(): Vec3[] {
   const pts = [...keyPoints()];
   for (const slot of REFERENCE_TOPS) {
-    for (const q of trailPolyline(slot)) {
+    for (const q of trailPolyline({ bottom: TERRAIN.base, top: slot })) {
       pts.push({ x: q.x, y: TERRAIN.height(q.x, q.z), z: q.z });
     }
-    for (const t of liftTowers(slot)) pts.push({ x: t.x, y: t.top, z: t.z });
+    for (const t of liftTowers({ bottom: TERRAIN.base, top: slot }))
+      pts.push({ x: t.x, y: t.top, z: t.z });
   }
   return pts;
 }

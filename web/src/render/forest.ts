@@ -1,6 +1,6 @@
 /** Chunked forest placement: candidates per map chunk, tiered by camera distance. */
 
-import type { LiftAnchor } from "@/game/descent";
+import type { LiftLine } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { LODGE, LIFT_BASE, ROAD_Z, SITE, WARMING_HUT_POS } from "./layout";
 import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
@@ -37,7 +37,7 @@ export type TreeSpot = {
 type Candidate = { x: number; z: number; keep: number; variant: number; birch: boolean };
 
 export type ForestClearings = {
-  anchors: readonly LiftAnchor[];
+  lines: readonly LiftLine[];
 };
 
 function hash32(a: number, b: number, c = 0, d = 0): number {
@@ -147,12 +147,12 @@ export function forested(x: number, z: number, clearings: ForestClearings): bool
   if (inMeadow(x, z)) return false;
   if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
   if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
-  const trails = clearings.anchors.map((a) => trailPolyline(a, 28));
+  const trails = clearings.lines.map((line) => trailPolyline(line, 28));
   const liftSq = LIFT_CLEAR ** 2;
   const trailSq = TRAIL_CLEAR ** 2;
-  for (let i = 0; i < clearings.anchors.length; i++) {
+  for (let i = 0; i < clearings.lines.length; i++) {
     if (distSqToPolyline(x, z, trails[i]) < trailSq) return false;
-    if (distSqToLiftLine(x, z, clearings.anchors[i]) < liftSq) return false;
+    if (distSqToLiftLine(x, z, clearings.lines[i]) < liftSq) return false;
   }
   const h = TERRAIN.height(x, z);
   if (h > 10.65) return false;

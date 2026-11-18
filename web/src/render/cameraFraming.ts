@@ -133,7 +133,7 @@ export function keyPoints(): Vec3[] {
   ];
   for (const slot of REFERENCE_TOPS) {
     pts.push(onTerrain(slot.x, slot.z, LIFT_TERMINAL_H));
-    pts.push(trailPoint(0.5, slot));
+    pts.push(trailPoint(0.5, { bottom: TERRAIN.base, top: slot }));
   }
   return pts;
 }
