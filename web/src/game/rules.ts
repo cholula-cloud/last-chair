@@ -19,6 +19,7 @@ import {
   checkLiftLine,
   checkSpacing,
   MAX_LIFTS,
+  MAX_LIFT_SLOTS,
   rulesFor,
   type LiftLine,
   type PlacementReason,
@@ -425,7 +426,7 @@ export function checkPlacement(
   line = { bottom: roundXZ(line.bottom), top: roundXZ(line.top) };
   const open = state.lifts.filter((l) => l.confirmed);
   if (type === "chair" && state.lodgeTier === 1) return { ok: false, reason: "lodge_tier" };
-  if (open.length >= MAX_LIFTS || state.lifts.length >= 12) return { ok: false, reason: "max_lifts" };
+  if (open.length >= MAX_LIFTS || state.lifts.length >= MAX_LIFT_SLOTS) return { ok: false, reason: "max_lifts" };
   const terrain = checkLiftLine(line, TERRAIN, type);
   if (!terrain.ok) return terrain;
   const assets = state.assets ?? [];

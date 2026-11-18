@@ -24,7 +24,7 @@
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | 🟡 | Key `last-chair-v1`, schema version 14 with migrations; cloud later | 25 |
+| Save format | ✅ | Key `last-chair-v1`, versioned migrations, validation and recovery | 25 |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | 🟡 | Seeded RNG injected (PR 3); weather still a formula | 18 |
 
@@ -366,7 +366,16 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (v14)
 
-Zustand saves `PersistedState` under `last-chair-v1` in localStorage. `migrate()` in `game/state.ts` keeps old cash, builds, guest rosters, random seeds, and night recaps where valid. The shipped v11 save introduced the permanent lodge, and v12 introduced saved brush widths. The v14 loader backfills catalog placements and newer day statistics for both of those versions, converts old snow guns to pipe-connected guns, and records prior clearing without charging the player. Existing widths and cash are preserved. Saves made during a lodge upgrade persist the target and nights remaining.
+Zustand saves `PersistedState` under `last-chair-v1` in local storage. The loader runs the migration registry in version order, then validates the result. Current saves are validated on load too. An unreadable, invalid or newer save starts at founder selection and shows a recovery notice. When browser storage allows it, the game keeps the original value under `last-chair-v1-backup`.
+
+| Version | Save change |
+|---|---|
+| 0–4 | Legacy night state, queue accounting, guest personas and satisfaction tallies |
+| 5–8 | Segmented snow, night facts, free lift placement and mountain scale |
+| 9–12 | Trail graph, elevations, the permanent lodge and painted trail widths |
+| 13–14 | Venue placements, connected guns, lodge construction and permanent clearings |
+
+Any persisted field or unit change needs one additional migration, one version increment and a fixture. Preserve historical fixture inputs and document the old defaults in the migration so later gameplay tuning cannot silently alter migrated winters. Valid old saves retain their cash, assets, guest rosters, seed and night recap.
 
 Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 

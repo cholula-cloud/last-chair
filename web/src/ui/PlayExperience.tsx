@@ -28,6 +28,7 @@ import {
 import { PlacementBar } from "@/ui/PlacementBar";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
+import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { useSpeed } from "@/ui/speed";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
@@ -56,6 +57,8 @@ export default function PlayExperience() {
   const morningHeadline = useGameStore((s) => s.morningHeadline);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
+  const saveNotice = useGameStore((s) => s.saveNotice);
+  const dismissSaveNotice = useGameStore((s) => s.dismissSaveNotice);
   const togglePause = useGameStore((s) => s.togglePause);
   const setFollowId = useGameStore((s) => s.setFollowId);
   const resumeFollowId = useCameraUi((s) => s.resumeFollowId);
@@ -279,6 +282,21 @@ export default function PlayExperience() {
       />
       <NightRecapSheet />
       <FounderPick />
+      <div className="pointer-events-none absolute inset-x-3 top-[max(0.6rem,env(safe-area-inset-top))] z-[70] mx-auto max-w-md">
+        <div className={saveNotice ? "key pointer-events-auto flex items-center gap-2 p-1 pl-3" : undefined}>
+          <p role="status" className="flex-1 text-sm font-bold">{saveNotice}</p>
+          {saveNotice && (
+            <button
+              type="button"
+              onClick={dismissSaveNotice}
+              aria-label="Dismiss save notice"
+              className="key key-sm press grid size-11 shrink-0 place-items-center"
+            >
+              <CloseIcon />
+            </button>
+          )}
+        </div>
+      </div>
       <WinterReviewSheet />
     </div>
   );

@@ -1,0 +1,63 @@
+{
+  "state": {
+    "dayIndex": 3,
+    "clockMin": 585,
+    "phase": "day",
+    "paused": true,
+    "cash": 8675,
+    "fare": "balanced",
+    "snow": "mid",
+    "snowQuality": 0.55,
+    "snowDepth": 0.45,
+    "guests": [
+      {
+        "id": "test-1",
+        "label": "Test skier",
+        "state": "ski",
+        "progress": 0.25,
+        "mood": 0.65,
+        "liftIndex": 0
+      }
+    ],
+    "followId": null,
+    "pendingFare": "balanced",
+    "pendingSnow": "mid",
+    "buildMode": false,
+    "founderId": "elena",
+    "buildings": [
+      "warming_hut"
+    ],
+    "lifts": [
+      {
+        "type": "surface",
+        "anchor": {
+          "x": -1.2,
+          "z": 0.2,
+          "label": "Ridge"
+        },
+        "confirmed": true
+      }
+    ],
+    "selectedLiftType": "surface",
+    "selectedSlotIndex": 0,
+    "talentsOwned": [],
+    "completedBeats": [],
+    "pendingBeat": null,
+    "beatAcknowledged": true,
+    "weather": "clear",
+    "morningHeadline": "Dutch Hill opens — one limping surface lift.",
+    "daysWithoutSnow": 0,
+    "reputation": 40,
+    "gunsVisible": false,
+    "groomVisible": false,
+    "seasonLength": 14,
+    "rngState": 42,
+    "nightRecap": null,
+    "dayStats": {
+      "arrivals": 0,
+      "completedRuns": 0,
+      "avgQueueMin": 2.5
+    }
+  },
+  "version": 1
+}
