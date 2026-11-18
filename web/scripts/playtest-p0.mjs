@@ -35,7 +35,7 @@ await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 2000
 await page.screenshot({ path: path.join(outDir, "founder-pick.png") });
 await page.getByRole("button", { name: /Elena Vargas/i }).click();
 
-await page.getByText(/Day 1\/14/).waitFor({ timeout: 10000 });
+await page.getByText(/Day 1\/28/).waitFor({ timeout: 10000 });
 await page.screenshot({ path: path.join(outDir, "day1-hud.png") });
 
 // Guests arrive from 8 AM and the day starts at 6, so seed the saved clock at 9:30, when the hill has
@@ -50,7 +50,7 @@ await page.addInitScript((json) => {
   }
 }, JSON.stringify(seeded));
 await page.reload({ waitUntil: "networkidle" });
-await page.getByText(/Day 1\/14/).waitFor({ timeout: 10000 });
+await page.getByText(/Day 1\/28/).waitFor({ timeout: 10000 });
 
 await page.getByLabel("Resume day").click();
 await page.waitForTimeout(4000);
@@ -97,10 +97,10 @@ await page.getByRole("button", { name: "High" }).click();
 const gotIt = page.getByRole("button", { name: "Got it" });
 if (await gotIt.count()) await gotIt.click();
 await page.getByRole("button", { name: /Sleep/i }).click();
-await page.getByText(/Day 2\/14/).waitFor({ timeout: 10000 });
+await page.getByText(/Day 2\/28/).waitFor({ timeout: 10000 });
 await page.screenshot({ path: path.join(outDir, "day2-morning.png") });
 
-for (let day = 2; day <= 14; day++) {
+for (let day = 2; day <= 28; day++) {
   const review = page.getByRole("heading", { name: /Winter review/i });
   if (await review.count()) break;
   const mountain2 = page.getByRole("heading", { name: /Tenney Mountain/i });
@@ -114,7 +114,7 @@ await page.screenshot({ path: path.join(outDir, "end-state.png"), fullPage: true
 const body = await page.locator("body").innerText();
 const okEnd =
   /Winter review|Tenney Mountain|Replay Dutch Hill/i.test(body) ||
-  /Day 14\/14/.test(body);
+  /Day 28\/28/.test(body);
 
 const fatal = errors.filter(
   (e) => !/favicon|hydration|ResizeObserver/i.test(e),

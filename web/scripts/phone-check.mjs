@@ -67,7 +67,7 @@ async function startPlay(page) {
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: /Elena Vargas/i }).click();
   await waitSceneReady(page);
-  await page.getByText(/Day 1\/14/).waitFor({ timeout: 15_000 });
+  await page.getByText(/Day 1\/28/).waitFor({ timeout: 15_000 });
 }
 
 async function shot(page, engine, tag, name) {
