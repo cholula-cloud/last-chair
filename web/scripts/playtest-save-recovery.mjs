@@ -42,8 +42,9 @@ try {
   await page.getByText("Build your first lift", { exact: true }).waitFor({ timeout: 20000 });
   // Continue refreshes the "last played" time (savedAt); the winter itself must be unchanged.
   const withoutSavedAt = (raw) => {
-    const { savedAt: _savedAt, ...rest } = JSON.parse(raw);
-    return rest;
+    const parsed = JSON.parse(raw);
+    delete parsed.savedAt;
+    return parsed;
   };
   const after = await page.evaluate((key) => localStorage.getItem(key), saveKey);
   assert.ok(after, "The slot still holds the save after Continue");
