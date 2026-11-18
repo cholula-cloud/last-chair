@@ -20,12 +20,22 @@ Written 2026-11-17 for handoff to Cursor. This file specifies every PR after wor
 
 "PR 12" or "row 28" means a row in the MASTER_PLAN roadmap, not a GitHub pull request number. The two sets collide (GitHub PR 28 removed Vercel; roadmap row 28 is guest models). Use the row in branch names and titles, for example `claude/row28-guest-models`.
 
-## Where things stand at writing
+## Where things stand (updated 2026-11-18)
 
-- `main` includes **12c** (#41), **13a** (#42), **13b** (#43), **phone mountain fix** (#44), and **M2 polish** (#45). Dutch Hill at H = 6, V = 3.
-- **13c** (elevation snow, save v10) lands on branch `cursor/pr-13c-snow-elevation-4a7d` — merge before row **14**.
-- **Next after 13c:** row **14** multi-lift choice; rows 15–17; M2 gate.
+- `main` includes **12c** (#41), **13a** (#42), **13b** (#43), **phone mountain fix attempt** (#44), **M2 polish** (#45), and **13c** elevation snow (#46, save v10). Dutch Hill at H = 6, V = 3. Row **13** (trail graph) is complete on paper; see blocker below.
 - Live game: https://cholula-cloud.github.io/last-chair/play/. Hosting is GitHub Pages only; there is no server code.
+
+### Known blocker — mobile 3D hill not visible
+
+On a **real iPhone** (owner screenshot 2026-11-18), `/play/` loads the **HUD and sim** (day clock, cash, conditions, menu) but the **WebGL mountain is missing**: only the ink page background shows where the canvas should be.
+
+- **#44** addressed terrain snow indexing, `pathSignature` cache keys, and full-size `<Canvas>` (`h-full w-full`). **#45** was touch/UI only.
+- Headless **`web/scripts/phone-check.mjs`** (Playwright mobile emulation) passes on CI; the gap is **real device / mobile Safari or Brave WebGL**, not caught in emulation.
+- **Pause row 14+** until the hill renders on phone after a hard refresh (or private window) on the deployed site. Next PR should be a dedicated mobile render fix (reproduce on device, WebGL context loss, canvas size 0, R3F mount, or stale bundle — TBD).
+
+### Next roadmap work (after blocker)
+
+Row **14** multi-lift choice; rows **15–17**; M2 gate.
 
 ## Recommended build order
 
