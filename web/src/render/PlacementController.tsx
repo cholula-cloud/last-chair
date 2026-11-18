@@ -3,10 +3,10 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import type { PerspectiveCamera } from "three";
-import { checkPlacement, projectLiftBottom, snapTop } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import type { PaintStroke } from "@/game/paintedTrail";
+import { liftBottomAt, liftTopAt, resolveLiftGrab, type LiftGrab } from "@/ui/liftGesture";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { pickTerrain } from "./terrainPick";
 import { LIFT_BUILD_ANCHORS, snapRadiusAtHit } from "./placementTap";
@@ -23,10 +23,12 @@ export function PlacementController() {
   useEffect(() => {
     if (!active) return;
     const pointers = new Set<number>();
-    let gesture: { top?: XZ; tapPoint?: XZ; snapped: boolean } | null = null;
+    let gesture: { top?: XZ; bottom?: XZ; tapPoint?: XZ; snapped: boolean } | null = null;
+    let grab: LiftGrab = "top";
+    let moved = false;
     let blocked = false;
 
-    const moveDraft = (event: PointerEvent) => {
+    const moveDraft = (event: PointerEvent, pressing = false) => {
       const draft = usePlacementDraft.getState();
       if (draft.review) return;
       const camera = get().camera as PerspectiveCamera;
@@ -53,20 +55,21 @@ export function PlacementController() {
             activeStroke: { ...stroke, points: [...stroke.points, raw] },
           });
         }
-      } else if (draft.kind === "lift" && draft.step === "top") {
-        const bottom = draft.bottom ?? TERRAIN.base;
+      } else if (draft.kind === "lift") {
         const y = TERRAIN.height(raw.x, raw.z);
         const radius = snapRadiusAtHit(camera, { ...raw, y }, rect.height);
-        const state = useGameStore.getState();
-        const anchor = LIFT_BUILD_ANCHORS
-          .map((top) => ({ top, distance: Math.hypot(top.x - raw.x, top.z - raw.z) }))
-          .filter(({ distance }) => distance <= radius * 0.7)
-          .sort((a, b) => a.distance - b.distance)
-          .find(({ top }) => checkPlacement(state, draft.type, { bottom, top }).ok);
-        const snapped = anchor
-          ? { top: anchor.top, snapped: true }
-          : snapTop(state, draft.type, { bottom, top: raw }, radius);
-        usePlacementDraft.setState({ top: snapped.top, snapped: snapped.snapped, tapPoint: raw });
+        if (pressing) {
+          grab = resolveLiftGrab(raw, { top: draft.top, bottom: draft.bottom ?? TERRAIN.base }, radius);
+          if (grab === "base-then-top") usePlacementDraft.setState({ bottom: liftBottomAt(raw), tapPoint: raw });
+          else usePlacementDraft.setState({ tapPoint: raw });
+          if (grab !== "top") return;
+        } else if (grab === "bottom") {
+          usePlacementDraft.setState({ bottom: liftBottomAt(raw), tapPoint: raw });
+          return;
+        }
+        const bottom = usePlacementDraft.getState().bottom ?? TERRAIN.base;
+        const next = liftTopAt(useGameStore.getState(), draft.type, bottom, raw, radius, LIFT_BUILD_ANCHORS);
+        usePlacementDraft.setState({ top: next.top, snapped: next.snapped, tapPoint: raw });
       } else {
         usePlacementDraft.setState({ tapPoint: raw });
       }
@@ -81,20 +84,25 @@ export function PlacementController() {
         if (gesture) usePlacementDraft.setState({ ...gesture, activeStroke: null });
         return;
       }
-      gesture = { top: draft.top, tapPoint: draft.tapPoint, snapped: draft.snapped };
+      moved = false;
+      gesture = { top: draft.top, bottom: draft.bottom, tapPoint: draft.tapPoint, snapped: draft.snapped };
       dom.setPointerCapture(event.pointerId);
-      moveDraft(event);
+      moveDraft(event, true);
     };
 
     const onMove = (event: PointerEvent) => {
-      if (pointers.has(event.pointerId) && !blocked) moveDraft(event);
+      if (pointers.has(event.pointerId) && !blocked) {
+        moved = true;
+        moveDraft(event);
+      }
     };
 
     const onUp = (event: PointerEvent) => {
       if (!pointers.delete(event.pointerId)) return;
       if (pointers.size > 0) return;
       if (!blocked) {
-        moveDraft(event);
+        // A tap on a bottom terminal or in the base has no drag to finish.
+        if (grab === "top" || moved) moveDraft(event);
         const draft = usePlacementDraft.getState();
         if (draft.kind === "trail") {
           const stroke = draft.activeStroke;
@@ -102,12 +110,12 @@ export function PlacementController() {
             activeStroke: null,
             ...(stroke && stroke.points.length > 1 ? { strokes: [...draft.strokes, stroke], redo: [] } : {}),
           });
-        } else if (draft.kind === "lift" && draft.step === "bottom" && draft.tapPoint) {
-          usePlacementDraft.setState({ bottom: projectLiftBottom(draft.tapPoint), step: "top" });
         }
       }
       gesture = null;
       blocked = false;
+      moved = false;
+      grab = "top";
     };
 
     const onCancel = (event: PointerEvent) => {

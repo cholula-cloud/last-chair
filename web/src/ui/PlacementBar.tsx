@@ -2,22 +2,22 @@
 
 import { useMemo } from "react";
 import { ASSET_CATALOG, CHAIR_TIER } from "@/game/base";
-import { liftLength, liftVertical, placementReason } from "@/game/descent";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { chooseLift, liftCapacityPerHour, liftWaitMin, rideMinutes } from "@/game/lifts";
+import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import { PERSONAS } from "@/game/personas";
 import {
-  checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement,
+  checkAssetPlacement, checkGunPlacement, checkPaint,
   commitPaint,
 } from "@/game/rules";
 import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { isOverSkill } from "@/game/trails";
-import { LIFT_LABELS, liftCost, type TrailDifficulty } from "@/game/types";
+import { LIFT_LABELS, type TrailDifficulty } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
+import { liftReadout } from "@/ui/liftGesture";
 import { DifficultyIcon } from "@/ui/kit/icons";
 import { PrimaryButton } from "@/ui/kit/parts";
 import {
@@ -177,16 +177,16 @@ function buildPaymentFacts(total: number) {
 function LiftBar() {
   const draft = usePlacementDraft();
   const state = useGameStore();
-  const { type, top, bottom, step } = draft;
+  const { type, top, bottom } = draft;
   const line = top ? { bottom: bottom ?? TERRAIN.base, top } : null;
-  const check = line ? checkPlacement(state, type, line) : null;
-  const capacity = liftCapacityPerHour(type, state.talentsOwned);
-  const ride = line ? rideMinutes(type, line) : null;
-  const cost = check?.ok ? check.cost : line ? liftCost(type, line) : 0;
-  const problem = check && !check.ok ? placementReason(check.reason, { ...check, liftType: type }) : null;
-  const length = line ? feet(liftLength(line) * TERRAIN.horizontalFeetPerUnit) : null;
-  const vertical = line ? feet(liftVertical(line) * TERRAIN.feetPerUnit) : null;
-  if (draft.review && line && check) {
+  const readout = line ? liftReadout(state, type, line) : null;
+  const cost = readout?.cost ?? 0;
+  const problem = readout?.problem ?? null;
+  const length = readout ? feet(readout.lengthFt) : null;
+  const vertical = readout ? feet(readout.verticalFt) : null;
+  const capacity = readout?.skiersPerHour ?? liftCapacityPerHour(type, state.talentsOwned);
+  const ride = readout?.rideMin ?? null;
+  if (draft.review && line && readout) {
     return (
       <BuildImpactCard
         title={`Review ${LIFT_LABELS[type]}`}
@@ -209,29 +209,26 @@ function LiftBar() {
       />
     );
   }
+  const chip = "chip px-2 py-0.5 text-xs font-extrabold tabular-nums";
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold" aria-live="polite">
         {draft.moveCamera ? "Move the map, then tap Place lift to continue."
-          : step === "bottom" ? "Tap the lift bottom inside the base area"
-          : top ? "Drag the top terminal to adjust the lift. Use two fingers to move the map."
-          : "Tap where the lift should unload. Green rings mark buildable spots."}
+          : top ? "Drag either end to adjust. Use two fingers to move the map."
+          : "Drag uphill from the base to place a lift."}
       </p>
-      {line && (
-        <p className="text-xs font-bold">
-          {formatMoney(cost)} · {length} long · {vertical} vertical · {capacity} skiers/hour · {ride?.toFixed(1)} min
-          {draft.snapped ? " · Snapped" : ""}
-        </p>
+      {readout && (
+        <div className="flex flex-wrap gap-1">
+          <span className={chip}>{formatMoney(cost)}</span>
+          <span className={chip}>{length} long</span>
+          <span className={chip}>{vertical} vertical</span>
+          <span className={chip}>{capacity} skiers per hour</span>
+          <span className={chip}>{ride?.toFixed(1)} min ride</span>
+        </div>
       )}
-      {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
-      <div className="grid grid-cols-2 gap-2">
-        <MoveMapButton resumeLabel="Place lift" />
-        <button type="button" className={actionClass} disabled={draft.moveCamera}
-          onClick={() => usePlacementDraft.setState({ step: step === "bottom" ? "top" : "bottom" })}>
-          {step === "bottom" ? "Keep bottom" : "Move bottom"}
-        </button>
-      </div>
-      <DraftActions canReview={!!check && step === "top"} />
+      {problem && <span className="chip inline-block px-2 py-0.5 text-xs font-extrabold text-barn-deep">{problem}</span>}
+      <MoveMapButton resumeLabel="Place lift" />
+      <DraftActions canReview={!!readout} />
     </div>
   );
 }
@@ -289,8 +286,7 @@ function SiteBar() {
 export function PlacementBar() {
   const active = usePlacementDraft((s) => s.active);
   const kind = usePlacementDraft((s) => s.kind);
-  const showPlacementColors = usePlacementDraft((s) =>
-    s.kind !== "trail" && (s.kind !== "lift" || s.step === "top" || !!s.top));
+  const showPlacementColors = usePlacementDraft((s) => s.kind !== "trail" && s.kind !== "lift");
   if (!active) return null;
   return (
     <div className="pointer-events-auto max-h-[65dvh] w-full max-w-[440px] overflow-y-auto px-1 short:max-w-[270px]" data-placement-kind={kind}>

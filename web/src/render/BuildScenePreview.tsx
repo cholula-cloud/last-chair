@@ -8,7 +8,8 @@ import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import type { TrailDifficulty } from "@/game/types";
 import { usePlacementDraft } from "@/ui/placementDraft";
-import { Lift } from "./Lift";
+import { liftReadout } from "@/ui/liftGesture";
+import { LiftGhost } from "./LiftGhost";
 import { PALETTE } from "./palette";
 import { SlopeGrid } from "./SlopeGrid";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
@@ -85,22 +86,13 @@ function ActiveBuildScenePreview() {
   } : null, [painted]);
 
   if (draft.kind === "lift") {
-    const valid = line && checkPlacement(state, draft.type, line).ok;
+    const bottom = draft.bottom ?? TERRAIN.base;
+    const readout = line ? liftReadout(state, draft.type, line) : null;
+    const anchors = draft.review ? [] : LIFT_BUILD_ANCHORS
+      .filter((top) => checkPlacement(state, draft.type, { bottom, top }).ok);
     return (
-      <>
-        {!line && draft.step === "top" && LIFT_BUILD_ANCHORS
-          .filter((top) => checkPlacement(state, draft.type, { bottom: draft.bottom ?? TERRAIN.base, top }).ok)
-          .map((top) => (
-            <TerrainRing guide key={`${top.x}/${top.z}`} at={top} radius={0.65} color={DIFFICULTY_COLOR.green} />
-          ))}
-        {line && (
-          <>
-            <TrailRibbon line={line} valid={!!valid} />
-            <Lift line={line} type={draft.type} preview previewInvalid={!valid} />
-            <TerrainRing at={line.top} radius={0.55} color={valid ? PALETTE.valid : PALETTE.invalid} />
-          </>
-        )}
-      </>
+      <LiftGhost line={line} bottom={bottom} type={draft.type} readout={readout}
+        snapped={draft.snapped} anchors={anchors} />
     );
   }
 
