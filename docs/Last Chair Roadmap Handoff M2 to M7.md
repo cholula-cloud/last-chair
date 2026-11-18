@@ -839,7 +839,7 @@ About 150 lines.
 
 ## PR 16: village venues
 
-> **Superseded 2026-11-18.** MASTER_PLAN v2.1 replaces this row with 16a asset catalog, 16b lodge tiers, 16c free venue placement and attach, and 16d venues with guest reasons. The lodge is now a fixed HQ whose tiers raise the ticket cap and gate what can be built; it no longer adds seats (§3 of the plan). Rewrite this section as four sections, and add one for L1, before building any of them. The text below is the old design and is kept only for its guest-state and revenue detail.
+> **Superseded 2026-11-18.** MASTER_PLAN v2.1 replaces this row with 16a asset catalog, 16b lodge tiers, 16c free venue placement and attach, and 16d venues with guest reasons. The lodge is now a fixed HQ whose tiers gate what can be built and earned from; it no longer adds seats (§3 of the plan). Rewrite this section as four sections, and add one for L1, before building any of them. The text below is the old design and is kept only for its guest-state and revenue detail.
 
 ### Goal
 The warming hut, lodge and café give guests somewhere to refuel and to sit out a long line, and village spending becomes real revenue.
