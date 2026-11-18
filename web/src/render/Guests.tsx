@@ -8,6 +8,7 @@ import type { LiftType } from "@/game/types";
 import type { LiftAnchor } from "@/game/descent";
 import { useGameStore } from "@/game/store";
 import { placeGuests, type GuestPlacement } from "./guestPlacement";
+import { useStallMap } from "./useStallMap";
 import { bakeKit, METERS_TO_WORLD, SHADOW_LAYER_MASK, TOY_SCALE, useKit } from "./kit";
 import { LIFT_BASE, LIFT_CABLE_OFFSET } from "./layout";
 import { TBAR_DROP, useCarrierGeometry } from "./Lift";
@@ -49,7 +50,9 @@ export function Guests({
   followedRef: FollowedRef;
 }) {
   const guests = useGameStore((s) => s.guests);
+  const dayIndex = useGameStore((s) => s.dayIndex);
   const followId = useGameStore((s) => s.followId);
+  const stallMap = useStallMap(guests, dayIndex);
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
 
@@ -81,8 +84,8 @@ export function Guests({
   const markerRef = useRef<THREE.Mesh>(null);
 
   const placements = useMemo(
-    () => placeGuests(guests, placedLifts),
-    [guests, placedLifts],
+    () => placeGuests(guests, placedLifts, stallMap),
+    [guests, placedLifts, stallMap],
   );
 
   useLayoutEffect(() => {

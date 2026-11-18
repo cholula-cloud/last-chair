@@ -38,6 +38,7 @@ import { Road, Terrain } from "./Terrain";
 import { TrailRibbon } from "./TrailRibbon";
 import { sceneCameraTarget } from "./sceneCamera";
 import { Trees } from "./Trees";
+import { ArrivalArea } from "./Vehicles";
 import { useCameraKeys } from "./useCameraKeys";
 
 /** Tilt (elevation above the horizon) and orbit limits, and the closest zoom. */
@@ -337,6 +338,8 @@ function CameraRig({
 
 export function MountainScene() {
   const followId = useGameStore((s) => s.followId);
+  const guests = useGameStore((s) => s.guests);
+  const dayIndex = useGameStore((s) => s.dayIndex);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   const lifts = useGameStore((s) => s.lifts);
@@ -397,6 +400,7 @@ export function MountainScene() {
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>
         <Village buildings={buildings} />
+        <ArrivalArea guests={guests} dayIndex={dayIndex} />
         {(gunsVisible || buildings.includes("snow_guns")) && (
           <SnowGuns reach={gunReach} anchor={primaryAnchor} />
         )}

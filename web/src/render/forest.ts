@@ -2,7 +2,7 @@
 
 import type { LiftAnchor } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
-import { LODGE, LIFT_BASE, ROAD_Z, WARMING_HUT_POS } from "./layout";
+import { LODGE, LIFT_BASE, ROAD_Z, SITE, WARMING_HUT_POS } from "./layout";
 import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
 
 export type XZ = { x: number; z: number };
@@ -97,6 +97,34 @@ export function pruneChunks(target: XZ) {
   }
 }
 
+function inLot(x: number, z: number) {
+  const { center, size } = SITE.arrival;
+  return (
+    Math.abs(x - center.x) <= size.w / 2 + 0.6 && Math.abs(z - center.z) <= size.d / 2 + 0.8
+  );
+}
+
+function onSpur(x: number, z: number) {
+  const spur = SITE.road.spur;
+  for (let i = 0; i < spur.length - 1; i++) {
+    if (distSqToSegment(x, z, spur[i].x, spur[i].z, spur[i + 1].x, spur[i + 1].z) < 2 ** 2)
+      return true;
+  }
+  return false;
+}
+
+function distSqToSegment(px: number, pz: number, ax: number, az: number, bx: number, bz: number) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const lenSq = dx * dx + dz * dz;
+  if (lenSq < 1e-6) return (px - ax) ** 2 + (pz - az) ** 2;
+  let t = ((px - ax) * dx + (pz - az) * dz) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + dx * t;
+  const cz = az + dz * t;
+  return (px - cx) ** 2 + (pz - cz) ** 2;
+}
+
 function inApron(x: number, z: number) {
   const pad = APRON_PAD;
   const xMin = Math.min(LODGE.x, LIFT_BASE.x, WARMING_HUT_POS.x) - pad - 8;
@@ -114,6 +142,7 @@ function inMeadow(x: number, z: number) {
 
 /** True when a tree may stand at (x, z). Same logic tints canopy beyond mid tier. */
 export function forested(x: number, z: number, clearings: ForestClearings): boolean {
+  if (inLot(x, z) || onSpur(x, z)) return false;
   if (inApron(x, z)) return false;
   if (inMeadow(x, z)) return false;
   if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;

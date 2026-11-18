@@ -3,7 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { ROAD_Z } from "./layout";
+import { ROAD_Z, SITE } from "./layout";
 import { smoothstep } from "./math";
 import { PALETTE, SUN_DIR } from "./palette";
 import type { Trail } from "@/game/snow";
@@ -160,12 +160,13 @@ export function Terrain({
 /** Ploughed valley road with a dark centre line, across the front of the base. */
 export function Road() {
   const geometry = useMemo(() => {
+    const { xFrom, xTo } = SITE.road;
     const segs = 90;
     const pos: number[] = [];
     const idx: number[] = [];
     const w = 0.38;
     for (let i = 0; i <= segs; i++) {
-      const x = -16 + (i / segs) * 34;
+      const x = xFrom + (i / segs) * (xTo - xFrom);
       const z = ROAD_Z + Math.sin(x * 0.18) * 0.25;
       for (const s of [-1, 0, 1]) {
         const zz = z + s * w;
