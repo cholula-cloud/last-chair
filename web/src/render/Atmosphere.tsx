@@ -7,6 +7,7 @@ import { useGameStore } from "@/game/store";
 import { SHADOW_LAYER } from "./kit";
 import { smoothstep } from "./math";
 import { fbm } from "@/game/terrain";
+import { sceneCameraTarget } from "./sceneCamera";
 import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
 
 /**
@@ -82,10 +83,12 @@ function ridgeGeometry(radius: number, base: number, amp: number, seed: number, 
 }
 
 const RIDGES = [
-  { radius: 52, base: 9, amp: 7, seed: 11.3, color: PALETTE.ridgeFar },
-  { radius: 38, base: 6, amp: 5.5, seed: 4.7, color: PALETTE.ridgeMid },
-  { radius: 27, base: 3.5, amp: 4, seed: 23.1, color: PALETTE.ridgeNear },
+  { radius: 520, base: 54, amp: 42, seed: 11.3, color: PALETTE.ridgeFar },
+  { radius: 420, base: 36, amp: 33, seed: 4.7, color: PALETTE.ridgeMid },
+  { radius: 320, base: 21, amp: 24, seed: 23.1, color: PALETTE.ridgeNear },
 ];
+
+const SHADOW_TEXEL = 28 / 1024;
 
 /**
  * Sky, fog, ridges, sun and hemisphere light. Re-reads the game clock, phase
@@ -121,11 +124,7 @@ export function Atmosphere() {
     () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color)),
     [],
   );
-  const target = useMemo(() => {
-    const o = new THREE.Object3D();
-    o.position.set(HILL_CENTER.x, 0, HILL_CENTER.z);
-    return o;
-  }, []);
+  const target = useMemo(() => new THREE.Object3D(), []);
 
   useEffect(
     () => () => {
@@ -167,6 +166,13 @@ export function Atmosphere() {
       if (!m) return;
       m.color.copy(WHITE).lerp(NIGHT.horizon, n * 0.85);
     });
+
+    const tx = Math.round(sceneCameraTarget.x / SHADOW_TEXEL) * SHADOW_TEXEL;
+    const tz = Math.round(sceneCameraTarget.z / SHADOW_TEXEL) * SHADOW_TEXEL;
+    target.position.set(tx, 0, tz);
+    if (sun.current) {
+      sun.current.position.set(tx + SUN_DIR[0] * 30, SUN_DIR[1] * 30, tz + SUN_DIR[2] * 30);
+    }
   });
 
   return (
@@ -191,20 +197,16 @@ export function Atmosphere() {
       <directionalLight
         ref={sun}
         target={target}
-        position={[
-          HILL_CENTER.x + SUN_DIR[0] * 30,
-          SUN_DIR[1] * 30,
-          HILL_CENTER.z + SUN_DIR[2] * 30,
-        ]}
+        position={[HILL_CENTER.x + SUN_DIR[0] * 30, SUN_DIR[1] * 30, HILL_CENTER.z + SUN_DIR[2] * 30]}
         intensity={2.5}
         castShadow
         shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-11}
-        shadow-camera-right={11}
-        shadow-camera-top={11}
-        shadow-camera-bottom={-11}
+        shadow-camera-left={-14}
+        shadow-camera-right={14}
+        shadow-camera-top={14}
+        shadow-camera-bottom={-14}
         shadow-camera-near={8}
-        shadow-camera-far={60}
+        shadow-camera-far={80}
         shadow-bias={-0.0004}
         shadow-normalBias={0.035}
       />

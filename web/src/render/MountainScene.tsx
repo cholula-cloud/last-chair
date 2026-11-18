@@ -36,6 +36,7 @@ import { Village } from "./Lodge";
 import { SnowGuns } from "./SnowGuns";
 import { Road, Terrain } from "./Terrain";
 import { TrailRibbon } from "./TrailRibbon";
+import { sceneCameraTarget } from "./sceneCamera";
 import { Trees } from "./Trees";
 import { useCameraKeys } from "./useCameraKeys";
 
@@ -326,6 +327,8 @@ function CameraRig({
       moved = true;
     }
     applied.current.copy(controls.target);
+    sceneCameraTarget.x = controls.target.x;
+    sceneCameraTarget.z = controls.target.z;
     if (moved) controls.update();
   });
 

@@ -17,6 +17,8 @@ export const PALETTE = {
   rock: "#5d5650",
   earth: "#7a6850",
   pineDeep: "#1f4a3d",
+  birchCrown: "#c4a24a",
+  trimWhite: "#f0ebe2",
   pineCool: "#356b5e",
   bark: "#4a3526",
   barnRed: "#a8382b",
