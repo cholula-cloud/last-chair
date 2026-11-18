@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import {
   ADAPTIVE,
   BUILDER,
+  CARELESS,
   FIXED_STRATEGIES,
   STINGY,
   bestBy,
@@ -24,7 +25,7 @@ import { createInitialState } from "./state";
 const SEEDS = seedList(6);
 const START_CASH = createInitialState().cash;
 // STINGY plays exactly Expensive / Minimal with no building, so its numbers are that fixed combination's.
-const STRATEGIES = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER];
+const STRATEGIES = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, CARELESS];
 
 let runs: Map<string, SeasonResult[]>;
 let sums: Map<string, StrategySummary>;
@@ -82,7 +83,6 @@ describe("balance properties", () => {
     expect(sum("cheap/high").endCash).toBeLessThan(sum("balanced/mid").endCash - 1500);
   });
 
-  // PR 20 owns the operating-cost retune after the new weather and higher turnout.
   it("some fixed combinations lose at least 10% of starting cash", () => {
     const losing = FIXED_STRATEGIES.map((s) => sum(s.id)).filter((s) => s.endCash < START_CASH * 0.9);
     expect(losing.length).toBeGreaterThan(0);
@@ -104,8 +104,7 @@ describe("balance properties", () => {
     expect(sum("adaptive").endCash).toBeGreaterThan(end);
   });
 
-  // PR 20 owns the operating-cost retune after the new weather and higher turnout.
-  it.fails("a passive Balanced / Mid season earns less than 30% on starting cash", () => {
+  it("a passive Balanced / Mid season earns less than 30% on starting cash", () => {
     expect(sum("balanced/mid").endCash).toBeLessThan(START_CASH * 1.3);
   });
 
@@ -117,5 +116,18 @@ describe("balance properties", () => {
     expect(quiet).toBeGreaterThan(4.9);
     expect(queued).toBeLessThan(quiet - 0.5);
     expect(runsTerm("builder", (d) => d.weekend && d.hasChair)).toBeGreaterThan(queued + 0.5);
+  });
+});
+
+describe("economy balance", () => {
+  it("keeps every strategy above zero through a 14-day winter", { timeout: 120_000 }, () => {
+    const short = runAll(SEEDS, STRATEGIES, { seasonLength: 14 });
+    expect([...short.values()].flat().filter((result) => result.wentNegative)).toHaveLength(0);
+  });
+
+  it("exposes careless 28-day shortfalls while prudent strategies avoid bankruptcy", () => {
+    expect((runs.get(CARELESS.id) ?? []).filter((result) => result.wentNegative).length).toBeGreaterThanOrEqual(2);
+    expect(STRATEGIES.filter((strategy) => strategy !== CARELESS)
+      .flatMap((strategy) => runs.get(strategy.id) ?? []).filter((result) => result.wentBankrupt)).toHaveLength(0);
   });
 });

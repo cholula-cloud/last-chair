@@ -119,8 +119,7 @@ describe("buildNightRecap", () => {
       snowQuality: 0.7,
       day: d,
       arrivalMood: 0.7,
-      openLiftCount: lifts,
-      founderFixedDelta: founderDelta,
+      costs: { fixed: DAILY_FIXED_COST, founder: founderDelta, liftOps: lifts * LIFT_OPS_COST, upkeep: 0 },
     });
 
   it("cashDelta equals revenue minus fixed, founder and lift costs", () => {
@@ -131,10 +130,6 @@ describe("buildNightRecap", () => {
     expect(recap.cashDelta).toBe(
       revenue - (DAILY_FIXED_COST + 80 + LIFT_OPS_COST * 2),
     );
-  });
-
-  it("bills at least one lift even with none open", () => {
-    expect(recapOf(30, 0, 0).cashDelta).toBe(recapOf(30, 1, 0).cashDelta);
   });
 
   it("carries the day's breakdown and names its largest negative term", () => {
@@ -754,8 +749,7 @@ describe("headless season", () => {
         snowQuality,
         day: { score: 70, breakdown: ZERO_TERMS, guests: arrivals, hillValue: 45 },
         arrivalMood: 0.7,
-        openLiftCount: 1,
-        founderFixedDelta: 0,
+        costs: { fixed: DAILY_FIXED_COST, founder: 0, liftOps: LIFT_OPS_COST, upkeep: 0 },
       });
       cash += recap.cashDelta;
 

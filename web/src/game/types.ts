@@ -226,5 +226,5 @@ export const DEPART_WALK_MIN = 3;
 export const MS_PER_GAME_MINUTE = 500;
 /** Internal P1 shortcut; scale to 28 for ship. */
 export const SEASON_LENGTH = DUTCH_HILL_CALENDAR.length;
-export const DAILY_FIXED_COST = 750;
+export const DAILY_FIXED_COST = 1095;
 export const LIFT_OPS_COST = 180;

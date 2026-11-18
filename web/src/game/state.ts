@@ -1,6 +1,7 @@
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { MOUNTAIN_CALENDARS, type MountainId } from "./calendar";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
+import type { Loan, Payable } from "./economy";
 import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
 import { mix32 } from "./rng";
@@ -68,6 +69,12 @@ export type PersistedState = {
   phase: GamePhase;
   paused: boolean;
   cash: number;
+  payables: Payable[];
+  loan: Loan | null;
+  loanTaken: boolean;
+  debtMornings: number;
+  outcome: "playing" | "finished" | "bankrupt";
+  constructionSpent: number;
   fare: FarePreset;
   snow: SnowPreset;
   /** Derived: mean of every open trail segment (`deriveSnow`). Never set by hand. */
@@ -135,6 +142,12 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     phase: "setup",
     paused: true,
     cash: 12000,
+    payables: [],
+    loan: null,
+    loanTaken: false,
+    debtMornings: 0,
+    outcome: "playing",
+    constructionSpent: 0,
     fare: "balanced",
     snow: "mid",
     snowQuality: START_QUALITY,
@@ -184,6 +197,12 @@ export function toPersisted(state: PersistedState): PersistedState {
     phase: state.phase,
     paused: state.paused,
     cash: state.cash,
+    payables: state.payables,
+    loan: state.loan,
+    loanTaken: state.loanTaken,
+    debtMornings: state.debtMornings,
+    outcome: state.outcome,
+    constructionSpent: state.constructionSpent,
     fare: state.fare,
     snow: state.snow,
     snowQuality: state.snowQuality,
@@ -235,4 +254,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;

@@ -27,6 +27,13 @@ function Icon({
 
 type P = { size?: number; className?: string };
 
+export const WarningDiamondIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 2.5 21.5 12 12 21.5 2.5 12zM12 7.5v5" />
+    <circle cx="12" cy="16" r="1.15" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
 export const FlagIcon = (p: P) => (
   <Icon {...p}>
     <path d="M5 21V4m0 1c5-4 8 4 14 0v10c-6 4-9-4-14 0" />

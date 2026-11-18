@@ -1,7 +1,11 @@
+import {
+  BANKRUPTCY_MORNINGS, LOAN_TERMS,
+  canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
+  morningCash, operatingCosts, payoffAmount, type Payable,
+} from "./economy";
 import { MOUNTAIN_CALENDARS, usesWeekendGuestMix } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
-  ASSET_CATALOG,
   assetRevenue,
   assetEffect,
   advanceLodgeUpgrade,
@@ -151,7 +155,6 @@ export function liveSatisfaction(state: GameState): number {
 const BEAT_REPUTATION_BONUS = 2;
 
 export function openNight(state: GameState): GameState {
-  const founder = founderById(state.founderId);
   if (openingStep(state)) return state;
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails)).length;
   const avgQueueMin = measuredWaitMin(state);
@@ -165,14 +168,12 @@ export function openNight(state: GameState): GameState {
     snowLabel: readSnow(snowCarriers(state.trails)).label,
     day: daySatisfaction(state.guests, ctx),
     arrivalMood: ctx.arrivalMood,
-    openLiftCount: openLifts,
-    founderFixedDelta: founder?.fixedCostDelta ?? 0,
+    costs: operatingCosts(state),
     busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
       const min = record.rides ? record.waitSumMin / record.rides : 0;
       const lift = state.lifts[i];
       return min > (busiest?.min ?? 0) && lift ? { min, label: `${LIFT_LABELS[lift.type]} ${i + 1}` } : busiest;
     }, undefined),
-    venueUpkeep: state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0),
   });
   const rawReputation = Math.round(
     state.reputation * 0.85 + recap.satisfaction * 0.15,
@@ -440,7 +441,8 @@ export function checkPlacement(
   );
   if (conflict) return { ok: false, reason: conflict.reason, type: conflict.type };
   const cost = liftCost(type, line);
-  if (state.cash < cost) return { ok: false, reason: "cash", need: cost - state.cash };
+  const { deposit } = constructionDraw(cost);
+  if (state.cash < deposit) return { ok: false, reason: "cash", need: deposit - state.cash };
   return { ok: true, cost, length: terrain.length, vertical: terrain.vertical };
 }
 
@@ -520,12 +522,12 @@ export function placeLift(
     dispatchCredit: 0,
     builtDay: state.dayIndex,
     builtAtMin: state.clockMin,
-    paid: check.cost,
+    paid: constructionDraw(check.cost).deposit,
   };
   return {
     ...state,
     lifts: [...state.lifts, lift],
-    cash: state.cash - check.cost,
+    ...purchaseConstruction(state, check.cost, "lift", state.lifts.length),
     buildMode: false,
   };
 }
@@ -549,6 +551,8 @@ export function undoLift(state: GameState): GameState {
     lifts: state.lifts.slice(0, i),
     trails: state.trails.filter((t) => t.liftIndex !== i),
     cash: state.cash + (state.lifts[i].paid ?? 0),
+    constructionSpent: state.constructionSpent - (state.lifts[i].paid ?? 0),
+    payables: state.payables.filter(({ liftIndex }) => liftIndex !== i),
   };
 }
 
@@ -629,6 +633,7 @@ export function commitPaint(state: GameState, strokes: readonly PaintStroke[], g
       ? [...state.trails, trail]
       : state.trails.map((item, i) => i === preview.trailIndex ? trail : item),
     cash: state.cash - preview.cost,
+    constructionSpent: state.constructionSpent + preview.cost,
     clearedCells: [...state.clearedCells, ...preview.cleared.newCells].sort(),
     buildMode: false,
   };
@@ -691,6 +696,7 @@ export function cutTrail(
     trails: [...state.trails, run],
     clearedCells: [...state.clearedCells, ...clearing.newCells].sort(),
     cash: state.cash - opt.cost,
+    constructionSpent: state.constructionSpent + opt.cost,
     buildMode: false,
   };
 }
@@ -714,6 +720,16 @@ export function undoTrail(state: GameState): GameState {
     trails: state.trails.slice(0, i),
     clearedCells: state.clearedCells.filter((cell) => !rolledBack.has(cell)),
     cash: state.cash + (last.paid ?? 0),
+    constructionSpent: state.constructionSpent - (last.paid ?? 0),
+  };
+}
+
+function purchaseConstruction(state: GameState, total: number, what: Payable["what"], liftIndex?: number) {
+  const { deposit } = constructionDraw(total);
+  return {
+    cash: state.cash - deposit,
+    constructionSpent: state.constructionSpent + deposit,
+    payables: [...state.payables, ...constructionPayables(total, state.dayIndex, what, liftIndex)],
   };
 }
 
@@ -729,7 +745,7 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     return [bottom, top];
   });
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
-  if (preview.ok && preview.cost > state.cash) return { ok: false as const, reason: "Not enough cash." };
+  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash." };
   return preview;
 }
 
@@ -738,7 +754,7 @@ export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
   if (!preview.ok) return state;
   const buildings = id === "cafe" || id === "shop" || id === "warming_hut"
     ? Array.from(new Set([...state.buildings, id])) : state.buildings;
-  return { ...state, cash: state.cash - preview.cost, buildings, assets: [...state.assets, preview.placement] };
+  return { ...state, ...purchaseConstruction(state, preview.cost, id), buildings, assets: [...state.assets, preview.placement] };
 }
 
 /** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */
@@ -753,8 +769,8 @@ export function beginLodgeUpgrade(state: GameState): GameState {
   const tier = nextLodgeTier(state.lodgeTier);
   if (state.phase !== "day" || state.lodgeUpgrade || tier == null) return state;
   const cost = LODGE_TIERS[tier].cost;
-  if (state.cash < cost) return state;
-  return { ...state, cash: state.cash - cost, lodgeUpgrade: { toTier: tier, nightsRemaining: 2 } };
+  if (state.cash < constructionDraw(cost).deposit) return state;
+  return { ...state, ...purchaseConstruction(state, cost, "lodge"), lodgeUpgrade: { toTier: tier, nightsRemaining: 2 } };
 }
 
 export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
@@ -762,18 +778,18 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
   const reason = state.phase !== "day" ? "Build during the day."
     : openingStep(state) ? "Build a lift and trail first."
     : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
-    : gunPlacementReason(point, state.guns) ?? (state.cash < GUN_COST ? "Not enough cash." : null);
+    : gunPlacementReason(point, state.guns) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,
-    placement: { at: point, builtDay: state.dayIndex, paid: GUN_COST },
+    placement: { at: point, builtDay: state.dayIndex, paid: constructionDraw(GUN_COST).deposit },
   };
 }
 
 export function placeGun(state: GameState, at: XZ): GameState {
   const preview = checkGunPlacement(state, at);
   return preview.ok
-    ? { ...state, cash: state.cash - preview.cost, guns: [...state.guns, preview.placement] }
+    ? { ...state, ...purchaseConstruction(state, preview.cost, "snow_guns"), guns: [...state.guns, preview.placement] }
     : state;
 }
 
@@ -823,14 +839,13 @@ export function acknowledgeBeat(state: GameState): GameState {
 function nightFor(
   state: GameState,
   snow: SnowPreset,
-  cash: number,
   weatherTomorrow: DayWeather = state.weatherDays[state.dayIndex] ?? weatherForDay(state),
 ) {
   const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
   state = closeLiftsNow(state, closing);
   const overnight = applyOvernight({
     snow,
-    cash,
+    cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
     gunCoverage: state.trails.map((t) => t.open ? gunCoverage(t, state.guns, state.talentsOwned) : []),
@@ -850,7 +865,7 @@ function nightFor(
 
 function forecastResults(state: GameState, snow: SnowPreset) {
   return Object.fromEntries(WEATHER_KINDS.map((kind) =>
-    [kind, nightFor(state, snow, state.cash, { kind, wind: "calm" })],
+    [kind, nightFor(state, snow, { kind, wind: "calm" })],
   )) as Record<WeatherKind, ReturnType<typeof nightFor>>;
 }
 
@@ -915,11 +930,51 @@ export function expectedArrivals(
   return outlook ? WEATHER_KINDS.reduce((sum, kind) => sum + outlook[kind] * arrivals(kind), 0) : arrivals(state.weather);
 }
 
+export function takeLoan(state: GameState): GameState {
+  if (!state.nightRecap || !loanOffered(state)) return state;
+  const principal = LOAN_TERMS.principal;
+  return {
+    ...state,
+    cash: state.cash + principal,
+    nightRecap: { ...state.nightRecap, loanReceived: principal },
+    loanTaken: true,
+    loan: { principal, balance: principal, ratePerDay: LOAN_TERMS.rate / state.seasonLength, takenDay: state.dayIndex },
+  };
+}
+
+export function repayLoan(state: GameState, amount?: number): GameState {
+  if (!state.nightRecap || !state.loan || !canRepayLoan(state)) return state;
+  const payoff = payoffAmount(state.loan);
+  const payment = amount === undefined ? payoff : Math.round(amount * 100) / 100;
+  if (!Number.isFinite(payment) || payment <= 0 || payment > payoff) return state;
+  const loan = payment === payoff ? null : {
+    ...state.loan,
+    principal: Math.max(0, state.loan.principal - payment),
+    balance: state.loan.balance - payment,
+  };
+  return {
+    ...state,
+    cash: state.cash - payment,
+    loan,
+    nightRecap: { ...state.nightRecap, loanRepaid: state.nightRecap.loanRepaid + payment },
+  };
+}
+
 export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
   if (state.pendingBeat && !state.beatAcknowledged) return state;
 
   const recap = state.nightRecap;
+  const costs = dailyCosts(state);
+  const cash = morningCash(state);
+  const debtMornings = cash < 0 ? state.debtMornings + 1 : 0;
+  state = {
+    ...state,
+    cash,
+    debtMornings,
+    loan: state.loan ? { ...state.loan, balance: state.loan.balance + costs.interest } : null,
+    payables: state.payables.filter(({ dueDay }) => dueDay > state.dayIndex),
+  };
   state = closeLiftsNow(state, new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : [])));
   const nextDay = state.dayIndex + 1;
   const lastDay = {
@@ -930,36 +985,36 @@ export function sleep(state: GameState): GameState {
     fare: state.fare,
     snow: state.snow,
   };
-  if (nextDay > state.seasonLength) {
+  const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
+  const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
+  const bankrupt = debtMornings >= BANKRUPTCY_MORNINGS;
+  if (bankrupt || nextDay > state.seasonLength) {
     return {
       ...state,
       phase: "winter_review",
+      outcome: bankrupt ? "bankrupt" : "finished",
+      loan: state.loan && { ...state.loan, balance: payoffAmount(state.loan) },
       paused: true,
-      cash: state.cash + recap.cashDelta,
+      lodgeUpgrade: upgrade,
+      lodgeTier: completedTier ?? state.lodgeTier,
       lastDay,
       nightRecap: null,
       pendingBeat: null,
       talentToast: null,
-      completedBeats: state.completedBeats.includes("winter_review")
+      completedBeats: bankrupt || state.completedBeats.includes("winter_review")
         ? state.completedBeats
         : [...state.completedBeats, "winter_review"],
     };
   }
 
-  const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
-  const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
-  const { overnight, talentsOwned } = nightFor(
-    state,
-    state.pendingSnow,
-    state.cash + recap.cashDelta,
-  );
+  const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
   const carried: GameState = {
     ...state,
     lodgeUpgrade: upgrade,
     lodgeTier: completedTier ?? state.lodgeTier,
     lastDay,
     paused: true,
-    cash: overnight.cash,
+    constructionSpent: 0,
     fare: state.pendingFare,
     snow: state.pendingSnow,
     trails: state.trails.map((t, i) => ({
@@ -1018,6 +1073,7 @@ export function sleep(state: GameState): GameState {
 }
 
 export function finishWinterReview(state: GameState): GameState {
+  if (state.phase !== "winter_review" || state.outcome !== "finished") return state;
   return { ...state, phase: "mountain2" };
 }
 

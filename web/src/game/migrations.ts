@@ -23,6 +23,25 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   { to: 3, note: "Preserve trail types; existing runs are cleared trails.", up: (raw) => raw },
   { to: 4, note: "Assign existing winters to Dutch Hill.", up: (raw) => ({ ...raw, mountainId: "dutch_hill" }) },
+  {
+    to: 5,
+    note: "Keep existing construction fully paid and preserve the recorded operating result.",
+    up(raw) {
+      const { cash, phase, nightRecap } = raw;
+      return {
+        ...raw,
+        payables: [],
+        loan: null,
+        loanTaken: false,
+        debtMornings: typeof cash === "number" && cash < 0 ? 1 : 0,
+        outcome: phase === "winter_review" || phase === "mountain2" ? "finished" : "playing",
+        constructionSpent: 0,
+        nightRecap: nightRecap && typeof nightRecap === "object" && !Array.isArray(nightRecap)
+          ? { ...nightRecap, costs: null, revenue: null, loanReceived: 0, loanRepaid: 0 }
+          : nightRecap,
+      };
+    },
+  },
 ];
 
 type MigrationResult =

@@ -1,5 +1,6 @@
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG } from "./base";
+import { constructionDraw } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
 import { describe, expect, it } from "vitest";
@@ -107,10 +108,10 @@ describe("skipToClose and sleep", () => {
 });
 
 describe("buyBuilding", () => {
-  it("buys a building and deducts its cost", () => {
+  it("buys a building and deducts its deposit", () => {
     const s = pure(rules.buyBuilding, started(), "cafe");
     expect(s.buildings).toContain("cafe");
-    expect(s.cash).toBe(started().cash - BUILDING_COSTS.cafe);
+    expect(s.cash).toBe(started().cash - constructionDraw(BUILDING_COSTS.cafe).deposit);
   });
 
   it("rejects a building that is already owned", () => {
@@ -121,7 +122,7 @@ describe("buyBuilding", () => {
   });
 
   it("rejects a purchase the cash cannot cover", () => {
-    const poor: GameState = { ...started(), cash: BUILDING_COSTS.cafe - 1 };
+    const poor: GameState = { ...started(), cash: constructionDraw(BUILDING_COSTS.cafe).deposit - 1 };
     expect(rules.buyBuilding(poor, "cafe")).toBe(poor);
   });
 
@@ -414,7 +415,7 @@ describe("building and save continuity", () => {
     expect(rules.placeGun(base, TERRAIN.base)).toBe(base);
 
     const upgrading = rules.beginLodgeUpgrade(base);
-    expect(upgrading.cash).toBe(base.cash - 3500);
+    expect(upgrading.cash).toBe(base.cash - 1400);
     const first = overnight(upgrading);
     expect(first.lodgeTier).toBe(1);
     expect(first.lodgeUpgrade?.nightsRemaining).toBe(1);
@@ -426,7 +427,7 @@ describe("building and save continuity", () => {
     expect(rules.placeLift(second, chair).lifts).toHaveLength(2);
     const guns = rules.placeGun(second, TERRAIN.base);
     expect(guns.guns).toHaveLength(1);
-    expect(guns.cash).toBe(second.cash - ASSET_CATALOG.snow_guns.cost);
+    expect(guns.cash).toBe(second.cash - constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit);
   });
 
   it("rolls back the exact cash and cells of a same-minute trail undo", () => {

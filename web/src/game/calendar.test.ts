@@ -25,13 +25,18 @@ describe("Dutch Hill calendar", () => {
     const state = pickFounder(createBuiltHill(), "elena");
     const night = acknowledgeBeat(openNight({ ...state, dayIndex: 14, weather: state.weatherDays[13].kind }));
     const { mountainId, ...fields } = toPersisted(night);
-    const old = { ...fields, seasonLength: 14, weatherDays: state.weatherDays.slice(0, 14) };
+    const old = {
+      ...fields,
+      seasonLength: 14,
+      weatherDays: state.weatherDays.slice(0, 14),
+      nightRecap: { ...fields.nightRecap, costs: undefined, revenue: undefined, loanReceived: undefined, loanRepaid: undefined },
+    };
     const result = migrate(old, 3);
     expect(result.reset).toBe(false);
     expect(result.state.seasonLength).toBe(14);
     expect(result.state.weatherDays).toEqual(old.weatherDays);
     expect(result.state.mountainId).toBe(mountainId);
-    expect(result.state.nightRecap).toEqual(night.nightRecap);
+    expect(result.state.nightRecap).toEqual({ ...night.nightRecap, costs: null, revenue: null });
     const review = sleep(hydrate(result.state, createInitialState()));
     expect(review).toMatchObject({ phase: "winter_review", dayIndex: 14 });
     const next = startNewSeason(review);

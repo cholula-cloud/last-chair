@@ -1,6 +1,7 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.4 · **Updated:** 2026-11-17  
+**Version:** 0.4 · **Updated:** 2026-11-18
+
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
 ## Implementation status (2026-11-18 audit)
@@ -18,7 +19,7 @@
 | Viability rule | 🟡 | Lift line (bottom to top) checked for bounds, base area, grade, drop, length, spacing and crossing (PR 12a); drag and snap placement checks include lift type and lodge tier | 12–13 |
 | Trail graph | ✅ | `GameState.trails[]`, painted width and sustained pitch, guest choice by skill, ski time by length, and segment elevations from the path | — |
 | Snow | ✅ | Six segments per trail; elevations, pipe-connected gun coverage, nightly grooming budgets and measured tree clearing influence snow | — |
-| Economy | 🟡 | Costs and revenue as written; lift cost from length and vertical (PR 12a); no loan / fail-soft | 20 |
+| Economy | ✅ | Daily upkeep, construction installments, winter loan and bankruptcy. Verified over 40 seeds | 20 |
 | Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
 | Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
@@ -266,28 +267,32 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 
 ---
 
-## Economy (Dutch Hill P0)
+## Economy (Dutch Hill)
 
 | Item | Value |
 |------|--------|
 | Starting cash | $12,000 |
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
-| Daily fixed cost | $750 (power, staff stub; PR 10, was $400) |
-| Lift ops / day | $180 per open lift |
+| Daily fixed cost | $1,095 plus the founder's fixed cost adjustment |
+| Lift operations per day | $180 per operating lift, with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
+| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $40 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
+| Snow and service | Minimal $0 / Mid $150 / High $350 per night |
 | Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
 
-**Lift build cost (PR 12a).** Length is the horizontal distance bottom to top and vertical the height of the top above the bottom, both in world units (`liftLength`, `liftVertical`). Parameters live in `LIFT_COST_PARAMS` (`game/types.ts`):
+**Lift build cost (PR 12a).** Length is the distance along the line in the horizontal plane. Vertical is the gain from bottom to top. The formula divides these measurements by the terrain's respective scale factors to recover design units. Parameters live in `LIFT_COST_PARAMS` (`game/types.ts`).
 
 | Type | base | perLength | perVertical | At Mid from the base (length 1.98, vertical 0.99) |
 |------|------|-----------|-------------|------|
 | Surface | $300 | $250 | $150 | $950 |
 | Double chair | $1,000 | $500 | $500 | $2,500 (exact; asserted in a test) |
 
-The default surface lift is pre-built and free. The cost is deducted when the lift is placed and refunded exactly by undo. The old flat $400 charge for a second lift of a type is gone. `LIFT_OPS_COST` still counts open lifts.
+**Construction payments.** Lifts, lodge upgrades, venues and snow guns take a 40% deposit at purchase, with 30% due that night and the rest due the next night. The first two payments round to the nearest dollar, and the last covers the remainder. A day-two café costs $480 up front and $360 on each of nights two and three. Buying requires cash for the deposit. Undoing a lift at its construction minute refunds the deposit and cancels both installments. Trail survey and clearing charges are paid when the trail is built.
 
-**Revenue/day:** `arrivals × fare × (0.5 + 0.7 × satisfaction/100)`, a multiplier of 0.5 at satisfaction 0 to 1.2 at 100 (PR 10; was 0.75 + 0.35 × s).
+**Daily settlement.** Ticket revenue is `round(arrivals × fare × (0.5 + 0.7 × satisfaction / 100))`. The recap adds actual venue receipts and subtracts fixed costs, the founder adjustment, lift operations and upkeep to get the rounded operating cash change. Projected morning cash adds that change to current cash and subtracts tonight's snow service and any construction installments due. The recap's cash breakdown also shows construction paid earlier in the day and any borrowing or repayment that night.
 
-**Fail soft:** cash &lt; 0 → warning + loan offer $10k (interest stub P1).
+**Cash warnings and winter loan.** The cash badge warns below $1,500 and flags a negative balance. Before the final night, the bank offers one $10,000 loan per winter when projected morning cash is below zero. Taking it adds the principal to cash immediately. At each Sleep, the balance accrues simple interest on the remaining principal at `0.08 / seasonLength`. A loan taken on night one and carried through all 28 Sleeps has a $10,800 payoff. The recap offers full repayment on any night when the payment leaves at least $2,000 in projected morning cash. The rules also support partial repayments against principal under the same eligibility condition.
+
+**Bankruptcy and the final night.** Three consecutive mornings below zero end the winter in the winter review. A morning at zero or above resets the count. The last Sleep posts the operating result, charges construction installments due that night and adds interest to any outstanding loan. It skips snow service and new loan offers. The winter review accounts for any later installments and remaining loan balance in liquid net worth. A bankrupt review lets the player start a new winter.
 
 ### Lodge tiers (rows L1 and 16a to 16d)
 
@@ -300,7 +305,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 | Attach pads | 2 | 4 | 6 |
 
 - **No arrival cap.** Tier does not change `planArrivals`. Car park stalls are visual, as today.
-- **Upgrade timing.** Paying starts construction; the tier changes after two Sleeps and applies the next morning. The old tier operates meanwhile.
+- **Upgrade timing.** The deposit starts construction. The old tier operates until the upgrade completes after two Sleeps.
 - **Asset gates.** Each catalog row has `opensAtTier`: surface lift, trails, warming hut, café, shop at 1; double chair, snow guns, rentals, ski school desk, tubing, basic decor at 2; bar, restaurant, ice rink, events, premium decor at 3. Moving the double chair and guns to Tier 2 changes the season characterization snapshot and the balance harness (the chair on day 4 needs Tier 2); row 16b re-baselines both.
 - **Attach bonus.** A venue on a lodge attach pad earns `ATTACH_BONUS = 0.05` extra on its revenue and its effect. Lifts, guns, activities and decor cannot attach.
 - **Replaces** the old `lodge` building: its +$4 `venueValue` and +0.08 `arrivalMood` leave with it, and the $1,800 cost is removed. Row L1 sets the replacement values so Tier 1 matches today's season.
@@ -310,7 +315,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 ### M2 build and operations
 
 - The build rules quote survey and preparation at $150 for a new painted trail. Clearing is $300 per acre of new 15-foot cells. Repainting charges only for newly cleared ground. Erasing a route leaves its clearing in place. The clear proportion within 90 ft of each snow segment raises thaw losses by up to 30%.
-- The warming hut charges $2 per stop and runs at $45 per day. Café, shop, rentals and lessons record receipts from actual visits. First-timers can visit rentals and lessons before their first lift. After tiring or facing a long queue, guests can stop in the café or hut if seats are available. Attach pads add 5% to the venue's effects and receipts.
+- The warming hut charges $2 per stop. Café, shop, rentals and lessons record receipts from actual visits. First-timers can visit rentals and lessons before their first lift. After tiring or facing a long queue, guests can stop in the café or hut if seats are available. Attach pads add 5% to the venue's effects and receipts.
 - Snow guns cost $400 each in Tier 2. They extend pipe reach from the base or an existing gun. Mid and High groom 3,000 and 5,000 ft respectively, busiest trails first. The Groom Pass adds 20%. Actual segments drive groomed stripes and covered trails.
 
 ## Night choices (ICR Simple mapping)
@@ -318,7 +323,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 | Control | Options | Sim effect |
 |---------|---------|------------|
 | Fare | Cheap / Balanced / Expensive | Value term (fare vs `hillValue`) and arrivals elasticity; tiles show `~N skiers` |
-| Snow & service | Minimal / Mid / High | overnight table above + fixed cost +$0 / +$150 / +$350; tiles show the predicted morning word and mean quality |
+| Snow & service | Minimal / Mid / High | Costs $0 / $150 / $350 when there is a next morning. Tiles show expected morning conditions and mean snow quality |
 
 Max **2** player choices Act I (+ optional story reply when beat ready).
 
@@ -372,19 +377,38 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 Zustand saves `PersistedState` under `last-chair-m3` in local storage. Launching M3 clears the previous `last-chair-v1` save and its backup. New M3 progress reloads from the new key. An unreadable M3 save starts at founder selection and shows a recovery notice.
 
+Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
+
 Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 
 ---
 
-## Balance (PR 10)
+## Balance
 
-The figures below describe the earlier 14-day balance baseline. The seeded-weather build uses the thaw forecast at 50% or above for its adaptive strategy. Higher turnout improves cash across several strategies, so the passive profit and losing-strategy thresholds will be tuned with operating costs in row 20.
+### Row 20 economy checks
 
-`web/src/game/balance.ts` `runSeason(seed, strategy, founder = Elena)` plays a 28-day winter headlessly through the real rules: `pickFounder`, then each day optional builds, `skipToClose`, `acknowledgeBeat`, the two night presets, `sleep`. It returns end and minimum cash, end reputation, mean satisfaction, arrivals, runs, mean wait, problem days, a went-negative flag, beats, talents and a per-day record. Same seed and strategy give the same result.
+`web/src/game/balance.ts` uses the regular build and Sleep rules to play a seeded winter with Elena by default. Strategy runs record cash, attendance, satisfaction, reputation, waits, runs and story progress, plus projected cash shortfalls, loans taken, bankruptcy and ending liquid net worth. It reports projected shortfalls even when borrowing covers the payment. Runs use 28 days by default and can also use 14 days to check legacy winters. `npm run balance` verifies the economy over 40 seeds by default and prints a strategy table. `balance.test.ts` checks the same thresholds on six seeds.
 
-Strategies: the nine fixed combinations {Cheap, Balanced, Expensive} × {Minimal, Mid, High} (no building); `adaptive` (reads the last recap: queue problem buys a chair if cash after it stays above $2,500, else Cheap; snow problem High; value problem fare one step down; a good day fare one step up; snow High only on a thaw morning, thin cover or a snow problem, else Mid); `builder` (chair on day 1–3 when it can afford it, then Balanced / Mid); `stingy` (never builds, Minimal, Expensive; plays the same winter as Expensive / Minimal). `npm run balance` prints the table over 40 seeds (`BALANCE_SEEDS=N`); `balance.test.ts` asserts the properties on 6 seeds in about 4 s.
+Fixed strategies use the nine fare and snow combinations. Builder upgrades the lodge, adds a chair when it can keep a $2,500 reserve in liquid net worth and uses Balanced fares and Mid snow service. Adaptive uses the last recap to adjust fares, prioritizes a chair when lift lines are the main problem and raises snow service on thin cover, a snow problem or a thaw forecast of at least 50%. Careless buys lodge upgrades, a café, a shop, a snow gun and a chair as deposits and lodge tiers allow. It runs Cheap fares and High snow service. The longer report also runs Careless with loan offers declined to verify the first projected shortfall came with an offer.
 
-**Properties** (all pass; `balance.test.ts`):
+1. No strategy has a projected cash shortfall in a 14-day winter.
+2. Careless has a projected cash shortfall within 28 days in at least two of six test seeds and at least a quarter of the report seeds.
+3. The fixed fare and snow combinations, Adaptive and Builder finish the 28-day test winters without bankruptcy.
+
+The 40-seed report passed all three checks. In 28 days, Careless had 10 projected shortfalls and received a loan offer before each first shortfall. All 10 offers were taken in the default runs. Five winters ended in bankruptcy when Careless declined borrowing.
+
+| Strategy | Mean ending cash over 28 days |
+|---|---:|
+| Balanced / Mid | $13,564 |
+| Adaptive | $30,925 |
+| Builder | $15,093 |
+| Careless | $5,335 |
+
+### Historical 14-day calibration (PR 10 and PR 10b)
+
+These figures describe the earlier 14-day baseline. It compared nine fixed combinations of fare and snow service, Adaptive, Builder and Stingy. Stingy used the same settings as Expensive / Minimal.
+
+**Historical properties**
 
 1. No fixed combination is best on both end cash (Expensive / Mid) and satisfaction (Cheap / High). Adaptive beats the median fixed combination on cash and satisfaction scaled 0–1 and averaged (0.95 against 0.43).
 2. Stingy ends with lower reputation (34 against 53) and fewer arrivals (286 against 416) than Balanced / Mid. Cheap / High ends $4,350 below Balanced / Mid. Five fixed combinations end below the starting cash.
@@ -479,4 +503,4 @@ Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
 
 New winters last 28 days, from Monday 26 January through Sunday 22 February. Presidents' Day is day 22; days 20–28 are February vacation. Holidays use weekend demand; vacation weekdays receive a 15% base demand increase and the weekend persona mix. Existing 14-day saves retain their length until the next winter.
 
-The 40-seed 28-day baseline after row 19 gives mean ending cash of $10,227 for Cheap / Minimal, $23,644 for Balanced / Mid, $41,860 for Adaptive, and $25,303 for Builder. No modeled strategy went below zero; row 20 owns the economy retune.
+Before row 20's economy changes, the 40-seed 28-day baseline after row 19 gave mean ending cash of $10,227 for Cheap / Minimal, $23,644 for Balanced / Mid, $41,860 for Adaptive, and $25,303 for Builder. Every modeled strategy stayed above zero.

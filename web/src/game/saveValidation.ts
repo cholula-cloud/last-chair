@@ -56,8 +56,22 @@ const guest = shape({
   joinedQueueAtMin: optional(number), rideStartMin: optional(number), visitMinutes: optional(number),
   refuelled: optional(boolean), rented: optional(boolean), lesson: optional(boolean), balks: optional(number),
 });
+const operatingCosts = shape(numbers("fixed", "founder", "liftOps", "upkeep"));
+const payable = shape({
+  what: (value) => assetId(value) || value === "lift" || value === "lodge",
+  liftIndex: optional(index),
+  amount: (value) => integer(value) && value > 0,
+  dueDay: (value) => integer(value) && value >= 1,
+});
+const loan = shape({
+  principal: (value) => number(value) && value >= 0,
+  balance: (value) => number(value) && value > 0,
+  ratePerDay: (value) => number(value) && value > 0,
+  takenDay: (value) => integer(value) && value >= 1,
+});
 const recap = shape({
-  ...numbers("arrivals", "satisfaction", "cashDelta"), problem: string,
+  ...numbers("arrivals", "satisfaction", "cashDelta", "loanReceived", "loanRepaid"), problem: string,
+  costs: nullable(operatingCosts), revenue: nullable(number),
   breakdown: shape(numbers("arrivalMood", "queue", "snow", "value", "runs")),
   facts: shape({
     ...numbers("avgWaitMin", "snowQuality", "farePrice", "hillValue", "runsPerGuest", "turnedAway", "arrivalMood"),
@@ -77,6 +91,12 @@ const fields: Record<keyof PersistedState, Check> = {
   phase: oneOf("setup", "day", "night", "winter_review", "mountain2"),
   paused: boolean,
   cash: number,
+  payables: array(payable),
+  loan: nullable(loan),
+  loanTaken: boolean,
+  debtMornings: index,
+  outcome: oneOf("playing", "finished", "bankrupt"),
+  constructionSpent: number,
   fare,
   snow,
   snowQuality: number,
@@ -125,5 +145,18 @@ export function validateSave(value: unknown): string[] {
   if (Array.isArray(value.weatherDays) && (value.weatherDays.length !== value.seasonLength ||
     (integer(value.dayIndex) && value.weatherDays[value.dayIndex - 1]?.kind !== value.weather))) errors.push("weatherDays");
   if (value.phase === "night" && value.nightRecap === null) errors.push("nightRecap");
+  const playing = value.phase === "setup" || value.phase === "day" || value.phase === "night";
+  if ((playing && value.outcome !== "playing") ||
+      (value.phase === "winter_review" && value.outcome === "playing") ||
+      (value.phase === "mountain2" && value.outcome !== "finished")) errors.push("outcome");
+  if (value.loan && value.loanTaken !== true) errors.push("loanTaken");
+  if (Array.isArray(value.payables) && Array.isArray(value.lifts) && integer(value.seasonLength)) {
+    const maxDueDay = value.seasonLength + 1;
+    const liftCount = value.lifts.length;
+    if (value.payables.some((item) => record(item) && (
+      (integer(item.dueDay) && item.dueDay > maxDueDay) ||
+      (item.what === "lift" ? !integer(item.liftIndex) || item.liftIndex >= liftCount : item.liftIndex !== undefined)
+    ))) errors.push("payables");
+  }
   return errors;
 }

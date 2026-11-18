@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
 import { MOUNTAIN_CALENDARS, dayLabel, type MountainId } from "@/game/calendar";
+import { LOW_CASH } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { formatClock } from "@/game/sim";
 import type { WeatherKind } from "@/game/types";
@@ -22,6 +23,7 @@ import {
   SnowfallIcon,
   SunIcon,
   ThawIcon,
+  WarningDiamondIcon,
   WindIcon,
 } from "@/ui/kit/icons";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
@@ -52,6 +54,7 @@ export function TopBar({
   const speed = useSpeed((s) => s.speed);
   const cycleSpeed = useSpeed((s) => s.cycle);
   const { weekday, date, note } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
+  const lowCash = cash >= 0 && cash < LOW_CASH;
   return (
     <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
       <button
@@ -92,10 +95,12 @@ export function TopBar({
         {speed}x
       </button>
       <span
-        className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
-          cash < 0 ? "bg-barn-deep text-white" : "bg-gold"
+        className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
+          cash < 0 ? "bg-barn-deep text-white" : lowCash ? "bg-sign-yellow" : "bg-gold"
         }`}
       >
+        {lowCash && <WarningDiamondIcon size={15} className="shrink-0" />}
+        <span className="sr-only">{cash < 0 ? "Negative cash" : lowCash ? "Low cash" : "Cash on hand"} </span>
         {formatMoney(cash)}
       </span>
     </div>

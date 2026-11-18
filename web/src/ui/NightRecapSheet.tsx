@@ -3,6 +3,7 @@
 import { ASSET_CATALOG, type AssetId } from "@/game/base";
 
 import { useState } from "react";
+import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
@@ -36,6 +37,7 @@ import {
   type Tone,
 } from "@/ui/kit/parts";
 import { RadioCard } from "@/ui/kit/RadioCard";
+import { LoanCard } from "@/ui/LoanCard";
 
 const WEEKDAY_FULL: Record<string, string> = {
   Mon: "Monday",
@@ -153,6 +155,61 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
       </p>
     </div>
+  );
+}
+
+function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
+  const [open, setOpen] = useState(false);
+  const takeLoan = useGameStore((state) => state.takeLoan);
+  const repayLoan = useGameStore((state) => state.repayLoan);
+  const costs = dailyCosts(night);
+  const projected = morningCash(night);
+  const finalNight = night.dayIndex === night.seasonLength;
+  const lines = [
+    ...(recap.costs && recap.revenue != null ? [
+      { label: "Tickets and venue sales", amount: recap.revenue },
+      { label: "Fixed operating costs", amount: -costs.fixed },
+      { label: "Founder operating costs", amount: -costs.founder },
+      { label: "Lift operations", amount: -costs.liftOps },
+      { label: "Building upkeep", amount: -costs.upkeep },
+    ] : [{ label: "Cash from operations", amount: recap.cashDelta }]),
+    { label: "Construction paid today", amount: -costs.constructionSpent },
+    { label: "Snow and service tonight", amount: -costs.snowNight },
+    { label: "Construction payments tonight", amount: -costs.draws },
+    { label: "Loan received tonight", amount: recap.loanReceived },
+    { label: "Loan repaid tonight", amount: -recap.loanRepaid },
+  ];
+
+  return (
+    <section className="mt-3" aria-label="Cash today and tonight">
+      <p className="flex flex-wrap justify-between gap-x-2 px-1 pb-2 text-sm font-bold" aria-live="polite">
+        {finalNight ? "Cash after closing" : "Projected morning cash"}
+        <strong className={`tabular-nums ${projected < 0 ? "text-barn-deep" : "text-ink"}`}>{formatMoney(projected)}</strong>
+      </p>
+      <DisclosureButton open={open} controls="night-money-lines" onToggle={() => setOpen((value) => !value)}>
+        Why? <span className="sr-only">Cash today and tonight</span>
+      </DisclosureButton>
+      <div hidden={!open} id="night-money-lines" className="panel mt-2 px-3.5 py-2.5">
+        <dl className="space-y-1 text-sm font-bold">
+          {lines.filter(({ amount }) => amount !== 0).map(({ label, amount }) => (
+            <div key={label} className="flex justify-between gap-3">
+              <dt>{label}</dt>
+              <dd className="shrink-0 tabular-nums">{formatMoney(amount, { signed: true })}</dd>
+            </div>
+          ))}
+          {costs.interest > 0 && (
+            <div className="flex justify-between gap-3 border-t border-snow-2 pt-1.5">
+              <dt>Interest added to loan balance</dt>
+              <dd className="shrink-0 tabular-nums">{formatMoney(costs.interest)}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+      {!finalNight && projected < 0 && night.debtMornings + 1 >= BANKRUPTCY_MORNINGS && (
+        <p className="mt-2 text-sm font-extrabold text-barn-deep" role="status">Another morning below zero will end the winter.</p>
+      )}
+      <LoanCard night={night} onTake={takeLoan} onRepay={repayLoan} repaid={recap.loanRepaid} />
+    </section>
   );
 }
 
@@ -308,6 +365,7 @@ export function NightRecapSheet() {
             />
           </div>
         </Sign>
+        <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
         <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
