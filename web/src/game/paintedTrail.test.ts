@@ -57,6 +57,50 @@ describe("trail paint geometry", () => {
     expect(draft.acres).toBeGreaterThan(0);
   });
 
+  it("resumes near the previous endpoint, keeps the bend, and prices both widths", () => {
+    const seam = meander[2];
+    const approach = stroke(meander.slice(0, 3), 30);
+    const finishPoints = [p(seam.x + 0.4, seam.z + 0.3), p(5, 15), slope.base];
+    const narrow = previewPaintedTrail(plain, [approach, stroke(finishPoints, 30)], slope);
+    const wide = previewPaintedTrail(plain, [approach, stroke(finishPoints, 100)], slope);
+    const partial = previewPaintedTrail(plain, [approach], slope);
+
+    expect(wide.reason).toBeNull();
+    expect(wide.path).toEqual(narrow.path);
+    expect(wide.path.at(-1)).toEqual(slope.base);
+    expect(wide.path).toContainEqual(seam);
+    expect(wide.path).not.toContainEqual(finishPoints[0]);
+    const seamIndex = wide.path.findIndex(({ x, z }) => x === seam.x && z === seam.z);
+    expect(wide.widths.slice(0, seamIndex + 1)).toEqual(partial.widths);
+    expect(wide.widths.at(-1)).toBe(100);
+    expect(wide.cost).toBeGreaterThan(narrow.cost);
+    expect(wide.lengthFt).toBeGreaterThan(partial.lengthFt);
+  });
+
+  it("keeps the contiguous draft when a disconnected stroke reaches the base", () => {
+    const start = stroke(meander.slice(0, 3));
+    const missed = stroke([p(5, 13), slope.base]);
+    const recovered = stroke([meander[2], p(5, 13), slope.base]);
+    const partial = previewPaintedTrail(plain, [start], slope);
+    const invalid = previewPaintedTrail(plain, [start, missed], slope);
+
+    expect(invalid.reason).toMatch(/end of the draft/i);
+    expect(invalid.path).toEqual(partial.path);
+    expect(invalid.widths).toEqual(partial.widths);
+    expect(previewPaintedTrail(plain, [start, recovered], slope).reason).toBeNull();
+  });
+
+  it("keeps extra paint over an authored run as a width edit", () => {
+    const initial = stroke(meander);
+    const wider = stroke(meander.slice(1, 3), 100);
+    const preview = previewPaintedTrail(plain, [initial, wider], slope);
+
+    expect(preview.reason).toBeNull();
+    expect(preview.path).toEqual(previewPaintedTrail(plain, [initial], slope).path);
+    expect(preview.widths).toContain(100);
+    expect(preview.widths.at(-1)).toBe(60);
+  });
+
   it("rejects a long scribble before deriving geometry or scanning pitch", () => {
     const sustainedPitch = vi.fn(slope.sustainedPitch);
     const scribble = [mainLift.anchor, ...Array.from({ length: 510 }, (_, i) =>
@@ -114,6 +158,23 @@ describe("trail paint geometry", () => {
     expect(widenedAgain.path).toHaveLength(once.path.length);
   });
 
+  it("blocks a detached later edit but accepts edits on separated parts of the same trail", () => {
+    const state = { lifts: [mainLift], trails: [existing()] };
+    const first = stroke([p(0, 0), p(1, 3.5)], 100);
+    const separated = stroke([p(1.5, 15), p(0.6, 18)], 150);
+    const detached = stroke([p(10, 10), p(1.5, 15)], 150);
+    const valid = previewPaintedTrail(state, [first, separated], slope);
+    const invalid = previewPaintedTrail(state, [first, detached], slope);
+    const firstOnly = previewPaintedTrail(state, [first], slope);
+
+    expect(valid.reason).toBeNull();
+    expect(valid.widths).toContain(100);
+    expect(valid.widths).toContain(150);
+    expect(invalid.reason).toMatch(/over the same trail/i);
+    expect(invalid.trailIndex).toBe(0);
+    expect(invalid.widths).toEqual(firstOnly.widths);
+  });
+
   it("rejects a broken run and preserves at least one open run for each lift", () => {
     const state = { lifts: [mainLift], trails: [existing()] };
     const erase = stroke(meander, 100, true);
@@ -133,6 +194,18 @@ describe("trail paint geometry", () => {
     expect(preview.reason).toBeNull();
     expect(preview.trailIndex).toBeNull();
     expect(preview.liftIndex).toBe(0);
+    expect(preview.path[0]).toEqual(mainLift.anchor);
+    expect(preview.path.at(-1)).toEqual(slope.base);
+  });
+
+  it("uses the complete draft to distinguish a branch from editing an existing run", () => {
+    const overExisting = stroke(meander.slice(1, 3));
+    const branch = stroke([meander[2], p(6, 12), p(5, 15), p(1.5, 15)]);
+    const state = { ...plain, trails: [existing()] };
+    const preview = previewPaintedTrail(state, [overExisting, branch], slope);
+
+    expect(preview.reason).toBeNull();
+    expect(preview.trailIndex).toBeNull();
     expect(preview.path[0]).toEqual(mainLift.anchor);
     expect(preview.path.at(-1)).toEqual(slope.base);
   });

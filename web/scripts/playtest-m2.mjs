@@ -165,14 +165,40 @@ async function drag(page, cdp, locations) {
   }
 }
 
-async function paintTrail(page, cdp, top) {
+async function paintTrail(page, cdp, top, resume = false) {
   await buildMenu(page);
   await click(page, /Paint a trail/i);
   await page.locator('[data-placement-kind="trail"]').waitFor();
-  await drag(page, cdp, [
+  const locations = [
     world(top.x, top.z), world(top.x - 1.6, top.z + 2.5),
     world(top.x - 2, top.z + 6), world(-3, 11), world(TERRAIN.base.x, TERRAIN.base.z),
-  ]);
+  ];
+  if (resume) {
+    assert(await page.getByText("Downhill slope", { exact: true }).isVisible());
+    await drag(page, cdp, locations.slice(0, 3));
+    const end = locations[2];
+    await click(page, "Move map");
+    const [before] = await waitForFraming(page, [end]);
+    const center = { x: viewport.width / 2, y: viewport.height * 0.43 };
+    if (cdp) {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    } else {
+      await page.mouse.move(center.x, center.y);
+      await page.mouse.down();
+      await page.mouse.move(center.x + 32, center.y, { steps: 4 });
+      await page.mouse.up();
+    }
+    const [after] = await waitForFraming(page, [end]);
+    assert(Math.hypot(after.x - before.x, after.y - before.y) > 3, "Move map should pan the saved draft");
+    await click(page, "Paint");
+    await drag(page, cdp, locations.slice(2));
+    await click(page, "Undo");
+    await click(page, "Redo");
+  } else {
+    await drag(page, cdp, locations);
+  }
   await confirmDraft(page, "trail", /^Cut trail/);
 }
 
@@ -200,11 +226,12 @@ async function opening(page, cdp, engine) {
   assert.deepEqual((await save(page)).state.lifts, withLift.lifts, "Reloading must keep the new lift");
 
   const top = withLift.lifts[0].anchor;
-  await paintTrail(page, cdp, top);
+  await paintTrail(page, cdp, top, true);
   const built = (await save(page)).state;
   assert.equal(built.trails.length, withLift.trails.length + 1, "The painted trail needs to be saved");
   assert(built.cash < withLift.cash, "The trail needs to be paid for");
   assert(await button(page, "Resume day").isEnabled());
+  assert.equal(await page.getByText("Downhill slope", { exact: true }).count(), 0, "Hide the grid after cutting");
   const scriptedSeconds = Math.round((Date.now() - started) / 100) / 10;
   assert(scriptedSeconds < 180, "The scripted opening exceeded three minutes");
   await screenshot(page, engine, "opening");

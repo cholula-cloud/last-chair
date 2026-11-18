@@ -19,6 +19,7 @@ type PlacementKind = "lift" | "trail" | "asset" | "gun";
 /** Session-only build drafts. The game state changes only on confirmation. */
 export const usePlacementDraft = create<{
   active: boolean;
+  moveCamera: boolean;
   kind: PlacementKind;
   asset?: AssetId;
   review: boolean;
@@ -37,6 +38,7 @@ export const usePlacementDraft = create<{
   lodgeRequested: number;
 }>(() => ({
   active: false,
+  moveCamera: false,
   kind: "lift",
   review: false,
   type: "surface",
@@ -84,6 +86,7 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
   useCameraUi.setState({ resumeFollowId: null });
   usePlacementDraft.setState({
     active: true,
+    moveCamera: false,
     kind,
     asset,
     ...(type ? { type } : {}),
@@ -109,6 +112,7 @@ export function cancelPlacement() {
 export function finishPlacement() {
   usePlacementDraft.setState({
     active: false,
+    moveCamera: false,
     review: false,
     asset: undefined,
     step: "top",

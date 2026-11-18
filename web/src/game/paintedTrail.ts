@@ -26,6 +26,7 @@ const MAX_SAVED_TRAILS = 24;
 const MAX_DRAFT_POINTS = 2_048;
 const MAX_TRAIL_SAMPLES = 768;
 const DRAFT_TOO_LONG = "This draft is too long. Undo a stroke or paint a shorter run.";
+const DISCONNECTED_STROKE = "Start your next stroke at the end of the draft.";
 
 export type PaintStroke = {
   points: readonly XZ[];
@@ -155,6 +156,37 @@ function changeWidths(path: readonly XZ[], widths: readonly number[], stroke: Pa
   });
 }
 
+/** Grow a new centerline in stroke order. Overlay strokes change width without adding a route. */
+function assembleDraft(strokes: readonly PaintStroke[], terrain: Terrain, spacing: number) {
+  const [first, ...rest] = strokes;
+  const path = [...(first?.points ?? [])];
+  const widths = path.map(() => first.widthFt);
+  const overlays: PaintStroke[] = [];
+  const joinRadius = terrain.scale.horizontal / 6;
+
+  for (const stroke of rest) {
+    const { points, widthFt, erase } = stroke;
+    const tail = path.at(-1);
+    const next = points[1];
+    if (!erase && tail && next && distance(points[0], tail) <= joinRadius &&
+        points.slice(1).some((point) => !withinPath(point, path, 1e-5))) {
+      // Keep the existing endpoint. Blend the new width over at most one sample.
+      const length = distance(tail, next);
+      if (length > spacing) {
+        path.push(along(tail, next, spacing / length));
+        widths.push(widthFt);
+      }
+      path.push(...points.slice(1));
+      widths.push(...points.slice(1).map(() => widthFt));
+    } else if (erase || points.every((point) => withinPath(point, path, widthFt / (2 * terrain.horizontalFeetPerUnit)))) {
+      overlays.push(stroke);
+    } else {
+      return { path, widths, overlays, disconnected: true };
+    }
+  }
+  return { path, widths, overlays, disconnected: false };
+}
+
 function acresFor(path: readonly XZ[], widths: readonly number[], terrain: Terrain) {
   let area = 0;
   for (let i = 1; i < path.length; i++) {
@@ -233,10 +265,17 @@ function editTrail(state: PaintState, trailIndex: number, strokes: readonly Pain
   );
   if (!samples) return rejectedPreview(DRAFT_TOO_LONG);
   const { path, widths: before } = samples;
-  const widths = strokes.reduce((last, stroke) => changeWidths(path, last, stroke, terrain), before);
+  const disconnected = strokes.slice(1).findIndex((stroke) => {
+    const radius = Math.max(terrain.scale.horizontal / 12, stroke.widthFt / (2 * terrain.horizontalFeetPerUnit));
+    return stroke.points.some((point) => !withinPath(point, trail.path, radius));
+  });
+  const edits = disconnected < 0 ? strokes : strokes.slice(0, disconnected + 1);
+  const widths = edits.reduce((last, stroke) => changeWidths(path, last, stroke, terrain), before);
   const deleteTrail = widths.length > 0 && widths.every((width) => width === 0);
   let reason: string | null = null;
-  if (deleteTrail && trailsOnLift(state.trails, trail.liftIndex).length === 1) {
+  if (disconnected >= 0) {
+    reason = "Keep each edit stroke over the same trail.";
+  } else if (deleteTrail && trailsOnLift(state.trails, trail.liftIndex).length === 1) {
     reason = "This lift needs an open trail.";
   } else if (!deleteTrail && widths.includes(0)) {
     reason = "Reconnect the trail before cutting.";
@@ -282,14 +321,12 @@ export function previewPaintedTrail(
   const first = active[0];
   const baseRadius = rulesFor(terrain).baseAreaRadius;
   const spacing = Math.min(H / 12, MIN_WIDTH / terrain.horizontalFeetPerUnit);
-  const centerline = first?.points ?? [];
-  const samples = subdivide(centerline, centerline.map(() => first.widthFt), spacing);
-  if (!samples) return rejectedPreview(DRAFT_TOO_LONG);
-  const firstPoint = samples.path[0];
-  const lastPoint = samples.path.at(-1);
-  let reason: string | null = null;
+  const { path, widths: draftWidths, overlays, disconnected } = assembleDraft(active, terrain, spacing);
+  const firstPoint = path[0];
   const start = firstPoint && trailHit(firstPoint, state, H / 6);
   if (start) {
+    const samples = subdivide(path, draftWidths, spacing);
+    if (!samples) return rejectedPreview(DRAFT_TOO_LONG);
     const editTarget = state.trails[start.index];
     const radius = Math.max(H / 12, STANDARD_BRUSH_WIDTH / (2 * terrain.horizontalFeetPerUnit));
     const covered = samples.path.filter((p) => withinPath(p, editTarget.path, radius)).length;
@@ -312,16 +349,21 @@ export function previewPaintedTrail(
 
   const enterByTrail = start && (nearestLift < 0 || start.distance < nearestDistance);
   const liftIndex = enterByTrail ? state.trails[start.index].liftIndex : nearestLift;
-  const path = [...centerline];
+  const end = path.at(-1);
+  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseRadius;
+  const finish = !disconnected && !atBase && end && trailHit(end, state, H / 6);
   if (path.length && liftIndex >= 0) path[0] = enterByTrail ? start.at : state.lifts[liftIndex].anchor;
-  const atBase = !!lastPoint && distance(lastPoint, terrain.base) <= baseRadius;
-  const finish = !atBase && lastPoint && trailHit(lastPoint, state, H / 6);
   if (path.length > 1 && finish) path[path.length - 1] = finish.at;
-  if (path.length > 1 && atBase && distance(path[path.length - 1], terrain.base) > 1e-8) path.push(terrain.base);
+  if (path.length > 1 && atBase && end && distance(end, terrain.base) > 1e-8) {
+    path.push(terrain.base);
+    draftWidths.push(draftWidths.at(-1)!);
+  }
 
-  if (!first || centerline.length < 2) reason = "Paint a trail down the hill.";
+  let reason: string | null = null;
+  if (!first || path.length < 2) reason = "Paint a trail down the hill.";
   else if (first.erase) reason = "Start over an existing trail to erase it.";
   else if (liftIndex < 0) reason = "Start at a lift top or an open trail.";
+  else if (disconnected) reason = DISCONNECTED_STROKE;
   else if (!atBase && !finish) reason = "Finish at the base or join an open trail.";
   else if (trailsOnLift(state.trails, liftIndex).length >= MAX_TRAILS_PER_LIFT) reason = "This lift has room for three trails.";
   else if (state.trails.filter((trail) => trail.open).length >= MAX_TRAILS_TOTAL) reason = "The hill has room for eight trails.";
@@ -334,12 +376,12 @@ export function previewPaintedTrail(
   const suffixWidths = finish ? suffix.map((_, i) => trailWidth(state.trails[finish.index], finish.segment + 1 + i)) : [];
   const full = subdivide([...prefix, ...path, ...suffix], [
     ...prefixWidths,
-    ...path.map(() => first.widthFt),
+    ...draftWidths,
     ...suffixWidths,
   ], spacing);
   if (!full) return rejectedPreview(DRAFT_TOO_LONG);
   const before = full.widths;
-  const widths = active.slice(1).reduce((last, stroke) => changeWidths(full.path, last, stroke, terrain), before);
+  const widths = overlays.reduce((last, stroke) => changeWidths(full.path, last, stroke, terrain), before);
   const problemSegments: number[] = [];
   let climbFloor = full.path[0] ? terrain.height(full.path[0].x, full.path[0].z) : 0;
   for (let i = 1; i < full.path.length; i++) {
@@ -372,9 +414,9 @@ export function previewPaintedTrail(
     }
   }
   if (summary.verticalFt < 16.4) reason ??= "The trail needs more downhill.";
-  const painted = subdivide(path, path.map(() => first.widthFt), spacing);
+  const painted = subdivide(path, draftWidths, spacing);
   if (!painted) return rejectedPreview(DRAFT_TOO_LONG);
-  const paintedWidths = active.slice(1).reduce((last, stroke) => changeWidths(painted.path, last, stroke, terrain), painted.widths);
+  const paintedWidths = overlays.reduce((last, stroke) => changeWidths(painted.path, last, stroke, terrain), painted.widths);
   const acres = acresFor(painted.path, paintedWidths, terrain);
   return {
     ...summary,

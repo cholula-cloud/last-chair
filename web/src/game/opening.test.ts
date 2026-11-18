@@ -58,6 +58,36 @@ describe("Dutch Hill opening", () => {
     expect(rules.skipToClose(painted).dayStats.completedRuns).toBeGreaterThan(0);
   });
 
+  it("charges for the full draft only after its final stroke and refunds the same clearing on undo", () => {
+    const lift = rules.placeLift(lease(), tow);
+    const [reference] = referencePaint(lift, 0, "green");
+    const seam = Math.floor(reference.points.length / 2);
+    const first = { ...reference, points: reference.points.slice(0, seam + 1) };
+    const second = { ...reference, widthFt: 100, points: reference.points.slice(seam) };
+
+    expect(rules.commitPaint(lift, [first])).toBe(lift);
+    const quote = rules.checkPaint(lift, [first, second]);
+    expect(quote.reason).toBeNull();
+    const cut = rules.commitPaint(lift, [first, second]);
+    expect(cut.trails[0]).toMatchObject({ path: quote.path, widths: quote.widths });
+    expect(cut.cash).toBe(lift.cash - quote.cost);
+    expect(rules.undoTrail(cut)).toEqual(lift);
+  });
+
+  it("does not charge for a width edit followed by a detached stroke", () => {
+    const lift = rules.placeLift(lease(), tow);
+    const opened = rules.commitPaint(lift, referencePaint(lift, 0, "green"));
+    const path = opened.trails[0].path;
+    const edits = [
+      { points: path.slice(0, 10), widthFt: 100 },
+      { points: [{ x: 30, z: 40 }, TERRAIN.base], widthFt: 150 },
+    ];
+
+    expect(rules.checkPaint(opened, edits.slice(0, 1)).cost).toBeGreaterThan(0);
+    expect(rules.checkPaint(opened, edits).reason).toMatch(/over the same trail/i);
+    expect(rules.commitPaint(opened, edits)).toBe(opened);
+  });
+
   it("opens a new winter with the same founder and the original undeveloped hill", () => {
     const built = rules.placeLift(lease(), tow);
     const painted = rules.commitPaint(built, referencePaint(built, 0, "green"));

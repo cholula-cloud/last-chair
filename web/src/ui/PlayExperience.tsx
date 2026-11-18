@@ -138,7 +138,7 @@ export default function PlayExperience() {
   const notStarted =
     phase === "day" && paused && dayIndex === 1 && clockMin <= DAY_START_MIN;
   const showStartHint = hydrated && notStarted;
-  const showNote = phase === "day" && !opening && noteDismissedDay !== dayIndex;
+  const showNote = phase === "day" && !notStarted && noteDismissedDay !== dayIndex;
 
   // Auto-dismiss only while the hill day clock is running (not paused, not before first play).
   useEffect(() => {
