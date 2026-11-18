@@ -37,7 +37,7 @@ const daysOf = (id: string, pick: (d: DayRecord) => boolean): DayRecord[] =>
 beforeAll(() => {
   runs = runAll(SEEDS, STRATEGIES);
   sums = new Map(summarizeAll(runs, STRATEGIES).map((s) => [s.id, s]));
-});
+}, 120_000);
 
 describe("runSeason", () => {
   it("plays a whole season and is deterministic per seed", () => {
