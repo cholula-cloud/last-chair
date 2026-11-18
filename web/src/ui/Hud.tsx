@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
+import { DUTCH_HILL_CALENDAR, dayLabel } from "@/game/calendar";
 import { formatMoney } from "@/game/format";
 import { formatClock, weekdayLabel } from "@/game/sim";
 import type { WeatherKind } from "@/game/types";
@@ -66,7 +67,7 @@ export function TopBar({
             Day {dayIndex}/{seasonLength}
           </span>
           <span className="text-[0.75rem] font-bold text-ink-soft">
-            {weekdayLabel(dayIndex)}
+            {weekdayLabel(dayIndex)} <span className="hidden min-[380px]:inline">{dayLabel(DUTCH_HILL_CALENDAR, dayIndex).date}</span>{dayLabel(DUTCH_HILL_CALENDAR, dayIndex).note && <span> · Holiday</span>}
           </span>
         </div>
         <ClockText text={formatClock(clockMin)} />

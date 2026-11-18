@@ -6,6 +6,7 @@ import { useState } from "react";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
+import { DUTCH_HILL_CALENDAR, dayLabel } from "@/game/calendar";
 import { nextTalentName, weekdayLabel, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
@@ -280,7 +281,7 @@ export function NightRecapSheet() {
       <div>
         <Sign
           innerClassName="pb-4 pt-3"
-          tab={`Dutch Hill, ${WEEKDAY_FULL[weekdayLabel(dayIndex)] ?? weekdayLabel(dayIndex)} night`}
+          tab={`Dutch Hill, ${WEEKDAY_FULL[weekdayLabel(dayIndex)] ?? weekdayLabel(dayIndex)} ${dayLabel(DUTCH_HILL_CALENDAR, dayIndex).date} night`}
         >
           <div className="flex items-center justify-between gap-2 px-3.5 pt-1">
             <SheetTitle className="display display-lg whitespace-nowrap text-[1.85rem] text-white">

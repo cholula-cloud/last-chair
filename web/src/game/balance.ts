@@ -236,8 +236,11 @@ export function runSeason(
   seed: number,
   strategy: Strategy,
   founderId: FounderId = "elena",
+  options: { seasonLength?: number } = {},
 ): SeasonResult {
-  let state = pickFounder(createBuiltHill(seed), founderId);
+  const hill = createBuiltHill(seed);
+  const length = options.seasonLength ?? hill.seasonLength;
+  let state = pickFounder({ ...hill, seasonLength: length, weatherDays: hill.weatherDays.slice(0, length) }, founderId);
   let recap: NightRecap | null = null;
   const days: DayRecord[] = [];
   let minCash = state.cash;

@@ -22,6 +22,7 @@ export const MIGRATIONS: readonly Migration[] = [
     },
   },
   { to: 3, note: "Preserve trail types; existing runs are cleared trails.", up: (raw) => raw },
+  { to: 4, note: "Assign existing winters to Dutch Hill.", up: (raw) => ({ ...raw, mountainId: "dutch_hill" }) },
 ];
 
 type MigrationResult =

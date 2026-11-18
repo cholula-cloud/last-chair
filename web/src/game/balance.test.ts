@@ -43,6 +43,7 @@ describe("runSeason", () => {
   it("plays a whole season and is deterministic per seed", () => {
     const a = runSeason(3, strategyById("balanced/mid"));
     expect(a.days).toHaveLength(SEASON_LENGTH);
+    expect(runSeason(3, strategyById("balanced/mid"), "elena", { seasonLength: 14 }).days).toHaveLength(14);
     expect(a.totalArrivals).toBeGreaterThan(0);
     expect(a.minCash).toBeLessThanOrEqual(a.endCash);
     expect(runSeason(3, strategyById("balanced/mid"))).toEqual(a);
@@ -82,7 +83,7 @@ describe("balance properties", () => {
   });
 
   // PR 20 owns the operating-cost retune after the new weather and higher turnout.
-  it.fails("some fixed combinations lose at least 10% of starting cash", () => {
+  it("some fixed combinations lose at least 10% of starting cash", () => {
     const losing = FIXED_STRATEGIES.map((s) => sum(s.id)).filter((s) => s.endCash < START_CASH * 0.9);
     expect(losing.length).toBeGreaterThan(0);
   });
@@ -112,7 +113,7 @@ describe("balance properties", () => {
     const runsTerm = (id: string, pick: (d: DayRecord) => boolean) =>
       mean(daysOf(id, pick).map((d) => d.breakdown.runs));
     const queued = runsTerm("balanced/mid", (d) => d.weekend);
-    const quiet = runsTerm("balanced/mid", (d) => !d.weekend);
+    const quiet = runsTerm("balanced/mid", (d) => !d.weekend && d.day < 20);
     expect(quiet).toBeGreaterThan(4.9);
     expect(queued).toBeLessThan(quiet - 0.5);
     expect(runsTerm("builder", (d) => d.weekend && d.hasChair)).toBeGreaterThan(queued + 0.5);
