@@ -40,6 +40,8 @@ export const usePlacementDraft = create<{
   strokes: PaintStroke[];
   redo: PaintStroke[];
   activeStroke: PaintStroke | null;
+  /** The active stroke has reached its point cap. */
+  strokeFull: boolean;
   lodgeRequested: number;
 }>(() => ({
   active: false,
@@ -58,6 +60,7 @@ export const usePlacementDraft = create<{
   strokes: [],
   redo: [],
   activeStroke: null,
+  strokeFull: false,
   lodgeRequested: 0,
 }));
 

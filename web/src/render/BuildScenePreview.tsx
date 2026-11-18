@@ -3,8 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
-import { previewPaintedTrail } from "@/game/paintedTrail";
-import { checkAssetPlacement, checkGunPlacement, checkPlacement } from "@/game/rules";
+import { checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
@@ -103,13 +102,19 @@ function TrailPreview() {
   })));
   const lifts = useGameStore((s) => s.lifts);
   const trails = useGameStore((s) => s.trails);
+  const cash = useGameStore((s) => s.cash);
+  const phase = useGameStore((s) => s.phase);
+  const clearedCells = useGameStore((s) => s.clearedCells);
+  const glade = usePlacementDraft((s) => s.glade);
   const all = useMemo(
     () => activeStroke ? [...strokes, activeStroke] : strokes,
     [strokes, activeStroke],
   );
+  // The same check the panel and the commit use, so the colour agrees with what Cut trail will do.
   const painted = useMemo(
-    () => all.length ? previewPaintedTrail({ lifts, trails }, all) : null,
-    [lifts, trails, all],
+    () => all.length ? checkPaint(useGameStore.getState(), all, glade) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the slices below are what the check reads
+    [lifts, trails, cash, phase, clearedCells, all, glade],
   );
   const continuation = painted?.draftEnd;
   const color = painted ? ribbonColor(painted.difficulty, !painted.reason) : DIFFICULTY_COLOR.green;
@@ -126,7 +131,7 @@ function TrailPreview() {
         ))}
       {painted && painted.path.length > 1 && (
         <TrailRibbon path={painted.path} widths={painted.widths} color={color}
-          problemSegments={painted.problemSegments} />
+          problemSegments={painted.problemSegments} live={!!activeStroke} />
       )}
       {continuation && !review && !activeStroke && !erasing && !moveCamera && (
         <TerrainRing guide at={continuation} radius={0.4} color={PALETTE.marker} />

@@ -10,15 +10,17 @@ import type { PaintStroke } from "@/game/paintedTrail";
 import { liftDrag, liftPress, type LiftGrab } from "@/ui/liftGesture";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { brushState } from "./brushState";
-import { edgePanInput, edgePanVelocity } from "./paintAssist";
+import { cameraBus } from "./cameraBus";
+import { MAX_STROKE_POINTS, edgePanInput, edgePanVelocity, usableHeight } from "./paintAssist";
 import { pickTerrain } from "./terrainPick";
 import { useReducedMotion } from "./useReducedMotion";
 import { LIFT_BUILD_ANCHORS, snapRadiusAtHit } from "./placementTap";
 
-const MAX_STROKE_POINTS = 512;
 const MIN_POINT_DISTANCE = 0.1;
 /** Time constant of the auto-pan velocity ramp, in seconds. Reduced motion skips the ramp. */
 const PAN_TAU = 0.12;
+/** How often the canvas and panel rectangles are re-measured while a stroke is down. */
+const LAYOUT_MS = 200;
 
 /** A single pointer builds. A second pointer cancels the draft gesture and hands the map to the camera. */
 export function PlacementController() {
@@ -35,50 +37,94 @@ export function PlacementController() {
     let offset: XZ = { x: 0, z: 0 };
     let moved = false;
     let blocked = false;
+
+    // Stroke points wait here and reach the store at most once per animation frame.
+    const pending: XZ[] = [];
+    let full = false;
     // Last screen position of the painting finger, for edge auto-pan between pointer events.
-    let screen: { x: number; y: number } | null = null;
+    const screen = { x: 0, y: 0, down: false };
     let panFrame = 0;
     let panLast = 0;
     const panVelocity = { x: 0, z: 0 };
+    const input = { x: 0, z: 0 };
+    const want = { x: 0, z: 0 };
+    const right = { x: 0, z: 0 };
+    const forward = { x: 0, z: 0 };
+    const layout = { at: -Infinity, left: 0, top: 0, width: 0, height: 0, usable: 0 };
+
+    const measure = (now: number) => {
+      if (now - layout.at < LAYOUT_MS) return;
+      layout.at = now;
+      const rect = dom.getBoundingClientRect();
+      const panel = document.querySelector("[data-placement-kind]");
+      layout.left = rect.left;
+      layout.top = rect.top;
+      layout.width = rect.width;
+      layout.height = rect.height;
+      layout.usable = usableHeight(rect.top, rect.height, panel ? panel.getBoundingClientRect().top : null);
+    };
 
     const pick = (clientX: number, clientY: number) => {
-      const camera = get().camera as PerspectiveCamera;
       const rect = dom.getBoundingClientRect();
       if (!rect.width || !rect.height) return null;
       return pickTerrain({
         x: ((clientX - rect.left) / rect.width) * 2 - 1,
         y: 1 - ((clientY - rect.top) / rect.height) * 2,
-      }, camera, TERRAIN.height);
+      }, get().camera as PerspectiveCamera, TERRAIN.height);
+    };
+
+    const flush = () => {
+      if (!pending.length) return;
+      const draft = usePlacementDraft.getState();
+      if (draft.kind !== "trail") {
+        pending.length = 0;
+        return;
+      }
+      const stroke: PaintStroke = draft.activeStroke ?? {
+        points: [], widthFt: draft.brushWidth, erase: draft.erasing,
+      };
+      usePlacementDraft.setState({
+        tapPoint: pending[pending.length - 1],
+        activeStroke: { ...stroke, points: [...stroke.points, ...pending] },
+      });
+      pending.length = 0;
+    };
+
+    /** Queue a stroke point; at the cap it stops taking points and says why once. */
+    const queuePoint = (raw: XZ, immediate: boolean) => {
+      const stroke = usePlacementDraft.getState().activeStroke;
+      const last = pending.length ? pending[pending.length - 1] : stroke?.points.at(-1);
+      const count = (stroke?.points.length ?? 0) + pending.length;
+      if (count >= MAX_STROKE_POINTS) {
+        if (!full) {
+          full = true;
+          usePlacementDraft.setState({ strokeFull: true });
+        }
+        return;
+      }
+      if (last && Math.hypot(last.x - raw.x, last.z - raw.z) < MIN_POINT_DISTANCE) return;
+      pending.push(raw);
+      if (immediate) flush();
     };
 
     const moveDraft = (event: PointerEvent, pressing = false) => {
       const draft = usePlacementDraft.getState();
       if (draft.review) return;
-      const camera = get().camera as PerspectiveCamera;
-      const rect = dom.getBoundingClientRect();
       const raw = pick(event.clientX, event.clientY);
       if (!raw) return;
 
       if (draft.kind === "trail") {
-        screen = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        const rect = dom.getBoundingClientRect();
+        screen.x = event.clientX - rect.left;
+        screen.y = event.clientY - rect.top;
+        screen.down = true;
         brushState.x = raw.x;
         brushState.z = raw.z;
         brushState.visible = true;
-        const stroke: PaintStroke = draft.activeStroke ?? {
-          points: [], widthFt: draft.brushWidth, erase: draft.erasing,
-        };
-        const last = stroke.points.at(-1);
-        const addPoint = !last || (
-          Math.hypot(last.x - raw.x, last.z - raw.z) >= MIN_POINT_DISTANCE &&
-          stroke.points.length < MAX_STROKE_POINTS
-        );
-        if (addPoint) {
-          usePlacementDraft.setState({
-            tapPoint: raw,
-            activeStroke: { ...stroke, points: [...stroke.points, raw] },
-          });
-        }
+        queuePoint(raw, pressing);
       } else if (draft.kind === "lift") {
+        const camera = get().camera as PerspectiveCamera;
+        const rect = dom.getBoundingClientRect();
         const y = TERRAIN.height(raw.x, raw.z);
         const radius = snapRadiusAtHit(camera, { ...raw, y }, rect.height);
         const game = useGameStore.getState();
@@ -95,44 +141,41 @@ export function PlacementController() {
       }
     };
 
-    const extendStroke = (raw: XZ) => {
-      const draft = usePlacementDraft.getState();
-      const stroke = draft.activeStroke;
-      if (draft.kind !== "trail" || !stroke) return;
-      const last = stroke.points.at(-1);
-      if (last && (Math.hypot(last.x - raw.x, last.z - raw.z) < MIN_POINT_DISTANCE ||
-        stroke.points.length >= MAX_STROKE_POINTS)) return;
-      usePlacementDraft.setState({ tapPoint: raw, activeStroke: { ...stroke, points: [...stroke.points, raw] } });
-    };
-
-    /** While a stroke is down and the brush is near a screen edge, slide the map under it. */
+    /**
+     * One animation frame while a stroke is down: write the queued points, and when the brush is
+     * near a screen edge (above the panel at the bottom) slide the map under it.
+     */
     const panStep = (now: number) => {
       panFrame = requestAnimationFrame(panStep);
       const dt = Math.min(0.05, Math.max(0, (now - panLast) / 1000));
       panLast = now;
+      flush();
       const controls = get().controls as OrbitControlsImpl | null;
-      const rect = dom.getBoundingClientRect();
-      const painting = !blocked && screen && usePlacementDraft.getState().activeStroke;
-      if (!controls || !painting || !screen || !rect.width || !rect.height) {
+      if (!controls || blocked || !screen.down || full || !usePlacementDraft.getState().activeStroke) {
         panVelocity.x = 0;
         panVelocity.z = 0;
         return;
       }
+      measure(now);
+      if (!layout.width || !layout.height) return;
       const camera = get().camera as PerspectiveCamera;
       const e = camera.matrixWorld.elements;
-      const flat = (x: number, z: number) => {
-        const len = Math.hypot(x, z) || 1;
-        return { x: x / len, z: z / len };
-      };
-      const input = edgePanInput(screen.x, screen.y, rect.width, rect.height);
-      const want = edgePanVelocity(input, flat(e[0], e[2]), flat(-e[8], -e[10]),
-        camera.position.distanceTo(controls.target));
+      const rl = Math.hypot(e[0], e[2]) || 1;
+      right.x = e[0] / rl;
+      right.z = e[2] / rl;
+      const fl = Math.hypot(e[8], e[10]) || 1;
+      forward.x = -e[8] / fl;
+      forward.z = -e[10] / fl;
+      edgePanInput(screen.x, screen.y, layout.width, layout.usable, undefined, input);
+      edgePanVelocity(input, right, forward, camera.position.distanceTo(controls.target), undefined, want);
       const k = reduced.current ? 1 : 1 - Math.exp(-dt / PAN_TAU);
       panVelocity.x += (want.x - panVelocity.x) * k;
       panVelocity.z += (want.z - panVelocity.z) * k;
       const dx = panVelocity.x * dt;
       const dz = panVelocity.z * dt;
       if (Math.abs(dx) + Math.abs(dz) < 1e-5) return;
+      // A tilt or glide in flight would fight the pan, so it stops here.
+      cameraBus.cancelMotion?.();
       // The camera rig soft-clamps the target to the play area on its next frame.
       camera.position.x += dx;
       camera.position.z += dz;
@@ -140,15 +183,16 @@ export function PlacementController() {
       controls.target.z += dz;
       controls.update();
       camera.updateMatrixWorld();
-      const raw = pick(screen.x + rect.left, screen.y + rect.top);
+      const raw = pick(screen.x + layout.left, screen.y + layout.top);
       if (raw) {
         brushState.x = raw.x;
         brushState.z = raw.z;
-        extendStroke(raw);
+        queuePoint(raw, false);
       }
     };
     const startPan = () => {
       cancelAnimationFrame(panFrame);
+      layout.at = -Infinity;
       panLast = performance.now();
       panFrame = requestAnimationFrame(panStep);
     };
@@ -156,16 +200,24 @@ export function PlacementController() {
       cancelAnimationFrame(panFrame);
       panVelocity.x = 0;
       panVelocity.z = 0;
-      screen = null;
+      screen.down = false;
+    };
+    const endStroke = () => {
+      stopPan();
+      pending.length = 0;
+      if (full) usePlacementDraft.setState({ strokeFull: false });
+      full = false;
     };
 
     const onDown = (event: PointerEvent) => {
       const draft = usePlacementDraft.getState();
       if (event.button !== 0 || draft.review) return;
+      // The paint tilt takes a moment; a press during it would land on a moving map.
+      if (draft.kind === "trail" && cameraBus.settling) return;
       pointers.add(event.pointerId);
       if (pointers.size > 1) {
         blocked = true;
-        stopPan();
+        endStroke();
         if (draft.kind === "trail") brushState.visible = false;
         if (gesture) usePlacementDraft.setState({ ...gesture, activeStroke: null });
         return;
@@ -181,10 +233,15 @@ export function PlacementController() {
       if (pointers.has(event.pointerId) && !blocked) {
         moved = true;
         moveDraft(event);
-      } else if (pointers.size === 0 && event.pointerType !== "touch" && event.buttons === 0) {
-        // A mouse previews the brush on hover.
+      } else if (pointers.size === 0 && event.pointerType !== "touch") {
         const draft = usePlacementDraft.getState();
         if (draft.kind !== "trail" || draft.review) return;
+        if (event.buttons !== 0) {
+          // An orbit or right-button drag: the brush returns on the next plain hover.
+          brushState.visible = false;
+          return;
+        }
+        // A mouse previews the brush on hover.
         const raw = pick(event.clientX, event.clientY);
         if (!raw) return;
         brushState.x = raw.x;
@@ -200,10 +257,10 @@ export function PlacementController() {
     const onUp = (event: PointerEvent) => {
       if (!pointers.delete(event.pointerId)) return;
       if (pointers.size > 0) return;
-      stopPan();
       if (!blocked) {
         // Only a real drag re-solves the draft; a press and release leaves it as the press made it.
         if (moved) moveDraft(event);
+        flush();
         const draft = usePlacementDraft.getState();
         if (draft.kind === "trail") {
           const stroke = draft.activeStroke;
@@ -213,6 +270,7 @@ export function PlacementController() {
           });
         }
       }
+      endStroke();
       // A finger has no hover, so the brush goes with it. A mouse or pen keeps its hover preview.
       if (event.pointerType === "touch") brushState.visible = false;
       gesture = null;
@@ -223,7 +281,7 @@ export function PlacementController() {
 
     const onCancel = (event: PointerEvent) => {
       if (!pointers.delete(event.pointerId)) return;
-      stopPan();
+      endStroke();
       brushState.visible = false;
       if (gesture) usePlacementDraft.setState({ ...gesture, activeStroke: null });
       if (pointers.size === 0) {
@@ -240,7 +298,7 @@ export function PlacementController() {
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onCancel);
     return () => {
-      stopPan();
+      endStroke();
       brushState.visible = false;
       dom.removeEventListener("pointerdown", onDown);
       dom.removeEventListener("pointermove", onMove);

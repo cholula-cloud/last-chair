@@ -3,7 +3,7 @@ import { TERRAIN } from "@/game/terrain";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import {
   DIFFICULTY_COLOR, EDGE_MARGIN, MAX_RIBBON_SEGMENTS, MIN_RIBBON_SEGMENTS, UNVALIDATED_COLOR,
-  brushRadius, darken, edgePanInput, edgePanVelocity, pixelWorldSize, ribbonColor, ribbonSegmentCount,
+  LIVE_RIBBON_SEGMENTS, brushRadius, darken, usableHeight, edgePanInput, edgePanVelocity, pixelWorldSize, ribbonColor, ribbonSegmentCount,
 } from "./paintAssist";
 import { ribbonGeometry } from "./TrailRibbon";
 
@@ -132,5 +132,32 @@ describe("ribbonGeometry", () => {
     expect(b.getAttribute("position").count).toBeGreaterThan(a.getAttribute("position").count);
     a.dispose();
     b.dispose();
+  });
+});
+
+describe("live ribbon detail and panel-aware margin", () => {
+  it("caps cross-sections while painting and builds full detail afterwards", () => {
+    expect(ribbonSegmentCount(400, true)).toBe(LIVE_RIBBON_SEGMENTS);
+    expect(ribbonSegmentCount(400, false)).toBe(400);
+    expect(ribbonSegmentCount(10, true)).toBe(MIN_RIBBON_SEGMENTS);
+  });
+
+  it("ends the usable screen at the top of the panel", () => {
+    expect(usableHeight(0, 812, null)).toBe(812);
+    expect(usableHeight(0, 812, 706)).toBe(706);
+    expect(usableHeight(20, 812, 706)).toBe(686);
+    expect(usableHeight(0, 812, 5000)).toBe(812);
+  });
+
+  it("starts the bottom margin above the panel", () => {
+    const h = usableHeight(0, 812, 706);
+    expect(edgePanInput(W / 2, 700, W, h).z).toBeLessThan(0);
+    expect(edgePanInput(W / 2, 700, W, 812).z).toBe(0);
+  });
+
+  it("writes into a supplied object without allocating", () => {
+    const out = { x: 9, z: 9 };
+    expect(edgePanInput(0, H / 2, W, H, EDGE_MARGIN, out)).toBe(out);
+    expect(out.x).toBeCloseTo(-1, 6);
   });
 });

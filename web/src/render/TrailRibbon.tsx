@@ -98,13 +98,15 @@ type TrailRibbonProps = {
   widths: readonly number[];
   color: string;
   problemSegments: readonly number[];
+  /** A finger is still painting: build a lighter ribbon, full detail follows on release. */
+  live?: boolean;
 };
 
 /** The painted trail on the snow. The geometry is rebuilt only when the stroke or its colour changes. */
-export function TrailRibbon({ path, widths, color, problemSegments }: TrailRibbonProps) {
+export function TrailRibbon({ path, widths, color, problemSegments, live = false }: TrailRibbonProps) {
   const geometry = useMemo(
-    () => ribbonGeometry(path, widths, ribbonSegmentCount(path.length), color, problemSegments),
-    [path, widths, color, problemSegments],
+    () => ribbonGeometry(path, widths, ribbonSegmentCount(path.length, live), color, problemSegments),
+    [path, widths, color, problemSegments, live],
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (

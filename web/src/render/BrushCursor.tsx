@@ -18,8 +18,6 @@ const SHADOW_PX = 1.5;
 const SEGMENTS = 48;
 const LIFT = 0.12;
 
-type Shown = { x: number; z: number } | null;
-
 function discGeometry() {
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(new Float32Array((SEGMENTS + 1) * 3), 3));
@@ -81,7 +79,10 @@ export function BrushCursor() {
   const widthFt = usePlacementDraft((s) => s.brushWidth);
   const erasing = usePlacementDraft((s) => s.erasing);
   const reduced = useReducedMotion();
-  const shown = useRef<Shown>(null);
+  const review = usePlacementDraft((s) => s.review);
+  const moveCamera = usePlacementDraft((s) => s.moveCamera);
+  // Where the cursor is drawn now. Mutated in place each frame.
+  const shown = useRef({ x: 0, z: 0, on: false });
   const radius = useRef(brushRadius(widthFt));
   const disc = useRef<Mesh>(null);
   const line = useRef<Mesh>(null);
@@ -91,6 +92,10 @@ export function BrushCursor() {
   useEffect(() => {
     radius.current = brushRadius(widthFt);
   }, [widthFt]);
+  // Coming back from Review or from moving the map, the brush waits for the next hover or touch.
+  useEffect(() => {
+    brushState.visible = false;
+  }, [review, moveCamera]);
   useEffect(() => () => {
     geometry.disc.dispose();
     geometry.line.dispose();
@@ -98,19 +103,24 @@ export function BrushCursor() {
   }, [geometry]);
 
   useFrame(({ camera, size }, dt) => {
-    const meshes = [disc.current, line.current, shadow.current];
     const show = visible && brushState.visible;
-    for (const mesh of meshes) if (mesh) mesh.visible = show;
+    const cursor = shown.current;
+    if (disc.current) disc.current.visible = show;
+    if (line.current) line.current.visible = show;
+    if (shadow.current) shadow.current.visible = show;
     if (!show) {
-      shown.current = null;
+      cursor.on = false;
       return;
     }
-    const want = brushState;
-    const k = reduced.current || !shown.current ? 1 : 1 - Math.exp(-Math.min(dt, 0.1) / BRUSH_FOLLOW_TAU);
-    const prev = shown.current ?? want;
-    const x = prev.x + (want.x - prev.x) * k;
-    const z = prev.z + (want.z - prev.z) * k;
-    shown.current = { x, z };
+    const k = reduced.current || !cursor.on ? 1 : 1 - Math.exp(-Math.min(dt, 0.1) / BRUSH_FOLLOW_TAU);
+    if (!cursor.on) {
+      cursor.x = brushState.x;
+      cursor.z = brushState.z;
+      cursor.on = true;
+    }
+    cursor.x += (brushState.x - cursor.x) * k;
+    cursor.z += (brushState.z - cursor.z) * k;
+    const { x, z } = cursor;
 
     const r = radius.current;
     const cam = camera as PerspectiveCamera;

@@ -16,6 +16,7 @@ import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { isOverSkill } from "@/game/trails";
 import { LIFT_LABELS, type TrailDifficulty } from "@/game/types";
+import { STROKE_FULL_REASON } from "@/render/paintAssist";
 import { trailPanelMode } from "@/ui/trailPanel";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { liftReadout } from "@/ui/liftGesture";
@@ -32,7 +33,7 @@ const SLOPES: readonly [TrailDifficulty, string][] = [
 ];
 const actionClass = "key press min-h-11 px-2 text-sm font-extrabold";
 const acres = (area: number) => `${area.toFixed(2)} acres`;
-const toolClass = "key press min-h-11 px-0.5 text-[0.68rem] font-extrabold";
+const toolClass = "key press min-h-11 px-0 text-[0.62rem] font-extrabold";
 const chipClass = "chip px-2 py-0.5 text-xs font-extrabold tabular-nums";
 const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
 
@@ -125,14 +126,15 @@ function TrailBar() {
       <span className={chipClass} style={{ background: "var(--gold)" }}>{formatMoney(preview.cost)}</span>
     </div>
   );
-  const problem = preview?.reason && (
+  const reason = draft.strokeFull ? STROKE_FULL_REASON : preview?.reason;
+  const problem = reason && (
     <p className="chip block max-w-full px-2 py-0.5 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">
-      {preview.reason}
+      {reason}
     </p>
   );
   if (trailPanelMode(draft) === "compact") {
     return (
-      <div className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
+      <div key="compact" className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
         <p className="text-sm font-extrabold">Lift your finger to finish.</p>
         {stats}
         {problem}
@@ -140,7 +142,7 @@ function TrailBar() {
     );
   }
   return (
-    <div className="panel trail-bar-in space-y-2 px-3 pb-3 pt-2" data-trail-panel="full">
+    <div key="full" className="panel trail-bar-in space-y-2 px-3 pb-3 pt-2" data-trail-panel="full">
       <p className="text-sm font-extrabold">
         {draft.moveCamera
           ? "Drag or pinch to move the map. Tap Paint to continue."
@@ -303,7 +305,12 @@ function SiteBar() {
           : `Choose a spot for ${item.label} near the lodge.`}
       </p>
       {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
-      {check?.ok && <p className="text-xs font-bold">{formatMoney(check.cost)}{check.attached ? " · +5% attached" : ""}</p>}
+      {check?.ok && (
+        <div className="flex flex-wrap gap-1">
+          <span className={chipClass}>{formatMoney(check.cost)}</span>
+          {check.attached && <span className={chipClass}>5% attached</span>}
+        </div>
+      )}
       <MoveMapButton resumeLabel="Place" />
       <DraftActions canReview={!!tapPoint} />
     </div>
