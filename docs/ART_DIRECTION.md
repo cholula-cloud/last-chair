@@ -140,6 +140,16 @@ Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 - **Nunito** (600–800, default 700) for everything else. Live numbers (clock, cash, queue, percentages) use tabular figures.
 - Sentence case. No all-caps labels, middle-dot meta strings, em dashes or emoji in UI copy.
 
+### Copy
+
+- Write complete short sentences with a subject and a verb. "Your lift breaks down more often." Not "Lift limps overnight."
+- Plain words. No developer words (stub, flag, preset), no unexplained acronyms, no puns in instructions.
+- One idea per line. Instructions name the gesture and the result: "Drag uphill from the base to place a lift."
+- Spell units: "4 min wait", "1,240 ft". Money always has a dollar sign and thousands separators.
+- Name things the same way every time: Dutch Hill, winter (never season), lodge Tier 2, guests.
+- Errors say what to do next: "Not enough cash. Close a day or take the loan."
+- Live numbers sit in separate chips rather than one joined string.
+
 ### Motion
 
 Principles from Apple's fluid-interface talks and Emil Kowalski's design engineering: respond on press, keep everything interruptible, animate only transform and opacity.
