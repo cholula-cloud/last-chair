@@ -1,3 +1,4 @@
+import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   ASSET_CATALOG,
@@ -53,7 +54,6 @@ import {
   createInitialGuests,
   emptyDayStats,
   isOnHill,
-  isWeekend,
   meanArrivals,
   nextTalentName,
   planArrivals,
@@ -996,7 +996,7 @@ export function sleep(state: GameState): GameState {
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,
-    guests: createInitialGuests(arrivals, rand, isWeekend(nextDay)),
+    guests: createInitialGuests(arrivals, rand, dayKind(DUTCH_HILL_CALENDAR, nextDay) !== "weekday" || inHolidayWeek(DUTCH_HILL_CALENDAR, nextDay)),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(carried.lifts),
     rngState: rng.state(),

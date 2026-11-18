@@ -9,7 +9,7 @@
 
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
-| Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 14 days | 19 |
+| Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14 | 19 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
 | Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
@@ -380,7 +380,7 @@ Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
 
 The figures below describe the earlier 14-day balance baseline. The seeded-weather build uses the thaw forecast at 50% or above for its adaptive strategy. Higher turnout improves cash across several strategies, so the passive profit and losing-strategy thresholds will be tuned with operating costs in row 20.
 
-`web/src/game/balance.ts` `runSeason(seed, strategy, founder = Elena)` plays a 14-day winter headlessly through the real rules: `pickFounder`, then each day optional builds, `skipToClose`, `acknowledgeBeat`, the two night presets, `sleep`. It returns end and minimum cash, end reputation, mean satisfaction, arrivals, runs, mean wait, problem days, a went-negative flag, beats, talents and a per-day record. Same seed and strategy give the same result.
+`web/src/game/balance.ts` `runSeason(seed, strategy, founder = Elena)` plays a 28-day winter headlessly through the real rules: `pickFounder`, then each day optional builds, `skipToClose`, `acknowledgeBeat`, the two night presets, `sleep`. It returns end and minimum cash, end reputation, mean satisfaction, arrivals, runs, mean wait, problem days, a went-negative flag, beats, talents and a per-day record. Same seed and strategy give the same result.
 
 Strategies: the nine fixed combinations {Cheap, Balanced, Expensive} × {Minimal, Mid, High} (no building); `adaptive` (reads the last recap: queue problem buys a chair if cash after it stays above $2,500, else Cheap; snow problem High; value problem fare one step down; a good day fare one step up; snow High only on a thaw morning, thin cover or a snow problem, else Mid); `builder` (chair on day 1–3 when it can afford it, then Balanced / Mid); `stingy` (never builds, Minimal, Expensive; plays the same winter as Expensive / Minimal). `npm run balance` prints the table over 40 seeds (`BALANCE_SEEDS=N`); `balance.test.ts` asserts the properties on 6 seeds in about 4 s.
 
@@ -447,7 +447,7 @@ Capacity before → after PR 10b: surface 52 → 47, chair 56 → 50. Saturday m
 
 Saturday mean wait, minutes, before → after: Balanced / Mid without a chair 10.6 → 15.3; builder with a chair 0.15 → 1.25; adaptive with a chair 0.12 → 0.87.
 
-**Limitations.** The season is 14 days, so no fixed combination goes below $0: the worst, Cheap / Minimal, loses about $190 a day and ends near $9,400, which a 28-day season (state `seasonLength`) would deepen to about $6,800 without emptying the bank. "At risk of going negative" is tested as a combination ending more than 10% below the starting cash. Adaptive earns 8% more than passive Balanced / Mid and 4% less than Expensive / Mid; its edge is satisfaction and reputation, which the score weights equally with cash. Saturdays without a chair now average 15 minutes in line (Cheap fares 19), where the satisfaction queue term is capped at −35 points, so the line costs revenue through the 0.5 + 0.7 s multiplier more than through mood. Only Elena is run. Persona and snow numbers outside the table above are untouched and still uncalibrated against play.
+**Historical 14-day limitations.** The season was 14 days, so no fixed combination goes below $0: the worst, Cheap / Minimal, loses about $190 a day and ends near $9,400, which a 28-day season (state `seasonLength`) would deepen to about $6,800 without emptying the bank. "At risk of going negative" is tested as a combination ending more than 10% below the starting cash. Adaptive earns 8% more than passive Balanced / Mid and 4% less than Expensive / Mid; its edge is satisfaction and reputation, which the score weights equally with cash. Saturdays without a chair now average 15 minutes in line (Cheap fares 19), where the satisfaction queue term is capped at −35 points, so the line costs revenue through the 0.5 + 0.7 s multiplier more than through mood. Only Elena is run. Persona and snow numbers outside the table above are untouched and still uncalibrated against play.
 
 ---
 
@@ -474,3 +474,7 @@ web/src/ui/NightRecapSheet.tsx
 ```
 
 Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
+
+### Dutch Hill calendar
+
+New winters last 28 days, from Monday 26 January through Sunday 22 February. Presidents' Day is day 22; days 20–28 are February vacation. Holidays use weekend demand; vacation weekdays receive a 15% base demand increase and the weekend persona mix. Existing 14-day saves retain their length until the next winter.

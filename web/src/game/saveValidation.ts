@@ -70,6 +70,7 @@ const dayStats = shape({
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
 const fields: Record<keyof PersistedState, Check> = {
+  mountainId: oneOf("dutch_hill"),
   dayIndex: (value) => integer(value) && value >= 1,
   clockMin: number,
   phase: oneOf("setup", "day", "night", "winter_review", "mountain2"),

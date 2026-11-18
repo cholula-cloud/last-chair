@@ -25,6 +25,6 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
       (s) =>
         `${s.label.padEnd(20)} Saturday wait: no chair ${s.satWaitNoChair?.toFixed(2) ?? "-"} min, chair ${s.satWaitChair?.toFixed(2) ?? "-"} min`,
     );
-    console.info(`\nBalance report, ${n} seeds, 14-day season, founder Elena\n\n${formatTable(all)}\n\n${lines.join("\n")}\n`);
+    console.info(`\nBalance report, ${n} seeds, 28-day season, founder Elena\n\n${formatTable(all)}\n\n${lines.join("\n")}\n`);
   });
 });

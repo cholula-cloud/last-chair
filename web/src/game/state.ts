@@ -61,6 +61,7 @@ export type LastDay = {
 
 /** Everything that is saved between sessions. */
 export type PersistedState = {
+  mountainId: "dutch_hill";
   dayIndex: number;
   clockMin: number;
   phase: GamePhase;
@@ -125,6 +126,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
   const seasonSeed = mix32(seed);
   const weatherDays = generateSeasonWeather(seasonSeed, SEASON_LENGTH);
   return {
+    mountainId: "dutch_hill",
     dayIndex: 1,
     clockMin: DAY_START_MIN,
     phase: "setup",
@@ -173,6 +175,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
 
 export function toPersisted(state: PersistedState): PersistedState {
   return {
+    mountainId: state.mountainId,
     dayIndex: state.dayIndex,
     clockMin: state.clockMin,
     phase: state.phase,
@@ -229,4 +232,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;

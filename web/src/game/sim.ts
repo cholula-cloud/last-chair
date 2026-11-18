@@ -1,3 +1,4 @@
+import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { morningWeatherHeadline } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
@@ -545,12 +546,15 @@ export type ArrivalInputs = {
 };
 
 function arrivalCount(opts: ArrivalInputs, noise: number): number {
-  const weekend = isWeekend(opts.dayIndex);
+  const kind = dayKind(DUTCH_HILL_CALENDAR, opts.dayIndex);
+  const weekend = kind !== "weekday";
+  const vacation = inHolidayWeek(DUTCH_HILL_CALENDAR, opts.dayIndex);
   let base = weekend ? 28 : 22;
   base += noise;
   if (weekend) base = Math.round(base * 1.3);
+  else if (vacation) base = Math.round(base * 1.15);
   const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
-  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, weekend));
+  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, weekend || vacation));
   if (opts.weather === "snow") base += 3;
   if (opts.weather === "storm") base -= 5;
   if (opts.weather === "thaw") base -= 4;
@@ -608,7 +612,7 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
     case "summit_link":
       return input.reputation >= 50;
     case "winter_review":
-      return input.dayIndex >= SEASON_LENGTH;
+      return false;
     default:
       return false;
   }
