@@ -72,19 +72,26 @@ export type TerrainDef = {
    */
   face: readonly (readonly [number, number])[];
   domes: readonly DomeDef[];
-  /** Valley walls that rise away from a centre line. */
-  ridges?: {
+  /**
+   * Flanks that fall away from the crest: the crest line sits at
+   * `centerX + centerXPerD * d` (d = distance uphill) and the ground is
+   * only slightly rounded (`crown` is the drop at the crest edge) within `halfWidth` of it, then drops toward
+   * `drop` as `1 - exp(-s² * sharpness)` (s is the distance beyond the crest edge). The drop ramps in over
+   * `rampFrom..rampTo` (distance uphill) so the apron and meadow stay flat, and
+   * the result never goes below `apron.height - floorMargin`.
+   */
+  flanks?: {
     centerX: number;
+    /** Lateral drift of the crest per unit of distance uphill. */
+    centerXPerD: number;
     halfWidth: number;
-    height: number;
+    crown: number;
+    drop: number;
     sharpness: number;
-    /** Share of the wall height present at the foot of the hill. */
-    floor: number;
     rampFrom: number;
     rampTo: number;
+    floorMargin: number;
   };
-  /** Shallow trough along the fall line. */
-  bowl?: { x: number; depth: number; xDenom: number; fromD: number; toD: number };
   /** The back side falls away behind the summit. */
   backFall?: { startZ: number; k: number };
   /** Value-noise bumps, faded in above the meadow and out across the summit cap. */
@@ -95,6 +102,8 @@ export type TerrainDef = {
     toD: number;
     fadeOutFromD?: number;
     fadeOutToD?: number;
+    /** Damp the noise along the crest (needs `flanks`) so the lift line is not a ridge of bumps. */
+    crestCalm?: { amount: number; width: number };
   };
 };
 
@@ -206,16 +215,19 @@ export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale 
       h += dome.height * Math.exp(-((x - dome.x) ** 2 / dome.xDenom + (z - dome.z) ** 2 / dome.zDenom));
     }
 
-    const r = def.ridges;
+    const fl = def.flanks;
     let side = 0;
-    if (r) {
-      side = Math.max(0, Math.abs(x - r.centerX) - r.halfWidth);
-      const wall = r.height * (1 - Math.exp(-side * side * r.sharpness));
-      h += wall * (r.floor + (1 - r.floor) * smoothstep(r.rampFrom, r.rampTo, d));
+    let crestOffset = 0;
+    if (fl) {
+      crestOffset = Math.abs(x - (fl.centerX + fl.centerXPerD * d));
+      side = Math.max(0, crestOffset - fl.halfWidth);
+      const across = Math.min(crestOffset, fl.halfWidth) / fl.halfWidth;
+      const drop =
+        (fl.crown * across * across + fl.drop * (1 - Math.exp(-side * side * fl.sharpness))) *
+        smoothstep(fl.rampFrom, fl.rampTo, d);
+      const floor = (def.apron?.height ?? 0) - fl.floorMargin;
+      h = Math.max(h - drop, Math.min(h, floor));
     }
-
-    const b = def.bowl;
-    if (b) h -= b.depth * Math.exp(-((x - b.x) ** 2) / b.xDenom) * smoothstep(b.fromD, b.toD, d);
 
     const f = def.backFall;
     if (f) {
@@ -229,7 +241,9 @@ export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale 
         n.fadeOutFromD === undefined || n.fadeOutToD === undefined
           ? 1
           : 1 - smoothstep(n.fadeOutFromD, n.fadeOutToD, d);
-      h += fbm(x * n.frequency, z * n.frequency) * n.amplitude * smoothstep(n.fromD, n.toD, d + side * 0.5) * fadeOut;
+      // The groomed crest: noise is damped by `crestCalm.amount` across the crest, easing back to full over `width` beyond its edge.
+      const calm = n.crestCalm ? 1 - n.crestCalm.amount * (1 - smoothstep(0, n.crestCalm.width, side)) : 1;
+      h += fbm(x * n.frequency, z * n.frequency) * n.amplitude * smoothstep(n.fromD, n.toD, d + side * 0.5) * fadeOut * calm;
     }
 
     return h;
