@@ -16,6 +16,8 @@ import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { isOverSkill } from "@/game/trails";
 import { LIFT_LABELS, type TrailDifficulty } from "@/game/types";
+import { STROKE_FULL_REASON } from "@/render/paintAssist";
+import { trailPanelMode } from "@/ui/trailPanel";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { liftReadout } from "@/ui/liftGesture";
 import { DifficultyIcon } from "@/ui/kit/icons";
@@ -25,11 +27,14 @@ import {
 } from "@/ui/placementDraft";
 
 const BRUSH_NAMES = ["Narrow", "Standard", "Wide", "Boulevard"];
+const DIFFICULTY_WORDS: Record<TrailDifficulty, string> = { green: "Green", blue: "Blue", black: "Black" };
 const SLOPES: readonly [TrailDifficulty, string][] = [
   ["green", "Gentle"], ["blue", "Moderate"], ["black", "Steep"],
 ];
 const actionClass = "key press min-h-11 px-2 text-sm font-extrabold";
-const acres = (area: number) => `${area.toFixed(2)} ac`;
+const acres = (area: number) => `${area.toFixed(2)} acres`;
+const toolClass = "key press min-h-11 px-0 text-[0.62rem] font-extrabold";
+const chipClass = "chip px-2 py-0.5 text-xs font-extrabold tabular-nums";
 const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
 
 /** Estimate the wait the current queues would offer an approaching guest of each skill. */
@@ -59,11 +64,11 @@ function backToDraft() {
   usePlacementDraft.setState({ review: false });
 }
 
-function MoveMapButton({ resumeLabel }: { resumeLabel: string }) {
+function MoveMapButton({ resumeLabel, className = actionClass }: { resumeLabel: string; className?: string }) {
   const moving = usePlacementDraft((s) => s.moveCamera);
   const painting = usePlacementDraft((s) => s.activeStroke !== null);
   return (
-    <button type="button" className={actionClass} disabled={painting}
+    <button type="button" className={className} disabled={painting}
       onClick={() => usePlacementDraft.setState({ moveCamera: !moving })}>
       {moving ? resumeLabel : "Move map"}
     </button>
@@ -109,29 +114,58 @@ function TrailBar() {
       />
     );
   }
+  const stats = preview && (
+    <div className="flex flex-wrap items-center gap-1" aria-live={draft.activeStroke ? "off" : "polite"}>
+      <span className={`${chipClass} inline-flex items-center gap-1`}>
+        <DifficultyIcon difficulty={preview.difficulty} size={14} />
+        {DIFFICULTY_WORDS[preview.difficulty]}
+      </span>
+      <span className={chipClass}>{feet(preview.lengthFt)} long</span>
+      <span className={chipClass}>{feet(preview.verticalFt)} vertical</span>
+      <span className={chipClass}>{acres(preview.acres)}</span>
+      <span className={chipClass} style={{ background: "var(--gold)" }}>{formatMoney(preview.cost)}</span>
+    </div>
+  );
+  const reason = draft.strokeFull ? STROKE_FULL_REASON : preview?.reason;
+  const problem = reason && (
+    <p className="chip block max-w-full px-2 py-0.5 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">
+      {reason}
+    </p>
+  );
+  if (trailPanelMode(draft) === "compact") {
+    return (
+      <div key="compact" className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
+        <p className="text-sm font-extrabold">Lift your finger to finish.</p>
+        {stats}
+        {problem}
+      </div>
+    );
+  }
   return (
-    <div className="panel space-y-2 px-3 pb-3 pt-2">
+    <div key="full" className="panel trail-bar-in space-y-2 px-3 pb-3 pt-2" data-trail-panel="full">
       <p className="text-sm font-extrabold">
         {draft.moveCamera
           ? "Drag or pinch to move the map. Tap Paint to continue."
           : draft.erasing
           ? "Drag over a trail to erase paint."
           : draft.strokes.length
-            ? "Start the next stroke at the marked end, or review when finished."
-            : "Drag from a green lift ring downhill. End anywhere, or connect to an open trail."}
+            ? "Drag from the marked end to keep painting, or tap Review."
+            : "Drag down the hill from a lift to paint a trail. Use two fingers to move the map."}
       </p>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
-        <span>Downhill slope</span>
-        {SLOPES.map(([difficulty, label]) => (
-          <span key={difficulty} className="inline-flex items-center gap-0.5">
-            <DifficultyIcon difficulty={difficulty} size={12} />
-            {label}
-          </span>
-        ))}
-      </div>
+      {draft.showSteepness && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
+          <span>Downhill slope</span>
+          {SLOPES.map(([difficulty, label]) => (
+            <span key={difficulty} className="inline-flex items-center gap-0.5">
+              <DifficultyIcon difficulty={difficulty} size={12} />
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-1" aria-label="Trail type">
         <button type="button" className={actionClass} aria-pressed={!draft.glade} onClick={() => usePlacementDraft.setState({ glade: false })}>Cleared trail</button>
-        <button type="button" className={actionClass} aria-pressed={draft.glade} onClick={() => usePlacementDraft.setState({ glade: true })}>Glade · keep trees</button>
+        <button type="button" className={actionClass} aria-pressed={draft.glade} onClick={() => usePlacementDraft.setState({ glade: true })}>Glade (keeps trees)</button>
       </div>
       <div className="grid grid-cols-4 gap-1" aria-label="Brush width">
         {BRUSH_WIDTHS.map((width, i) => (
@@ -143,22 +177,17 @@ function TrailBar() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-4 gap-1">
-        <MoveMapButton resumeLabel="Paint" />
-        <button type="button" className={actionClass} aria-pressed={draft.erasing}
+      <div className="grid grid-cols-5 gap-1">
+        <MoveMapButton resumeLabel="Paint" className={toolClass} />
+        <button type="button" className={toolClass} aria-pressed={draft.erasing}
           onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}>Erase</button>
-        <button type="button" className={actionClass} disabled={!draft.strokes.length} onClick={undoStroke}>Undo</button>
-        <button type="button" className={actionClass} disabled={!draft.redo.length} onClick={redoStroke}>Redo</button>
+        <button type="button" className={toolClass} aria-pressed={draft.showSteepness}
+          onClick={() => usePlacementDraft.setState({ showSteepness: !draft.showSteepness })}>Steepness</button>
+        <button type="button" className={toolClass} disabled={!draft.strokes.length} onClick={undoStroke}>Undo</button>
+        <button type="button" className={toolClass} disabled={!draft.redo.length} onClick={redoStroke}>Redo</button>
       </div>
-      {preview && (
-        <div className="text-xs font-bold" aria-live={draft.activeStroke ? "off" : "polite"}>
-          <p className="flex flex-wrap items-center gap-1.5">
-            <DifficultyIcon difficulty={preview.difficulty} size={16} />
-            <span>{feet(preview.lengthFt)} · {feet(preview.verticalFt)} vertical · {acres(preview.acres)} · {formatMoney(preview.cost)}</span>
-          </p>
-          {preview.reason && <p className="text-barn-deep">{preview.reason}</p>}
-        </div>
-      )}
+      {stats}
+      {problem}
       <DraftActions canReview={draft.strokes.length > 0 && !draft.activeStroke} />
     </div>
   );
@@ -276,7 +305,12 @@ function SiteBar() {
           : `Choose a spot for ${item.label} near the lodge.`}
       </p>
       {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
-      {check?.ok && <p className="text-xs font-bold">{formatMoney(check.cost)}{check.attached ? " · +5% attached" : ""}</p>}
+      {check?.ok && (
+        <div className="flex flex-wrap gap-1">
+          <span className={chipClass}>{formatMoney(check.cost)}</span>
+          {check.attached && <span className={chipClass}>5% attached</span>}
+        </div>
+      )}
       <MoveMapButton resumeLabel="Place" />
       <DraftActions canReview={!!tapPoint} />
     </div>

@@ -12,6 +12,7 @@ import type { LiftReadout } from "@/ui/liftGesture";
 import { Lift } from "./Lift";
 import { LIFT_TERMINAL_H } from "./layout";
 import { PALETTE } from "./palette";
+import { useReducedMotion } from "./useReducedMotion";
 
 /** Time constant of the follow spring, in seconds. */
 export const FOLLOW_TAU = 0.09;
@@ -25,24 +26,6 @@ const lerpXZ = (from: XZ, to: XZ, k: number): XZ => ({
   z: from.z + (to.z - from.z) * k,
 });
 const gap = (a: XZ, b: XZ) => Math.hypot(a.x - b.x, a.z - b.z);
-
-/** Tracks prefers-reduced-motion in a ref so the frame loop never queries it. */
-function useReducedMotion() {
-  const reduced = useRef(false);
-  useEffect(() => {
-    let query: MediaQueryList;
-    try {
-      query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    } catch {
-      return;
-    }
-    const update = () => { reduced.current = query.matches; };
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  }, []);
-  return reduced;
-}
 
 /** A flat ring that sits on the ground at its group's origin. */
 function PadRing({ color }: { color: string }) {

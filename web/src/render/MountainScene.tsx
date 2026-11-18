@@ -39,9 +39,12 @@ import {
   TARGET_Y_MAX,
   classifyPointer,
   clampTarget,
+  elevationOf,
   exceedsTapSlop,
   insideArea,
   marchToTerrain,
+  paintTiltElevation,
+  withElevation,
   type PointerEv,
   type TapRecord,
 } from "./cameraControls";
@@ -57,13 +60,17 @@ import { TrailSign } from "./TrailSign";
 import { sceneCameraTarget } from "./sceneCamera";
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
+import { cameraBus } from "./cameraBus";
 import { useCameraKeys } from "./useCameraKeys";
+import { useReducedMotion } from "./useReducedMotion";
 
 /** Tilt (elevation above the horizon) and orbit limits, and the closest zoom. */
 const MIN_ELEVATION = 0.35;
 const MAX_ELEVATION = 1.25;
 const AZIMUTH_RANGE = 1.4;
 
+/** Length of the paint tilt, in milliseconds. */
+const TILT_MS = 320;
 const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 const GOAL = new THREE.Vector3();
 const AWAY = new THREE.Vector3();
@@ -158,6 +165,7 @@ function CameraRig({
       userMoved.current = true;
       interacting.current = true;
       glide.current = null;
+      cameraBus.cancelMotion?.();
       returning.current = false;
     };
     const onEnd = () => {
@@ -306,6 +314,55 @@ function CameraRig({
     );
   }, [placementFocus, controls, aspect, glideTo]);
 
+  // Paint mode tilts the camera toward top-down and the previous tilt comes back on exit. The tilt
+  // is a short eased turn about the orbit target, so the point under the screen centre stays put
+  // and the map settles quickly enough to paint on.
+  const painting = usePlacementDraft((s) => s.active && s.kind === "trail");
+  const savedElevation = useRef<number | null>(null);
+  const tilt = useRef<{ from: number; to: number; start: number } | null>(null);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    cameraBus.cancelMotion = () => {
+      glide.current = null;
+      tilt.current = null;
+      cameraBus.settling = false;
+    };
+    return () => {
+      cameraBus.cancelMotion = null;
+      cameraBus.settling = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!controls) return;
+    const cam = get().camera;
+    const tiltTo = (elevation: number) => {
+      const from = elevationOf(controls.target, cam.position);
+      glide.current = null;
+      if (reduced.current) {
+        const position = withElevation(controls.target, cam.position, elevation);
+        cam.position.set(position.x, position.y, position.z);
+        controls.update();
+        tilt.current = null;
+        cameraBus.settling = false;
+      } else {
+        tilt.current = { from, to: elevation, start: performance.now() };
+        cameraBus.settling = true;
+      }
+    };
+    if (painting) {
+      const current = elevationOf(controls.target, cam.position);
+      const goal = paintTiltElevation(current);
+      if (goal === null) return;
+      savedElevation.current = current;
+      userMoved.current = true;
+      tiltTo(goal);
+    } else if (savedElevation.current !== null) {
+      const back = savedElevation.current;
+      savedElevation.current = null;
+      tiltTo(back);
+    }
+  }, [painting, controls, get, reduced]);
+
   // Re-home on first mount and on a portrait/landscape flip; for a resize
   // within a mode, only while the user has not moved the camera.
   useEffect(() => {
@@ -338,6 +395,18 @@ function CameraRig({
     if (!controls) return;
     const cam = get().camera;
     let moved = false;
+    const turn = tilt.current;
+    if (turn) {
+      const t = Math.min(1, (performance.now() - turn.start) / TILT_MS);
+      const eased = 1 - (1 - t) ** 3;
+      const p = withElevation(controls.target, cam.position, turn.from + (turn.to - turn.from) * eased);
+      cam.position.set(p.x, p.y, p.z);
+      if (t >= 1) {
+        tilt.current = null;
+        cameraBus.settling = false;
+      }
+      moved = true;
+    }
     const g = glide.current;
     if (g) {
       controls.target.lerp(g.target, 0.14);

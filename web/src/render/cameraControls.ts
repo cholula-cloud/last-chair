@@ -140,3 +140,34 @@ export function marchToTerrain(
 ): XZ | null {
   return marchTerrainCore(origin, dir, height, maxDist, step);
 }
+
+export type Vec3 = { x: number; y: number; z: number };
+
+/** Elevation of the camera above the horizon, in radians, as seen from the orbit target. */
+export const PAINT_ELEVATION = 1.2;
+
+/** Elevation of `position` above the horizon around `target`, in radians. */
+export function elevationOf(target: Vec3, position: Vec3): number {
+  const len = Math.hypot(position.x - target.x, position.y - target.y, position.z - target.z);
+  return len > 0 ? Math.asin(Math.max(-1, Math.min(1, (position.y - target.y) / len))) : 0;
+}
+
+/** `position` turned about `target` to a new elevation, keeping its distance and heading. */
+export function withElevation(target: Vec3, position: Vec3, elevation: number): Vec3 {
+  const dx = position.x - target.x;
+  const dz = position.z - target.z;
+  const len = Math.hypot(dx, position.y - target.y, dz);
+  const flat = Math.hypot(dx, dz);
+  const ux = flat > 1e-9 ? dx / flat : 0;
+  const uz = flat > 1e-9 ? dz / flat : 1;
+  return {
+    x: target.x + ux * Math.cos(elevation) * len,
+    y: target.y + Math.sin(elevation) * len,
+    z: target.z + uz * Math.cos(elevation) * len,
+  };
+}
+
+/** The tilted elevation for paint mode, or null when the camera is already that high. */
+export function paintTiltElevation(current: number, goal = PAINT_ELEVATION): number | null {
+  return current >= goal - 0.02 ? null : goal;
+}

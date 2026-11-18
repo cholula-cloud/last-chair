@@ -21,6 +21,8 @@ type PlacementKind = "lift" | "trail" | "asset" | "gun";
 export const usePlacementDraft = create<{
   active: boolean;
   showBuildGrid: boolean;
+  /** The steepness grid in trail mode. Remembered for the session, not saved. */
+  showSteepness: boolean;
   moveCamera: boolean;
   kind: PlacementKind;
   asset?: AssetId;
@@ -38,10 +40,13 @@ export const usePlacementDraft = create<{
   strokes: PaintStroke[];
   redo: PaintStroke[];
   activeStroke: PaintStroke | null;
+  /** The active stroke has reached its point cap. */
+  strokeFull: boolean;
   lodgeRequested: number;
 }>(() => ({
   active: false,
   showBuildGrid: false,
+  showSteepness: false,
   moveCamera: false,
   kind: "lift",
   review: false,
@@ -55,6 +60,7 @@ export const usePlacementDraft = create<{
   strokes: [],
   redo: [],
   activeStroke: null,
+  strokeFull: false,
   lodgeRequested: 0,
 }));
 
