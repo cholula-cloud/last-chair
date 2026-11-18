@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney } from "./format";
+import { formatFeet, formatMoney } from "./format";
+
+describe("formatFeet", () => {
+  it("rounds and thousands-separates", () => {
+    expect(formatFeet(17.2285, 70)).toBe("1,206 ft");
+    expect(formatFeet(0, 70)).toBe("0 ft");
+    expect(formatFeet(2.973, 50.44)).toBe("150 ft");
+  });
+});
 
 describe("formatMoney", () => {
   it("formats signed and unsigned amounts", () => {

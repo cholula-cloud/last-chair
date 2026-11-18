@@ -297,7 +297,7 @@ Goal: where you put things matters.
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | 11 | ☑ | Terrain as data | One heightfield used by sim and render; Dutch Hill silhouette; portrait camera framing so lift line and trail read on iPhone |
-| 12-pre | ◐ | Camera, scale and playability (parts 1 to 3) | Part 1 merged (PR 34). Part 2a/b scale (merged). Part 2c forest tiers (merged). Part 2d arrival lot and guest cars (in progress). Part 3 follows |
+| 12-pre | ◐ | Camera, scale and playability (parts 1 to 3) | Parts 1, 2a/b, 2c, 2d merged. Part 3 (speed, Build focus, feet, phone-check) in PR |
 | 12 | ◐ | Free lift placement | Tap bottom and top on terrain; valid/invalid preview; replaces three fixed slots. 12a rules merged (game rules, cost, undo, save v7, interim Build buttons); 12b render helpers and 12c tap UI to follow |
 | 13 | ☐ | Trail graph | Trails from lift top to base; difficulty from **sustained** pitch (one steep rollover does not make a green black); guests choose by skill |
 | 14 | ☐ | Multi-lift choice | Guests pick lift and trail by queue length and skill |

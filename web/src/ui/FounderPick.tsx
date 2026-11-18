@@ -2,6 +2,7 @@
 
 import { FOUNDERS } from "@/game/content";
 import { useGameStore } from "@/game/store";
+import { useSpeed } from "@/ui/speed";
 import { Sheet } from "@/ui/kit/Sheet";
 
 /** Badge stripe per founder, drawn from the scene's jacket palette. */
@@ -44,7 +45,10 @@ export function FounderPick() {
           >
             <button
               type="button"
-              onClick={() => pickFounder(f.id)}
+              onClick={() => {
+                useSpeed.getState().reset();
+                pickFounder(f.id);
+              }}
               className="key press flex h-full w-full overflow-hidden text-left"
             >
               <span

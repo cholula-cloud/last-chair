@@ -82,6 +82,7 @@ export function Sheet({
   aside,
   titleHidden = false,
   mood,
+  dataMarker,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
@@ -106,6 +107,8 @@ export function Sheet({
   titleHidden?: boolean;
   /** "night" warms the palette (see globals.css) for the night recap. */
   mood?: "night";
+  /** Extra data attribute on the dialog (e.g. build sheet camera framing). */
+  dataMarker?: string;
 }) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
@@ -190,6 +193,7 @@ export function Sheet({
       <SheetTitleId.Provider value={titleId}>
       <section
         ref={sheetRef}
+        {...(dataMarker ? { [`data-${dataMarker}`]: true } : {})}
         data-state={state}
         role="dialog"
         aria-modal={modal || undefined}

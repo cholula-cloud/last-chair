@@ -12,8 +12,17 @@ import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
 import { useCameraUi } from "@/ui/cameraUi";
 import { usePlacementDraft } from "@/ui/placementDraft";
+import { scaledTickMs, useSpeed } from "@/ui/speed";
 import { Atmosphere } from "./Atmosphere";
-import { cameraPosition, framingAspect, homeAzimuth, homeView, isPortraitAspect } from "./cameraFraming";
+import {
+  cameraPosition,
+  frameView,
+  type SafeRect,
+  framingAspect,
+  homeAzimuth,
+  homeView,
+  isPortraitAspect,
+} from "./cameraFraming";
 import {
   FOCUS_DISTANCE,
   GLIDE_MAX_FRAMES,
@@ -34,6 +43,8 @@ import type { GuestPlacement } from "./guestPlacement";
 import { Lift } from "./Lift";
 import { Village } from "./Lodge";
 import { SnowGuns } from "./SnowGuns";
+import { LIFT_TERMINAL_H } from "./layout";
+import { RenderStats } from "./RenderStats";
 import { Road, Terrain } from "./Terrain";
 import { TrailRibbon } from "./TrailRibbon";
 import { sceneCameraTarget } from "./sceneCamera";
@@ -236,6 +247,54 @@ function CameraRig({
     goHome();
   }, [recenterNonce, goHome]);
 
+  const placementFocus = usePlacementDraft((s) => s.focus);
+  const seenFocus = useRef(0);
+  useEffect(() => {
+    if (!controls || !placementFocus || placementFocus.nonce === seenFocus.current) return;
+    seenFocus.current = placementFocus.nonce;
+    userMoved.current = true;
+    const v = homeView(aspect);
+    const world = placementFocus.points.map((p, i) => ({
+      x: p.x,
+      y: TERRAIN.height(p.x, p.z) + (i === 1 ? LIFT_TERMINAL_H : 0),
+      z: p.z,
+    }));
+    if (world.length >= 2) {
+      const a = world[0];
+      const b = world[1];
+      world.push({
+        x: (a.x + b.x) / 2,
+        y: (a.y + b.y) / 2 + LIFT_TERMINAL_H,
+        z: (a.z + b.z) / 2,
+      });
+    }
+    let yMin: number = v.safe.yMin;
+    const sheet = document.querySelector("[data-build-sheet]");
+    if (sheet) {
+      const r = sheet.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      yMin = Math.max(-0.9, 1 - (2 * r.top) / vh);
+    }
+    const safe: SafeRect = {
+      xMin: v.safe.xMin,
+      xMax: v.safe.xMax,
+      yMin,
+      yMax: v.safe.yMax,
+    };
+    const framed = frameView({
+      points: world,
+      aspect,
+      fov: v.fov,
+      azimuth: v.azimuth,
+      elevation: v.elevation,
+      safe,
+    });
+    glideTo(
+      new THREE.Vector3(framed.target.x, framed.target.y, framed.target.z),
+      framed.distance,
+    );
+  }, [placementFocus, controls, aspect, glideTo]);
+
   // Re-home on first mount and on a portrait/landscape flip; for a resize
   // within a mode, only while the user has not moved the camera.
   useEffect(() => {
@@ -337,6 +396,7 @@ function CameraRig({
 }
 
 export function MountainScene() {
+  const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
   const dayIndex = useGameStore((s) => s.dayIndex);
@@ -382,13 +442,14 @@ export function MountainScene() {
   }, [confirmedLifts, primaryAnchor, showPreview, previewValid, previewSlot]);
 
   useFrame((_, delta) => {
-    useGameStore.getState().tick(delta * 1000);
+    useGameStore.getState().tick(scaledTickMs(delta, speed));
   });
 
   const terrainSnow = Math.min(1, snowQuality * 0.75 + snowDepth * 0.25);
 
   return (
     <>
+      <RenderStats />
       <Atmosphere />
       <Terrain
         snowQuality={terrainSnow}

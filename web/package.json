@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "balance": "BALANCE_REPORT=1 vitest run src/game/balance.report.test.ts",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "playtest:p0": "node scripts/playtest-p0.mjs"
+    "playtest:p0": "node scripts/playtest-p0.mjs",
+    "phone-check": "node scripts/phone-check.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
