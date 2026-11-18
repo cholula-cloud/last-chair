@@ -75,13 +75,18 @@ async function confirmDraft(page, kind, action) {
   }
 }
 
-async function openPlay(page) {
-  await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
+/** /play opens on the title screen; Continue resumes the active slot, otherwise start a new winter. */
+async function enterGame(page) {
   const continueButton = button(page, /^Continue/);
   const newWinter = button(page, "New winter");
   await newWinter.waitFor({ timeout: 20000 });
   await press((await continueButton.count()) > 0 ? continueButton : newWinter);
   await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
+}
+
+async function openPlay(page) {
+  await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
+  await enterGame(page);
 }
 
 async function buildMenu(page) {
@@ -232,7 +237,7 @@ async function opening(page, cdp, engine) {
   assert.equal(withLift.trails.length, 0, "The game must not generate a free trail");
   assert(await button(page, "Resume day").isDisabled());
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.locator('[data-scene-ready="true"]').waitFor();
+  await enterGame(page);
   assert.deepEqual((await save(page)).state.lifts, withLift.lifts, "Reloading must keep the new lift");
 
   const top = withLift.lifts[0].anchor;

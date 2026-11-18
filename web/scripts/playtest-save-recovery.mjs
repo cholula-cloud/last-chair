@@ -40,7 +40,14 @@ try {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /^Continue/ }).tap();
   await page.getByText("Build your first lift", { exact: true }).waitFor({ timeout: 20000 });
-  assert.equal(await page.evaluate((key) => localStorage.getItem(key), saveKey), before);
+  // Continue refreshes the "last played" time (savedAt); the winter itself must be unchanged.
+  const withoutSavedAt = (raw) => {
+    const { savedAt: _savedAt, ...rest } = JSON.parse(raw);
+    return rest;
+  };
+  const after = await page.evaluate((key) => localStorage.getItem(key), saveKey);
+  assert.ok(after, "The slot still holds the save after Continue");
+  assert.deepEqual(withoutSavedAt(after), withoutSavedAt(before));
 
   const malformed = '{"state":';
   await page.addInitScript(({ key, value }) => localStorage.setItem(key, value), { key: saveKey, value: malformed });

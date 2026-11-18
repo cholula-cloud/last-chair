@@ -56,6 +56,8 @@ async function waitSceneReady(page) {
     } catch (e) {
       if (attempt === 1) throw e;
       await page.reload({ waitUntil: "domcontentloaded" });
+      // A reload returns to the title screen; resume the saved winter.
+      await page.getByRole("button", { name: /^Continue/ }).click({ timeout: 30_000 });
     }
   }
 }
