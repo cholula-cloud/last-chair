@@ -16,7 +16,7 @@ const MIN_POINT_DISTANCE = 0.1;
 
 /** A single pointer builds. A second pointer cancels the draft gesture and hands the map to the camera. */
 export function PlacementController() {
-  const active = usePlacementDraft((s) => s.active);
+  const active = usePlacementDraft((s) => s.active && !s.moveCamera);
   const dom = useThree((s) => s.gl.domElement);
   const get = useThree((s) => s.get);
 

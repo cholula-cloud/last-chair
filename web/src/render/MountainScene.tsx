@@ -52,7 +52,7 @@ import { SnowGuns } from "./SnowGuns";
 import { LIFT_TERMINAL_H } from "./layout";
 import { RenderStats } from "./RenderStats";
 import { Road, Terrain } from "./Terrain";
-import { TrailRibbon } from "./TrailRibbon";
+import { TrailSign } from "./TrailSign";
 import { sceneCameraTarget } from "./sceneCamera";
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
@@ -438,6 +438,7 @@ export function MountainScene() {
   const lifts = useGameStore((s) => s.lifts);
   const trailRuns = useGameStore((s) => s.trails);
   const placementActive = usePlacementDraft((s) => s.active);
+  const usingBuildTool = usePlacementDraft((s) => s.active && !s.moveCamera);
   // Snapped trail snow: changes only when the look does, so the terrain repaints rarely.
   const trailKey = useGameStore((s) => snowKey(snowCarriers(s.trails)));
   const trailSnow = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
@@ -510,19 +511,10 @@ export function MountainScene() {
         <Trees lines={clearingLines} paths={forestPaths} />
 
         {trailRuns.map((run, ti) => {
-          const lift = lifts[run.liftIndex];
-          if (!run.open || !lift?.confirmed) return null;
-          const line = liftLineOf(lift);
+          if (!run.open || !lifts[run.liftIndex]?.confirmed) return null;
+          const lane = trailRuns.slice(0, ti).filter((trail) => trail.open && trail.liftIndex === run.liftIndex).length;
           return (
-            <TrailRibbon
-              key={`trail-${ti}-${run.name}`}
-              kind="built"
-              line={line}
-              path={run.path}
-              widths={run.widths}
-              groomed={run.groomed ?? false}
-              trail={trailSnow[ti] ?? trailSnow[0]}
-            />
+            <TrailSign key={`trail-${ti}-${run.name}`} run={run} lane={lane} />
           );
         })}
 
@@ -549,11 +541,11 @@ export function MountainScene() {
         screenSpacePanning={false}
         zoomToCursor
         touches={{
-          ONE: placementActive ? -1 as THREE.TOUCH : THREE.TOUCH.PAN,
-          TWO: placementActive ? THREE.TOUCH.DOLLY_PAN : THREE.TOUCH.DOLLY_ROTATE,
+          ONE: usingBuildTool ? -1 as THREE.TOUCH : THREE.TOUCH.PAN,
+          TWO: usingBuildTool ? THREE.TOUCH.DOLLY_PAN : THREE.TOUCH.DOLLY_ROTATE,
         }}
         mouseButtons={{
-          LEFT: placementActive ? -1 as THREE.MOUSE : THREE.MOUSE.PAN,
+          LEFT: usingBuildTool ? -1 as THREE.MOUSE : THREE.MOUSE.PAN,
           MIDDLE: THREE.MOUSE.DOLLY,
           RIGHT: THREE.MOUSE.ROTATE,
         }}

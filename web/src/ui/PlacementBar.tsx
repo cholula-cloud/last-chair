@@ -15,7 +15,7 @@ import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { isOverSkill } from "@/game/trails";
-import { LIFT_LABELS, liftCost } from "@/game/types";
+import { LIFT_LABELS, liftCost, type TrailDifficulty } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { DifficultyIcon } from "@/ui/kit/icons";
 import { PrimaryButton } from "@/ui/kit/parts";
@@ -24,6 +24,9 @@ import {
 } from "@/ui/placementDraft";
 
 const BRUSH_NAMES = ["Narrow", "Standard", "Wide", "Boulevard"];
+const SLOPES: readonly [TrailDifficulty, string][] = [
+  ["green", "Gentle"], ["blue", "Moderate"], ["black", "Steep"],
+];
 const actionClass = "key press min-h-11 px-2 text-sm font-extrabold";
 const acres = (area: number) => `${area.toFixed(2)} ac`;
 const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
@@ -98,12 +101,23 @@ function TrailBar() {
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold">
-        {draft.erasing
+        {draft.moveCamera
+          ? "Drag or pinch to move the map. Tap Paint to continue."
+          : draft.erasing
           ? "Drag over a trail to erase paint."
           : draft.strokes.length
-            ? "Review the trail, or paint again to change its width."
+            ? "Start the next stroke at the marked end, or review when finished."
             : "Drag from a green lift ring to the amber base ring. You can also connect to an open trail."}
       </p>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
+        <span>Downhill slope</span>
+        {SLOPES.map(([difficulty, label]) => (
+          <span key={difficulty} className="inline-flex items-center gap-0.5">
+            <DifficultyIcon difficulty={difficulty} size={12} />
+            {label}
+          </span>
+        ))}
+      </div>
       <div className="grid grid-cols-4 gap-1" aria-label="Brush width">
         {BRUSH_WIDTHS.map((width, i) => (
           <button key={width} type="button" aria-pressed={draft.brushWidth === width}
@@ -114,7 +128,11 @@ function TrailBar() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-4 gap-1">
+        <button type="button" className={actionClass} disabled={!!draft.activeStroke}
+          onClick={() => usePlacementDraft.setState({ moveCamera: !draft.moveCamera })}>
+          {draft.moveCamera ? "Paint" : "Move map"}
+        </button>
         <button type="button" className={actionClass} aria-pressed={draft.erasing}
           onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}>Erase</button>
         <button type="button" className={actionClass} disabled={!draft.strokes.length} onClick={undoStroke}>Undo</button>

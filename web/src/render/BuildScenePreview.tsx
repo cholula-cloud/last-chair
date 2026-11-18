@@ -10,6 +10,7 @@ import type { TrailDifficulty } from "@/game/types";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { Lift } from "./Lift";
 import { PALETTE } from "./palette";
+import { SlopeGrid } from "./SlopeGrid";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
 
@@ -94,7 +95,7 @@ function ActiveBuildScenePreview() {
           ))}
         {line && (
           <>
-            <TrailRibbon kind="preview" line={line} valid={!!valid} />
+            <TrailRibbon line={line} valid={!!valid} />
             <Lift line={line} type={draft.type} preview previewInvalid={!valid} />
             <TerrainRing at={line.top} radius={0.55} color={valid ? PALETTE.valid : PALETTE.invalid} />
           </>
@@ -104,8 +105,10 @@ function ActiveBuildScenePreview() {
   }
 
   if (draft.kind === "trail") {
+    const continuation = painted?.reason && painted.trailIndex === null ? painted.path.at(-1) : null;
     return (
       <>
+        {!draft.review && <SlopeGrid />}
         {!draft.review && !draft.erasing && (
           <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
         )}
@@ -115,12 +118,15 @@ function ActiveBuildScenePreview() {
             <TerrainRing guide key={`${anchor.x}/${anchor.z}`} at={anchor} radius={0.65} color={DIFFICULTY_COLOR.green} />
           ))}
         {painted && trailLine && painted.path.length > 1 && (
-          <TrailRibbon kind="preview" line={trailLine} valid={!painted.reason}
+          <TrailRibbon line={trailLine} valid={!painted.reason}
             path={painted.path} widths={painted.widths}
             color={DIFFICULTY_COLOR[painted.difficulty]} problemSegments={painted.problemSegments}
           />
         )}
-        {draft.tapPoint && !draft.review && (
+        {continuation && !draft.review && !draft.activeStroke && !draft.erasing && (
+          <TerrainRing guide at={continuation} radius={0.4} color={PALETTE.marker} />
+        )}
+        {draft.tapPoint && !draft.review && !draft.moveCamera && (
           <TerrainRing at={draft.tapPoint} radius={draft.brushWidth / (2 * TERRAIN.horizontalFeetPerUnit)}
             color={draft.erasing ? PALETTE.invalid : PALETTE.white} />
         )}
