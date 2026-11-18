@@ -12,7 +12,8 @@ import { TERRAIN, fbm } from "@/game/terrain";
 import { forested } from "./forest";
 import { sceneCameraTarget } from "./sceneCamera";
 import { buildGeometry } from "./terrainMesh";
-import { sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
+import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
+import type { XZ } from "@/game/terrain";
 
 const CANOPY = new THREE.Color(PALETTE.pineDeep);
 
@@ -39,6 +40,7 @@ function paint(
   trails: readonly Trail[],
   influence: readonly TrailInfluence[],
   lines: readonly LiftLine[],
+  paths?: readonly (readonly XZ[])[],
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
   const nor = g.attributes.normal as THREE.BufferAttribute;
@@ -100,7 +102,7 @@ function paint(
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
     const distCam = Math.hypot(x - sceneCameraTarget.x, z - sceneCameraTarget.z);
-    if (distCam > 45 && forested(x, z, { lines })) {
+    if (distCam > 45 && forested(x, z, { lines, paths })) {
       c.lerp(CANOPY, 0.5);
     }
 
@@ -114,12 +116,14 @@ export function Terrain({
   snowDepth,
   trails,
   lines,
+  paths,
 }: {
   snowQuality: number;
   snowDepth: number;
   /** Trail snow, one per lift line (already snapped, see `snowKey`). */
   trails: readonly Trail[];
   lines: readonly LiftLine[];
+  paths?: readonly (readonly XZ[])[];
 }) {
   const geometry = useMemo(() => buildGeometry(), []);
   const q = Math.round(snowQuality * 20) / 20;
@@ -127,24 +131,30 @@ export function Terrain({
   const lineKey = lines
     .map((l) => `${l.bottom.x},${l.bottom.z}|${l.top.x},${l.top.z}`)
     .join(";");
+  const pathKey = paths?.map((p) => p.map((q) => `${q.x},${q.z}`).join(";")).join("|") ?? "";
   const influence = useMemo(
-    () => lines.map((line) => trailInfluence(line, geometry.attributes.position.array)),
+    () =>
+      lines.map((line, i) =>
+        paths?.[i]?.length
+          ? pathInfluence(paths[i], geometry.attributes.position.array)
+          : trailInfluence(line, geometry.attributes.position.array),
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [geometry, lineKey],
+    [geometry, lineKey, pathKey],
   );
 
   const camBand = useRef("");
 
   // Repaints when snow changes and when the camera pans enough to move the canopy band.
   useLayoutEffect(() => {
-    paint(geometry, q, d, trails, influence, lines);
-  }, [geometry, q, d, trails, influence, lineKey, lines]);
+    paint(geometry, q, d, trails, influence, lines, paths);
+  }, [geometry, q, d, trails, influence, lineKey, lines, paths]);
 
   useFrame(() => {
     const band = `${Math.round(sceneCameraTarget.x / 6)},${Math.round(sceneCameraTarget.z / 6)}`;
     if (band === camBand.current) return;
     camBand.current = band;
-    paint(geometry, q, d, trails, influence, lines);
+    paint(geometry, q, d, trails, influence, lines, paths);
   });
 
   useEffect(() => () => geometry.dispose(), [geometry]);

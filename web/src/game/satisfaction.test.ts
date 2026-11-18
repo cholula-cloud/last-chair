@@ -1,4 +1,5 @@
 import { freshTrail } from "./snow";
+import { fallLineTrailForLift } from "./trails";
 import { describe, expect, it } from "vitest";
 import { REFERENCE_TOPS } from "./descent";
 import { createRng } from "./rng";
@@ -18,7 +19,7 @@ import {
   type SatisfactionContext,
 } from "./satisfaction";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals, tickGuests } from "./sim";
-import { createInitialState, migrate, toPersisted, type GameState } from "./state";
+import { createInitialState, migrate, toPersisted, type GameState, type LiftSlot } from "./state";
 import { stepLifts } from "./lifts";
 import { DAY_START_MIN, LIFT_CLOSE_MIN, type Guest } from "./types";
 
@@ -321,17 +322,19 @@ describe("whole days", () => {
       founderId: "elena",
       rand,
     });
-    const lifts = chair
-      ? [
-          ...base.lifts,
-          { type: "chair" as const, anchor: REFERENCE_TOPS[1], confirmed: true, queue: [], dispatchCredit: 0, trail: freshTrail() },
-        ]
-      : base.lifts;
+    const extraLift: LiftSlot | null = chair
+      ? { type: "chair", anchor: REFERENCE_TOPS[1], confirmed: true, queue: [], dispatchCredit: 0 }
+      : null;
+    const lifts = extraLift ? [...base.lifts, extraLift] : base.lifts;
+    const trails = extraLift
+      ? [...base.trails, fallLineTrailForLift(base.lifts.length, extraLift, freshTrail())]
+      : base.trails;
     const s: GameState = {
       ...base,
       dayIndex,
       clockMin: DAY_START_MIN,
       lifts,
+      trails,
       guests: createInitialGuests(arrivals, rand, dayIndex === 6),
       dayStats: { ...emptyDayStats(), arrivals },
       paused: false,
@@ -339,7 +342,8 @@ describe("whole days", () => {
     };
     // Snow lives on the trails; a snowQuality override means an even trail at that quality.
     if (over.snowQuality !== undefined) {
-      s.lifts = s.lifts.map((l) => ({ ...l, trail: freshTrail(0.45, over.snowQuality) }));
+      s.trails = s.trails.map((t) => ({ ...t, snow: freshTrail(0.45, over.snowQuality!) }));
+      s.snowQuality = over.snowQuality;
     }
     return rules.skipToClose(s);
   }

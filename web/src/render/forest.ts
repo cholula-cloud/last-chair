@@ -3,7 +3,7 @@
 import type { LiftLine } from "@/game/descent";
 import { TERRAIN } from "@/game/terrain";
 import { LODGE, LIFT_BASE, ROAD_Z, SITE, WARMING_HUT_POS } from "./layout";
-import { distSqToLiftLine, distSqToPolyline, trailPolyline } from "./trail";
+import { distSqToLiftLine, distSqToPolyline, pathPolyline, trailPolyline } from "./trail";
 
 export type XZ = { x: number; z: number };
 
@@ -38,6 +38,8 @@ type Candidate = { x: number; z: number; keep: number; variant: number; birch: b
 
 export type ForestClearings = {
   lines: readonly LiftLine[];
+  /** Stored trail paths, parallel to `lines` when set. */
+  paths?: readonly (readonly XZ[])[];
 };
 
 function hash32(a: number, b: number, c = 0, d = 0): number {
@@ -147,7 +149,9 @@ export function forested(x: number, z: number, clearings: ForestClearings): bool
   if (inMeadow(x, z)) return false;
   if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
   if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
-  const trails = clearings.lines.map((line) => trailPolyline(line, 28));
+  const trails = clearings.lines.map((line, i) =>
+    clearings.paths?.[i]?.length ? pathPolyline(clearings.paths[i], 28) : trailPolyline(line, 28),
+  );
   const liftSq = LIFT_CLEAR ** 2;
   const trailSq = TRAIL_CLEAR ** 2;
   for (let i = 0; i < clearings.lines.length; i++) {

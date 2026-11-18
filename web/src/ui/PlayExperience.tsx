@@ -7,6 +7,7 @@ import { formatMoney } from "@/game/format";
 import { liveSatisfaction, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
+import { snowCarriers } from "@/game/trails";
 import { useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { MountainScene } from "@/render/MountainScene";
@@ -46,7 +47,7 @@ export default function PlayExperience() {
   const snowDepth = useGameStore((s) => s.snowDepth);
   // "tone|label" of the worst trail segment, as a string so the HUD re-renders only when it changes.
   const snowRead = useGameStore((s) => {
-    const r = readSnow(s.lifts);
+    const r = readSnow(snowCarriers(s.trails));
     return `${r.tone}|${r.label}`;
   });
   const avgQueue = useGameStore((s) => currentWaitMin(s));

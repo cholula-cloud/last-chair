@@ -40,7 +40,7 @@ function idHash(id: string): number {
 }
 
 /** A lift as the guests see it; the array index matches `Guest.liftIndex`. */
-export type GuestLift = { line: LiftLine; type: LiftType };
+export type GuestLift = { line: LiftLine; type: LiftType; path?: readonly import("@/game/terrain").XZ[] };
 
 export function Guests({
   lifts,

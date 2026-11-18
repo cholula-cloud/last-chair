@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
 import { checkPlacement, liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
+import { snowCarriers } from "@/game/trails";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import type { LiftType } from "@/game/types";
@@ -433,6 +434,7 @@ export function MountainScene() {
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   const lifts = useGameStore((s) => s.lifts);
+  const trailRuns = useGameStore((s) => s.trails);
   const placementActive = usePlacementDraft((s) => s.active);
   const draftTop = usePlacementDraft((s) => s.top);
   const draftBottom = usePlacementDraft((s) => s.bottom);
@@ -442,8 +444,8 @@ export function MountainScene() {
   const gunsVisible = useGameStore((s) => s.gunsVisible);
   const gunReach = useGameStore((s) => s.gunReach);
   // Snapped trail snow: changes only when the look does, so the terrain repaints rarely.
-  const trailKey = useGameStore((s) => snowKey(s.lifts));
-  const trails = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
+  const trailKey = useGameStore((s) => snowKey(snowCarriers(s.trails)));
+  const trailSnow = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
   const groomVisible = useGameStore((s) => s.groomVisible);
   // Orbit stays within about a quarter turn either side of the home heading.
   const azimuth = useThree((s) => homeAzimuth(s.size.width / Math.max(1, s.size.height)));
@@ -462,9 +464,13 @@ export function MountainScene() {
   const guestLifts = useMemo(
     () =>
       lifts.length > 0
-        ? lifts.map((l) => ({ line: liftLineOf(l), type: l.type }))
-        : [{ line: primaryLine, type: "surface" as LiftType }],
-    [lifts, primaryLine],
+        ? lifts.map((l, i) => ({
+            line: liftLineOf(l),
+            type: l.type,
+            path: trailRuns[i]?.path,
+          }))
+        : [{ line: primaryLine, type: "surface" as LiftType, path: trailRuns[0]?.path }],
+    [lifts, primaryLine, trailRuns],
   );
   const previewLine = useMemo(
   () =>
@@ -504,7 +510,8 @@ export function MountainScene() {
       <Terrain
         snowQuality={terrainSnow}
         snowDepth={snowDepth}
-        trails={trails}
+        trails={trailSnow}
+        paths={trailRuns.map((t) => t.path)}
         lines={confirmedLifts.map((l) => liftLineOf(l))}
       />
       <Road />
@@ -515,15 +522,16 @@ export function MountainScene() {
         {(gunsVisible || buildings.includes("snow_guns")) && (
           <SnowGuns reach={gunReach} line={primaryLine} />
         )}
-        <Trees lines={clearingLines} />
+        <Trees lines={clearingLines} paths={trailRuns.map((t) => t.path)} />
 
         {confirmedLifts.map((lift, i) => (
           <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
             <TrailRibbon
               kind="built"
               line={liftLineOf(lift)}
+              path={trailRuns[i]?.path}
               groomed={groomVisible}
-              trail={trails[i] ?? trails[0]}
+              trail={trailSnow[i] ?? trailSnow[0]}
             />
             <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} />
           </group>

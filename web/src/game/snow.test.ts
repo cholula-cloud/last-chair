@@ -170,7 +170,7 @@ describe("state integration", () => {
 
   it("the derived globals equal the segment means after a night", () => {
     const s = rules.sleep(atNight(started(), "high", "clear"));
-    const d = deriveSnow(s.lifts);
+    const d = deriveSnow(s.trails.map((t) => ({ confirmed: t.open, trail: t.snow })));
     expect(s.snowQuality).toBeCloseTo(d.snowQuality, 10);
     expect(s.snowDepth).toBeCloseTo(d.snowDepth, 10);
   });
@@ -184,14 +184,17 @@ describe("state integration", () => {
   it("is deterministic", () => {
     const a = rules.sleep(atNight(started(), "mid", "clear"));
     const b = rules.sleep(atNight(started(), "mid", "clear"));
-    expect(a.lifts.map((l) => l.trail)).toEqual(b.lifts.map((l) => l.trail));
+    expect(a.trails.map((t) => t.snow)).toEqual(b.trails.map((t) => t.snow));
   });
 
   it("a day of skiing wears the trail and keeps the globals derived", () => {
     const s0 = started();
     const done = rules.skipToClose({ ...s0, paused: false });
-    expect(done.lifts[0].trail[0].quality).toBeLessThan(s0.lifts[0].trail[0].quality);
-    expect(done.snowQuality).toBeCloseTo(deriveSnow(done.lifts).snowQuality, 10);
+    expect(done.trails[0].snow[0].quality).toBeLessThan(s0.trails[0].snow[0].quality);
+    expect(done.snowQuality).toBeCloseTo(
+      deriveSnow(done.trails.map((t) => ({ confirmed: t.open, trail: t.snow }))).snowQuality,
+      10,
+    );
   });
 
   it("a guest on a worn lift feels that lift's snow", () => {
@@ -220,8 +223,8 @@ describe("state integration", () => {
     for (const l of v4.lifts) delete l.trail;
     delete v4.gunReach;
     const m = migrate(v4, 4);
-    expect(m.lifts[0].trail).toHaveLength(TRAIL_SEGMENTS);
-    expect(m.lifts[0].trail.every((s) => s.quality === 0.4 && s.depth === 0.3)).toBe(true);
+    expect(m.trails[0].snow).toHaveLength(TRAIL_SEGMENTS);
+    expect(m.trails[0].snow.every((s) => s.quality === 0.4 && s.depth === 0.3)).toBe(true);
     expect(m.snowQuality).toBeCloseTo(0.4, 10);
     expect(m.gunReach).toBe(0);
   });

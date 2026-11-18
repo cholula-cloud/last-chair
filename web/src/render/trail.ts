@@ -14,7 +14,98 @@ function trailEnd(line: LiftLine): XZ {
   return { x: line.bottom.x + LODGE_OFFSET.x, z: line.bottom.z + LODGE_OFFSET.z };
 }
 
-/** A gentle S-curve from the lift top (t = 0) to the run-out at the base area (t = 1). */
+function arcLengths(path: readonly XZ[]): { total: number; cum: number[] } {
+  const cum: number[] = [0];
+  for (let i = 1; i < path.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z));
+  }
+  return { total: cum[cum.length - 1], cum };
+}
+
+/** Point at normalized arc length t ∈ [0,1] along a stored trail path. */
+export function pathPoint(path: readonly XZ[], t: number): { x: number; y: number; z: number } {
+  if (path.length === 0) return { x: 0, y: 0, z: 0 };
+  if (path.length === 1) {
+    const p = path[0];
+    return { x: p.x, y: TERRAIN.height(p.x, p.z) + TRAIL_LIFT, z: p.z };
+  }
+  const { total, cum } = arcLengths(path);
+  const target = Math.max(0, Math.min(1, t)) * total;
+  let i = 0;
+  while (i < cum.length - 2 && cum[i + 1] < target) i++;
+  const a = path[i];
+  const b = path[Math.min(i + 1, path.length - 1)];
+  const seg = cum[i + 1] - cum[i] || 1;
+  const u = (target - cum[i]) / seg;
+  const x = a.x + (b.x - a.x) * u;
+  const z = a.z + (b.z - a.z) * u;
+  return { x, y: TERRAIN.height(x, z) + TRAIL_LIFT, z };
+}
+
+/** Path sampled as a polyline (for tree clearing). */
+export function pathPolyline(path: readonly XZ[], n = 24): XZ[] {
+  const pts: XZ[] = [];
+  for (let i = 0; i <= n; i++) {
+    const p = pathPoint(path, i / n);
+    pts.push({ x: p.x, z: p.z });
+  }
+  return pts;
+}
+
+/** Squared distance from a point to a stored path polyline. */
+export function distSqToPath(px: number, pz: number, path: readonly XZ[], n = 40): number {
+  return distSqToPolyline(px, pz, pathPolyline(path, n));
+}
+
+/** For each vertex: trail weight and position along `path`. */
+export function pathInfluence(
+  path: readonly XZ[],
+  positions: ArrayLike<number>,
+  core = 3.0,
+  fade = 6.3,
+  n = 40,
+): TrailInfluence {
+  const pts = pathPolyline(path, n);
+  return trailInfluencePolyline(pts, positions, core, fade, n);
+}
+
+function trailInfluencePolyline(
+  pts: XZ[],
+  positions: ArrayLike<number>,
+  core: number,
+  fade: number,
+  n: number,
+): TrailInfluence {
+  const count = positions.length / 3;
+  const w = new Float32Array(count);
+  const t = new Float32Array(count);
+  for (let v = 0; v < count; v++) {
+    const px = positions[v * 3];
+    const pz = positions[v * 3 + 2];
+    let best = Infinity;
+    let bestT = 0;
+    for (let i = 0; i < n; i++) {
+      const ax = pts[i].x;
+      const az = pts[i].z;
+      const dx = pts[i + 1].x - ax;
+      const dz = pts[i + 1].z - az;
+      const lenSq = dx * dx + dz * dz || 1e-6;
+      const u = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
+      const d = (px - (ax + u * dx)) ** 2 + (pz - (az + u * dz)) ** 2;
+      if (d < best) {
+        best = d;
+        bestT = (i + u) / n;
+      }
+    }
+    const d = Math.sqrt(best);
+    const k = Math.max(0, Math.min(1, (d - core) / (fade - core)));
+    w[v] = 1 - k * k * (3 - 2 * k);
+    t[v] = bestT;
+  }
+  return { w, t };
+}
+
+/** Legacy S-curve from the lift top (t = 0) to the run-out at the base area (t = 1). */
 export function trailPoint(
   t: number,
   line: LiftLine,
@@ -85,34 +176,7 @@ export function trailInfluence(
   fade = 6.3,
   n = 40,
 ): TrailInfluence {
-  const pts = trailPolyline(line, n);
-  const count = positions.length / 3;
-  const w = new Float32Array(count);
-  const t = new Float32Array(count);
-  for (let v = 0; v < count; v++) {
-    const px = positions[v * 3];
-    const pz = positions[v * 3 + 2];
-    let best = Infinity;
-    let bestT = 0;
-    for (let i = 0; i < n; i++) {
-      const ax = pts[i].x;
-      const az = pts[i].z;
-      const dx = pts[i + 1].x - ax;
-      const dz = pts[i + 1].z - az;
-      const lenSq = dx * dx + dz * dz || 1e-6;
-      const u = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
-      const d = (px - (ax + u * dx)) ** 2 + (pz - (az + u * dz)) ** 2;
-      if (d < best) {
-        best = d;
-        bestT = (i + u) / n;
-      }
-    }
-    const d = Math.sqrt(best);
-    const k = Math.max(0, Math.min(1, (d - core) / (fade - core)));
-    w[v] = 1 - k * k * (3 - 2 * k);
-    t[v] = bestT;
-  }
-  return { w, t };
+  return trailInfluencePolyline(trailPolyline(line, n), positions, core, fade, n);
 }
 
 export function sampleSegments(
