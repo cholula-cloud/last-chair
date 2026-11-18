@@ -419,7 +419,9 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
     const legacy = persisted as { buildings?: (BuildingId | "lodge")[] };
     p.lodgeTier ??= fresh.lodgeTier;
     p.lodgeUpgrade ??= null;
-    p.assets ??= placedAssetsFromLegacy(legacy.buildings ?? fresh.buildings);
+    if (fromVersion < 11 || !p.assets) {
+      p.assets = placedAssetsFromLegacy(legacy.buildings ?? fresh.buildings);
+    }
     p.buildings = (legacy.buildings ?? fresh.buildings)
       .filter((id): id is BuildingId => id !== "lodge" && id !== "snow_guns");
     p.dayStats = { ...emptyDayStats(), ...p.dayStats };
@@ -427,7 +429,7 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       ...trail,
       widths: trail.widths ?? trail.path.map(() => STANDARD_BRUSH_WIDTH),
     }));
-    if (!p.guns) {
+    if (fromVersion < 13 || !p.guns) {
       p.guns = legacy.buildings?.includes("snow_guns")
         ? migrateLegacyGuns(p.trails, p.dayIndex ?? 1)
         : [];
