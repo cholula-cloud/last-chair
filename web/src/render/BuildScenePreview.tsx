@@ -65,7 +65,31 @@ function TerrainRing({ at, radius, color, guide = false }: {
 
 export function BuildScenePreview() {
   const active = usePlacementDraft((s) => s.active);
-  return active ? <ActiveBuildScenePreview /> : null;
+  const kind = usePlacementDraft((s) => s.kind);
+  if (!active) return null;
+  return kind === "lift" ? <LiftPreview /> : <ActiveBuildScenePreview />;
+}
+
+/** Selectors only: pointer moves and clock ticks do not recompute the anchor list. */
+function LiftPreview() {
+  const type = usePlacementDraft((s) => s.type);
+  const top = usePlacementDraft((s) => s.top);
+  const bottom = usePlacementDraft((s) => s.bottom) ?? TERRAIN.base;
+  const snapped = usePlacementDraft((s) => s.snapped);
+  const review = usePlacementDraft((s) => s.review);
+  const lifts = useGameStore((s) => s.lifts);
+  const cash = useGameStore((s) => s.cash);
+  const assets = useGameStore((s) => s.assets);
+  const lodgeTier = useGameStore((s) => s.lodgeTier);
+  const talentsOwned = useGameStore((s) => s.talentsOwned);
+  const rules = useMemo(() => ({ lifts, cash, assets, lodgeTier, talentsOwned }),
+    [lifts, cash, assets, lodgeTier, talentsOwned]);
+  const anchors = useMemo(() => review ? [] : LIFT_BUILD_ANCHORS
+    .filter((at) => checkPlacement(rules, type, { bottom, top: at }).ok),
+  [review, rules, type, bottom]);
+  const line = useMemo(() => top ? { top, bottom } : null, [top, bottom]);
+  const readout = useMemo(() => line ? liftReadout(rules, type, line) : null, [line, rules, type]);
+  return <LiftGhost line={line} bottom={bottom} type={type} readout={readout} snapped={snapped} anchors={anchors} />;
 }
 
 function ActiveBuildScenePreview() {
@@ -78,23 +102,9 @@ function ActiveBuildScenePreview() {
   const painted = useMemo(() => draft.kind === "trail" && strokes.length
     ? previewPaintedTrail(state, strokes)
     : null, [draft.kind, state, strokes]);
-  const line = useMemo(() => draft.top ? {
-    top: draft.top, bottom: draft.bottom ?? TERRAIN.base,
-  } : null, [draft.top, draft.bottom]);
   const trailLine = useMemo(() => painted?.path.length ? {
     top: painted.path[0], bottom: painted.path[painted.path.length - 1],
   } : null, [painted]);
-
-  if (draft.kind === "lift") {
-    const bottom = draft.bottom ?? TERRAIN.base;
-    const readout = line ? liftReadout(state, draft.type, line) : null;
-    const anchors = draft.review ? [] : LIFT_BUILD_ANCHORS
-      .filter((top) => checkPlacement(state, draft.type, { bottom, top }).ok);
-    return (
-      <LiftGhost line={line} bottom={bottom} type={draft.type} readout={readout}
-        snapped={draft.snapped} anchors={anchors} />
-    );
-  }
 
   if (draft.kind === "trail") {
     const continuation = painted?.draftEnd;

@@ -194,7 +194,7 @@ function LiftBar() {
           ...buildPaymentFacts(cost),
           { label: "Vertical", value: vertical ?? "0 ft" },
           { label: "Length", value: length ?? "0 ft" },
-          { label: "Capacity", value: `${capacity} skiers/hour` },
+          { label: "Capacity", value: `${capacity} skiers per hour` },
           { label: "Ride time", value: `${ride?.toFixed(1)} min` },
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
           { label: "Opens", value: "After you cut a trail" },
@@ -226,9 +226,9 @@ function LiftBar() {
           <span className={chip}>{ride?.toFixed(1)} min ride</span>
         </div>
       )}
-      {problem && <span className="chip inline-block px-2 py-0.5 text-xs font-extrabold text-barn-deep">{problem}</span>}
+      {problem && <p className="chip block max-w-full px-2 py-0.5 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">{problem}</p>}
       <MoveMapButton resumeLabel="Place lift" />
-      <DraftActions canReview={!!readout} />
+      <DraftActions canReview={!!readout?.ok} />
     </div>
   );
 }

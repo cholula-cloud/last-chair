@@ -3,7 +3,9 @@ import { createBuiltHill } from "@/game/__fixtures__/built-hill";
 import { rulesFor, REFERENCE_TOPS } from "@/game/descent";
 import { pickFounder } from "@/game/rules";
 import { TERRAIN } from "@/game/terrain";
-import { BOTTOM_GRAB_FACTOR, liftBottomAt, liftReadout, liftTopAt, resolveLiftGrab } from "./liftGesture";
+import {
+  BOTTOM_GRAB_FACTOR, liftBottomAt, liftDrag, liftPress, liftReadout, liftTopAt, resolveLiftGrab,
+} from "./liftGesture";
 
 const R = rulesFor(TERRAIN).baseAreaRadius;
 const base = TERRAIN.base;
@@ -15,8 +17,8 @@ describe("resolveLiftGrab", () => {
     expect(resolveLiftGrab({ x: base.x + R * 0.5, z: base.z }, {}, SNAP)).toBe("base-then-top");
   });
 
-  it("drags the top from the current bottom when the press is outside the base", () => {
-    expect(resolveLiftGrab({ x: base.x + R + 3, z: base.z }, {}, SNAP)).toBe("top");
+  it("sets the top from the current bottom when the press is outside the base", () => {
+    expect(resolveLiftGrab({ x: base.x + R + 3, z: base.z }, {}, SNAP)).toBe("new-top");
   });
 
   it("moves the top when the press is within the snap radius of the top terminal", () => {
@@ -68,5 +70,41 @@ describe("liftReadout", () => {
     const bad = liftReadout(state, "surface", { bottom: base, top: { x: base.x + 0.2, z: base.z } });
     expect(bad.ok).toBe(false);
     expect(bad.problem).toBeTruthy();
+  });
+});
+
+describe("liftPress and liftDrag", () => {
+  const anchors = [REFERENCE_TOPS[0]];
+  const top = REFERENCE_TOPS[0];
+
+  it("clears the old top and snap when a base press sets the bottom", () => {
+    const { grab, patch } = liftPress(state, "surface", { top, bottom: base }, { x: base.x + 0.3, z: base.z }, 0.2, anchors);
+    expect(grab).toBe("base-then-top");
+    expect("top" in patch && patch.top === undefined).toBe(true);
+    expect(patch.snapped).toBe(false);
+    expect(patch.bottom).toBeDefined();
+  });
+
+  it("leaves the top untouched on a press at the top terminal", () => {
+    const { grab, patch } = liftPress(state, "surface", { top, bottom: base }, { x: top.x + 0.3, z: top.z }, 1, anchors);
+    expect(grab).toBe("top");
+    expect(patch).not.toHaveProperty("top");
+    expect(patch).not.toHaveProperty("bottom");
+    expect(patch).not.toHaveProperty("snapped");
+  });
+
+  it("applies the grab offset when the finger then moves", () => {
+    const press = { x: top.x + 0.3, z: top.z };
+    const { grab, offset } = liftPress(state, "surface", { top, bottom: base }, press, 1, anchors);
+    const patch = liftDrag(state, "surface", grab, offset, { bottom: base }, press, 1, anchors);
+    expect(patch.top).toEqual(top);
+    expect(patch.snapped).toBe(true);
+  });
+
+  it("sets the top at the press point for a new top", () => {
+    const point = { x: top.x, z: top.z };
+    const { grab, patch } = liftPress(state, "surface", {}, point, 1, anchors);
+    expect(grab).toBe("new-top");
+    expect(patch.top).toEqual(top);
   });
 });

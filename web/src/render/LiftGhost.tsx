@@ -2,7 +2,7 @@
 
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import type { Group } from "three";
 import type { LiftLine } from "@/game/descent";
 import { formatMoney } from "@/game/format";
@@ -26,12 +26,22 @@ const lerpXZ = (from: XZ, to: XZ, k: number): XZ => ({
 });
 const gap = (a: XZ, b: XZ) => Math.hypot(a.x - b.x, a.z - b.z);
 
-function reducedMotion(): boolean {
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
+/** Tracks prefers-reduced-motion in a ref so the frame loop never queries it. */
+function useReducedMotion() {
+  const reduced = useRef(false);
+  useEffect(() => {
+    let query: MediaQueryList;
+    try {
+      query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    } catch {
+      return;
+    }
+    const update = () => { reduced.current = query.matches; };
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  return reduced;
 }
 
 /** A flat ring that sits on the ground at its group's origin. */
@@ -55,9 +65,9 @@ function AnchorDot({ at }: { at: XZ }) {
 }
 
 /**
- * The lift ghost: a true-scale preview whose ends chase the draft on a short spring,
- * anchor dots, terminal pads and a live length and price label. Validation uses the
- * draft values passed in; only the drawing is smoothed.
+ * The lift ghost: a true-scale preview of the draft line, anchor dots, terminal pads and a live
+ * length and price label. The pads and the label chase the draft on a short spring by mutating
+ * group refs; the cable and towers are built from the draft itself, so nothing re-renders per frame.
  */
 export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
   line: LiftLine | null;
@@ -71,10 +81,9 @@ export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
   const bottomGroup = useRef<Group>(null);
   const pulse = useRef<Group>(null);
   const shown = useRef<{ top: XZ | null; bottom: XZ | null }>({ top: null, bottom: null });
-  const committed = useRef<{ top: XZ | null; bottom: XZ | null }>({ top: null, bottom: null });
   const pulseStart = useRef<number | null>(null);
   const target = useRef({ top: line?.top ?? null, bottom });
-  const [display, setDisplay] = useState<LiftLine | null>(null);
+  const reduced = useReducedMotion();
 
   useEffect(() => {
     target.current = { top: line?.top ?? null, bottom };
@@ -82,12 +91,11 @@ export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
 
   const snapKey = snapped && line ? `${line.top.x}/${line.top.z}` : null;
   useEffect(() => {
-    if (snapKey && !reducedMotion()) pulseStart.current = performance.now();
-  }, [snapKey]);
+    if (snapKey && !reduced.current) pulseStart.current = performance.now();
+  }, [snapKey, reduced]);
 
   useFrame((_, dt) => {
-    const calm = reducedMotion();
-    const k = calm ? 1 : 1 - Math.exp(-Math.min(dt, 0.1) / FOLLOW_TAU);
+    const k = reduced.current ? 1 : 1 - Math.exp(-Math.min(dt, 0.1) / FOLLOW_TAU);
     const { top: wantTop, bottom: wantBottom } = target.current;
     const s = shown.current;
     s.bottom = s.bottom ? lerpXZ(s.bottom, wantBottom, k) : wantBottom;
@@ -116,14 +124,6 @@ export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
       }
       pulse.current.scale.setScalar(scale);
     }
-
-    // Rebuild the ghost geometry only when a drawn end has moved.
-    const c = committed.current;
-    const moved = (a: XZ | null, b: XZ | null) => (a === null) !== (b === null) || (a && b && gap(a, b) > 0.01);
-    if (moved(s.top, c.top) || moved(s.bottom, c.bottom)) {
-      committed.current = { top: s.top, bottom: s.bottom };
-      setDisplay(s.top && s.bottom ? { top: s.top, bottom: s.bottom } : null);
-    }
   });
 
   const color = readout && !readout.ok ? PALETTE.invalid : PALETTE.valid;
@@ -132,7 +132,7 @@ export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
   return (
     <>
       {dotAnchors.map((at) => <AnchorDot key={`${at.x}/${at.z}`} at={at} />)}
-      {display && <Lift line={display} type={type} preview previewInvalid={!!readout && !readout.ok} />}
+      {line && <Lift line={line} type={type} preview previewInvalid={!!readout && !readout.ok} />}
       <group ref={bottomGroup} visible={false}>
         <PadRing color={color} />
       </group>
