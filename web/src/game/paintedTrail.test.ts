@@ -44,6 +44,7 @@ describe("trail paint geometry", () => {
     expect(wide.reason).toBeNull();
     expect(wide.path[0]).toEqual(mainLift.anchor);
     expect(wide.path.at(-1)).toEqual(slope.base);
+    expect(wide.draftEnd).toEqual(path.at(-1));
     expect(wide.widths).toHaveLength(wide.path.length);
     expect(wide.acres).toBeCloseTo(narrow.acres * 2);
     expect(wide.cost).toBeGreaterThan(narrow.cost);
@@ -54,6 +55,7 @@ describe("trail paint geometry", () => {
     const draft = previewPaintedTrail(plain, [stroke(meander.slice(0, 3))], slope);
     expect(draft.reason).toBeNull();
     expect(draft.path.at(-1)).toEqual(meander[2]);
+    expect(draft.draftEnd).toEqual(meander[2]);
     expect(draft.lengthFt).toBeGreaterThan(0);
     expect(draft.acres).toBeGreaterThan(0);
   });
@@ -87,6 +89,7 @@ describe("trail paint geometry", () => {
 
     expect(invalid.reason).toMatch(/end of the draft/i);
     expect(invalid.path).toEqual(partial.path);
+    expect(invalid.draftEnd).toEqual(meander[2]);
     expect(invalid.widths).toEqual(partial.widths);
     expect(previewPaintedTrail(plain, [start, recovered], slope).reason).toBeNull();
   });
@@ -191,12 +194,15 @@ describe("trail paint geometry", () => {
 
   it("joins an existing trail at both ends to form a complete independent run", () => {
     const bypass = [p(2, 7), p(6, 10), p(5, 13), p(1.5, 15)];
-    const preview = previewPaintedTrail({ ...plain, trails: [existing()] }, [stroke(bypass)], slope);
+    const glade = { ...existing(), glade: true };
+    const preview = previewPaintedTrail({ ...plain, trails: [glade] }, [stroke(bypass)], slope);
     expect(preview.reason).toBeNull();
     expect(preview.trailIndex).toBeNull();
     expect(preview.liftIndex).toBe(0);
     expect(preview.path[0]).toEqual(mainLift.anchor);
     expect(preview.path.at(-1)).toEqual(slope.base);
+    expect(preview.clearing.path[0]).toEqual(bypass[0]);
+    expect(preview.clearing.path.at(-1)).toEqual(bypass.at(-1));
   });
 
   it("uses the complete draft to distinguish a branch from editing an existing run", () => {

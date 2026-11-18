@@ -2,24 +2,39 @@
 
 import { useEffect, useMemo } from "react";
 import { BufferGeometry, Color, Float32BufferAttribute } from "three";
-import { checkAssetPlacement, checkGunPlacement, checkPlacement } from "@/game/rules";
+import { useShallow } from "zustand/react/shallow";
+import { checkAssetPlacement, checkGunPlacement, checkPlacement, openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
 
 /** A sampled guide: the placement preview remains the final authority. */
 export function BuildGrid() {
-  const draft = usePlacementDraft();
-  const state = useGameStore();
-  const { active, showBuildGrid, kind, type, asset, bottom, top, step } = draft;
-  const { lifts, assets, guns, cash, phase, lodgeTier, trails } = state;
-  const placementKey = JSON.stringify({
-    lifts: lifts.map(({ anchor, bottom, type, confirmed }) => ({ anchor, bottom, type, confirmed })),
-    assets, guns, cash, phase, lodgeTier,
-    trails: trails.map(({ open }) => open),
-  });
+  const { mode, type, asset, bottom, top, step } = usePlacementDraft(useShallow((draft) => {
+    const mode = draft.active
+      ? draft.kind === "trail" ? "overview" : draft.kind
+      : draft.showBuildGrid ? "overview" : null;
+    return {
+      mode,
+      type: mode === "lift" ? draft.type : undefined,
+      asset: mode === "asset" ? draft.asset : undefined,
+      bottom: mode === "lift" && draft.step === "top" ? draft.bottom : undefined,
+      top: mode === "lift" && draft.step === "bottom" ? draft.top : undefined,
+      step: mode === "lift" ? draft.step : undefined,
+    };
+  }));
+  const state = useGameStore(useShallow((state) => mode && mode !== "overview" ? {
+    lifts: state.lifts,
+    trails: state.trails,
+    assets: state.assets,
+    guns: state.guns,
+    cash: state.cash,
+    phase: state.phase,
+    dayIndex: state.dayIndex,
+    lodgeTier: state.lodgeTier,
+  } : null));
   const geometry = useMemo(() => {
-    if (!active && !showBuildGrid) return null;
+    if (!mode) return null;
     const positions: number[] = [];
     const colors: number[] = [];
     const green = new Color("#36a975");
@@ -27,6 +42,7 @@ export function BuildGrid() {
     const neutral = new Color("#d7e5dd");
     const size = TERRAIN.scale.horizontal / 2;
     const { xMin, xMax, zMin, zMax } = TERRAIN.bounds;
+    const canPlaceLift = state && state.phase === "day" && openingStep(state) !== "trail";
     const segment = (ax: number, az: number, bx: number, bz: number, color: Color) => {
       positions.push(ax, TERRAIN.height(ax, az) + 0.07, az, bx, TERRAIN.height(bx, bz) + 0.07, bz);
       colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
@@ -35,12 +51,12 @@ export function BuildGrid() {
       for (let z = zMin; z + size <= zMax; z += size) {
         const at = { x: x + size / 2, z: z + size / 2 };
         let valid: boolean | null = null;
-        if (active && kind === "lift" && (step === "top" || top)) {
-          valid = checkPlacement(state, type, step === "bottom" && top
+        if (state && mode === "lift" && type && (step === "top" || top)) {
+          valid = canPlaceLift && checkPlacement(state, type, step === "bottom" && top
             ? { bottom: at, top }
             : { bottom: bottom ?? TERRAIN.base, top: at }).ok;
-        } else if (active && kind === "asset" && asset) valid = checkAssetPlacement(state, asset, at).ok;
-        else if (active && kind === "gun") valid = checkGunPlacement(state, at).ok;
+        } else if (state && mode === "asset" && asset) valid = checkAssetPlacement(state, asset, at).ok;
+        else if (state && mode === "gun") valid = checkGunPlacement(state, at).ok;
         const color = valid === null ? neutral : valid ? green : red;
         segment(x, z, x + size, z, color);
         segment(x, z, x, z + size, color);
@@ -50,9 +66,7 @@ export function BuildGrid() {
     result.setAttribute("position", new Float32BufferAttribute(positions, 3));
     result.setAttribute("color", new Float32BufferAttribute(colors, 3));
     return result;
-    // The rules depend on these fields, not the clock or moving guests.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, showBuildGrid, kind, type, asset, bottom, top, step, placementKey]);
+  }, [mode, type, asset, bottom, top, step, state]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
   return geometry ? (
     <lineSegments geometry={geometry} renderOrder={1}>

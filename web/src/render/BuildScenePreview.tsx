@@ -105,7 +105,7 @@ function ActiveBuildScenePreview() {
   }
 
   if (draft.kind === "trail") {
-    const continuation = painted?.reason && painted.trailIndex === null ? painted.path.at(-1) : null;
+    const continuation = painted?.draftEnd;
     return (
       <>
         {!draft.review && <SlopeGrid />}

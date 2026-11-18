@@ -1,4 +1,5 @@
 import { ASSET_CATALOG } from "./base";
+import { MOUNTAIN_CALENDARS } from "./calendar";
 import { checkLiftLine, MAX_LIFTS, MAX_LIFT_SLOTS } from "./descent";
 import type { PersistedState } from "./state";
 import { TERRAIN, type XZ } from "./terrain";
@@ -70,7 +71,7 @@ const dayStats = shape({
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
 const fields: Record<keyof PersistedState, Check> = {
-  mountainId: oneOf("dutch_hill"),
+  mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
   dayIndex: (value) => integer(value) && value >= 1,
   clockMin: number,
   phase: oneOf("setup", "day", "night", "winter_review", "mountain2"),

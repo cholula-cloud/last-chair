@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { referencePaint } from "./__fixtures__/built-hill";
+import { isClearedAt } from "./clearing";
 import { REFERENCE_TOPS } from "./descent";
 import { isLiftOperational, stepLifts } from "./lifts";
 import { migrate } from "./migrations";
@@ -94,12 +95,38 @@ describe("Dutch Hill opening", () => {
     const quote = rules.checkPaint(lift, strokes, true);
     expect(quote.reason).toBeNull();
     expect(quote.cleared.newCells).toEqual([]);
+    expect(quote.name).toBe("Glade 1");
     const marked = rules.commitPaint(lift, strokes, true);
-    expect(marked.trails[0].glade).toBe(true);
+    expect(marked.trails[0]).toMatchObject({ glade: true, name: quote.name });
     expect(marked.clearedCells).toEqual(lift.clearedCells);
     expect(marked.cash).toBe(lift.cash - quote.cost);
     expect(migrate(toPersisted(marked), SAVE_VERSION)).toMatchObject({ reset: false, state: { trails: [{ glade: true }] } });
     expect(rules.undoTrail(marked)).toEqual(lift);
+  });
+
+  it("clears a new branch without clearing the glade sections it connects to", () => {
+    const lift = rules.placeLift(lease(), tow);
+    const marked = rules.commitPaint(lift, referencePaint(lift, 0, "green"), true);
+    const [glade] = marked.trails;
+    const pointAt = (fraction: number) => glade.path[Math.floor(glade.path.length * fraction)];
+    const bend = (fraction: number) => {
+      const at = pointAt(fraction);
+      return { x: at.x + 4, z: at.z };
+    };
+    const points = [pointAt(0.3), bend(0.45), bend(0.6), pointAt(0.8)];
+    const built = rules.commitPaint(marked, [{ points, widthFt: 60 }]);
+    const branch = built.trails[1];
+    expect(branch.path[0]).toEqual(glade.path[0]);
+    expect(branch.path.at(-1)).toEqual(glade.path.at(-1));
+    expect(isClearedAt(points[1], new Set(built.clearedCells))).toBe(true);
+    expect(isClearedAt(pointAt(0.1), new Set(built.clearedCells))).toBe(false);
+    expect(isClearedAt(pointAt(0.95), new Set(built.clearedCells))).toBe(false);
+
+    const widened = rules.commitPaint(built, [{ points: points.slice(1, 3), widthFt: 100 }]);
+    expect(widened.clearedCells.length).toBeGreaterThan(built.clearedCells.length);
+    expect(isClearedAt(pointAt(0.1), new Set(widened.clearedCells))).toBe(false);
+    expect(isClearedAt(pointAt(0.95), new Set(widened.clearedCells))).toBe(false);
+    expect(rules.undoTrail(widened)).toEqual(marked);
   });
 
   it("opens a new winter with the same founder and the original undeveloped hill", () => {

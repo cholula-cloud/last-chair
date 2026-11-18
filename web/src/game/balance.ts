@@ -13,10 +13,11 @@ import {
   trailOptions,
 } from "./rules";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
+import { MOUNTAIN_CALENDARS, dayKind } from "./calendar";
 import { trailsOnLift } from "./trails";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
-import { isWeekend, type NightRecap } from "./sim";
+import type { NightRecap } from "./sim";
 import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
@@ -273,7 +274,7 @@ export function runSeason(
     minCash = Math.min(minCash, state.cash + recap.cashDelta);
     days.push({
       day: state.dayIndex,
-      weekend: isWeekend(state.dayIndex),
+      weekend: dayKind(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) === "weekend",
       fare,
       snow,
       hasChair: chair,

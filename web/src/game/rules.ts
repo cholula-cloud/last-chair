@@ -1,4 +1,4 @@
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek } from "./calendar";
+import { MOUNTAIN_CALENDARS, usesWeekendGuestMix } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   ASSET_CATALOG,
@@ -12,7 +12,7 @@ import {
   terminalOverlapsBuilding,
   type AssetId,
 } from "./base";
-import { clearingQuote, trailExposure, type ClearingCell } from "./clearing";
+import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST } from "./guns";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
@@ -180,6 +180,7 @@ export function openNight(state: GameState): GameState {
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0);
   const pendingBeat = readyStoryBeat({
+    calendar: MOUNTAIN_CALENDARS[state.mountainId],
     dayIndex: state.dayIndex,
     liftsOpen: openLifts,
     completedRuns: state.dayStats.completedRuns,
@@ -578,16 +579,22 @@ export function closeLift(state: GameState, index: number): GameState {
 
 export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false) {
   const preview = previewPaintedTrail(state, strokes);
-  const isGlade = preview.trailIndex == null ? glade : !!state.trails[preview.trailIndex]?.glade;
-  const cleared = isGlade || preview.path.length < 2 || preview.deleteTrail
+  const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
+  const isGlade = original ? !!original.glade : glade;
+  const name = original?.name ?? `${isGlade ? "Glade" : "Painted trail"} ${state.trails.length + 1}`;
+  const { path, widths, previousWidths } = preview.clearing;
+  const excludedCells = previousWidths && !isGlade && !preview.deleteTrail
+    ? [...state.clearedCells, ...clearingCells(path, previousWidths)]
+    : state.clearedCells;
+  const cleared = isGlade || path.length < 2 || preview.deleteTrail
     ? { newCells: [], acres: 0, cost: 0 }
-    : clearingQuote(preview.path, preview.widths, clearedLand(state));
+    : clearingQuote(path, widths, excludedCells);
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
   const reason = preview.reason ?? (state.phase !== "day" ? "Build during the day."
     : state.cash < cost ? "Not enough cash." : null);
-  return { ...preview, cost, reason, cleared, glade: isGlade };
+  return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
 export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false): GameState {
@@ -600,7 +607,7 @@ export function commitPaint(state: GameState, strokes: readonly PaintStroke[], g
   const trail: TrailRun = {
     liftIndex: preview.liftIndex,
     ...(preview.glade ? { glade: true } : {}),
-    name: original?.name ?? `${preview.glade ? "Glade" : "Painted trail"} ${state.trails.length + 1}`,
+    name: preview.name,
     path: preview.deleteTrail && original ? original.path : preview.path,
     widths: preview.deleteTrail ? original?.widths : preview.widths,
     lengthFt: preview.deleteTrail && original ? original.lengthFt : preview.lengthFt,
@@ -710,7 +717,9 @@ export function undoTrail(state: GameState): GameState {
   };
 }
 
-export function checkAssetPlacement(state: GameState, id: AssetId, at: XZ) {
+type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "cash">;
+
+export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, "assets">, id: AssetId, at: XZ) {
   if (state.phase !== "day") return { ok: false as const, reason: "Build during the day." };
   if (openingStep(state)) return { ok: false as const, reason: "Build a lift and trail first." };
   if (id === "snow_guns") return { ok: false as const, reason: "Place snow guns from the Snow section." };
@@ -748,7 +757,7 @@ export function beginLodgeUpgrade(state: GameState): GameState {
   return { ...state, cash: state.cash - cost, lodgeUpgrade: { toTier: tier, nightsRemaining: 2 } };
 }
 
-export function checkGunPlacement(state: GameState, at: XZ) {
+export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
   const point = roundXZ(at);
   const reason = state.phase !== "day" ? "Build during the day."
     : openingStep(state) ? "Build a lift and trail first."
@@ -772,8 +781,10 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
   if (!FOUNDERS.some((f) => f.id === id)) return state;
   const rng = createRng(state.rngState);
   const rand = () => rng.next();
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const arrivals = planArrivals({
-    dayIndex: 1,
+    calendar,
+    dayIndex: state.dayIndex,
     fare: state.fare,
     snowQuality: state.snowQuality,
     weather: state.weather,
@@ -788,7 +799,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     morningHeadline: `${state.morningHeadline} ${morningWeatherHeadline(state.weather)}`,
     phase: "day",
     paused: true,
-    guests: createInitialGuests(arrivals, rand, false),
+    guests: createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, state.dayIndex)),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(state.lifts),
     talentToast: null,
@@ -891,6 +902,7 @@ export function expectedArrivals(
   const outlook = outlookFor(state, 1);
   const results = forecastResults(state, snow);
   const arrivals = (weather: WeatherKind) => meanArrivals({
+    calendar: MOUNTAIN_CALENDARS[state.mountainId],
     dayIndex: state.dayIndex + 1,
     fare,
     snowQuality: results[weather].overnight.snowQuality,
@@ -973,7 +985,9 @@ export function sleep(state: GameState): GameState {
   // Roll next-day arrivals at sleep (fare and weather apply).
   const rng = createRng(state.rngState);
   const rand = () => rng.next();
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const arrivals = planArrivals({
+    calendar,
     dayIndex: nextDay,
     fare: state.pendingFare,
     snowQuality: overnight.snowQuality,
@@ -996,7 +1010,7 @@ export function sleep(state: GameState): GameState {
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,
-    guests: createInitialGuests(arrivals, rand, dayKind(DUTCH_HILL_CALENDAR, nextDay) !== "weekday" || inHolidayWeek(DUTCH_HILL_CALENDAR, nextDay)),
+    guests: createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, nextDay)),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(carried.lifts),
     rngState: rng.state(),

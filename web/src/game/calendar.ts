@@ -12,20 +12,36 @@ export const DUTCH_HILL_CALENDAR: CalendarDef = {
   holidayWeeks: [{ from: 20, to: 28, label: "February vacation week" }],
 };
 
+export const MOUNTAIN_CALENDARS = { dutch_hill: DUTCH_HILL_CALENDAR };
+export type MountainId = keyof typeof MOUNTAIN_CALENDARS;
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function weekdayIndex(cal: CalendarDef, day: number): number {
+  return (cal.startWeekday + day - 1) % WEEKDAYS.length;
+}
+
+export function weekdayForDay(cal: CalendarDef, day: number) {
+  return WEEKDAYS[weekdayIndex(cal, day)] ?? WEEKDAYS[0];
+}
+
 export function dayKind(cal: CalendarDef, day: number): "weekday" | "weekend" | "holiday" {
   if (cal.holidays.some((holiday) => holiday.day === day)) return "holiday";
-  return (cal.startWeekday + day - 1) % 7 >= 5 ? "weekend" : "weekday";
+  return weekdayIndex(cal, day) >= 5 ? "weekend" : "weekday";
 }
 
 export function inHolidayWeek(cal: CalendarDef, day: number): boolean {
   return cal.holidayWeeks.some(({ from, to }) => day >= from && day <= to);
 }
 
-export function dayLabel(cal: CalendarDef, day: number): { weekday: string; date: string; note?: string } {
+export function usesWeekendGuestMix(cal: CalendarDef, day: number): boolean {
+  return dayKind(cal, day) !== "weekday" || inHolidayWeek(cal, day);
+}
+
+export function dayLabel(cal: CalendarDef, day: number): { weekday: typeof WEEKDAYS[number]; date: string; note?: string } {
   const date = new Date(Date.UTC(2026, cal.startDate.month - 1, cal.startDate.day + day - 1));
-  const weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][(cal.startWeekday + day - 1) % 7];
-  const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][date.getUTCMonth()];
   const note = cal.holidays.find((holiday) => holiday.day === day)?.label ??
     cal.holidayWeeks.find(({ from, to }) => day >= from && day <= to)?.label;
-  return { weekday, date: `${date.getUTCDate()} ${month}`, ...(note ? { note } : {}) };
+  return { weekday: weekdayForDay(cal, day), date: `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`, ...(note ? { note } : {}) };
 }

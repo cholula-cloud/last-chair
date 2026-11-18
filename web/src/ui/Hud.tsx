@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useRef, type ReactNode } from "react";
-import { DUTCH_HILL_CALENDAR, dayLabel } from "@/game/calendar";
+import { MOUNTAIN_CALENDARS, dayLabel, type MountainId } from "@/game/calendar";
 import { formatMoney } from "@/game/format";
-import { formatClock, weekdayLabel } from "@/game/sim";
+import { formatClock } from "@/game/sim";
 import type { WeatherKind } from "@/game/types";
 import {
   BuildIcon,
   CloseIcon,
+  FlagIcon,
   GuestsIcon,
   HomeIcon,
   MoodIcon,
@@ -28,6 +29,7 @@ import { useSpeed } from "@/ui/speed";
 
 /** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
 export function TopBar({
+  mountainId,
   dayIndex,
   seasonLength,
   clockMin,
@@ -37,6 +39,7 @@ export function TopBar({
   openingBlocked = false,
   onTogglePause,
 }: {
+  mountainId: MountainId;
   dayIndex: number;
   seasonLength: number;
   clockMin: number;
@@ -48,6 +51,7 @@ export function TopBar({
 }) {
   const speed = useSpeed((s) => s.speed);
   const cycleSpeed = useSpeed((s) => s.cycle);
+  const { weekday, date, note } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
   return (
     <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
       <button
@@ -67,7 +71,14 @@ export function TopBar({
             Day {dayIndex}/{seasonLength}
           </span>
           <span className="text-[0.75rem] font-bold text-ink-soft">
-            {weekdayLabel(dayIndex)} <span className="hidden min-[380px]:inline">{dayLabel(DUTCH_HILL_CALENDAR, dayIndex).date}</span>{dayLabel(DUTCH_HILL_CALENDAR, dayIndex).note && <span> · Holiday</span>}
+            {weekday} <span className="hidden whitespace-nowrap min-[380px]:inline">{date}</span>
+            {note && (
+              <span className="ml-1 inline-flex items-center gap-0.5 align-middle" title={note}>
+                <FlagIcon size={12} />
+                <span aria-hidden="true">Holiday</span>
+                <span className="sr-only">{note}</span>
+              </span>
+            )}
           </span>
         </div>
         <ClockText text={formatClock(clockMin)} />

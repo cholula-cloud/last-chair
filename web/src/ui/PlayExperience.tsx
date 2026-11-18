@@ -42,6 +42,7 @@ export default function PlayExperience() {
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
   const clockMin = useGameStore((s) => s.clockMin);
@@ -193,6 +194,7 @@ export default function PlayExperience() {
       <header data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
         <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
           <TopBar
+            mountainId={mountainId}
             dayIndex={dayIndex}
             seasonLength={seasonLength}
             clockMin={clockMin}

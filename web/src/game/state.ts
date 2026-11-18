@@ -1,4 +1,5 @@
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
+import { MOUNTAIN_CALENDARS, type MountainId } from "./calendar";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
@@ -8,7 +9,7 @@ import type { LiftAnchor } from "./descent";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY } from "./snow";
 import type { TrailRun } from "./trails";
-import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, type NightRecap } from "./sim";
+import { DAY_START_MIN, emptyDayStats, type NightRecap } from "./sim";
 import type {
   BuildingId,
   DayStats,
@@ -61,7 +62,7 @@ export type LastDay = {
 
 /** Everything that is saved between sessions. */
 export type PersistedState = {
-  mountainId: "dutch_hill";
+  mountainId: MountainId;
   dayIndex: number;
   clockMin: number;
   phase: GamePhase;
@@ -123,10 +124,12 @@ export const DEFAULT_SEED = 1;
 export const OPENING_HEADLINE = "Dutch Hill has a lodge. Build a lift and paint a trail to open.";
 
 export function createInitialState(seed: number = DEFAULT_SEED): GameState {
+  const mountainId = "dutch_hill";
+  const seasonLength = MOUNTAIN_CALENDARS[mountainId].length;
   const seasonSeed = mix32(seed);
-  const weatherDays = generateSeasonWeather(seasonSeed, SEASON_LENGTH);
+  const weatherDays = generateSeasonWeather(seasonSeed, seasonLength);
   return {
-    mountainId: "dutch_hill",
+    mountainId,
     dayIndex: 1,
     clockMin: DAY_START_MIN,
     phase: "setup",
@@ -167,7 +170,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     reputation: 40,
     gunsVisible: false,
     groomVisible: false,
-    seasonLength: SEASON_LENGTH,
+    seasonLength,
     talentToast: null,
     rngState: seed >>> 0,
   };
