@@ -1,25 +1,21 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
 import { previewPaintedTrail } from "@/game/paintedTrail";
 import { checkAssetPlacement, checkGunPlacement, checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
-import type { TrailDifficulty } from "@/game/types";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { liftReadout } from "@/ui/liftGesture";
+import { BrushCursor } from "./BrushCursor";
 import { LiftGhost } from "./LiftGhost";
+import { DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
 import { PALETTE } from "./palette";
 import { SlopeGrid } from "./SlopeGrid";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
-
-const DIFFICULTY_COLOR: Record<TrailDifficulty, string> = {
-  green: "#197641",
-  blue: "#195dc4",
-  black: "#28263e",
-};
 
 function TerrainRing({ at, radius, color, guide = false }: {
   at: XZ;
@@ -67,7 +63,7 @@ export function BuildScenePreview() {
   const active = usePlacementDraft((s) => s.active);
   const kind = usePlacementDraft((s) => s.kind);
   if (!active) return null;
-  return kind === "lift" ? <LiftPreview /> : <ActiveBuildScenePreview />;
+  return kind === "lift" ? <LiftPreview /> : kind === "trail" ? <TrailPreview /> : <SitePreview />;
 }
 
 /** Selectors only: pointer moves and clock ticks do not recompute the anchor list. */
@@ -92,50 +88,57 @@ function LiftPreview() {
   return <LiftGhost line={line} bottom={bottom} type={type} readout={readout} snapped={snapped} anchors={anchors} />;
 }
 
-function ActiveBuildScenePreview() {
+/**
+ * The painted trail and its guides. Selectors are narrow, so a clock tick or a pointer move that
+ * adds no stroke point does not rebuild the ribbon.
+ */
+function TrailPreview() {
+  const { strokes, activeStroke, review, erasing, moveCamera, showSteepness } = usePlacementDraft(useShallow((s) => ({
+    strokes: s.strokes,
+    activeStroke: s.activeStroke,
+    review: s.review,
+    erasing: s.erasing,
+    moveCamera: s.moveCamera,
+    showSteepness: s.showSteepness,
+  })));
+  const lifts = useGameStore((s) => s.lifts);
+  const trails = useGameStore((s) => s.trails);
+  const all = useMemo(
+    () => activeStroke ? [...strokes, activeStroke] : strokes,
+    [strokes, activeStroke],
+  );
+  const painted = useMemo(
+    () => all.length ? previewPaintedTrail({ lifts, trails }, all) : null,
+    [lifts, trails, all],
+  );
+  const continuation = painted?.draftEnd;
+  const color = painted ? ribbonColor(painted.difficulty, !painted.reason) : DIFFICULTY_COLOR.green;
+  return (
+    <>
+      {!review && showSteepness && <SlopeGrid />}
+      {!review && !erasing && (
+        <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
+      )}
+      {!review && !activeStroke && !all.length && lifts
+        .filter((lift) => lift.confirmed)
+        .map(({ anchor }) => (
+          <TerrainRing guide key={`${anchor.x}/${anchor.z}`} at={anchor} radius={0.65} color={DIFFICULTY_COLOR.green} />
+        ))}
+      {painted && painted.path.length > 1 && (
+        <TrailRibbon path={painted.path} widths={painted.widths} color={color}
+          problemSegments={painted.problemSegments} />
+      )}
+      {continuation && !review && !activeStroke && !erasing && !moveCamera && (
+        <TerrainRing guide at={continuation} radius={0.4} color={PALETTE.marker} />
+      )}
+      <BrushCursor />
+    </>
+  );
+}
+
+function SitePreview() {
   const draft = usePlacementDraft();
   const state = useGameStore();
-  const strokes = useMemo(
-    () => draft.activeStroke ? [...draft.strokes, draft.activeStroke] : draft.strokes,
-    [draft.strokes, draft.activeStroke],
-  );
-  const painted = useMemo(() => draft.kind === "trail" && strokes.length
-    ? previewPaintedTrail(state, strokes)
-    : null, [draft.kind, state, strokes]);
-  const trailLine = useMemo(() => painted?.path.length ? {
-    top: painted.path[0], bottom: painted.path[painted.path.length - 1],
-  } : null, [painted]);
-
-  if (draft.kind === "trail") {
-    const continuation = painted?.draftEnd;
-    return (
-      <>
-        {!draft.review && <SlopeGrid />}
-        {!draft.review && !draft.erasing && (
-          <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
-        )}
-        {!draft.review && !draft.activeStroke && !strokes.length && state.lifts
-          .filter((lift) => lift.confirmed)
-          .map(({ anchor }) => (
-            <TerrainRing guide key={`${anchor.x}/${anchor.z}`} at={anchor} radius={0.65} color={DIFFICULTY_COLOR.green} />
-          ))}
-        {painted && trailLine && painted.path.length > 1 && (
-          <TrailRibbon line={trailLine} valid={!painted.reason}
-            path={painted.path} widths={painted.widths}
-            color={DIFFICULTY_COLOR[painted.difficulty]} problemSegments={painted.problemSegments}
-          />
-        )}
-        {continuation && !draft.review && !draft.activeStroke && !draft.erasing && (
-          <TerrainRing guide at={continuation} radius={0.4} color={PALETTE.marker} />
-        )}
-        {draft.tapPoint && !draft.review && !draft.moveCamera && (
-          <TerrainRing at={draft.tapPoint} radius={draft.brushWidth / (2 * TERRAIN.horizontalFeetPerUnit)}
-            color={draft.erasing ? PALETTE.invalid : PALETTE.white} />
-        )}
-      </>
-    );
-  }
-
   if (!draft.tapPoint) return null;
   const check = draft.kind === "gun"
     ? checkGunPlacement(state, draft.tapPoint)

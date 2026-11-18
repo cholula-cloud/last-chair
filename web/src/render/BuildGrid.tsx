@@ -11,9 +11,9 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 /** A sampled guide: the placement preview remains the final authority. */
 export function BuildGrid() {
   const { mode, asset } = usePlacementDraft(useShallow((draft) => {
-    // Lift mode shows anchor dots and the ghost instead of a grid.
+    // Lift mode shows anchor dots and the ghost instead of a grid. Trail mode keeps the map quiet.
     const mode = draft.active
-      ? draft.kind === "trail" ? "overview" : draft.kind === "lift" ? null : draft.kind
+      ? draft.kind === "trail" || draft.kind === "lift" ? null : draft.kind
       : draft.showBuildGrid ? "overview" : null;
     return { mode, asset: mode === "asset" ? draft.asset : undefined };
   }));

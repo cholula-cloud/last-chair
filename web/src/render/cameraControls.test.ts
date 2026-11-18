@@ -14,8 +14,12 @@ import {
   classifyPointer,
   clampTarget,
   hardLimitOnAxis,
+  elevationOf,
   insideArea,
   marchToTerrain,
+  PAINT_ELEVATION,
+  paintTiltElevation,
+  withElevation,
   type PointerEv,
 } from "./cameraControls";
 
@@ -138,5 +142,37 @@ describe("marchToTerrain", () => {
   });
   it("returns null for a ray that never reaches the ground", () => {
     expect(marchToTerrain({ x: 0, y: 5, z: 0 }, { x: 1, y: 0.1, z: 0 }, flat, 20)).toBeNull();
+  });
+});
+
+describe("paint tilt", () => {
+  const target = { x: 2, y: 1, z: -3 };
+  const position = { x: 12, y: 9, z: 7 };
+
+  it("measures the elevation above the horizon", () => {
+    expect(elevationOf({ x: 0, y: 0, z: 0 }, { x: 10, y: 10, z: 0 })).toBeCloseTo(Math.PI / 4, 6);
+    expect(elevationOf(target, target)).toBe(0);
+  });
+
+  it("raises the camera to a new elevation and keeps its distance and heading", () => {
+    const next = withElevation(target, position, 1.2);
+    const dist = (p: typeof position) => Math.hypot(p.x - target.x, p.y - target.y, p.z - target.z);
+    expect(dist(next)).toBeCloseTo(dist(position), 6);
+    expect(elevationOf(target, next)).toBeCloseTo(1.2, 6);
+    expect(Math.atan2(next.x - target.x, next.z - target.z)).toBeCloseTo(Math.atan2(position.x - target.x, position.z - target.z), 6);
+  });
+
+  it("restores the original view by applying the saved elevation", () => {
+    const saved = elevationOf(target, position);
+    const back = withElevation(target, withElevation(target, position, PAINT_ELEVATION), saved);
+    expect(back.x).toBeCloseTo(position.x, 6);
+    expect(back.y).toBeCloseTo(position.y, 6);
+    expect(back.z).toBeCloseTo(position.z, 6);
+  });
+
+  it("only tilts a camera that is lower than the paint elevation", () => {
+    expect(paintTiltElevation(0.6)).toBe(PAINT_ELEVATION);
+    expect(paintTiltElevation(PAINT_ELEVATION)).toBeNull();
+    expect(paintTiltElevation(1.25)).toBeNull();
   });
 });

@@ -39,9 +39,12 @@ import {
   TARGET_Y_MAX,
   classifyPointer,
   clampTarget,
+  elevationOf,
   exceedsTapSlop,
   insideArea,
   marchToTerrain,
+  paintTiltElevation,
+  withElevation,
   type PointerEv,
   type TapRecord,
 } from "./cameraControls";
@@ -58,6 +61,7 @@ import { sceneCameraTarget } from "./sceneCamera";
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
 import { useCameraKeys } from "./useCameraKeys";
+import { useReducedMotion } from "./useReducedMotion";
 
 /** Tilt (elevation above the horizon) and orbit limits, and the closest zoom. */
 const MIN_ELEVATION = 0.35;
@@ -305,6 +309,42 @@ function CameraRig({
       framed.distance,
     );
   }, [placementFocus, controls, aspect, glideTo]);
+
+  // Paint mode tilts the camera toward top-down through the same glide the focus requests use,
+  // and the previous tilt comes back when paint mode closes.
+  const painting = usePlacementDraft((s) => s.active && s.kind === "trail");
+  const savedElevation = useRef<number | null>(null);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (!controls) return;
+    const cam = get().camera;
+    const tiltTo = (elevation: number) => {
+      const position = withElevation(controls.target, cam.position, elevation);
+      if (reduced.current) {
+        glide.current = null;
+        cam.position.set(position.x, position.y, position.z);
+        controls.update();
+      } else {
+        glideFrames.current = 0;
+        glide.current = {
+          target: controls.target.clone(),
+          position: new THREE.Vector3(position.x, position.y, position.z),
+        };
+      }
+    };
+    if (painting) {
+      const current = elevationOf(controls.target, cam.position);
+      const goal = paintTiltElevation(current);
+      if (goal === null) return;
+      savedElevation.current = current;
+      userMoved.current = true;
+      tiltTo(goal);
+    } else if (savedElevation.current !== null) {
+      const back = savedElevation.current;
+      savedElevation.current = null;
+      tiltTo(back);
+    }
+  }, [painting, controls, get, reduced]);
 
   // Re-home on first mount and on a portrait/landscape flip; for a resize
   // within a mode, only while the user has not moved the camera.

@@ -345,6 +345,16 @@ body {
       transform: translateY(-8px);
     }
   }
+  /* Trail panel swap: the compact bar and the full panel rise in. Transform and opacity only. */
+  .trail-bar-in {
+    transition:
+      opacity 160ms var(--ease-out),
+      transform 160ms var(--ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
   .callout-in {
     transform-origin: 1.75rem top;
     transition:
@@ -421,6 +431,7 @@ body {
     opacity: 0;
   }
   .note-in,
+  .trail-bar-in,
   .callout-in,
   .arrive,
   .pop {
