@@ -167,6 +167,11 @@ export function isPortraitAspect(aspect: number) {
   return framingAspect(aspect) < PORTRAIT_ASPECT;
 }
 
+/** The home view's azimuth for this aspect (cheap: no framing solve). */
+export function homeAzimuth(aspect: number) {
+  return framingAspect(aspect) < PORTRAIT_ASPECT ? PORTRAIT.azimuth : LANDSCAPE.azimuth;
+}
+
 export function homeView(aspect: number) {
   const framedAspect = framingAspect(aspect);
   const params = framedAspect < PORTRAIT_ASPECT ? PORTRAIT : LANDSCAPE;

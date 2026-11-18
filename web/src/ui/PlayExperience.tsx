@@ -2,7 +2,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "@/game/format";
 import { liveSatisfaction } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
@@ -13,10 +13,13 @@ import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { GuestsSheet } from "@/ui/GuestsSheet";
+import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
   ConditionsBoard,
   MorningNote,
+  RecenterButton,
+  ResumeFollowChip,
   StartCallout,
   TopBar,
 } from "@/ui/Hud";
@@ -49,6 +52,11 @@ export default function PlayExperience() {
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
   const togglePause = useGameStore((s) => s.togglePause);
+  const setFollowId = useGameStore((s) => s.setFollowId);
+  const resumeFollowId = useCameraUi((s) => s.resumeFollowId);
+  const canResume = useGameStore(
+    (s) => !!resumeFollowId && !s.followId && s.guests.some((g) => g.id === resumeFollowId && isOnHill(g)),
+  );
   const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
@@ -88,11 +96,33 @@ export default function PlayExperience() {
   }, [talentToast]);
 
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
+  const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
+  const noteExpanded = noteExpandedDay === dayIndex;
+  const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
+  const actionBarWrapRef = useRef<HTMLDivElement>(null);
 
   const notStarted =
     phase === "day" && paused && dayIndex === 1 && clockMin <= DAY_START_MIN;
   const showStartHint = hydrated && notStarted;
   const showNote = phase === "day" && noteDismissedDay !== dayIndex;
+
+  // Auto-dismiss only while the hill day clock is running (not paused, not before first play).
+  useEffect(() => {
+    if (!showNote || paused || notStarted) return;
+    const t = window.setTimeout(() => setNoteDismissedDay(dayIndex), 6000);
+    return () => window.clearTimeout(t);
+  }, [showNote, dayIndex, paused, notStarted]);
+
+  useEffect(() => {
+    if (!menuConfirmOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      const wrap = actionBarWrapRef.current;
+      if (wrap && e.target instanceof Node && wrap.contains(e.target)) return;
+      setMenuConfirmOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointer);
+    return () => window.removeEventListener("pointerdown", onPointer);
+  }, [menuConfirmOpen]);
 
   return (
     <div className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink">
@@ -120,7 +150,10 @@ export default function PlayExperience() {
             cash={cash}
             paused={paused}
             notStarted={notStarted}
-            onTogglePause={togglePause}
+            onTogglePause={() => {
+              setNoteDismissedDay(dayIndex);
+              togglePause();
+            }}
           />
           {showStartHint && <StartCallout />}
         </div>
@@ -134,6 +167,8 @@ export default function PlayExperience() {
                 ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
                 : null
             }
+            expanded={noteExpanded}
+            onExpand={() => setNoteExpandedDay(dayIndex)}
             onDismiss={() => setNoteDismissedDay(dayIndex)}
           />
         )}
@@ -151,12 +186,25 @@ export default function PlayExperience() {
               anyOnHill={anyOnHill}
             />
           </div>
-          <div className="w-full sm:max-w-[400px]">
+          <div ref={actionBarWrapRef} className="relative w-full sm:max-w-[400px]">
+            <div className="pointer-events-auto absolute right-0 bottom-full mb-2 flex items-center gap-2">
+              {canResume && (
+                <ResumeFollowChip
+                  onClick={() => {
+                    setFollowId(resumeFollowId);
+                    useCameraUi.setState({ resumeFollowId: null });
+                  }}
+                />
+              )}
+              <RecenterButton onClick={requestRecenter} />
+            </div>
             <ActionBar
               buildActive={buildMode}
               onBuild={() => setBuildOpen(true)}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
+              confirmMenu={menuConfirmOpen}
+              onConfirmMenuChange={setMenuConfirmOpen}
             />
           </div>
         </div>

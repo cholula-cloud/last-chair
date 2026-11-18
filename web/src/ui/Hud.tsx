@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { formatMoney } from "@/game/format";
 import { formatClock, weekdayLabel } from "@/game/sim";
 import type { WeatherKind } from "@/game/types";
@@ -15,6 +15,7 @@ import {
   PauseIcon,
   PlayIcon,
   QueueIcon,
+  RecenterIcon,
   SnowIcon,
   SnowfallIcon,
   SunIcon,
@@ -101,33 +102,42 @@ export function MorningNote({
   headline,
   crewLine,
   overnightLine,
+  expanded,
   onDismiss,
+  onExpand,
 }: {
   weather: WeatherKind;
   headline: string;
   crewLine: string | null;
   /** What last night's Snow & service cost ("Overnight: High snow & service, −$350"), if anything. */
   overnightLine?: string | null;
+  expanded?: boolean;
   onDismiss: () => void;
+  onExpand?: () => void;
 }) {
   const w = WEATHER[weather];
   return (
     <aside
       aria-label="Morning note"
-      className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-start gap-2.5 py-2 pl-2.5 pr-2"
+      className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-center gap-2 py-1 pl-2 pr-1.5 [--lift:3px]"
     >
-      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink">
+      <button
+        type="button"
+        onClick={onExpand}
+        aria-label="Show full morning note"
+        className="flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
+      >
         {w.icon}
-      </span>
-      <div className="min-w-0 flex-1 py-0.5">
-        <p className="text-[0.88rem] font-bold leading-snug">
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className={`text-[0.8rem] font-bold leading-snug ${expanded ? "" : "line-clamp-2"}`}>
           <span className="font-extrabold">{w.label}.</span> {headline}
         </p>
         {overnightLine && (
-          <p className="mt-0.5 text-[0.82rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
+          <p className="mt-0.5 truncate text-[0.74rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
         )}
         {crewLine && (
-          <p className="mt-0.5 text-[0.88rem] font-extrabold text-sign-green">{crewLine}</p>
+          <p className="mt-0.5 truncate text-[0.8rem] font-extrabold text-sign-green">{crewLine}</p>
         )}
       </div>
       <button
@@ -292,30 +302,108 @@ function BarButton({
   );
 }
 
-/** Thumb-zone action row: Home, Build, Guests, and the barn-red Close hill. */
+/** Round on-map button that glides the camera back to the home view. */
+export function RecenterButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Recenter the view"
+      className="key press pointer-events-auto flex size-12 shrink-0 items-center justify-center !rounded-full [--lift:4px]"
+    >
+      <RecenterIcon size={22} />
+    </button>
+  );
+}
+
+/** Shown after a pan drag ended follow; restores it. */
+export function ResumeFollowChip({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="chip press pointer-events-auto flex h-11 items-center px-4 text-[0.85rem] font-extrabold"
+    >
+      Resume follow
+    </button>
+  );
+}
+
+/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and the barn-red Close hill. */
 export function ActionBar({
   buildActive,
   onBuild,
   onGuests,
   onCloseHill,
+  confirmMenu = false,
+  onConfirmMenuChange,
 }: {
   buildActive: boolean;
   onBuild: () => void;
   onGuests: () => void;
   onCloseHill: () => void;
+  confirmMenu?: boolean;
+  onConfirmMenuChange?: (open: boolean) => void;
 }) {
+  const menuRef = useRef<HTMLButtonElement>(null);
+  const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
+  useEffect(() => {
+    if (!confirmMenu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenu(false);
+        menuRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setMenu is stable for this effect
+  }, [confirmMenu]);
   return (
     <nav
       aria-label="Hill actions"
-      className="pointer-events-auto flex w-full gap-2"
+      className="pointer-events-auto relative flex w-full gap-2"
     >
-      <Link
-        href="/"
+      {confirmMenu && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Leave the hill?"
+          className="panel absolute bottom-full left-0 mb-3 flex w-full flex-col gap-2 p-3"
+        >
+          <p className="text-[0.88rem] font-bold leading-snug">Leave the hill and go to the menu?</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              autoFocus
+              onClick={() => {
+                setMenu(false);
+                menuRef.current?.focus();
+              }}
+              className="key press h-11 flex-1 text-[0.9rem] font-extrabold [--lift:3px]"
+            >
+              Stay
+            </button>
+            <Link
+              href="/"
+              className="key key-solid press flex h-11 flex-1 items-center justify-center text-[0.9rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
+            >
+              Leave
+            </Link>
+          </div>
+        </div>
+      )}
+      <button
+        ref={menuRef}
+        type="button"
+        onClick={() => setMenu(!confirmMenu)}
+        aria-expanded={confirmMenu}
+        aria-haspopup="dialog"
         className="key press flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 text-[0.8rem] font-extrabold [--lift:4px]"
       >
         <HomeIcon size={20} />
-        Home
-      </Link>
+        Menu
+      </button>
       <BarButton
         icon={<BuildIcon />}
         label="Build"
