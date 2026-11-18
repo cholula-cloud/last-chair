@@ -217,6 +217,216 @@
         5.46
       ],
       "recolorMaterials": []
+    },
+    {
+      "name": "lodge-tier-2",
+      "file": "lodge-tier-2.glb",
+      "tris": 2800,
+      "sizeBytes": 26164,
+      "heightMeters": 13.96,
+      "footprintMeters": [
+        21.37,
+        20.2
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "lodge-tier-3",
+      "file": "lodge-tier-3.glb",
+      "tris": 3384,
+      "sizeBytes": 29280,
+      "heightMeters": 15.25,
+      "footprintMeters": [
+        22.1,
+        20.2
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "a-frame-lodge",
+      "file": "a-frame-lodge.glb",
+      "tris": 764,
+      "sizeBytes": 13484,
+      "heightMeters": 12.36,
+      "footprintMeters": [
+        16.89,
+        15.8
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "ticket-booth",
+      "file": "ticket-booth.glb",
+      "tris": 268,
+      "sizeBytes": 10776,
+      "heightMeters": 3.93,
+      "footprintMeters": [
+        4.75,
+        3.84
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "patrol-hut",
+      "file": "patrol-hut.glb",
+      "tris": 524,
+      "sizeBytes": 13348,
+      "heightMeters": 6.42,
+      "footprintMeters": [
+        8.2,
+        6.29
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "maintenance-garage",
+      "file": "maintenance-garage.glb",
+      "tris": 748,
+      "sizeBytes": 14516,
+      "heightMeters": 8.09,
+      "footprintMeters": [
+        15.1,
+        9.65
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "birch",
+      "file": "birch.glb",
+      "tris": 292,
+      "sizeBytes": 6440,
+      "heightMeters": 7.2,
+      "footprintMeters": [
+        3.67,
+        3.35
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "sedan",
+      "file": "sedan.glb",
+      "tris": 364,
+      "sizeBytes": 9068,
+      "heightMeters": 1.51,
+      "footprintMeters": [
+        1.87,
+        4.72
+      ],
+      "recolorMaterials": [
+        "paint"
+      ]
+    },
+    {
+      "name": "wagon",
+      "file": "wagon.glb",
+      "tris": 388,
+      "sizeBytes": 9224,
+      "heightMeters": 1.61,
+      "footprintMeters": [
+        1.92,
+        4.92
+      ],
+      "recolorMaterials": [
+        "paint"
+      ]
+    },
+    {
+      "name": "pickup",
+      "file": "pickup.glb",
+      "tris": 420,
+      "sizeBytes": 9336,
+      "heightMeters": 1.83,
+      "footprintMeters": [
+        2.02,
+        5.36
+      ],
+      "recolorMaterials": [
+        "paint"
+      ]
+    },
+    {
+      "name": "sign-post",
+      "file": "sign-post.glb",
+      "tris": 90,
+      "sizeBytes": 4400,
+      "heightMeters": 2.53,
+      "footprintMeters": [
+        0.94,
+        0.11
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "area-sign",
+      "file": "area-sign.glb",
+      "tris": 244,
+      "sizeBytes": 6148,
+      "heightMeters": 2.61,
+      "footprintMeters": [
+        2.7,
+        0.3
+      ],
+      "recolorMaterials": []
+    },
+    {
+      "name": "skier-kid",
+      "file": "skier-kid.glb",
+      "tris": 314,
+      "sizeBytes": 10316,
+      "heightMeters": 1.3,
+      "footprintMeters": [
+        0.54,
+        1.16
+      ],
+      "recolorMaterials": [
+        "jacket",
+        "helmet"
+      ]
+    },
+    {
+      "name": "skier-coat",
+      "file": "skier-coat.glb",
+      "tris": 442,
+      "sizeBytes": 13244,
+      "heightMeters": 1.95,
+      "footprintMeters": [
+        0.87,
+        1.76
+      ],
+      "recolorMaterials": [
+        "jacket",
+        "helmet"
+      ]
+    },
+    {
+      "name": "boarder",
+      "file": "boarder.glb",
+      "tris": 322,
+      "sizeBytes": 10148,
+      "heightMeters": 1.94,
+      "footprintMeters": [
+        1.8,
+        0.5
+      ],
+      "recolorMaterials": [
+        "jacket",
+        "helmet"
+      ]
+    },
+    {
+      "name": "boarder-kid",
+      "file": "boarder-kid.glb",
+      "tris": 322,
+      "sizeBytes": 10204,
+      "heightMeters": 1.41,
+      "footprintMeters": [
+        1.4,
+        0.38
+      ],
+      "recolorMaterials": [
+        "jacket",
+        "helmet"
+      ]
     }
   ]
 }
