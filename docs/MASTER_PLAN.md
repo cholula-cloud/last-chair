@@ -38,7 +38,7 @@ A winter is **28 days** (14 today; row 19 moves it) and ends in a **winter revie
 ### Design pillars
 
 1. **Fun first, depth optional.** The default path is satisfying in 10 minutes. Ledgers exist for players who want them.
-2. **Build with your hands.** Trails are painted, lifts are dragged, the mountain answers immediately with cost, difficulty and what the change opens up. (New in v2.0, from the ICR review in §4.)
+2. **Build with your hands.** Trails are painted with a brush you drag down the hill and resize, lifts are dragged, the mountain answers immediately with cost, difficulty and what the change opens up. (New in v2.0, from the ICR review in §4.)
 3. **See it, fix it.** Queues, snow and moods are visible on the mountain; follow any guest.
 4. **Crew handles the boring stuff.** You build and set fare plus snow & service; the overnight crew runs operations and learns talents in a fixed order.
 5. **Pause anytime.** Planning is half the game.
@@ -151,7 +151,7 @@ Read from the App Store screenshots and three trailer videos:
 |---|---|---|
 | Mountain shape | Dutch Hill read as a valley: the flanks stood higher than the lift line and a trough ran under the lift ("the indent") | A convex mountain: the lift runs up a crest and the ground falls away on both sides. Row 13d |
 | Scale on screen | The hill fills part of the screen; the village and road take a lot of it | The mountain fills the portrait screen at default zoom, with room for six to ten trails. Row B1 |
-| Trails | Cut by tapping a top point and choosing a route | Painted with a finger through the trees; brush width; live difficulty colour from sustained pitch; cost and acres while painting; Review to confirm. Row B2 |
+| Trails | Cut by tapping a top point and choosing a route | A brush: drag one finger from a lift top down through the trees and the trail follows your line, as wide as the brush. A size control under the thumb (Narrow, Standard, Wide, Boulevard) sets the brush; a ring under your finger shows its width. Paint over a trail to widen it, erase to narrow it. Live difficulty colour, acres and cost while you paint; undo per stroke; Review to confirm. Row B2 |
 | Lifts | Two taps (bottom, top) with snapping | Drag the top terminal; snap to anchor points; ghost line; live cost, vertical and capacity. Row B3 |
 | Build feedback | Valid or invalid | A "what this changes" card before every confirm: cost, acres, vertical, which guests can now ski it, effect on queues. Row B4 |
 | Clearing | Trees are scenery | Trees are the thing you cut; cutting costs money and changes snow (shade, wind). Row B5 |
@@ -291,7 +291,7 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 13d | ☑ | Hill shape (#50) | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
 | 13e | ☐ | Trail corridor shards | Fix the jagged dark triangles in cut trail corridors |
 | B1 | ☐ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
-| B2 | ☐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |
+| B2 | ☐ | Brush trails | Drag a resizable brush down the hill to paint a trail; overpaint to widen, erase to narrow; live difficulty colour, acres and cost; undo; Review to confirm. Splits: B2a sim (trail from a stroke with per-point width), B2b brush UI and size control, B2c review card, widen and erase. Spec: handoff "Row B2" |
 | B3 | ☐ | Drag lifts | Drag the top terminal with live snapping to anchor points; ghost line; live cost, vertical and capacity |
 | B4 | ☐ | Build impact card | Before every confirm: cost, acres, vertical, which skill levels can ski it, expected queue change. Numbers from the sim |
 | B5 | ☐ | Trees as a resource | Cutting costs per acre; clearings change snow (shade, wind) |

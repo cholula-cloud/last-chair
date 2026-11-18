@@ -1,6 +1,6 @@
 # Last Chair roadmap handoff: next PRs and M2 to M7
 
-> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review) and M8 Rival Mode; they have no section here yet, so write one before building each.
+> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review) and M8 Rival Mode. Row B2 (brush trails) has a section below; the others have none yet, so write one before building each.
 
 Written 2026-11-17 for handoff to Cursor. This file specifies every PR after world scale 2b, from the rest of M2 through M7. It is the companion to `docs/Last Chair World Scale 2b Handoff and Full Plan.md`, which records the current state and fully specifies PR 2b. `docs/MASTER_PLAN.md` stays the authority for what the game is; where this file and MASTER_PLAN disagree on a number or an order, MASTER_PLAN wins until someone changes it in a PR.
 
@@ -651,6 +651,65 @@ Freehand trail drawing, glades, grooming per trail (17), lift choice by skill (1
 3. `REF_SNOW_H` normalised by the Ridge top or the summit. Recommended: Ridge for M2 (keeps calibration); summit with PR 18's weather model.
 
 ---
+
+## Row B2: brush trails
+
+Added 2026-11-18 with MASTER_PLAN v2.0. Owner direction: a trail is painted like a brush stroke you drag down the hill, and the brush size is adjustable.
+
+### Goal
+
+Replace "tap a top, pick a route" with a brush. The player drags one finger from a lift top down through the trees; the trail follows the finger and is as wide as the brush. A size control changes the brush.
+
+### Depends on
+
+13d (convex hill), B1 (bigger mountain, so strokes have room). Lift placement (12a to 12c) and the trail graph (13a to 13c) stay as they are underneath.
+
+### Player-visible result
+
+- **Build → Trails → Paint.** A brush ring appears under the finger, sized to the current brush.
+- **Size control** in the thumb zone: four labelled stops, Narrow, Standard, Wide, Boulevard (proposed 30, 60, 100, 150 ft). Each is a 44 px key with its width in feet. The ring and the next stroke use the selected size.
+- **Painting:** one finger paints, two fingers pan, zoom and orbit. The stroke must start on a lift top or an existing trail. While painting, the corridor fills in, coloured by difficulty (green, blue, black, double black) from sustained pitch along the centreline; a ticker shows length, vertical, acres and cost.
+- **Problems show in red on the stroke:** a section that runs uphill, crosses a lift line, or is too steep for any guest. The stroke can still be painted; Review will not confirm it until fixed.
+- **Widen and narrow:** painting over an existing trail with a larger brush widens that stretch; an Erase toggle removes paint (narrows or deletes) before confirm.
+- **Undo and redo** per stroke. **Review** opens a card: name, difficulty, length, vertical, acres, cost, which guest types can ski it. **Cut trail** confirms; trees in the corridor fall.
+
+### Design
+
+- **Data:** a trail is a centreline `path: XZ[]` plus `widths: number[]` (design feet, one per path point). Existing trails migrate with a uniform Standard width.
+- **Stroke to trail (pure, `game/`):** sample the finger's terrain hits, simplify (Ramer–Douglas–Peucker, tolerance proposed 0.05 design units), resample at a fixed spacing, attach the brush width to each point. Overpaint merges by taking the max width per resampled point within the brush radius; erase reduces it, and points under a minimum width end the trail there.
+- **Rules (pure):** valid when it starts at a lift top or joins a trail, ends at the base or joins a trail, never climbs more than the existing uphill tolerance, does not cross a lift line, and has a sustained pitch some persona can ski. Difficulty is `sustainedPitch` on the centreline, unchanged.
+- **Costs:** clearing cost = acres × price per acre (proposed); grooming and snowmaking costs scale with acres; crowding uses skiers per acre. Numbers go in SIMULATION_SPEC as "proposed" until tuned in the harness.
+- **Render:** the corridor ribbon reads `widths[]`; trees inside the corridor are culled at confirm (not while painting, so the player sees the forest they are cutting). Preview corridor is semi-transparent with the difficulty colour.
+
+### Splits
+
+| PR | Scope | Size |
+|---|---|---|
+| B2a | `game/`: `widths[]` on trails, save migration, stroke-to-trail, overpaint and erase merge, validation, acres and cost. Unit tests only, no UI | ~300 lines |
+| B2b | Brush UI: stroke capture on terrain, ring cursor, size control, live coloured preview, ticker, undo and redo | ~350 lines |
+| B2c | Review card, Cut trail confirm, tree culling by width, Erase toggle | ~250 lines |
+
+### Tests
+
+Stroke simplification keeps endpoints and stays within tolerance; overpaint never narrows; erase below the minimum splits or ends a trail; a stroke that climbs or crosses a lift fails with the right reason; acres scale with width; migrated saves get Standard width and an unchanged season snapshot except where width now drives cost (diff explained line by line).
+
+### Verification
+
+`npm run check`; `npm run phone-check` at 390x844 with a scripted stroke; on a real iPhone, paint a Standard trail from the Ridge top to base in under 30 seconds and widen its top half with Wide.
+
+### Acceptance criteria
+
+A new player paints a trail and changes the brush size without instructions. One finger always paints and two fingers always move the camera while in Paint. Every number on the Review card comes from the sim.
+
+### Out of scope
+
+Glades (B5), variable width inside one stroke by pressure, trail names chosen by the player, terrain parks.
+
+### Open decisions
+
+1. Brush sizes: four fixed stops (recommended) or a continuous slider.
+2. Pinch to resize the brush while painting: no (recommended; pinch stays camera zoom).
+3. Price per acre: set in B2a from the balance harness.
 
 ## PR 14: multi-lift choice
 
