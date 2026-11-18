@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { formatMoney } from "@/game/format";
 import { trailOptions, undoableTrailIndex } from "@/game/rules";
 import { useGameStore } from "@/game/store";
@@ -18,11 +19,16 @@ export function TrailsPanel() {
   const state = useGameStore((s) => s);
   const undoIdx = undoableTrailIndex(state);
 
+  useEffect(() => () => setTrailPreview(null), []);
+
   const openLifts = lifts
     .map((l, i) => ({ lift: l, index: i }))
     .filter(({ lift }) => lift.confirmed);
 
   if (openLifts.length === 0) return null;
+
+  const hoverPreview =
+    typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
   return (
     <div className="panel px-3.5 pb-4 pt-3.5 short:col-span-2">
@@ -60,14 +66,19 @@ export function TrailsPanel() {
                           disabled={need > 0}
                           className="key press flex w-full min-h-[52px] items-center gap-2 px-2.5 py-2 text-left"
                           onPointerEnter={() => {
+                            if (!hoverPreview) return;
                             setTrailPreview(opt.path);
                             requestFocus([lift.anchor, opt.path[0] ?? lift.anchor]);
                           }}
-                          onPointerLeave={() => setTrailPreview(null)}
-                          onClick={() => {
+                          onPointerLeave={() => {
+                            if (!hoverPreview) return;
                             setTrailPreview(null);
+                          }}
+                          onClick={() => {
+                            setTrailPreview(opt.path);
                             requestFocus(opt.path);
                             cutTrail(liftIndex, oi);
+                            setTrailPreview(null);
                           }}
                         >
                           <DifficultyIcon difficulty={opt.difficulty} size={16} />
