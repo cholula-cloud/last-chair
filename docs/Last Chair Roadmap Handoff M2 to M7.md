@@ -1,6 +1,6 @@
 # Last Chair roadmap handoff: next PRs and M2 to M7
 
-> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review) and M8 Rival Mode. Row B2 (brush trails) has a section below; the others have none yet, so write one before building each.
+> **2026-11-18:** `docs/MASTER_PLAN.md` is now the game plan and design doc (story, modes, build experience, roadmap, how we work). This file is its per-PR spec appendix: open the section for a row before building it. MASTER_PLAN v2.0 added rows 13d, 13e and B1 to B5 to M2 (the builder rows from the ICR review). v2.1 adds the fixed lodge (L1), splits row 16 into 16a to 16d, adds M4b (styles S1 to S3, activities A1 to A5) and turns M8 Rival Mode into Capitalist Mode (rows 41 to 48). Row B2 (brush trails) has a section below; the others have none yet, so write one before building each.
 
 Written 2026-11-17 for handoff to Cursor. This file specifies every PR after world scale 2b, from the rest of M2 through M7. It is the companion to `docs/Last Chair World Scale 2b Handoff and Full Plan.md`, which records the current state and fully specifies PR 2b. `docs/MASTER_PLAN.md` stays the authority for what the game is; where this file and MASTER_PLAN disagree on a number or an order, MASTER_PLAN wins until someone changes it in a PR.
 
@@ -838,6 +838,8 @@ About 150 lines.
 ---
 
 ## PR 16: village venues
+
+> **Superseded 2026-11-18.** MASTER_PLAN v2.1 replaces this row with 16a asset catalog, 16b lodge tiers, 16c free venue placement and attach, and 16d venues with guest reasons. The lodge is now a fixed HQ whose tiers raise the ticket cap and gate what can be built; it no longer adds seats (§3 of the plan). Rewrite this section as four sections, and add one for L1, before building any of them. The text below is the old design and is kept only for its guest-state and revenue detail.
 
 ### Goal
 The warming hut, lodge and café give guests somewhere to refuel and to sit out a long line, and village spending becomes real revenue.
