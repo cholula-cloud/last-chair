@@ -3,8 +3,8 @@ PALETTE["sage-green"] = ("#7d9a82", 0.85)
 def snow_strip(a, c, s, bevel=0.05):
     a.box(c, s, "snow", bevel=bevel)
 
-def b_lodge():
-    a = Asset("base-lodge")
+def b_lodge(name="base-lodge", extra=None):
+    a = Asset(name)
     W, D, H = 12.0, 9.0, 6.4      # walls x, y, eave height
     F = 0.7                        # foundation height
     a.box((0, 0, F / 2), (W + 0.3, D + 0.3, F), "stone-grey")
@@ -96,6 +96,8 @@ def b_lodge():
     # snow drifts at base corners
     a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
     a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
+    if extra:
+        extra(a, W, D, H, F)
     return a.finish()
 
 def b_house():

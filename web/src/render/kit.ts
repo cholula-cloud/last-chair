@@ -44,13 +44,33 @@ export const KIT_ASSETS = [
   "pine-a",
   "pine-b",
   "pine-c",
+  // Kit v1.1: loaded on demand (not preloaded) until a renderer uses them.
+  "lodge-tier-2",
+  "lodge-tier-3",
+  "a-frame-lodge",
+  "ticket-booth",
+  "patrol-hut",
+  "maintenance-garage",
+  "birch",
+  "sedan",
+  "wagon",
+  "pickup",
+  "sign-post",
+  "area-sign",
+  "skier-kid",
+  "skier-coat",
+  "boarder",
+  "boarder-kid",
 ] as const;
 export type KitAsset = (typeof KIT_ASSETS)[number];
+
+/** Assets fetched at startup; the rest load when first used. */
+const PRELOAD_COUNT = KIT_ASSETS.indexOf("lodge-tier-2");
 
 const url = (name: KitAsset) => `${BASE}/models/${name}.glb`;
 
 if (typeof window !== "undefined") {
-  for (const a of KIT_ASSETS) useGLTF.preload(url(a), DRACO_PATH);
+  for (const a of KIT_ASSETS.slice(0, PRELOAD_COUNT)) useGLTF.preload(url(a), DRACO_PATH);
 }
 
 /** Loaded kit asset scene (suspends while loading). */
