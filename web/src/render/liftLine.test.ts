@@ -3,9 +3,23 @@ import { REFERENCE_TOPS } from "@/game/descent";
 import { liftLineOf } from "@/game/rules";
 import { starterLifts } from "@/game/__fixtures__/built-hill";
 import { TERRAIN } from "@/game/terrain";
-import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
+import { DAY_START_MIN, MS_PER_GAME_MINUTE } from "@/game/types";
+import { scaledTickMs, type GameSpeed } from "@/ui/speed";
+import { cableHeightAt, carrierLoopPhase, liftFrame, liftTowers } from "./liftLine";
 
 const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
+
+it("takes one ride to reach the summit and runs at the selected clock speed", () => {
+  const rideMin = 5;
+  expect(carrierLoopPhase(DAY_START_MIN + rideMin, rideMin)).toBe(0.5);
+  expect(carrierLoopPhase(DAY_START_MIN + 2 * rideMin, rideMin)).toBe(0);
+  const phase = (speed: GameSpeed) => {
+    const minutes = scaledTickMs(0.05, speed) / MS_PER_GAME_MINUTE;
+    return carrierLoopPhase(DAY_START_MIN + minutes, rideMin);
+  };
+  expect(phase(2)).toBeCloseTo(2 * phase(1));
+  expect(phase(3)).toBeCloseTo(3 * phase(1));
+});
 
 describe("lift cable clearance", () => {
   it("keeps at least 0.5 u above terrain along each span", () => {

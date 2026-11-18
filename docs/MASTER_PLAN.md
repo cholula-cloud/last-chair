@@ -420,6 +420,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 25 | ☑ | Save recovery | Validate M3 saves and recover unreadable progress. The M3 opening clears M2 saves and backups. |
 | — | ☑ | Lodge-only opening | The player's first paid lift and ski trail open Dutch Hill. |
 | — | ☑ | Trail planning and signs | Resume a draft across brush strokes, move the map before finishing, use the downhill grid, and read difficulty at each built trail entrance. |
+| — | ☑ | Placement and base polish | Move the camera without losing a placement. Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. |
 | 18 | ☐ | Weather model | Seeded forecast; storms; thaw runs; wind holds |
 | 19 | ☐ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |

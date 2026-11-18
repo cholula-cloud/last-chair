@@ -3,12 +3,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Guest } from "@/game/types";
-import { lodgeParkingLots, type LodgeTier } from "@/game/base";
+import type { LodgeTier } from "@/game/base";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { merge, type Part } from "./geo";
 import { SITE } from "./layout";
-import { expandedStallCenters, type StallSlot } from "./parking";
+import type { StallSlot } from "./parking";
+import { buildParkingSurface } from "./parkingSurface";
 import { PALETTE } from "./palette";
 import { useStallMap } from "./useStallMap";
 
@@ -51,30 +52,7 @@ function spotsFromGuests(guests: Guest[], map: Map<string, StallSlot>): CarSpot[
 }
 
 function GravelLot({ tier }: { tier: LodgeTier }) {
-  const geometry = useMemo(() => {
-    const lots = lodgeParkingLots(tier, SITE);
-    const first = lots[0];
-    const last = lots[lots.length - 1];
-    const left = first.center.x - first.size.w / 2;
-    const right = last.center.x + last.size.w / 2;
-    const x = (left + right) / 2;
-    const z = first.center.z;
-    const parts: Part[] = [{
-      geo: new THREE.PlaneGeometry(right - left + 0.55, first.size.d + 1.15),
-      pos: [x, TERRAIN.height(x, z) + 0.022, z],
-      rot: [-Math.PI / 2, 0, 0],
-      color: PALETTE.earth,
-    }];
-    for (const { x, z } of expandedStallCenters(SITE, tier)) {
-      parts.push({
-        geo: new THREE.PlaneGeometry(0.22, 0.025),
-        pos: [x, TERRAIN.height(x, z) + 0.03, z + (z > SITE.arrival.center.z ? 0.32 : -0.32)],
-        rot: [-Math.PI / 2, 0, 0],
-        color: PALETTE.snowOld,
-      });
-    }
-    return merge(parts);
-  }, [tier]);
+  const geometry = useMemo(() => buildParkingSurface(SITE, tier), [tier]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry} receiveShadow>

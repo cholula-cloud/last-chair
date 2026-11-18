@@ -165,6 +165,25 @@ async function drag(page, cdp, locations) {
   }
 }
 
+async function moveDraftMap(page, cdp, anchor, resumeLabel) {
+  await click(page, "Move map");
+  const [before] = await waitForFraming(page, [anchor]);
+  const center = { x: viewport.width / 2, y: viewport.height * 0.43 };
+  if (cdp) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  } else {
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + 32, center.y, { steps: 4 });
+    await page.mouse.up();
+  }
+  const [after] = await waitForFraming(page, [anchor]);
+  assert(Math.hypot(after.x - before.x, after.y - before.y) > 3, "Move map should pan the saved draft");
+  await click(page, resumeLabel);
+}
+
 async function paintTrail(page, cdp, top, resume = false) {
   await buildMenu(page);
   await click(page, /Paint a trail/i);
@@ -176,23 +195,7 @@ async function paintTrail(page, cdp, top, resume = false) {
   if (resume) {
     assert(await page.getByText("Downhill slope", { exact: true }).isVisible());
     await drag(page, cdp, locations.slice(0, 3));
-    const end = locations[2];
-    await click(page, "Move map");
-    const [before] = await waitForFraming(page, [end]);
-    const center = { x: viewport.width / 2, y: viewport.height * 0.43 };
-    if (cdp) {
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });
-      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    } else {
-      await page.mouse.move(center.x, center.y);
-      await page.mouse.down();
-      await page.mouse.move(center.x + 32, center.y, { steps: 4 });
-      await page.mouse.up();
-    }
-    const [after] = await waitForFraming(page, [end]);
-    assert(Math.hypot(after.x - before.x, after.y - before.y) > 3, "Move map should pan the saved draft");
-    await click(page, "Paint");
+    await moveDraftMap(page, cdp, locations[2], "Paint");
     await drag(page, cdp, locations.slice(2));
     await click(page, "Undo");
     await click(page, "Redo");
@@ -214,7 +217,9 @@ async function opening(page, cdp, engine) {
   await buildMenu(page);
   await click(page, "Place lift");
   await page.locator('[data-placement-kind="lift"]').waitFor();
-  await drag(page, cdp, [world(REFERENCE_TOPS[0].x, REFERENCE_TOPS[0].z)]);
+  const ridge = world(REFERENCE_TOPS[0].x, REFERENCE_TOPS[0].z);
+  await drag(page, cdp, [ridge]);
+  await moveDraftMap(page, cdp, ridge, "Place lift");
   await confirmDraft(page, "lift", /^Place for /);
   const withLift = (await save(page)).state;
   assert.equal(withLift.lifts.length, initial.lifts.length + 1, "The lift needs to be saved");
@@ -292,7 +297,9 @@ async function upgrade(page, cdp, engine) {
   assert(await rentals.isEnabled(), "Tier 2 should unlock Rentals");
   await press(rentals);
   await page.locator('[data-placement-kind="asset"]').waitFor();
-  await drag(page, cdp, [world(11.5, 15.5)]);
+  const rentalSite = world(11.5, 15.5);
+  await drag(page, cdp, [rentalSite]);
+  await moveDraftMap(page, cdp, rentalSite, "Place");
   await confirmDraft(page, "asset", "Build here");
   state = (await save(page)).state;
   assert(state.assets.some((asset) => asset.id === "rentals"), "Tier 2 rentals need to be placed");
