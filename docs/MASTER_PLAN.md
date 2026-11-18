@@ -287,8 +287,8 @@ Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow
 | 12-pre | ☑ | Camera, scale, playability (parts 1 to 3, 2b to 2d) | Free camera, Dutch Hill at 6×/3×, tiered forest, arrival lot |
 | 12 | ☑ | Free lift placement (12a to 12c) | Tap bottom and top on terrain; valid/invalid preview; snapping |
 | 13 | ☑ | Trail graph (13a to 13c) | Trails from lift top to base; sustained pitch; guests choose by skill; snow by elevation |
-| — | ☑ | Render fix (#48) | Scene blank on every browser since #39; restored |
-| 13d | ◐ | Hill shape | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
+| — | ☑ | Render fix (#48), trail ribbon folds (#49) | Scene blank on every browser since #39; restored |
+| 13d | ☑ | Hill shape (#50) | Dutch Hill becomes a convex mountain: lift on the crest, flanks fall away, no trough under the lift |
 | 13e | ☐ | Trail corridor shards | Fix the jagged dark triangles in cut trail corridors |
 | B1 | ☐ | Bigger mountain | The mountain fills the portrait screen at default zoom; room for six to ten trails; forest density to match; camera limits retuned |
 | B2 | ☐ | Paint trails | Finger-paint a trail through the trees; brush width; live difficulty colour; cost and acres while painting; undo; Review to confirm. Likely splits: B2a sim (trail from a painted polyline), B2b paint UI |

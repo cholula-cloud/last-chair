@@ -38,7 +38,7 @@ From camera part 3 (#39) until this fix, `/play/` drew the HUD and ran the sim b
 
 ### Next roadmap work
 
-Per MASTER_PLAN v2.0 §8: 13d hill shape (in flight), 13e trail corridor shards, then builder rows B1 to B4, then rows **14–17**, B5, M2 gate.
+Per MASTER_PLAN v2.0 §8: 13d hill shape merged (#50); 13e trail corridor shards, then builder rows B1 to B4, then rows **14–17**, B5, M2 gate.
 
 ## Recommended build order
 
