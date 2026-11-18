@@ -143,7 +143,7 @@ From manual emphasis + community tone (Reddit thread timed out; Steam reviews pa
 
 ## 6. ICR full surface (reference over time)
 
-**Not** Last Chair v1 acceptance — that is the roadmap in [MASTER_PLAN.md](../MASTER_PLAN.md#6-roadmap). Use this list as a **long-horizon mechanics bibliography** when extending toward ICR depth:
+**Not** Last Chair v1 acceptance — that is the roadmap in [MASTER_PLAN.md](../MASTER_PLAN.md#8-roadmap). Use this list as a **long-horizon mechanics bibliography** when extending toward ICR depth:
 
 - [ ] Real-time day + overnight resolution
 - [ ] Lift build preview (terminals, line, quote)
@@ -177,7 +177,7 @@ We **do not** copy assets, code, audio, or trademarked names. We **do** replicat
 - Individually simulated skiers imply **entity component** or agent loop on terrain nav mesh / heightfield.
 - Heavy UI + pause suggests **simulation thread** or fixed tick with UI on React/Vue/similar for web.
 
-**Last Chair stack:** see [MASTER_PLAN.md §4](../MASTER_PLAN.md#4-how-it-is-built).
+**Last Chair stack:** see [MASTER_PLAN.md §6](../MASTER_PLAN.md#6-how-it-is-built).
 
 ---
 

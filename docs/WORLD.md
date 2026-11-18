@@ -278,7 +278,7 @@ Terrain archetype tags (for sim): `southern_thaw`, `family_ropetow`, `exposed_su
 
 ### Implementation order
 
-Ship **Dutch Hill only** through the MVP (M3 in [MASTER_PLAN](./MASTER_PLAN.md#6-roadmap)); Tenney and caretaker follow in M5. Update the roster table when locking elevation, lift type, and opening scenario per peak.
+Ship **Dutch Hill only** through the MVP (M3 in [MASTER_PLAN](./MASTER_PLAN.md#8-roadmap)); Tenney and caretaker follow in M5. Update the roster table when locking elevation, lift type, and opening scenario per peak.
 
 ---
 

@@ -223,7 +223,7 @@ A `TerrainDef` is written in design units. `createTerrain(def, scale = def.scale
 
 ### Trail graph (P0)
 
-Each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. Segment `elevations[]` are derived from terrain height along each path (normalised to the Ridge top). P1: glade flag and more choice rules (PR 14).
+Each open lift has up to three named runs (paths stored on `TrailRun`); guests pick by skill at unload; the Build sheet cuts new routes. Segment `elevations[]` are derived from terrain height along each path (normalised to the Ridge top). P1: glade flag and more choice rules (PR 14). **B2 (brush trails, spec):** a trail becomes a painted centreline with a width per point (`widths[]`, design feet). Width sets acres cleared (clearing cost per acre), grooming and snowmaking cost (scale with acres) and crowding (skiers per acre on a busy day). Difficulty stays sustained pitch along the centreline. Save version bumps when it lands.
 
 ---
 
