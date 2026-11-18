@@ -12,8 +12,8 @@ import { LIFT_COST_PARAMS, liftCost, type LiftType } from "./types";
 const MID = REFERENCE_TOPS[1];
 const started = (cash = 20000): GameState => ({ ...rules.pickFounder(createInitialState(7), "elena"), cash });
 const chairReq = { type: "chair" as const, bottom: TERRAIN.base, top: MID };
-/** A top far from Ridge and Mid that the terrain rules accept from the base. */
-const FAR_TOP = TERRAIN.toWorld({ x: 1.6, z: 0.4 });
+/** A top on the crest between Ridge and Mid (at least the spacing from each) that the terrain rules accept from the base. */
+const FAR_TOP = TERRAIN.toWorld({ x: -0.3, z: 0.2 });
 const baseLine = (top: { x: number; z: number }): LiftLine => ({ bottom: TERRAIN.base, top });
 
 describe("liftCost", () => {

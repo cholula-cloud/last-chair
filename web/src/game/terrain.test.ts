@@ -70,6 +70,50 @@ describe("Dutch Hill silhouette", () => {
     }
   });
 
+  describe("convex across the slope: the lift line runs up a crest", () => {
+    const H = TERRAIN.scale.horizontal;
+    const base = DUTCH_HILL.base;
+    const summit = DUTCH_HILL.summit;
+    const apronZ = DUTCH_HILL.apron!.z;
+    /** Height at design x, design distance d uphill from the apron edge. */
+    const hd = (x: number, d: number) => TERRAIN.height(x * H, (apronZ - d) * H);
+    /** Design x of the base to summit line at distance d. */
+    const lineX = (d: number) => base.x + ((apronZ - d - base.z) / (summit.z - base.z)) * (summit.x - base.x);
+    const band: number[] = [];
+    for (let i = 0; i <= 13; i++) band.push(0.8 + i * 0.2);
+
+    it("keeps the lift line at least as high as the ground 1 to 4 units to either side", () => {
+      for (const d of band) {
+        const c = hd(lineX(d), d);
+        for (let k = 1; k <= 4; k++) {
+          expect(hd(lineX(d) - k, d), `d=${d.toFixed(1)} x-${k}`).toBeLessThanOrEqual(c);
+          expect(hd(lineX(d) + k, d), `d=${d.toFixed(1)} x+${k}`).toBeLessThanOrEqual(c);
+        }
+      }
+    });
+
+    it("has no trough under the lift (lateral second difference is not positive)", () => {
+      const EPS = 0.05; // world units
+      for (const d of band) {
+        const x = lineX(d);
+        const second = hd(x - 0.5, d) + hd(x + 0.5, d) - 2 * hd(x, d);
+        expect(second, `d=${d.toFixed(1)}`).toBeLessThanOrEqual(EPS);
+      }
+    });
+
+    it("settles to a low valley floor at the map edges, not a pit", () => {
+      const apron = DUTCH_HILL.apron!.height * TERRAIN.scale.vertical;
+      for (const x of [TERRAIN.bounds.xMin, TERRAIN.bounds.xMax]) {
+        // The back side behind the summit falls away by design (backFall), so check the front and sides.
+        for (let z = -4 * H; z <= TERRAIN.bounds.zMax; z += 4) {
+          const h = TERRAIN.height(x, z);
+          expect(h, `(${x}, ${z})`).toBeGreaterThan(apron - 3);
+          expect(h, `(${x}, ${z})`).toBeLessThan(apron + 3);
+        }
+      }
+    });
+  });
+
   it("has a 570 ft vertical through feetPerUnit", () => {
     const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
     const units = TERRAIN.height(summit.x, summit.z) - baseH;
