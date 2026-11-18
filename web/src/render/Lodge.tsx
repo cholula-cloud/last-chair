@@ -77,7 +77,7 @@ function villagePlacements(owned: { cafe: boolean; shop: boolean; hut: boolean }
  * lamp posts. Bodies merge into one mesh; window and lamp
  * glass share an untonemapped glow material so the amber stays warm at night.
  */
-export function Village({ buildings }: { buildings: string[] }) {
+export function Village({ buildings, onLodgeSelect }: { buildings: string[]; onLodgeSelect?: () => void }) {
   const hasCafe = buildings.includes("cafe");
   const hasShop = buildings.includes("shop");
   const hasHut = buildings.includes("warming_hut");
@@ -161,6 +161,19 @@ export function Village({ buildings }: { buildings: string[] }) {
       <mesh geometry={glow}>
         <meshBasicMaterial ref={glowMat} vertexColors toneMapped={false} />
       </mesh>
+      {onLodgeSelect && (
+        <mesh
+          position={[LODGE.x, TERRAIN.height(LODGE.x, LODGE.z) + 0.5, LODGE.z]}
+          onClick={(event) => {
+            if (event.delta > 5) return;
+            event.stopPropagation();
+            onLodgeSelect();
+          }}
+        >
+          <boxGeometry args={[LODGE.footprint.width, 1, LODGE.footprint.depth]} />
+          <meshBasicMaterial colorWrite={false} depthWrite={false} />
+        </mesh>
+      )}
       <instancedMesh ref={pools} args={[undefined, undefined, LAMPS.length + 1]} renderOrder={3}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial

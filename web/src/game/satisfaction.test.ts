@@ -161,7 +161,7 @@ describe("guest satisfaction terms", () => {
     const thaw = rules.arrivalMood([...b], null, "thaw");
     expect(snow).toBeGreaterThan(clear);
     expect(clear).toBeGreaterThan(thaw);
-    expect(rules.arrivalMood([...b, "lodge"], null)).toBeGreaterThan(clear);
+    expect(rules.arrivalMood([...b, "cafe"], null)).toBeGreaterThan(clear);
   });
 
   it("clamps to 0..100", () => {

@@ -43,8 +43,7 @@ export const VALUE = {
   /** Dollars lost per minute in lift lines beyond the free minute per ride, up to `WAIT_CAP`. */
   WAIT_PER_MIN: 0.35,
   WAIT_CAP: 20,
-  /** Dollars for a lodge or café on the hill. */
-  LODGE: 4,
+  /** Dollars for a café on the hill. */
   CAFE: 3,
   /** Dollars at the full run target (and lost at zero runs), scaled like the runs term. */
   RUNS: 8,
@@ -61,7 +60,7 @@ export const VALUE = {
 
 /** Dollars the buildings add to a day on the hill. */
 export function venueValue(buildings: readonly BuildingId[]): number {
-  return (buildings.includes("lodge") ? VALUE.LODGE : 0) + (buildings.includes("cafe") ? VALUE.CAFE : 0);
+  return buildings.includes("cafe") ? VALUE.CAFE : 0;
 }
 
 /** What the town expects a day here to be worth: reputation and the venues they know about (no RNG). */
@@ -292,7 +291,7 @@ export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
         ? `Many guests barely skied — ${facts.turnedAway} turned away at close.`
         : `Many guests barely skied — ${facts.runsPerGuest.toFixed(1)} runs each. Faster lifts would let them ski more.`;
     case "arrivalMood":
-      return `A cold welcome (mood ${Math.round(facts.arrivalMood * 100)} on arrival) — a warmer lodge would help.`;
+      return `A cold welcome (mood ${Math.round(facts.arrivalMood * 100)} on arrival).`;
     default:
       return facts.cashDelta !== undefined && facts.cashDelta < 0
         ? `Lost ${formatMoney(-facts.cashDelta)} today — running costs beat ticket sales on a quiet day.`

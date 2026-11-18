@@ -427,7 +427,7 @@ function PlacementOrbitCap({
   return null;
 }
 
-export function MountainScene() {
+export function MountainScene({ onLodgeSelect }: { onLodgeSelect?: () => void }) {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
@@ -523,7 +523,7 @@ export function MountainScene() {
       <Road />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>
-        <Village buildings={buildings} />
+        <Village buildings={buildings} onLodgeSelect={onLodgeSelect} />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
         {(gunsVisible || buildings.includes("snow_guns")) && (
           <SnowGuns reach={gunReach} line={primaryLine} />

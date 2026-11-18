@@ -9,7 +9,7 @@ import {
   toPersisted,
   type GameState,
 } from "./state";
-import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
+import { BUILDING_COSTS, SNOW_NIGHT_COST, type BuildingId, type Guest } from "./types";
 
 const started = () => rules.pickFounder(createInitialState(7), "elena");
 
@@ -106,10 +106,11 @@ describe("buyBuilding", () => {
     expect(rules.buyBuilding(poor, "cafe")).toBe(poor);
   });
 
-  it("requires the warming hut before the lodge", () => {
-    const noHut: GameState = { ...started(), buildings: [] };
-    expect(rules.buyBuilding(noHut, "lodge")).toBe(noHut);
-    expect(rules.buyBuilding(started(), "lodge").buildings).toContain("lodge");
+  it("starts with a fixed lodge that does not charge a build cost", () => {
+    const state = started();
+    expect(state.lodgeTier).toBe(1);
+    expect(state.buildings).not.toContain("lodge");
+    expect(rules.buyBuilding(state, "lodge" as BuildingId)).toBe(state);
   });
 });
 
@@ -274,6 +275,16 @@ describe("save migration", () => {
     expect(migrated.phase).toBe("night");
     expect(migrated.nightRecap).toEqual(night.nightRecap);
   });
+
+  it("folds a purchased v10 lodge into the fixed Tier 1 headquarters without changing the rest of the save", () => {
+    const state = atNight();
+    const { lodgeTier, ...persisted } = toPersisted(state);
+    const saved = { ...persisted, buildings: ["warming_hut", "lodge", "cafe"], cash: 4590 };
+    const migrated = migrate(saved, 10);
+    expect(lodgeTier).toBe(1);
+    expect(migrated).toEqual({ ...saved, buildings: ["warming_hut", "cafe"], lodgeTier });
+    expect(toPersisted(hydrate(migrated, createInitialState(2)))).toEqual(migrated);
+  });
 });
 
 describe("liveSatisfaction", () => {
@@ -281,7 +292,7 @@ describe("liveSatisfaction", () => {
     const base = rules.togglePause(started());
     const withCafe: GameState = {
       ...base,
-      buildings: [...base.buildings, "cafe", "lodge"],
+      buildings: [...base.buildings, "cafe"],
     };
     const cases = [base, withCafe, { ...withCafe, fare: "expensive" as const }];
     for (const s of cases) {

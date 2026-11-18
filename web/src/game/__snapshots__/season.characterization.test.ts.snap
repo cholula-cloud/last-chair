@@ -47,6 +47,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
         "type": "surface",
       },
     ],
+    "lodgeTier": 1,
     "morningHeadline": "New winter — Dutch Hill again.",
     "nightRecap": null,
     "paused": true,

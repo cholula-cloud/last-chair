@@ -208,7 +208,7 @@ describe("save v7", () => {
   const v6 = () => ({ ...toPersisted(createInitialState(3)), selectedSlotIndex: 1 });
 
   it("drops selectedSlotIndex and keeps lifts", () => {
-    expect(SAVE_VERSION).toBe(10);
+    expect(SAVE_VERSION).toBe(11);
     const saved = v6();
     const m = migrate(saved, 6) as unknown as Record<string, unknown>;
     expect("selectedSlotIndex" in m).toBe(false);

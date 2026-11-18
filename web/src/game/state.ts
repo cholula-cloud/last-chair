@@ -1,6 +1,8 @@
 import { MAX_LIFTS, REFERENCE_TOPS, type LiftAnchor } from "./descent";
+import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { PERSONAS } from "./personas";
 import { VALUE, ZERO_TERMS } from "./satisfaction";
+import type { LodgeTier } from "./site";
 import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY, deriveSnow, trailFromGlobals } from "./snow";
 import {
@@ -82,6 +84,7 @@ export type PersistedState = {
   buildMode: boolean;
   founderId: FounderId | null;
   buildings: BuildingId[];
+  lodgeTier: LodgeTier;
   lifts: LiftSlot[];
   trails: TrailRun[];
   selectedLiftType: LiftType;
@@ -146,6 +149,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     buildMode: false,
     founderId: null,
     buildings: ["warming_hut"],
+    lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
     lifts: defaultLifts(),
     trails: defaultTrails(),
     selectedLiftType: "surface",
@@ -184,6 +188,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     buildMode: state.buildMode,
     founderId: state.founderId,
     buildings: state.buildings,
+    lodgeTier: state.lodgeTier,
     lifts: state.lifts,
     trails: state.trails,
     selectedLiftType: state.selectedLiftType,
@@ -217,7 +222,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** Frozen horizontal scale for v7 saves (Dutch Hill only). */
 const V7_DUTCH_HILL_H = 6;
@@ -391,6 +396,11 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
       ...t,
       elevations: t.elevations ?? segmentElevationsForPath(t.path),
     }));
+  }
+  if (fromVersion < 11) {
+    const legacy = persisted as { buildings?: (BuildingId | "lodge")[] };
+    p.buildings = (legacy.buildings ?? fresh.buildings).filter((id): id is BuildingId => id !== "lodge");
+    p.lodgeTier = fresh.lodgeTier;
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.

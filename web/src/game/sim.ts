@@ -493,7 +493,6 @@ export type BeatCheckInput = {
   snowDepth: number;
   daysWithoutSnow: number;
   reputation: number;
-  buildings: BuildingId[];
   lessonsBooked: boolean;
   completedBeats: StoryBeatId[];
 };
@@ -514,11 +513,7 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
     case "saturday":
       return isWeekend(input.dayIndex) && input.arrivals >= 22;
     case "school_bus":
-      return (
-        input.lessonsBooked ||
-        (!isWeekend(input.dayIndex) && input.arrivals >= 28) ||
-        input.buildings.includes("lodge")
-      );
+      return input.lessonsBooked || (!isWeekend(input.dayIndex) && input.arrivals >= 28);
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
