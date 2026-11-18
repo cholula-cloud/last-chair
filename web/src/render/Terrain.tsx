@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { ROAD_Z } from "./layout";
 import { smoothstep } from "./math";
@@ -8,8 +9,12 @@ import { PALETTE, SUN_DIR } from "./palette";
 import type { Trail } from "@/game/snow";
 import type { LiftAnchor } from "@/game/descent";
 import { TERRAIN, fbm } from "@/game/terrain";
+import { forested } from "./forest";
+import { sceneCameraTarget } from "./sceneCamera";
 import { buildGeometry } from "./terrainMesh";
 import { sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
+
+const CANOPY = new THREE.Color(PALETTE.pineDeep);
 
 const C = {
   snow: new THREE.Color(PALETTE.snow),
@@ -33,6 +38,7 @@ function paint(
   snowDepth: number,
   trails: readonly Trail[],
   influence: readonly TrailInfluence[],
+  anchors: readonly LiftAnchor[],
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
   const nor = g.attributes.normal as THREE.BufferAttribute;
@@ -93,6 +99,10 @@ function paint(
     const bare = Math.max(bareDepth, bareCover);
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
+    const distCam = Math.hypot(x - sceneCameraTarget.x, z - sceneCameraTarget.z);
+    if (distCam > 45 && forested(x, z, { anchors })) {
+      c.lerp(CANOPY, 0.5);
+    }
 
     col.setXYZ(i, c.r, c.g, c.b);
   }
@@ -122,10 +132,19 @@ export function Terrain({
     [geometry, anchorKey],
   );
 
-  // Repaints only when the snapped snow changes: once a night, then now and then by day.
+  const camBand = useRef("");
+
+  // Repaints when snow changes and when the camera pans enough to move the canopy band.
   useLayoutEffect(() => {
-    paint(geometry, q, d, trails, influence);
-  }, [geometry, q, d, trails, influence]);
+    paint(geometry, q, d, trails, influence, anchors);
+  }, [geometry, q, d, trails, influence, anchorKey, anchors]);
+
+  useFrame(() => {
+    const band = `${Math.round(sceneCameraTarget.x / 6)},${Math.round(sceneCameraTarget.z / 6)}`;
+    if (band === camBand.current) return;
+    camBand.current = band;
+    paint(geometry, q, d, trails, influence, anchors);
+  });
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 
