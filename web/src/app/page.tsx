@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const FEATURES = [
-  "Dutch Hill, Vermont: one tired surface lift, one trail, a 14-day winter.",
+  "Dutch Hill, Vermont: one tired surface lift, one trail, a 28-day winter.",
   "Run or pause the day. Follow any skier from car park to lift line to the bottom.",
   "Grow the lodge, build lifts, paint trails and add places for guests to warm up.",
   "Each night, set tomorrow’s fare and how hard the crew works the snow, then sleep.",

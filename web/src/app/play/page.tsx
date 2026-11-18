@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
+const PlayGate = dynamic(() => import("@/ui/PlayGate"), {
   ssr: false,
   loading: () => (
     <div className="display flex h-[100dvh] items-center justify-center bg-sky text-xl text-ink">
@@ -12,5 +12,5 @@ const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
 });
 
 export default function PlayPage() {
-  return <PlayExperience />;
+  return <PlayGate />;
 }

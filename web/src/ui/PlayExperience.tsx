@@ -9,7 +9,7 @@ import { liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { snowCarriers } from "@/game/trails";
-import { useGameStore } from "@/game/store";
+import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
@@ -36,7 +36,7 @@ import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { useSpeed } from "@/ui/speed";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
-export default function PlayExperience() {
+export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
@@ -113,6 +113,7 @@ export default function PlayExperience() {
     const onHide = () => {
       if (document.visibilityState === "hidden") {
         useGameStore.setState({ paused: true });
+        flushSave();
       }
     };
     document.addEventListener("visibilitychange", onHide);
@@ -274,6 +275,7 @@ export default function PlayExperience() {
               openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
               onConfirmMenuChange={setMenuConfirmOpen}
+              onLeave={onLeave}
             />
           </div>
           )}

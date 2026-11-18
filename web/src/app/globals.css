@@ -435,3 +435,35 @@ body {
     inset: -5px;
   }
 }
+
+/* The Settings toggle applies the same rules. */
+:root[data-reduce-motion="true"] .press {
+    transition:
+      background-color 120ms ease,
+      color 120ms ease;
+}
+:root[data-reduce-motion="true"] .press:active:not(:disabled):not([aria-pressed="true"]) {
+    transform: none;
+}
+:root[data-reduce-motion="true"] .sheet {
+    transition: opacity 200ms ease;
+}
+:root[data-reduce-motion="true"] .sheet[data-state="enter"],
+:root[data-reduce-motion="true"] .sheet[data-state="closing"] {
+    transform: none;
+    opacity: 0;
+}
+:root[data-reduce-motion="true"] .note-in,
+:root[data-reduce-motion="true"] .callout-in,
+:root[data-reduce-motion="true"] .arrive,
+:root[data-reduce-motion="true"] .pop {
+    transition: opacity 200ms ease;
+    @starting-style {
+      opacity: 0;
+      transform: none;
+    }
+}
+:root[data-reduce-motion="true"] .pulse-ring::after {
+    animation: none;
+    inset: -5px;
+}

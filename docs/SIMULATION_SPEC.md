@@ -25,7 +25,7 @@
 | Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
 | Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
-| Save format | ✅ | Key `last-chair-m3`, validation and recovery | 25 |
+| Save format | ✅ | Three slots (`last-chair-m3-slot-1` to `-3`) with an active-slot pointer, per-slot backup, validation and recovery, a throttled write cadence, and JSON export and import | 25, L-D |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | ✅ | Weather draws use a separate seeded stream from daily guest draws | 18 |
 
@@ -375,11 +375,29 @@ Fail-forward: beats delay to next eligible day; no hard fail.
 
 ## Save format (M3 v1)
 
-Zustand saves `PersistedState` under `last-chair-m3` in local storage. Launching M3 clears the previous `last-chair-v1` save and its backup. New M3 progress reloads from the new key. An unreadable M3 save starts at founder selection and shows a recovery notice.
+Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
+
+**Slots.** There are three slots under the keys `last-chair-m3-slot-1`, `last-chair-m3-slot-2` and `last-chair-m3-slot-3`. The key `last-chair-m3-active` holds `1`, `2` or `3` and names the slot the game reads and writes. A missing or invalid pointer means slot 1. On first load, a save under the old key `last-chair-m3` moves into slot 1 when slot 1 is empty: the writer copies it, removes the old key, moves `last-chair-m3-backup` to `last-chair-m3-slot-1-backup` and sets the pointer to 1. Each slot has its own backup under `<slot key>-backup`. A save that fails `migrate()` or `validateSave()` is copied verbatim to that slot's backup before the slot is replaced with a fresh winter and the recovery notice appears. Deleting a slot removes the slot key and its backup. Importing into a slot replaces the slot and removes its old backup.
+
+**Write cadence.** The store keeps the latest state in memory and writes it to the active slot when any of these happens:
+
+| Trigger | Write |
+|---|---|
+| Phase change (into night, into day, into setup and review) | Immediately |
+| Any action except `tick` and camera or build-mode state (build, undo, close lift, sleep, founder, loan, season, pause, fare and snow choices) | Immediately |
+| Tab hidden (`visibilitychange`) or page closing (`pagehide`) | Immediately |
+| Leaving the hill from the Menu button | Immediately |
+| `tick` during the day | At most once every 10 000 ms of wall time since the last write |
+
+A failed write (storage full or denied) keeps the latest state in memory and retries at the next trigger.
+
+**Export file.** `{ "app": "last-chair", "format": 1, "exportedAt": <ISO time>, "version": <save version>, "state": <PersistedState> }`, named like `last-chair-dutch-hill-day-12.json`. Import checks `app` and `format`, rejects a `version` newer than the game, then runs `state` through `migrate()` and `validateSave()`. A file that fails any check is rejected with a plain message and nothing is written. There is no checksum. Importing into an occupied slot asks first.
+
+**Settings.** Voice volume, captions, reduce motion and default speed live apart from the save under `last-chair-settings`. Voice volume and captions have no consumer yet. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
-Cloud sync: P2; on `visibilitychange` hidden → write localStorage.
+Cloud sync: P2.
 
 ---
 

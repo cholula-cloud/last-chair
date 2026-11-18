@@ -11,7 +11,7 @@ const browser = await engines[engine].launch({
   executablePath,
   args: engine === "chromium" ? ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] : [],
 });
-const saveKey = "last-chair-m3";
+const saveKey = "last-chair-m3-slot-1";
 
 try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -27,6 +27,9 @@ try {
     localStorage.setItem("unrelated-preference", "kept");
   });
   await page.reload({ waitUntil: "domcontentloaded" });
+  const newWinter = page.getByRole("button", { name: "New winter", exact: true });
+  await newWinter.waitFor({ timeout: 20000 });
+  await newWinter.tap();
   const founder = page.getByRole("button", { name: /Elena Vargas/ });
   await founder.waitFor({ timeout: 20000 });
   assert.deepEqual(await page.evaluate(() => ["last-chair-v1", "last-chair-v1-backup", "unrelated-preference"]
@@ -35,6 +38,7 @@ try {
   const before = await page.evaluate((key) => localStorage.getItem(key), saveKey);
   assert.ok(before, "Picking a founder starts an M3 save");
   await page.reload({ waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: /^Continue/ }).tap();
   await page.getByText("Build your first lift", { exact: true }).waitFor({ timeout: 20000 });
   assert.equal(await page.evaluate((key) => localStorage.getItem(key), saveKey), before);
 

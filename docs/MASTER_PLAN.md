@@ -33,6 +33,7 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
 | Economy | Operating costs and upkeep, staged construction, a winter loan, and bankruptcy in the winter review |
 | Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
+| Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
 **Partly built**
@@ -468,10 +469,12 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 
 ### M6: Sandbox
 
-| # | PR |
-|---|---|
-| 39 | Main menu: Story / Sandbox; mountain, money, weather, talent and lodge-tier settings |
-| 40 | Save slots |
+Rows 39 and 40 are partly built. PR L-D pulled the title screen and three save slots forward into M3.
+
+| # | Status | PR | Accomplishes |
+|---|---|---|---|
+| 39 | ◐ | Main menu: Story / Sandbox; mountain, money, weather, talent and lodge-tier settings | Landed in L-D: the `/play` title screen with Continue, New winter, Load, Settings (voice volume, captions, reduce motion, default speed) and Credits. Remaining for M6: Story and Sandbox modes and the sandbox settings. |
+| 40 | ◐ | Save slots | Landed in L-D: three slots with export to and import from a JSON file, delete with a confirm, per-slot backups, and a throttled save cadence. Remaining for M6: six slots and rename. |
 
 ### M7: 110% pass
 
