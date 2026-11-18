@@ -1208,7 +1208,7 @@ Open decisions:
 
 ### Design
 
-Costs today (from code): `DAILY_FIXED_COST` $750, founder `fixedCostDelta` (Marco +$80), `LIFT_OPS_COST` $180 per open lift with a minimum of one, snow and service $0 / $150 / $350 charged at Sleep, lift and building prices charged in full at purchase. Revenue: `arrivals × fare × (0.5 + 0.7 × satisfaction / 100)`.
+Costs at the time this row was written: `DAILY_FIXED_COST` $750 (retuned to $1,095 in PR 68; SIMULATION_SPEC holds the live value), founder `fixedCostDelta` (Marco +$80), `LIFT_OPS_COST` $180 per open lift with a minimum of one, snow and service $0 / $150 / $350 charged at Sleep, lift and building prices charged in full at purchase. Revenue: `arrivals × fare × (0.5 + 0.7 × satisfaction / 100)`.
 
 Additions (proposed numbers):
 
@@ -2096,7 +2096,7 @@ Run in this order. Each line is pass or fail; the gate passes when every line pa
 | 2 | Snapshot history | `git log -p -- web/src/game/__snapshots__/` since 2b | changes only in PRs 18, 19, 20, 21, 23, 24, 27, each with a diff summary in its PR description |
 | 3 | Determinism | test: `runSeason(s, adaptive)` twice for s in 1..6, and a serialize-reload in the middle of day 10 and night 10 | identical results |
 | 4 | Balance | `npm run balance` with `BALANCE_SEEDS=40` | ten PR 27 properties hold; table pasted in SIMULATION_SPEC |
-| 5 | Saves | migration fixtures v0 to current | all load, validate and play one day |
+| 5 | Saves | M3 save fixtures v1 to current, in every slot | all load, validate and play one day |
 | 6 | Talents | `talents.test.ts` | 20 with-and-without tests pass |
 | 7 | Founders | `founders.test.ts` | twelve modifier tests pass |
 | 8 | Beats | `story.test.ts` and harness fire rates | one per night, none in the day, rates within PR 23 bounds |

@@ -21,13 +21,13 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete through save v14. The automated simulation gate uses distinct beginner chair boardings. The remaining milestone sign-off is the three-minute opening with an uncoached first-time player. CI runs the strict simulation gate and checks the full scripted M2 flow in a WebKit phone viewport.
+M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weather, the 28-day calendar and the economy (rows 25, 18, 19, 20, PRs 59 to 68); saves are M3 schema v5 under `last-chair-m3`. A builder and quality-of-life pass (rows L-A to L-F) comes next, then rows 21 to 24, the coach and balance. The M2 sign-off with an uncoached first-time player is still open.
 
 **Built and merged**
 
 | Area | What exists |
 |---|---|
-| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, save schema v14 with migrations |
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v5 with validation and recovery |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
@@ -40,16 +40,14 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
-| Weather | Seeded forecasts, storms, thaw runs and chair wind holds | Tune against the full winter | 18 |
-| Season | `SEASON_LENGTH = 14` | 28 days, weekends, holiday weeks | 19 |
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
 | Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
 | Radio | Beat card in the night recap | Feed UI, story log, lodge tier-up lines, SummitLink offer as a choice | 23 |
 | Winter review | Sheet with score | Beats, choices, lodge tier, carry-forward data | 24 |
-| Save versioning | Version field and migrations since v7 | Old-save reset policy and tests as a formal row | 25 |
+| Menu and saves | One save key, no title screen | Title screen, three slots, throttled autosave | 39, 40 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** M3 begins with the lodge-only opening and builder refinements, followed by the season systems. Row 27 is the MVP checkpoint for a complete Dutch Hill winter.
+**Next up:** the builder pass (L-A lift tool, L-B trail painting, L-C lease boundary and forest), then the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
 
 ---
 
@@ -68,7 +66,7 @@ Overnight:  crew makes snow, grooms, learns the next talent → morning headline
 Growth:     the recap shows what held the hill back (a long line, an empty café, a missing venue); build to fix it, or upgrade the lodge to open what you need
 ```
 
-A winter is **28 days** (14 today; row 19 moves it) and ends in a **winter review**. The loop is about **diagnosis**: see a problem on the mountain, change one thing, read tomorrow. Building is how you fix problems, and it should feel good on its own.
+A winter is **28 days** and ends in a **winter review**. The loop is about **diagnosis**: see a problem on the mountain, change one thing, read tomorrow. Building is how you fix problems, and it should feel good on its own.
 
 ### Design pillars
 
@@ -262,6 +260,16 @@ Read from the App Store screenshots and three trailer videos:
 
 ICR's lessons from its patches and player reviews still apply: keep the day uninterrupted and route events to one nightly meeting; let guests leave a long line for the village; rate trails by sustained pitch; judge ticket price against what the hill offered; make snow tools visible; coach the first winter; label every control; expect snowboarders; keep the game from going easy once a hill is solved.
 
+### Where, why and what building means
+
+**Where: the lease.** Heartwellville leases you the old ski area. Each mountain defines a lease polygon in its data file. Every placement rule checks it and refuses with "Outside the Dutch Hill lease." The camera stays over the lease with a margin. In build modes the boundary shows as a thin dashed survey line and the land outside dims a little. Outside the lease the world continues at lower detail: terrain, a far forest and the ridges, so the hill sits in a real valley.
+
+**Why: guests ask.** Every build should answer something the player can see. Long lines call for a lift, crowded beginner terrain for a green trail, a full lodge for a café. In M3 the night recap names the top unmet demand in one sentence ("Guests want"). Map pins can follow in M4.
+
+**What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that SummitLink also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
+
+**The goal is always on screen.** A goal strip under the date shows the winter goal and its progress. On Dutch Hill: reach lodge Tier 2, run the school bus, stay solvent.
+
 ---
 
 ## 6. Platform and mobile rules
@@ -385,7 +393,7 @@ Rows 1 to 4 (docs, tooling + CI, pure sim core, known-bug fixes), 4b (phone HUD)
 
 Rows 5 to 10: lift as a server, guest day script, satisfaction from causes, snow per trail segment, levers you can feel, balance harness. All merged. Gate met in browser at phone sizes; real-device and external playtests pending.
 
-### M2: Build the mountain ◐
+### M2: Build the mountain ☑ (first-time player sign-off pending)
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
@@ -426,6 +434,12 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
 | 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config |
 | 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
+| L-A | ☐ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
+| L-B | ☐ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
+| L-C | ☐ | The lease and a continuous world | A lease boundary per mountain that every placement checks. Outside it the world continues in lower detail. A forest fixed in world space that no longer swaps style around the camera |
+| L-D | ◐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
+| L-E | ☐ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions, a goal strip on the HUD, and a "Guests want" line in the night recap |
+| L-F | ☐ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ◐ | Founders complete | All six modifiers live |
 | 23 | ◐ | Route 100 Radio + Act I beats | Radio feed; six beats on metric gates, delivered at night; lodge tier-up lines; the school bus beat needs the Tier 2 ski school; story log; the first SummitLink offer as a choice |
@@ -469,12 +483,10 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 
 ### M6: Sandbox
 
-Rows 39 and 40 are partly built. PR L-D pulled the title screen and three save slots forward into M3.
-
-| # | Status | PR | Accomplishes |
-|---|---|---|---|
-| 39 | ◐ | Main menu: Story / Sandbox; mountain, money, weather, talent and lodge-tier settings | Landed in L-D: the `/play` title screen with Continue, New winter, Load, Settings (voice volume, captions, reduce motion, default speed) and Credits. Remaining for M6: Story and Sandbox modes and the sandbox settings. |
-| 40 | ◐ | Save slots | Landed in L-D: three slots with export to and import from a JSON file, delete with a confirm, per-slot backups, and a throttled save cadence. Remaining for M6: six slots and rename. |
+| # | PR |
+|---|---|
+| 39 | Sandbox entry on the title screen; mountain, money, weather, talent and lodge-tier settings (the title screen itself moved to M3 row L-D) |
+| 40 | Sandbox save slots (Story slots moved to M3 row L-D) |
 
 ### M7: 110% pass
 
