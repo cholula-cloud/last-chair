@@ -6,15 +6,18 @@ import {
   pickFounder,
   placeAsset,
   placeLift,
+  placeGun,
   setPendingFare,
   setPendingSnow,
   skipToClose,
   sleep,
+  takeLoan,
   trailOptions,
 } from "./rules";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
 import { MOUNTAIN_CALENDARS, dayKind } from "./calendar";
 import { trailsOnLift } from "./trails";
+import { liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import type { NightRecap } from "./sim";
@@ -73,12 +76,12 @@ export const CHAIR_COST = liftCost("chair", { bottom: TERRAIN.base, top: REFEREN
 export const CASH_RESERVE = 2500;
 
 function canAffordChair(state: GameState): boolean {
-  return state.lodgeTier >= 2 && !hasChair(state) && state.cash >= CHAIR_COST + CASH_RESERVE;
+  return state.lodgeTier >= 2 && !hasChair(state) && liquidNetWorth(state) >= CHAIR_COST + CASH_RESERVE;
 }
 
 function canStartChairUpgrade(state: GameState): boolean {
   return state.lodgeTier === 1 && !state.lodgeUpgrade &&
-    state.cash >= LODGE_TIERS[2].cost + CHAIR_COST + CASH_RESERVE;
+    liquidNetWorth(state) >= LODGE_TIERS[2].cost + CHAIR_COST + CASH_RESERVE;
 }
 
 function chairLiftIndex(state: GameState): number {
@@ -132,7 +135,7 @@ export const ADAPTIVE: Strategy = {
     const actions: BuildAction[] = [];
     const buyingChair = problem === "queue" && canAffordChair(state);
     if (buyingChair) actions.push("chair");
-    let cash = state.cash - (buyingChair ? CHAIR_COST : 0);
+    let cash = liquidNetWorth(state) - (buyingChair ? CHAIR_COST : 0);
     for (const id of ["rentals", "ski_school"] as const) {
       if (state.assets.some((asset) => asset.id === id)) continue;
       const { cost } = ASSET_CATALOG[id];
@@ -172,7 +175,23 @@ export const STINGY: Strategy = {
   night: () => ({ fare: "expensive", snow: "minimal" }),
 };
 
-export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY];
+/** Builds on deposits and sets the cheapest fare with the most expensive service. */
+export const CARELESS: Strategy = {
+  id: "careless",
+  label: "Careless",
+  build: ({ state }) => {
+    const actions: BuildAction[] = [];
+    if (state.lodgeTier === 1 && !state.lodgeUpgrade) actions.push("upgrade_lodge");
+    if (!state.buildings.includes("cafe")) actions.push("cafe");
+    if (!state.buildings.includes("shop")) actions.push("shop");
+    if (state.lodgeTier >= 2 && !state.guns.length) actions.push("snow_guns");
+    if (state.lodgeTier >= 2 && !hasChair(state)) actions.push("chair");
+    return actions;
+  },
+  night: () => ({ fare: "cheap", snow: "high" }),
+};
+
+export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY, CARELESS];
 
 export function strategyById(id: string): Strategy {
   const s = STRATEGIES.find((x) => x.id === id);
@@ -211,6 +230,10 @@ export type SeasonResult = {
   /** Days whose recap named a problem. */
   problemDays: number;
   wentNegative: boolean;
+  wentBankrupt: boolean;
+  tookLoan: boolean;
+  endNetWorth: number;
+  firstShortfallOfferedLoan: boolean;
   /** Story beats fired (the winter review excluded). */
   beats: number;
   talents: number;
@@ -230,6 +253,7 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
     const placed = placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
     return placed === state ? state : addReferenceDescent(placed, placed.lifts.length - 1);
   }
+  if (action === "snow_guns") return placeGun(state, TERRAIN.base);
   return buyBuilding(state, action);
 }
 
@@ -237,7 +261,7 @@ export function runSeason(
   seed: number,
   strategy: Strategy,
   founderId: FounderId = "elena",
-  options: { seasonLength?: number } = {},
+  options: { seasonLength?: number; takeLoan?: boolean } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
   const length = options.seasonLength ?? hill.seasonLength;
@@ -245,6 +269,7 @@ export function runSeason(
   let recap: NightRecap | null = null;
   const days: DayRecord[] = [];
   let minCash = state.cash;
+  let firstShortfallOfferedLoan = false;
   let runs = 0;
   let waitSum = 0;
   let dispatched = 0;
@@ -271,7 +296,7 @@ export function runSeason(
     runs += dayStats.completedRuns;
     waitSum += dayStats.waitSumMin;
     dispatched += dayStats.dispatched;
-    minCash = Math.min(minCash, state.cash + recap.cashDelta);
+
     days.push({
       day: state.dayIndex,
       weekend: dayKind(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) === "weekend",
@@ -287,7 +312,13 @@ export function runSeason(
       problem: recap.problem,
     });
     const plan = strategy.night(ctxOf());
-    state = sleep(setPendingSnow(setPendingFare(state, plan.fare), plan.snow));
+    state = setPendingSnow(setPendingFare(state, plan.fare), plan.snow);
+    const projected = morningCash(state);
+    const offered = loanOffered(state);
+    if (minCash >= 0 && projected < 0) firstShortfallOfferedLoan = offered;
+    minCash = Math.min(minCash, projected);
+    if (offered && options.takeLoan !== false) state = takeLoan(state);
+    state = sleep(state);
     minCash = Math.min(minCash, state.cash);
   }
 
@@ -304,6 +335,10 @@ export function runSeason(
     meanWaitMin: dispatched > 0 ? waitSum / dispatched : 0,
     problemDays: days.filter((d) => d.problem !== NO_PROBLEM).length,
     wentNegative: minCash < 0,
+    wentBankrupt: state.outcome === "bankrupt",
+    tookLoan: state.loanTaken,
+    endNetWorth: liquidNetWorth(state),
+    firstShortfallOfferedLoan,
     beats: state.completedBeats.filter((b) => b !== "winter_review").length,
     talents: state.talentsOwned.length,
     days,
@@ -370,9 +405,10 @@ export function seedList(n: number, from = 1): number[] {
 export function runAll(
   seeds: number[],
   strategies: Strategy[] = STRATEGIES,
+  options: Parameters<typeof runSeason>[3] = {},
 ): Map<string, SeasonResult[]> {
   const out = new Map<string, SeasonResult[]>();
-  for (const s of strategies) out.set(s.id, seeds.map((seed) => runSeason(seed, s)));
+  for (const s of strategies) out.set(s.id, seeds.map((seed) => runSeason(seed, s, "elena", options)));
   return out;
 }
 

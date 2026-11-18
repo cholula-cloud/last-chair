@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
+import { constructionDraw } from "@/game/economy";
 import { openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
@@ -21,6 +22,7 @@ function LodgeCard() {
   const [review, setReview] = useState(false);
   const next = nextLodgeTier(tier);
   const unlocks = next ? lodgeTierUnlocks(next) : [];
+  const payment = next ? constructionDraw(LODGE_TIERS[next].cost) : null;
 
   return (
     <div className="panel px-3.5 pb-4 pt-3.5" data-lodge-card>
@@ -30,7 +32,7 @@ function LodgeCard() {
         <p role="status" className="mt-2 font-bold">
           Tier {construction.toTier} under construction · {construction.nightsRemaining} {construction.nightsRemaining === 1 ? "night" : "nights"} left
         </p>
-      ) : next && (
+      ) : next && payment && (
         <>
           <p className="mt-2 text-sm font-bold">
             Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
@@ -39,12 +41,13 @@ function LodgeCard() {
             <BuildImpactCard
               title={`Upgrade to ${LODGE_TIERS[next].label}`}
               facts={[
-                { label: "Cost", value: formatMoney(LODGE_TIERS[next].cost) },
+                { label: "Total cost", value: formatMoney(LODGE_TIERS[next].cost) },
+                { label: "Payment", value: `${formatMoney(payment.deposit)} now, ${formatMoney(payment.first)} each of the next two nights` },
                 { label: "Construction", value: "Two nights" },
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
-              problem={cash < LODGE_TIERS[next].cost ? "Not enough cash." : null}
+              problem={cash < payment.deposit ? "Not enough cash for the deposit." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
               onConfirm={() => { upgrade(); setReview(false); }}
@@ -99,6 +102,7 @@ export function BuildSheet({
         {!opening && <LodgeCard />}
         <div className="panel px-3.5 pb-4 pt-3.5">
           <SectionHeading>Lifts</SectionHeading>
+          <p className="mb-2 text-xs font-bold">Pay 40% now and 30% each of the next two nights.</p>
           <div className="grid grid-cols-2 gap-2">
             {(["surface", "chair"] as const).map((type: LiftType) => (
               <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
@@ -134,7 +138,7 @@ export function BuildSheet({
                 <button key={id} type="button" disabled={locked} onClick={() => buildAsset(id)}
                   className="key press min-h-14 p-2 text-left font-extrabold">
                   {asset.label}
-                  <small className="block">{locked ? `Lodge Tier ${asset.opensAtTier}` : formatMoney(asset.cost)}</small>
+                  <small className="block">{locked ? `Lodge Tier ${asset.opensAtTier}` : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}</small>
                 </button>
               );
             })}
@@ -142,7 +146,7 @@ export function BuildSheet({
           <SectionHeading>Snow</SectionHeading>
           <button type="button" className="key press min-h-11 px-3 font-extrabold"
             disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
-            Snow gun {tier < 2 ? "· Lodge Tier 2" : `· ${formatMoney(ASSET_CATALOG.snow_guns.cost)}`}
+            Snow gun {tier < 2 ? "· Lodge Tier 2" : `· ${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
           </button>
         </div>}
       </div>

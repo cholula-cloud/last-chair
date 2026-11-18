@@ -31,17 +31,17 @@ export const CHAIR_TIER = 2;
 export const ASSET_CATALOG: Record<AssetId, Asset> = {
   warming_hut: {
     label: BUILDING_LABELS.warming_hut, category: "hospitality", footprint: { width: 0.65, depth: 0.55 },
-    cost: 350, upkeep: 45, effect: { seats: 12, arrivalMood: 0.05 },
+    cost: 350, upkeep: 0, effect: { seats: 12, arrivalMood: 0.05 },
     revenuePerUse: 2, visitMinutes: 20, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   cafe: {
     label: BUILDING_LABELS.cafe, category: "hospitality", footprint: { width: 0.9, depth: 0.65 },
-    cost: BUILDING_COSTS.cafe, upkeep: 30, effect: { seats: 12, arrivalMood: 0.04, hillValue: 3 },
+    cost: BUILDING_COSTS.cafe, upkeep: 40, effect: { seats: 12, arrivalMood: 0.04, hillValue: 3 },
     revenuePerUse: 9, visitMinutes: 20, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   shop: {
     label: BUILDING_LABELS.shop, category: "services", footprint: { width: 0.8, depth: 0.6 },
-    cost: BUILDING_COSTS.shop, upkeep: 20, effect: {},
+    cost: BUILDING_COSTS.shop, upkeep: 25, effect: {},
     revenuePerUse: 5, visitMinutes: 0, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   rentals: {
@@ -56,7 +56,7 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
   },
   snow_guns: {
     label: "Snow gun", category: "infrastructure", footprint: { width: 0.25, depth: 0.25 },
-    cost: 400, upkeep: 0, effect: {},
+    cost: 400, upkeep: 40, effect: {},
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
   },
 };

@@ -31,6 +31,7 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
+| Economy | Operating costs and upkeep, staged construction, a winter loan, and bankruptcy in the winter review |
 | Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
@@ -40,7 +41,6 @@ M2 code is complete through save v14. The automated simulation gate uses distinc
 |---|---|---|---|
 | Weather | Seeded forecasts, storms, thaw runs and chair wind holds | Tune against the full winter | 18 |
 | Season | `SEASON_LENGTH = 14` | 28 days, weekends, holiday weeks | 19 |
-| Economy | Costs, revenue, lift cost by length | Loan offer, bankruptcy, construction draws | 20 |
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
 | Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
 | Radio | Beat card in the night recap | Feed UI, story log, lodge tier-up lines, SummitLink offer as a choice | 23 |
@@ -297,7 +297,7 @@ Career hub    → map · level · talents · story log · Ledger (M5)
 
 **Speed:** 1× default, 2× after the tutorial beat. "Skip to close" after 2 PM.
 
-**Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; wanted item locked → lodge tier). Negative cash triggers a warning and a loan offer before game over.
+**Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; wanted item locked → lodge tier). The closing recap offers a one-time winter loan when projected morning cash falls below zero before the final night. Three consecutive negative mornings end the winter and open the winter review.
 
 ---
 
@@ -424,7 +424,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
 | 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config |
-| 20 | ◐ | Economy + fail-soft | Fixed and lift costs; construction draws cash; lodge upgrades as the main capital sink; loan offer; bankruptcy |
+| 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ◐ | Founders complete | All six modifiers live |
 | 23 | ◐ | Route 100 Radio + Act I beats | Radio feed; six beats on metric gates, delivered at night; lodge tier-up lines; the school bus beat needs the Tier 2 ski school; story log; the first SummitLink offer as a choice |

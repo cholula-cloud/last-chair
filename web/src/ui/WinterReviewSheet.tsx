@@ -1,6 +1,7 @@
 "use client";
 
 import { STORY_BEATS } from "@/game/content";
+import { liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { Sheet } from "@/ui/kit/Sheet";
@@ -9,7 +10,9 @@ import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
 export function WinterReviewSheet() {
   const phase = useGameStore((s) => s.phase);
+  const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
   const cash = useGameStore((s) => s.cash);
+  const netWorth = useGameStore(liquidNetWorth);
   const reputation = useGameStore((s) => s.reputation);
   const completedBeats = useGameStore((s) => s.completedBeats);
   const talentsOwned = useGameStore((s) => s.talentsOwned);
@@ -48,15 +51,16 @@ export function WinterReviewSheet() {
       title="Winter review"
       subtitle="Dutch Hill, season one"
       footer={
-        <PrimaryButton onClick={finishWinterReview}>
-          Continue to mountain 2
+        <PrimaryButton onClick={bankrupt ? startNewSeason : finishWinterReview}>
+          {bankrupt ? "Replay Dutch Hill winter" : "Continue to mountain 2"}
         </PrimaryButton>
       }
     >
       <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, season one">
         <p className="display text-[1.35rem] leading-tight text-white">
-          You held one more winter in the sticks.
+          {bankrupt ? "The bank called" : "You held one more winter in the sticks."}
         </p>
+        {bankrupt && <p className="mt-1 text-sm font-bold text-sign-green-ink">Cash stayed below zero for three mornings in a row.</p>}
         <div className="sign-rule my-3" aria-hidden="true" />
         <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
           <StatTile onSign label="Cash" value={formatMoney(cash)} />
@@ -69,7 +73,12 @@ export function WinterReviewSheet() {
           <StatTile onSign label="Crew talents" value={talentsOwned.length} />
         </div>
       </Sign>
-      <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
+      {netWorth !== cash && (
+        <p className="chip mt-4 px-3.5 py-3 font-bold">
+          Net worth after outstanding debts <strong>{formatMoney(netWorth)}</strong>
+        </p>
+      )}
+      {!bankrupt && <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-snow-2">
           <PinIcon size={20} />
         </span>
@@ -77,7 +86,7 @@ export function WinterReviewSheet() {
           Career pin unlocked:{" "}
           <strong className="font-extrabold">Tenney Mountain, NH</strong>
         </p>
-      </div>
+      </div>}
     </Sheet>
   );
 }

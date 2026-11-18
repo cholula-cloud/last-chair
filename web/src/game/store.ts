@@ -36,6 +36,8 @@ type GameActions = {
   setPendingFare: (f: FarePreset) => void;
   setPendingSnow: (s: SnowPreset) => void;
   sleep: () => void;
+  takeLoan: () => void;
+  repayLoan: () => void;
   setFollowId: (id: string | null) => void;
   setBuildMode: (on: boolean) => void;
   setSelectedLiftType: (t: LiftType) => void;
@@ -138,6 +140,8 @@ export const useGameStore = create<GameStore>()(
       setPendingFare: (f) => set((s) => rules.setPendingFare(s, f)),
       setPendingSnow: (x) => set((s) => rules.setPendingSnow(s, x)),
       sleep: () => set((s) => rules.sleep(s)),
+      takeLoan: () => set((s) => rules.takeLoan(s)),
+      repayLoan: () => set((s) => rules.repayLoan(s)),
       setFollowId: (id) => set((s) => rules.setFollowId(s, id)),
       setBuildMode: (on) => set((s) => rules.setBuildMode(s, on)),
       setSelectedLiftType: (t) => set((s) => rules.setSelectedLiftType(s, t)),

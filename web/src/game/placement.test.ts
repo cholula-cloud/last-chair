@@ -46,7 +46,7 @@ describe("liftCost", () => {
 });
 
 describe("placeLift", () => {
-  it("appends a lift, deducts the price and closes build mode", () => {
+  it("appends a lift, deducts the deposit and closes build mode", () => {
     const s0 = { ...started(), buildMode: true };
     const before = structuredClone(s0);
     const s = rules.placeLift(s0, chairReq);
@@ -62,9 +62,9 @@ describe("placeLift", () => {
       dispatchCredit: 0,
       builtDay: s0.dayIndex,
       builtAtMin: s0.clockMin,
-      paid: 2500,
+      paid: 1000,
     });
-    expect(s.cash).toBe(s0.cash - 2500);
+    expect(s.cash).toBe(s0.cash - 1000);
     expect(s.buildMode).toBe(false);
   });
 
@@ -88,8 +88,8 @@ describe("placeLift", () => {
     expect(rules.placeLift(s, { ...chairReq, top: { x: Number.NaN, z: 0 } })).toBe(s);
   });
 
-  it("fails cash and leaves state unchanged when the price is short", () => {
-    const poor = started(2499);
+  it("fails cash and leaves state unchanged when the deposit is short", () => {
+    const poor = started(999);
     expect(rules.placeLift(poor, chairReq)).toBe(poor);
     const c = rules.checkPlacement(poor, "chair", baseLine(MID));
     expect(c).toMatchObject({ ok: false, reason: "cash", need: 1 });
@@ -128,8 +128,7 @@ describe("undoLift", () => {
     const before = structuredClone(s1);
     const s2 = rules.undoLift(s1);
     expect(s1).toEqual(before);
-    expect(s2.cash).toBe(s0.cash);
-    expect(s2.lifts).toEqual(s0.lifts);
+    expect(s2).toEqual(s0);
   });
 
   it("is unavailable once the clock has moved", () => {
@@ -185,7 +184,7 @@ describe("sim parity", () => {
       ...base,
       lifts: [...base.lifts, hand],
       trails: [...base.trails, handTrail],
-      cash: base.cash - 2500,
+      cash: base.cash - 1000,
     });
     expect(a.guests).toEqual(b.guests);
     expect(a.dayStats).toEqual(b.dayStats);

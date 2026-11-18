@@ -1,3 +1,4 @@
+import type { OperatingCosts } from "./economy";
 import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { isWindHeld, morningWeatherHeadline, WIND_HOLD } from "./weather";
@@ -30,11 +31,9 @@ import {
   ARRIVE_WALK_MIN,
   DEPART_WALK_MIN,
   LIFT_CLOSE_MIN,
-  DAILY_FIXED_COST,
   DAY_END_MIN,
   DAY_START_MIN,
   FARE_PRICES,
-  LIFT_OPS_COST,
   SEASON_LENGTH,
   SNOW_NIGHT_COST,
   type BuildingId,
@@ -376,6 +375,11 @@ export type NightRecap = {
   /** Mean signed points of each satisfaction term over the guests who arrived. */
   breakdown: SatTerms;
   cashDelta: number;
+  /** Null when the operating costs were not recorded in a legacy save. */
+  costs: OperatingCosts | null;
+  revenue: number | null;
+  loanReceived: number;
+  loanRepaid: number;
   problem: string;
   facts: RecapFacts;
 };
@@ -390,24 +394,23 @@ export function buildNightRecap(opts: {
   /** The day's guest-built satisfaction (see `daySatisfaction`). */
   day: DaySatisfaction;
   arrivalMood: number;
-  openLiftCount: number;
-  founderFixedDelta: number;
-  venueUpkeep?: number;
+  costs: OperatingCosts;
   busiestLift?: RecapFacts["busiestLift"];
 }): NightRecap {
   const { stats, fare, day } = opts;
-  const revenue = computeDayRevenue(fare, day.score, stats.arrivals);
-  const costs =
-    DAILY_FIXED_COST +
-    opts.founderFixedDelta +
-    (opts.venueUpkeep ?? 0) +
-    LIFT_OPS_COST * Math.max(1, opts.openLiftCount);
-  const cashDelta = Math.round(revenue + Object.values(stats.venueRevenue ?? {}).reduce((sum, amount) => sum + amount, 0) - costs);
+  const revenue = computeDayRevenue(fare, day.score, stats.arrivals)
+    + Object.values(stats.venueRevenue ?? {}).reduce((sum, amount) => sum + amount, 0);
+  const { costs } = opts;
+  const cashDelta = Math.round(revenue - costs.fixed - costs.founder - costs.liftOps - costs.upkeep);
   return {
     arrivals: stats.arrivals,
     satisfaction: day.score,
     breakdown: day.breakdown,
     cashDelta,
+    costs,
+    revenue,
+    loanReceived: 0,
+    loanRepaid: 0,
     problem: problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
       snowQuality: opts.snowQuality,

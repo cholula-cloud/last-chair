@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { ASSET_CATALOG, CHAIR_TIER } from "@/game/base";
 import { liftLength, liftVertical, placementReason } from "@/game/descent";
+import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { chooseLift, liftCapacityPerHour, liftWaitMin, rideMinutes } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
@@ -163,6 +164,16 @@ function TrailBar() {
   );
 }
 
+function buildPaymentFacts(total: number) {
+  const { deposit, first, second } = constructionDraw(total);
+  const remaining = first === second ? `${formatMoney(first)} each of the next two nights`
+    : `${formatMoney(first)} tonight, ${formatMoney(second)} tomorrow night`;
+  return [
+    { label: "Total cost", value: formatMoney(total) },
+    { label: "Payment", value: `${formatMoney(deposit)} now, ${remaining}` },
+  ];
+}
+
 function LiftBar() {
   const draft = usePlacementDraft();
   const state = useGameStore();
@@ -180,7 +191,7 @@ function LiftBar() {
       <BuildImpactCard
         title={`Review ${LIFT_LABELS[type]}`}
         facts={[
-          { label: "Cost", value: formatMoney(cost) },
+          ...buildPaymentFacts(cost),
           { label: "Vertical", value: vertical ?? "0 ft" },
           { label: "Length", value: length ?? "0 ft" },
           { label: "Capacity", value: `${capacity} skiers/hour` },
@@ -188,7 +199,7 @@ function LiftBar() {
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
           { label: "Opens", value: "After you cut a trail" },
         ]}
-        confirmLabel={`Place for ${formatMoney(cost)}`}
+        confirmLabel={`Place for ${formatMoney(constructionDraw(cost).deposit)} now`}
         problem={problem}
         onCancel={backToDraft}
         onConfirm={() => {
@@ -242,7 +253,7 @@ function SiteBar() {
       <BuildImpactCard
         title={`Review ${item.label}`}
         facts={[
-          { label: "Cost", value: formatMoney(check?.ok ? check.cost : item.cost) },
+          ...buildPaymentFacts(check?.ok ? check.cost : item.cost),
           { label: "Lodge tier", value: String(item.opensAtTier) },
           ...(check?.ok ? [{ label: "Area", value: acres(check.acres) }] : []),
           ...(check?.ok && check.attached ? [{ label: "Lodge pad", value: "+5% attached" }] : []),
