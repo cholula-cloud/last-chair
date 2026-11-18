@@ -285,6 +285,21 @@ describe("save migration", () => {
     expect(migrated).toEqual({ ...saved, buildings: ["warming_hut", "cafe"], lodgeTier });
     expect(toPersisted(hydrate(migrated, createInitialState(2)))).toEqual(migrated);
   });
+
+  it("gives a v11 trail a Standard width per saved point without changing its path or snow", () => {
+    const persisted = toPersisted(atNight());
+    const legacy = {
+      ...persisted,
+      trails: persisted.trails.map(({ widths, ...trail }) => {
+        expect(widths).toHaveLength(trail.path.length);
+        return trail;
+      }),
+    };
+    const migrated = migrate(legacy, 11);
+    expect(migrated).toEqual(persisted);
+    expect(migrated.trails.every((trail) => trail.widths.length === trail.path.length &&
+      trail.widths.every((width) => width === 60))).toBe(true);
+  });
 });
 
 describe("liveSatisfaction", () => {

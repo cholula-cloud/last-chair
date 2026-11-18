@@ -10,6 +10,7 @@ export type Difficulty = TrailDifficulty;
 export const OVER_SKILL_MULT = 1.6;
 export const MAX_TRAILS_PER_LIFT = 3;
 export const MAX_TRAILS_TOTAL = 8;
+export const STANDARD_TRAIL_WIDTH_FT = 60;
 
 const DIFF_RANK: Record<Difficulty, number> = { green: 0, blue: 1, black: 2 };
 
@@ -149,6 +150,8 @@ export type TrailRun = {
   liftIndex: number;
   name: string;
   path: XZ[];
+  /** Width in feet at each path point. */
+  widths: number[];
   lengthFt: number;
   pitch: number;
   difficulty: Difficulty;
@@ -409,6 +412,7 @@ export function buildTrailRun(
     liftIndex,
     name: opts.name ?? (opts.gentle ? "Dutch Meadows" : `Run ${liftIndex + 1}`),
     path,
+    widths: path.map(() => STANDARD_TRAIL_WIDTH_FT),
     lengthFt: pathLengthFt(path, terrain),
     pitch,
     difficulty: classifyPitch(pitch),

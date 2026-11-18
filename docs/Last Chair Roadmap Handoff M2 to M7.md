@@ -38,7 +38,7 @@ From camera part 3 (#39) until this fix, `/play/` drew the HUD and ran the sim b
 
 ### Next roadmap work
 
-Follow MASTER_PLAN §9. B1 widens the shoulders, preserves saved X/Z coordinates, reference terminal heights, and the starter route, and frames both buildable shoulders at phone size. On the final B1 terrain, use tests to verify six distinct viable routes in a three-lift layout. The separate integrated 390×844 Chromium review found smooth starter and painted corridors after the #49 fix. L1 removes the lodge purchase and its mood and value bonuses, introduces a Tier 1 lodge card and migrates old saves to the fixed lodge. B2 is next.
+Follow MASTER_PLAN §9. B1 widens the shoulders, preserves saved X/Z coordinates, reference terminal heights, and the starter route, and frames both buildable shoulders at phone size. On the final B1 terrain, use tests to verify six distinct viable routes in a three-lift layout. The separate integrated 390×844 Chromium review found smooth starter and painted corridors after the #49 fix. L1 removes the lodge purchase and its mood and value bonuses, introduces a Tier 1 lodge card and migrates old saves to the fixed lodge. B2a adds the pure geometry and v12 width migration. Continue with the B2b touch controls and B2c review UI.
 
 ## Recommended build order
 

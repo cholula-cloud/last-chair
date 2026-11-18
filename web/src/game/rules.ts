@@ -15,6 +15,7 @@ import {
   resetLiftQueues,
   stepLifts,
 } from "./lifts";
+import { previewPaintedTrail, type PaintStroke } from "./paintedTrail";
 import { createRng } from "./rng";
 import {
   THAW_START_MIN,
@@ -49,6 +50,7 @@ import {
   routeOptions,
   segmentElevationsForPath,
   snowCarriers,
+  STANDARD_TRAIL_WIDTH_FT,
   trailCost,
   trailsOnLift,
   type RouteOption,
@@ -456,6 +458,41 @@ export function undoLift(state: GameState): GameState {
 
 export type TrailOffer = RouteOption & { cost: number };
 
+export function checkPaint(state: GameState, strokes: readonly PaintStroke[], terrain: Terrain = TERRAIN) {
+  const draft = previewPaintedTrail(state, strokes, terrain);
+  const reason = draft.reason ?? (state.phase !== "day" ? "Build during the day."
+    : state.cash < draft.cost ? "Not enough cash." : null);
+  return { ...draft, reason };
+}
+
+export function commitPaint(state: GameState, strokes: readonly PaintStroke[], terrain: Terrain = TERRAIN): GameState {
+  const draft = checkPaint(state, strokes, terrain);
+  if (draft.reason || draft.liftIndex < 0) return state;
+  const original = draft.trailIndex === null ? undefined : state.trails[draft.trailIndex];
+  const trail: TrailRun = draft.deleteTrail && original ? { ...original, open: false } : {
+    liftIndex: draft.liftIndex,
+    name: original?.name ?? `Painted trail ${state.trails.length + 1}`,
+    path: draft.path,
+    widths: draft.widths,
+    lengthFt: draft.lengthFt,
+    pitch: draft.pitch,
+    difficulty: draft.difficulty,
+    open: true,
+    snow: original?.snow ?? averageTrail(state.trails.filter((item) => item.open).map((item) => item.snow)),
+    elevations: segmentElevationsForPath(draft.path, terrain),
+    builtDay: original ? original.builtDay : state.dayIndex,
+    builtAtMin: original ? original.builtAtMin : state.clockMin,
+    paid: (original?.paid ?? 0) + draft.cost,
+  };
+  return {
+    ...state,
+    trails: draft.trailIndex === null ? [...state.trails, trail]
+      : state.trails.map((item, i) => i === draft.trailIndex ? trail : item),
+    cash: state.cash - draft.cost,
+    buildMode: false,
+  };
+}
+
 export function trailOptions(
   state: Pick<GameState, "lifts" | "trails">,
   liftIndex: number,
@@ -490,6 +527,7 @@ export function cutTrail(
     liftIndex,
     name: opt.name,
     path: opt.path,
+    widths: opt.path.map(() => STANDARD_TRAIL_WIDTH_FT),
     lengthFt: opt.lengthFt,
     pitch: opt.pitch,
     difficulty: opt.difficulty,

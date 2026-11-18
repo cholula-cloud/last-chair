@@ -10,6 +10,7 @@ import {
   defaultTrails,
   fallLineTrailForLift,
   segmentElevationsForPath,
+  STANDARD_TRAIL_WIDTH_FT,
   type TrailRun,
 } from "./trails";
 import { DAY_START_MIN, SEASON_LENGTH, emptyDayStats, makeGuest, type NightRecap } from "./sim";
@@ -222,7 +223,7 @@ export function hydrate<T extends GameState>(persisted: unknown, current: T): T 
 
 /** Storage key stays `last-chair-v1` so existing saves load; the schema version is separate. */
 export const SAVE_KEY = "last-chair-v1";
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** Frozen horizontal scale for v7 saves (Dutch Hill only). */
 const V7_DUTCH_HILL_H = 6;
@@ -401,6 +402,12 @@ export function migrate(persisted: unknown, fromVersion: number): PersistedState
     const legacy = persisted as { buildings?: (BuildingId | "lodge")[] };
     p.buildings = (legacy.buildings ?? fresh.buildings).filter((id): id is BuildingId => id !== "lodge");
     p.lodgeTier = fresh.lodgeTier;
+  }
+  if (fromVersion < 12) {
+    p.trails = (p.trails ?? fresh.trails).map((trail) => ({
+      ...trail,
+      widths: trail.path.map(() => STANDARD_TRAIL_WIDTH_FT),
+    }));
   }
   // A save without rngState gets a fresh random seed; filling it from
   // createInitialState() would put every migrated save on the same seed.
