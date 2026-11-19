@@ -38,7 +38,7 @@ function Desk({ s }: { s: GameState }) {
     costs.draws > 0 && `${formatMoney(costs.draws)} in construction payments comes due at closing.`,
     s.schoolContract?.decision === "accepted" && s.schoolContract.day === s.dayIndex && "The Readsboro bus is scheduled for today.",
   ].filter(Boolean);
-  const lastBeat = s.beatLog.at(-1);
+  const lastBeat = s.pendingBeat ? { day: s.dayIndex, id: s.pendingBeat } : s.beatLog.at(-1);
   const lastMoment = s.surpriseLog.at(-1);
   const lastLodge = s.seasonDays.findLast(d => d.lodgeOpening);
   const broadcasts = [

@@ -16,6 +16,7 @@ import { LIFT_CABLE_OFFSET } from "./layout";
 import { TBAR_DROP, useCarrierGeometry } from "./Lift";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 import { HATS, JACKETS, PALETTE } from "./palette";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 const SPLIT = ["jacket", "helmet"] as const;
 
@@ -214,13 +215,13 @@ export function Guests({
   return (
     <group name="guests">
       <instancedMesh name="skiers" ref={baseRef} args={[geos.base, undefined, MAX]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh ref={jacketRef} args={[geos.jacket, undefined, MAX]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh ref={hatRef} args={[geos.hat, undefined, MAX]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh
         ref={shadowRef}
@@ -232,10 +233,10 @@ export function Guests({
         <meshBasicMaterial colorWrite={false} />
       </instancedMesh>
       <instancedMesh ref={tbarRef} args={[tbar, undefined, MAX]} castShadow frustumCulled={false}>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh name="occupied-chairs" ref={chairRef} args={[chair, undefined, MAX]} castShadow frustumCulled={false}>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </instancedMesh>
       <group ref={ringRef} visible={false}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={4}>

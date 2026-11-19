@@ -39,8 +39,10 @@ try {
   const button = (name) => page.getByRole("button", { name, exact: true });
   await button("Layers").tap();
   const panel = page.getByRole("region", { name: "Map layers" });
-  await panel.getByLabel("Slope legend").waitFor();
-  const bounds = await panel.boundingBox();
+  const strip = page.getByRole("group",{name:"Map layers"});
+  await strip.getByRole("button",{name:"Slope"}).tap();
+  await page.getByLabel("Slope legend").waitFor();
+  const bounds = await strip.boundingBox();
   assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 391);
   for (const layer of ["Snow depth", "Snow-making", "Conditions"]) {
     await button(layer).tap();
@@ -80,7 +82,7 @@ try {
   await panel.getByText(/Forecast chances/).waitFor();
   await button("Yesterday’s wear").tap();
   await panel.getByText(/Yesterday’s run count is unavailable/).waitFor();
-  await button("Layers").tap();
+  await strip.getByRole("button",{name:"Off"}).tap();
   await panel.waitFor({ state: "hidden" });
   assert.deepEqual(await save(), before, "Reading layers must preserve the saved hill");
   assert.deepEqual(errors, []);

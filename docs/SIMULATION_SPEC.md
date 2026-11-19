@@ -210,6 +210,8 @@ One heightfield serves the sim and the renderer (`game/terrain.ts`, pure TypeScr
 | `horizontalFeetPerUnit` | Horizontal feet per world unit: `def.horizontalFeetPerUnit / H` (Dutch Hill def 420, so 70 at 6/3) |
 | `scale`, `toWorld(p)`, `toDesign(p)` | See world scale below |
 
+**Slope bands (implemented, row O1).** The map overlay classes ground by real pitch, `grade * realGradeFactor`, with the painted-trail thresholds: green up to 0.25, blue up to 0.45, black up to 0.65 (`MAX_PAINTED_PITCH`), double black above it. Contours are every 50 ft of vertical. Constants live in `game/trails.ts`, `game/paintedTrail.ts` and `game/overlays.ts`.
+
 Dutch Hill's features are named in the data: base apron (flat village ground at z ≥ 2.1, height 0.1), meadow (gentle novice apron), face (fall-line control points with a monotone cubic and one steeper rollover band), summit and east shoulder domes, side ridges, bowl and noise. The characterization snapshot does not depend on terrain.
 
 #### World scale (part 2a, no visible change)

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import {
-  pitchBand,
   segmentCondition,
   overlayModel,
   readPoint,
@@ -15,17 +14,6 @@ import { gunCoverage, trailSegmentMidpoints } from "./guns";
 import { freshTrail, WEAR_PER_RUN } from "./snow";
 
 describe("map layers", () => {
-  it("uses the route cutoffs and distinguishes terrain too steep to paint", () => {
-    expect([0.24, 0.25, 0.26, 0.45, 0.46, 0.65, 0.66].map(pitchBand)).toEqual([
-      "green",
-      "green",
-      "blue",
-      "blue",
-      "black",
-      "black",
-      "double",
-    ]);
-  });
   it("classifies all seven segment surfaces, giving missing cover priority", () => {
     const condition = (
       depth: number,

@@ -5,7 +5,6 @@ import {
   sampleSnowPath,
 } from "./guns";
 import { onLease } from "./lease";
-import { MAX_PAINTED_PITCH } from "./paintedTrail";
 import { PERSONAS } from "./personas";
 import { previewOvernight, skipToClose } from "./rules";
 import {
@@ -22,9 +21,7 @@ import type { GameState } from "./state";
 import { TALENT } from "./talents";
 import { TERRAIN, type XZ } from "./terrain";
 import {
-  classifyPitch,
   isOverSkill,
-  realGradeFactor,
   STANDARD_TRAIL_WIDTH_FT,
   type TrailRun,
 } from "./trails";
@@ -38,14 +35,11 @@ export const LAYERS = {
   conditions: "Conditions",
 } as const;
 export type MapLayer = keyof typeof LAYERS;
+export type SnowLayer = Exclude<MapLayer,"slope">;
 export type MapTime = "Now" | "Close" | "Tomorrow";
 export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };
 export const MARKS = {
-  green: { name: "Green", color: "#87bd86", glyph: "●" },
-  blue: { name: "Blue", color: "#7cb2de", glyph: "■" },
-  black: { name: "Black", color: "#797889", glyph: "◆" },
-  double: { name: "Double black", color: "#514960", glyph: "❖" },
   neutral: { name: "Not simulated", color: "#aeb3b2", glyph: "–" },
   bare: { name: "Bare · closed", color: "#b18b66", glyph: "×" },
   shallow: { name: "Shallow", color: "#bbbdab", glyph: "·" },
@@ -69,8 +63,7 @@ export const MARKS = {
   breakup: { name: "Broken cover", color: "#b18b66", glyph: "×" },
 } satisfies Record<string, Mark>;
 export type MarkId = keyof typeof MARKS;
-export const LEGENDS: Record<MapLayer, MarkId[]> = {
-  slope: ["green", "blue", "black", "double"],
+export const LEGENDS: Record<SnowLayer, MarkId[]> = {
   depth: ["breakup", "shallow", "covered", "deep", "neutral"],
   guns: ["last", "reach", "out", "neutral"],
   conditions: [
@@ -86,9 +79,6 @@ export const LEGENDS: Record<MapLayer, MarkId[]> = {
   ],
 };
 
-export function pitchBand(pitch: number): MarkId {
-  return pitch > MAX_PAINTED_PITCH ? "double" : classifyPitch(pitch);
-}
 export function segmentCondition(
   s: Segment,
   groomed: boolean,
@@ -198,7 +188,7 @@ export function overlayModel(
 export type OverlayModel = ReturnType<typeof overlayModel>;
 type Cell = OverlayModel["trails"][number][number];
 export function cellMark(
-  layer: MapLayer,
+  layer: SnowLayer,
   cell: Cell,
   wear = false,
   gunView: GunView = "Last night",
@@ -273,7 +263,7 @@ export function segmentAt(trails: TrailRun[], point: XZ) {
 export function readPoint(
   state: GameState,
   model: OverlayModel,
-  layer: MapLayer,
+  layer: SnowLayer,
   point: XZ,
   wear: boolean,
   gunView: GunView = "Last night",
@@ -289,14 +279,6 @@ export function readPoint(
       title: "Outside the lease",
       detail: "Tap inside the lease to inspect the hill.",
     };
-  if (layer === "slope") {
-    const pitch = TERRAIN.grade(point.x, point.z) * realGradeFactor();
-    return {
-      ...result,
-      title: MARKS[pitchBand(pitch)].name,
-      detail: `The downhill pitch is ${Math.round(pitch * 100)}%.`,
-    };
-  }
   const hit = segmentAt(state.trails, point);
   if (!hit) {
     if (layer === "guns") {

@@ -7,6 +7,7 @@ import type { SnowGun } from "@/game/guns";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { bakeKit, LIFT_TOY_SCALE, METERS_TO_WORLD, mergePlaced, placeKit, useKit } from "./kit";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 const SCALE = METERS_TO_WORLD * LIFT_TOY_SCALE;
 /** Kit fan nozzle height (5.6 m) in world units. */
@@ -79,7 +80,7 @@ function PlacedGuns({ guns, fired, day }: { guns: readonly SnowGun[]; fired: boo
   return (
     <group>
       <mesh geometry={geo} castShadow>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </mesh>
       {firing.length > 0 && <Plumes firing={firing} />}
     </group>

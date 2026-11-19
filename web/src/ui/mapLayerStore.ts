@@ -12,11 +12,14 @@ import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import type { XZ } from "@/game/terrain";
 import type { SnowPreset } from "@/game/types";
+import { resolveActiveLayer } from "@/game/overlays";
 import { usePlacementDraft } from "./placementDraft";
 
 export const useLayers = create<{
   layer: MapLayer | null;
   nightInspection: boolean;
+  stripOpen: boolean;
+  autoOff: boolean;
   time: MapTime;
   preset: SnowPreset;
   gunView: GunView;
@@ -25,6 +28,8 @@ export const useLayers = create<{
 }>(() => ({
   layer: null,
   nightInspection: false,
+  stripOpen: false,
+  autoOff: false,
   time: "Now",
   preset: "mid",
   gunView: "Last night",
@@ -37,7 +42,7 @@ let daySelection: ReturnType<typeof useLayers.getState> | null = null;
 /** Inspect the closed hill without changing tomorrow's map or committing operating choices. */
 export function openNightLayer(layer: MapLayer, preset: SnowPreset) {
   daySelection ??= useLayers.getState();
-  useLayers.setState({ nightInspection: true, layer, time: "Now", point: null, wear: false, gunView: "Last night", preset });
+  useLayers.setState({ nightInspection: true, stripOpen:true, layer, time: "Now", point: null, wear: false, gunView: "Last night", preset });
 }
 
 export function closeNightLayer() {
@@ -47,11 +52,12 @@ export function closeNightLayer() {
 
 export function useActiveLayer() {
   const manual = useLayers((s) => s.layer);
-  const draft = usePlacementDraft((s) => (s.active ? s.kind : null));
+  const painting = usePlacementDraft(s => s.active && s.kind === "trail" && !s.review);
+  const autoOff = useLayers(s => s.autoOff);
   const phase = useGameStore((s) => s.phase);
   const inspecting = useLayers(s => s.nightInspection);
   if (phase === "night" && inspecting) return manual;
-  return phase === "day" ? (draft === "trail" ? "slope" : draft ? null : manual) : null;
+  return phase === "day" ? resolveActiveLayer(manual, autoOff, painting) : null;
 }
 
 // The panel and the renderer read the same immutable store snapshot. Share their simulation work.

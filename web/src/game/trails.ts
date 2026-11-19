@@ -186,9 +186,13 @@ export function realGradeFactor(terrain: Terrain = TERRAIN): number {
   return (570 / 420) * (V / H);
 }
 
+/** Real sustained pitch (rise over run) at or below which a trail is green, then blue. */
+export const GREEN_MAX_PITCH = 0.25;
+export const BLUE_MAX_PITCH = 0.45;
+
 export function classifyPitch(pitch: number): Difficulty {
-  if (pitch <= 0.25) return "green";
-  if (pitch <= 0.45) return "blue";
+  if (pitch <= GREEN_MAX_PITCH) return "green";
+  if (pitch <= BLUE_MAX_PITCH) return "blue";
   return "black";
 }
 

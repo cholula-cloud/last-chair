@@ -1,6 +1,5 @@
 "use client";
 
-import { MapOverlay } from "./MapOverlay";
 import { BuildGrid } from "./BuildGrid";
 import { LeaseBoundary } from "./LeaseBoundary";
 import { CameraRig } from "./CameraRig";
@@ -30,6 +29,7 @@ import { Lift } from "./Lift";
 import { Village } from "./Lodge";
 import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
+import { OverlayScene } from "./OverlayScene";
 import { Road, Terrain } from "./Terrain";
 import { TrailSign } from "./TrailSign";
 import { Trees } from "./Trees";
@@ -111,12 +111,13 @@ export function MountainScene({ coaching = false }: { coaching?: boolean }) {
         forestPaths={forestPaths}
         lines={clearingLines}
       />
-      <MapOverlay />
       <Road />
       <LeaseBoundary />
+      <OverlayScene />
       <BuildGrid />
       <Suspense fallback={null}>
-        <group name="overlay-context"><Village /><ArrivalArea guests={guests} dayIndex={dayIndex} /></group>
+        <Village />
+        <ArrivalArea guests={guests} dayIndex={dayIndex} />
         <SnowGuns />
         <Trees lines={clearingLines} paths={forestPaths} />
 
@@ -135,7 +136,7 @@ export function MountainScene({ coaching = false }: { coaching?: boolean }) {
         ))}
 
         <BuildScenePreview />
-        <group name="overlay-context"><Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} /></group>
+        <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
       </Suspense>
       <PlacementController />
       <CameraRig followId={followId} followedRef={followedRef} />

@@ -11,6 +11,8 @@ import { TERRAIN, fbm } from "@/game/terrain";
 import { forestMask } from "./forest";
 import { distanceOutsideLease } from "@/game/lease";
 import { outsideWeight, patchLeaseDim } from "./leaseDim";
+import { patchOverlay } from "./terrainOverlay";
+import { realGradeFactor } from "@/game/trails";
 import { buildGeometry } from "./terrainMesh";
 import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
 import type { XZ } from "@/game/terrain";
@@ -150,6 +152,11 @@ export function Terrain({
     const outside = new Float32Array(pos.count);
     for (let i = 0; i < pos.count; i++) outside[i] = outsideWeight({ x: pos.getX(i), z: pos.getZ(i) });
     g.setAttribute("aOut", new THREE.BufferAttribute(outside, 1));
+    // Real pitch at each vertex, for the slope layer. Computed once, so a layer switch rebuilds nothing.
+    const pitch = new Float32Array(pos.count);
+    const factor = realGradeFactor();
+    for (let i = 0; i < pos.count; i++) pitch[i] = TERRAIN.grade(pos.getX(i), pos.getZ(i)) * factor;
+    g.setAttribute("aPitch", new THREE.BufferAttribute(pitch, 1));
     return g;
   }, []);
   const q = Math.round(snowQuality * 20) / 20;
@@ -191,7 +198,7 @@ export function Terrain({
     paint(geometry, q, d, trails, influence, canGrow);
   }, [geometry, q, d, trails, influence, canGrow]);
 
-  const material = useMemo(() => patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true })), []);
+  const material = useMemo(() => patchOverlay(patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true }))), []);
   useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
 
   // Receives only: the hill barely self-shadows at this sun angle, and casting

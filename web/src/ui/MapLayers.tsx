@@ -7,10 +7,12 @@ import {
   readPoint,
   type MarkId,
   type GunView,
-  type MapLayer,
+  type MapLayer, type SnowLayer,
   type MapTime,
 } from "@/game/mapLayers";
-import { useGameStore } from "@/game/store";
+import { slopeReadout, SLOPE_LEGEND } from "@/game/overlays";
+import { TERRAIN } from "@/game/terrain";
+import { PatternSwatch } from "./OverlayControls";
 import { useLayers, useLayerSnapshot } from "./mapLayerStore";
 
 const control = "key press min-h-11 shrink-0 px-2 text-xs font-bold";
@@ -19,7 +21,7 @@ export function LayerLegend({
   wear = false,
   gunView = "Last night",
 }: {
-  layer: MapLayer;
+  layer: SnowLayer;
   wear?: boolean;
   gunView?: GunView;
 }) {
@@ -51,16 +53,17 @@ export function LayerLegend({
   );
 }
 
-export function LayerPanel({ layer }: { layer: MapLayer }) {
+export function LayerPanel({ layer, embedded = false }: { layer: MapLayer; embedded?: boolean }) {
   const { time, preset, point, wear, gunView } = useLayers();
   const { state, model } = useLayerSnapshot(layer);
-  const read = point && readPoint(state, model, layer, point, wear, gunView);
+  const slope = point && layer === "slope" ? slopeReadout(point,{terrain:TERRAIN}) : null;
+  const read = slope ? {title:slope.headline,detail:slope.chips.join(" · "),personas:[]} : point && layer !== "slope" && readPoint(state, model, layer, point, wear, gunView);
   return (
     <section
       aria-label="Map layers"
-      className="panel absolute bottom-full right-0 mb-2 max-h-[37dvh] w-[min(92vw,25rem)] space-y-2 overflow-y-auto overscroll-contain p-2"
+      className={`panel pointer-events-auto max-h-[37dvh] w-[min(92vw,25rem)] space-y-2 overflow-y-auto overscroll-contain p-2 ${embedded ? "" : "absolute bottom-full right-0 mb-2"}`}
     >
-      <div className="flex gap-1 overflow-x-auto" aria-label="Choose a layer">
+      {!embedded && <div className="flex gap-1 overflow-x-auto" aria-label="Choose a layer">
         {(Object.keys(LAYERS) as MapLayer[]).map((id) => (
           <button
             type="button"
@@ -72,7 +75,7 @@ export function LayerPanel({ layer }: { layer: MapLayer }) {
             {LAYERS[id]}
           </button>
         ))}
-      </div>
+      </div>}
       {layer === "guns" && (
         <div className="flex gap-1" aria-label="Snow-making service">
           {(["Last night", "Mid", "High"] as const).map((view) => (
@@ -145,11 +148,11 @@ export function LayerPanel({ layer }: { layer: MapLayer }) {
           )}
         </>
       )}
-      <LayerLegend
+      {layer === "slope" ? <div aria-label="Slope legend" className="flex gap-1">{SLOPE_LEGEND.map(e=><span key={e.id} className="flex items-center text-xs"><PatternSwatch color={e.color} pattern={e.pattern}/>{e.label}</span>)}</div> : <LayerLegend
         layer={layer}
         gunView={gunView}
         wear={layer === "conditions" && wear}
-      />
+      />}
       <p className="text-xs font-bold">
         {layer === "slope"
           ? "Contour lines mark 50 ft of elevation."
@@ -178,29 +181,5 @@ export function LayerPanel({ layer }: { layer: MapLayer }) {
         </div>
       )}
     </section>
-  );
-}
-export function MapLayers() {
-  const layer = useLayers((s) => s.layer);
-  return (
-    <div>
-      <button
-        type="button"
-        className="key press min-h-11 px-3 text-sm font-extrabold"
-        aria-expanded={!!layer}
-        onClick={() =>
-          useLayers.setState({
-            layer: layer ? null : "slope",
-            point: null,
-            time: "Now",
-            wear: false,
-            preset: useGameStore.getState().pendingSnow,
-          })
-        }
-      >
-        Layers
-      </button>
-      {layer && <LayerPanel layer={layer} />}
-    </div>
   );
 }

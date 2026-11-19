@@ -2,10 +2,9 @@ import {
   gunRadius,
   cellMark,
   MARKS,
-  pitchBand,
   segmentPath,
   type GunView,
-  type MapLayer,
+  type SnowLayer,
   type MarkId,
   type OverlayModel,
 } from "@/game/mapLayers";
@@ -13,7 +12,7 @@ import { leaseBounds } from "@/game/lease";
 import { COVER_MIN } from "@/game/snow";
 import type { GameState } from "@/game/state";
 import { TERRAIN, type XZ } from "@/game/terrain";
-import { realGradeFactor, STANDARD_TRAIL_WIDTH_FT } from "@/game/trails";
+import { STANDARD_TRAIL_WIDTH_FT } from "@/game/trails";
 
 const bounds = leaseBounds();
 export const textureUV = (x: number, z: number) => [
@@ -48,45 +47,10 @@ function line(ctx: CanvasRenderingContext2D, path: readonly XZ[]) {
     else ctx.moveTo(x, y);
   });
 }
-const slopeCache = new Map<boolean, HTMLCanvasElement>();
-function slopeCanvas(strong: boolean) {
-  const cached = slopeCache.get(strong);
-  if (cached) return cached;
-  const canvas = surface(SIZE),
-    ctx = canvas.getContext("2d")!;
-  const step = 6,
-    nx = SIZE / step;
-  const heights = new Float32Array(nx * nx);
-  const inks = Object.fromEntries(
-    (["green", "blue", "black", "double"] as const).map((k) => [
-      k,
-      pattern(ctx, k, strong),
-    ]),
-  );
-  const base = TERRAIN.height(TERRAIN.base.x, TERRAIN.base.z);
-  for (let j = 0; j < nx; j++)
-    for (let i = 0; i < nx; i++) {
-      const x = bounds.xMin + ((i + 0.5) / nx) * (bounds.xMax - bounds.xMin);
-      const z = bounds.zMin + ((j + 0.5) / nx) * (bounds.zMax - bounds.zMin);
-      const band = pitchBand(TERRAIN.grade(x, z) * realGradeFactor());
-      ctx.fillStyle = inks[band];
-      ctx.fillRect(i * step, j * step, step, step);
-      const level = ((TERRAIN.height(x, z) - base) * TERRAIN.feetPerUnit) / 50;
-      heights[j * nx + i] = level;
-      // Draw only the edges crossed by a 50-foot elevation boundary.
-      ctx.fillStyle = "#25354caa";
-      if (i && Math.floor(level) !== Math.floor(heights[j * nx + i - 1]))
-        ctx.fillRect(i * step, j * step, 1, step);
-      if (j && Math.floor(level) !== Math.floor(heights[(j - 1) * nx + i]))
-        ctx.fillRect(i * step, j * step, step, 1);
-    }
-  slopeCache.set(strong, canvas);
-  return canvas;
-}
 export function drawLayer(
   state: GameState,
   model: OverlayModel,
-  layer: MapLayer,
+  layer: SnowLayer,
   wear: boolean,
   strong: boolean,
   gunView: GunView,
@@ -101,10 +65,6 @@ export function drawLayer(
     line(ctx, TERRAIN.lease);
     ctx.closePath();
     ctx.clip();
-  }
-  if (layer === "slope") {
-    ctx.drawImage(slopeCanvas(strong), 0, 0);
-    return canvas;
   }
   ctx.fillStyle = pattern(ctx, "neutral", false);
   ctx.fillRect(0, 0, SIZE, SIZE);
