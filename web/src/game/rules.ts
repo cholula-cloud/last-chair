@@ -1,9 +1,9 @@
 import {
-  BANKRUPTCY_MORNINGS, LOAN_TERMS,
+  BANKRUPTCY_MORNINGS, LOAN_TERMS, loanRate,
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
   morningCash, operatingCosts, payoffAmount, type Payable,
 } from "./economy";
-import { MOUNTAIN_CALENDARS, usesWeekendGuestMix } from "./calendar";
+import { MOUNTAIN_CALENDARS, isFestiveDay, usesWeekendGuestMix, weekdayForDay } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   assetRevenue,
@@ -20,7 +20,14 @@ import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
-import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
+import { FOUNDERS } from "./content";
+import {
+  apresRevenueFor, clearingCostFor, founderMods, reputationDriftFor, warmWeekPenalty,
+} from "./founders";
+import {
+  cafeShiftValue, firstTimerMoodBonus, hasTalent, heritageSignReputation, nextTalent, snowNightCost,
+  snowPenaltyScale, talentArrivalMood, talentLearnedLine,
+} from "./talents";
 import {
   checkLiftLine,
   checkSpacing,
@@ -107,14 +114,16 @@ export function arrivalMood(
   buildings: BuildingId[],
   founderId: FounderId | null,
   weather: WeatherKind = "clear",
+  extra: { warmWeekPenalty?: number; talentMood?: number } = {},
 ): number {
   let mood = 0.65;
   if (weather === "snow" || weather === "storm") mood += 0.06;
   if (weather === "thaw") mood -= 0.08;
   if (buildings.includes("warming_hut")) mood += 0.05;
   if (buildings.includes("cafe")) mood += 0.04;
-  const founder = founderById(founderId);
-  if (founder) mood += founder.arrivalMoodBonus;
+  mood += founderMods(founderId).arrivalMoodBonus;
+  mood -= extra.warmWeekPenalty ?? 0;
+  mood += extra.talentMood ?? 0;
   return Math.max(0, Math.min(0.95, mood));
 }
 
@@ -131,18 +140,25 @@ export function measuredWaitMin(state: GameState): number {
 export function satisfactionContext(
   state: Pick<
     GameState,
-    "fare" | "buildings" | "founderId" | "weather" | "clockMin"
+    "fare" | "buildings" | "founderId" | "weather" | "clockMin" | "talentsOwned" | "dayIndex" | "weatherDays" | "mountainId"
   > & Partial<Pick<GameState, "assets">>,
 ): SatisfactionContext {
-  const founder = founderById(state.founderId);
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const mood = arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather, {
+    warmWeekPenalty: warmWeekPenalty(state),
+    talentMood: talentArrivalMood(state.talentsOwned, isFestiveDay(calendar, state.dayIndex)),
+  });
   return {
     fare: state.fare,
-    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) +
+    arrivalMood: Math.min(0.95, mood +
       (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
     venueValue: state.assets
       ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
-      : venueValue(state.buildings),
-    snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
+        + cafeShiftValue(state.talentsOwned, state.assets.some((asset) => asset.id === "cafe"))
+      : venueValue(state.buildings, state.talentsOwned),
+    snowExpectation: SAT.SNOW_EXPECTED + founderMods(state.founderId).snowExpectationPenalty,
+    firstTimerMoodBonus: firstTimerMoodBonus(state.talentsOwned),
+    snowPenaltyScale: snowPenaltyScale(state.talentsOwned),
     now: state.clockMin,
   };
 }
@@ -176,9 +192,9 @@ export function openNight(state: GameState): GameState {
       return min > (busiest?.min ?? 0) && lift ? { min, label: `${LIFT_LABELS[lift.type]} ${i + 1}` } : busiest;
     }, undefined),
   });
-  const rawReputation = Math.round(
-    state.reputation * 0.85 + recap.satisfaction * 0.15,
-  );
+  const rawReputation = Math.min(100, Math.round(
+    state.reputation * 0.85 + recap.satisfaction * 0.15 + reputationDriftFor(state.founderId),
+  ));
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0);
   const pendingBeat = readyStoryBeat({
@@ -190,7 +206,7 @@ export function openNight(state: GameState): GameState {
     snowDepth: state.snowDepth,
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: rawReputation,
-    lessonsBooked: (stats.venueRevenue.ski_school ?? 0) > 0 || state.talentsOwned.includes("school_day"),
+    lessonsBooked: (stats.venueRevenue.ski_school ?? 0) > 0 || hasTalent(state.talentsOwned, "school_day"),
     completedBeats: state.completedBeats,
   });
   return {
@@ -278,14 +294,14 @@ export function tick(state: GameState, deltaMs: number): GameState {
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
       if (asset?.id === "cafe" || asset?.id === "warming_hut") occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
-        const rate = assetRevenue(asset);
+        const rate = apresRevenueFor(state.founderId, assetRevenue(asset));
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         if (asset.id === "cafe" || asset.id === "warming_hut") {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");
           if (shop && !was.refuelled && g.refuelled) {
-            venueRevenue.shop = (venueRevenue.shop ?? 0) + assetRevenue(shop);
+            venueRevenue.shop = (venueRevenue.shop ?? 0) + apresRevenueFor(state.founderId, assetRevenue(shop));
           }
         }
       }
@@ -418,7 +434,7 @@ export function liftLineOf(lift: LiftSlot): LiftLine {
 }
 
 type LiftPlacementState = Pick<GameState, "lifts" | "cash"> &
-  Partial<Pick<GameState, "assets" | "lodgeTier">>;
+  Partial<Pick<GameState, "assets" | "lodgeTier" | "founderId">>;
 
 /** Terrain, buildings, lift count, spacing, crossing and cash checks. */
 export function checkPlacement(
@@ -441,7 +457,7 @@ export function checkPlacement(
     open.map((l) => ({ line: liftLineOf(l), type: l.type })),
   );
   if (conflict) return { ok: false, reason: conflict.reason, type: conflict.type };
-  const cost = liftCost(type, line);
+  const cost = clearingCostFor(state.founderId ?? null, liftCost(type, line), 50);
   const { deposit } = constructionDraw(cost);
   if (state.cash < deposit) return { ok: false, reason: "cash", need: deposit - state.cash };
   return { ok: true, cost, length: terrain.length, vertical: terrain.vertical };
@@ -591,9 +607,10 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   const excludedCells = previousWidths && !isGlade && !preview.deleteTrail
     ? [...state.clearedCells, ...clearingCells(path, previousWidths)]
     : state.clearedCells;
-  const cleared = isGlade || path.length < 2 || preview.deleteTrail
+  const quoted = isGlade || path.length < 2 || preview.deleteTrail
     ? { newCells: [], acres: 0, cost: 0 }
     : clearingQuote(path, widths, excludedCells);
+  const cleared = { ...quoted, cost: clearingCostFor(state.founderId, quoted.cost) };
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
@@ -643,7 +660,7 @@ export function commitPaint(state: GameState, strokes: readonly PaintStroke[], g
 export type TrailOffer = RouteOption & { cost: number };
 
 export function trailOptions(
-  state: Pick<GameState, "lifts" | "trails"> & Partial<Pick<GameState, "clearedCells">>,
+  state: Pick<GameState, "lifts" | "trails"> & Partial<Pick<GameState, "clearedCells" | "founderId">>,
   liftIndex: number,
   terrain: Terrain = TERRAIN,
 ): TrailOffer[] {
@@ -653,7 +670,8 @@ export function trailOptions(
   return routeOptions(lift.anchor, existing, terrain).map((opt) => ({
     ...opt,
     cost: state.clearedCells
-      ? 150 + clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost
+      ? 150 + clearingCostFor(state.founderId ?? null,
+        clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost)
       : trailCost(opt.lengthFt),
   }));
 }
@@ -871,9 +889,9 @@ function nightFor(
     talentsOwned: state.talentsOwned,
     daysWithoutSnow: state.daysWithoutSnow,
   });
-  const learned = CREW_TALENTS.find((x) => x.name === overnight.talentLearned);
+  const learned = nextTalent(state.talentsOwned);
   const talentsOwned = learned ? [...state.talentsOwned, learned.id] : state.talentsOwned;
-  return { overnight, talentsOwned };
+  return { overnight, talentsOwned, learned };
 }
 
 function forecastResults(state: GameState, snow: SnowPreset) {
@@ -914,7 +932,7 @@ export function previewOvernight(state: GameState, snow: SnowPreset): OvernightP
     tone: reading.tone,
     meanQuality: outlook ? WEATHER_KINDS.reduce((sum, kind) =>
       sum + outlook[kind] * results[kind].overnight.snowQuality, 0) : overnight.snowQuality,
-    cost: SNOW_NIGHT_COST[snow],
+    cost: snowNightCost(snow, SNOW_NIGHT_COST[snow], state.talentsOwned),
     weather,
     outlook,
     results,
@@ -951,7 +969,7 @@ export function takeLoan(state: GameState): GameState {
     cash: state.cash + principal,
     nightRecap: { ...state.nightRecap, loanReceived: principal },
     loanTaken: true,
-    loan: { principal, balance: principal, ratePerDay: LOAN_TERMS.rate / state.seasonLength, takenDay: state.dayIndex },
+    loan: { principal, balance: principal, ratePerDay: loanRate(state.founderId) / state.seasonLength, takenDay: state.dayIndex },
   };
 }
 
@@ -985,6 +1003,8 @@ export function sleep(state: GameState): GameState {
     ...state,
     cash,
     debtMornings,
+    reputation: Math.min(100, state.reputation + heritageSignReputation(
+      state.talentsOwned, weekdayForDay(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex))),
     loan: state.loan ? { ...state.loan, balance: state.loan.balance + costs.interest } : null,
     payables: state.payables.filter(({ dueDay }) => dueDay > state.dayIndex),
   };
@@ -1020,7 +1040,7 @@ export function sleep(state: GameState): GameState {
     };
   }
 
-  const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
+  const { overnight, talentsOwned, learned } = nightFor(state, state.pendingSnow);
   const carried: GameState = {
     ...state,
     lodgeUpgrade: upgrade,
@@ -1070,11 +1090,12 @@ export function sleep(state: GameState): GameState {
     ...carried,
     phase: "day",
     gunsVisible: overnight.gunsFired,
-    talentToast: overnight.talentLearned
-      ? `Crew learned: ${overnight.talentLearned}. Next: ${overnight.nextTalentHint ?? "—"}`
-      : overnight.nextTalentHint
-        ? `Tomorrow the crew learns: ${overnight.nextTalentHint}`
-        : null,
+    talentToast: learned
+      ? talentLearnedLine(learned.id, {
+        chair: state.lifts.some((lift) => lift.confirmed && lift.type === "chair"),
+        cafe: state.assets.some((asset) => asset.id === "cafe"),
+      })
+      : null,
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,

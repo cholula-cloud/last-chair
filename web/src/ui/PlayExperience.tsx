@@ -11,7 +11,8 @@ import { readSnow } from "@/game/snow";
 import { snowCarriers } from "@/game/trails";
 import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
-import { isWindHeld, weatherForDay } from "@/game/weather";
+import { snowNightCost, windHoldWindow } from "@/game/talents";
+import { isWindHeld, weatherForDay, WIND_HOLD } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
@@ -61,10 +62,13 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   const anyOnHill = useGameStore((s) => s.guests.some(isOnHill));
   const weather = useGameStore((s) => s.weather);
   const chairHeld = useGameStore((s) => s.phase === "day" && s.lifts.some((lift, i) =>
-    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin) && isLiftOperational(lift, i, s.trails),
+    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin, s.talentsOwned) && isLiftOperational(lift, i, s.trails),
   ));
+  const windHoldEnd = useGameStore((s) => windHoldWindow(s.talentsOwned, WIND_HOLD).toMin);
   const morningHeadline = useGameStore((s) => s.morningHeadline);
   const snowPreset = useGameStore((s) => s.snow);
+  const talentsOwned = useGameStore((s) => s.talentsOwned);
+  const overnightCost = snowNightCost(snowPreset, SNOW_NIGHT_COST[snowPreset], talentsOwned);
   const talentToast = useGameStore((s) => s.talentToast);
   const saveNotice = useGameStore((s) => s.saveNotice);
   const dismissSaveNotice = useGameStore((s) => s.dismissSaveNotice);
@@ -209,7 +213,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {chairHeld && <WindHoldCallout />}
+          {chairHeld && <WindHoldCallout untilMin={windHoldEnd} />}
         </div>
         {showNote && !placementActive && (
           <MorningNote
@@ -217,8 +221,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             headline={tidy(morningHeadline)}
             crewLine={talentToast ? tidy(talentToast) : null}
             overnightLine={
-              dayIndex > 1 && SNOW_NIGHT_COST[snowPreset] > 0
-                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
+              dayIndex > 1 && overnightCost > 0
+                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-overnightCost)}`
                 : null
             }
             expanded={noteExpanded}

@@ -1,5 +1,6 @@
 import { formatMoney } from "./format";
 import { PERSONAS } from "./personas";
+import { billboardValue, cafeShiftValue } from "./talents";
 import { FARE_PRICES, type BuildingId, type FarePreset, type Guest } from "./types";
 
 /** Constants of the satisfaction formula (see SIMULATION_SPEC, Satisfaction). All points are on the 0–100 scale. */
@@ -59,15 +60,21 @@ export const VALUE = {
 } as const;
 
 /** Dollars the buildings add to a day on the hill. */
-export function venueValue(buildings: readonly BuildingId[]): number {
-  return buildings.includes("cafe") ? VALUE.CAFE : 0;
+export function venueValue(buildings: readonly BuildingId[], talentsOwned: readonly string[] = []): number {
+  const cafe = buildings.includes("cafe");
+  return (cafe ? VALUE.CAFE : 0) + cafeShiftValue(talentsOwned, cafe);
 }
 
 /** What the town expects a day here to be worth: reputation and the venues they know about (no RNG). */
-export function expectedHillValue(reputation: number, buildings: readonly BuildingId[]): number {
+export function expectedHillValue(
+  reputation: number,
+  buildings: readonly BuildingId[],
+  talentsOwned: readonly string[] = [],
+): number {
   return Math.max(
     VALUE.FLOOR,
-    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings),
+    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings, talentsOwned)
+      + billboardValue(talentsOwned),
   );
 }
 
@@ -93,6 +100,10 @@ export type SatisfactionContext = {
   venueValue: number;
   /** Snow quality guests expect today: `SAT.SNOW_EXPECTED` plus the founder's penalty. */
   snowExpectation: number;
+  /** Ski School talent: added to the arrival mood of first-time skiers. Defaults to 0. */
+  firstTimerMoodBonus?: number;
+  /** First Aid Hut talent: scales a negative snow term. Defaults to 1. */
+  snowPenaltyScale?: number;
   /** Game clock minute; sizes the wait of a guest still standing in a line. */
   now: number;
 };
@@ -159,16 +170,18 @@ function guestEvaluation(
   ctx: SatisfactionContext,
 ): { terms: SatTerms; hillValue: number } {
   const p = PERSONAS[g.persona];
-  const arrivalMood = SAT.ARRIVAL_PTS * (ctx.arrivalMood - SAT.ARRIVAL_NEUTRAL);
+  const mood = ctx.arrivalMood + (g.persona === "first_timer" ? ctx.firstTimerMoodBonus ?? 0 : 0);
+  const arrivalMood = SAT.ARRIVAL_PTS * (Math.min(0.95, mood) - SAT.ARRIVAL_NEUTRAL);
   const queue = 0 - Math.min(
     SAT.QUEUE_CAP,
     SAT.QUEUE_PTS * p.queueWeight * queuePain(guestAvgWaitMin(g, ctx.now)),
   );
   // Guests with no run yet have felt no snow.
-  const snow =
+  const rawSnow =
     g.runs > 0
       ? SAT.SNOW_PTS * p.snowWeight * (g.snowSum / g.runs - ctx.snowExpectation)
       : 0;
+  const snow = rawSnow < 0 ? rawSnow * (ctx.snowPenaltyScale ?? 1) : rawSnow;
   const hillValue = guestHillValue(g, ctx);
   const price = FARE_PRICES[ctx.fare];
   const value = Math.max(

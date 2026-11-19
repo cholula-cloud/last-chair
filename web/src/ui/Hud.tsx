@@ -129,11 +129,17 @@ const WEATHER: Record<WeatherKind, { label: string; icon: ReactNode }> = {
   thaw: { label: "Thaw", icon: <ThawIcon size={20} /> },
 };
 
-export function WindHoldCallout() {
+function clockWord(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h > 12 ? h - 12 : h}${m ? `:${String(m).padStart(2, "0")}` : ""} ${h >= 12 ? "PM" : "AM"}`;
+}
+
+export function WindHoldCallout({ untilMin = 780 }: { untilMin?: number }) {
   return (
     <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
       <WindIcon size={18} />
-      Chair on wind hold until 1 PM
+      Chair on wind hold until {clockWord(untilMin)}
     </p>
   );
 }
@@ -179,7 +185,7 @@ export function MorningNote({
           <p className="mt-0.5 truncate text-[0.74rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
         )}
         {crewLine && (
-          <p className="mt-0.5 truncate text-[0.8rem] font-extrabold text-sign-green">{crewLine}</p>
+          <p className="mt-0.5 line-clamp-3 text-[0.8rem] font-extrabold leading-snug text-sign-green">{crewLine}</p>
         )}
       </div>
       <button

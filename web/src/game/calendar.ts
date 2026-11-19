@@ -31,6 +31,11 @@ export function dayKind(cal: CalendarDef, day: number): "weekday" | "weekend" | 
   return weekdayIndex(cal, day) >= 5 ? "weekend" : "weekday";
 }
 
+/** Friday, a weekend or a holiday: the days the village turns out. */
+export function isFestiveDay(cal: CalendarDef, day: number): boolean {
+  return dayKind(cal, day) !== "weekday" || weekdayForDay(cal, day) === "Fri";
+}
+
 export function inHolidayWeek(cal: CalendarDef, day: number): boolean {
   return cal.holidayWeeks.some(({ from, to }) => day >= from && day <= to);
 }

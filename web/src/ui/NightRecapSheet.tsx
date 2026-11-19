@@ -8,7 +8,8 @@ import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
-import { nextTalentName, type NightRecap } from "@/game/sim";
+import type { NightRecap } from "@/game/sim";
+import { nextTalent, snowNightCost, talentWaitingFor } from "@/game/talents";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
 import { WHY_BASE, delta, formatPoints, whyLines } from "@/game/why";
@@ -238,10 +239,11 @@ function Choices({
   const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
     value: v,
     label: SNOW_LABELS[v],
-    detail: SNOW_NIGHT_COST[v] ? `${formatMoney(SNOW_NIGHT_COST[v])}/night` : "Free",
+    detail: snowNightCost(v, SNOW_NIGHT_COST[v], night.talentsOwned)
+      ? `${formatMoney(snowNightCost(v, SNOW_NIGHT_COST[v], night.talentsOwned))}/night` : "Free",
     note: `${previews[v].label}, ${Math.round(previews[v].meanQuality * 100)}%`,
   }));
-  const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
+  const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
   const chosen = previews[pendingSnow];
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
@@ -285,7 +287,7 @@ export function NightRecapSheet() {
 
   const { dayIndex, pendingBeat, beatAcknowledged, lastDay } = night;
   const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], dayIndex);
-  const nextTalent = nextTalentName(night.talentsOwned);
+  const learning = nextTalent(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat);
   const canSleep = !pendingBeat || beatAcknowledged;
   const mood = moodWord(recap.satisfaction);
@@ -306,11 +308,19 @@ export function NightRecapSheet() {
             setPendingSnow={setPendingSnow}
           />}
 
-          {dayIndex < night.seasonLength && nextTalent && (
-            <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
-              Tomorrow the crew learns{" "}
-              <span className="font-extrabold text-sign-green">{nextTalent}</span>
-            </p>
+          {dayIndex < night.seasonLength && learning && (
+            <div className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
+              <p>
+                Tomorrow the crew learns{" "}
+                <span className="font-extrabold text-sign-green">{learning.name}</span>.
+              </p>
+              <p className="mt-0.5 text-[0.85rem] text-ink-soft">
+                {talentWaitingFor(learning.id, {
+                  chair: night.lifts.some((lift) => lift.confirmed && lift.type === "chair"),
+                  cafe: night.assets.some((asset) => asset.id === "cafe"),
+                }) ?? learning.effect}
+              </p>
+            </div>
           )}
         </>
       }

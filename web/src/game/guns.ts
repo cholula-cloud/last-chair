@@ -1,3 +1,4 @@
+import { hasTalent } from "./talents";
 import { footprintOnLease } from "./lease";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import type { TrailRun } from "./trails";
@@ -64,7 +65,7 @@ export function gunCoverage(
   talentsOwned: readonly string[] = [],
   terrain: Terrain = TERRAIN,
 ): boolean[] {
-  const talentFactor = talentsOwned.includes("trail_guns") ? 1.25 : 1;
+  const talentFactor = hasTalent(talentsOwned, "trail_guns") ? 1.25 : 1;
   const reach = GUN_RADIUS_DESIGN * terrain.scale.horizontal * talentFactor;
   const midpoints = trailSegmentMidpoints(trail);
   return trail.snow.map((_, i) => {
@@ -83,7 +84,7 @@ export function groomCoverage(
   talentsOwned: readonly string[] = [],
 ): boolean[][] {
   const coverage = trails.map((trail) => trail.snow.map(() => false));
-  let remainingFt = GROOM_FT[preset] * (talentsOwned.includes("groom_pass") ? 1.2 : 1);
+  let remainingFt = GROOM_FT[preset] * (hasTalent(talentsOwned, "groom_pass") ? 1.2 : 1);
   if (remainingFt <= 0) return coverage;
 
   const order = trails.map((trail, index) => ({ trail, index, runs: runsByTrail[index] ?? 0 }))

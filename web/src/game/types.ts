@@ -38,6 +38,13 @@ export type FounderId =
   | "amira"
   | "juniper"
   | "marco";
+export type CrewMember = "frank" | "dana" | "elena";
+export type TalentId =
+  | "rope_tow" | "trail_guns" | "groom_pass" | "ticket_booth" | "patrol_radio"
+  | "school_day" | "house_band" | "cafe_shift" | "wind_hold" | "corduroy"
+  | "snow_fences" | "heritage_sign" | "bull_wheel" | "ski_school" | "early_plow"
+  | "volunteer_patrol" | "night_lights" | "groomer_rebuild" | "first_aid_hut"
+  | "route100_billboard";
 export type StoryBeatId =
   | "first_load"
   | "saturday"
@@ -121,16 +128,46 @@ export type FounderDef = {
   id: FounderId;
   name: string;
   title: string;
-  blurb: string;
+  /** One short sentence naming the founder's advantage. */
+  bonus: string;
+  /** One short sentence naming the founder's cost. */
+  constraint: string;
+  /** Elena: added to arrival mood. */
   arrivalMoodBonus: number;
+  /** Marco: dollars added to the daily fixed cost. */
   fixedCostDelta: number;
+  /** Amira: added to the snow quality guests expect. */
   snowExpectationPenalty: number;
+  /** Tom: added to the loan's rate for the winter (negative is cheaper). */
+  loanRateDelta: number;
+  /** Tom: arrival mood lost on a thaw day in a warm week. */
+  warmWeekMoodPenalty: number;
+  /** Riley: share taken off lift operating cost (the overnight repair crew). */
+  liftOpsDiscount: number;
+  /** Riley: SummitLink cannot buy in. The SummitLink offer (row 23) reads this. */
+  noSummitLinkEquity: boolean;
+  /** Amira: how many days ahead the forecast reaches. */
+  forecastDays: 1 | 2;
+  /** Amira: how much of tomorrow's true weather the forecast knows (0 to 1). */
+  forecastSkill: number;
+  /** Juniper: reputation gained each night before rounding. */
+  reputationDrift: number;
+  /** Juniper: multiplier on lift and trail clearing cost. */
+  clearingCostMult: number;
+  /** Marco: multiplier on venue revenue. */
+  apresRevenueMult: number;
+  /** Elena: buildings that cannot be demolished. */
+  lockedBuildings: readonly import("./base").AssetId[];
 };
 
 export type TalentDef = {
-  id: string;
+  id: TalentId;
   name: string;
+  crew: CrewMember;
+  /** One or two short sentences shown in the morning note and the crew list. */
   effect: string;
+  /** The facility the talent waits for; it still counts as learned without it. */
+  needs?: "chair" | "cafe" | "lodge";
 };
 
 export type StoryBeatDef = {

@@ -1,81 +1,88 @@
-import type {
-  FounderDef,
-  StoryBeatDef,
-  TalentDef,
-} from "./types";
+import type { FounderDef, StoryBeatDef } from "./types";
+
+/** What a hill with no founder modifier does. */
+export const NO_FOUNDER_MODS = {
+  arrivalMoodBonus: 0,
+  fixedCostDelta: 0,
+  snowExpectationPenalty: 0,
+  loanRateDelta: 0,
+  warmWeekMoodPenalty: 0,
+  liftOpsDiscount: 0,
+  noSummitLinkEquity: false,
+  forecastDays: 1,
+  forecastSkill: 0.5,
+  reputationDrift: 0,
+  clearingCostMult: 1,
+  apresRevenueMult: 1,
+  lockedBuildings: [],
+} as const;
+const NONE = NO_FOUNDER_MODS;
 
 export const FOUNDERS: FounderDef[] = [
   {
+    ...NONE,
     id: "elena",
     name: "Elena Vargas",
     title: "The Caretaker",
-    blurb: "Families arrive happier. Warming hut stays.",
+    bonus: "Guests arrive in a better mood.",
+    constraint: "You can never tear down the warming hut.",
     arrivalMoodBonus: 0.08,
-    fixedCostDelta: 0,
-    snowExpectationPenalty: 0,
+    lockedBuildings: ["warming_hut"],
   },
   {
+    ...NONE,
     id: "tom",
     name: "Tom Keene",
     title: "The Refi",
-    blurb: "Softer cash stress. Warm weeks sting mood.",
-    arrivalMoodBonus: 0,
-    fixedCostDelta: 0,
-    snowExpectationPenalty: 0.03,
+    bonus: "Your loan costs 1% less.",
+    constraint: "Guests arrive grumpy after a week of thaw.",
+    loanRateDelta: -0.01,
+    warmWeekMoodPenalty: 0.075,
   },
   {
+    ...NONE,
     id: "riley",
     name: "Riley Otis",
     title: "The Rigger",
-    blurb: "Lift limps overnight. No SummitLink equity.",
-    arrivalMoodBonus: 0.02,
-    fixedCostDelta: 0,
-    snowExpectationPenalty: 0,
+    bonus: "Your crew fixes lifts overnight. Lift running costs drop 15%.",
+    constraint: "SummitLink won’t invest in you.",
+    liftOpsDiscount: 0.15,
+    noSummitLinkEquity: true,
   },
   {
+    ...NONE,
     id: "amira",
     name: "Amira Chen",
     title: "The Forecast",
-    blurb: "Clearer weather read. Guests expect better snow.",
-    arrivalMoodBonus: 0,
-    fixedCostDelta: 0,
+    bonus: "You see the weather two days ahead, and your forecast is sharper.",
+    constraint: "Guests expect better snow.",
     snowExpectationPenalty: 0.05,
+    forecastDays: 2,
+    forecastSkill: 0.7,
   },
   {
+    ...NONE,
     id: "juniper",
     name: "Juniper Hale",
     title: "The Preservationist",
-    blurb: "Glade reputation. Clearing costs more later.",
-    arrivalMoodBonus: 0.04,
-    fixedCostDelta: 0,
-    snowExpectationPenalty: 0,
+    bonus: "Your reputation grows a little every night.",
+    constraint: "Clearing land for lifts and trails costs 15% more.",
+    reputationDrift: 0.5,
+    clearingCostMult: 1.15,
   },
   {
+    ...NONE,
     id: "marco",
     name: "Marco Russo",
     title: "The Showman",
-    blurb: "Après buzz. Higher daily fixed cost.",
-    arrivalMoodBonus: 0.03,
+    bonus: "Your café, shop and lessons earn 10% more.",
+    constraint: "Your fixed cost is $80 a day higher.",
     fixedCostDelta: 80,
-    snowExpectationPenalty: 0,
+    apresRevenueMult: 1.1,
   },
 ];
 
-/** Ordered crew overnight learning list (P1: 12 talents). */
-export const CREW_TALENTS: TalentDef[] = [
-  { id: "rope_tow", name: "Rope Tow", effect: "Surface lift ops +5% efficiency" },
-  { id: "trail_guns", name: "Trail Guns", effect: "Gun reach + snow depth overnight" },
-  { id: "house_band", name: "House Band", effect: "Village mood +3" },
-  { id: "groom_pass", name: "Groom Pass", effect: "Morning corduroy quality +0.05" },
-  { id: "ticket_booth", name: "Ticket Booth", effect: "Arrivals +1 on weekends" },
-  { id: "patrol_radio", name: "Patrol Radio", effect: "Lift capacity +5%" },
-  { id: "cafe_shift", name: "Café Shift", effect: "Café guests linger happier" },
-  { id: "school_day", name: "School Day", effect: "Weekday bus arrivals unlocked" },
-  { id: "wind_hold", name: "Wind Hold", effect: "Chair stays open in gusts" },
-  { id: "corduroy", name: "Corduroy", effect: "Groom visual stripes stronger" },
-  { id: "night_lights", name: "Night Lights", effect: "Evening ops stub ready" },
-  { id: "heritage_sign", name: "Heritage Sign", effect: "Reputation +2 each week" },
-];
+export { CREW_TALENTS } from "./talents";
 
 export const STORY_BEATS: StoryBeatDef[] = [
   {

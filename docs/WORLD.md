@@ -103,43 +103,43 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 #### 1. **Elena Vargas — *The Caretaker***
 
 - **Background:** Taught the last lessons at **Dutch Hill** before the **1985** closure (fiction: you’re back for the revival).
-- **Bonus:** +arrival mood for families; lesson conversion slightly easier.
+- **Bonus:** Guests arrive in a better mood (arrival mood +0.08).
 - **Constraint:** Cannot demolish the original warming hut (upgrade in place only).
 - **Story:** Knows every bus driver by name; pushes school-day beats early.
 
 #### 2. **Tom “Ledger” Keene — *The Refi***
 
 - **Background:** Community banker who lost the last loan.
-- **Bonus:** Better loan terms while reputation &gt; threshold.
-- **Constraint:** +interest stress on warm weeks (narrative: covenant anxiety).
+- **Bonus:** The winter loan costs 1% less (7% instead of 8%).
+- **Constraint:** Guests arrive grumpy on a thaw day when three of the last seven days were thaw (mood −0.075; narrative: covenant anxiety).
 - **Story:** SummitLink calls him first—creates tension on buyout offers.
 
 #### 3. **Riley Otis — *The Rigger***
 
 - **Background:** Lift mechanic; can keep one marginal lift “limping” safely.
-- **Bonus:** Overnight repair chance on one lift without call-out cost.
+- **Bonus:** The overnight repair crew keeps lift running costs 15% lower.
 - **Constraint:** Cannot take equity investment from SummitLink (hard lock on “sell out” ending).
 - **Story:** Patrollog sidequests about wind holds.
 
 #### 4. **Dr. Amira Chen — *The Forecast***
 
 - **Background:** Former NWS adjacent researcher; moved to valley for “quiet.”
-- **Bonus:** Longer reliable weather outlook UI (1 extra day detail).
-- **Constraint:** Higher guest expectation on snow quality (satisfaction harder).
+- **Bonus:** The forecast reaches two days ahead, and tomorrow's forecast is sharper.
+- **Constraint:** Guests expect better snow (+0.05 quality).
 - **Story:** “Ledger & Cocoa” segments explain weather in plain language.
 
 #### 5. **Juniper Hale — *The Preservationist***
 
 - **Background:** Land trust liaison; clearing trees is politically visible.
-- **Bonus:** Reputation from untouched glades / forested character.
-- **Constraint:** Trail clearing costs more; some steep lines blocked until permit beat.
+- **Bonus:** Reputation grows 0.5 a night from the untouched forest.
+- **Constraint:** Clearing land for lifts and trails costs 15% more.
 - **Story:** Vermont land-trust politics arc synergy (e.g. Hogback / Maple Valley region beats).
 
 #### 6. **Marco Russo — *The Showman***
 
 - **Background:** Ran a failed festival series; loves night skiing and music.
-- **Bonus:** Après and events revenue baseline higher.
-- **Constraint:** Fixed costs for “empty night” programming debt at career start.
+- **Bonus:** Café, shop and lesson revenue is 10% higher.
+- **Constraint:** The fixed cost is $80 a day higher (“empty night” programming debt).
 - **Story:** Headliner beats, Trampoline/Arena content later.
 
 ---
@@ -177,11 +177,11 @@ Guests are **agents** with a **persona tag** affecting needs, venues, and mood w
 
 ### Relationship to talents & crew
 
-In **Story Mode (ICR Simple)**, overnight crew talent order is **framed as NPCs**:
+In **Story Mode (ICR Simple)**, overnight crew talent order is **framed as NPCs**. Each of the 20 talents has an owner (see SIMULATION_SPEC, Crew talents):
 
-- **Frank** biases snowmaking maintenance.
-- **Dana** biases patrol talents.
-- **Elena** biases school/lesson talents.
+- **Frank** owns snow and lift work: Rope Tow, Trail Guns, Groom Pass, Corduroy, Snow Fences, Bull Wheel Tune, Early Plow, Night Lights, Groomer Rebuild.
+- **Dana** owns patrol and safety: Patrol Radio, Wind Hold, Volunteer Patrol, First Aid Hut.
+- **Elena** owns people and village talents: Ticket Booth, School Day, House Band, Café Shift, Heritage Sign, Ski School, Route 100 Billboard.
 
 Same fixed priority idea as ICR **Build the Mountain**—but **named**, so radio can joke about their stubbornness.
 

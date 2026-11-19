@@ -53,11 +53,17 @@ export function GuestsSheet({
   const founderId = useGameStore((s) => s.founderId);
   const weather = useGameStore((s) => s.weather);
   const clockMin = useGameStore((s) => s.clockMin);
+  const talentsOwned = useGameStore((s) => s.talentsOwned);
+  const dayIndex = useGameStore((s) => s.dayIndex);
+  const weatherDays = useGameStore((s) => s.weatherDays);
+  const mountainId = useGameStore((s) => s.mountainId);
   const followId = useGameStore((s) => s.followId);
   const setFollowId = useGameStore((s) => s.setFollowId);
 
   if (!open) return null;
-  const ctx = satisfactionContext({ fare, buildings, assets, founderId, weather, clockMin });
+  const ctx = satisfactionContext({
+    fare, buildings, assets, founderId, weather, clockMin, talentsOwned, dayIndex, weatherDays, mountainId,
+  });
 
   return (
     <Sheet

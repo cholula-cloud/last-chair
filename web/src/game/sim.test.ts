@@ -220,7 +220,7 @@ describe("applyOvernight", () => {
     expect(run("mid", { talentsOwned: ["trail_guns"] }).talentLearned).toBe("Rope Tow");
     expect(
       run("mid", { talentsOwned: ["rope_tow", "trail_guns"] }).talentLearned,
-    ).toBe("House Band");
+    ).toBe("Groom Pass");
   });
 
   it("returns no talent and no hint once all are owned", () => {

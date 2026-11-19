@@ -1,4 +1,5 @@
 import { liftLength, liftVertical, placementReason, rulesFor, type LiftLine } from "@/game/descent";
+import { clearingCostFor } from "@/game/founders";
 import { liftCapacityPerHour, rideMinutes } from "@/game/lifts";
 import { checkPlacement, projectLiftBottom, snapTop } from "@/game/rules";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -80,7 +81,7 @@ export function liftReadout(
   const check = checkPlacement(state, type, line);
   return {
     ok: check.ok,
-    cost: check.ok ? check.cost : liftCost(type, line),
+    cost: check.ok ? check.cost : clearingCostFor(state.founderId ?? null, liftCost(type, line), 50),
     lengthFt: Math.round(liftLength(line) * TERRAIN.horizontalFeetPerUnit),
     verticalFt: Math.round(liftVertical(line) * TERRAIN.feetPerUnit),
     skiersPerHour: liftCapacityPerHour(type, state.talentsOwned),

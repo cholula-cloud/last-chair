@@ -22,8 +22,8 @@
 | Economy | ✅ | Daily upkeep, construction installments, winter loan and bankruptcy. Verified over 40 seeds | 20 |
 | Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
 | Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
-| Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
-| Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
+| Crew talents | ✅ | 20 in crew order, each with a numeric effect and a with-and-without test | 21 |
+| Founder modifiers | ✅ | All six bonuses and constraints live. The demolition lock is a tested helper for row Q9 | 22 |
 | Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
 | Save format | ✅ | Three slots (`last-chair-m3-slot-1` to `-3`) with an active-slot pointer, per-slot backup, validation and recovery, a throttled write cadence, and JSON export and import | 25, L-D |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
@@ -274,10 +274,10 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 |------|--------|
 | Starting cash | $12,000 |
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
-| Daily fixed cost | $1,095 plus the founder's fixed cost adjustment |
-| Lift operations per day | $180 per operating lift, with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
+| Daily fixed cost | $1,095 plus the founder's fixed cost adjustment, minus $15 with Volunteer Patrol |
+| Lift operations per day | $180 per operating lift ($175 per surface lift with Rope Tow; Riley pays 15% less), with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
 | Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $40 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
-| Snow and service | Minimal $0 / Mid $150 / High $350 per night |
+| Snow and service | Minimal $0 / Mid $150 / High $350 per night ($140 and $330 with Groomer Rebuild) |
 | Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
 
 **Lift build cost (PR 12a).** Length is the distance along the line in the horizontal plane. Vertical is the gain from bottom to top. The formula divides these measurements by the terrain's respective scale factors to recover design units. Parameters live in `LIFT_COST_PARAMS` (`game/types.ts`).
@@ -330,32 +330,53 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ---
 
-## Crew talents (P0 stub)
+## Crew talents
 
-Overnight picks **first unowned** talent in crew order (list in `web/src/game/content.ts`). P0 implements **3 placeholders:**
+The crew learns the first unowned talent in crew order at every Sleep (`CREW_TALENTS` in `web/src/game/talents.ts`), so a 28-day winter owns all 20 after the 20th Sleep. A talent that needs a facility still counts as learned; the morning note says what it waits for. Every number is in `TALENT` and every effect has a with-and-without test in `talents.test.ts`. ✅ marks implemented.
 
-1. **Rope Tow** — surface lift ops efficiency  
-2. **Trail Guns** — +gun reach P1  
-3. **House Band** — village mood stub P1  
+| # | Id | Crew | Effect | |
+|---|----|------|--------|---|
+| 1 | `rope_tow` | Frank | Surface lift operating cost $180 → $175 a day | ✅ |
+| 2 | `trail_guns` | Frank | Gun reach +0.25 at Mid; guns cover every segment at High | ✅ |
+| 3 | `groom_pass` | Frank | Groom target +0.07 | ✅ |
+| 4 | `ticket_booth` | Elena | Weekend and holiday arrivals +1 | ✅ |
+| 5 | `patrol_radio` | Dana | All lift capacity ×1.05 | ✅ |
+| 6 | `school_day` | Elena | Weekday arrivals +2; opens the school bus beat gate | ✅ |
+| 7 | `house_band` | Elena | Arrival mood +0.03 on Friday, weekends and holidays | ✅ |
+| 8 | `cafe_shift` | Elena | Café venue value +$2 (needs a café) | ✅ |
+| 9 | `wind_hold` | Dana | Chair wind hold 10:30 to 13:00 becomes 11:00 to 12:15 (needs a chair) | ✅ |
+| 10 | `corduroy` | Frank | Groom target +0.03 more, stacks with Groom Pass | ✅ |
+| 11 | `snow_fences` | Frank | Thaw night depth loss ×0.7 on the two lowest segments | ✅ |
+| 12 | `heritage_sign` | Elena | Reputation +2 at each Sunday Sleep | ✅ |
+| 13 | `bull_wheel` | Frank | Chair capacity ×1.05, stacks with Patrol Radio (needs a chair) | ✅ |
+| 14 | `ski_school` | Elena | First-timer arrival mood +0.05 | ✅ |
+| 15 | `early_plow` | Frank | Storm-day arrival penalty −5 → −2 | ✅ |
+| 16 | `volunteer_patrol` | Dana | Daily fixed cost −$15 | ✅ |
+| 17 | `night_lights` | Frank | Lifts load until 15:55 instead of 15:45 | ✅ |
+| 18 | `groomer_rebuild` | Frank | Snow and service Mid $150 → $140, High $350 → $330 | ✅ |
+| 19 | `first_aid_hut` | Dana | Negative snow term ×0.85 | ✅ |
+| 20 | `route100_billboard` | Elena | Expected hill value +$1 | ✅ |
 
-Player sees: “Tomorrow the crew learns: *Rope Tow*” on level readout.
+The three cost talents (Rope Tow, Volunteer Patrol, Groomer Rebuild) carry smaller savings than the handoff proposed ($5, $15 and $10 a night, with Route 100 Billboard worth $1 instead of $2) so a passive Balanced and Mid winter stays under a 30% return and the Careless strategy still goes negative. Row 27 owns the final tune.
+
+Saves store talents as ids in `talentsOwned`. No id was renamed or removed, so old saves load unchanged; the next talent learned is the first unowned id in the new order.
 
 ---
 
-## Founder modifiers (P1 — numeric)
+## Founder modifiers
 
-Apply at career start; one founder:
+One founder per career. Data in `FOUNDERS` (`content.ts`), rules in `web/src/game/founders.ts`, tests in `founders.test.ts`. ✅ marks implemented.
 
-| Founder | Bonus | Constraint |
-|---------|-------|------------|
-| Elena Vargas | arrivalMood +0.08 | cannot demolish warming hut |
-| Tom Keene | loan rate −1% | warm-week satisfaction −3 |
-| Riley Otis | overnight repair 15% | no SummitLink equity |
-| Amira Chen | +1 day forecast | snow expectation +5% penalty |
-| Juniper Hale | glade rep + | clearing cost +15% |
-| Marco Russo | après rev +10% | starting fixed cost +$80/day |
+| Founder | Bonus | | Constraint | |
+|---------|-------|---|------------|---|
+| Elena Vargas | Arrival mood +0.08 (and +2 arrivals a day) | ✅ | Cannot demolish the warming hut: `canDemolish` is the lock; no demolish action exists yet, so row Q9 must call it | ✅ |
+| Tom Keene | Loan rate 8% → 7% | ✅ | On a thaw day with 3 or more thaw days in the last 7, arrival mood −0.075 (−3 points) | ✅ |
+| Riley Otis | Overnight repair crew: lift operating cost ×0.85 (there are no lift breakdowns yet, so repair is read as a cost) | ✅ | No SummitLink equity: `canTakeSummitLinkEquity` is false; row 23 reads it | ✅ |
+| Amira Chen | Forecast two days ahead; tomorrow's forecast skill 0.7 instead of 0.5 | ✅ | Snow expectation +0.05 | ✅ |
+| Juniper Hale | Reputation +0.5 a night before rounding, capped at 100 | ✅ | Lift and trail clearing cost ×1.15 (lifts rounded to $50) | ✅ |
+| Marco Russo | Venue revenue ×1.10 (café, shop, rentals, ski school; tickets unchanged) | ✅ | Daily fixed cost +$80 | ✅ |
 
-P0: founder pick UI only; apply Elena default silently for tests.
+No other founder carries an arrival bonus or snow expectation change.
 
 ---
 

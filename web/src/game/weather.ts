@@ -1,5 +1,7 @@
+import { founderMods } from "./founders";
 import { STREAM, streamFor } from "./rng";
 import type { GameState } from "./state";
+import { windHoldWindow } from "./talents";
 import { LIFT_SPECS, type DayWeather, type LiftType, type Outlook, type WeatherKind, type Wind } from "./types";
 
 export type { DayWeather, Outlook } from "./types";
@@ -65,13 +67,16 @@ export function weatherForDay(state: Pick<GameState, "weatherDays" | "dayIndex">
 }
 
 type ForecastState = Pick<GameState, "weatherDays" | "dayIndex" | "seasonLength" | "founderId">;
+/** Skill of a two-day outlook: a guess tilted a little toward the truth. */
+export const TWO_DAY_FORECAST_SKILL = 0.4;
 export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
   const target = state.dayIndex + ahead;
-  if (target > state.seasonLength || (ahead === 2 && state.founderId !== "amira")) return null;
+  const founder = founderMods(state.founderId);
+  if (target > state.seasonLength || ahead > founder.forecastDays) return null;
   const actual = state.weatherDays[target - 1];
   if (!actual) return null;
   const base = chainRow(weatherForDay(state).kind, state.dayIndex + 1);
-  const skill = ahead === 2 ? 0.4 : state.founderId === "amira" ? 0.7 : 0.5;
+  const skill = ahead === 2 ? TWO_DAY_FORECAST_SKILL : founder.forecastSkill;
   const forecast: Outlook = { clear: 0, snow: 0, storm: 0, thaw: 0 };
   for (const kind of WEATHER_KINDS) {
     const prior = ahead === 1 ? base[kind] : WEATHER_KINDS.reduce((sum, previous) =>
@@ -83,9 +88,15 @@ export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
 
 export const WIND_HOLD = { fromMin: 630, toMin: 780 } as const;
 
-export function isWindHeld(type: LiftType, wind: Wind, clockMin: number): boolean {
+export function isWindHeld(
+  type: LiftType,
+  wind: Wind,
+  clockMin: number,
+  talentsOwned: readonly string[] = [],
+): boolean {
+  const hold = windHoldWindow(talentsOwned, WIND_HOLD);
   return wind === "gusty" && LIFT_SPECS[type].windHold &&
-    clockMin >= WIND_HOLD.fromMin && clockMin < WIND_HOLD.toMin;
+    clockMin >= hold.fromMin && clockMin < hold.toMin;
 }
 
 export function morningWeatherHeadline(kind: WeatherKind): string {

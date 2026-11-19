@@ -1,11 +1,15 @@
 import { ASSET_CATALOG, type AssetId } from "./base";
-import { founderById } from "./content";
+import { founderMods, liftOpsAfterRepair, loanRateFor } from "./founders";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
+import { fixedCostSaving, liftOpsCostFor, snowNightCost } from "./talents";
 import { DAILY_FIXED_COST, LIFT_OPS_COST, SNOW_NIGHT_COST } from "./types";
 
 export const LOW_CASH = 1500;
 export const LOAN_TERMS = { principal: 10_000, rate: 0.08, reserve: 2_000 } as const;
+
+/** The winter loan rate for a founder (Tom pays 1% less). */
+export const loanRate = (founderId: GameState["founderId"]) => loanRateFor(founderId, LOAN_TERMS.rate);
 export const BANKRUPTCY_MORNINGS = 3;
 const CHAIR_DAILY_SURCHARGE = 5;
 
@@ -43,11 +47,15 @@ export function constructionPayables(total: number, day: number, what: Payable["
 
 export function operatingCosts(state: GameState): OperatingCosts {
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails));
+  const owned = state.talentsOwned;
+  const liftOps = openLifts.length === 0
+    ? liftOpsCostFor("surface", LIFT_OPS_COST, owned)
+    : openLifts.reduce((sum, { type }) => sum + liftOpsCostFor(type, LIFT_OPS_COST, owned), 0);
   return {
-    fixed: DAILY_FIXED_COST,
-    founder: founderById(state.founderId)?.fixedCostDelta ?? 0,
-    liftOps: LIFT_OPS_COST * Math.max(1, openLifts.length)
-      + CHAIR_DAILY_SURCHARGE * openLifts.filter(({ type }) => type === "chair").length,
+    fixed: DAILY_FIXED_COST - fixedCostSaving(owned),
+    founder: founderMods(state.founderId).fixedCostDelta,
+    liftOps: liftOpsAfterRepair(state.founderId, liftOps
+      + CHAIR_DAILY_SURCHARGE * openLifts.filter(({ type }) => type === "chair").length),
     upkeep: 60 + state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0)
       + state.guns.length * ASSET_CATALOG.snow_guns.upkeep,
   };
@@ -56,7 +64,8 @@ export function operatingCosts(state: GameState): OperatingCosts {
 export function dailyCosts(state: GameState): CostLines {
   return {
     ...(state.nightRecap?.costs ?? operatingCosts(state)),
-    snowNight: state.dayIndex < state.seasonLength ? SNOW_NIGHT_COST[state.pendingSnow] : 0,
+    snowNight: state.dayIndex < state.seasonLength
+      ? snowNightCost(state.pendingSnow, SNOW_NIGHT_COST[state.pendingSnow], state.talentsOwned) : 0,
     draws: state.payables.reduce((sum, item) => sum + (item.dueDay <= state.dayIndex ? item.amount : 0), 0),
     interest: state.loan ? state.loan.principal * state.loan.ratePerDay : 0,
     constructionSpent: state.constructionSpent,
