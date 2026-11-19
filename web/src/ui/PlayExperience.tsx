@@ -80,7 +80,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     const game = useGameStore.getState();
     if (resumeOfficeDay.current && !document.hidden && game.phase === "day" && game.paused) game.togglePause();
     resumeOfficeDay.current = false;
-    officeTrigger.current?.focus({ preventScroll: true });
+    requestAnimationFrame(() => officeTrigger.current?.focus({ preventScroll: true }));
   };
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);

@@ -1,4 +1,5 @@
 import { biggestProblem } from "./satisfaction";
+import type { Demand } from "./guestsWant";
 import type { NightRecap } from "./sim";
 import type { MapLayer } from "./mapLayers";
 import type { GameState } from "./state";
@@ -159,8 +160,17 @@ export type ProblemGuide = {
 };
 
 /** Pair a measured shortfall with tools that can actually explain it. */
-export function problemGuide(recap: Pick<NightRecap, "arrivals" | "breakdown" | "cashDelta">): ProblemGuide | null {
-  switch (recap.arrivals ? biggestProblem(recap.breakdown) : null) {
+export function problemGuide(
+  recap: Pick<NightRecap, "arrivals" | "breakdown" | "cashDelta">,
+  demand?: Demand["key"],
+): ProblemGuide | null {
+  const issue = demand ?? biggestProblem(recap.breakdown);
+  switch (recap.arrivals ? issue : null) {
+    case "seats":
+      return { layer: "slope", tab: "Crew", text: "Find flat ground near the base on Slope, then check Crew for lodge space and venue unlocks." };
+    case "green":
+      return { layer: "slope", tab: "Crew", text: "Use Slope to trace another gentle descent and check Crew for trail skills." };
+    case "lines":
     case "queue":
       return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for the deposit you can afford." };
     case "snow":

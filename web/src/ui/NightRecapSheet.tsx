@@ -9,7 +9,7 @@ import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
-import { demandContext, guestsWantLine } from "@/game/guestsWant";
+import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
 import { nextTalentName, type NightRecap } from "@/game/sim";
@@ -347,8 +347,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const summitLinkOffer = summitLinkOfferOpen(night);
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
-  const guide = tipsOn && coachProblem ? problemGuide(recap) : null;
-  const guestsWant = hasGuests ? guestsWantLine(recap, demandContext(night)) : null;
+  const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
+  const guide = tipsOn && coachProblem ? problemGuide(recap, demand?.key) : null;
+  const guestsWant = demand?.line;
 
   return (
     <Sheet

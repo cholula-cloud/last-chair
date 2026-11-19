@@ -140,6 +140,12 @@ describe("contextual problem guidance", () => {
   ])("matches %s to an available layer and Office section", (issue, layer, tab) => {
     expect(problemGuide({ arrivals: 20, breakdown: { ...neutral, [issue]: -10 }, cashDelta: 12 })).toMatchObject({ layer, tab });
   });
+  it("uses the same measured demand as the Guests want line", () => {
+    const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30 };
+    expect(problemGuide(recap, "seats")).toMatchObject({ layer: "slope", tab: "Crew", text: expect.stringMatching(/lodge/) });
+    expect(problemGuide(recap, "green")?.text).toMatch(/gentle descent/);
+    expect(problemGuide(recap, "snow")).toMatchObject({ layer: "conditions", tab: "Desk" });
+  });
   it("offers a real cash shortfall and stays silent on a quiet profitable day", () => {
     expect(problemGuide({ arrivals: 0, breakdown: neutral, cashDelta: -40 })?.tab).toBe("Money");
     expect(problemGuide({ arrivals: 5, breakdown: neutral, cashDelta: 40 })).toBeNull();

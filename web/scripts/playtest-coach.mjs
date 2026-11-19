@@ -40,7 +40,7 @@ try {
     }, JSON.stringify({ version: SAVE_VERSION, state: toPersisted(prepared) }));
     await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
     await enterGame(page);
-    const press = label => page.getByRole("button", { name: label, exact: true }).tap({ force: true });
+    const press = label => page.getByRole("button", { name: label, exact: true }).tap();
     const next = () => page.getByRole("button", { name: "Next", exact: true }).tap();
     const target = key => page.locator('[data-coach="' + key + '"]');
     await page.getByText("Give families a lift up and a trail back to the lodge.", { exact: false }).waitFor();
@@ -82,6 +82,8 @@ try {
         const layer = (await mapButton.innerText()).split(" · ")[1];
         const officeButton = guide.getByRole("button", { name: /^Office · / });
         const tab = (await officeButton.innerText()).split(" · ")[1];
+        const readWinter = () => page.evaluate(() => JSON.parse(localStorage.getItem("last-chair-m3-slot-1")).state);
+        const beforeInspection = await readWinter();
         await mapButton.tap();
         const view = page.getByRole("region", { name: "Inspect nightly map" });
         assert.equal(await view.getByRole("button", { name: layer, exact: true }).getAttribute("aria-pressed"), "true");
@@ -89,6 +91,7 @@ try {
         await officeButton.tap();
         assert.equal(await page.locator('[data-office-tab="' + tab + '"]').getAttribute("aria-pressed"), "true");
         await press("Close Office");
+        assert.deepEqual(await readWinter(), beforeInspection, "Map and Office inspections preserve the closed day");
         await guide.getByRole("button", { name: "Dismiss advice" }).tap();
       }
       if (anchor === "fare" || anchor === "snow") {
