@@ -36,6 +36,8 @@ import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
+import { openOffice, useOffice } from "@/ui/officeStore";
+import { OfficeSheet } from "@/ui/OfficeSheet";
 import { useSpeed } from "@/ui/speed";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
@@ -44,6 +46,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const officeOpen = useOffice((s) => s.open);
 
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
@@ -123,6 +126,15 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
     return () => document.removeEventListener("visibilitychange", onHide);
   }, []);
 
+  // Closing the Office hands focus back to the bar button that opened it.
+  const officeWasOpen = useRef(false);
+  useEffect(() => {
+    if (officeWasOpen.current && !officeOpen) {
+      document.querySelector<HTMLElement>('[data-bar="office"]')?.focus({ preventScroll: true });
+    }
+    officeWasOpen.current = officeOpen;
+  }, [officeOpen]);
+
   useEffect(() => {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
@@ -195,7 +207,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
-      <header data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
+      <header inert={officeOpen} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
         <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
           <TopBar
             mountainId={mountainId}
@@ -246,7 +258,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
       </header>
 
       {phase === "day" && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
+        <div inert={officeOpen} className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2">
             {!placementActive && <ReadoutCard />}
             <OverlayLegend />
@@ -294,6 +306,10 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
                 setBuildOpen(true);
               }}
               onGuests={() => setGuestsOpen(true)}
+              onOffice={() => {
+                setMenuConfirmOpen(false);
+                openOffice();
+              }}
               onCloseHill={skipToClose}
               openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
@@ -306,6 +322,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
       )}
 
       <OverlayStateSync />
+      <OfficeSheet onLeave={onLeave} />
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}

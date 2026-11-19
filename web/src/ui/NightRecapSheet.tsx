@@ -65,7 +65,7 @@ const FORECAST = {
   thaw: { name: "Thaw", Icon: ThawIcon },
 };
 
-function Forecast({ state, ahead }: { state: GameState; ahead: 1 | 2 }) {
+export function Forecast({ state, ahead }: { state: Parameters<typeof outlookFor>[0]; ahead: 1 | 2 }) {
   const outlook = outlookFor(state, ahead);
   if (!outlook) return null;
   const odds = (Object.keys(FORECAST) as WeatherKind[]).sort((a, b) => outlook[b] - outlook[a]);
