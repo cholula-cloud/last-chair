@@ -6,18 +6,20 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { PerspectiveCamera } from "three";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
-import type { PaintStroke } from "@/game/paintedTrail";
-import { liftDrag, liftPress, type LiftGrab } from "@/ui/liftGesture";
+import type { LiftGrab } from "@/ui/liftGesture";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { brushState } from "./brushState";
 import { cameraBus } from "./cameraBus";
 import { limitShift } from "./cameraControls";
-import { MAX_STROKE_POINTS, PAN_MOVE_PX, edgePanInput, edgePanVelocity, panDrive, usableHeight } from "./paintAssist";
+import { edgePanInput, edgePanVelocity, panDrive, usableHeight } from "./paintAssist";
+import {
+  flushTrailPending,
+  pointerLiftMove,
+  pointerTrailMove,
+  queueTrailPoint,
+} from "./placementPointerHandlers";
 import { pickTerrain } from "./terrainPick";
 import { useReducedMotion } from "./useReducedMotion";
-import { LIFT_BUILD_ANCHORS, snapRadiusAtHit } from "./placementTap";
-
-const MIN_POINT_DISTANCE = 0.1;
 /** Time constant of the auto-pan velocity ramp, in seconds. Reduced motion skips the ramp. */
 const PAN_TAU = 0.12;
 /** How often the canvas and panel rectangles are re-measured while a stroke is down. */
@@ -74,38 +76,16 @@ export function PlacementController() {
       }, get().camera as PerspectiveCamera, TERRAIN.height);
     };
 
-    const flush = () => {
-      if (!pending.length) return;
-      const draft = usePlacementDraft.getState();
-      if (draft.kind !== "trail") {
-        pending.length = 0;
-        return;
-      }
-      const stroke: PaintStroke = draft.activeStroke ?? {
-        points: [], widthFt: draft.brushWidth, erase: draft.erasing,
-      };
-      usePlacementDraft.setState({
-        tapPoint: pending[pending.length - 1],
-        activeStroke: { ...stroke, points: [...stroke.points, ...pending] },
-      });
-      pending.length = 0;
+    const fullFlag = { current: false };
+    const syncFull = () => {
+      full = fullFlag.current;
     };
 
-    /** Queue a stroke point; at the cap it stops taking points and says why once. */
+    const flush = () => flushTrailPending(pending);
+
     const queuePoint = (raw: XZ, immediate: boolean) => {
-      const stroke = usePlacementDraft.getState().activeStroke;
-      const last = pending.length ? pending[pending.length - 1] : stroke?.points.at(-1);
-      const count = (stroke?.points.length ?? 0) + pending.length;
-      if (count >= MAX_STROKE_POINTS) {
-        if (!full) {
-          full = true;
-          usePlacementDraft.setState({ strokeFull: true });
-        }
-        return;
-      }
-      if (last && Math.hypot(last.x - raw.x, last.z - raw.z) < MIN_POINT_DISTANCE) return;
-      pending.push(raw);
-      if (immediate) flush();
+      queueTrailPoint(pending, fullFlag, raw, immediate);
+      syncFull();
     };
 
     const moveDraft = (event: PointerEvent, pressing = false) => {
@@ -116,32 +96,15 @@ export function PlacementController() {
 
       if (draft.kind === "trail") {
         const rect = dom.getBoundingClientRect();
-        const sx = event.clientX - rect.left;
-        const sy = event.clientY - rect.top;
-        if (pressing || !screen.down || Math.hypot(sx - screen.x, sy - screen.y) >= PAN_MOVE_PX) {
-          screen.movedAt = performance.now();
-        }
-        screen.x = sx;
-        screen.y = sy;
-        screen.down = true;
-        brushState.x = raw.x;
-        brushState.z = raw.z;
-        brushState.visible = true;
+        pointerTrailMove(raw, event.clientX, event.clientY, rect, pressing, screen);
         queuePoint(raw, pressing);
       } else if (draft.kind === "lift") {
         const camera = get().camera as PerspectiveCamera;
         const rect = dom.getBoundingClientRect();
-        const y = TERRAIN.height(raw.x, raw.z);
-        const radius = snapRadiusAtHit(camera, { ...raw, y }, rect.height);
         const game = useGameStore.getState();
-        if (pressing) {
-          const press = liftPress(game, draft.type, draft, raw, radius, LIFT_BUILD_ANCHORS);
-          grab = press.grab;
-          offset = press.offset;
-          usePlacementDraft.setState(press.patch);
-        } else {
-          usePlacementDraft.setState(liftDrag(game, draft.type, grab, offset, draft, raw, radius, LIFT_BUILD_ANCHORS));
-        }
+        ({ grab, offset } = pointerLiftMove(
+          game, draft, draft.type, grab, offset, raw, camera, rect.height, pressing,
+        ));
       } else {
         usePlacementDraft.setState({ tapPoint: raw });
       }
@@ -218,7 +181,8 @@ export function PlacementController() {
     const endStroke = () => {
       stopPan();
       pending.length = 0;
-      if (full) usePlacementDraft.setState({ strokeFull: false });
+      if (fullFlag.current) usePlacementDraft.setState({ strokeFull: false });
+      fullFlag.current = false;
       full = false;
     };
 

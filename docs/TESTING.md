@@ -70,7 +70,9 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 ## M2 build gate and brief playtest
 
-Run `npm run m2-gate` from `web/` for the 40-seed numerical comparison. Run `npm run playtest:m2` with the local game running to exercise the opening and prepared-save routes at 390×844. Playwright Chromium and WebKit are the default engines. Screenshots and the result summary go to `web/playtest-artifacts/m2/` unless `PLAYTEST_OUT` points elsewhere.
+**Agent baseline (19 Nov 2026, Atlantic/Bermuda).** `npm run check`, `npm run m2-gate`, and render/build unit tests passed on `main`. Chromium `playtest:m2` completed the scripted opening in 91.2s with tier-2 rentals revenue. `phone-check` FPS thresholds failed in headless cloud VMs (low GPU); use a real device or local GPU for FPS sign-off. Uncoached first-time player sign-off remains open.
+
+Run `npm run m2-gate` from `web/` for the 40-seed numerical comparison. Run `npx playwright install chromium` once before `playtest:m2` on a fresh checkout. Run `npm run playtest:m2` with the local game running to exercise the opening and prepared-save routes at 390×844. Playwright Chromium and WebKit are the default engines. Screenshots and the result summary go to `web/playtest-artifacts/m2/` unless `PLAYTEST_OUT` points elsewhere.
 
 **November 18, 2026.** Scripted Chromium touch input placed a paid lift, painted and cut a trail, and verified both in the save in 106.2 seconds from the playable opening. The starter and new trail corridors rendered without dark shards at this viewport. A prepared-save run completed the Tier 2 lodge upgrade after two Sleeps, placed Rentals, and displayed a $144 Rentals receipt in the closing recap. The next morning, a new trail was cut and the following closing recap rendered with updated queue and satisfaction figures. The two browser days have different rosters, so the paired simulation gate measures causality separately. Testing exposed crowded clock and undo/recenter controls at phone size. The working branch adjusts their layout.
 

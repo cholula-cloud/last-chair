@@ -4,8 +4,6 @@ import { create } from "zustand";
 import type { LiftType } from "@/game/types";
 import type { AssetId } from "@/game/base";
 import { STANDARD_BRUSH_WIDTH, type PaintStroke } from "@/game/paintedTrail";
-import { useGameStore } from "@/game/store";
-import { useCameraUi } from "@/ui/cameraUi";
 import type { XZ } from "@/game/terrain";
 
 export type PlacementFocus = {
@@ -64,81 +62,16 @@ export const usePlacementDraft = create<{
   lodgeRequested: 0,
 }));
 
-export function requestLodge() {
-  usePlacementDraft.setState((s) => s.active ? {} : { lodgeRequested: s.lodgeRequested + 1 });
-}
-
-export function requestFocus(points: XZ[]) {
-  usePlacementDraft.setState((s) => ({
-    focus: { points, nonce: (s.focus?.nonce ?? 0) + 1 },
-  }));
-}
-
-export function startPlacement(type: LiftType) {
-  useGameStore.getState().setSelectedLiftType(type);
-  startDraft("lift", type);
-}
-
-export function startPaintPlacement() {
-  startDraft("trail");
-}
-
-export function startAssetPlacement(asset: AssetId) {
-  startDraft("asset", undefined, asset);
-}
-
-export function startGunPlacement() {
-  startDraft("gun");
-}
-
-function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
-  useGameStore.getState().setBuildMode(true);
-  useGameStore.getState().setFollowId(null);
-  useCameraUi.setState({ resumeFollowId: null });
-  usePlacementDraft.setState({
-    active: true,
-    moveCamera: false,
-    kind,
-    asset,
-    ...(type ? { type } : {}),
-    review: false,
-    step: "top",
-    top: undefined,
-    bottom: undefined,
-    snapped: false,
-    tapPoint: undefined,
-    focus: null,
-    glade: false,
-    brushWidth: STANDARD_BRUSH_WIDTH,
-    erasing: false,
-    strokes: [],
-    redo: [],
-    activeStroke: null,
-  });
-}
-
-export function cancelPlacement() {
-  finishPlacement();
-}
-
-export function finishPlacement() {
-  usePlacementDraft.setState({
-    active: false,
-    moveCamera: false,
-    review: false,
-    asset: undefined,
-    step: "top",
-    top: undefined,
-    bottom: undefined,
-    snapped: false,
-    tapPoint: undefined,
-    focus: null,
-    strokes: [],
-    redo: [],
-    activeStroke: null,
-  });
-  useGameStore.getState().setBuildMode(false);
-}
+export {
+  cancelPlacement,
+  finishPlacement,
+  requestFocus,
+  requestLodge,
+  startAssetPlacement,
+  startGunPlacement,
+  startPaintPlacement,
+  startPlacement,
+} from "@/ui/placementDraftActions";
 
 export function undoStroke() {
   usePlacementDraft.setState(({ strokes, redo }) => {
