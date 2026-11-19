@@ -57,7 +57,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | 4 | Build surface + chair; buy lodge / café / guns | Valid/invalid descent; cash drops; visible change on the mountain |
 | 5 | Close the hill and choose fare and snow service | Player can explain what they observed and what they chose to protect. At the next close, the same measure can be compared if both days produced a reading. |
 | 6 | Sleep several mornings | Snow/groom/guns visible after Mid/High; crew talent toast |
-| 7 | Read the winter review | Settlement agrees with cash less debt and unpaid construction. The review recalls the school and SummitLink decisions actually made. A solvent winter earns the Tenney pin. |
+| 7 | Read the winter review | Settlement agrees with cash less debt and unpaid construction. The review recalls the school and Abominable Snowglomerate decisions actually made. A solvent winter earns the Tenney pin. |
 | 8 | Replay from the review or the Tenney stub | New operating state, prior settlement saved, and no active fare cap or school contract. |
 
 Ask after play: “What surprised you this winter? Did it change what you did?” Give each player room to decline either offer.

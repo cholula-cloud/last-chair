@@ -350,7 +350,7 @@ Apply at career start; one founder:
 |---------|-------|------------|
 | Elena Vargas | arrivalMood +0.08 | cannot demolish warming hut |
 | Tom Keene | loan rate −1% | warm-week satisfaction −3 |
-| Riley Otis | overnight repair 15% | no SummitLink equity |
+| Riley Otis | overnight repair 15% | no Abominable Snowglomerate equity |
 | Amira Chen | +1 day forecast | snow expectation +5% penalty |
 | Juniper Hale | glade rep + | clearing cost +15% |
 | Marco Russo | après rev +10% | starting fixed cost +$80/day |
@@ -367,7 +367,7 @@ P0: founder pick UI only; apply Elena default silently for tests.
 | Saturday | `dayIndex` is Sat and `arrivals ≥ 25` |
 | School bus | `lessons booked ≥ 1` OR `arrivals ≥ 40` on weekday (P1) |
 | Dry week | `daysWithoutSnow ≥ 3` and `snow.depth &lt; 0.2` |
-| SummitLink | `reputation ≥ 50` (stub from satisfaction avg) |
+| Abominable Snowglomerate | `reputation ≥ 50` (stub from satisfaction avg) |
 | Winter review | `dayIndex == seasonLength` |
 
 Fail-forward: beats delay to next eligible day; no hard fail.

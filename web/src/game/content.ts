@@ -27,7 +27,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "riley",
     name: "Riley Otis",
     title: "The Rigger",
-    blurb: "Lift limps overnight. Turns down SummitLink deals.",
+    blurb: "Lift limps overnight. Turns down Abominable Snowglomerate deals.",
     arrivalMoodBonus: 0.02,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0,
@@ -104,7 +104,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
   },
   {
     id: "summit_link",
-    title: "SummitLink stop",
+    title: "Abominable Snowglomerate stop",
     radio:
       "Vivian Cho pulls off Route 100: add us to the map, keep the name if you like. The pass wants the dot.",
   },

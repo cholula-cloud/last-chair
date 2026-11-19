@@ -1276,7 +1276,7 @@ Tuning arithmetic for properties 1 and 2: with total spend `S` and a steady dail
 - Bankruptcy: force cash to −$100 for three Sleeps; the third Sleep returns `phase: "winter_review"`, `outcome: "bankrupt"`. Two negative mornings then a positive one reset `debtMornings` to 0.
 - Fail-soft order: the first negative morning is always preceded by a night where `loanOffered` was true (property over the 40-seed CARELESS runs with `takeLoan: false`).
 - Balance properties 1 to 3 above. Existing properties re-checked at 28 days; any margin that moves gets a new number with the 40-seed table pasted in the PR.
-- Snapshot. Allowed changes: `cash` and `cashDelta` on nights 2 onward (the café on day 2, the chair on day 4, upkeep); `final` gains `payables`, `loan`, `loanTaken`, `debtMornings`, `outcome`. `arrivals`, `satisfaction`, `snowQuality`, `snowDepth`, `weather`, `reputation`, `beats`, `talents` must not change. If a SummitLink or other beat gate reads cash later, that changes in PR 23, not here.
+- Snapshot. Allowed changes: `cash` and `cashDelta` on nights 2 onward (the café on day 2, the chair on day 4, upkeep); `final` gains `payables`, `loan`, `loanTaken`, `debtMornings`, `outcome`. `arrivals`, `satisfaction`, `snowQuality`, `snowDepth`, `weather`, `reputation`, `beats`, `talents` must not change. If an Abominable Snowglomerate or other beat gate reads cash later, that changes in PR 23, not here.
 
 ### Verification
 
@@ -1456,7 +1456,7 @@ Open decisions:
 
 **Goal:** make all six founders' bonus and constraint from the SIMULATION_SPEC table live in the sim, with one test per modifier.
 
-**Depends on:** PR 18 (Amira's forecast, Tom's thaw weeks), PR 20 (loan rate, fixed cost, lift ops). Juniper's clearing cost reads PR 13's trail clearing if it exists. Riley's SummitLink lock lands in PR 23 using the flag defined here.
+**Depends on:** PR 18 (Amira's forecast, Tom's thaw weeks), PR 20 (loan rate, fixed cost, lift ops). Juniper's clearing cost reads PR 13's trail clearing if it exists. Riley's Abominable Snowglomerate lock lands in PR 23 using the flag defined here.
 
 **Player-visible result:** the founder pick lists each founder's bonus and constraint as two short lines with icons, and the effects show up in play: Amira sees two days of forecast, Tom pays less interest and his guests sour in warm weeks, Riley's lifts cost less to run, and so on.
 
@@ -1574,13 +1574,13 @@ Verify accepting, declining, reloading after booking and submitting a repeated r
 
 ### Vivian's offer (first-winter PR 5)
 
-On or after day 18, Vivian may make the first SummitLink offer if reputation is at least 55 and an operating day remains. Show both terms together: $6,000 cash once and a ceiling of Balanced on ticket fares for the rest of this winter. "Stay independent" leaves cash and fare controls as they were. If accepted, apply the cap to the next operating day and every remaining day. Reduce a selected Expensive fare to Balanced and enforce the cap in both the simulation and fare controls. Cheap remains available. Riley can decline and sees the reason he cannot accept before replying. Keep any earlier winter's decision in its record; clear the offer's active cap when a new winter starts.
+On or after day 18, Vivian may make the first Abominable Snowglomerate offer if reputation is at least 55 and an operating day remains. Show both terms together: $6,000 cash once and a ceiling of Balanced on ticket fares for the rest of this winter. "Stay independent" leaves cash and fare controls as they were. If accepted, apply the cap to the next operating day and every remaining day. Reduce a selected Expensive fare to Balanced and enforce the cap in both the simulation and fare controls. Cheap remains available. Riley can decline and sees the reason he cannot accept before replying. Keep any earlier winter's decision in its record; clear the offer's active cap when a new winter starts.
 
 Record the offer day, actual answer, receipt and the fare cap. Apply the money exactly once and surface it separately from operating revenue. Test accept, decline, Riley, a fare already set to Expensive, repeated replies and reload. A pending, missed or unavailable offer must not appear as an accepted or declined agreement in the review.
 
 ### Save and verification
 
-Use the current save versioning and preserve previously recorded events and known facts. Leave unknown dates, counts or decisions unknown. A historical school-bus radio card gives no credit for a visit and an old SummitLink tease gives no credit for a deal. Validate at the rule layer as well as the UI. Report local event incidence, school visits booked and delivered, and actual SummitLink responses in the balance run. Verify night recap and story log at phone sizes with real event facts and both offers.
+Use the current save versioning and preserve previously recorded events and known facts. Leave unknown dates, counts or decisions unknown. A historical school-bus radio card gives no credit for a visit and an old Abominable Snowglomerate tease gives no credit for a deal. Validate at the rule layer as well as the UI. Report local event incidence, school visits booked and delivered, and actual Abominable Snowglomerate responses in the balance run. Verify night recap and story log at phone sizes with real event facts and both offers.
 
 Out of scope: audio production, Act II, and career consequences beyond the saved Act I record.
 
@@ -1604,7 +1604,7 @@ The same rule applies to every founder and every combination of answers: complet
 
 ### Verification
 
-Test solvent completion at and above zero, a finished season below zero, and early bankruptcy. Check that all paths use the same settlement, including seasons with a loan, unpaid installments or SummitLink funding. Run review fixtures for an optional school visit declined, an incomplete visit, a delivered visit, Vivian accepted and declined, Riley, and older saves with absent history. Check a 390×844 phone layout and reload before and after the review. Season grading and balance targets should be evaluated with the measured record and remain independent of which offers were accepted.
+Test solvent completion at and above zero, a finished season below zero, and early bankruptcy. Check that all paths use the same settlement, including seasons with a loan, unpaid installments or Abominable Snowglomerate funding. Run review fixtures for an optional school visit declined, an incomplete visit, a delivered visit, Vivian accepted and declined, Riley, and older saves with absent history. Check a 390×844 phone layout and reload before and after the review. Season grading and balance targets should be evaluated with the measured record and remain independent of which offers were accepted.
 
 ---
 
@@ -1931,7 +1931,7 @@ Docs at the gate: MASTER_PLAN M3 rows all ☑ and Gate M3 status filled; SIMULAT
 
 ## Limitations
 
-Numbers labelled proposed (weather transition matrix, storm and wind effects, holiday multipliers, upkeep, construction draw, loan terms, bankruptcy rule, eight new talents and several talent constants, Juniper's drift, Riley's reading, beat thresholds, SummitLink reply, score weights and grades, coach timings) are first values chosen to make each mechanic testable; PR 27 tunes them against the harness and three players, and the weather statistics quoted come from a 4,000-season simulation of the proposed chain, not from Vermont records. The plan assumes M2 (PRs 12b to 17 and world scale 2b to 2d) is merged; where M2 did not add something M3 reads (wind sensitivity in PR 15, venue revenue in PR 16, trail clearing in PR 13), the PR says what to do instead. Save version numbers are relative because M2 may bump the version after v8. Line counts are estimates from similar past PRs. The 14-day balance figures used in worked examples are the PR 10b table, measured before the M3 changes. Dutch Hill is the only mountain in M3; the career record is written for M5 to read, and nothing carries into Tenney yet.
+Numbers labelled proposed (weather transition matrix, storm and wind effects, holiday multipliers, upkeep, construction draw, loan terms, bankruptcy rule, eight new talents and several talent constants, Juniper's drift, Riley's reading, beat thresholds, Abominable Snowglomerate reply, score weights and grades, coach timings) are first values chosen to make each mechanic testable; PR 27 tunes them against the harness and three players, and the weather statistics quoted come from a 4,000-season simulation of the proposed chain, not from Vermont records. The plan assumes M2 (PRs 12b to 17 and world scale 2b to 2d) is merged; where M2 did not add something M3 reads (wind sensitivity in PR 15, venue revenue in PR 16, trail clearing in PR 13), the PR says what to do instead. Save version numbers are relative because M2 may bump the version after v8. Line counts are estimates from similar past PRs. The 14-day balance figures used in worked examples are the PR 10b table, measured before the M3 changes. Dutch Hill is the only mountain in M3; the career record is written for M5 to read, and nothing carries into Tenney yet.
 
 
 ---
@@ -2824,7 +2824,7 @@ Climate (proposed, consumed by row 18): Dutch Hill weights snow 0.3, clear 0.4, 
 
 Economy (proposed): start cash $28,000; daily fixed cost 1.8x Dutch Hill's; lift ops 1.5x; fares Cheap $45, Balanced $59, Expensive $74; building costs 1.6x; `expectationBonus` +8 hill-value points so the same snow and queues feel worse.
 
-Beats (Act II, copy drafts only; thresholds are data): first summit ride, a cold snap Saturday, a ski club bus from Plymouth (school bus analogue), a wind-hold week, SummitLink's second offer, winter review. Writers follow WORLD.md Part 4; no named living operators.
+Beats (Act II, copy drafts only; thresholds are data): first summit ride, a cold snap Saturday, a ski club bus from Plymouth (school bus analogue), a wind-hold week, Abominable Snowglomerate's second offer, winter review. Writers follow WORLD.md Part 4; no named living operators.
 
 Harder, defined as balance properties over the harness (`balance.ts`, 28 days, 6 seeds in CI, 40 in the report):
 
@@ -3035,7 +3035,7 @@ Settings and their effects:
 | Money | Normal, Comfortable, Unlimited | start cash × 1, × 3; Unlimited: costs still posted to the Ledger, cash shown as "Unlimited", never blocks |
 | Weather | Live random, Fixed sunny, Storm week | row 18 model; Fixed: every day `clear`; Storm week: a 7-day cycle of snow, snow, clear, thaw, thaw, clear, snow |
 | Talents | Crew order, All learned, Pick each night | All: `talentsOwned` = full list at start; Pick: night sheet shows a third tile "Crew learns tonight" with the next three |
-| Story | off (fixed) | no beats, no SummitLink |
+| Story | off (fixed) | no beats, no Abominable Snowglomerate |
 
 State:
 
@@ -3200,7 +3200,7 @@ Candidates (MASTER_PLAN section 8, M7 candidate list), with the friction each an
 | Named regulars with bios after N visits | guests feel anonymous | rows 6, 9; persona pool | M |
 | Radio serial "Ledger & Cocoa" | nights repetitive | row 23 | M (writing heavy) |
 | Heritage card per mountain | history thin | PR 35 | S |
-| SummitLink arc branches; co-op ending | Act end flat | rows 23, 24 | L |
+| Abominable Snowglomerate arc branches; co-op ending | Act end flat | rows 23, 24 | L |
 | Tomorrow cards on the night recap | cause and effect unclear | row 9 preview | S |
 | Talent synergy view (dormant until facility exists) | talents confusing | row 21 | M |
 | One-glance ops dashboard | too many taps for status | HUD | M |

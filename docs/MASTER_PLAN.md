@@ -36,7 +36,7 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
-The first-winter implementation on this branch uses save schema v6. The night recap follows up on the previous guest measure, Route 100 can report three local surprises, and the school and SummitLink offers have operating consequences. The winter review checks cash after debt and unpaid construction, records the optional commitments, and retains the settlement through replay.
+The first-winter implementation on this branch uses save schema v6. The night recap follows up on the previous guest measure, Route 100 can report three local surprises, and the school and Abominable Snowglomerate offers have operating consequences. The winter review checks cash after debt and unpaid construction, records the optional commitments, and retains the settlement through replay.
 
 **Partly built**
 
@@ -44,7 +44,7 @@ The first-winter implementation on this branch uses save schema v6. The night re
 |---|---|---|---|
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
 | Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
-| Radio | Beat card, local moments, school visit and SummitLink choice | Feed UI, full story log, lodge tier-up lines | 23 |
+| Radio | Beat card, local moments, school visit and Abominable Snowglomerate choice | Feed UI, full story log, lodge tier-up lines | 23 |
 | Winter review | Settlement, optional commitments, lodge tier and saved winter record | Career effects on later mountains | 24 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
@@ -54,7 +54,7 @@ The next evidence for the coach and balance rows comes from an uncoached opening
 
 ## 1. What the game is
 
-**Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **SummitLink**, tries to buy up the same coast.
+**Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **Abominable Snowglomerate**, tries to buy up the same coast.
 
 **One sentence:** reopen a lost New England mountain, build it with your thumb, grow your lodge, watch tiny skiers have their day, make two or three choices each night, and keep the hill running.
 
@@ -103,17 +103,17 @@ Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Sa
 
 ### The antagonist
 
-**SummitLink Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Vivian Cho**, shows up when your hill starts to matter. Every SummitLink offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
+**Abominable Snowglomerate Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Vivian Cho**, shows up when your hill starts to matter. Every Abominable Snowglomerate offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
 
 ### Arc across the career
 
 | Act | Hills | Story question | What changes in play |
 |---|---|---|---|
 | I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian can make one offer in the last third of winter |
-| II | Tenney Mountain, NH · Maple Valley, VT | Can you win a hill SummitLink also wants? | Colder, steeper, more capital. SummitLink competes for the same guests; its offers get bigger |
+| II | Tenney Mountain, NH · Maple Valley, VT | Can you win a hill Abominable Snowglomerate also wants? | Colder, steeper, more capital. Abominable Snowglomerate competes for the same guests; its offers get bigger |
 | III | Mount Whittier, NH · Hogback, VT | Can an independent run big lifts and hard terrain? | Lift reliability, wind holds, glades |
 | IV | Brodie, MA · Crotched West, NH | Can the independents hold together? | Night skiing, racing, split-area politics. Caretaker income from earlier hills funds the push |
-| Ending | | Who owns the Ice Coast? | Branches on your choices: a co-op of independent hills, a sale to SummitLink, or going it alone (proposed) |
+| Ending | | Who owns the Ice Coast? | Branches on your choices: a co-op of independent hills, a sale to Abominable Snowglomerate, or going it alone (proposed) |
 
 Full roster and per-hill hooks: [WORLD.md Part 3](./WORLD.md#part-3-career-mountains).
 
@@ -128,7 +128,7 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 | **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
 | **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
 | **Readsboro school visit** | Once Tier 2 and a ski school are available, accept or decline one weekday visit for six pupils at a discounted fare. Track booked, delivered and missed lessons separately. The optional goal is credited only for lessons actually delivered |
-| **SummitLink offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect |
+| **Abominable Snowglomerate offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect |
 | **Named crew** (Frank, Dana, Elena) | Their biases explain the fixed talent order, so a talent arriving reads as a person learning, not a menu |
 | **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Vivian results when present, and the operator's choices and measured results. Records a career result for later use by the map |
 | **Caretaker** | Hills you leave keep running off-screen and pay a small income that funds the next hill |
@@ -200,10 +200,10 @@ Every asset is a revenue line or a mood term in the Ledger, never filler. The Bu
 
 | | **Story Mode** (v1 product) | **Sandbox** (M6) | **Capitalist Mode** (M8, after v1) |
 |---|---|---|---|
-| Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat SummitLink |
+| Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat Abominable Snowglomerate |
 | Ruleset | Simple: build + fare + snow & service | Simple, with optional manual ops later | Simple at each hill, plus a company layer |
 | Economy | Real pressure | Normal / Comfortable / Unlimited | Real pressure, shared market, banks, stock market |
-| Story | Radio beats, SummitLink arc | Off | The rival's moves are the story |
+| Story | Radio beats, Abominable Snowglomerate arc | Off | The rival's moves are the story |
 | Win | Finish the career | None | Selectable goals (below) |
 | Save | Local now, cloud later | Local slots | Local slot |
 
@@ -213,13 +213,13 @@ Every asset is a revenue line or a mood term in the Ledger, never filler. The Bu
 
 Capitalist Mode is a sandboxy company game on the same New England map, in the spirit of a business tycoon, with the difference that you keep the detail of running each mountain. It starts after Story Mode's MVP (Gate M3), the career map and the Ledger (M5). Scope is New England only. Everything here is proposed and gets cut down in row 41 before building.
 
-You start with one small hill (a Dutch Hill-style hill: Tier 1 lodge, modest cash) and freedom to grow. SummitLink, our Ikon and Epic stand-in, is a deterministic AI company with its own seeded sim, so every match can be replayed and balanced in the harness.
+You start with one small hill (a Dutch Hill-style hill: Tier 1 lodge, modest cash) and freedom to grow. Abominable Snowglomerate, our Ikon and Epic stand-in, is a deterministic AI company with its own seeded sim, so every match can be replayed and balanced in the harness.
 
 - **Hills.** Buy hills from the career map's lost hills plus fictional operating hills (no real brands). Each owned hill runs the Story sim with its own lodge, tier and styles. One hill is on screen; the others run in a coarse off-screen sim, shared with the Caretaker (row 37).
-- **Hiring.** You cannot set two nightly levers on five hills. Managers do it: a general manager per hill runs the fare and snow levers to a policy you set, within a budget. Company roles add a snow boss (snow quality per dollar), ops chief (lift reliability), food and beverage manager (venue revenue) and marketing lead (arrivals and reputation). Skill and wage vary; SummitLink can poach them. Story Mode keeps the named crew, so pillar 5 holds in both modes.
+- **Hiring.** You cannot set two nightly levers on five hills. Managers do it: a general manager per hill runs the fare and snow levers to a policy you set, within a budget. Company roles add a snow boss (snow quality per dollar), ops chief (lift reliability), food and beverage manager (venue revenue) and marketing lead (arrivals and reputation). Skill and wage vary; Abominable Snowglomerate can poach them. Story Mode keeps the named crew, so pillar 5 holds in both modes.
 - **Banks.** Loans priced by cash flow and collateral, where the collateral is a hill. Missing payments costs the hill.
 - **Passes and tickets.** Set a season pass and a day ticket for your network (passes open at Tier 3). Guests choose between networks by price, distance, snow and how crowded each hill felt last visit.
-- **Moves and counter-moves.** SummitLink undercuts your pass, poaches a manager, sponsors a race, or bids on a hill you want. You answer at night, as in Story Mode.
+- **Moves and counter-moves.** Abominable Snowglomerate undercuts your pass, poaches a manager, sponsors a race, or bids on a hill you want. You answer at night, as in Story Mode.
 - **Stock market.** Late game: take the company public. Valuation follows earnings, the raise dilutes your control, and quarterly targets and shareholder pressure follow.
 - **Goals (selectable).** Largest share of New England skier-days after N winters; take the company public and survive two more winters; own N hills. Going broke or losing your last hill ends the game.
 
@@ -270,7 +270,7 @@ ICR's lessons from its patches and player reviews still apply: keep the day unin
 
 **Why: guests ask.** Every build should answer something the player can see. Long lines call for a lift, crowded beginner terrain for a green trail, a full lodge for a café. In M3 the night recap names the top unmet demand in one sentence ("Guests want"). Map pins can follow in M4.
 
-**What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that SummitLink also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
+**What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that Abominable Snowglomerate also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
 
 **The goal is always on screen.** A strip under the date shows the remaining days and progress toward finishing solvent. Show Readsboro as an optional goal once the offer is relevant.
 
@@ -387,7 +387,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M5** Career | Tenney Mountain, the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
 | **M6** Sandbox | Free-build mode and save slots | Sandbox hill saves and reloads |
 | **M7** 110% pass | Polish the best ideas after a side-by-side with ICR | Owner sign-off |
-| **M8** Capitalist Mode | A company across New England against SummitLink | A match plays to a winner in the harness and on a phone |
+| **M8** Capitalist Mode | A company across New England against Abominable Snowglomerate | A match plays to a winner in the harness and on a phone |
 
 ### M0: Clean foundation ☑
 
@@ -494,7 +494,7 @@ The PR numbers below name the six increments in this sequence. The roadmap row n
 |---|---|
 | 34 | Mountain definitions as data (terrain, start state, lodge position and start tier, archetype tags, beats) |
 | 35 | Career map hub (New England pins, locked hills with one-line history) |
-| 36 | Tenney Mountain, NH (Act II): colder, steeper, more capital; SummitLink competes for the same guests |
+| 36 | Tenney Mountain, NH (Act II): colder, steeper, more capital; Abominable Snowglomerate competes for the same guests |
 | 37 | Caretaker income from departed hills, built on a coarse off-screen hill sim |
 | 38 | Ledger: income snapshot, then fuller statements |
 
@@ -507,7 +507,7 @@ The PR numbers below name the six increments in this sequence. The roadmap row n
 
 ### M7: 110% pass
 
-Play one ICR winter and one Last Chair winter side by side, list friction, tune defaults before adding systems. Candidate list: named regulars with bios, radio serial, SummitLink arc branches and the co-op ending, tomorrow cards on the recap, scenarios (7-day ice storm), shareable season card and trail-map poster, golden-hour light and snowfall. Also: PWA install, performance budget pass, accessibility audit.
+Play one ICR winter and one Last Chair winter side by side, list friction, tune defaults before adding systems. Candidate list: named regulars with bios, radio serial, Abominable Snowglomerate arc branches and the co-op ending, tomorrow cards on the recap, scenarios (7-day ice storm), shareable season card and trail-map poster, golden-hour light and snowfall. Also: PWA install, performance budget pass, accessibility audit.
 
 ### M8: Capitalist Mode (after v1)
 
@@ -520,7 +520,7 @@ Design first, then build. Every row is proposed and gets a handoff section befor
 | 43 | Hiring: managers per hill and company roles, wages, policy-driven nightly levers |
 | 44 | Banks: loans, collateral, default |
 | 45 | Hill acquisition on the career map (bids from both sides) |
-| 46 | SummitLink AI: deterministic policy for pricing, bidding, poaching and counter-moves, tested in the harness |
+| 46 | Abominable Snowglomerate AI: deterministic policy for pricing, bidding, poaching and counter-moves, tested in the harness |
 | 47 | Season pass vs day ticket pricing and guest choice between networks |
 | 48 | Stock market and IPO; end-of-match review |
 
