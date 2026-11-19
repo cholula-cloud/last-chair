@@ -87,6 +87,15 @@ export const GuestsIcon = (p: P) => (
   </Icon>
 );
 
+/** Clipboard for the Office. */
+export const OfficeIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="5" y="5" width="14" height="16" rx="2" />
+    <path d="M9 5V3.5h6V5" />
+    <path d="M8.5 11h7M8.5 14.5h7M8.5 18h4" />
+  </Icon>
+);
+
 /** Crescent moon for Close hill. */
 export const MoonIcon = (p: P) => (
   <Icon {...p}>

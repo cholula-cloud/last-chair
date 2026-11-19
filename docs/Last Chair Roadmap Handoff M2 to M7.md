@@ -3380,6 +3380,24 @@ Built. Files: `web/src/ui/ColdOpen.tsx`, `coldOpenCards.ts` (cards and cues), `G
 
 ---
 
+## F1: Office shell and Desk
+
+**Goal.** An Office button in the bottom bar opens a full-screen sheet that pauses the day and holds everything that is not building. F1 ships the shell and the Desk tab. Other tabs (Money F2, Stats F3, Reports, Crew F4, Atlas) join `OFFICE_TABS` when their rows land; no placeholders.
+
+**Scope.** The bar reads Menu, Build, Guests, Office, Close hill. Opening the Office pauses a running day and closing it resumes a day that was running (`openOffice` and `closeOffice` in `ui/officeStore.ts`; Office open and tab state live in that UI store, never in the save, and no sim state is added). The tab strip scrolls sideways with 44 px targets and keeps the active tab centred. The header has Settings (the same controls as the title screen, now `ui/SettingsControls.tsx`) and Save slots (names the active slot and offers the menu, where Load lists the slots). The Office reads and plans: fare and snow choices stay at Night.
+
+**Desk.** Today's weather and `morningHeadline`; the winter goal in detail from `goalChips`; tomorrow's forecast (and two-day for Amira) from `outlookFor`; a needs-attention list; the latest Route 100 Radio item.
+
+**Needs attention.** `game/attention.ts` `needsAttention(state)`, most urgent first: cash below zero, a built lift with no open trail, a wind hold, bad snow on the worst segment, the "Guests want" line (`guestsWantLine` over live `daySatisfaction`, shown from 5 arrivals), low cash (`LOW_CASH`). Each item is one sentence. Items with a place on the map carry `focus` points; tapping one closes the Office and frames them with the existing `requestFocus` camera glide. `game/deskRadio.ts` `latestRadio` picks the radio card: a local moment from yesterday or today, else the latest story beat heard, else the latest older local moment.
+
+**Not moved.** The winter review is a forced end-of-winter phase screen, not a reachable screen, and no recap archive exists yet. Both stay where they are; the Reports tab (F3) is where they join the Office.
+
+**Tests.** `attention.test.ts`, `deskRadio.test.ts`, `officeStore.test.ts` (pause, resume, already paused, phase moved on, repeated open or close, no sim change).
+
+**Done when.** Office opens and closes from the bar at 375 px, the day pauses and resumes, Desk shows all five blocks, a focus tap frames the problem and resumes the day, `npm run check` passes.
+
+---
+
 ## Cross-cutting engineering tasks not tied to a roadmap row
 
 ### Error reporting
