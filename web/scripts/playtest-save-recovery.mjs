@@ -30,6 +30,8 @@ try {
   const newWinter = page.getByRole("button", { name: "New winter", exact: true });
   await newWinter.waitFor({ timeout: 20000 });
   await newWinter.tap();
+  // New winter opens the cold open first.
+  await page.getByRole("button", { name: "Skip", exact: true }).tap();
   const founder = page.getByRole("button", { name: /Elena Vargas/ });
   await founder.waitFor({ timeout: 20000 });
   assert.deepEqual(await page.evaluate(() => ["last-chair-v1", "last-chair-v1-backup", "unrelated-preference"]

@@ -1,0 +1,77 @@
+import { describe, expect, it } from "vitest";
+import { demandContext, guestsWantLine, type DemandContext } from "./guestsWant";
+import { createInitialState } from "./state";
+
+const calm: Parameters<typeof guestsWantLine>[0] = {
+  breakdown: { arrivalMood: 0, queue: 0, snow: 0, value: 0, runs: 0 },
+  facts: {
+    avgWaitMin: 1,
+    snowQuality: 0.7,
+    snowLabel: "Good cover",
+    farePrice: 45,
+    hillValue: 50,
+    runsPerGuest: 4,
+    turnedAway: 0,
+    arrivalMood: 0.7,
+  },
+};
+const ctx: DemandContext = { liftCount: 1, greenTrailCount: 1, greenRuns: 3, seatsFullMin: 0 };
+
+const withBreakdown = (patch: Partial<typeof calm.breakdown>) => ({ ...calm, breakdown: { ...calm.breakdown, ...patch } });
+
+describe("guestsWantLine", () => {
+  it("shows nothing when nothing is pressing", () => {
+    expect(guestsWantLine(calm, ctx)).toBeNull();
+    expect(guestsWantLine(withBreakdown({ queue: -1.5, snow: -1 }), ctx)).toBeNull();
+  });
+
+  it("asks for a second lift when one lift has long lines", () => {
+    const recap = { ...withBreakdown({ queue: -9 }), facts: { ...calm.facts, avgWaitMin: 7, busiestLift: { label: "Surface lift 1", min: 10.4 } } };
+    expect(guestsWantLine(recap, ctx)).toBe("Guests want a second lift. Lines ran over 10 minutes.");
+  });
+
+  it("names the busiest lift when there are already two", () => {
+    const recap = { ...withBreakdown({ queue: -6 }), facts: { ...calm.facts, busiestLift: { label: "Chair 2", min: 6.2 } } };
+    expect(guestsWantLine(recap, { ...ctx, liftCount: 2 })).toBe("Guests want shorter lift lines. Chair 2 ran over 6 minutes.");
+  });
+
+  it("asks for another green trail when beginner terrain is crowded", () => {
+    const line = guestsWantLine(withBreakdown({ runs: -3 }), { ...ctx, greenTrailCount: 1, greenRuns: 40 });
+    expect(line).toBe("Guests want another green trail.");
+  });
+
+  it("does not call a quiet green trail crowded", () => {
+    expect(guestsWantLine(withBreakdown({ runs: -3 }), { ...ctx, greenRuns: 10 })).toBeNull();
+  });
+
+  it("asks for more lodge seats when the lodge was full for long", () => {
+    expect(guestsWantLine(calm, { ...ctx, seatsFullMin: 90 })).toBe("Guests want more seats at the lodge.");
+  });
+
+  it("asks for better snow when the snow term hurts", () => {
+    const recap = { ...withBreakdown({ snow: -8 }), facts: { ...calm.facts, snowLabel: "Icy bottom" } };
+    expect(guestsWantLine(recap, ctx)).toBe("Guests want better snow. Cover was icy bottom.");
+  });
+
+  it("picks the largest pain when several apply", () => {
+    const recap = { ...withBreakdown({ queue: -4, snow: -10 }), facts: { ...calm.facts, busiestLift: { label: "Surface lift 1", min: 5 } } };
+    expect(guestsWantLine(recap, { ...ctx, seatsFullMin: 60 })).toMatch(/better snow/);
+  });
+
+  it("writes plain sentences with no dashes or middle dots", () => {
+    const line = guestsWantLine(withBreakdown({ queue: -9 }), ctx) ?? "";
+    expect(line).not.toMatch(/[—–·]/);
+  });
+});
+
+describe("demandContext", () => {
+  it("counts confirmed lifts, green trails and their runs", () => {
+    const state = createInitialState(1);
+    const ctxOut = demandContext({
+      lifts: [{ ...(state.lifts[0] ?? { type: "surface", anchor: { x: 0, z: 0 }, queue: [], dispatchCredit: 0 }), confirmed: true }],
+      trails: [{ difficulty: "green" }, { difficulty: "blue" }] as never,
+      dayStats: { ...state.dayStats, runsByTrail: [12, 5], seatsFullMin: 30 },
+    });
+    expect(ctxOut).toEqual({ liftCount: 1, greenTrailCount: 1, greenRuns: 12, seatsFullMin: 30 });
+  });
+});

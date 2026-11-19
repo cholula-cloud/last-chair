@@ -107,6 +107,8 @@ export type PersistedState = {
   talentsOwned: string[];
   completedBeats: StoryBeatId[];
   summitLinkDecision: SummitLinkDecision | null;
+  /** Coach tips the player has already seen this winter (see coach.ts). */
+  tipsSeen: string[];
   pendingBeat: StoryBeatId | null;
   beatAcknowledged: boolean;
   schoolContract: SchoolContract | null;
@@ -190,6 +192,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     talentsOwned: [],
     completedBeats: [],
     summitLinkDecision: null,
+    tipsSeen: [],
     pendingBeat: null,
     beatAcknowledged: true,
     schoolContract: null,
@@ -245,6 +248,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     talentsOwned: state.talentsOwned,
     completedBeats: state.completedBeats,
     summitLinkDecision: state.summitLinkDecision,
+    tipsSeen: state.tipsSeen,
     pendingBeat: state.pendingBeat,
     beatAcknowledged: state.beatAcknowledged,
     schoolContract: state.schoolContract,
@@ -279,4 +283,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;

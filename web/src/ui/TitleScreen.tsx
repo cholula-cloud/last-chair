@@ -195,7 +195,7 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
 }
 
 function SettingsView({ onBack }: { onBack: () => void }) {
-  const { voiceVolume, captions, reduceMotion, defaultSpeed, set } = useSettings();
+  const { voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed, set } = useSettings();
   const volumeId = useId();
   const speedId = useId();
   return (
@@ -217,6 +217,8 @@ function SettingsView({ onBack }: { onBack: () => void }) {
           className="h-11 w-full accent-[var(--sign-green)]"
         />
       </div>
+      <Toggle label="Voice" on={voiceOn} onChange={(v) => set({ voiceOn: v })} />
+      <Toggle label="Coach tips" on={tips} onChange={(v) => set({ tips: v })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
       <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
       <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">
@@ -248,11 +250,12 @@ function CreditsView({ onBack }: { onBack: () => void }) {
     <SubView title="Credits" onBack={onBack}>
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
       <p className="font-bold leading-snug">It is built with Next.js, React Three Fiber, three.js and zustand.</p>
+      <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
     </SubView>
   );
 }
 
-export function TitleScreen({ onStart }: { onStart: () => void }) {
+export function TitleScreen({ onStart }: { onStart: (opts?: { newWinter: boolean }) => void }) {
   const [view, setView] = useState<View>("main");
   const [summaries, setSummaries] = useState<SlotSummary[]>(() => readAllSlotSummaries());
   const [active, setActive] = useState<SlotNumber>(() => readActiveSlot());
@@ -272,9 +275,9 @@ export function TitleScreen({ onStart }: { onStart: () => void }) {
   const summaryOf = (slot: SlotNumber): SlotSummary => summaries[slot - 1] ?? { kind: "empty" };
   const activeSummary = summaryOf(active);
 
-  const enterGame = () => {
+  const enterGame = (opts?: { newWinter: boolean }) => {
     useSpeed.getState().reset();
-    onStart();
+    onStart(opts);
   };
 
   const play = async (slot: SlotNumber) => {
@@ -284,7 +287,7 @@ export function TitleScreen({ onStart }: { onStart: () => void }) {
 
   const begin = (slot: SlotNumber) => {
     startNewWinter(slot);
-    enterGame();
+    enterGame({ newWinter: true });
   };
 
   const newWinter = () => {

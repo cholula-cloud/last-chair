@@ -8,6 +8,7 @@ import type { PaintStroke } from "./paintedTrail";
 import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
 import { STORY_BEATS } from "./content";
+import { withTipSeen } from "./coach";
 import * as rules from "./rules";
 import {
   createInitialState,
@@ -56,6 +57,7 @@ type GameActions = {
   acknowledgeBeat: () => void;
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
+  markTipSeen: (id: string) => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
@@ -250,6 +252,7 @@ export const useGameStore = create<GameStore>()(
         acknowledgeBeat: () => commit((s) => rules.acknowledgeBeat(s)),
         replyToSummitLink: (reply) => commit((s) => rules.replyToSummitLink(s, reply)),
         decideSchoolContract: (decision) => commit((s) => rules.decideSchoolContract(s, decision)),
+        markTipSeen: (id) => commit((s) => ({ tipsSeen: withTipSeen(s.tipsSeen, id) })),
         finishWinterReview: () => commit((s) => rules.finishWinterReview(s)),
         startNewSeason: () => commit((s) => rules.startNewSeason(s)),
         nextTalentHint: () => rules.nextTalentHint(get()),

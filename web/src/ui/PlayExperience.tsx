@@ -15,6 +15,8 @@ import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
+import { CoachTip } from "@/ui/CoachTip";
+import { GoalStrip } from "@/ui/GoalStrip";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
@@ -209,8 +211,22 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
+          {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
           {chairHeld && <WindHoldCallout />}
         </div>
+        {phase === "day" && (
+          <CoachTip
+            context={{
+              phase,
+              dayIndex,
+              opening,
+              running: !notStarted,
+              placementActive,
+              buildOpen,
+              hasGuestsWant: false,
+            }}
+          />
+        )}
         {showNote && !placementActive && (
           <MorningNote
             weather={weather}

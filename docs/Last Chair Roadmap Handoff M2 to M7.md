@@ -3347,6 +3347,20 @@ Ritual first (no code), then performance (so later picks have headroom), then ac
 
 ---
 
+## L-E: Cold open, goal strip, Guests want, coach tips
+
+Built. Files: `web/src/ui/ColdOpen.tsx`, `coldOpenCards.ts` (cards and cues), `GoalStrip.tsx`, `CoachTip.tsx`; `web/src/game/goals.ts`, `guestsWant.ts`, `coach.ts`; stills and voice under `web/public/story/`; `web/scripts/capture-story.mjs` regenerates the stills from the live scene.
+
+**Cold open.** New winter (not Continue or Load) shows four full-screen stills with always-on captions before the founder pick. The scene loads underneath. Skip, tap, Space or the right arrow move on. The voice-over (`cold-open.mp3`, 18.8 s, ElevenLabs) starts from the New winter tap. Cue times found by detecting silence in the recording: the pauses between lines run 5.36 to 6.12 s, 10.48 to 11.30 s and 16.78 to 17.42 s, so the cards start at 0, 6.0, 11.2 and 17.3 s. Moving by hand seeks the audio to that card's cue. If play() is refused, Voice is off in Settings, or the audio clock stops for 2 seconds, the cards run on timers equal to the cue gaps. Credits carry "Voice by ElevenLabs."
+
+**Goal strip.** Three chips under the HUD date: Lodge Tier 2 (`lodgeTier >= 2`), School bus (the `school_bus` beat is pending or complete), Solvent (cash at or above zero, no debt mornings, not bankrupt). Tapping a chip shows a one-sentence explainer. Hidden before the first start and during placement.
+
+**Guests want.** `guestsWantLine(recap, ctx)` names the largest unmet demand among long lift lines, a full lodge, crowded green trails and poor snow, or nothing. It reads the same satisfaction terms as the "Why?" list.
+
+**Coach tips.** `COACH_TIPS` in `game/coach.ts` is a table of ten tips with `when(context)` predicates; `nextTip` returns at most one. Seen ids live in the save as `tipsSeen` (schema 6; saves already past day 1 migrate as having seen every tip). Settings has a Coach tips switch. Row 26 extends the table and the context.
+
+---
+
 ## Cross-cutting engineering tasks not tied to a roadmap row
 
 ### Error reporting

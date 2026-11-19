@@ -67,6 +67,8 @@ async function startPlay(page) {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "New winter", exact: true }).click({ timeout: 30_000 });
+  // New winter opens the cold open first.
+  await page.getByRole("button", { name: "Skip", exact: true }).click({ timeout: 30_000 });
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: /Elena Vargas/i }).click();
   await waitSceneReady(page);
