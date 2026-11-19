@@ -26,6 +26,7 @@ import {
   WindIcon,
 } from "@/ui/kit/icons";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
+import { undoChipLabel, type UndoKind } from "@/ui/undoLabel";
 import { useSpeed } from "@/ui/speed";
 
 /** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
@@ -308,7 +309,7 @@ export function ConditionsBoard({
               {c.value}
             </span>
             <span
-              className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none ${TONE_CHIP[c.tone]}`}
+              className={`max-w-full whitespace-normal break-words rounded-md px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-tight ${TONE_CHIP[c.tone]}`}
             >
               {c.state}
               {c.bare ? null : (
@@ -377,9 +378,11 @@ export function ResumeFollowChip({ onClick }: { onClick: () => void }) {
 export function LiftUndoChip({
   refund,
   onClick,
+  kind = "lift",
 }: {
   refund: number;
   onClick: () => void;
+  kind?: UndoKind;
 }) {
   return (
     <button
@@ -387,7 +390,7 @@ export function LiftUndoChip({
       onClick={onClick}
       className="chip press pointer-events-auto flex h-11 items-center px-4 text-[0.85rem] font-extrabold"
     >
-      Placed · Undo (+{formatMoney(refund)})
+      {undoChipLabel(kind, refund)}
     </button>
   );
 }

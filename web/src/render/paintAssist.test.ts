@@ -3,7 +3,7 @@ import { TERRAIN } from "@/game/terrain";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import {
   DIFFICULTY_COLOR, EDGE_MARGIN, MAX_RIBBON_SEGMENTS, MIN_RIBBON_SEGMENTS, UNVALIDATED_COLOR,
-  LIVE_RIBBON_SEGMENTS, brushRadius, darken, usableHeight, edgePanInput, edgePanVelocity, pixelWorldSize, ribbonColor, ribbonSegmentCount,
+  LIVE_RIBBON_SEGMENTS, MAX_STROKE_POINTS, PAN_HOLD_MS, PAN_STILL_MS, panDrive, brushRadius, darken, usableHeight, edgePanInput, edgePanVelocity, pixelWorldSize, ribbonColor, ribbonSegmentCount,
 } from "./paintAssist";
 import { ribbonGeometry } from "./TrailRibbon";
 
@@ -159,5 +159,31 @@ describe("live ribbon detail and panel-aware margin", () => {
     const out = { x: 9, z: 9 };
     expect(edgePanInput(0, H / 2, W, H, EDGE_MARGIN, out)).toBe(out);
     expect(out.x).toBeCloseTo(-1, 6);
+  });
+});
+
+describe("panDrive", () => {
+  it("is full while the finger is moving and after a short pause", () => {
+    expect(panDrive(0)).toBe(1);
+    expect(panDrive(PAN_HOLD_MS)).toBe(1);
+  });
+
+  it("eases to zero by the still time and stays there", () => {
+    expect(panDrive((PAN_HOLD_MS + PAN_STILL_MS) / 2)).toBeCloseTo(0.5, 9);
+    expect(panDrive(PAN_STILL_MS)).toBe(0);
+    expect(panDrive(5000)).toBe(0);
+  });
+
+  it("falls monotonically", () => {
+    let last = 1;
+    for (let t = 0; t <= 400; t += 10) {
+      const v = panDrive(t);
+      expect(v).toBeLessThanOrEqual(last + 1e-12);
+      last = v;
+    }
+  });
+
+  it("keeps a stroke's point cap at 512", () => {
+    expect(MAX_STROKE_POINTS).toBe(512);
   });
 });

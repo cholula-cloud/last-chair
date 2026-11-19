@@ -12,6 +12,7 @@ import {
   LEASE_CAMERA_MARGIN,
   LEASE_TARGET_MARGIN,
   clampToLease,
+  limitShift,
   insideLease,
   PLAY_AREA as A,
   playArea,
@@ -55,24 +56,46 @@ describe("play area", () => {
 });
 
 describe("lease clamp", () => {
-  it("leaves the target alone on the lease and within the margin", () => {
+  it("leaves the target alone on the lease and within half the margin", () => {
     expect(clampToLease(TERRAIN.base)).toEqual(TERRAIN.base);
     const edge = TERRAIN.lease![0];
-    const out = { x: edge.x - 1, z: edge.z - 1 };
-    expect(distanceOutsideLease(out)).toBeLessThan(LEASE_TARGET_MARGIN);
+    const out = { x: edge.x - 0.5, z: edge.z - 0.5 };
+    expect(distanceOutsideLease(out)).toBeLessThan(LEASE_TARGET_MARGIN / 2);
     expect(clampToLease(out)).toEqual(out);
   });
 
-  it("stops a target dragged far outside close to the outline, at the polygon rather than the box", () => {
-    // The north-west box corner is far from the polygon.
+  it("never lets a target dragged far outside rest more than the margin from the outline", () => {
     const b = leaseBounds();
     const corner = { x: b.xMin, z: b.zMin };
     expect(distanceOutsideLease(corner)).toBeGreaterThan(8);
-    const clamped = clampToLease(corner);
-    expect(distanceOutsideLease(clamped)).toBeLessThan(LEASE_TARGET_MARGIN + 4);
-    const resting = insideLease(corner);
-    expect(distanceOutsideLease(resting)).toBeCloseTo(LEASE_TARGET_MARGIN, 5);
-    expect(distanceOutsideLease(clampToLease({ x: 500, z: 500 }))).toBeLessThan(LEASE_TARGET_MARGIN + 7);
+    for (const p of [corner, { x: 500, z: 500 }, { x: -500, z: 12 }, { x: 3, z: -900 }, { x: b.xMax + 30, z: b.zMax + 30 }]) {
+      const d = distanceOutsideLease(clampToLease(p));
+      expect(d).toBeGreaterThan(LEASE_TARGET_MARGIN * 0.5);
+      expect(d).toBeLessThanOrEqual(LEASE_TARGET_MARGIN + 1e-9);
+    }
+    expect(distanceOutsideLease(insideLease(corner))).toBeCloseTo(LEASE_TARGET_MARGIN, 5);
+  });
+
+  it("holds the limit when the target is pushed toward every vertex of the lease, in steps", () => {
+    for (const v of TERRAIN.lease!) {
+      const c = TERRAIN.base;
+      const dir = { x: v.x - c.x, z: v.z - c.z };
+      const len = Math.hypot(dir.x, dir.z);
+      let at = { ...c };
+      for (let i = 0; i < 400; i++) {
+        const s = limitShift(at, (dir.x / len) * 0.7, (dir.z / len) * 0.7);
+        at = { x: at.x + s.x, z: at.z + s.z };
+      }
+      expect(distanceOutsideLease(at)).toBeLessThanOrEqual(LEASE_TARGET_MARGIN + 1e-6);
+    }
+  });
+
+  it("lets a shift that stays inside the limit through whole, and treats non-finite input safely", () => {
+    const s = limitShift(TERRAIN.base, 0.3, -0.2);
+    expect(s.x).toBeCloseTo(0.3, 9);
+    expect(s.z).toBeCloseTo(-0.2, 9);
+    const bad = limitShift(TERRAIN.base, Number.NaN, 0);
+    expect(Number.isFinite(bad.x) && Number.isFinite(bad.z)).toBe(true);
   });
 
   it("is monotonic: pulling further out never moves the target further out by more than the cap", () => {

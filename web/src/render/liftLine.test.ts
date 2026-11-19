@@ -5,7 +5,16 @@ import { starterLifts } from "@/game/__fixtures__/built-hill";
 import { TERRAIN } from "@/game/terrain";
 import { DAY_START_MIN, MS_PER_GAME_MINUTE } from "@/game/types";
 import { scaledTickMs, type GameSpeed } from "@/ui/speed";
-import { cableHeightAt, carrierLoopPhase, liftFrame, liftTowers } from "./liftLine";
+import {
+  cableHeightAt,
+  carrierLoopPhase,
+  CABLE_RADIUS,
+  ghostCableRadius,
+  INVALID_CABLE_RADIUS,
+  INVALID_HALO_RADIUS,
+  liftFrame,
+  liftTowers,
+} from "./liftLine";
 
 const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top });
 
@@ -56,5 +65,14 @@ describe("lift cable clearance", () => {
     const towers = liftTowers(line);
     expect(towers[0].x).toBeCloseTo(0.9, 5);
     expect(towers[0].z).toBeCloseTo(15.3, 5);
+  });
+});
+
+describe("ghost cable radius", () => {
+  it("keeps the valid ghost thin and thickens the invalid one, with a wider halo", () => {
+    expect(ghostCableRadius(false)).toBe(CABLE_RADIUS);
+    expect(ghostCableRadius(true)).toBe(INVALID_CABLE_RADIUS);
+    expect(INVALID_CABLE_RADIUS).toBeGreaterThanOrEqual(CABLE_RADIUS * 3);
+    expect(INVALID_HALO_RADIUS).toBeGreaterThan(INVALID_CABLE_RADIUS);
   });
 });

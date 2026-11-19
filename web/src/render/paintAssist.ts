@@ -7,6 +7,12 @@ import type { TrailDifficulty } from "@/game/types";
 export const EDGE_MARGIN = 0.1;
 /** Pan speed at full depth into the margin, as a fraction of the camera distance per second. */
 export const EDGE_PAN_SPEED = 0.5;
+/** A resting finger keeps panning this long after its last move, then eases to a stop. */
+export const PAN_HOLD_MS = 150;
+/** Time still at which the edge pan has stopped completely. */
+export const PAN_STILL_MS = 300;
+/** Pointer travel, in pixels, that counts as the finger moving. */
+export const PAN_MOVE_PX = 2;
 /** Fewest and most cross-sections a painted ribbon is built with. */
 export const MIN_RIBBON_SEGMENTS = 40;
 export const MAX_RIBBON_SEGMENTS = 768;
@@ -70,6 +76,16 @@ export function edgePanVelocity(
   out.x = (right.x * input.x + forward.x * input.z) * scale;
   out.z = (right.z * input.x + forward.z * input.z) * scale;
   return out;
+}
+
+/**
+ * How much of the edge pan to apply, from 0 to 1, given the time since the pointer last moved:
+ * full while it is moving, easing to zero by `PAN_STILL_MS`, so a finger resting at the edge stops the map.
+ */
+export function panDrive(stillMs: number, hold = PAN_HOLD_MS, stop = PAN_STILL_MS): number {
+  if (!(stillMs > hold)) return 1;
+  if (stillMs >= stop) return 0;
+  return 1 - (stillMs - hold) / (stop - hold);
 }
 
 /** One cross-section per stroke point, never fewer than the minimum, never more than the cap. */

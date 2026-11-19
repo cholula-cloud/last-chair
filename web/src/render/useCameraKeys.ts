@@ -4,6 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { limitShift } from "./cameraControls";
 
 const PAN_CODES: Record<string, [number, number]> = {
   KeyW: [0, 1],
@@ -132,6 +133,9 @@ export function useCameraKeys({
       const len = Math.hypot(right, forward) || 1;
       const step = (PAN_RATE * dist * dt) / len;
       move.set((hx * forward - hz * right) / hl, 0, (hz * forward + hx * right) / hl).multiplyScalar(step);
+      const shift = limitShift(controls.target, move.x, move.z);
+      move.x = shift.x;
+      move.z = shift.z;
       camera.position.add(move);
       controls.target.add(move);
       moved = true;

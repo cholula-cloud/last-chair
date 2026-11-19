@@ -25,7 +25,15 @@ import {
   useKit,
 } from "./kit";
 import { LIFT_CABLE_OFFSET } from "./layout";
-import { cableHeightAt, carrierLoopPhase, liftFrame, liftTowers } from "./liftLine";
+import {
+  cableHeightAt,
+  carrierLoopPhase,
+  CABLE_RADIUS,
+  ghostCableRadius,
+  INVALID_HALO_RADIUS,
+  liftFrame,
+  liftTowers,
+} from "./liftLine";
 import { PALETTE } from "./palette";
 
 const CARRIERS = 16;
@@ -51,7 +59,7 @@ function segmentPart(
 }
 
 /** Up and return cables between tower tops (procedural, thin). */
-function cableGeometry(line: LiftLine): THREE.BufferGeometry {
+function cableGeometry(line: LiftLine, radius = CABLE_RADIUS): THREE.BufferGeometry {
   const towers = liftTowers(line);
   const { px, pz } = liftFrame(line);
   const off = LIFT_CABLE_OFFSET;
@@ -64,7 +72,7 @@ function cableGeometry(line: LiftLine): THREE.BufferGeometry {
         segmentPart(
           new THREE.Vector3(a.x + px * off * s, a.top - 0.03, a.z + pz * off * s),
           new THREE.Vector3(b.x + px * off * s, b.top - 0.03, b.z + pz * off * s),
-          0.012,
+          radius,
           PALETTE.cable,
         ),
       );
@@ -76,11 +84,11 @@ function cableGeometry(line: LiftLine): THREE.BufferGeometry {
 const S = METERS_TO_WORLD * LIFT_TOY_SCALE;
 
 /** Kit towers and terminals placed along the line; returns body + window glow. */
-function useLiftStructure(line: LiftLine) {
+function useLiftStructure(line: LiftLine, cableRadius: number) {
   const tower = bakeKit(useKit("lift-tower"));
   const bottom = bakeKit(useKit("lift-terminal-bottom"));
   const top = bakeKit(useKit("lift-terminal-top"));
-  const cables = useMemo(() => cableGeometry(line), [line]);
+  const cables = useMemo(() => cableGeometry(line, cableRadius), [line, cableRadius]);
   const built = useMemo(() => {
     const towers = liftTowers(line);
     const { yaw } = liftFrame(line);
@@ -140,7 +148,11 @@ export function Lift({
   closing?: boolean;
   type?: LiftType;
 }) {
-  const structure = useLiftStructure(line);
+  const invalidGhost = preview && previewInvalid;
+  const structure = useLiftStructure(line, preview ? ghostCableRadius(previewInvalid) : CABLE_RADIUS);
+  // A soft red halo around an invalid ghost's cable, so it shows on dimmed land.
+  const halo = useMemo(() => (invalidGhost ? cableGeometry(line, INVALID_HALO_RADIUS) : null), [line, invalidGhost]);
+  useEffect(() => () => halo?.dispose(), [halo]);
   const towers = useMemo(() => liftTowers(line), [line]);
   const frame = useMemo(() => liftFrame(line), [line]);
   const carrierGeo = useCarrierGeometry(type);
@@ -180,6 +192,11 @@ export function Lift({
 
   return (
     <group>
+      {halo && (
+        <mesh geometry={halo} renderOrder={2}>
+          <meshBasicMaterial color={ghostColor} transparent opacity={0.22} depthWrite={false} />
+        </mesh>
+      )}
       {structure.glow && (
         <mesh geometry={structure.glow}>
           {preview ? (
@@ -194,7 +211,7 @@ export function Lift({
           <meshBasicMaterial
             color={ghostColor}
             transparent
-            opacity={0.55}
+            opacity={invalidGhost ? 0.85 : 0.55}
             depthWrite={false}
           />
         ) : (

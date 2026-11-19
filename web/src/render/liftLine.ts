@@ -63,3 +63,13 @@ export function cableHeightAt(t: number, towers: LiftPoint[]): number {
   const k = f - i;
   return towers[i].top + (towers[i + 1].top - towers[i].top) * k;
 }
+
+/** Cable tube radii, in world units: the real cable, the thicker invalid ghost, and its soft halo. */
+export const CABLE_RADIUS = 0.012;
+export const INVALID_CABLE_RADIUS = 0.045;
+export const INVALID_HALO_RADIUS = 0.14;
+
+/** Cable radius for a ghost: valid ghosts stay thin, invalid ones read clearly on dimmed land. */
+export function ghostCableRadius(invalid: boolean): number {
+  return invalid ? INVALID_CABLE_RADIUS : CABLE_RADIUS;
+}

@@ -22,11 +22,10 @@ export function playArea(terrain: Terrain = TERRAIN, margin = LEASE_CAMERA_MARGI
   return { xMin: b.xMin - margin, xMax: b.xMax + margin, zMin: b.zMin - margin, zMax: b.zMax + margin };
 }
 
-/** How far past the lease outline the camera target may rest, in world units. */
+/** The farthest the camera target may be from the lease outline, in world units, in every mode. */
 export const LEASE_TARGET_MARGIN = 3;
-/** Overshoot beyond the margin where panning meets resistance, and the hard limit past it. */
-const TARGET_SOFT = 2;
-const TARGET_HARD = 6;
+/** Fraction of the margin the target moves freely; resistance builds over the rest. */
+const TARGET_FREE_FRACTION = 0.5;
 
 /** The nearest point the camera target may rest on: inside the lease outline plus the margin. */
 export function insideLease(p: XZ, terrain: Terrain = TERRAIN, margin = LEASE_TARGET_MARGIN): XZ {
@@ -44,17 +43,30 @@ function leaseCentre(terrain: Terrain): XZ {
 }
 
 /**
- * Soft clamp to the lease polygon: unchanged on it, eased past the margin, flat at the hard limit.
- * The mountain edge, not its bounding box, stops the camera.
+ * Clamp to the lease polygon plus the margin: unchanged up to half the margin past the outline,
+ * then eased so the distance approaches the margin and never exceeds it. The mountain edge, not
+ * its bounding box, stops the camera. Every code path that moves the orbit target ends here.
  */
 export function clampToLease(p: XZ, terrain: Terrain = TERRAIN, margin = LEASE_TARGET_MARGIN): XZ {
   if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) return leaseCentre(terrain);
   const edge = nearestLeaseEdge(p, terrain);
-  if (!edge || distanceOutsideLease(p, terrain) <= margin) return p;
-  const over = edge.distance - margin;
-  const eased = margin + easeOvershoot(over, TARGET_SOFT, TARGET_HARD);
+  if (!edge) return insideArea(p, playArea(terrain));
+  const free = margin * TARGET_FREE_FRACTION;
+  if (distanceOutsideLease(p, terrain) <= free) return p;
+  const room = margin - free;
+  const eased = free + room * (1 - Math.exp(-(edge.distance - free) / room));
   const k = eased / edge.distance;
   return { x: edge.at.x + (p.x - edge.at.x) * k, z: edge.at.z + (p.z - edge.at.z) * k };
+}
+
+/**
+ * The part of a requested ground shift `(dx, dz)` that keeps the target within the lease limit.
+ * Used by paths that move the camera outside the orbit controls (edge auto-pan, keys), so the
+ * target never leaves the limit even for a frame.
+ */
+export function limitShift(target: XZ, dx: number, dz: number, terrain: Terrain = TERRAIN): XZ {
+  const c = insideLease({ x: target.x + dx, z: target.z + dz }, terrain);
+  return { x: c.x - target.x, z: c.z - target.z };
 }
 
 /** Play area for the current mountain. */
