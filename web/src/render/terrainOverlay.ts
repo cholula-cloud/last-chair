@@ -42,10 +42,9 @@ uniform vec3 uBandLimits;
 uniform vec3 uBandColors[4];
 varying float vPitch;
 varying vec3 vOverlayPos;
-float lineMask(float coord, float halfWidth) {
+float lineMask(float coord, float halfWidth, float aa) {
   float f = fract(coord);
   float d = min(f, 1.0 - f);
-  float aa = fwidth(coord);
   return 1.0 - smoothstep(halfWidth - aa, halfWidth + aa, d);
 }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
@@ -58,12 +57,17 @@ if (uOverlayMode > 0.5) {
   vec2 q = p / period;
   float pxPerPeriod = 1.0 / (fwidth(q.x) + 1e-6);
   float fade = clamp((pxPerPeriod - 3.0) / 4.0, 0.0, 1.0);
-  float dotAA = fwidth(q.x);
-  float dots = 1.0 - smoothstep(0.26 - dotAA, 0.26 + dotAA, length(fract(q * 1.3) - 0.5));
-  float stripes = lineMask((q.x + q.y) * 1.1, 0.2);
-  float hatch = max(lineMask((q.x + q.y) * 0.9, 0.09), lineMask((q.x - q.y) * 0.9, 0.09));
-  float dense = max(lineMask((q.x + q.y) * 1.9, 0.2), lineMask((q.x - q.y) * 1.9, 0.2));
-  float mark = band < 0.5 ? dots : band < 1.5 ? stripes : band < 2.5 ? hatch : dense;
+  float aa = fwidth(q.x);
+  float mark = 0.0;
+  if (band < 0.5) {
+    mark = 1.0 - smoothstep(0.26 - aa, 0.26 + aa, length(fract(q * 1.3) - 0.5));
+  } else if (band < 1.5) {
+    mark = lineMask((q.x + q.y) * 1.1, 0.2, aa * 2.2);
+  } else if (band < 2.5) {
+    mark = max(lineMask((q.x + q.y) * 0.9, 0.09, aa * 1.8), lineMask((q.x - q.y) * 0.9, 0.09, aa * 1.8));
+  } else {
+    mark = max(lineMask((q.x + q.y) * 1.9, 0.2, aa * 3.8), lineMask((q.x - q.y) * 1.9, 0.2, aa * 3.8));
+  }
   float contourCoord = (vOverlayPos.y - uBaseY) * uFeetPerUnit / uContourFt;
   float cw = fwidth(contourCoord);
   float cf = fract(contourCoord);
