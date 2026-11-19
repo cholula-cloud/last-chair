@@ -38,7 +38,6 @@ const base = (process.env.PLAY_URL ?? "http://127.0.0.1:3000").replace(/\/$/, ""
 const output = path.join(process.env.PLAYTEST_OUT ?? "playtest-artifacts", "m2");
 const viewport = { width: 390, height: 844 };
 const button = (page, name) => page.getByRole("button", { name, exact: typeof name === "string" });
-await fs.mkdir(output, { recursive: true });
 
 const BUTTON_TIMEOUT = 18000;
 const mouseOnly = process.env.PLAYTEST_INPUT === "mouse";
@@ -76,7 +75,7 @@ async function confirmDraft(page, kind, action) {
 }
 
 /** /play opens on the title screen; Continue resumes the active slot, otherwise start a new winter. */
-async function enterGame(page) {
+export async function enterGame(page) {
   const continueButton = button(page, /^Continue/);
   const newWinter = button(page, "New winter");
   await newWinter.waitFor({ timeout: 20000 });
@@ -217,10 +216,7 @@ async function paintTrail(page, cdp, top, resume = false) {
   await confirmDraft(page, "trail", /^Cut trail/);
 }
 
-async function opening(page, cdp, engine) {
-  await openPlay(page);
-  await click(page, /Elena Vargas/);
-  await page.getByText(/Day 1\/\d+/).waitFor();
+export async function buildOpening(page, cdp) {
   const started = Date.now();
   const initial = (await save(page)).state;
   assert.equal(initial.lodgeTier, 1);
@@ -249,8 +245,14 @@ async function opening(page, cdp, engine) {
   assert(built.cash < withLift.cash, "The trail needs to be paid for");
   assert(await button(page, "Resume day").isEnabled());
   assert.equal(await page.getByText("Downhill slope", { exact: true }).count(), 0, "Hide the grid after cutting");
-  const scriptedSeconds = Math.round((Date.now() - started) / 100) / 10;
-  assert(scriptedSeconds < 180, "The scripted opening exceeded three minutes");
+  return Math.round((Date.now() - started) / 100) / 10;
+}
+
+async function opening(page, cdp, engine) {
+  await openPlay(page);
+  await click(page, /Elena Vargas/);
+  await page.getByText(/Day 1\/\d+/).waitFor();
+  const scriptedSeconds = await buildOpening(page, cdp);
   await screenshot(page, engine, "opening");
   return scriptedSeconds;
 }
@@ -270,9 +272,18 @@ async function closeHill(page) {
   return state;
 }
 
+export async function resolveRadio(page) {
+  for (const label of ["Stay independent", "Decline", "Got it"]) {
+    const choice = button(page, label);
+    if (await choice.isVisible()) {
+      await press(choice);
+      return;
+    }
+  }
+}
+
 async function sleep(page) {
-  const acknowledge = button(page, "Got it");
-  if (await acknowledge.isVisible()) await press(acknowledge);
+  await resolveRadio(page);
   await click(page, "Sleep until morning");
   assert.equal((await save(page)).state.phase, "day");
 }
@@ -397,6 +408,7 @@ async function play(engine) {
       const { context, cdp } = await newContext();
       step = "fresh opening";
       artifacts.scriptedSeconds = await opening(page, cdp, engine);
+      assert(artifacts.scriptedSeconds < 180, "The scripted opening exceeded three minutes");
       console.error(engine + " fresh opening completed in " + artifacts.scriptedSeconds + " seconds");
       await context.close();
       page = undefined;
@@ -424,12 +436,15 @@ async function play(engine) {
   }
 }
 
-const results = [];
-for (const engine of engines) {
-  assert(Object.hasOwn(browserTypes, engine), "Unknown engine: " + engine);
-  results.push(await play(engine));
+if (import.meta.main) {
+  await fs.mkdir(output, { recursive: true });
+  const results = [];
+  for (const engine of engines) {
+    assert(Object.hasOwn(browserTypes, engine), "Unknown engine: " + engine);
+    results.push(await play(engine));
+  }
+  const summary = { viewport, scenario, firstTimePlayerVerified: false, results };
+  await fs.writeFile(path.join(output, "summary.json"), JSON.stringify(summary, null, 2));
+  console.log(JSON.stringify(summary, null, 2));
+  if (results.some((result) => !result.ok)) process.exitCode = 1;
 }
-const summary = { viewport, scenario, firstTimePlayerVerified: false, results };
-await fs.writeFile(path.join(output, "summary.json"), JSON.stringify(summary, null, 2));
-console.log(JSON.stringify(summary, null, 2));
-if (results.some((result) => !result.ok)) process.exitCode = 1;

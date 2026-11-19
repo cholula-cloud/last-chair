@@ -309,6 +309,10 @@ Retained for planning; details in agent playtest report.
 | 5 | Vivian’s offer | Accept $6,000 once with a Balanced fare ceiling for the remaining winter or stay independent. Riley can decline and sees why accepting is unavailable. |
 | 6 | Winter memory | Show the settlement and common goal outcome, plus only the choices and results the season recorded. Test the complete winter. |
 
+Two implementation checks put numbers on the tradeoffs. On the same morning, an eight-seat school taught all six Readsboro pupils with its seats open, four with four seats occupied by public guests, and zero with all eight occupied. With a second school, all six received lessons even under that pressure. The bus paid $150 in lift tickets in each case. The town remembers the lessons.
+
+Vivian’s check used seed 3, Elena, a Tier 2 school and an accepted bus visit. An operator keeping fares Cheap ended with $9,974 independent or $15,974 after signing, with the same 1,107 guests. An operator aiming for Expensive ended with $16,840 independent or $22,633 after signing, and served 831 or 892 guests respectively. The cap changed service and pricing freedom while the payment still won on cash in both examples. The size of that inducement remains a question for human playtesting.
+
 The matrix retains other review findings for prioritization. Impact describes the GDV or NYFA gap. Effort is a rough sizing estimate.
 
 | ID | Work item | GDV principles | NYFA | Impact | Effort | Suggested row |
