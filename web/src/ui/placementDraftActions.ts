@@ -16,6 +16,7 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
     moveCamera: false,
     kind,
     asset,
+    movingAssetIndex: undefined,
     ...(type ? { type } : {}),
     review: false,
     step: "top",
@@ -42,8 +43,9 @@ export function startPaintPlacement() {
   startDraft("trail");
 }
 
-export function startAssetPlacement(asset: AssetId) {
+export function startAssetPlacement(asset: AssetId, movingAssetIndex?: number) {
   startDraft("asset", undefined, asset);
+  if (movingAssetIndex !== undefined) usePlacementDraft.setState({ movingAssetIndex });
 }
 
 export function startGunPlacement() {

@@ -64,6 +64,22 @@ try {
       assert.ok(bus.taught > 0 && bus.taught <= 6);
       await receipt.waitFor();
       assert.ok((await receipt.innerText()).includes(`${bus.taught} of 6 pupils got a lesson. Bus tickets brought in $150.`));
+      await button("Sleep until morning").tap();
+      await button("Resume day").tap();
+      await button("Office").tap();
+      const office = page.getByRole("dialog", { name: "Dutch Hill Office" });
+      await office.getByRole("heading", { name: "Needs attention" }).waitFor();
+      assert.equal((await read()).paused, true);
+      await office.getByRole("button", { name: "Money", exact: true }).tap();
+      await office.getByText(/School tickets \$150/).waitFor();
+      await office.getByRole("button", { name: "Crew", exact: true }).tap();
+      await office.getByRole("heading", { name: "Crew talents" }).waitFor();
+      await office.getByRole("button", { name: "Reports", exact: true }).tap();
+      await office.locator("summary").filter({ hasText: /^Day 3 ·/ }).tap();
+      await office.getByText(`School tickets $150 · ${bus.taught} of 6 pupils taught`).waitFor();
+      await office.getByRole("button", { name: "Close Office" }).tap();
+      await button("Pause day").waitFor();
+      assert.equal((await read()).paused, false);
     } else {
       assert.equal(state.nightRecap.facts.schoolBus, undefined);
       assert.equal(await receipt.count(), 0);

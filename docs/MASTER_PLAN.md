@@ -8,7 +8,7 @@ This file answers four questions: what the game is, what the player does and why
 | Doc | Job |
 |---|---|
 | **MASTER_PLAN.md** (this) | Game plan and design: vision, story, the lodge, modes, build experience, roadmap, how we work |
-| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no section yet: L-E, L-F, P1, S1 to S3, A1 to A5, 41 to 48 and the Q rows in §11. Write one before building each |
+| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no section yet: L-E, L-F, S1 to S3, A1 to A5, 41 to 48 and the Q rows in §11. Write one before building each |
 | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Numbers and formulas, marked spec vs implemented |
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
@@ -367,7 +367,7 @@ A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a te
 
 ## 9. Roadmap
 
-Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (L-E, L-F, P1, S1 to S3, A1 to A5, 41 to 48, and the Q rows in §11) need one before building.
+Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (L-E, L-F, S1 to S3, A1 to A5, 41 to 48, and the Q rows in §11) need one before building.
 
 ### What each milestone means
 
@@ -443,7 +443,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 22 | ☑ | Founders complete | All six modifiers live |
 | 23 | ◐ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log. Still to build: the radio feed (the live card on the Office Desk, F1), lodge tier-up lines, and the story log in Reports (F3) |
 | 24 | ◐ | Winter review | Common goal outcome, season score, recorded choices and consequences, lodge tier, talents; carry-forward data |
-| P1 | ☐ | Family Pack and Race Kid personas | Two more guest types with the weights already in SIMULATION_SPEC (queue, snow, value), their venue and trail needs, and mixes by weekday, weekend and holiday. The Readsboro school visit and the rink (A2) depend on them. Re-baselines the characterization snapshot and the balance harness. Replaces the "row 9" tag in the spec |
+| P1 | ☑ | Family Pack and Race Kid personas | Two more guest types with the weights already in SIMULATION_SPEC (queue, snow, value), their venue and trail needs, and mixes by weekday, weekend and holiday. The Readsboro school visit and the rink (A2) depend on them. Re-baselines the characterization snapshot and the balance harness. Replaces the "row 9" tag in the spec |
 | O1 | ☐ | Overlay framework and slope layer | A Layers button on the mountain view, a layer strip, a legend that pairs every colour with a pattern, a tap or hold readout card, buildings and guests dimmed while a layer is on, reduced motion respected. The slope layer covers the whole lease in the same bands that colour a painted trail, with contour lines; it absorbs the steepness grid from L-B (§12) |
 | O2 | ☐ | Snow depth and snow-making layers | Depth shaded from bare to deep with the 0.15 break-up line drawn; gun reach, the pipe network and the segments tonight's Mid and High presets would add depth to. Ground the sim does not model shows a neutral tint (§12) |
 | O3 | ☐ | Conditions layer | A named condition for every trail segment drawn as texture and motion on the snow, a tap-to-why sentence, a Now, Close, Tomorrow scrub that repaints the hill for the chosen overnight preset, a wear map, and persona suitability chips. Trail signs show the condition glyph (§12) |
@@ -552,7 +552,7 @@ Audit of this plan and the repo on 2026-11-19. Each finding below was checked ag
 6. **Budgets have no gate.** §6 lists frame, mesh and file budgets and no test measures frame time, load time or bundle size. The performance pass sits in M7. The blank scene from #39 to #48 lasted nine PRs; the phone-check canvas sample now catches that class and does not catch slowness.
 7. **Settings and accessibility are thin.** Settings holds voice volume, captions, reduced motion and default speed. It has no sound or music volume, text size, graphics quality or colour-blind aid. The accessibility audit is in M7.
 8. **PWA install shipped in row Q2 (PR #81).** Add to Home Screen removes Safari's toolbar and its edge gestures, which matters for a game played by painting and dragging. The manifest, icons and meta tags are in `web/`; the real-device install check sits in Q1.
-9. **Nothing records outside players.** The M3 gate needs three outside players to finish winter 1 without help, and no log shows what they did. The sim is seeded and deterministic, so a replay log (seed plus actions) is cheap.
+9. **Playtest feedback.** Office notes can include a replay of the session. The owner can use it for future device testing.
 10. **Build forgiveness is unspecified.** Undo covers the last lift and painted trails. The plan has no rule for demolishing, moving or selling a lift, trail or venue, or for refunds, and founder row 22 mentions a "demolition lock" with nothing yet to lock.
 11. **Rights are unchecked.** The cold open uses a generated voice from free ElevenLabs credits; check the free plan's terms on commercial use and attribution before a public launch. Dutch Hill heritage text is credited to NELSAP and DHASH; permission to use their material is not recorded.
 
@@ -569,15 +569,15 @@ Audit of this plan and the repo on 2026-11-19. Each finding below was checked ag
 
 | # | When | PR | Done when |
 |---|---|---|---|
-| Q1 | Optional owner follow-up | Real-device gate: run the phone-check list by hand on an iPhone and an iPad in Safari, and close the M2 sign-off with three observed people who have not seen the game | Findings fixed or ticketed; sign-off logged in TESTING.md |
+| Q1 | Optional owner follow-up | Optional device check: run the phone-check list by hand on an iPhone and an iPad in Safari, and close the M2 sign-off with three observed people who have not seen the game | Findings fixed or ticketed; sign-off logged in TESTING.md |
 | Q2 | M3 | ☑ PWA shell (PR #81): manifest, icons, standalone display, theme colour, iOS meta tags, safe-area check | Installs from Safari, opens full screen, gestures do not trigger Safari navigation |
 | Q3 | M3, before row 27 | Feel floor: an ambient bed, UI taps, a build thunk and the radio sting; a day tint; confirm and tier-up juice. A thin version of rows 31 to 33 that those rows later finish | A muted run and an unmuted run feel different; sound starts after the first gesture; reduced motion and mute respected |
-| Q4 | M3, after Q1 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
+| Q4 | M3 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
 | Q5 | M3 | Playtest log: export a replay (seed plus action list) and a "Send notes" button that attaches it | A recorded session replays to the point where the player got stuck |
 | Q6 | M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Abominable Snowglomerate offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
-| Q7 | M3 | Performance gate: Playwright measures load time, bundle size and frame time at phone size; a ten-minute soak on a device | Budgets and pass or fail written in TESTING.md |
+| Q7 | M3 | Performance gate: Playwright measures load time, bundle size and frame time at phone size; an optional ten-minute device soak | Budgets and pass or fail written in TESTING.md |
 | Q8 | M3 | Settings and accessibility spec: master, music, effects and voice volume, captions, reduced motion, text size, speed, graphics quality, pattern aids; VoiceOver labels on sheets; a contrast check; the audit runs at the M3 gate, not in M7 | Spec merged into §10; audit logged |
-| Q9 | M3 | Build forgiveness rules: demolish, move, sell, refund, undo window and confirm copy | Rules in SIMULATION_SPEC with tests |
+| Q9 | M3 ☑ | Venue move, sale, purchase undo, protected structures, lift and trail closure confirmations | Rules in SIMULATION_SPEC and regression coverage in buildForgiveness.test.ts |
 | Q10 | Before any public share | Rights check: the voice-over terms, the real names, the credits | A written decision in WORLD.md |
 
 If M3 must stay small, keep Q1, Q3, Q5 and Q9 in it and move Q2, Q4, Q7 and Q8 to M4. Automated M3 checks are the release gate. The owner will test on hardware when ready.
@@ -616,7 +616,7 @@ Extras on the same layer:
 - **Scrub.** Now, Close of day and Tomorrow morning. Tomorrow uses the overnight preview and the forecast odds, so flipping Minimal, Mid and High repaints the hill before the player commits.
 - **Wear map.** Which segments yesterday's runs scraped, so the player sees where guests wore the snow out.
 - **Tap to why.** One sentence of cause from the sim for any segment.
-- **Who can ski it.** Persona chips on a segment (First-Timer, Regular, later Family Pack and Race Kid) that combine its difficulty and its condition.
+- **Who can ski it.** Persona chips on a segment (First-Timer, Regular, Family Pack and Race Kid) that combine its difficulty and its condition.
 - **In-world trail signs.** The same glyph on the trail sign at each entrance, as on a real trail-status board.
 - **Static fallback.** With reduced motion the textures stay and the movement stops.
 

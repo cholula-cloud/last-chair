@@ -14,7 +14,7 @@ export function winterLoanRate(state: Pick<GameState, "founderId">): number {
 
 export const BANKRUPTCY_MORNINGS = 3;
 const CHAIR_DAILY_SURCHARGE = 5;
-const VACATION_STAFFING_COST = 425;
+const VACATION_STAFFING_COST = 550;
 
 export type Payable = {
   what: "lift" | "lodge" | AssetId;

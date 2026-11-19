@@ -84,7 +84,13 @@ The follow-up Chromium touch opening completed in 92.6 seconds with the updated 
 
 The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.08 minutes, improved satisfaction by 7.97 points, and increased distinct beginner chair boardings in all 40 seeds. Moving the developed chair met both mean floors and changed completed-run counts in 39 of 40 seeds. See the [calibration table](./SIMULATION_SPEC.md#m2-acceptance-calibration).
 
-## Install on iPhone (row Q1)
+## Performance and replay checks
+
+Run `npm run check:bundle` after the production build. The limits are 450 KiB gzip for initial play-page JavaScript and 350 KiB for the largest individual chunk, with the handoff’s 5% tolerance. The phone check records title load time (5 seconds), frame rate (30 fps), p95 frame time, draw calls (40) and triangles (200,000). Set `PHONE_CHECK_SOAK=1` for ten one-minute samples with the scene open. Software-rendered results identify the browser and renderer. Physical device testing is optional.
+
+In the Office, open **Playtest notes** and export the replay, or use **Send notes** to share the replay and typed feedback together. On browsers without file sharing, the attachment downloads. Reproduce the session from `web/` with `npm run replay -- /path/to/last-chair-replay.json`. The file contains the starting checkpoint, RNG seed and game actions since that checkpoint. Loading a slot starts a fresh recording. Long sessions checkpoint every 30,000 recorded actions. The replay uses the same release’s rules.
+
+## Optional install on iPhone (row Q1)
 
 Run on a real iPhone with Safari, against the deployed Pages site (the manifest only resolves under its real base path).
 

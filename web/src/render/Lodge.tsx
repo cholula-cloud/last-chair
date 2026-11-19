@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { LODGE_FOOTPRINT, type AssetId, type LodgeTier, type PlacedAsset } from "@/game/base";
+import { groomCoverage } from "@/game/guns";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { requestLodge, usePlacementDraft } from "@/ui/placementDraft";
@@ -169,9 +170,16 @@ export function Village() {
   const cat = bakeKit(catKit);
   const catRef = useRef<THREE.Group>(null);
   const reduced = useReducedMotion();
-  const trail = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength && s.pendingSnow !== "minimal"
-    ? s.trails.find(run => run.open && !run.glade && run.path.length > 1)?.path : undefined);
-  const groom = useMemo(() => trail && pathSampler(trail), [trail]);
+  const night = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength ? s : null);
+  const groom = useMemo(() => {
+    if (!night || night.pendingSnow === "minimal") return null;
+    const coverage = groomCoverage(night.trails, night.dayStats.runsByTrail, night.pendingSnow, night.talentsOwned);
+    const index = coverage.findIndex(row => row.some(Boolean));
+    if (index < 0) return null;
+    const first = coverage[index].indexOf(true) / coverage[index].length;
+    const sample = pathSampler(night.trails[index].path);
+    return (t: number) => sample(first + (1 - first) * t);
+  }, [night]);
   const lampKit = useKit("lamp-post");
 
   const { body, glow } = useMemo(() => {

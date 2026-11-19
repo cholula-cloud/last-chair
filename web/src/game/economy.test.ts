@@ -25,7 +25,7 @@ describe("construction payments", () => {
 
   it("adds staffing to fixed costs during February vacation", () => {
     const hill = opened();
-    expect(dailyCosts({ ...hill, dayIndex: 20 }).fixed - dailyCosts({ ...hill, dayIndex: 19 }).fixed).toBe(425);
+    expect(dailyCosts({ ...hill, dayIndex: 20 }).fixed - dailyCosts({ ...hill, dayIndex: 19 }).fixed).toBe(550);
   });
 
   it("charges $480 up front and two $360 installments for a day-two café", () => {

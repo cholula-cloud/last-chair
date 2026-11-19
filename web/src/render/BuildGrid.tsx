@@ -50,12 +50,12 @@ function withCash<T extends { canAfford: boolean }>(state: T) {
  * placement preview remains the final authority. Lift and trail tools draw none.
  */
 export function BuildGrid() {
-  const { mode, asset } = usePlacementDraft(useShallow((draft) => {
+  const { mode, asset, movingAssetIndex } = usePlacementDraft(useShallow((draft) => {
     // Lift mode shows anchor dots and the ghost instead of a grid. Trail mode keeps the map quiet.
     const mode = draft.active
       ? draft.kind === "trail" || draft.kind === "lift" ? null : draft.kind
       : draft.showBuildGrid ? "overview" : null;
-    return { mode, asset: mode === "asset" ? draft.asset : undefined };
+    return { mode, movingAssetIndex: draft.movingAssetIndex, asset: mode === "asset" ? draft.asset : undefined };
   }));
   const draftAsset = asset;
   const state = useGameStore(useShallow((state) => mode && mode !== "overview" ? {
@@ -71,10 +71,17 @@ export function BuildGrid() {
   } : null));
   const dots = useMemo(() => {
     if (!mode) return [];
-    if (state && mode === "asset" && asset) return gridDots((at) => checkAssetPlacement(withCash(state), asset, at).ok);
+    if (state && mode === "asset" && asset) {
+      const placement = withCash(state);
+      if (movingAssetIndex !== undefined) {
+        placement.assets = placement.assets.filter((_, index) => index !== movingAssetIndex);
+        placement.cash = Number.MAX_SAFE_INTEGER;
+      }
+      return gridDots((at) => checkAssetPlacement(placement, asset, at).ok);
+    }
     if (state && mode === "gun") return gridDots((at) => checkGunPlacement(withCash(state), at).ok);
     return gridDots(null);
-  }, [mode, asset, state]);
+  }, [mode, asset, movingAssetIndex, state]);
 
   const geometry = useMemo(() => new THREE.CircleGeometry(DOT_RADIUS, 8).rotateX(-Math.PI / 2), []);
   useEffect(() => () => geometry.dispose(), [geometry]);

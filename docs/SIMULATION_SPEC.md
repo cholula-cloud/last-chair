@@ -12,7 +12,7 @@
 |---|---|---|---|
 | Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14; day is about 4 minutes at 1×, row L-F targets about 2 | 19, L-F |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
-| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | P1 |
+| Personas | ✅ | Four guest types with calendar-specific shares, measured preferences, venue visits and satisfaction weights | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | ✅ | Types differ in capacity, line length, ride time and beginner appeal. Queues account for trail difficulty, closures and chair wind holds | 18 |
@@ -60,19 +60,21 @@ Implemented in `sim.ts` `tickGuests` and `lifts.ts` `stepLifts`. The whole roste
 - **QueueAtLift:** FIFO per lift; wait time affects satisfaction.
 - **RideLift:** fixed ride duration by lift type.
 - **SkiRun:** duration from the persona table, scaled by snow quality (`× (1 + 0.3 × (1 − quality))`, so Mid snow at 0.55 is +13%). At the bottom the run is counted. Stamina cost is the persona's per-run cost multiplied by the trail length relative to Dutch Meadows, with a 0.5 minimum multiplier for short runs. The guest laps unless energy ≤ 0, runs reach their target, or `now + expected wait + ride + next run > 15:45`.
-- **Refuel:** optional café if energy low and venue exists (P1, PR 16). Not built.
+- **Refuel:** a guest short on energy can visit an available café or warming hut when there is time left for a stop. Family Pack seeks lunch earlier.
 - **Depart:** 3 game minutes to the car park, then `gone`. Lifts stop loading at 15:45: everyone still in a line leaves it and departs, and counts in `turnedAway` if they had not ridden yet. By 16:00 every guest is `gone` or `depart`.
 
 ### Persona table (implemented values)
 
 Each guest draws a persona from the day's mix, a target run count in the persona's range, and an arrival minute.
 
-| Persona | Weekday / weekend mix | Energy cost per run (start 1.0) | Run time at quality 1 | Target runs | Observed runs per day |
+| Persona | Weekday / weekend / vacation | Energy per run | Reference run | Target runs | Terrain and venues |
 |---|---|---|---|---|---|
-| First-Timer | 60% / 40% | 0.13 (tired after 8) | 14 min | 4–8 | see Balance |
-| Saturday Regular | 40% / 60% | 0.075 (tired after 13) | 8 min | 9–13 | see Balance |
+| First-Timer | 48% / 30% / 25% | 0.13 | 14 min | 4–8 | Green runs, rentals, then lessons |
+| Saturday Regular | 34% / 45% / 35% | 0.075 | 8 min | 9–13 | Blue runs, skis up to black |
+| Family Pack | 12% / 17% / 30% | 0.12 | 13 min | 5–8 | Green runs, skis up to blue, rents equipment and seeks lunch below 65% energy |
+| Race Kid | 6% / 8% / 10% | 0.075 | 7 min | 9–13 | Black runs and ski school training |
 
-Targets and energy were raised in PR 10 so a long line can cut a guest's runs (before: First-Timer 0.18 energy, 3–6 runs; Regular 0.11, 6–10; observed 4.4 and 8.0–8.3 before the retune, at the PR 6 capacities). Family Pack and Race Kid are not modeled. The satisfaction weights in the next table apply to the queue, snow and value terms (see Satisfaction below).
+A family entry occupies one seat and pays one fare. A holiday or school-vacation weekday uses the vacation column. Every third Readsboro pupil is a Race Kid. Each pupil visits ski school first when a lesson seat is available.
 
 ### Personas (weights on satisfaction terms)
 
@@ -83,7 +85,7 @@ Targets and energy were raised in PR 10 so a long line can cut a guest's runs (b
 | Family Pack | 1.4 | 0.9 | 1.0 |
 | Race Kid | 1.0 | 1.4 | 0.9 |
 
-P0: pool **First-Timer + Saturday Regular** only.
+The same seeded persona draw sets each guest’s label, trail preferences, and scoring weights.
 
 ### Satisfaction (guest, 0–100)
 
@@ -108,7 +110,7 @@ Persona weights:
 | First-Timer | 1.2 | 1.0 | 0.8 |
 | Saturday Regular | 1.5 | 1.1 | 1.3 |
 
-Family Pack (1.4 / 0.9 / 1.0) and Race Kid (1.0 / 1.4 / 0.9) have weights in the design but are not modeled yet.
+Family Pack uses 1.4 / 0.9 / 1.0 and Race Kid uses 1.0 / 1.4 / 0.9.
 
 **Ticket value (`satisfaction.ts` `VALUE`).** A guest judges the ticket against what the day gave them, in dollars:
 
@@ -135,7 +137,7 @@ The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to
 ### Arrivals (Dutch Hill P0)
 
 - Base guests/day: **18–22** on a weekday and **24–28** on a weekend (uniform noise of 0–4), Sat/Sun ×1.3, then the fare multiplier and modifiers (`planArrivals`).
-- Fare elasticity: `expected = max(10, 45 + 0.6 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.8 × valueWeight × (expected / fare − 0.8125), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix (weekday 60% first-timers, weekend 60% regulars). The reference ratio 0.8125 (39 / 48) is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–48.
+- Fare elasticity: `expected = max(10, 45 + 0.6 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.8 × valueWeight × (expected / fare − 0.8125), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix from the persona table above. The reference ratio 0.8125 (39 / 48) is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–48.
 - `meanArrivals` / `rules.expectedArrivals(state, fare, snow)` is the same count with the noise replaced by its mean (2) and no RNG; the night sheet shows it on each fare tile. `rules.previewOvernight(state, snow)` runs `applyOvernight` on the current trails and returns the morning's worst-segment word, mean quality and cost.
 - Spawn minute per guest (PR 10b): a mix of early birds (30%, triangle 08:00–10:00, mode 09:00) and the main crowd (70%, triangle 08:00–13:30, mode 09:30), seeded. The first guests arrive at 08:00, about 22% are in by 09:00, about 79% by 11:00, under 1% after 13:00, and no one comes after 13:30. The earlier mean-of-two-triangulars curve (PR 6) left the hill empty until about 09:25 while the clock ran from 07:30.
 - Day stats: `arrivals` (roster size), `guestsArrived`, `completedRuns`, `runsPerGuest`, `turnedAway`, `peakOnHill`, plus the lift waits below.
@@ -544,3 +546,15 @@ Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
 New winters last 28 days, from Monday 26 January through Sunday 22 February. Presidents' Day is day 22; days 20–28 are February vacation. Holidays use weekend demand; vacation weekdays receive a 15% base demand increase and the weekend persona mix. Existing 14-day saves retain their length until the next winter.
 
 Before row 20's economy changes, the 40-seed 28-day baseline after row 19 gave mean ending cash of $10,227 for Cheap / Minimal, $23,644 for Balanced / Mid, $41,860 for Adaptive, and $25,303 for Builder. Every modeled strategy stayed above zero.
+
+
+## Build forgiveness (Q9)
+
+| Structure | Immediate correction | After the construction minute |
+|---|---|---|
+| Lift | Undo the last lift after undoing its new trails. Return the deposit and cancel its two installments. | Close an extra lift and its trails for $0 before opening or overnight. Installments remain due. Keep at least one usable lift. A new corridor requires a new lift. |
+| Trail | Undo the last new cut for its full price. Reverse the new clearing recorded with that cut. | Review brush edits before confirming them. Erasing a whole trail closes it for $0 and retains the cleared land. Keep one open descent per working lift. |
+| Base venue | Undo a new purchase at its construction day and minute. Return the 40% deposit and cancel exactly two matching installments. | Before opening, move a venue for $0 to a valid site, or sell a paid-off venue for half its original price. Assets carried from saves without a purchase record can be removed for $0. Moves preserve financing, and the preview shows any lodge-pad benefit. |
+| Lodge and snow guns | Cancel or reposition the placement draft before committing. | The lodge, its upgrades and installed snow guns are permanent. |
+
+The venue removal confirmation shows cash returned, canceled installments or lost upkeep, and any reason the action is unavailable. A booked Readsboro program retains a ski school through the visit. Elena keeps the first warming hut once its undo window passes. Operations during play retain stable venue and trail references for guests. A lift closure confirmation shows its timing, linked trail closures, zero refund and outstanding installments.

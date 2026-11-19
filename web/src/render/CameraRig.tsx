@@ -361,8 +361,8 @@ export function CameraRig({
     }
     const g = glide.current;
     if (g) {
-      controls.target.lerp(g.target, 0.14);
-      cam.position.lerp(g.position, 0.14);
+      controls.target.lerp(g.target, reduced.current ? 1 : 0.14);
+      cam.position.lerp(g.position, reduced.current ? 1 : 0.14);
       glideFrames.current += 1;
       if (
         glideFrames.current >= GLIDE_MAX_FRAMES ||
@@ -378,13 +378,20 @@ export function CameraRig({
       if (glide.current) glide.current = null;
       wasFollowing.current = true;
       GOAL.set(pos.x, pos.y + 0.35, pos.z);
-      controls.target.lerp(GOAL, 0.12);
+      if (reduced.current) {
+        // Translate both ends of the camera ray together to preserve the viewing angle.
+        cam.position.add(AWAY.copy(GOAL).sub(controls.target));
+        controls.target.copy(GOAL);
+      } else {
+        controls.target.lerp(GOAL, 0.12);
+      }
       moved = true;
     } else {
       if (wasFollowing.current) returning.current = !suppressReturn.current;
       wasFollowing.current = false;
       if (returning.current) {
-        controls.target.lerp(home.target, 0.08);
+        if (reduced.current) cam.position.add(AWAY.copy(home.target).sub(controls.target));
+        controls.target.lerp(home.target, reduced.current ? 1 : 0.08);
         if (controls.target.distanceTo(home.target) < 0.02) returning.current = false;
         moved = true;
       }

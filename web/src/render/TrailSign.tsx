@@ -4,12 +4,15 @@ import { Billboard } from "@react-three/drei";
 import { useEffect, useMemo } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import { TERRAIN } from "@/game/terrain";
+import { MARKS, segmentCondition } from "@/game/mapLayers";
+import { useGameStore } from "@/game/store";
+import { weatherForDay, isWindHeld } from "@/game/weather";
 import type { TrailRun } from "@/game/trails";
 
 const BOARD_WIDTH = 2.55;
 const BOARD_HEIGHT = 0.72;
 
-function signTexture(name: string, difficulty: TrailRun["difficulty"]): CanvasTexture | null {
+function signTexture(name: string, difficulty: TrailRun["difficulty"], glyph: string): CanvasTexture | null {
   if (typeof document === "undefined") return null;
   const canvas = document.createElement("canvas");
   canvas.width = 512;
@@ -38,14 +41,26 @@ function signTexture(name: string, difficulty: TrailRun["difficulty"]): CanvasTe
   ctx.fillStyle = "#25374a";
   ctx.font = "bold 43px system-ui, sans-serif";
   ctx.textBaseline = "middle";
-  ctx.fillText(name, 108, 72, 378);
+  ctx.fillText(name, 108, 72, 295);
+  ctx.font = "bold 62px sans-serif";
+  ctx.fillText(glyph, 420, 72, 75);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   return texture;
 }
 
 export function TrailSign({ run, lane }: { run: TrailRun; lane: number }) {
-  const texture = useMemo(() => signTexture(run.name, run.difficulty), [run.name, run.difficulty]);
+  const glyph = useGameStore(state => {
+    const lift = state.lifts[run.liftIndex];
+    if (lift && isWindHeld(lift.type, weatherForDay(state).wind, state.clockMin, state.talentsOwned)) return MARKS.hold.glyph;
+    if (!run.snow.length) return "";
+    const i = run.snow.reduce((worst, segment, index) =>
+      Math.min(segment.quality, segment.coverage) < Math.min(run.snow[worst].quality, run.snow[worst].coverage) ? index : worst, 0);
+    const index = state.trails.indexOf(run);
+    return MARKS[segmentCondition(run.snow[i], !!run.groomed?.[i], state.weather, state.clockMin,
+      run.elevations[i], state.dayStats.runsByTrail[index] ?? 0)].glyph;
+  });
+  const texture = useMemo(() => signTexture(run.name, run.difficulty, glyph), [run.name, run.difficulty, glyph]);
   useEffect(() => () => texture?.dispose(), [texture]);
   const start = run.path[0];
   const next = run.path.find((point) => Math.hypot(point.x - start.x, point.z - start.z) > 0.7);

@@ -9,7 +9,7 @@ import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import { PERSONAS } from "@/game/personas";
 import {
-  checkAssetPlacement, checkGunPlacement, checkPaint,
+  checkAssetMove, checkAssetPlacement, checkGunPlacement, checkPaint,
   commitPaint,
 } from "@/game/rules";
 import type { GameState } from "@/game/state";
@@ -93,7 +93,8 @@ function TrailBar() {
         title={preview.trailIndex !== null ? "Review trail changes" : preview.glade ? "Review glade" : "Review painted trail"}
         facts={[
           { label: "Trail", value: preview.name },
-          { label: "Cost", value: formatMoney(preview.cost) },
+          { label: preview.deleteTrail ? "Refund" : "Cost", value: formatMoney(preview.cost) },
+          ...(preview.deleteTrail ? [{ label: "Effect", value: "Close this route. Cleared land stays cleared." }] : []),
           { label: "Difficulty", value: preview.difficulty },
           { label: "Length", value: feet(preview.lengthFt) },
           { label: "Vertical", value: feet(preview.verticalFt) },
@@ -259,12 +260,12 @@ function LiftBar() {
 function SiteBar() {
   const draft = usePlacementDraft();
   const state = useGameStore();
-  const { asset, tapPoint } = draft;
+  const { asset, tapPoint, movingAssetIndex } = draft;
   const gun = draft.kind === "gun";
   const item = gun ? ASSET_CATALOG.snow_guns : asset ? ASSET_CATALOG[asset] : null;
   if (!item) return null;
   const check = tapPoint
-    ? gun ? checkGunPlacement(state, tapPoint) : asset ? checkAssetPlacement(state, asset, tapPoint) : null
+    ? movingAssetIndex !== undefined ? checkAssetMove(state, movingAssetIndex, tapPoint) : gun ? checkGunPlacement(state, tapPoint) : asset ? checkAssetPlacement(state, asset, tapPoint) : null
     : null;
   const problem = check && !check.ok ? check.reason : null;
 
@@ -273,20 +274,21 @@ function SiteBar() {
       <BuildImpactCard
         title={`Review ${item.label}`}
         facts={[
-          ...buildPaymentFacts(check?.ok ? check.cost : item.cost),
+          ...(movingAssetIndex === undefined ? buildPaymentFacts(check?.ok ? check.cost : item.cost) : [{ label: "Moving cost", value: "$0" }]),
           { label: "Daily upkeep", value: formatMoney(item.upkeep) },
           { label: "Lodge tier", value: String(item.opensAtTier) },
           ...(check?.ok ? [{ label: "Area", value: acres(check.acres) }] : []),
           ...(check?.ok && check.attached ? [{ label: "Lodge pad", value: "+5% attached" }] : []),
         ]}
-        confirmLabel="Build here"
+        confirmLabel={movingAssetIndex === undefined ? "Build here" : "Move here"}
         problem={tapPoint ? problem : "Choose a spot on the hill."}
         onCancel={backToDraft}
         onConfirm={() => {
           if (!check?.ok) return;
-          if (gun) state.placeGun(check.placement.at);
+          if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
+          else if (gun) state.placeGun(check.placement.at);
           else if (asset) state.placeAsset(asset, check.placement.at);
-          if (useGameStore.getState().cash !== state.cash) finishPlacement();
+          if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) finishPlacement();
         }}
       />
     );

@@ -24,6 +24,7 @@ export const usePlacementDraft = create<{
   moveCamera: boolean;
   kind: PlacementKind;
   asset?: AssetId;
+  movingAssetIndex?: number;
   review: boolean;
   type: LiftType;
   step: PlacementStep;

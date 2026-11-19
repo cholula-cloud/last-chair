@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/game/base";
+import { MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { operatingGoalText } from "@/game/winterArc";
 import { CREW_TALENTS, founderById, STORY_BEATS } from "@/game/content";
 import { dailyCosts, liquidNetWorth, LOW_CASH, morningCash, payoffAmount } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -48,7 +50,7 @@ function Desk({ s }: { s: GameState }) {
   return <>
     <Section title={`Day ${s.dayIndex} at Dutch Hill`}><p>{s.morningHeadline}</p></Section>
     <Section title="Winter goal"><p>Finish day {s.seasonLength} with enough cash to settle the loan and unpaid construction.</p>
-      <p>{formatMoney(liquidNetWorth(s))} after outstanding bills.</p></Section>
+      <p>{formatMoney(liquidNetWorth(s))} after outstanding bills.</p><p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p></Section>
     <Section title="Tomorrow’s forecast">{forecast ? <p>{Object.entries(forecast).map(([kind, p]) => `${kind} ${Math.round(100*p)}%`).join(" · ")}</p> : <p>This is closing day.</p>}</Section>
     <Section title="Needs attention">{attention.length ? <ul className="list-disc space-y-1 pl-5">{attention.map(item => <li key={String(item)}>{item}</li>)}</ul> : <p>No outstanding notices.</p>}</Section>
     <Section title="Route 100 Radio">{!radio ? <p>Radio is off.</p> : latest ? <p>{latest.day && <strong>Day {latest.day}. </strong>}{latest.text}</p> : <p>The first broadcast comes after the hill opens.</p>}</Section>
@@ -96,6 +98,7 @@ function Reports({ s }: { s: GameState }) {
     <Section title="Recap archive">{s.dayHistory.length === 0 && <p>Settled days appear here as this winter progresses.</p>}
       {s.dayHistory.slice().reverse().map(d => <details key={d.day}><summary className="min-h-11 cursor-pointer py-2 font-bold">Day {d.day} · {d.weather} · {formatMoney(d.recap.cashDelta, {signed:true})}</summary>
         <p>{d.recap.problem}</p><p>{d.recap.arrivals} guests · Satisfaction {Math.round(d.recap.satisfaction)}/100 · Average wait {d.recap.facts.avgWaitMin.toFixed(1)} minutes</p>
+        {d.recap.facts.schoolBus && <p>School tickets {formatMoney(d.recap.facts.schoolBus.ticketRevenue)} · {d.recap.facts.schoolBus.taught} of {d.recap.facts.schoolBus.invited} pupils taught</p>}
         <p>Service {formatMoney(d.snowCost)} · Construction installments {formatMoney(d.constructionDue)} · Settled cash {formatMoney(d.closingCash)}</p>
       </details>)}</Section>
     <Section title="Story log"><StoryEntries /></Section>
@@ -118,6 +121,7 @@ function Crew({ s }: { s: GameState }) {
       {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads. {lodgeTierUnlocks(nextTier).join(", ")}</p>}
       {s.lodgeUpgrade && <p>Upgrade underway · {s.lodgeUpgrade.nightsRemaining} nights remaining.</p>}</Section>
     <Section title="Goal checklist"><p>Finish day {s.seasonLength} solvent · {formatMoney(liquidNetWorth(s))} after bills today.</p>
+      <p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p>
       {s.schoolContract && <p>Readsboro goal · {s.schoolContract.decision === "accepted" && s.schoolContract.pupilsTaught === null && s.outcome === "playing" ? `Booked for day ${s.schoolContract.day}.` : schoolMemory(s.schoolContract)}</p>}
       <p>{s.outcome !== "playing" && s.lastWinter?.score ? `Winter score ${s.lastWinter.score.total}/100` : "The final winter score is calculated at review."}</p></Section>
     {founder && <Section title={founder.name}><p>{founder.bonus}</p><p>{founder.constraint}</p></Section>}

@@ -222,6 +222,7 @@ async function runViewport(engine, launch, vp) {
   let stats = null;
   let p95FrameMs = null;
   let titleLoadMs = null;
+  const soak = [];
 
   try {
     await startPlay(page);
@@ -298,6 +299,18 @@ async function runViewport(engine, launch, vp) {
     await page.getByLabel("Game speed 2x, tap to change").waitFor();
     await shot(page, engine, tag, "speed-2x");
 
+    if (process.env.PHONE_CHECK_SOAK === "1") {
+      await page.getByRole("button", { name: /cancel/i }).first().click();
+      for (let minute = 1; minute <= 10; minute++) {
+        const sample = await measureFrames(page, 60_000);
+        soak.push({ minute, ...sample });
+        if (!(await page.locator('[data-scene-ready="true"]').isVisible())) {
+          fail(`${engine} ${tag}: scene disappeared at minute ${minute}`);
+          break;
+        }
+      }
+    }
+
     const fatal = errors.filter((e) => !/favicon|hydration|ResizeObserver/i.test(e));
     if (fatal.length) fail(`${engine} ${tag}: page errors\n${fatal.join("\n")}`);
   } catch (e) {
@@ -307,7 +320,7 @@ async function runViewport(engine, launch, vp) {
     await browser.close();
   }
 
-  return { engine, tag, touchNote, fps, p95FrameMs, titleLoadMs, stats };
+  return { engine, tag, touchNote, fps, p95FrameMs, titleLoadMs, stats, soak };
 }
 
 const results = [];
