@@ -1,14 +1,14 @@
 # Last Chair game plan and design
 
-**Version:** 2.2 · **Updated:** 2026-11-19
+**Version:** 2.5 · **Updated:** 2026-11-19
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19.
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer.
 
 | Doc | Job |
 |---|---|
 | **MASTER_PLAN.md** (this) | Game plan and design: vision, story, the lodge, modes, build experience, roadmap, how we work |
-| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no section yet: L-E, L-F, S1 to S3, A1 to A5, 41 to 48 and the Q rows in §11. Write one before building each |
+| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: B6, B7, O5, T1, S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C; write briefs for B6, B7, O5 and T1 before building them. Rows **P4** and **F3** have stub briefs in Part C. Write one before building each |
 | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Numbers and formulas, marked spec vs implemented |
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
@@ -253,7 +253,7 @@ The Was column is the state before M2. Every row below except Village styles and
 | Lifts | Two taps (bottom, top) with snapping | Drag the top terminal; snap to anchor points; ghost line; live cost, vertical and capacity. Row B3 |
 | Build feedback | Valid or invalid | An impact card before every confirm, for every asset: cost, acres, vertical, what it opens, expected effect on queues and tickets. Row B4 |
 | The lodge | A buildable item ("Lodge (step 1)", $1,800) with a small satisfaction bonus | A fixed HQ whose tiers gate what you can build and earn from (§3). Rows L1, 16a to 16d |
-| Village styles and activities | One café, one shop, one hut at fixed spots | A catalog of venues placed anywhere, with a +5% bonus on the lodge's attach pads (built, rows 16a to 16d). Cosmetic styles and activities are still to build (rows S, A) |
+| Village styles and activities | One café, one shop, one hut at fixed spots | A catalog of venues placed anywhere, with a +5% bonus on the lodge's attach pads (built, rows 16a to 16d). Cosmetic style variants and activity meshes are Blender work in M4b (rows S, A) |
 | Clearing | Trees are scenery | Trees are the thing you cut; cutting costs money and changes snow (shade, wind). Row B5 |
 
 ICR's lessons from its patches and player reviews still apply: keep the day uninterrupted and route events to one nightly meeting; let guests leave a long line for the village; rate trails by sustained pitch; judge ticket price against what the hill offered; make snow tools visible; coach the first winter; label every control; expect snowboarders; keep the game from going easy once a hill is solved.
@@ -296,7 +296,7 @@ Lodge card    → tier, what the next tier opens, Upgrade (also opens by tapping
 Guests sheet  → list + Follow (no tiny 3D picking on phone)
 Night recap   → recap + fare + snow/service tiles + Continue
 Layers strip  → Slope · Snow depth · Snow-making · Conditions (§12)
-Office        → full-screen, pauses the day: Desk · Money · Reports · Crew. Stats and Atlas expand the Office in later milestones (§12).
+Office        → full-screen, pauses the day: Desk · Money · Stats · Reports · Crew. Money and Stats are the CFO view (ledger plus charts from `dayHistory`); Atlas joins in M5 (§12).
 ```
 
 **Touch:** one-finger pan, pinch zoom, two-finger orbit and tilt, tap select, double-tap focus; recenter button. Build mode is an explicit toggle; inside it, one finger paints or drags and two fingers move the camera.
@@ -361,13 +361,13 @@ Roadmap: row updated
 
 ### Numbering
 
-A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a test the game has to pass before the next milestone starts. A **row** is one line in a milestone table; big rows split into lettered PRs (13a, 13b). Row numbers are not GitHub PR numbers. Rows with a letter prefix (B, L, S, A, P, Q) belong to a named track: builder, lodge, styles, activities, personas, quality.
+A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a test the game has to pass before the next milestone starts. A **row** is one line in a milestone table; big rows split into lettered PRs (13a, 13b). Row numbers are not GitHub PR numbers. Rows with a letter prefix (B, L, S, A, T, P, Q) belong to a named track: builder, lodge, styles, activities, **trail signage (Blender)**, personas, quality. **Milestone M4b** is reserved for Blender output only (rows 28, 29, T1, S1 to S3, A1 to A5); gameplay hooks for activities ship in the same PR as their GLB when a row needs sim or catalog changes. Row **T1** replaces procedural lift-top billboards with kit signage meshes.
 
 ---
 
 ## 9. Roadmap
 
-Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (L-E, L-F, S1 to S3, A1 to A5, 41 to 48, and the Q rows in §11) need one before building.
+Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (B6, B7, O5, T1, S1 to S3, A1 to A5, 41 to 48) need one before building. Stub briefs exist for **P4** and **F3** in Part C. **M4b is Blender-only** (`tools/blender/`, export to `web/public/models/`); do not mix Blender asset work into M4 rows.
 
 ### What each milestone means
 
@@ -377,8 +377,8 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M1** Real core loop | Every number on the night recap is caused by something visible | 15-minute phone session; player explains a preset change |
 | **M2** Build the mountain | Building feels good, the lodge is your HQ, and where and what you build matters | Moving a lift or adding a trail measurably changes tomorrow; upgrading the lodge opens a new build option and a new revenue source; a new player builds a lift and paints a trail in 3 minutes |
 | **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Automated winter playthrough, save/reload and balance checks pass |
-| **M4** Look and feel | Dedicated art and audio pass | Screenshots and device check |
-| **M4b** Activities and styles | Tubing, rink, bar, decor, events, and the style system | Tier 3 on Dutch Hill opens bar, rink and events; a style switch persists across reload |
+| **M4** Polish and feel (code) | Build UX fixes, shaders, lighting, audio, juice, overlays, Office economics (Money ledger polish plus F3 chart tabs), and a cross-cutting design/engineering/UI pass. **No Blender.** | Owner can place a lift with a readable guide; trail paint shows other trails and does not over-snap to base; muted vs unmuted and day vs night read clearly; the Office reads like a ski-area CFO dashboard (Money plus Stats/Reports charts from real `dayHistory`, not a text log); phone check green |
+| **M4b** Blender assets | Guest silhouettes, lodge/lift kit, **trail signage**, style variants, activity/decoration GLBs plus catalog rows | Every M4b asset is built in Blender, in manifest v2, and wired through the asset table; trail entrances use realistic signs (not stacked billboards at the lift); Tier 3 activity placeholders render on the hill |
 | **M5** Career | Tenney Mountain, the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
 | **M6** Sandbox | Free-build mode and save slots | Sandbox hill saves and reloads |
 | **M7** 110% pass | Polish the best ideas after a side-by-side with ICR | Owner sign-off |
@@ -450,7 +450,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | O2 | ☑ | Snow depth and snow-making layers | Depth shaded from bare to deep with the 0.15 break-up line drawn; gun reach, the pipe network and the segments tonight's Mid and High presets would add depth to. Ground the sim does not model shows a neutral tint (§12) |
 | O3 | ☑ | Conditions layer | A named condition for every trail segment drawn as texture and motion on the snow, a tap-to-why sentence, a Now, Close, Tomorrow scrub that repaints the hill for the chosen overnight preset, a wear map, and persona suitability chips. Trail signs show the condition glyph (§12) |
 | F1 | ☑ | Office shell and Desk | An Office button in the bottom bar that pauses the day and opens a full-screen sheet with a tab strip. Desk shows the headline, goal detail, tomorrow's forecast, a needs-attention list and the radio card. The winter review and the recap archive move in. No new sim state (§12) |
-| F2 | ☑ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38 |
+| F2 | ☑ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38. **F3** may add chart-only fields to each `DayReport` (e.g. closing loan balance, reputation) with another schema bump; numbers still come from the nightly settlement path in `sleep()`, not invented in the UI |
 | F4 | ☑ | Crew tab | Lodge tier and what the next tier opens, the goal checklist, talents learned and next, the founder's modifier, the winter score. Rows 21 to 24 build the data; this is where the player sees it |
 | 26 | ☑ | Coached first winter | Contextual tips cover the first lift, trail, build controls and night recap. The first problem guide links to a relevant map layer and Office tab. Dismissals are saved with the winter. |
 | 27 | ☑ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
@@ -468,33 +468,42 @@ Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted valida
 | 5 | Vivian's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
 | 6 | Winter memory | 24, 27 | End with the measured settlement, the same common goal for all paths and a truthful record of choices and outcomes. Check the balance and playtest the whole arc. |
 
-### M4: Look and feel
+### M4: Polish and feel (code only)
 
-| # | Status | PR |
-|---|---|---|
-| 28 | ☐ | Guest models: skiers and snowboarders, jacket colour by state |
-| 29 | ☐ | Lift and lodge GLB kit (most of it exists in `web/public/models/`); polish the three lodge tier looks |
-| 30 | ☐ | Snow shader: coverage patches, groom stripes tied to the overnight preset |
-| 31 | ☐ | Day/night lighting |
-| 32 | ☐ | Audio: ambient bed, UI sounds, radio sting |
-| 33 | ☐ | Mobile juice: sheet motion, build-place and lodge-upgrade feedback; reduced motion respected |
-| O4 | ☐ | Crowd and revenue layers, demand pins | Guest density and queue length, venue takings, and "Guests want" pins on the map (§12) |
-| F3 | ☐ | Stats and Reports tabs | Daily charts from `dayHistory` (guests, satisfaction terms, queue, snow, revenue per guest, against yesterday and the season best), the recap archive, the story log, the season calendar, the trail report |
-
-Rows 31 to 33 carry the game's feel and sit after the M3 gate. Row Q3 (§11) adds a thin version of each before the gate, so outside players judge a game that sounds and looks alive.
-
-### M4b: Activities and styles
+M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting: the build grid vanishes in lift mode and the dot field feels wrong elsewhere; trail paint hides existing trails and snaps runs to the base too aggressively. Ship **B6** and **B7** before the feel rows so building stays trustworthy. **Office economics** land in **F3** (Stats and Reports charts on top of F2’s `dayHistory`); **O4** later paints revenue and crowds on the map. The M4 gate treats the Office as the hill’s CFO dashboard, not a recap log.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| S1 | ☐ | Style system | Style picker on the building card, default style per mountain, saved per building |
-| S2 | ☐ | Style packs | Dutch Hill 1950s timber plus one more style for the lodge tiers and venues |
-| S3 | ☐ | Unlockable styles | Story beats, tier-ups and winter-review rewards open styles |
-| A1 | ☐ | Tubing hill (Tier 2) | Family draw, ticket revenue |
-| A2 | ☐ | Ice rink (Tier 3) | Teen and family draw, upkeep |
-| A3 | ☐ | Bar and restaurant (Tier 3) | Après revenue |
-| A4 | ☐ | Decor | Fire pits, string lights, signs; small arrival-mood terms |
-| A5 | ☐ | Events | Winter carnival hosted at the lodge, an optional night choice that uses the rink and tubing |
+| B6 | ☐ | Build grid and lift placement guide | A single readable guide during lift placement: anchor ring, snap feedback, and a grid that matches asset/gun placement (cell size, contrast, lease alignment). Lift mode must show useful guidance (L-A intentionally hid the dot grid; replace it with something that does not fight the cable ghost). Overview and venue modes keep a consistent dot field. |
+| B7 | ☐ | Trail paint context and freer endpoints | While painting, **all confirmed trails** stay visible (full or high-opacity ribbons; draft on top). Reduce automatic connector logic that pulls the end to `terrain.base` or reuses another trail's suffix when the player did not intend it (`paintedTrail.ts` `atBase`, prefix/suffix merge). Player-authored endpoints win unless the sim requires a lift top or a valid ski path to base. |
+| P4 | ☐ | M4 polish pass | Cross-cutting pass on **game design** (flows, coach gaps, copy), **engineering** (layering violations, perf hotspots, test gaps), and **UI** (thumb zone, sheet density, HUD clarity). **Priority:** Office economic UX — Money scanability, Stats chart legibility at 375 px, Reports archive vs season calendar hierarchy, chart table fallback under reduced motion. Outcome: a short punch list closed inside M4 or ticketed explicitly. Owner playtest notes drive priority. |
+| 30 | ☐ | Snow shader | Coverage patches and groom stripes tied to the overnight preset (handoff PR 30) |
+| 31 | ☐ | Day/night lighting | Moving sun rig and night recap readability (handoff PR 31) |
+| 32 | ☐ | Audio | Licensed ambient bed, UI sounds, radio sting; builds on Q3 synth floor (handoff PR 32) |
+| 33 | ☐ | Mobile juice | Sheet motion, build-place and lodge-upgrade feedback; reduced motion respected (handoff PR 33) |
+| O4 | ☐ | Crowd and revenue layers, demand pins | Guest density and queue length, venue takings, and "Guests want" pins on the map (§12) |
+| O5 | ☐ | Trails map layer | Named trail centerlines with difficulty colour on the hill; labels readable on phone; lift-top **trail map** readout (UI card or single board) instead of one billboard per run. Pairs with T1: detailed names live on the layer when signs stay compact |
+| F3 | ☐ | Stats and Reports tabs | Add **Stats** to `OFFICE_TABS`. Chart-heavy **Stats** and expanded **Reports** from `dayHistory` (and `seasonDays` where noted), with yesterday and season-best overlays. Deliverables: revenue vs cost time series; ticket and venue/trail revenue breakdown (`recap.facts.venueRevenue`, school bus tickets); fare elasticity (fare preset vs measured arrivals per settled day); construction cash timeline (`constructionDue` plus live `payables`); loan drawdown/amortization from `recap.loanReceived`, `recap.loanRepaid` and closing cash (extend `dayHistory` with chart-only snapshots if F2 omitted loan balance at close — no new sim forks); projected morning cash trend (`closingCash` series plus live `morningCash`); satisfaction and revenue correlation scatter when both exist; ops charts (arrivals, satisfaction and five terms, queue/wait, snow service spend). Reports keeps recap archive, story log, a **season calendar** (28-day grid with weather and result; tap opens that day’s report), trail report in ski-area snow-report style, winter review links. **Depends on F2** data completeness; gate: opening Stats after day 7 feels like a CFO dashboard, not a `<details>` log list (§12). |
+
+Suggested order: **B6, B7**, then **F2 chart-field check** (extend `dayHistory` only if F3 needs missing snapshots), **F3**, early **P4** sweep on Office economics, **30 to 33**, then **O4**. Rows 31 to 33 finish what Q3 (§11) started so outside players judge a game that sounds and looks alive.
+
+### M4b: Blender assets
+
+Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB.
+
+| # | Status | PR | Accomplishes |
+|---|---|---|---|
+| 28 | ☐ | Guest models (Blender) | Five skier and snowboarder silhouettes; jacket/helmet tint in render (handoff PR 28) |
+| 29 | ☐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
+| T1 | ☐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
+| S1 | ☐ | Style system (Blender) | Style picker on the building card; default style per mountain; saved `styleId` per building; each style is a Blender variant |
+| S2 | ☐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
+| S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
+| A1 | ☐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
+| A2 | ☐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
+| A3 | ☐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
+| A4 | ☐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
+| A5 | ☐ | Events (Blender + catalog) | Winter carnival night choice using rink and tubing assets |
 
 ### M5: Career
 
@@ -552,7 +561,7 @@ Audit of this plan and the repo on 2026-11-19. Each finding below was checked ag
 
 These November 19 observations explain why Q1–Q10 were added. The roadmap below and the testing log track what shipped.
 
-1. **Effort is inverted.** §4 spends about 15 lines on Capitalist Mode and M8 has eight rows, all after v1. The feel layer (guest models, snow shader, lighting, audio, juice) is six one-line rows in M4, after the MVP gate. The code plays no sound: Settings stores a voice volume and nothing uses it. Outside players at the M3 gate will judge a silent, flat-lit game.
+1. **Effort is inverted.** §4 spends about 15 lines on Capitalist Mode and M8 has eight rows, all after v1. The feel layer (snow shader, lighting, audio, juice in M4; guest and building GLBs in M4b) sits after the MVP gate. Q3 shipped a thin audio and juice floor before M3; M4 row 32 still adds licensed beds. Outside players at the M3 gate may judge a game that is quieter than the final target.
 2. **The biggest unknown is still open.** The M2 gate asks whether a new player builds a lift and paints a trail in three minutes. No person has run it. Every phone check uses Playwright Chromium at phone sizes; no iPhone or iPad Safari run is recorded. Touch painting, edge auto-pan (Safari's left-edge swipe goes back), pinch zoom, the collapsing address bar and WebGL memory limits show up only there.
 3. **The coach comes last.** Row 26 follows the story and crew rows, so until it lands a new player meets the whole game cold.
 4. **The hill may look empty.** A day has 12 to 48 guests, at most 24 meshes are drawn on iPhone, and the mountain fills the screen (B1). Pillar 3 promises tiny skiers having their day. This has not been checked on a device.
@@ -625,26 +634,30 @@ Extras on the same layer:
 - **Wear map.** Which segments yesterday's runs scraped, so the player sees where guests wore the snow out.
 - **Tap to why.** One sentence of cause from the sim for any segment.
 - **Who can ski it.** Persona chips on a segment (First-Timer, Regular, Family Pack and Race Kid) that combine its difficulty and its condition.
-- **In-world trail signs.** The same glyph on the trail sign at each entrance, as on a real trail-status board.
+- **In-world trail signs (row T1, M4b).** Realistic post-and-board props at trail entrances (Blender kit), not floating canvas rectangles at the lift top. Today’s implementation (`TrailSign.tsx`) stacks one billboard per open trail near the unload; T1 removes that clutter. Compact signs show difficulty shape; full name and condition detail are available on the **Trails** layer (O5) and on tap readouts.
 - **Static fallback.** With reduced motion the textures stay and the movement stops.
+
+| Layer | Row | What it shows |
+|---|---|---|
+| **Trails** | O5 | Every open trail’s centerline with difficulty colour and name labels; optional lift-top summary card listing runs served by that lift. Used for planning and for players who want a trail map on screen without crowding the 3D scene |
 
 Later layers (row O4): Crowds (guest density and queue length), Revenue (venue takings from the per-venue receipts), and "Guests want" pins from the night recap.
 
 ### The Office
 
-An **Office** button joins the bottom bar: Build, Guests, Office, Night. The Office is where the player does everything that is not building. It opens full screen and pauses the day (pillar 6); closing it resumes a day that was running. It reads and plans. Fare and snow choices stay at Night, and a loan keeps its card, so the Office never becomes a second place to decide. Settings and save slots get a shortcut here.
+An **Office** button joins the bottom bar: Build, Guests, Office, Night. The Office is the player’s **economic command center**: where cash, turnout, costs and trends are read and compared, not where the day is decided. It opens full screen and pauses the day (pillar 6); closing it resumes a day that was running. **Money** and **Stats** are first-class; **Desk** frames today’s problems; **Reports** archives narrative and seasonal context. Fare and snow choices stay at Night, and a loan keeps its card, so the Office never becomes a second place to decide. Settings and save slots get a shortcut here. **M4 gate:** a player who opens the Office mid-winter should feel like a ski-area CFO glancing at dashboards, not scrolling a recap log.
 
 | Tab | Holds | Row |
 |---|---|---|
 | **Desk** | Today's headline, the goal in detail, tomorrow's forecast, a needs-attention list, the live Route 100 Radio card | F1 |
-| **Money** | Ledger (income by source, costs, construction installments, the loan, projected morning cash) and Economy (fare against turnout, reputation, hill value against fare, what-if fare previews) | F2, 38 |
-| **Stats** | Daily charts: guests, satisfaction and its five terms, queue, snow, revenue per guest; against yesterday and the season best | F3 |
-| **Reports** | The recap archive, the story log, the season calendar (28 days with weather and result; tap a day for its report), the trail report in the style of a real ski-area snow report, the winter review | F1, F3 |
+| **Money** | First-class **ledger**: cash, payables, projected morning cash, operating breakdown (tickets, venues, costs), loan status, fare vs turnout and hill value (sparkline or mini trend optional in F3). Economy what-ifs stay here, not at Night | F2, 38 |
+| **Stats** | Chart-heavy **operations and economics**: time series from `dayHistory` for revenue, costs, margin, arrivals, satisfaction (and five terms when present), wait, snow spend, venue/trail revenue stacks; fare-elasticity and satisfaction-vs-revenue views when data exists; construction and loan/cash projections. Every chart supports **yesterday** and **season best** comparison | F3 |
+| **Reports** | Narrative and reference: recap archive (complement to Stats, not a substitute for charts), story log, season calendar (28 days with weather and result; tap a day for its report), trail report in the style of a real ski-area snow report, winter review links | F1, F3 |
 | **Crew** | Lodge tier and what the next tier opens, goal checklist, talents learned and next, the founder's modifier, winter score | F4 |
 | **Atlas** | The career map with heritage cards for lost hills, and the **trail map**: a hand-drawn-style ski-area map of your own hill, generated live from your trails and lifts with names, difficulty colours, lodge and venues | 35 |
 
 Delight pieces, in the order to build them: the trail map (the classic piece of ski-area art, and the base for the M7 shareable poster), the season calendar, and a scrapbook of auto-snapped moments (first sellout, a tier-up, the big storm; each stores a camera pose and a state and renders on demand). A guest book of named regulars waits for M7.
 
-**Data.** The save keeps only yesterday's snapshot, so Stats, the calendar, Reports and the scrapbook need history. Row F2 adds a compact `dayHistory` record per day to state (about 28 small records a winter, schema bump, old saves start empty). Everything the Office shows comes from those records and from live state.
+**Data (pillar 7).** The save keeps only yesterday's snapshot, so Stats, the calendar, Reports and the scrapbook need history. Row F2 adds a compact `dayHistory` record per day to state (about 28 small records a winter, schema bump, old saves start empty). F3 charts and the Money ledger read **only** `dayHistory`, `seasonDays`, live state, and existing selectors (`morningCash`, `dailyCosts`, `expectedArrivals`, recap facts). No placeholder or demo numbers. If a chart needs a field F2 did not persist, extend `DayReport` at sleep time in the same PR as F3.
 
-**Phone layout.** The tab strip scrolls horizontally with 44 px targets and keeps the active tab centred. Each tab is one scrolling column; charts are drawn as simple SVG with labelled axes and a table fallback.
+**Phone layout.** The tab strip scrolls horizontally with 44 px targets and keeps the active tab centred. Each tab is one scrolling column. **Stats** leads with one chart per screen width; charts use simple **SVG** (labelled axes, pattern-friendly colours per §10) with a **table fallback** when reduced motion is on or a series is empty (first week: honest empty state, not fake data). Money uses tabular figures and gold for cash (ART_DIRECTION).

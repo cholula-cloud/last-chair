@@ -20,7 +20,7 @@
 | Trail graph | ✅ | `GameState.trails[]`, painted width and sustained pitch, guest choice by skill, ski time by length, and segment elevations from the path | — |
 | Snow | ✅ | Six segments per trail; elevations, pipe-connected gun coverage, nightly grooming budgets and measured tree clearing influence snow | — |
 | Economy | ✅ | Daily upkeep, construction installments, winter loan and bankruptcy. Verified over 40 seeds | 20 |
-| Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
+| Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activity assets and catalog rows follow in M4b (Blender); sim hooks ship with each activity PR | L1, 16a–16d |
 | Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
 | Crew talents | ✅ | Twenty ordered talents change lift operations, attendance, guest experience, operating costs or snow service | 21 |
 | Founder modifiers | ✅ | Each of the six founders has an operating advantage and a constraint | 22 |
@@ -420,6 +420,8 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
 Schema v6 records the school contract and pass offer. Schema v7 shipped with first-winter coach progress. A parallel v7 build recorded operating days, dated broadcasts and settled winters. Schema v8 accepts both v7 formats and preserves their known records. Its Office ledger starts with the next nightly settlement, when actual fare, costs, weather and receipts become available. Historical saves retain their recorded cash, season length and outcomes.
+
+**Office charts (row F3).** Stats and Reports time series read `dayHistory` (`DayReport`: `recap` is a full `NightRecap`, plus `snowCost`, `constructionDue`, `closingCash`). Chart selectors must not synthesize values the settlement did not record; extend `DayReport` at `sleep()` if a series needs a field F2 omitted (e.g. loan balance after interest). See MASTER_PLAN §12 and the F3 handoff stub.
 
 ---
 

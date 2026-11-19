@@ -421,7 +421,7 @@ Gate M3: the P1 script in `docs/TESTING.md` signed by three external players.
 
 | Milestone | PRs |
 |---|---|
-| M4 look and feel | 28 guest models, 29 lift and lodge GLB kit from Blender, 30 snow shader, 31 day and night lighting, 32 audio, 33 mobile juice (sheet motion, satisfaction pulse, reduced motion) |
+| M4 / M4b (superseded by MASTER_PLAN v2.5) | M4 code: B6/B7 build UX, P4 polish, F3 Office economics (Stats/Reports charts), 30–33, O4, O5. M4b Blender: 28–29, T1, S1–S3, A1–A5 |
 | M5 career | 34 mountain definitions as data (terrain, scale, site, start state, beats), 35 career map hub, 36 Tenney Mountain NH (colder, steeper, more capital; scale up to 15x), 37 caretaker idle income, 38 ledger |
 | M6 sandbox | 39 main menu Story and Sandbox with mountain, money, weather, talent settings, 40 save slots |
 | M7 110% pass | top five improvements after a side-by-side with Ice Coast Revival, PWA install, performance budget pass, accessibility audit |
