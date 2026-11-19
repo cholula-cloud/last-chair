@@ -119,7 +119,7 @@ Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 | `sign-green` | `#0B6B3A` | Guide sign: results and summaries, the play key, the selected option, gains |
 | `sign-yellow` / `sign-yellow-soft` | `#F6C700` / `#FFF6CC` | Warning diamond: Route 100 Radio, alerts / the radio message bubble |
 | `sign-brown` | `#7A4524` | Recreation sign: only the action that ends the day (Sleep until morning) |
-| `gold` | `#FFC93C` | Cash only |
+| `gold` | `#FFC93C` | Cash only (Office Money totals and chart currency series) |
 | `barn` | `#E0483E` | Problems, losses, Close hill |
 
 ### Shape
@@ -139,6 +139,7 @@ Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 
 - **Lilita One** for headings, big numbers, section titles and primary button labels. Never body text.
 - **Nunito** (600–800, default 700) for everything else. Live numbers (clock, cash, queue, percentages) use tabular figures.
+- **Office Stats charts (row F3):** axis labels in Nunito; headline metric in Lilita when a chart has one hero number. SVG strokes use `ink` at 3 px; positive cash/margin may use `sign-green`, shortfalls `barn`. Pair colour with pattern or label (§10). Table fallback uses the same formatted numbers as the SVG, not a second rounding.
 - Sentence case. No all-caps labels, middle-dot meta strings, em dashes or emoji in UI copy.
 
 ### Copy

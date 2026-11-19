@@ -421,6 +421,8 @@ Row 20 introduces M3 schema v5 with construction installments, loan and repaymen
 
 Schema v6 records the school contract and pass offer. Schema v7 shipped with first-winter coach progress. A parallel v7 build recorded operating days, dated broadcasts and settled winters. Schema v8 accepts both v7 formats and preserves their known records. Its Office ledger starts with the next nightly settlement, when actual fare, costs, weather and receipts become available. Historical saves retain their recorded cash, season length and outcomes.
 
+**Office charts (row F3).** Stats and Reports time series read `dayHistory` (`DayReport`: `recap` is a full `NightRecap`, plus `snowCost`, `constructionDue`, `closingCash`). Chart selectors must not synthesize values the settlement did not record; extend `DayReport` at `sleep()` if a series needs a field F2 omitted (e.g. loan balance after interest). See MASTER_PLAN §12 and the F3 handoff stub.
+
 ---
 
 ## Balance

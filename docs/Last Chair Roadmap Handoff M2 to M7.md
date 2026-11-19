@@ -10,7 +10,7 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 |---|---|
 | Part A | Foundation briefs, M2 builder and operations rows, M2 gate |
 | Part B | M3, rows 18 to 27, M3 gate |
-| Part C | M4 (code: B6, B7, P4, rows 30 to 33, O4, O5, F3), M4b (Blender: rows 28, 29, T1, S1 to S3, A1 to A5), M5 to M7, rows 34 to 40, 110% pass and cross-cutting work |
+| Part C | M4 (code: B6, B7, P4, rows 30 to 33, O4, O5, **F3** Office economics), M4b (Blender: rows 28, 29, T1, S1 to S3, A1 to A5), M5 to M7, rows 34 to 40, 110% pass and cross-cutting work |
 
 ## Numbering
 
@@ -1957,7 +1957,7 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
 
-**M4 vs M4b (MASTER_PLAN v2.4).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), then handoff sections for rows **30 to 33**, **O4**, **O5**, and **F3**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; write new briefs for B6, B7, P4, O5, and T1 before implementing them.
+**M4 vs M4b (MASTER_PLAN v2.5).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), Office economics (**F3** on top of merged **F2** `dayHistory`), then handoff sections for rows **30 to 33**, **O4**, and **O5**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; stub briefs exist for **B6**, **B7**, **P4**, **F3**, **O5**, and **T1** — expand before coding if scope shifts.
 
 ### Row B6 — Build grid and lift placement guide (M4, brief TBD)
 
@@ -1967,9 +1967,39 @@ Owner report: the placement dot grid does not appear during lift placement and t
 
 Owner report: other trails disappear while painting; new runs snap to the base too often. **Goal:** render confirmed trail ribbons whenever `placementDraft.kind === "trail"` (dim existing, full opacity on draft). In `web/src/game/paintedTrail.ts`, tighten when `atBase` pushes `terrain.base`, and when prefix/suffix merge reuses another trail — prefer the painted polyline unless required for connectivity or guest pathing. **Files (likely):** `TrailRibbon.tsx`, `paintedTrail.ts`, `PlacementController.tsx`. **Tests:** characterization on preview paths; visual screenshots with two trails visible during a third draft. **Acceptance:** player can plan a run beside an existing trail; ending above the village does not auto-yank to base unless they finish in the base area on purpose.
 
-### Row P4 — M4 polish pass (M4, brief TBD)
+### Row P4 — M4 polish pass (M4, stub)
 
-One coordinated pass after B6/B7 or in parallel with early feel rows: design (coach, night flow, copy vs ART_DIRECTION), engineering (`npm run check`, layering, bundle, known TODOs), UI (44px targets, sheet scroll, Office/HUD). Deliverable: punch list with every item ☑ or an explicit follow-up row before M4 gate.
+One coordinated pass after B6/B7 or in parallel with early feel rows: design (coach, night flow, copy vs ART_DIRECTION), engineering (`npm run check`, layering, bundle, known TODOs), UI (44px targets, sheet scroll, Office/HUD). **Office economics (priority):** Money tab hierarchy (cash → commitments → ledger → fare), Stats chart density and axis labels at 375 px, Reports vs Stats duplication (archive stays prose; trends live in Stats), season calendar tap targets, table fallbacks when `data-reduce-motion` is on. Deliverable: punch list with every item ☑ or an explicit follow-up row before M4 gate.
+
+### Row F3 — Stats and Reports, Office economics (M4, stub)
+
+**Goal.** The Office reads like a **ski-area CFO dashboard** (MASTER_PLAN §12). Ship the **Stats** tab and upgrade **Reports** so time series and breakdowns dominate; the recap archive remains narrative, not the only history UI.
+
+**Depends on.** Row **F2** (`DayReport` / `dayHistory`, Money ledger). Before chart work, audit F2 fields; add chart-only snapshots at `sleep()` if missing (e.g. closing loan balance, closing reputation) — schema bump, no sim fork. Cross-check `SIMULATION_SPEC` Office ledger note.
+
+**Stats tab** — add `"Stats"` to `OFFICE_TABS` in `ui/officeStore.ts`; panel in `ui/Office.tsx` or `ui/officeCharts.tsx`. Each section: titled chart, one-sentence “Why?” caption, optional yesterday/season-best overlay. **SVG** charts with ink outline and pattern-friendly series colours; **table fallback** (same numbers) under reduced motion or empty series.
+
+| Chart | Data source |
+|---|---|
+| Revenue vs operating costs | `dayHistory[].recap.revenue`, `recap.costs`, `recap.cashDelta` |
+| Revenue breakdown (tickets, venues, school bus) | `recap.revenue`, `recap.facts.venueRevenue`, `recap.facts.schoolBus` |
+| Fare elasticity | `dayHistory[].fare`, `recap.arrivals`, `recap.facts.farePrice` |
+| Construction cash timeline | `dayHistory[].constructionDue`; live `payables` for forward view in Money/Stats |
+| Loan drawdown / amortization | `recap.loanReceived`, `recap.loanRepaid`, `closingCash`; loan snapshot in `DayReport` if added |
+| Morning cash trend | `dayHistory[].closingCash`; night sheet uses same `morningCash()` as live state |
+| Arrivals, satisfaction, wait | `recap.arrivals`, `recap.satisfaction`, `recap.facts.avgWaitMin`, `recap.breakdown` |
+| Snow service spend | `dayHistory[].snowCost` vs `recap.costs` when present |
+| Satisfaction vs revenue | paired points per settled day when both exist |
+
+**Reports tab** — keep `Reports` in `Office.tsx`; add **season calendar** (28 cells from `dayHistory` + `weatherDays`, tap opens that day’s recap summary). **Trail report** copies ski-area snow-report tone from overnight conditions (use existing recap facts; no invented trail stats). Story log and winter review links unchanged.
+
+**Files (likely).** `web/src/ui/officeStore.ts`, `OfficeSheet.tsx`, `Office.tsx`, new chart helpers under `ui/` only (no `game/` imports from render). Optional `game/officeSeries.ts` pure selectors over `dayHistory`.
+
+**Tests.** Selector tests for series builders (empty history, one day, full winter); `officeStore` still pauses day; snapshot unchanged unless `DayReport` shape changes.
+
+**Phone check.** Stats and Reports at 375×667 and 390×844; table fallback visible with reduced motion; no horizontal chart overflow.
+
+**Done when.** After several settled days, opening **Stats** shows multiple readable charts from real saves; **Reports** calendar matches night recaps; gate language in §12 satisfied; `npm run check` green.
 
 ### Row O5 — Trails map layer (M4, brief TBD)
 
