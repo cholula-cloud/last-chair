@@ -22,6 +22,16 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 - The M2 release integrates the remaining builder features, lodge tiers, venue visits, lift operations, and snow and clearing rules. The automated gates pass on the integrated version. First-time player sign-off remains open.
 - The live game is https://cholula-cloud.github.io/last-chair/play/. GitHub Pages serves a static export.
 
+### M3 follow-up after PR #80
+
+The 28-day winter and all planned implementation rows landed in [PR #80](https://github.com/cholula-cloud/last-chair/pull/80). The 40-seed balance report passed. Three follow-ups remain.
+
+- **L-E / F1, Office Desk.** Match the HUD's Readsboro visibility rule. Until the winter settles, label positive net worth as on track. The final settlement already deducts loans and unpaid construction.
+- **27 / Q8, browser verification.** The production Chromium winter passed at 390×844 and 844×390 on candidate builds. Check the [final Chromium and WebKit matrix](https://github.com/cholula-cloud/last-chair/actions/runs/44602000946) for both settings at all four sizes. Explicit checks of reduced-motion animations and single coach/radio announcements remain.
+- **Q7, performance.** At 390×844 the software renderer measured 1.8 FPS against a target of 30. Physical Safari performance, VoiceOver listening and the ten-minute soak remain unverified. The owner deferred personal and outside-player testing.
+
+The separate post-merge debug and refactor pass was deferred at the owner's request.
+
 ### Render verification
 
 From #39 until #48, the HUD and simulation ran but the 3D scene stayed blank. `RenderStats` passed a positive priority to React Three Fiber's `useFrame`, taking over rendering without drawing. The hook now uses default priority. The phone check samples a canvas screenshot to confirm the scene actually drew.

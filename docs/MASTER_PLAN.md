@@ -421,6 +421,8 @@ Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder 
 
 ### M3: One full winter (product MVP)
 
+PR #80 merged at `5292b49` with all planned M3 implementation rows represented, including the work from #85–87. Two Desk details remain under L-E/F1. The optional Readsboro goal appears before eligibility, and a positive midwinter cash position is labeled “Done” before settlement. Row 27 and Q8 still need final browser evidence. Q7 missed the software-rendered frame-rate target. See the [handoff](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md#m3-follow-up-after-pr-80) for the remaining checks.
+
 M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements lead into the season systems. Rows O1 to O3 (overlays) and F1, F2, F4 (the Office) come from §12, and quality rows Q1 to Q9 from §11; the owner accepted all of them into M3 on 2026-11-19. The owner deferred external and device playtests until they are ready.
 
 | # | Status | PR | Accomplishes |
