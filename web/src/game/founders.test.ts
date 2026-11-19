@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { assetRevenue, placedAssetsFromLegacy } from "./base";
+import { FOUNDERS } from "./content";
 import { REFERENCE_TOPS } from "./descent";
 import { morningCash, operatingCosts } from "./economy";
-import { acknowledgeBeat, sleep, arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, takeLoan } from "./rules";
+import { acknowledgeBeat, sleep, arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, skipToClose, takeLoan } from "./rules";
 import { makeGuest, meanArrivals } from "./sim";
 import { TERRAIN } from "./terrain";
 import type { FounderId, WeatherKind } from "./types";
@@ -12,6 +13,13 @@ import { outlookFor } from "./weather";
 const hill = (id: FounderId) => pickFounder(createBuiltHill(42), id);
 
 describe("founder bonuses and constraints", () => {
+  it("gives each founder a readable bonus and constraint on the selection card", () => {
+    expect(FOUNDERS).toHaveLength(6);
+    for (const founder of FOUNDERS) {
+      expect(founder.bonus).toMatch(/^[A-Z].*\.$/);
+      expect(founder.constraint).toMatch(/^[A-Z].*\.$/);
+    }
+  });
   it("Elena welcomes families and draws two extra visitors", () => {
     expect(arrivalMood(["warming_hut"], "elena")).toBeCloseTo(0.78);
     const state = hill("elena");
@@ -70,6 +78,16 @@ describe("founder bonuses and constraints", () => {
   it("Marco receives an extra 10% at the café", () => {
     const cafe = placedAssetsFromLegacy(["cafe"])[0];
     expect(assetRevenue(cafe, "marco")).toBeCloseTo(assetRevenue(cafe) * 1.1);
+  });
+  it("books Marco’s venue premium in receipts from a played day", () => {
+    const start = hill("elena");
+    const venueReceipts = (founderId: FounderId) => {
+      const close = skipToClose({ ...start, founderId });
+      return Object.values(close.dayStats.venueRevenue).reduce((sum, receipt) => sum + receipt, 0);
+    };
+    const regular = venueReceipts("riley");
+    expect(regular).toBeGreaterThan(0);
+    expect(venueReceipts("marco")).toBeCloseTo(regular * 1.1);
   });
   it("Marco’s programming costs $80 each operating day", () => {
     expect(operatingCosts(hill("marco")).founder).toBe(80);

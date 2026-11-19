@@ -7,7 +7,8 @@ import { acknowledgeBeat, openNight, pickFounder, previewOvernight, satisfaction
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
 import { freshTrail } from "./snow";
-import type { GameState } from "./state";
+import { migrate } from "./migrations";
+import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 import { LIFT_CLOSE_MIN, type WeatherKind } from "./types";
 import { isWindHeld } from "./weather";
 
@@ -32,6 +33,15 @@ describe("crew order and operations", () => {
     expect(state.phase).toBe("winter_review");
     expect(state.talentsOwned).toEqual(CREW_TALENTS.map(talent => talent.id));
     expect(talentDescription("Wind Hold", state)).toContain("Waits for a chair");
+  });
+  it("resumes the fixed learning order after loading an earlier sequence", () => {
+    const owned = ["rope_tow", "trail_guns", "house_band", "groom_pass"];
+    const saved = toPersisted({ ...hill, talentsOwned: owned });
+    const loaded = migrate(JSON.parse(JSON.stringify(saved)), SAVE_VERSION);
+    expect(loaded.reset).toBe(false);
+    expect(loaded.state.talentsOwned).toEqual(owned);
+    const morning = sleep(acknowledgeBeat(openNight({ ...hill, ...loaded.state })));
+    expect(morning.talentsOwned).toEqual([...owned, "ticket_booth"]);
   });
   it("rope tow saves $40 per open surface lift", () => {
     expect(operatingCosts(withTalent("rope_tow")).liftOps).toBe(operatingCosts(hill).liftOps - 40);

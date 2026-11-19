@@ -111,7 +111,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 
 - **Background:** Community banker who lost the last loan.
 - **Bonus:** Borrow at 7% for the winter.
-- **Constraint:** Repeated thaw days cost 3 welcome points.
+- **Constraint:** On a thaw day, guests lose 3 welcome points if at least three of the last seven days were thaws.
 - **Story:** Abominable Snowglomerate calls him first—creates tension on buyout offers.
 
 #### 3. **Riley Otis — *The Rigger***
@@ -124,14 +124,14 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 #### 4. **Dr. Amira Chen — *The Forecast***
 
 - **Background:** Former NWS adjacent researcher; moved to valley for “quiet.”
-- **Bonus:** See two days of forecasts.
+- **Bonus:** See two days of forecasts and get a sharper outlook for tomorrow.
 - **Constraint:** Guests expect 5% better snow.
 - **Story:** “Ledger & Cocoa” segments explain weather in plain language.
 
 #### 5. **Juniper Hale — *The Preservationist***
 
 - **Background:** Land trust liaison; clearing trees is politically visible.
-- **Bonus:** Gain extra reputation each night.
+- **Bonus:** Gain half a reputation point before rounding on a night with guests.
 - **Constraint:** Lift lines and tree clearing cost 15% more.
 - **Story:** Vermont land-trust politics arc synergy (e.g. Hogback / Maple Valley region beats).
 
@@ -179,9 +179,9 @@ Guests are **agents** with a **persona tag** affecting needs, venues, and mood w
 
 In **Story Mode (ICR Simple)**, overnight crew talent order is **framed as NPCs**:
 
-- **Frank** maintains the lifts, plows the road and works the snow.
-- **Dana** runs patrol, first aid and gusty-day chair operations.
-- **Elena** handles lessons, the café, tickets and community events.
+- **Frank** teaches Rope Tow, Trail Guns, Groom Pass, Corduroy, Snow Fences, Bull Wheel Tune, Early Plow, Night Lights and Groomer Rebuild.
+- **Dana** teaches Patrol Radio, Wind Hold, Volunteer Patrol and First Aid Hut.
+- **Elena** teaches Ticket Booth, School Day, House Band, Café Shift, Heritage Sign, Ski School and Route 100 Billboard.
 
 Same fixed priority idea as ICR **Build the Mountain**—but **named**, so radio can joke about their stubbornness.
 

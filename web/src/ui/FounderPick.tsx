@@ -71,8 +71,8 @@ export function FounderPick() {
                   {f.title}
                 </span>
                 <span className="mt-1 text-[0.85rem] font-bold leading-snug text-ink-soft">
-                  <span className="block">＋ {f.bonus}</span>
-                  <span className="block">◇ {f.constraint}</span>
+                  <span className="block"><span aria-hidden="true">＋ </span><span className="sr-only">Bonus: </span>{f.bonus}</span>
+                  <span className="block"><span aria-hidden="true">◇ </span><span className="sr-only">Cost: </span>{f.constraint}</span>
                 </span>
               </span>
             </button>
