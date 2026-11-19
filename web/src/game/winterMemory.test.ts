@@ -3,7 +3,7 @@ import { createBuiltHill } from "./__fixtures__/built-hill";
 import { migrate } from "./migrations";
 import { SAVE_VERSION, toPersisted } from "./state";
 import { acknowledgeBeat, finishWinterReview, pickFounder, skipToClose, sleep, startNewSeason } from "./rules";
-import { schoolMemory, winterRecord } from "./winterMemory";
+import { schoolMemory, winterScore, winterRecord } from "./winterMemory";
 
 describe("Dutch Hill winter review", () => {
   it("remembers the commitment separately from the lessons actually taught", () => {
@@ -76,6 +76,27 @@ describe("Dutch Hill winter review", () => {
       expect(result.state.career).toHaveLength(previous === earlier ? 2 : 1);
       if (previous === earlier) expect(result.state.career[0]).toEqual(earlier);
     }
+  });
+
+  it("averages closing reputation over the same guest days as satisfaction", () => {
+    const day = { arrivals: 5, fare: "cheap", snow: "mid", satisfaction: 80 } as const;
+    const state = { ...createBuiltHill(3), dayIndex: 3, reputation: 99, seasonDays: [
+      { ...day, day: 1, closingReputation: 40 },
+      { ...day, day: 2, arrivals: 0, closingReputation: 10 },
+      { ...day, day: 3, satisfaction: 60, closingReputation: 80 },
+    ] };
+    expect(winterScore(state)).toEqual({ satisfaction: 70, averageReputation: 60, measuredDays: 2, total: 65 });
+    expect(winterScore({ ...state, seasonDays: [{ ...day, day: 1 }, ...state.seasonDays.slice(1)] })).toBeNull();
+  });
+
+  it("preserves a settled v7 score that originally used final reputation", () => {
+    const hill = createBuiltHill(7);
+    const score = { satisfaction: 75, measuredDays: 2, total: 82 };
+    const record = { ...winterRecord(hill), score, reputation: 89 };
+    const result = migrate({ ...toPersisted(hill), lastWinter: record, career: [record] }, 7);
+    expect(result.reset).toBe(false);
+    expect(result.state.lastWinter?.score).toEqual(score);
+    expect(result.state.career[0].score).toEqual(score);
   });
 
 });

@@ -248,6 +248,8 @@ export type SeasonResult = {
   tookLoan: boolean;
   endNetWorth: number;
   events: GameState["surpriseLog"];
+  schoolOffers: number;
+  vivianOffers: number;
   schoolVisits: NonNullable<NightRecap["facts"]["schoolBus"]>[];
   solvent: boolean;
   winterScore: number;
@@ -302,6 +304,8 @@ export function runSeason(
 
   const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const schoolVisits: SeasonResult["schoolVisits"] = [];
+  let schoolOffers = 0;
+  let vivianOffers = 0;
   let guard = 0;
   while (state.phase === "day" && guard++ < 400) {
     for (const action of strategy.build?.(ctxOf()) ?? []) state = applyBuild(state, action);
@@ -313,12 +317,14 @@ export function runSeason(
     const snow = state.snow;
     const chair = hasChair(state);
     state = skipToClose(state);
-    if (state.pendingBeat === "school_bus") state = decideSchoolContract(state, options.school ?? "declined");
-    else if (state.pendingBeat === "summit_link") {
+    if (state.pendingBeat === "school_bus") {
+      schoolOffers++;
+      state = decideSchoolContract(state, options.school ?? "declined");
+    } else if (state.pendingBeat === "summit_link") {
+      vivianOffers++;
       const reply = founderId === "riley" ? "declined" : options.summitLink ?? "declined";
       state = replyToSummitLink(state, reply);
-    }
-    else state = acknowledgeBeat(state);
+    } else state = acknowledgeBeat(state);
     recap = state.nightRecap as NightRecap;
     if (recap.facts.schoolBus) schoolVisits.push(recap.facts.schoolBus);
     const { dayStats } = state;
@@ -375,6 +381,8 @@ export function runSeason(
     solvent: record.goalMet,
     winterScore: record.score.total,
     events: state.surpriseLog,
+    schoolOffers,
+    vivianOffers,
     schoolVisits,
     schoolContract: state.schoolContract,
     summitLinkDecision: state.summitLinkDecision,

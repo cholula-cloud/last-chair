@@ -43,17 +43,21 @@ export function CoachCard({ slot }: { slot: "day" | "recap-problem" | "fare" | "
       resize.observe(panel);
       resize.observe(document.documentElement);
     }
+    let onScreen = false;
+    const intersection = new IntersectionObserver(([entry]) => { onScreen = entry.isIntersecting; });
+    if (panel) intersection.observe(panel);
     let elapsed = 0;
     let last = performance.now();
     const limit = step === 3 ? 45 : step === 4 ? 30 : step === 6 ? 20 : 0;
     const timer = limit ? window.setInterval(() => {
       const now = performance.now();
       const state = useGameStore.getState();
-      if (!document.hidden && (state.phase === "night" || !state.paused)) elapsed += Math.min(now - last, 1000);
+      if (onScreen && !document.hidden && (state.phase === "night" || !state.paused)) elapsed += Math.min(now - last, 1000);
       last = now;
       if (elapsed >= limit * 1000) useCoach.getState().next(step);
     }, 500) : undefined;
     return () => {
+      intersection.disconnect();
       resize?.disconnect();
       if (panel && slot === "day") {
         panel.removeAttribute("style");

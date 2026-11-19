@@ -70,6 +70,8 @@ export type LastDay = {
 
 export type SeasonDay = Pick<LastDay, "fare" | "snow" | "arrivals" | "satisfaction"> & {
   day: number;
+  /** Missing on days settled before daily reputation was recorded. */
+  closingReputation?: number;
   lodgeOpening?: LodgeTier;
   schoolBus?: NightRecap["facts"]["schoolBus"];
   summitLink?: { reply: SummitLinkDecision; receipt: number; fareCap: "balanced" | null };

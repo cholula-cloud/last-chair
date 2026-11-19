@@ -1820,7 +1820,7 @@ Properties for the MVP (`balance.test.ts`, 6 seeds; report on 40):
 | 3 | No strategy goes below $0 within 14 days | PR 20 |
 | 4 | Careless goes below $0 on ≥ 25% of 40 seeds over 28 days | PR 20 |
 | 5 | No fixed, adaptive, builder or coached run goes bankrupt | PR 20 |
-| 6 | Adaptive and coached mean grade ≥ "Solid winter"; stingy < "Held on" | PR 24 |
+| 6 | Adaptive and Coached mean winter scores reach 65 (the original “Solid winter” threshold). Stingy stays below 50 (“Held on”). Use measured season satisfaction and reputation. The settlement independently decides solvency. | PR 24 |
 | 7 | Each founder's adaptive mean score within ±15% of the median founder | PR 22 |
 | 8 | Holiday-week Saturdays without a chair average over 12 minutes in line; with a chair 1 to 5 | PR 19 |
 | 9 | The common solvency goal is achievable with no accepted offer. The Readsboro and Vivian paths resolve through the regular simulation. Report local event incidence and offer, reply, and delivery counts separately | PR 23, PR 24 |

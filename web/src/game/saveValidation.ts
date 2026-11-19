@@ -104,6 +104,7 @@ const dayStats = shape({
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
 const seasonDay = shape({
+  closingReputation: optional(number),
   summitLink: optional(shape({ reply: summitLinkDecision, receipt: number, fareCap: nullable(oneOf("balanced")) })),
   lodgeOpening: optional(oneOf(2, 3)), day: index, fare, snow, arrivals: index, satisfaction: number,
   schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })),
@@ -113,7 +114,7 @@ const moment = shape({ dayIndex: index, kind: surpriseKind, affectedGuests: inde
 const winterRecord = shape({
   completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
   days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
-  moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, measuredDays: index, total: number }))),
+  moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, averageReputation: optional(number), measuredDays: index, total: number }))),
   day: index, founder,
   bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
   school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),

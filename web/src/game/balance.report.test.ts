@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ADAPTIVE, CARELESS, STRATEGIES, formatTable, runAll, summarize, seedList, summarizeAll } from "./balance";
-import { checkFounderScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
+import { checkFixedStrategies, checkFounderScores, checkStrategyScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
 import { gateMetrics, gateScenarios } from "./m2gate";
 
 /**
@@ -41,6 +41,8 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
     const holidayChair = all.find((row) => row.id === "builder")?.holidaySatWaitChair;
     expect(holidayChair).toBeGreaterThan(1);
     expect(holidayChair).toBeLessThan(5);
+    checkFixedStrategies(all);
+    checkStrategyScores(long);
     const short = runAll(seeds, STRATEGIES, { seasonLength: 14 });
     const careful = STRATEGIES.filter((strategy) => strategy !== CARELESS)
       .flatMap((strategy) => long.get(strategy.id) ?? []);

@@ -100,8 +100,10 @@ export function WinterReviewSheet() {
       </section>
       <section className="panel mt-4 space-y-2 px-4 py-3">
         <h3 className="font-extrabold">Season score{score && ` · ${score.total}/100`}</h3>
-        {score ? <p>Guest satisfaction averaged {score.satisfaction.toFixed(1)} across {score.measuredDays} days with guests. Closing reputation was {reputation}. Each counts for half the score.</p>
-          : <p>A winter score needs a complete daily record and at least one day with guests.</p>}
+        {score ? <p>Guest satisfaction averaged {score.satisfaction.toFixed(1)} across {score.measuredDays} days with guests. {score.averageReputation === undefined
+            ? `Final reputation was ${reputation}.`
+            : `Closing reputation averaged ${score.averageReputation.toFixed(1)} over those same days.`} Each counts for half the score.</p>
+          : <p>A winter score needs daily satisfaction and closing reputation for every day with guests, and at least one guest day.</p>}
         <details>
           <summary className="min-h-11 cursor-pointer font-bold">Operating decisions</summary>
           {!days.some((d, i) => i > 0 && (d.fare !== days[i-1].fare || d.snow !== days[i-1].snow)) && <p>No fare or service changes appear in the daily record.</p>}

@@ -14,6 +14,7 @@
     "m2-gate": "M2_ACCEPTANCE=1 vitest run --reporter=default src/game/m2gate.test.ts",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "playtest:p0": "node scripts/playtest-p0.mjs",
+    "playtest:coach": "node scripts/playtest-coach.mjs",
     "playtest:m2": "node scripts/playtest-m2.mjs",
     "playwright:install": "playwright install chromium",
     "phone-check": "node scripts/phone-check.mjs",

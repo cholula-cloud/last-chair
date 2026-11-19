@@ -67,7 +67,7 @@ try {
       await element.scrollIntoViewIfNeeded();
       assert.equal(await element.count(), 1, anchor);
       await page.locator('[data-coach="' + anchor + '"].coach-target').waitFor();
-      if (anchor === "recap-problem") await next();
+      if (anchor === "recap-problem") await page.getByRole("button", { name: /^Why .*happy/ }).tap();
       if (anchor === "fare" || anchor === "snow") {
         await element.getByRole("button").first().tap();
       }

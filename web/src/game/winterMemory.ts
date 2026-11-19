@@ -13,11 +13,25 @@ export function schoolMemory(contract: SchoolContract | null): string {
   return `The Readsboro bus came. Of the ${SCHOOL_BUS_PUPILS} pupils booked, ${taught} finished a lesson.`;
 }
 
-export function winterScore(state: GameState) {
+type WinterScore = {
+  satisfaction: number;
+  /** Older settled scores used reputation on the final day of the winter. */
+  averageReputation?: number;
+  measuredDays: number;
+  total: number;
+};
+
+export function winterScore(state: GameState): WinterScore | null {
   const observed = state.seasonDays.filter(day => day.arrivals > 0);
   if (state.seasonDays.length !== state.dayIndex || !observed.length) return null;
   const satisfaction = observed.reduce((sum, day) => sum + day.satisfaction, 0) / observed.length;
-  return { satisfaction, measuredDays: observed.length, total: Math.round((satisfaction + state.reputation) / 2) };
+  let reputationSum = 0;
+  for (const day of observed) {
+    if (day.closingReputation === undefined) return null;
+    reputationSum += day.closingReputation;
+  }
+  const averageReputation = reputationSum / observed.length;
+  return { satisfaction, averageReputation, measuredDays: observed.length, total: Math.round((satisfaction + averageReputation) / 2) };
 }
 
 /** A single settled winter, retained when the player replays in this slot. */

@@ -1079,7 +1079,7 @@ export function sleep(state: GameState): GameState {
     cash,
     debtMornings,
     seasonDays: [...state.seasonDays, { day: state.dayIndex, fare: state.fare, snow: state.snow,
-      arrivals: recap.arrivals, satisfaction: recap.satisfaction, ...(completedTier && { lodgeOpening: completedTier }),
+      arrivals: recap.arrivals, satisfaction: recap.satisfaction, closingReputation: state.reputation, ...(completedTier && { lodgeOpening: completedTier }),
       ...(recap.summitLinkReply && { summitLink: {
         reply: recap.summitLinkReply,
         receipt: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0,

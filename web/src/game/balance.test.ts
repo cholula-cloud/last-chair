@@ -18,7 +18,7 @@ import {
   type SeasonResult,
   type StrategySummary,
 } from "./balance";
-import { checkFounderScores, checkWinterChoices } from "./m3BalanceChecks";
+import { checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
 import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
@@ -141,6 +141,7 @@ it("settles independent winters and delivers booked school visits through the or
   checkWinterChoices(SEEDS, runs.get("adaptive") ?? []);
 });
 
-it("keeps every founder's adaptive score within 15% of the median", { timeout: 120_000 }, () => {
+it("keeps every founder's adaptive score within 15% of the median and every strategy mean below 90", { timeout: 120_000 }, () => {
   checkFounderScores(SEEDS, runs.get("adaptive") ?? []);
+  checkStrategyScores(runs);
 });
