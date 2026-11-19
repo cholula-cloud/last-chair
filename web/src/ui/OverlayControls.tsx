@@ -21,7 +21,7 @@ import {
   useOverlayUi,
 } from "@/ui/overlayUi";
 
-const SWATCH = 20;
+const SWATCH = 16;
 
 /** A legend swatch: the layer colour as a light fill with the pattern drawn in the same colour. */
 export function PatternSwatch({ color, pattern }: { color: string; pattern: OverlayPattern }) {
@@ -46,7 +46,7 @@ export function PatternSwatch({ color, pattern }: { color: string; pattern: Over
 
 function LegendChip({ entry }: { entry: LegendEntry }) {
   return (
-    <li className="chip flex h-9 items-center gap-1.5 px-2 text-xs font-extrabold" title={entry.detail} aria-label={entry.detail}>
+    <li className="chip flex h-8 items-center gap-1 px-1.5 text-[0.7rem] font-extrabold" title={entry.detail} aria-label={entry.detail}>
       <PatternSwatch color={entry.color} pattern={entry.pattern} />
       {entry.label}
     </li>
@@ -58,8 +58,8 @@ export function OverlayLegend() {
   const layer = getOverlayLayer(useActiveLayer());
   if (!layer) return null;
   return (
-    <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
-      <ul className="flex flex-wrap items-center justify-end gap-1.5" aria-label={`${layer.label} legend`}>
+    <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1" data-overlay-legend={layer.id}>
+      <ul className="flex flex-wrap items-center justify-end gap-1" aria-label={`${layer.label} legend`}>
         {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
       </ul>
       <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
