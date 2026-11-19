@@ -5,7 +5,7 @@ import {
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
   liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
-import { MOUNTAIN_CALENDARS, weekdayForDay, dayKind, guestMixForDay } from "./calendar";
+import { MOUNTAIN_CALENDARS, weekdayForDay, isFestiveDay, guestMixForDay } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   assetRevenue,
@@ -22,6 +22,7 @@ import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
+import { isWarmWeek } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
 import {
   checkLiftLine,
@@ -150,9 +151,8 @@ export function satisfactionContext(
   const owned = state.talentsOwned;
   const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const day = state.dayIndex;
-  const band = TALENT.houseBand.learned(owned) && (weekdayForDay(calendar, day) === "Fri" || dayKind(calendar, day) !== "weekday");
-  const warmWeek = state.founderId === "tom" && state.weather === "thaw" &&
-    state.weatherDays.slice(Math.max(0, day - 7), day).filter(w => w.kind === "thaw").length >= 3;
+  const band = TALENT.houseBand.learned(owned) && isFestiveDay(calendar, day);
+  const warmWeek = state.founderId === "tom" && isWarmWeek(state.weather, state.weatherDays, day);
   return {
     fare: state.fare,
     firstTimerMoodBonus: TALENT.skiSchool.learned(owned) ? TALENT.skiSchool.mood : 0,
