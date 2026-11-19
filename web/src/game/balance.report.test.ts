@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CARELESS, STRATEGIES, formatTable, runAll, seedList, summarizeAll } from "./balance";
+import { ADAPTIVE, CARELESS, STRATEGIES, formatTable, runAll, summarize, seedList, summarizeAll } from "./balance";
+import { checkFounderScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
 import { gateMetrics, gateScenarios } from "./m2gate";
 
 /**
@@ -22,6 +23,25 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
     const seeds = seedList(n);
     const long = runAll(seeds);
     const all = summarizeAll(long);
+    const adaptive = long.get(ADAPTIVE.id) ?? [];
+    const accepted = checkWinterChoices(seeds, adaptive);
+    for (const [id, runs] of [...long, ["adaptive/accept", accepted] as const]) {
+      const net = runs.reduce((sum, run) => sum + run.endNetWorth, 0) / n;
+      const summary = summarize(STRATEGIES.find((strategy) => strategy.id === id) ?? ADAPTIVE, runs);
+      console.info(id, JSON.stringify({
+        winterScore: meanWinterScore(runs).toFixed(1),
+        netWorth: Math.round(net), solvent: runs.filter((run) => run.solvent).length,
+        bankrupt: runs.filter((run) => run.wentBankrupt).length,
+        holidaySaturdayWaitNoChair: summary.holidaySatWaitNoChair?.toFixed(2) ?? null, holidaySaturdayWaitChair: summary.holidaySatWaitChair?.toFixed(2) ?? null,
+        ...storyCounts(runs),
+      }));
+    }
+    for (const row of checkFounderScores(seeds, adaptive)) console.info(row.founder, JSON.stringify(row));
+    expect(Math.max(...[...long.values()].map(meanWinterScore))).toBeLessThan(90);
+    expect(all.find((row) => row.id === "balanced/mid")?.holidaySatWaitNoChair).toBeGreaterThan(12);
+    const holidayChair = all.find((row) => row.id === "builder")?.holidaySatWaitChair;
+    expect(holidayChair).toBeGreaterThan(1);
+    expect(holidayChair).toBeLessThan(5);
     const short = runAll(seeds, STRATEGIES, { seasonLength: 14 });
     const careful = STRATEGIES.filter((strategy) => strategy !== CARELESS)
       .flatMap((strategy) => long.get(strategy.id) ?? []);

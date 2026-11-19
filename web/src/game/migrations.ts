@@ -56,6 +56,18 @@ export const MIGRATIONS: readonly Migration[] = [
       return clearTeaser ? { ...migrated, pendingBeat: null, beatAcknowledged: true } : migrated;
     },
   },
+  {
+    to: 7,
+    note: "Retain settled winters and start recording dated operating and radio history.",
+    up(raw) {
+      return {
+        ...raw,
+        seasonDays: [],
+        beatLog: Array.isArray(raw.completedBeats) ? raw.completedBeats.map(id => ({ id, day: null })) : [],
+        career: raw.lastWinter ? [raw.lastWinter] : [],
+      };
+    },
+  },
 ];
 
 type MigrationResult =

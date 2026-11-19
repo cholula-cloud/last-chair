@@ -182,7 +182,7 @@ export type ImportResult =
   | { ok: true; state: PersistedState }
   | { ok: false; message: string };
 
-const BAD_FILE = "This file is not a Last Chair save.";
+const BAD_FILE = "Choose a save file exported from Last Chair.";
 
 /** Parses an export file and runs its state through the same migration and validation as a slot load. */
 export function parseExport(text: string): ImportResult {
@@ -190,17 +190,17 @@ export function parseExport(text: string): ImportResult {
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { ok: false, message: "This file is not a Last Chair save." };
+    return { ok: false, message: BAD_FILE };
   }
   if (!parsed || typeof parsed !== "object") return { ok: false, message: BAD_FILE };
   const file = parsed as Partial<Record<keyof ExportFile, unknown>>;
   if (file.app !== EXPORT_APP) return { ok: false, message: BAD_FILE };
-  if (file.format !== EXPORT_FORMAT) return { ok: false, message: "That save file comes from a different version of Last Chair." };
+  if (file.format !== EXPORT_FORMAT) return { ok: false, message: "Open this file in the version of Last Chair that exported it." };
   const version = file.version;
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) return { ok: false, message: BAD_FILE };
-  if (version > SAVE_VERSION) return { ok: false, message: "That save is from a newer version of Last Chair." };
+  if (version > SAVE_VERSION) return { ok: false, message: "Update Last Chair to open this newer save." };
   const result = migrate(file.state, version);
-  if (result.reset) return { ok: false, message: "That save is damaged, so it was not imported." };
+  if (result.reset) return { ok: false, message: "This save is damaged. Choose another copy to import." };
   return { ok: true, state: result.state };
 }
 

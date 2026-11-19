@@ -1,6 +1,6 @@
 "use client";
 
-import { FOUNDERS } from "@/game/content";
+import { FOUNDERS, WINTER_GOAL } from "@/game/content";
 import { useGameStore } from "@/game/store";
 import { useSpeed } from "@/ui/speed";
 import { Sheet } from "@/ui/kit/Sheet";
@@ -37,7 +37,7 @@ export function FounderPick() {
       subtitle="Who signs the lease? Your founder’s quirks last the whole winter."
     >
       <p className="mb-3 text-sm font-bold leading-snug">
-        Keep Dutch Hill open through closing day with enough cash to cover its winter bills. If you open a ski school, Al would love to bring the Readsboro kids up.
+        {WINTER_GOAL}
       </p>
       <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
         {FOUNDERS.map((f, i) => (
@@ -72,7 +72,8 @@ export function FounderPick() {
                   {f.title}
                 </span>
                 <span className="mt-1 text-[0.85rem] font-bold leading-snug text-ink-soft">
-                  {f.blurb}
+                  <span className="block">＋ {f.bonus}</span>
+                  <span className="block">◇ {f.constraint}</span>
                 </span>
               </span>
             </button>

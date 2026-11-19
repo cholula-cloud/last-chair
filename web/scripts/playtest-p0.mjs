@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 import { buildOpening, enterGame, resolveRadio } from "./playtest-m2.mjs";
 
 const base = (process.env.PLAY_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
@@ -16,32 +16,50 @@ const saveKey = "last-chair-m3-slot-1";
 const screenshots = [];
 await fs.mkdir(outDir, { recursive: true });
 
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_EXECUTABLE,
+const engine = process.env.PLAYTEST_ENGINE ?? "chromium";
+const [width, height] = (process.env.PLAYTEST_VIEWPORT ?? "390x844").split("x").map(Number);
+const reduced = process.env.PLAYTEST_REDUCED_MOTION === "1";
+const browser = await ({ chromium, webkit })[engine].launch({
+  executablePath: engine === "chromium" ? process.env.CHROMIUM_EXECUTABLE : undefined,
   headless: true,
-  args: ["--enable-unsafe-swiftshader"],
+  args: engine === "chromium" ? ["--enable-unsafe-swiftshader"] : [],
 });
 
 try {
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width, height },
+    reducedMotion: reduced ? "reduce" : "no-preference",
     isMobile: true,
     hasTouch: true,
   });
+  if (reduced) await context.addInitScript(() => {
+    localStorage.setItem("last-chair-settings", JSON.stringify({
+      version: 1, state: { reduceMotion: true, radioEnabled: false, voiceVolume: 0 },
+    }));
+  });
   const page = await context.newPage();
-  const cdp = process.env.PLAYTEST_INPUT === "mouse" ? null : await context.newCDPSession(page);
+  const cdp = engine !== "chromium" || process.env.PLAYTEST_INPUT === "mouse" ? null : await context.newCDPSession(page);
   page.setDefaultTimeout(20000);
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
   const heading = (name) => page.getByRole("heading", { name, exact: typeof name === "string" });
-  const tap = (name) => button(page, name).tap();
+  const tap = async (name) => {
+    const control = button(page, name);
+    await control.scrollIntoViewIfNeeded();
+    const box = await control.boundingBox();
+    assert.ok(box && box.width >= 44 && box.height >= 44, String(name) + " needs a 44px touch target");
+    await control.tap();
+  };
   const readSave = () => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "null"), saveKey);
   async function screenshot(name, fullPage = false) {
-    await page.screenshot({ path: path.join(outDir, name), fullPage });
+    await page.screenshot({ path: path.join(outDir, name), fullPage, timeout: 60000 });
     screenshots.push(name);
   }
 
+  page.on("console", message => {
+    if (message.type() === "error") errors.push(message.text());
+  });
   await page.goto(base + "/", { waitUntil: "domcontentloaded" });
   await screenshot("home.png", true);
 
@@ -111,6 +129,18 @@ try {
 
   await end.waitFor();
   await screenshot("end-state.png", true);
+  const settled = (await readSave()).state;
+  assert.equal(settled.phase, "winter_review");
+  assert.equal(settled.career.length, 1);
+  assert.equal(settled.lastWinter.netWorth, settled.lastWinter.cash - settled.lastWinter.loan - settled.lastWinter.construction);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await enterGame(page);
+  await end.waitFor();
+  if (settled.lastWinter.goalMet) await tap("Continue to mountain 2");
+  await tap("Replay Dutch Hill winter");
+  const replay = (await readSave()).state;
+  assert.equal(replay.dayIndex, 1);
+  assert.deepEqual(replay.career, settled.career);
   assert.deepEqual(errors, []);
   console.log(JSON.stringify({ ok: true, endMatched: true, errorCount: errors.length, screenshots }, null, 2));
 } finally {

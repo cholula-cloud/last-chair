@@ -11,11 +11,11 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|---|---|
 | Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents | `npm test`, CI on every PR | Set up (PR 2) |
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
-| Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the 12-strategy table over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
+| Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the strategy and founder tables over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
 | Phone check | Playwright Chromium + WebKit, `npm run phone-check` (viewports 390×844, 844×390, 820×1180, 375×667; waits on `[data-scene-ready="true"]`; screenshots and perf gates to `PLAYTEST_OUT/phone-check/`, default `web/playtest-artifacts/phone-check/`) | Home pan/zoom, Build feet, speed chip, optional `?stats=1` draw-call budget (Chromium) | Local, before merge | Exists |
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
-| Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Milestone gates | Scripts below |
+| Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
 `npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
 
@@ -45,28 +45,23 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 ---
 
-## P1 device playtest (~45–60 min) — gate for M3 (product MVP)
+## Optional first-winter device playtest
 
-**Devices:** iPhone or iPad Safari (required for sign-off). Opening M3 clears M2 progress and starts a fresh winter. The browser check verifies that further reloads keep M3 progress.
+M3 uses automated simulation and browser checks for acceptance. An external session can provide feedback on readability, touch and player understanding. No external sessions have been recorded as of November 19, 2026.
 
-| Step | Action | Pass if |
-|---|---|---|
-| 1 | Pick a founder | Modifiers listed; HUD shows Day 1 of the season |
-| 2 | Open the hill and start the clock without coaching | Player places a lift, paints a trail and sees the first guests ride |
-| 3 | Guests → Follow | Camera tracks the guest |
-| 4 | Build surface + chair; buy lodge / café / guns | Valid/invalid descent; cash drops; visible change on the mountain |
-| 5 | Close the hill and choose fare and snow service | Player can explain what they observed and what they chose to protect. At the next close, the same measure can be compared if both days produced a reading. |
-| 6 | Sleep several mornings | Snow/groom/guns visible after Mid/High; crew talent toast |
-| 7 | Read the winter review | Settlement agrees with cash less debt and unpaid construction. The review recalls the school and Abominable Snowglomerate decisions actually made. A solvent winter earns the Tenney pin. |
-| 8 | Replay from the review or the Tenney stub | New operating state, prior settlement saved, and no active fare cap or school contract. |
+Use a fresh slot in Safari on an iPhone or iPad. Allow up to 90 minutes over two sittings on the same device. Players may change speed or skip to close. For an uncoached session, ask the player to play a winter at Dutch Hill and keep the following prompts for the observer.
 
-Ask after play: “What surprised you this winter? Did it change what you did?” Give each player room to decline either offer.
+| Observe | Evidence to record |
+|---|---|
+| Choose a founder and open the hill | Founder terms and Day 1 date were readable. The player placed a lift, painted a trail and saw guests ride. Record opening time and any hesitation. |
+| Follow a guest and use the build sheet | Guest tracking worked. For a building or chair, the player could find its price, construction terms and the change on the mountain. |
+| Close, choose tomorrow's fare or service, then read the next recap | The player could link a choice to a measured problem and distinguish the forecast from the result. |
+| Reload once during the night | Day, pending choices, radio and night sheet restored. |
+| Observe weather, crew and local events | Record the weather and events actually seen, the relevant morning changes and any unclear text or controls. |
+| Respond to Readsboro or Vivian when offered | Record the reply and actual school attendance, lessons or fare cap. The player chooses freely. An offer may never arrive. |
+| Reach the review, continue when eligible, then replay | Record completed days, cash, debt, construction, net worth and outcome. Replay starts a fresh winter and keeps the previous settlement. |
 
-### External sign-off (M3 gate)
-
-- [ ] Player A (phone/tablet) finished winter 1
-- [ ] Player B finished winter 1
-- [ ] Player C finished winter 1
+After play, ask why the player changed fare or snow on a night they remember, whether anything felt unfair, and which controls were difficult to find or read. Log volunteered feedback with device and OS version.
 
 ---
 

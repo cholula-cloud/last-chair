@@ -17,7 +17,7 @@ import {
   trailOptions,
 } from "./rules";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
-import { MOUNTAIN_CALENDARS, dayKind } from "./calendar";
+import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
 import { liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
@@ -27,6 +27,7 @@ import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
+import { winterRecord } from "./winterMemory";
 import { outlookFor } from "./weather";
 
 /**
@@ -46,6 +47,7 @@ export type StrategyContext = {
   recap: NightRecap | null;
   /** The recap's biggest problem term, or null on a good day. */
   problem: keyof SatTerms | null;
+  sawSaturdayQueue: boolean;
 };
 
 export type NightPlan = { fare: FarePreset; snow: SnowPreset };
@@ -159,6 +161,14 @@ export const ADAPTIVE: Strategy = {
   },
 };
 
+/** Follows the first week's operating advice and waits for a Saturday queue before adding a chair. */
+export const COACHED: Strategy = {
+  id: "coached",
+  label: "Coached",
+  build: (ctx) => (ADAPTIVE.build?.(ctx) ?? []).filter((action) => action !== "chair" || ctx.sawSaturdayQueue),
+  night: (ctx) => ctx.state.dayIndex < 7 ? { fare: "balanced", snow: "mid" } : ADAPTIVE.night(ctx),
+};
+
 /** Starts the lodge upgrade on day 1, then builds its first chair at Tier 2. */
 export const BUILDER: Strategy = {
   id: "builder",
@@ -193,7 +203,7 @@ export const CARELESS: Strategy = {
   night: () => ({ fare: "cheap", snow: "high" }),
 };
 
-export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY, CARELESS];
+export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY, CARELESS, COACHED];
 
 export function strategyById(id: string): Strategy {
   const s = STRATEGIES.find((x) => x.id === id);
@@ -205,6 +215,8 @@ export function strategyById(id: string): Strategy {
 export type DayRecord = {
   day: number;
   weekend: boolean;
+  saturday: boolean;
+  holidayWeek: boolean;
   fare: FarePreset;
   snow: SnowPreset;
   hasChair: boolean;
@@ -235,6 +247,10 @@ export type SeasonResult = {
   wentBankrupt: boolean;
   tookLoan: boolean;
   endNetWorth: number;
+  events: GameState["surpriseLog"];
+  schoolVisits: NonNullable<NightRecap["facts"]["schoolBus"]>[];
+  solvent: boolean;
+  winterScore: number;
   schoolContract: GameState["schoolContract"];
   summitLinkDecision: GameState["summitLinkDecision"];
   firstShortfallOfferedLoan: boolean;
@@ -280,13 +296,16 @@ export function runSeason(
   const ctxOf = (): StrategyContext => ({
     state,
     recap,
+    sawSaturdayQueue: days.some((day) => day.saturday && biggestProblem(day.breakdown) === "queue"),
     problem: recap ? biggestProblem(recap.breakdown) : null,
   });
 
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const schoolVisits: SeasonResult["schoolVisits"] = [];
   let guard = 0;
   while (state.phase === "day" && guard++ < 400) {
     for (const action of strategy.build?.(ctxOf()) ?? []) state = applyBuild(state, action);
-    if (strategy.id === "builder" || strategy.id === "adaptive") {
+    if (strategy.id === "builder" || strategy.id === "adaptive" || strategy.id === "coached") {
       state = maybeCutChairGreen(state);
     }
     minCash = Math.min(minCash, state.cash);
@@ -301,6 +320,7 @@ export function runSeason(
     }
     else state = acknowledgeBeat(state);
     recap = state.nightRecap as NightRecap;
+    if (recap.facts.schoolBus) schoolVisits.push(recap.facts.schoolBus);
     const { dayStats } = state;
     runs += dayStats.completedRuns;
     waitSum += dayStats.waitSumMin;
@@ -308,7 +328,9 @@ export function runSeason(
 
     days.push({
       day: state.dayIndex,
-      weekend: dayKind(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) === "weekend",
+      weekend: dayKind(calendar, state.dayIndex) === "weekend",
+      saturday: weekdayForDay(calendar, state.dayIndex) === "Sat",
+      holidayWeek: inHolidayWeek(calendar, state.dayIndex),
       fare,
       snow,
       hasChair: chair,
@@ -332,6 +354,8 @@ export function runSeason(
   }
 
   if (state.phase !== "winter_review") throw new Error(`Season stopped on day ${state.dayIndex} in ${state.phase}`);
+  const record = winterRecord(state);
+  if (!record.score) throw new Error("Completed simulated season has no measured score");
   const n = Math.max(1, days.length);
   return {
     seed,
@@ -347,7 +371,11 @@ export function runSeason(
     wentNegative: minCash < 0,
     wentBankrupt: state.outcome === "bankrupt",
     tookLoan: state.loanTaken,
-    endNetWorth: liquidNetWorth(state),
+    endNetWorth: record.netWorth,
+    solvent: record.goalMet,
+    winterScore: record.score.total,
+    events: state.surpriseLog,
+    schoolVisits,
     schoolContract: state.schoolContract,
     summitLinkDecision: state.summitLinkDecision,
     firstShortfallOfferedLoan,
@@ -375,6 +403,8 @@ export type StrategySummary = {
   /** Mean over seeds of Saturday wait, game minutes, on days with a chair / without. */
   satWaitChair: number | null;
   satWaitNoChair: number | null;
+  holidaySatWaitChair: number | null;
+  holidaySatWaitNoChair: number | null;
 };
 
 function mean(xs: number[]): number {
@@ -383,9 +413,9 @@ function mean(xs: number[]): number {
 
 export function summarize(strategy: Strategy, results: SeasonResult[]): StrategySummary {
   const m = (f: (r: SeasonResult) => number) => mean(results.map(f));
-  const sat = (chair: boolean) => {
+  const sat = (chair: boolean, holidayOnly = false) => {
     const waits = results.flatMap((r) =>
-      r.days.filter((d) => d.day % 7 === 6 && d.hasChair === chair).map((d) => d.avgWaitMin),
+      r.days.filter((d) => d.saturday && (!holidayOnly || d.holidayWeek) && d.hasChair === chair).map((d) => d.avgWaitMin),
     );
     return waits.length ? mean(waits) : null;
   };
@@ -406,6 +436,8 @@ export function summarize(strategy: Strategy, results: SeasonResult[]): Strategy
     talents: m((r) => r.talents),
     satWaitChair: sat(true),
     satWaitNoChair: sat(false),
+    holidaySatWaitChair: sat(true, true),
+    holidaySatWaitNoChair: sat(false, true),
   };
 }
 
@@ -479,7 +511,7 @@ export function formatTable(all: StrategySummary[]): string {
     "probDays".padStart(9),
     "neg%".padStart(5),
     "beats".padStart(6),
-    "score".padStart(6),
+    "combo".padStart(6),
   ].join(" ");
   const rows = all.map((s) =>
     [

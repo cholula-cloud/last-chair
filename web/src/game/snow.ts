@@ -158,6 +158,8 @@ export type NightInputs = {
   hasGuns: boolean;
   hasTrailGuns: boolean;
   hasGroom: boolean;
+  corduroy?: boolean;
+  snowFences?: boolean;
 };
 
 /** Fraction of the trail from the bottom that the guns cover tonight (0 when they do not fire). */
@@ -195,7 +197,7 @@ export function overnightTrail(
 ): Trail {
   const n = trail.length;
   const reach = gunCoverage ? 0 : gunReach(o);
-  const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0);
+  const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0) + (o.corduroy ? 0.03 : 0);
 
   return trail.map((seg, i) => {
     const e = elevationAt(i, n, elevations);
@@ -227,7 +229,7 @@ export function overnightTrail(
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.10);
       if (depth >= COVER_MIN) coverage = 1;
     } else if (o.weather === "thaw") {
-      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed);
+      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed * (o.snowFences && i >= n - 2 ? 0.7 : 1));
       quality = Math.max(0.1, quality - (0.04 + 0.16 * low) * exposed);
     } else {
       depth = Math.max(0.02, depth - 0.01 * exposed);

@@ -123,7 +123,8 @@ export type FounderDef = {
   id: FounderId;
   name: string;
   title: string;
-  blurb: string;
+  bonus: string;
+  constraint: string;
   arrivalMoodBonus: number;
   fixedCostDelta: number;
   snowExpectationPenalty: number;
@@ -133,6 +134,7 @@ export type TalentDef = {
   id: string;
   name: string;
   effect: string;
+  crew: "Frank" | "Dana" | "Elena";
 };
 
 export type StoryBeatDef = {
@@ -164,6 +166,11 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
   mid: 150,
   high: 350,
 };
+
+export function snowNightCost(preset: SnowPreset, owned: readonly string[]): number {
+  if (owned.includes("groomer_rebuild") && preset !== "minimal") return preset === "mid" ? 120 : 300;
+  return SNOW_NIGHT_COST[preset];
+}
 
 export const LIFT_LABELS: Record<LiftType, string> = {
   surface: "Surface lift",
@@ -225,7 +232,7 @@ export const ARRIVAL_EARLY_LATEST_MIN = 10 * 60;
 /** Walk between the car park and the lift line (arriving) or the lodge and the car park (departing). */
 export const ARRIVE_WALK_MIN = 3;
 export const DEPART_WALK_MIN = 3;
-export const MS_PER_GAME_MINUTE = 500;
+export const MS_PER_GAME_MINUTE = 120_000 / (DAY_END_MIN - DAY_START_MIN);
 /** Internal P1 shortcut; scale to 28 for ship. */
 export const SEASON_LENGTH = DUTCH_HILL_CALENDAR.length;
 export const DAILY_FIXED_COST = 1095;

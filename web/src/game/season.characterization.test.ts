@@ -9,7 +9,7 @@ import { createInitialState, type GameState } from "./state";
 import { referencePaint } from "./__fixtures__/built-hill";
 import type { PaintStroke } from "./paintedTrail";
 import { TERRAIN, type XZ } from "./terrain";
-import type { WeatherKind } from "./types";
+import { MS_PER_GAME_MINUTE, type WeatherKind } from "./types";
 
 const SEED = 42;
 
@@ -98,7 +98,7 @@ function playSeason(d: Driver) {
       d.commitPaint(referencePaint(d.view(), 1));
     }
     if (d.view().paused) d.togglePause();
-    while (d.view().phase === "day") d.tick(2000);
+    while (d.view().phase === "day") d.tick(4 * MS_PER_GAME_MINUTE);
     d.setPendingFare(FARES[day % 3]);
     d.setPendingSnow(SNOWS[day % 3]);
     nights.push(summarize(d.view()));

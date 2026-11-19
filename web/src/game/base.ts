@@ -247,6 +247,6 @@ export function assetEffect(asset: PlacedAsset, key: keyof Asset["effect"]): num
   return (ASSET_CATALOG[asset.id].effect[key] ?? 0) * assetMultiplier(asset);
 }
 
-export function assetRevenue(asset: PlacedAsset): number {
-  return ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset);
+export function assetRevenue(asset: PlacedAsset, founder?: import("./types").FounderId | null): number {
+  return ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset) * (founder === "marco" ? 1.1 : 1);
 }

@@ -3,8 +3,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export type GameSpeed = 1 | 2 | 3;
-export const SPEEDS: readonly GameSpeed[] = [1, 2, 3];
+export type GameSpeed = 1 | 2 | 4;
+export const SPEEDS: readonly GameSpeed[] = [1, 2, 4];
 
 export const SETTINGS_KEY = "last-chair-settings";
 
@@ -12,6 +12,7 @@ export type Settings = {
   /** 0 to 100. Stored for the voice lines that come later. */
   voiceVolume: number;
   captions: boolean;
+  radioEnabled: boolean;
   reduceMotion: boolean;
   defaultSpeed: GameSpeed;
 };
@@ -23,6 +24,7 @@ type SettingsStore = Settings & {
 export const DEFAULT_SETTINGS: Settings = {
   voiceVolume: 80,
   captions: true,
+  radioEnabled: true,
   reduceMotion: false,
   defaultSpeed: 1,
 };
@@ -33,9 +35,11 @@ export function cleanSettings(raw: Partial<Record<keyof Settings, unknown>> | nu
   const volume = typeof r.voiceVolume === "number" && Number.isFinite(r.voiceVolume)
     ? Math.min(100, Math.max(0, Math.round(r.voiceVolume)))
     : DEFAULT_SETTINGS.voiceVolume;
-  const speed = SPEEDS.find((s) => s === r.defaultSpeed) ?? DEFAULT_SETTINGS.defaultSpeed;
+  const preferredSpeed = r.defaultSpeed === 3 ? 4 : r.defaultSpeed;
+  const speed = SPEEDS.find((s) => s === preferredSpeed) ?? DEFAULT_SETTINGS.defaultSpeed;
   return {
     voiceVolume: volume,
+    radioEnabled: typeof r.radioEnabled === "boolean" ? r.radioEnabled : DEFAULT_SETTINGS.radioEnabled,
     captions: typeof r.captions === "boolean" ? r.captions : DEFAULT_SETTINGS.captions,
     reduceMotion: typeof r.reduceMotion === "boolean" ? r.reduceMotion : DEFAULT_SETTINGS.reduceMotion,
     defaultSpeed: speed,
@@ -52,7 +56,7 @@ export const useSettings = create<SettingsStore>()(
       name: SETTINGS_KEY,
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ voiceVolume, captions, reduceMotion, defaultSpeed }) => ({ voiceVolume, captions, reduceMotion, defaultSpeed }),
+      partialize: ({ voiceVolume, captions, radioEnabled, reduceMotion, defaultSpeed }) => ({ voiceVolume, captions, radioEnabled, reduceMotion, defaultSpeed }),
       merge: (persisted, current) => ({ ...current, ...cleanSettings(persisted as Partial<Settings> | undefined) }),
     },
   ),

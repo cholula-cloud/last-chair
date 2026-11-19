@@ -93,7 +93,7 @@ export function importIntoSlot(slot: SlotNumber, text: string): ImportOutcome {
   try {
     localStorage.setItem(key, JSON.stringify({ state: parsed.state, version: SAVE_VERSION, savedAt: Date.now() }));
   } catch {
-    return { ok: false, message: "This browser would not let Last Chair store that save." };
+    return { ok: false, message: "Allow this browser to store site data, then import the file again." };
   }
   return { ok: true };
 }

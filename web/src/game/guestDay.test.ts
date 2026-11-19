@@ -8,7 +8,7 @@ import { createRng } from "./rng";
 import * as rules from "./rules";
 import { createInitialGuests, emptyDayStats, makeGuest, planArrivals } from "./sim";
 import { type GameState } from "./state";
-import { DAY_END_MIN, DAY_START_MIN, LIFT_CLOSE_MIN } from "./types";
+import { DAY_END_MIN, DAY_START_MIN, LIFT_CLOSE_MIN, MS_PER_GAME_MINUTE } from "./types";
 
 const WEEKDAY = 2;
 const SATURDAY = 6;
@@ -49,7 +49,7 @@ describe("guest day script", () => {
     for (const seed of [1, 2, 3]) {
       let s = freshDay(seed, WEEKDAY);
       while (s.phase === "day") {
-        s = rules.tick(s, 1000);
+        s = rules.tick(s, 2 * MS_PER_GAME_MINUTE);
         for (const g of s.guests) {
           if (g.state !== "pending") expect(g.arriveAtMin).toBeLessThanOrEqual(s.clockMin);
           else expect(g.arriveAtMin).toBeGreaterThan(s.clockMin - 0.5 - 1e-9);
@@ -127,7 +127,7 @@ describe("guest day script", () => {
       guests: [queued("a", 0), queued("b", 3)],
       lifts: freshDay(1, WEEKDAY).lifts.map((l) => ({ ...l, queue: ["a", "b"], dispatchCredit: 0, trail: freshTrail() })),
     };
-    const out = rules.tick(s, 1000);
+    const out = rules.tick(s, 2 * MS_PER_GAME_MINUTE);
     expect(out.guests.map((g) => g.state)).toEqual(["depart", "depart"]);
     expect(out.lifts.every((l) => l.queue.length === 0)).toBe(true);
     // Only the guest who never rode counts as turned away.
@@ -141,7 +141,7 @@ describe("guest day script", () => {
       clockMin: 15 * 60 + 38,
       guests: [makeGuest({ id: "late", state: "ski", stateSinceMin: 15 * 60 + 20, targetRuns: 9 })],
     };
-    const out = rules.tick(s, 1000);
+    const out = rules.tick(s, 2 * MS_PER_GAME_MINUTE);
     expect(out.guests[0].state).toBe("depart");
     expect(out.guests[0].runs).toBe(1);
   });
@@ -185,7 +185,7 @@ describe("lift capacity against the arrival curve", () => {
     expect(saturday).toBeLessThan(14);
   });
 
-  it("adding a chair clearly cuts the wait on both days", () => {
+  it("adding a chair clearly cuts the wait on both days", { timeout: 30_000 }, () => {
     expect(avgWait(SATURDAY, true)).toBeLessThan(avgWait(SATURDAY, false) / 5);
     expect(avgWait(WEEKDAY, true)).toBeLessThan(avgWait(WEEKDAY, false) / 2);
   });

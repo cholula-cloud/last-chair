@@ -56,6 +56,7 @@ export type LiftSlot = {
 
 /** What yesterday looked like, kept so tonight's recap can show the change. Null on day 1 and after a new season. */
 export type LastDay = {
+  snowNightCost?: number;
   arrivals: number;
   satisfaction: number;
   cashDelta: number;
@@ -65,6 +66,13 @@ export type LastDay = {
   fare: FarePreset;
   /** The snow & service preset the crew worked the night before. */
   snow: SnowPreset;
+};
+
+export type SeasonDay = Pick<LastDay, "fare" | "snow" | "arrivals" | "satisfaction"> & {
+  day: number;
+  lodgeOpening?: LodgeTier;
+  schoolBus?: NightRecap["facts"]["schoolBus"];
+  summitLink?: { reply: SummitLinkDecision; receipt: number; fareCap: "balanced" | null };
 };
 
 /** Everything that is saved between sessions. */
@@ -131,6 +139,9 @@ export type PersistedState = {
   surpriseLog: SurpriseEntry[];
   /** Set at Sleep; shown as deltas on the next night's recap. */
   lastDay: LastDay | null;
+  seasonDays: SeasonDay[];
+  beatLog: { id: StoryBeatId; day: number | null }[];
+  career: WinterRecord[];
   lastWinter?: WinterRecord;
   dayStats: DayStats;
 };
@@ -172,6 +183,9 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     nightRecap: null,
     surprise: null,
     surpriseLog: [],
+    seasonDays: [],
+    beatLog: [],
+    career: [],
     lastDay: null,
     dayStats: emptyDayStats(),
     pendingFare: "balanced",
@@ -211,6 +225,9 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
 export function toPersisted(state: PersistedState): PersistedState {
   return {
     mountainId: state.mountainId,
+    seasonDays: state.seasonDays,
+    beatLog: state.beatLog,
+    career: state.career,
     dayIndex: state.dayIndex,
     clockMin: state.clockMin,
     phase: state.phase,
@@ -279,4 +296,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;

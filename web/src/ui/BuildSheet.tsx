@@ -47,7 +47,7 @@ function LodgeCard() {
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
-              problem={cash < payment.deposit ? "Not enough cash for the deposit." : null}
+              problem={cash < payment.deposit ? "You need more cash for the deposit. Check your balance after closing." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
               onConfirm={() => { upgrade(); setReview(false); }}

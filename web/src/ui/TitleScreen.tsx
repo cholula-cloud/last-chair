@@ -296,7 +296,7 @@ export function TitleScreen({ onStart }: { onStart: () => void }) {
   const exportOne = (slot: SlotNumber) => {
     const file = exportSlot(slot);
     if (!file) {
-      setMessage(`Slot ${slot} could not be exported.`);
+      setMessage("Choose a slot with a saved winter to export it.");
       return;
     }
     download(exportFilename(file), JSON.stringify(file, null, 2));
@@ -316,7 +316,7 @@ export function TitleScreen({ onStart }: { onStart: () => void }) {
     try {
       text = await file.text();
     } catch {
-      setMessage("That file could not be read.");
+      setMessage("Choose the saved winter file again.");
       return;
     }
     const check = parseExport(text);

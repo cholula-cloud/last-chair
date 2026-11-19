@@ -1,3 +1,8 @@
+import historicalSaves from "./__fixtures__/m3-saves.json";
+import { referencePaint } from "./__fixtures__/built-hill";
+import { REFERENCE_TOPS } from "./descent";
+import { TERRAIN } from "./terrain";
+import { validateSave } from "./saveValidation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACTIVE_SLOT_KEY,
@@ -74,6 +79,33 @@ describe("save slots", () => {
       expect(data.get(slotKey(1))).toBe(slotOne);
       expect(data.has(SAVE_KEY)).toBe(true);
     });
+  });
+
+  describe("historical schema compatibility", () => {
+    // Serialized by each schema's own createInitialState(71) and toPersisted.
+    it("covers the full sequence of released M3 versions", () => {
+      expect(historicalSaves.map(save => save.version)).toEqual(
+        Array.from({ length: SAVE_VERSION }, (_, i) => i + 1),
+      );
+    });
+
+    for (const slot of [1, 2, 3] as const) {
+      it.each(historicalSaves)(`plays a day from v$version in slot ${slot}`, async (save) => {
+        data.set(slotKey(slot), JSON.stringify(save));
+        await playSlot(slot);
+        const game = useGameStore.getState;
+        expect(game().saveNotice).toBeNull();
+        expect(game().rngState).toBe(save.state.rngState);
+        expect(validateSave(toPersisted(game()))).toEqual([]);
+        game().pickFounder("elena");
+        game().placeLift({ type: "surface", bottom: TERRAIN.base, top: REFERENCE_TOPS[0] });
+        game().commitPaint(referencePaint(game(), 0, "green"));
+        game().skipToClose();
+        expect(game().phase).toBe("night");
+        expect(game().nightRecap?.arrivals).toBeGreaterThan(0);
+        expect(validateSave(JSON.parse(data.get(slotKey(slot))!).state)).toEqual([]);
+      });
+    }
   });
 
   describe("summaries", () => {

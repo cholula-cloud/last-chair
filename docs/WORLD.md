@@ -58,7 +58,7 @@ Real arc (public record):
 | Field | Value |
 |-------|--------|
 | Vertical (game scale) | ~400–570′ stepped by upgrades |
-| Start state | **One limping surface lift**, partial trail, **no guns** |
+| Start state | Tier 1 lodge. The player places the first surface lift and paints its descent before opening. |
 | Archetypes | `rural_sticks`, `natural_snow_only`, `weekends_family`, `no_snowmaking_start` |
 | Weather | Southern VT snow belt — good winters **or** 1970s-style drought arcs |
 | Arrival | Gravel lot off Route 100, 30 stalls, shoulder overflow (visual; no cap) |
@@ -73,10 +73,10 @@ Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**,
 |---|------|------|
 | 1 | **First uphill load** | DHASH hikers on radio; “last ticket was 1985” |
 | 2 | **Saturday** | Plates from **Bennington**, **Williamstown**, **Brattleboro** |
-| 3 | **School bus** | Readsboro / Wilmington corridor; one bus = payroll |
+| 3 | **School bus** | Readsboro / Wilmington corridor. A proven ski school can invite six pupils for a weekday. |
 | 4 | **Dry week** | No guns—**wait for cold** or close trails (ICR lesson) |
-| 5 | **Abominable Snowglomerate** | Pass rep stops on Route 100; “add us to the map” |
-| 6 | **Winter review** | Win → career pin **Tenney Mountain, NH** |
+| 5 | **Abominable Snowglomerate** | Vivian offers $6,000 in return for a fare cap. Riley must decline. |
+| 6 | **Winter review** | A solvent finish reveals **Tenney Mountain, NH**, a preview of the next hill. |
 
 ---
 
@@ -103,21 +103,21 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 #### 1. **Elena Vargas — *The Caretaker***
 
 - **Background:** Taught the last lessons at **Dutch Hill** before the **1985** closure (fiction: you’re back for the revival).
-- **Bonus:** +arrival mood for families; lesson conversion slightly easier.
+- **Bonus:** Higher arrival mood and two more planned guests.
 - **Constraint:** Cannot demolish the original warming hut (upgrade in place only).
 - **Story:** Knows every bus driver by name; pushes school-day beats early.
 
 #### 2. **Tom “Ledger” Keene — *The Refi***
 
 - **Background:** Community banker who lost the last loan.
-- **Bonus:** Better loan terms while reputation &gt; threshold.
-- **Constraint:** +interest stress on warm weeks (narrative: covenant anxiety).
+- **Bonus:** Borrows at 7% for the winter.
+- **Constraint:** Repeated thaw days cost three welcome points.
 - **Story:** Abominable Snowglomerate calls him first—creates tension on buyout offers.
 
 #### 3. **Riley Otis — *The Rigger***
 
 - **Background:** Lift mechanic; can keep one marginal lift “limping” safely.
-- **Bonus:** Overnight repair chance on one lift without call-out cost.
+- **Bonus:** Lift operations cost 15% less.
 - **Constraint:** Cannot take equity investment from Abominable Snowglomerate (hard lock on “sell out” ending).
 - **Story:** Patrollog sidequests about wind holds.
 
@@ -131,15 +131,15 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 #### 5. **Juniper Hale — *The Preservationist***
 
 - **Background:** Land trust liaison; clearing trees is politically visible.
-- **Bonus:** Reputation from untouched glades / forested character.
-- **Constraint:** Trail clearing costs more; some steep lines blocked until permit beat.
+- **Bonus:** A small nightly reputation bonus when guests arrive.
+- **Constraint:** Lift lines and tree clearing cost 15% more.
 - **Story:** Vermont land-trust politics arc synergy (e.g. Hogback / Maple Valley region beats).
 
 #### 6. **Marco Russo — *The Showman***
 
 - **Background:** Ran a failed festival series; loves night skiing and music.
-- **Bonus:** Après and events revenue baseline higher.
-- **Constraint:** Fixed costs for “empty night” programming debt at career start.
+- **Bonus:** Venues bring in 10% more revenue.
+- **Constraint:** Daily fixed operating costs rise by $80.
 - **Story:** Headliner beats, Trampoline/Arena content later.
 
 ---

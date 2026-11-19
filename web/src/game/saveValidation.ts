@@ -100,6 +100,21 @@ const dayStats = shape({
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
+const seasonDay = shape({ summitLink: optional(shape({ reply: summitLinkDecision, receipt: number, fareCap: nullable(oneOf("balanced")) })),
+  lodgeOpening: optional(oneOf(2, 3)), day: index, fare, snow, arrivals: index, satisfaction: number,
+  schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })) });
+const broadcast = shape({ id: beat, day: nullable(index) });
+const moment = shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index });
+const winterRecord = shape({
+    completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
+    days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
+    moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, measuredDays: index, total: number }))),
+    day: index, founder,
+    bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
+    school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
+    localMoment: nullable(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index })),
+});
+
 const fields: Record<keyof PersistedState, Check> = {
   mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
   dayIndex: (value) => integer(value) && value >= 1,
@@ -153,15 +168,14 @@ const fields: Record<keyof PersistedState, Check> = {
   seasonLength: (value) => integer(value) && value >= 1,
   rngState: number,
   nightRecap: nullable(recap),
-  lastWinter: optional(shape({
-    day: index, founder,
-    bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
-    school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
-    localMoment: nullable(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index })),
-  })),
+  lastWinter: optional(winterRecord),
+  seasonDays: array(seasonDay),
+  beatLog: array(broadcast),
+  career: array(winterRecord),
   surprise: optional(nullable(shape({ dayIndex: index, kind: surpriseKind, guestIds: array(string) }))),
   surpriseLog: optional(array(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index }))),
   lastDay: nullable(shape({
+    snowNightCost: optional(number),
     ...numbers("arrivals", "satisfaction", "cashDelta", "avgWaitMin"), fare, snow,
     observation: optional(shape({ measure: oneOf(...SAT_TERM_KEYS), value: number })),
   })),

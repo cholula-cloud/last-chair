@@ -137,8 +137,9 @@ async function waitForFraming(page, points) {
 
 async function drag(page, cdp, locations) {
   const points = await withDeadline(waitForFraming(page, locations), "Terrain projection", 15000);
+  const bounds = page.viewportSize();
   for (const p of points) {
-    assert(p.x >= 0 && p.x < viewport.width && p.y >= 0 && p.y < viewport.height,
+    assert(p.x >= 0 && p.x < bounds.width && p.y >= 0 && p.y < bounds.height,
       "Planned build point is outside the viewport: " + JSON.stringify(p));
   }
   const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, points[0]);
@@ -177,7 +178,8 @@ async function drag(page, cdp, locations) {
 async function moveDraftMap(page, cdp, anchor, resumeLabel) {
   await click(page, "Move map");
   const [before] = await waitForFraming(page, [anchor]);
-  const center = { x: viewport.width / 2, y: viewport.height * 0.43 };
+  const bounds = page.viewportSize();
+  const center = { x: bounds.width / 2, y: bounds.height * 0.43 };
   if (cdp) {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });
@@ -301,6 +303,7 @@ async function upgrade(page, cdp, engine) {
     value: JSON.stringify({ state: toPersisted(prepared), version: SAVE_VERSION }),
   });
   await openPlay(page);
+  await click(page, "Skip tips");
   await buildMenu(page);
   const rentals = button(page, /^Rentals\b/i);
   assert(await rentals.isDisabled(), "Rentals should require the Tier 2 lodge");
@@ -311,9 +314,12 @@ async function upgrade(page, cdp, engine) {
   assert.equal(state.lodgeUpgrade?.toTier, 2);
   assert.equal(state.lodgeUpgrade?.nightsRemaining, 2);
   await click(page, "Close build sheet");
+  await click(page, "Game speed 1x, tap to change");
+  await click(page, "Game speed 2x, tap to change");
 
   await closeHill(page);
   await sleep(page);
+  assert(await button(page, "Game speed 4x, tap to change").isVisible(), "Morning should keep the selected speed");
   state = (await save(page)).state;
   assert.equal(state.lodgeTier, 1);
   assert.equal(state.lodgeUpgrade?.nightsRemaining, 1);

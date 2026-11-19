@@ -21,18 +21,18 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a 28-day winter from the founder pick to settlement. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. Three outside players still need to finish the winter without help on Safari. Record their results in [the P1 sign-off log](./TESTING.md#external-sign-off-m3-gate).
+M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a 28-day winter from the founder pick to settlement. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
 
 **Built and merged**
 
 | Area | What exists |
 |---|---|
-| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, versioned M3 saves with validation and recovery |
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v7 with validation and recovery |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
 | Economy | Operating costs and upkeep, staged construction, a winter loan, and bankruptcy in the winter review |
-| Story | Six founders and a picker, six beats gated on sim metrics and shown as a radio card in the night recap, a basic winter review sheet |
+| Story | Six founders, a dated story log, optional school and company offers, and a winter review with measured results and a record that survives replay |
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
@@ -370,7 +370,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M0** Clean foundation | The code can be tested and known bugs are gone | CI green; the sim runs headless from a test |
 | **M1** Real core loop | Every number on the night recap is caused by something visible | 15-minute phone session; player explains a preset change |
 | **M2** Build the mountain | Building feels good, the lodge is your HQ, and where and what you build matters | Moving a lift or adding a trail measurably changes tomorrow; upgrading the lodge opens a new build option and a new revenue source; a new player builds a lift and paints a trail in 3 minutes |
-| **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Three outside players finish winter 1 on a phone without help |
+| **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Automated winter playthrough, save/reload and balance checks pass |
 | **M4** Look and feel | Dedicated art and audio pass | Screenshots and device check |
 | **M4b** Activities and styles | Tubing, rink, bar, decor, events, and the style system | Tier 3 on Dutch Hill opens bar, rink and events; a style switch persists across reload |
 | **M5** Career | Tenney Mountain, the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
@@ -438,11 +438,11 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 23 | ◐ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log |
 | 24 | ◐ | Winter review | Common goal outcome, season score, recorded choices and consequences, and carry-forward data |
 | 26 | ☐ | Coached first winter | Skippable help from placing the first lift and painting the first trail through the first night choice |
-| 27 | ☐ | MVP balance + external playtest | Verify the solvency goal and the optional Readsboro path. Three outside players finish winter 1 without help. |
+| 27 | ☐ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
 
 #### Dutch Hill first-winter sequence
 
-Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted validation. The three outside-player sessions for increment 6 are pending. The PR numbers below name the six increments in this sequence. The roadmap row numbers still identify the related milestone work.
+Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted validation. The owner can run the optional device session for increment 6 at any time. The PR numbers below name the six increments in this sequence. The roadmap row numbers still identify the related milestone work.
 
 | PR | Increment | Roadmap rows | Acceptance |
 |---|---|---|---|

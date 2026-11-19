@@ -1,7 +1,7 @@
 import type { OperatingCosts } from "./economy";
 import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
-import { isWindHeld, morningWeatherHeadline, WIND_HOLD } from "./weather";
+import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
@@ -37,7 +37,7 @@ import {
   DAY_START_MIN,
   FARE_PRICES,
   SEASON_LENGTH,
-  SNOW_NIGHT_COST,
+  snowNightCost,
   type BuildingId,
   type DayStats,
   type DayWeather,
@@ -195,6 +195,8 @@ export type GuestClock = {
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
+  const closeMin = LIFT_CLOSE_MIN + (clock.talentsOwned.includes("night_lights") ? 10 : 0);
+  const hold = windHoldWindow(clock.talentsOwned);
   const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
     // Sent home from a line: the wait so far counts as a completed wait.
     const left =
@@ -218,7 +220,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         now - guest.stateSinceMin < (guest.visitMinutes ?? 20)) occupied[guest.venueIndex]++;
   }
   const visit = (guest: Guest, ids: readonly AssetId[], balk = false): Guest | null => {
-    if (now >= LIFT_CLOSE_MIN) return null;
+    if (now >= closeMin) return null;
     const index = ids.flatMap((id) => assets.map((asset, i) => asset.id === id ? i : -1)).find((i) =>
       i >= 0 && occupied[i] < Math.floor(assetEffect(assets[i], "seats")));
     if (index === undefined) return null;
@@ -232,7 +234,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     };
   };
   const chooseQueue = (guest: Guest): Guest => {
-    if (now >= LIFT_CLOSE_MIN) return goHome(guest);
+    if (now >= closeMin) return goHome(guest);
     const index = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, guest, clock.wind, now);
     if (index < 0) {
       const reopensLater = clock.wind === "gusty" && chooseLift(clock.lifts, clock.talentsOwned, clock.trails) >= 0;
@@ -259,10 +261,10 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "arrive": {
         const progress = (now - g.stateSinceMin) / ARRIVE_WALK_MIN;
         if (progress < 1) return { ...g, progress };
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : beginnerService(g) ?? chooseQueue(g);
+        return now >= closeMin ? goHome(g) : beginnerService(g) ?? chooseQueue(g);
       }
       case "refuel": {
-        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        if (now >= closeMin) return goHome(g);
         const progress = (now - g.stateSinceMin) / (g.visitMinutes ?? 20);
         if (progress < 1) return { ...g, progress };
         const asset = assets[g.venueIndex ?? -1];
@@ -275,7 +277,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
       }
       case "queue": {
-        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        if (now >= closeMin) return goHome(g);
         const waited = g.joinedQueueAtMin == null ? 0 : now - g.joinedQueueAtMin;
         if (waited > 12 && (g.balks ?? 0) < 2) {
           const next = visit({
@@ -293,8 +295,8 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const duration = Math.max(0.1, Math.hypot(from.x - to.x, from.z - to.z) * TERRAIN.horizontalFeetPerUnit / 250);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
-        if (g.state === "walk_out" || now >= LIFT_CLOSE_MIN) return goHome(g);
-        if (lift && isWindHeld(lift.type, clock.wind ?? "calm", now)) {
+        if (g.state === "walk_out" || now >= closeMin) return goHome(g);
+        if (lift && isWindHeld(lift.type, clock.wind ?? "calm", now, clock.talentsOwned)) {
           return { ...g, progress: 1, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
         }
         return { ...joinLine(g), trailIndex: g.trailIndex, joinedQueueAtMin: g.joinedQueueAtMin };
@@ -313,9 +315,9 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const done = { runs, energy, snowSum: g.snowSum + q };
         const returning = { ...g, runs };
         const openLift = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, now);
-        const allHeld = openLift < 0 && clock.wind === "gusty" && now >= WIND_HOLD.fromMin && now < WIND_HOLD.toMin;
+        const allHeld = openLift < 0 && clock.wind === "gusty" && now >= hold.fromMin && now < hold.toMin;
         const li = allHeld
-          ? chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, WIND_HOLD.toMin)
+          ? chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, hold.toMin)
           : openLift;
         const lapOverhead =
           clock.lifts[li]?.confirmed
@@ -330,12 +332,12 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
         const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
         const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
-        if (!remote && !allHeld && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
+        if (!remote && !allHeld && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
-        const waitForHold = allHeld ? Math.max(0, WIND_HOLD.toMin - now - walkingMin) : 0;
-        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > LIFT_CLOSE_MIN || li < 0) {
+        const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
+        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > closeMin || li < 0) {
           const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > 0.5;
           return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
         }
@@ -499,11 +501,11 @@ export function applyOvernight(opts: {
 }): OvernightResult {
   const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
   const hasTrailGuns = opts.talentsOwned.includes("trail_guns");
-  const hasGroom = opts.talentsOwned.includes("groom_pass") ||
-    opts.talentsOwned.includes("corduroy");
+  const hasGroom = opts.talentsOwned.includes("groom_pass");
 
   const { kind: weather } = opts.weatherTomorrow;
-  const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
+  const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom,
+    corduroy: opts.talentsOwned.includes("corduroy"), snowFences: opts.talentsOwned.includes("snow_fences") };
   const gunCoverage = opts.gunCoverage?.map((coverage) =>
     opts.snow === "minimal" ? coverage.map(() => false) : coverage);
   const reach = gunCoverage ? 0 : gunReach(night);
@@ -519,7 +521,7 @@ export function applyOvernight(opts: {
   return {
     trails,
     ...deriveSnow(trails.map((trail, i) => ({ confirmed: opts.openTrails?.[i] !== false, trail }))),
-    cash: opts.cash - SNOW_NIGHT_COST[opts.snow],
+    cash: opts.cash - snowNightCost(opts.snow, opts.talentsOwned),
     groomVisible,
     gunCoverage,
     groomCoverage: opts.groomCoverage,
@@ -593,10 +595,10 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   base += noise;
   if (weekend) base = Math.round(base * 1.3);
   else if (inHolidayWeek(calendar, opts.dayIndex)) base = Math.round(base * 1.15);
-  const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
+  const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings, opts.talentsOwned);
   base = Math.round(base * fareDemandMultiplier(opts.fare, expected, usesWeekendGuestMix(calendar, opts.dayIndex)));
   if (opts.weather === "snow") base += 3;
-  if (opts.weather === "storm") base -= 5;
+  if (opts.weather === "storm") base -= opts.talentsOwned.includes("early_plow") ? 2 : 5;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
   if (opts.buildings.includes("cafe")) base += 1;

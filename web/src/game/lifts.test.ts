@@ -307,7 +307,7 @@ describe("lifts in the day tick", () => {
       expect(s.lifts).toHaveLength(2);
       s = rules.togglePause(addReferenceDescent(s, 1));
       while (s.phase === "day") {
-        s = rules.tick(s, 500);
+        s = rules.tick(s, MS_PER_GAME_MINUTE);
         const ids = s.lifts.flatMap((l) => l.queue);
         expect(new Set(ids).size).toBe(ids.length);
         const waiting = s.guests.filter((g) => g.state === "queue").map((g) => g.id);
@@ -318,9 +318,9 @@ describe("lifts in the day tick", () => {
 
   it("records measured waits in the day stats", () => {
     let s = dayState([queued("a"), queued("b"), queued("c")]);
-    s = rules.tick(s, 1000);
+    s = rules.tick(s, 2 * MS_PER_GAME_MINUTE);
     // Large ticks are simulated in sub-steps, so the first guest waits one dispatch interval.
-    for (let i = 0; i < 12; i++) s = rules.tick(s, 500);
+    for (let i = 0; i < 12; i++) s = rules.tick(s, MS_PER_GAME_MINUTE);
     const { dispatched, waitSumMin, avgQueueMin, peakWaitMin, maxQueueLength, byLift } = s.dayStats;
     expect(dispatched).toBe(3);
     expect(byLift).toEqual([{ rides: dispatched, waitSumMin }]);
@@ -352,7 +352,7 @@ describe("lifts in the day tick", () => {
 
   it("a new day starts with empty queues", () => {
     let s = dayState(["a", "b", "c", "d", "e", "f"].map(queued), 5);
-    s = rules.tick(s, 500);
+    s = rules.tick(s, MS_PER_GAME_MINUTE);
     expect(s.lifts.flatMap((l) => l.queue).length).toBeGreaterThan(0);
     const night = rules.acknowledgeBeat(rules.skipToClose(s));
     const next = rules.sleep(night);

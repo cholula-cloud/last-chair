@@ -1,11 +1,11 @@
 import Link from "next/link";
 
 const FEATURES = [
-  "Dutch Hill, Vermont: one tired surface lift, one trail, a 28-day winter.",
+  "Start with a lodge at Dutch Hill. Build your first lift and trail for a 28-day Vermont winter.",
   "Run or pause the day. Follow any skier from car park to lift line to the bottom.",
   "Grow the lodge, build lifts, paint trails and add places for guests to warm up.",
   "Each night, set tomorrow’s fare and how hard the crew works the snow, then sleep.",
-  "Six founders, a crew that learns one trick a night, and Route 100 Radio.",
+  "Choose one of six founders. Your crew learns new skills as the winter goes on.",
 ];
 
 export default function Home() {
@@ -39,7 +39,7 @@ export default function Home() {
           className="panel mt-9 px-5 py-4 short:mt-0"
         >
           <h2 id="in-this-build" className="display text-[1.4rem]">
-            In this build
+            Your winter at Dutch Hill
           </h2>
           <ul className="mt-3 space-y-2.5">
             {FEATURES.map((f) => (
@@ -56,8 +56,7 @@ export default function Home() {
             ))}
           </ul>
           <p className="mt-4 border-t-2 border-snow-2 pt-3 text-[0.85rem] font-bold text-ink-soft">
-            An early preview. The career map, the ledger and the other mountains
-            are still on the drawing board. Progress saves in this browser.
+            Your winter saves in this browser. Choose Load on the title screen to export a copy.
           </p>
         </section>
       </main>

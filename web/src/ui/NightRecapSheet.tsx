@@ -8,22 +8,26 @@ import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
+import { talentDescription } from "@/game/content";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { useSettings } from "@/ui/settingsStore";
+import { StoryEntries } from "@/ui/StoryLog";
 import { surpriseRadio } from "@/game/surprises";
 import { WHY_BASE, GUEST_MEASURE_LABELS, delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "@/game/why";
 import {
   FARE_LABELS,
   FARE_PRICES,
   SNOW_LABELS,
-  SNOW_NIGHT_COST,
   type FarePreset,
   type SnowPreset,
   type WeatherKind,
 } from "@/game/types";
 import { outlookFor } from "@/game/weather";
+import { CoachCard } from "./CoachCard";
+import { useCoach } from "./coachStore";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
 import {
@@ -98,7 +102,7 @@ function WhyList({ recap }: { recap: NightRecap }) {
   const lines = whyLines(recap);
   return (
     <div className="mt-3">
-      <DisclosureButton open={open} controls="why-list" onToggle={() => setOpen((o) => !o)}>
+      <DisclosureButton open={open} controls="why-list" onToggle={() => { if (!open) useCoach.getState().next(6); setOpen((o) => !o); }}>
         Why {Math.round(recap.satisfaction)}% happy?
       </DisclosureButton>
       {open && (
@@ -275,27 +279,29 @@ function Choices({
   const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
     value: v,
     label: SNOW_LABELS[v],
-    detail: SNOW_NIGHT_COST[v] ? `${formatMoney(SNOW_NIGHT_COST[v])}/night` : "Free",
+    detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
     note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
   }));
-  const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
+  const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
   const chosen = previews[pendingSnow];
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading aside="Tomorrow’s public ticket">Fare</SectionHeading>
-      <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
+      <CoachCard slot="fare" />
+      <div data-coach="fare"><ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={(v) => { setPendingFare(v); useCoach.getState().next(7); }} /></div>
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
         Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
-      <ChoiceTiles
+      <CoachCard slot="snow" />
+      <div data-coach="snow"><ChoiceTiles
         label="Snow and service"
         options={snowOptions}
         value={pendingSnow}
-        onPick={setPendingSnow}
-      />
+        onPick={(v) => { setPendingSnow(v); useCoach.getState().next(8); }}
+      /></div>
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
         In the most likely weather, expect {chosen.label.toLowerCase()}.
@@ -316,6 +322,7 @@ export function NightRecapSheet() {
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
+  const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
 
   const recap = night?.nightRecap;
@@ -328,7 +335,7 @@ export function NightRecapSheet() {
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
   const surpriseCopy = surprise && surpriseRadio(surprise);
   const summitLinkOffer = summitLinkOfferOpen(night);
-  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged);
+  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
 
   return (
@@ -347,10 +354,11 @@ export function NightRecapSheet() {
             setPendingSnow={setPendingSnow}
           />}
 
+          <CoachCard slot="sleep" />
           {dayIndex < night.seasonLength && nextTalent && (
             <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
               Tomorrow the crew learns{" "}
-              <span className="font-extrabold text-sign-green">{nextTalent}</span>
+              <span className="font-extrabold text-sign-green">{talentDescription(nextTalent, night)}</span>
             </p>
           )}
         </>
@@ -369,10 +377,15 @@ export function NightRecapSheet() {
             </p>
           )}
           <PrimaryButton
+            data-coach="sleep"
             tone="brown"
             disabled={!canSleep}
             aria-describedby={canSleep ? undefined : "sleep-hint"}
-            onClick={sleep}
+            onClick={() => {
+              if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
+              sleep();
+              if (dayIndex === 1) useCoach.getState().skip();
+            }}
           >
             <CocoaIcon size={24} />
             {dayIndex < night.seasonLength ? "Sleep until morning" : "Finish the winter"}
@@ -413,7 +426,8 @@ export function NightRecapSheet() {
         <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
-        <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
+        <CoachCard slot="recap-problem" />
+        <p data-coach="recap-problem" className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
           {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
@@ -430,7 +444,7 @@ export function NightRecapSheet() {
         {hasGuests && <WhyList key={dayIndex} recap={recap} />}
 
         <SchoolContractCard night={night} />
-        {beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
+        {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={
@@ -446,7 +460,11 @@ export function NightRecapSheet() {
             {tidy(beat.radio)}
           </RadioCard>
         )}
-        {surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        <details className="panel mt-4 p-3">
+          <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
+          <StoryEntries />
+        </details>
       </div>
     </Sheet>
   );

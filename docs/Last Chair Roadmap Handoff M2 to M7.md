@@ -956,9 +956,9 @@ Numbers marked proposed are design choices to be tuned with the balance harness 
 
 ### Current handoff
 
-The common goal is to finish day 28 with nonnegative cash after debt and unpaid construction. Readsboro is optional. Vivian’s offer trades $6,000 for a fare cap. GitHub PR #77 delivered the revised first-winter sequence and #78 recorded hosted verification. The briefs below preserve design history, including proposed values. Use the [M3 roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for delivery status and the [device playtest](./TESTING.md) for sign-offs.
+The common goal is to finish day 28 with nonnegative cash after debt and unpaid construction. Readsboro is optional. Vivian’s offer trades $6,000 for a fare cap. GitHub PR #77 delivered the revised first-winter sequence and #78 recorded hosted verification. The briefs below preserve design history, including proposed values. Use the [M3 roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for delivery status and the [device playtest](./TESTING.md) for optional device sessions.
 
-M3 still needs an owner-device check, a VoiceOver pass and three unassisted outside-player completions. Record the build, device, observed outcome and help given for each session. The separate M2 opening also needs a first-time player.
+The owner deferred all M3 human testing on November 19. Safari, VoiceOver and outside-player sessions are optional follow-up. The separate M2 opening also needs a first-time player.
 
 ## Rules for every M3 PR
 
@@ -1797,7 +1797,7 @@ Open decisions:
 
 ## PR 27: MVP balance and external playtest
 
-**Goal:** tune the full 28-day winter with an expanded balance harness, then get three outside players through the P1 script on their own phone or tablet without help, and record the results.
+**Goal:** tune the full 28-day winter with an expanded balance harness, then verify the winter end to end with the automated P1 script.
 
 **Depends on:** PRs 18 to 26 merged.
 
@@ -1849,20 +1849,10 @@ The script in TESTING.md predates M3. Replace its table with this one (proposed)
 
 Session length. A full winter takes about 2 hours at 1x (PR 19 arithmetic). The P1 session is up to 90 minutes over at most two sittings on the same device, with 2x or 3x speed and "Skip to close" allowed. The tester finishes the winter at home if the second sitting is unobserved; the save on their device proves it (they screenshot the review).
 
-### Design: recruiting and recording three outside players
+### Optional device sessions
 
-Who: three adults who have not seen Last Chair, own an iPhone or iPad with Safari, and are not on the project. At least one rarely plays games; at least one has skied in New England (proposed mix). Recruit from the owner's network by direct message with a fixed invite text; no public post. No payment in M3 (decision below).
+The owner will choose when to play on hardware. Use the P1 protocol in TESTING.md for any future session.
 
-How:
-
-1. Send the live link (`https://cholula-cloud.github.io/last-chair/play/`), the date of the observed sitting, and one line: "Play a winter at Dutch Hill; we won't help, we'll watch."
-2. Observed sitting (in person or video call with screen share from the phone): the observer reads a fixed opener, then only says "What are you thinking?" when the player is silent for 30 s. No hints. Any help given is logged and that player does not count for sign-off.
-3. Second sitting unobserved; the player sends a screenshot of the winter review.
-4. Debrief, five questions: Why did you change fare or snow on a night you remember? What was the hardest thing to understand? Did anything feel unfair? Did you want to play Tenney? Anything too small or hidden on your screen?
-
-Record per player in `docs/TESTING.md` sign-off log (date, gate "P1 external", initials, device and iOS version, result) and in a GitHub issue using a new template `.github/ISSUE_TEMPLATE/playtest.md` with: device, OS, Safari version, minutes per sitting, days skipped to close, finished yes or no, grade, help given (count and when), crashes or stuck states, debrief answers, top three friction points with screenshots. Use initials only; no names, emails or recordings in the repo.
-
-Pass for the gate: three players finish winter 1 with zero help, no crash or stuck state, and each can answer debrief question 1 with a cause they saw in the game. Any friction point seen by two of three players becomes an issue fixed before sign-off; a fix that changes sim numbers reruns the harness.
 
 ### Files
 
@@ -1878,13 +1868,13 @@ Pass for the gate: three players finish winter 1 with zero help, no crash or stu
 
 ### Verification
 
-Agent run of `playtest-p1.mjs` at the four viewports first; then the three external sessions on real devices. Accessibility spot check during the agent run: every interactive element at least 44x44 px (script measures bounding boxes), reduced motion on (`prefers-reduced-motion: reduce` emulation) shows no sheet or coach animation, radio off completes the winter.
+Agent run of `playtest-p1.mjs` at the four viewports for M3. Accessibility spot check during the agent run: every interactive element at least 44x44 px (script measures bounding boxes), reduced motion on (`prefers-reduced-motion: reduce` emulation) shows no sheet or coach animation, radio off completes the winter.
 
 ### Acceptance criteria
 
 - `npm run check` green with all ten properties.
 - 40-seed table and constant changes recorded in SIMULATION_SPEC.
-- TESTING.md shows three external P1 sign-offs with issues linked.
+- TESTING.md records the automated results and offers a device script for later.
 
 ### Risks and edge cases
 
@@ -1909,7 +1899,7 @@ Open decisions:
 
 ## Gate M3 test plan
 
-Run in this order. Each line is pass or fail; the gate passes when every line passes.
+Use the automated checks below for M3 acceptance. Manual device and accessibility observations can be added when the owner is ready.
 
 | # | Check | How | Pass if |
 |---|---|---|---|
@@ -1923,9 +1913,7 @@ Run in this order. Each line is pass or fail; the gate passes when every line pa
 | 8 | Story | Rule tests and balance report | One item per night, no interruptions during the day, and recorded events and outcomes agree with the sim |
 | 9 | Review | `review.test.ts`; a bankrupt run in the harness | every season ends in a review with a record |
 | 10 | Agent P1 | `playtest-p1.mjs` at 390x844, 844x390, 820x1180, 375x667 in Chromium and WebKit | completes; no console errors; no element under 44 px; no overlap in screenshots |
-| 11 | Accessibility | same run with reduced motion and radio off; manual VoiceOver pass on one device | no animation; winter completes; coach and radio announced once |
-| 12 | Owner device | owner plays days 1 to 3 on an iPhone in Safari | 30 fps or better by eye; no stuck state |
-| 13 | External P1 | three players per PR 27 | three signed rows in TESTING.md, zero help |
+| 11 | Accessibility | same run with reduced motion and radio off | no animation; winter completes; coach and radio announced once |
 
 Docs at the gate: MASTER_PLAN M3 rows all ☑ and Gate M3 status filled; SIMULATION_SPEC implementation table has no 🟡 or ❌ for Time, Economy, Crew talents, Founder modifiers, Story beat gates, Save format, Randomness; WORLD.md beats and founders match the sim.
 
@@ -1955,7 +1943,7 @@ Standard phone check for every player-visible PR in this part, unless a PR says 
 
 Use `web/scripts/phone-check.mjs` from world-scale part 3 when it exists (waits on `[data-scene-ready="true"]`, reports draw calls and triangles). Until then, take screenshots with Playwright Chromium at those sizes and attach them to the PR. Real iPhone Safari has not run anything since PR 10; each PR records whether a real device was used.
 
-Preconditions for the whole of Part C: M3 gate passed (rows 18 to 27 merged, P1 script signed), world scale 2b, 2c, 2d and part 3 merged, rows 12b, 12c, 13 to 17 merged. Where a PR below names a file or field from those rows, it is the planned name from Part B and the 2b handoff; confirm it exists before coding.
+Preconditions for the whole of Part C: M3 gate passed (rows 18 to 27 merged, automated P1 checks passed), world scale 2b, 2c, 2d and part 3 merged, rows 12b, 12c, 13 to 17 merged. Where a PR below names a file or field from those rows, it is the planned name from Part B and the 2b handoff; confirm it exists before coding.
 
 ---
 

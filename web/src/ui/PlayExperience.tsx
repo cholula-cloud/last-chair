@@ -13,6 +13,9 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
+import { CoachCard } from "./CoachCard";
+import { useCoach } from "./coachStore";
+import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { GuestsSheet } from "@/ui/GuestsSheet";
@@ -33,15 +36,23 @@ import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
-import { useSpeed } from "@/ui/speed";
+import { StoryLogSheet } from "@/ui/StoryLog";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
+  const [storyOpen, setStoryOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const coaching = useCoach((s) => s.index < TIPS.length);
+  useEffect(() => {
+    if (!hydrated) return;
+    const observe = () => useCoach.getState().observe(useGameStore.getState());
+    observe();
+    return useGameStore.subscribe(observe);
+  }, [hydrated]);
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
@@ -61,9 +72,11 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   const anyOnHill = useGameStore((s) => s.guests.some(isOnHill));
   const weather = useGameStore((s) => s.weather);
   const chairHeld = useGameStore((s) => s.phase === "day" && s.lifts.some((lift, i) =>
-    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin) && isLiftOperational(lift, i, s.trails),
+    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin, s.talentsOwned) && isLiftOperational(lift, i, s.trails),
   ));
   const morningHeadline = useGameStore((s) => s.morningHeadline);
+  const shortHold = useGameStore((s) => s.talentsOwned.includes("wind_hold"));
+  const paidForSnow = useGameStore((s) => s.lastDay?.snowNightCost ?? SNOW_NIGHT_COST[s.snow]);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
   const saveNotice = useGameStore((s) => s.saveNotice);
@@ -125,10 +138,6 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   }, [buildOpen, setBuildMode]);
 
   useEffect(() => {
-    if (phase === "night") useSpeed.getState().reset();
-  }, [phase]);
-
-  useEffect(() => {
     if (!talentToast) return;
     const t = window.setTimeout(
       () => useGameStore.setState({ talentToast: null }),
@@ -188,7 +197,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene />
+        <MountainScene coaching={coaching && dayIndex === 1} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
@@ -202,6 +211,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             cash={cash}
             paused={paused}
             notStarted={notStarted}
+            speedUnlocked={!coaching || dayIndex > 1}
             openingBlocked={opening !== null}
             onTogglePause={() => {
               setNoteDismissedDay(dayIndex);
@@ -209,7 +219,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {chairHeld && <WindHoldCallout />}
+          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !storyOpen && <CoachCard slot="day" />}
+          {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
         {showNote && !placementActive && (
           <MorningNote
@@ -217,8 +228,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             headline={tidy(morningHeadline)}
             crewLine={talentToast ? tidy(talentToast) : null}
             overnightLine={
-              dayIndex > 1 && SNOW_NIGHT_COST[snowPreset] > 0
-                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
+              dayIndex > 1 && paidForSnow > 0
+                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
                 : null
             }
             expanded={noteExpanded}
@@ -270,6 +281,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
                 buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
                 setBuildOpen(true);
               }}
+              onStoryLog={() => setStoryOpen(true)}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
               openingBlocked={opening !== null}
@@ -282,6 +294,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
         </div>
       )}
 
+      {storyOpen && <StoryLogSheet onClose={() => setStoryOpen(false)} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}

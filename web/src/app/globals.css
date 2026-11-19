@@ -477,3 +477,5 @@ body {
     animation: none;
     inset: -5px;
 }
+
+.coach-target { outline: 3px solid var(--barn-deep); outline-offset: 2px; }

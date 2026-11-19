@@ -14,7 +14,7 @@ import {
   toPersisted,
   type GameState,
 } from "./state";
-import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
+import { BUILDING_COSTS, MS_PER_GAME_MINUTE, SNOW_NIGHT_COST, type Guest } from "./types";
 import { WEATHER_KINDS } from "./weather";
 import { observeGuests } from "./why";
 
@@ -158,7 +158,7 @@ function runningWith(guests: Guest[], seed = 7): GameState {
   return { ...rules.togglePause(started()), guests, rngState: seed, clockMin: MORNING };
 }
 
-const TICK_MS = 1000;
+const TICK_MS = 2 * MS_PER_GAME_MINUTE;
 
 describe("night reload", () => {
   it("restores the night sheet so sleeping after a reload matches sleeping without one", () => {
@@ -395,6 +395,7 @@ describe("lastDay", () => {
       cashDelta: recap.cashDelta,
       avgWaitMin: recap.facts.avgWaitMin,
       observation: observeGuests(recap),
+      snowNightCost: SNOW_NIGHT_COST[night.pendingSnow],
       fare: "expensive",
       snow: "high",
     });

@@ -83,9 +83,15 @@ export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
 
 export const WIND_HOLD = { fromMin: 630, toMin: 780 } as const;
 
-export function isWindHeld(type: LiftType, wind: Wind, clockMin: number): boolean {
+const SHORT_HOLD = { fromMin: 660, toMin: 735 } as const;
+export function windHoldWindow(owned: readonly string[]) {
+  return owned.includes("wind_hold") ? SHORT_HOLD : WIND_HOLD;
+}
+
+export function isWindHeld(type: LiftType, wind: Wind, clockMin: number, owned: readonly string[] = []): boolean {
+  const hold = windHoldWindow(owned);
   return wind === "gusty" && LIFT_SPECS[type].windHold &&
-    clockMin >= WIND_HOLD.fromMin && clockMin < WIND_HOLD.toMin;
+    clockMin >= hold.fromMin && clockMin < hold.toMin;
 }
 
 export function morningWeatherHeadline(kind: WeatherKind): string {

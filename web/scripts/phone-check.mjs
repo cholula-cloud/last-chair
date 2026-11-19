@@ -218,6 +218,7 @@ async function runViewport(engine, launch, vp) {
 
   try {
     await startPlay(page);
+    await page.getByRole("button", { name: "Skip tips" }).click();
     const home = await shot(page, engine, tag, "home");
 
     const canvas = page.locator("canvas").first();

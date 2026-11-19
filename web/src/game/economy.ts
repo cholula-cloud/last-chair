@@ -2,7 +2,7 @@ import { ASSET_CATALOG, type AssetId } from "./base";
 import { founderById } from "./content";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
-import { DAILY_FIXED_COST, LIFT_OPS_COST, SNOW_NIGHT_COST } from "./types";
+import { DAILY_FIXED_COST, LIFT_OPS_COST, snowNightCost } from "./types";
 
 export const LOW_CASH = 1500;
 export const LOAN_TERMS = { principal: 10_000, rate: 0.08, reserve: 2_000 } as const;
@@ -43,11 +43,13 @@ export function constructionPayables(total: number, day: number, what: Payable["
 
 export function operatingCosts(state: GameState): OperatingCosts {
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails));
+  const liftCost = openLifts.reduce((sum, lift) => sum + LIFT_OPS_COST
+    + (lift.type === "chair" ? CHAIR_DAILY_SURCHARGE : 0)
+    - (lift.type === "surface" && state.talentsOwned.includes("rope_tow") ? 40 : 0), 0);
   return {
-    fixed: DAILY_FIXED_COST,
+    fixed: DAILY_FIXED_COST - (state.talentsOwned.includes("volunteer_patrol") ? 50 : 0),
     founder: founderById(state.founderId)?.fixedCostDelta ?? 0,
-    liftOps: LIFT_OPS_COST * Math.max(1, openLifts.length)
-      + CHAIR_DAILY_SURCHARGE * openLifts.filter(({ type }) => type === "chair").length,
+    liftOps: Math.round((liftCost || LIFT_OPS_COST) * (state.founderId === "riley" ? 0.85 : 1)),
     upkeep: 60 + state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0)
       + state.guns.length * ASSET_CATALOG.snow_guns.upkeep,
   };
@@ -56,7 +58,7 @@ export function operatingCosts(state: GameState): OperatingCosts {
 export function dailyCosts(state: GameState): CostLines {
   return {
     ...(state.nightRecap?.costs ?? operatingCosts(state)),
-    snowNight: state.dayIndex < state.seasonLength ? SNOW_NIGHT_COST[state.pendingSnow] : 0,
+    snowNight: state.dayIndex < state.seasonLength ? snowNightCost(state.pendingSnow, state.talentsOwned) : 0,
     draws: state.payables.reduce((sum, item) => sum + (item.dueDay <= state.dayIndex ? item.amount : 0), 0),
     interest: state.loan ? state.loan.principal * state.loan.ratePerDay : 0,
     constructionSpent: state.constructionSpent,

@@ -22,9 +22,9 @@
 | Economy | ✅ | Daily upkeep, construction installments, winter loan and bankruptcy. Verified over 40 seeds | 20 |
 | Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
 | Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
-| Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
-| Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
-| Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
+| Crew talents | ✅ | Twenty ordered talents change lift operations, attendance, guest experience, operating costs or snow service | 21 |
+| Founder modifiers | ✅ | Each of the six founders has an operating advantage and a constraint | 22 |
+| Story beat gates | ✅ | Nightly events use operating results. School and pass offers require replies, and the season settles in winter review | 23 |
 | Save format | ✅ | Three slots (`last-chair-m3-slot-1` to `-3`) with an active-slot pointer, per-slot backup, validation and recovery, a throttled write cadence, and JSON export and import | 25, L-D |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | ✅ | Weather draws use a separate seeded stream from daily guest draws | 18 |
@@ -37,8 +37,8 @@
 |----------|--------|
 | Day start | 07:30 (first arrivals 08:00; moved from 06:00 in PR 6 to remove an empty two hours) |
 | Day end (close) | 16:00 |
-| Realtime 1× | 1 in-game minute ≈ 0.5 s (tunable) |
-| Speed | 1×, 2×, 3× chip in the top bar (session-only, resets at night and on founder pick); 1× default |
+| Realtime 1× | 120 seconds from opening to close |
+| Speed | 1×, 2× and 4× in the top bar. The selected speed carries into the next morning. New sessions use the speed in Settings (initially 1×). |
 | Season | 28 days (internal test: 14) |
 
 **Pause:** `dayClock` frozen; build allowed.  
@@ -330,51 +330,37 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ---
 
-## Crew talents (P0 stub)
+## Crew talents
 
-Overnight picks **first unowned** talent in crew order (list in `web/src/game/content.ts`). P0 implements **3 placeholders:**
+Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/content.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
 
-1. **Rope Tow** — surface lift ops efficiency  
-2. **Trail Guns** — +gun reach P1  
-3. **House Band** — village mood stub P1  
-
-Player sees: “Tomorrow the crew learns: *Rope Tow*” on level readout.
-
----
-
-## Founder modifiers (P1 — numeric)
-
-Apply at career start; one founder:
+## Founder modifiers
 
 | Founder | Bonus | Constraint |
-|---------|-------|------------|
-| Elena Vargas | arrivalMood +0.08 | cannot demolish warming hut |
-| Tom Keene | loan rate −1% | warm-week satisfaction −3 |
-| Riley Otis | overnight repair 15% | no Abominable Snowglomerate equity |
-| Amira Chen | +1 day forecast | snow expectation +5% penalty |
-| Juniper Hale | glade rep + | clearing cost +15% |
-| Marco Russo | après rev +10% | starting fixed cost +$80/day |
-
-P0: founder pick UI only; apply Elena default silently for tests.
-
----
+|---|---|---|
+| Elena Vargas | +0.08 arrival mood and two additional planned guests | Keeps the warming hut |
+| Tom Keene | Winter loan rate of 7% | Loses three welcome points on a thaw day with at least three thaws in the last seven days |
+| Riley Otis | Lift operations cost 15% less | Must decline the pass offer |
+| Amira Chen | Two-day forecast | Expected snow quality rises by 0.05 |
+| Juniper Hale | +0.5 before rounding the nightly reputation update when guests arrive | Lift and clearing quotes rise by 15% |
+| Marco Russo | Venue revenue rises by 10% | Fixed operating costs rise by $80 per day |
 
 ## Story beat gates (Act I)
 
-| Beat | Gate (metric) |
-|------|----------------|
-| First uphill load | `lifts.open ≥ 1` and `guests.completedRun ≥ 5` |
-| Saturday | `dayIndex` is Sat and `arrivals ≥ 25` |
-| School bus | `lessons booked ≥ 1` OR `arrivals ≥ 40` on weekday (P1) |
-| Dry week | `daysWithoutSnow ≥ 3` and `snow.depth &lt; 0.2` |
-| Abominable Snowglomerate | `reputation ≥ 50` (stub from satisfaction avg) |
-| Winter review | `dayIndex == seasonLength` |
+The first eligible outstanding beat appears at closing. A delayed beat can appear on a later eligible night.
 
-Fail-forward: beats delay to next eligible day; no hard fail.
+| Beat | Gate and outcome |
+|---|---|
+| First uphill load | At least one open lift and five completed runs |
+| Saturday | Saturday with at least 22 arrivals |
+| School bus | Tier 2 lodge, installed ski school and a completed pupil lesson. Accept to book six pupils for the next eligible school day, or decline. |
+| Dry week | Three or more days without snowfall and snow depth below 0.35 |
+| Abominable Snowglomerate | Reputation of at least 55 from day 18 through the penultimate night. Acceptance pays $6,000 and limits fares. |
+| Winter review | The final night settles the winter. Three consecutive mornings with negative cash trigger early review. |
 
 ---
 
-## Save format (M3 v1)
+## Save format (M3 v7)
 
 Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
 
@@ -398,7 +384,7 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
-Cloud sync: P2.
+Schema v6 records the school contract and pass offer. Schema v7 adds dated operating and radio history and winter career records. Historical saves retain their recorded cash, season length and outcomes.
 
 ---
 

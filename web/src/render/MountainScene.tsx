@@ -41,7 +41,7 @@ const AZIMUTH_RANGE = 1.4;
 
 const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 
-export function MountainScene() {
+export function MountainScene({ coaching = false }: { coaching?: boolean }) {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
@@ -92,7 +92,7 @@ export function MountainScene() {
 
   useFrame((_, delta) => {
     const game = useGameStore.getState();
-    if (game.phase === "day" && !game.paused) game.tick(scaledTickMs(delta, speed));
+    if (game.phase === "day" && !game.paused) game.tick(scaledTickMs(delta, coaching ? 1 : speed));
   });
 
   const terrainSnow = Math.min(1, snowQuality * 0.75 + snowDepth * 0.25);
