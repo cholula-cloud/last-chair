@@ -40,7 +40,7 @@ export function SchoolContractCard({ night }: { night: GameState }) {
       }
     >
       {storyBeatCopy("school_bus")?.radio} {SCHOOL_BUS_PUPILS} pupils arrive {weekday} {date} at 9 AM and pay {formatMoney(SCHOOL_BUS_FARE)} each for
-      a lift ticket. They use your ski school and share the lifts with everyone else.
+      a lift ticket. They share the lifts with everyone else. Your optional goal is to give each pupil a lesson.
     </RadioCard>
   );
 }

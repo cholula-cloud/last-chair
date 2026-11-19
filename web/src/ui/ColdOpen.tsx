@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { audio as sound } from "@/audio/engine";
-import { mixGains } from "@/audio/mix";
+import { sliderGain } from "@/audio/mix";
 import { useSettings } from "@/ui/settingsStore";
 import { COLD_OPEN_AUDIO, COLD_OPEN_CARDS, cardAtTime, cueOf, silentHoldSeconds } from "@/ui/coldOpenCards";
 
@@ -11,12 +11,13 @@ const STALL_MS = 2000;
 
 /**
  * Four still cards with a voice-over, shown once after New winter and before the founder pick.
- * Captions are always on. The voice starts from the New winter tap; if the browser refuses it,
+ * Captions remain visible when audio is unavailable. The voice starts from the New winter tap; if the browser refuses it,
  * or Voice is off in Settings, the cards run on timers.
  */
 export function ColdOpen({ onDone }: { onDone: () => void }) {
   // The voice is heard when Sound, Voice and both volumes are up. It runs through the voice bus.
-  const voiceHeard = useSettings((s) => mixGains(s).master > 0 && mixGains(s).voice > 0);
+  const captions = useSettings(s => s.captions);
+  const voiceLevel = useSettings(s => s.voiceOn && !s.muted ? sliderGain(s.masterVolume) * sliderGain(s.voiceVolume) : 0);
   const [index, setIndex] = useState(0);
   // True while the recording is actually playing; the cards then follow its clock.
   const [voiceLive, setVoiceLive] = useState(false);
@@ -47,7 +48,7 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     nextRef.current?.focus();
     if (!sound.voiceAudible()) return;
-    const voice = new Audio(COLD_OPEN_AUDIO);
+    const voice = new Audio((process.env.NEXT_PUBLIC_BASE_PATH ?? "") + COLD_OPEN_AUDIO);
     routedRef.current = sound.routeVoice(voice);
     voice.volume = routedRef.current ? 1 : sound.voiceFallbackVolume();
     audioRef.current = voice;
@@ -74,9 +75,9 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
 
   // Settings changes made while it plays: muting stops the voice. A routed voice follows its bus on its own.
   useEffect(() => {
-    if (!voiceHeard) stopVoice();
-    else if (audioRef.current && !routedRef.current) audioRef.current.volume = sound.voiceFallbackVolume();
-  }, [voiceHeard, stopVoice]);
+    if (!voiceLevel) stopVoice();
+    else if (audioRef.current && !routedRef.current) audioRef.current.volume = voiceLevel;
+  }, [voiceLevel, stopVoice]);
 
   // With the voice playing, follow its clock. Only a card change sets state.
   useEffect(() => {
@@ -149,7 +150,7 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={c.id}
-          src={c.image}
+          src={(process.env.NEXT_PUBLIC_BASE_PATH ?? "") + c.image}
           alt=""
           draggable={false}
           className="cold-card absolute inset-0 h-full w-full object-cover"
@@ -172,14 +173,14 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
         Skip
       </button>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))]">
-        <p
+        {(captions || !voiceLive) && <p
           key={card.id}
           role="status"
           aria-live="polite"
           className="cold-caption display max-w-xl text-center text-[clamp(1.35rem,5.4vw,2rem)] leading-tight"
         >
           {card.caption}
-        </p>
+        </p>}
         <p className="text-[0.85rem] font-extrabold text-white/80">
           {index + 1} of {COLD_OPEN_CARDS.length}.{index < last ? " Tap or press Space for the next card." : ""}
         </p>

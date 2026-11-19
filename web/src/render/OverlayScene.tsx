@@ -3,10 +3,13 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { SnowLayerTexture } from "./MapOverlay";
+import { useSettings } from "@/ui/settingsStore";
+import { useLayers } from "@/ui/mapLayerStore";
 import { getOverlayLayer } from "@/game/overlays";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
-import { setProbe, useActiveLayer, useOverlayUi } from "@/ui/overlayUi";
+import { setProbe, useActiveLayer } from "@/ui/overlayUi";
 import { exceedsTapSlop } from "./cameraControls";
 import { buildLeaseMask } from "./overlayMask";
 import { PALETTE } from "./palette";
@@ -19,12 +22,16 @@ const TAP_MS = 250;
 
 /** Writes the active layer into the terrain shader and the dimming uniform. Nothing runs per frame. */
 function useOverlayUniforms(mode: number) {
+  const strong = useSettings(s => s.patternAids);
+  useEffect(() => { overlayUniforms.uPatternStrength.value = strong ? 1 : 0.65; },[strong]);
   useEffect(() => {
-    if (mode === 0) {
-      overlayUniforms.uOverlayMode.value = 0;
-      overlayDim.value = 0;
-      return;
-    }
+    overlayUniforms.uOverlayMode.value=mode;
+    overlayDim.value=mode === 0 ? 0 : 1;
+    return () => { overlayUniforms.uOverlayMode.value=0; overlayDim.value=0; };
+  },[mode]);
+  const slope = mode === 1;
+  useEffect(() => {
+    if(!slope) return;
     const mask = buildLeaseMask(TERRAIN);
     const texture = new THREE.DataTexture(mask.data, mask.size, mask.size, THREE.RedFormat, THREE.UnsignedByteType);
     texture.minFilter = THREE.LinearFilter;
@@ -33,15 +40,11 @@ function useOverlayUniforms(mode: number) {
     texture.needsUpdate = true;
     overlayUniforms.uOverlayMask.value = texture;
     overlayUniforms.uMaskRect.value.set(mask.x0, mask.z0, 1 / mask.spanX, 1 / mask.spanZ);
-    overlayUniforms.uOverlayMode.value = mode;
-    overlayDim.value = 1;
     return () => {
-      overlayUniforms.uOverlayMode.value = 0;
-      overlayDim.value = 0;
       overlayUniforms.uOverlayMask.value = null;
       texture.dispose();
     };
-  }, [mode]);
+  }, [slope]);
 }
 
 /** A tap or a hold on the map, with no building tool in use, sets the readout point. */
@@ -103,7 +106,7 @@ function useProbe(enabled: boolean) {
 }
 
 function ProbeMarker() {
-  const probe = useOverlayUi((s) => s.probe);
+  const probe = useLayers((s) => s.point);
   const geometry = useMemo(() => {
     if (!probe) return null;
     const count = 36;
@@ -131,5 +134,8 @@ export function OverlayScene() {
   const mode = getOverlayLayer(layerId)?.mode ?? 0;
   useOverlayUniforms(mode);
   useProbe(mode !== 0 && !building);
-  return mode !== 0 && !building ? <ProbeMarker /> : null;
+  return <>
+    {layerId && layerId !== "slope" && <SnowLayerTexture layer={layerId}/>}
+    {mode !== 0 && !building && <ProbeMarker />}
+  </>;
 }

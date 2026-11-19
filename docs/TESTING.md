@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.0 · **Updated:** 2026-11-18
+**Version:** 1.0 · **Updated:** 2026-11-19
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -11,11 +11,14 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|---|---|
 | Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents | `npm test`, CI on every PR | Set up (PR 2) |
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
-| Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the 12-strategy table over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
+| Balance harness | Vitest and seeded seasons | Six-seed operating, settlement and story properties. The extended report compares 14 strategies, six founders and paired offer choices over 40 seeds. | Six seeds in `npm test` and CI. From `web/`, run `npm run balance` for the extended report. | Automated |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
 | Phone check | Playwright Chromium + WebKit, `npm run phone-check` (viewports 390×844, 844×390, 820×1180, 375×667; waits on `[data-scene-ready="true"]`; screenshots and perf gates to `PLAYTEST_OUT/phone-check/`, default `web/playtest-artifacts/phone-check/`) | Home pan/zoom, Build feet, speed chip, optional `?stats=1` draw-call budget (Chromium) | Local, before merge | Exists |
+| Accessibility | Vitest palette contrast and Playwright, `npm run playtest:accessibility` | Eleven text/background pairs in both palettes, labelled controls and dialogs, targets, large text, keyboard story progression and silent captions | Contrast runs in CI. Set `PLAY_URL` to a served game for the browser audit. | Automated |
+| Mountain layers | Playwright, `npm run playtest:layers` | Switch all four layers, tap a real trail segment, compare gun service and scrub conditions through tomorrow without changing the save. | Set `PLAY_URL` to a running game. Use `PLAYTEST_ENGINE=webkit` for WebKit. | Automated |
+| First-winter coach | Playwright, `npm run playtest:coach` | Walk the ten tips, review and start the lodge upgrade, use the first measured problem to open its map layer and Office tab, then Sleep and reload. Uses the same four viewports as the phone check. | Set `PLAY_URL` to the running game. Chromium by default, or `PLAYTEST_ENGINE=webkit`. | Automated |
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
-| Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Milestone gates | Scripts below |
+| Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
 `npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
 
@@ -45,28 +48,23 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 ---
 
-## P1 device playtest (~45–60 min) — gate for M3 (product MVP)
+## Optional first-winter device playtest
 
-**Devices:** iPhone or iPad Safari (required for sign-off). Opening M3 clears M2 progress and starts a fresh winter. The browser check verifies that further reloads keep M3 progress.
+M3 uses automated simulation and browser checks for acceptance. An external session can provide feedback on readability, touch and player understanding. No external sessions have been recorded as of November 19, 2026.
 
-| Step | Action | Pass if |
-|---|---|---|
-| 1 | Pick a founder | Modifiers listed; HUD shows Day 1 of the season |
-| 2 | Open the hill and start the clock without coaching | Player places a lift, paints a trail and sees the first guests ride |
-| 3 | Guests → Follow | Camera tracks the guest |
-| 4 | Build surface + chair; buy lodge / café / guns | Valid/invalid descent; cash drops; visible change on the mountain |
-| 5 | Close the hill and choose fare and snow service | Player can explain what they observed and what they chose to protect. At the next close, the same measure can be compared if both days produced a reading. |
-| 6 | Sleep several mornings | Snow/groom/guns visible after Mid/High; crew talent toast |
-| 7 | Read the winter review | Settlement agrees with cash less debt and unpaid construction. The review recalls the school and Abominable Snowglomerate decisions actually made. A solvent winter earns the Tenney pin. |
-| 8 | Replay from the review or the Tenney stub | New operating state, prior settlement saved, and no active fare cap or school contract. |
+Use a fresh slot in Safari on an iPhone or iPad. Allow up to 90 minutes over two sittings on the same device. Players may change speed or skip to close. For an uncoached session, ask the player to play a winter at Dutch Hill and keep the following prompts for the observer.
 
-Ask after play: “What surprised you this winter? Did it change what you did?” Give each player room to decline either offer.
+| Observe | Evidence to record |
+|---|---|
+| Choose a founder and open the hill | Founder terms and Day 1 date were readable. The player placed a lift, painted a trail and saw guests ride. Record opening time and any hesitation. |
+| Follow a guest and use the build sheet | Guest tracking worked. For a building or chair, the player could find its price, construction terms and the change on the mountain. |
+| Close, choose tomorrow's fare or service, then read the next recap | The player could link a choice to a measured problem and distinguish the forecast from the result. |
+| Reload once during the night | Day, pending choices, radio and night sheet restored. |
+| Observe weather, crew and local events | Record the weather and events actually seen, the relevant morning changes and any unclear text or controls. |
+| Respond to Readsboro or Vivian when offered | Record the reply and actual school attendance, lessons or fare cap. The player chooses freely. An offer may never arrive. |
+| Reach the review, continue when eligible, then replay | Record completed days, cash, debt, construction, net worth and outcome. Replay starts a fresh winter and keeps the previous settlement. |
 
-### External sign-off (M3 gate)
-
-- [ ] Player A (phone/tablet) finished winter 1
-- [ ] Player B finished winter 1
-- [ ] Player C finished winter 1
+After play, ask why the player changed fare or snow on a night they remember, whether anything felt unfair, and which controls were difficult to find or read. Log volunteered feedback with device and OS version.
 
 ---
 
@@ -88,7 +86,15 @@ The follow-up Chromium touch opening completed in 92.6 seconds with the updated 
 
 The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.08 minutes, improved satisfaction by 7.97 points, and increased distinct beginner chair boardings in all 40 seeds. Moving the developed chair met both mean floors and changed completed-run counts in 39 of 40 seeds. See the [calibration table](./SIMULATION_SPEC.md#m2-acceptance-calibration).
 
-## Install on iPhone (row Q1)
+## Performance and replay checks
+
+Run `npm run check:bundle` after the production build. The limits are 450 KiB gzip for initial play-page JavaScript and 350 KiB for the largest individual chunk, with the handoff’s 5% tolerance. The phone check records title load time (5 seconds), frame rate (30 fps), p95 frame time, draw calls (40) and triangles (200,000). Set `PHONE_CHECK_SOAK=1` for ten one-minute samples with the scene open. Software-rendered results identify the browser and renderer. Physical device testing is optional.
+
+The November 19 integrated production export loaded the title in 185 ms at 390×844 in Chromium. Initial play-page JS was 177,496 bytes gzip, with the largest chunk at 337,558 bytes gzip. The scene used 28 draw calls and 182,221 triangles. Those checks passed. Under 4× CPU throttling with Mesa software rendering, the same run measured 1.8 fps and a 717 ms p95 frame. It failed the 30 fps target. Physical iPhone frame time and the device soak remain unmeasured.
+
+In the Office, open **Playtest notes** and export the replay, or use **Send notes** to share the replay and typed feedback together. On browsers without file sharing, the attachment downloads. Reproduce the session from `web/` with `npm run replay -- /path/to/last-chair-replay.json`. The file contains the starting checkpoint, RNG seed and game actions since that checkpoint. Loading a slot starts a fresh recording. Long sessions checkpoint every 30,000 recorded actions. The replay uses the same release’s rules.
+
+## Optional install on iPhone (row Q1)
 
 Run on a real iPhone with Safari, against the deployed Pages site (the manifest only resolves under its real base path).
 
@@ -104,6 +110,10 @@ Run on a real iPhone with Safari, against the deployed Pages site (the manifest 
 
 The installed app has its own storage. A winter saved in a Safari tab does not appear in it. Record device, iOS version and any step that fails.
 
+## Hill sound and ambient life
+
+From `web/`, run `PLAY_URL=http://localhost:3000 npm run playtest:feel` against a running build. Set `CHROMIUM_EXECUTABLE` to use a system Chromium. At 390×844 the check reads the live skier and chair instances, follows the groomer from its yard onto a trail, and inspects Web Audio as a lodge is built and upgraded. A second browser context starts muted. Both use reduced motion.
+
 ## Sign-off log
 
 | Date | Gate | Who / how | Result |
@@ -116,9 +126,17 @@ The installed app has its own storage. A winter saved in a Safari tab does not a
 | 2026-11-19 | M2 scripted touch opening | Portrait Chromium, isolated run | Opened in 75.9 seconds. Tier 2 rentals earned $180, the wind hold and forecasts passed, and the script observed zero page errors. |
 | 2026-11-19 | Phone renderer | 390×844 headless Chromium, SwiftShader and 4× CPU throttle | Gestures, placement and speed controls passed. 25 draw calls and 182,221 triangles met scene budgets. Measured 2.8 FPS against the 30 FPS target. Device Safari and uncoached human sign-off remain open. |
 | 2026-11-19 | First-winter merge, PR #77 | Hosted CI and Playwright WebKit, 390×844 | CI passed lint, typecheck, tests, the 40-seed M2 gate and production build. WebKit passed viewport interactions, save recovery, and the opening and lodge scenarios. The scripted opening took 16.3 seconds. This run collected no FPS measurement. [CI](https://github.com/cholula-cloud/last-chair/actions/runs/44589727395) · [WebKit](https://github.com/cholula-cloud/last-chair/actions/runs/44589726764) |
+| 2026-11-19 | Office, Readsboro and replay export | Production export, Chromium touch at 390×844 | The Office paused a running day, resumed it on close, and kept a previously paused day paused. Desk, Money, Reports, Crew and the save-slot shortcut opened. The school visit produced six arrivals and $150 on acceptance and no receipt on decline. The exported replay contained the school reply and notes and reproduced the saved state exactly. No page errors. |
+| 2026-11-19 | M3 first-winter coach | Chromium touch input at 390×844, 844×390, 820×1180 and 375×667 | On a prepared day-one hill, all ten tips appeared in order. Players could review and start the Tier 2 upgrade, open Slope for a measured lift queue, inspect Money in the Office and return to the same recap. Fare, snow, Sleep, speed unlock and reload passed. All four viewports had zero page errors. |
+| 2026-11-19 | M3 phone performance | 390×844 Chromium with software rendering and 4× CPU throttle | Title loaded in 185 ms. The hill used 28 draw calls and 182,221 triangles. At 1.8 FPS it missed the 30 FPS target. A physical-device frame rate and ten-minute soak remain unmeasured. |
+| 2026-11-19 | M3 full winter, PR #80 candidate | Production export, 390×844 Chromium | Opened Dutch Hill, followed a guest, set fare and snow service, reached settlement, reloaded the review and replayed. The settlement agreed with debt and unpaid construction, career history survived replay, and the browser logged zero errors. |
+| 2026-11-19 | Q8 accessibility | Chromium at 375×667, emulated touch and reduced motion | All four volume sliders and eight toggles had accessible names and 44 px targets. The 19 px text preference survived reload with no horizontal overflow. A muted opening showed captions and supported keyboard advance through four cards to the named founder dialog. No page errors. Eleven normal-text pairs passed 4.5:1 in both day and night palettes. Physical VoiceOver listening remains an owner device check. |
+| 2026-11-19 | M3 hill sound and ambient life | Chromium touch, 390×844, reduced motion | Sound-on opened one audio device after Continue and played wind, a tap, the construction thunk, radio notes and the Tier 2 chime. Muted opened zero audio devices. The WebGL scene showed occupied chairs during the day and the snowcat on the grooming route after closing. |
 
 Log friction as a GitHub issue with device and OS version.
 
 ### Smoke check rule
 
 A smoke check between PRs is **≤10 minutes and ≤2 in-game days**: load, one day, one night, one reload, one viewport each for iPhone portrait and iPad. Full-season and feel playtests happen only at milestone gates (M1 = PR 10, M3 = PR 27).
+
+**P1 and Q9, November 19, 2026.** The four-persona weekday, weekend and vacation mixes, school lessons, venue needs, trail choices, finance and characterization tests passed. At 375 × 667, a touch-driven Chromium run on the production build opened Build from a prepared day-two save. The café undo confirmation displayed $480. Confirming restored the deposit, removed the café and canceled both installments in the saved slot. The warming-hut removal confirmation explained Elena’s lock and disabled removal.

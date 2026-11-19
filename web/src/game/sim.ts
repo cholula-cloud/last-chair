@@ -1,10 +1,11 @@
+import { TALENT } from "./talents";
 import type { OperatingCosts } from "./economy";
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
+import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
-import { isWindHeld, morningWeatherHeadline, WIND_HOLD } from "./weather";
+import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
-import { PERSONAS, skiMinutes } from "./personas";
+import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
@@ -37,14 +38,13 @@ import {
   DAY_START_MIN,
   FARE_PRICES,
   SEASON_LENGTH,
-  SNOW_NIGHT_COST,
+  snowNightCost,
   type BuildingId,
   type DayStats,
   type DayWeather,
   type FarePreset,
   type FounderId,
   type Guest,
-  type PersonaId,
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
@@ -119,14 +119,11 @@ export function makeGuest(over: Partial<Guest> = {}): Guest {
 export function createInitialGuests(
   count: number,
   rand: Rand = Math.random,
-  weekend = false,
+  mix: GuestMix | boolean = "weekday",
 ): Guest[] {
   const seed = daySeed(rand);
-  const firstShare = weekend
-    ? PERSONAS.first_timer.weekendShare
-    : PERSONAS.first_timer.weekdayShare;
   const drawn = Array.from({ length: count }, (_, i) => {
-    const persona: PersonaId = rand() < firstShare ? "first_timer" : "regular";
+    const persona = drawPersona(rand(), mix);
     const [lo, hi] = PERSONAS[persona].targetRuns;
     const targetRuns = lo + Math.floor(rand() * (hi - lo + 1));
     const arriveAtMin = drawArrivalMin(rand);
@@ -156,7 +153,7 @@ export function schoolBusGuests(day: number, pupils: number): Guest[] {
   return Array.from({ length: pupils }, (_, i) => makeGuest({
     id: `school-${day}-${i}`,
     label: `Readsboro pupil ${i + 1}`,
-    persona: "first_timer",
+    persona: i % 3 === 2 ? "race_kid" : "first_timer",
     schoolPupil: true,
     state: "pending",
     arriveAtMin: SCHOOL_BUS_ARRIVAL_MIN,
@@ -195,6 +192,8 @@ export type GuestClock = {
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
+  const closeMin = LIFT_CLOSE_MIN + (TALENT.nightLights.learned(clock.talentsOwned) ? TALENT.nightLights.minutes : 0);
+  const hold = windHoldWindow(clock.talentsOwned);
   const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
     // Sent home from a line: the wait so far counts as a completed wait.
     const left =
@@ -218,7 +217,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         now - guest.stateSinceMin < (guest.visitMinutes ?? 20)) occupied[guest.venueIndex]++;
   }
   const visit = (guest: Guest, ids: readonly AssetId[], balk = false): Guest | null => {
-    if (now >= LIFT_CLOSE_MIN) return null;
+    if (now >= closeMin) return null;
     const index = ids.flatMap((id) => assets.map((asset, i) => asset.id === id ? i : -1)).find((i) =>
       i >= 0 && occupied[i] < Math.floor(assetEffect(assets[i], "seats")));
     if (index === undefined) return null;
@@ -232,7 +231,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     };
   };
   const chooseQueue = (guest: Guest): Guest => {
-    if (now >= LIFT_CLOSE_MIN) return goHome(guest);
+    if (now >= closeMin) return goHome(guest);
     const index = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, guest, clock.wind, now);
     if (index < 0) {
       const reopensLater = clock.wind === "gusty" && chooseLift(clock.lifts, clock.talentsOwned, clock.trails) >= 0;
@@ -245,8 +244,10 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     return joinLine(guest);
   };
   const beginnerService = (guest: Guest): Guest | null => {
-    if (guest.persona !== "first_timer") return null;
     if (guest.schoolPupil && !guest.lesson) return visit(guest, ["ski_school"]);
+    if (guest.persona === "race_kid") return !guest.lesson ? visit(guest, ["ski_school"]) : null;
+    if (guest.persona === "family_pack") return !guest.rented ? visit(guest, ["rentals"]) : null;
+    if (guest.persona !== "first_timer") return null;
     return (!guest.rented ? visit(guest, ["rentals"]) : null) ??
       (!guest.lesson ? visit(guest, ["ski_school"]) : null);
   };
@@ -259,10 +260,10 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       case "arrive": {
         const progress = (now - g.stateSinceMin) / ARRIVE_WALK_MIN;
         if (progress < 1) return { ...g, progress };
-        return now >= LIFT_CLOSE_MIN ? goHome(g) : beginnerService(g) ?? chooseQueue(g);
+        return now >= closeMin ? goHome(g) : beginnerService(g) ?? chooseQueue(g);
       }
       case "refuel": {
-        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        if (now >= closeMin) return goHome(g);
         const progress = (now - g.stateSinceMin) / (g.visitMinutes ?? 20);
         if (progress < 1) return { ...g, progress };
         const asset = assets[g.venueIndex ?? -1];
@@ -275,7 +276,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
       }
       case "queue": {
-        if (now >= LIFT_CLOSE_MIN) return goHome(g);
+        if (now >= closeMin) return goHome(g);
         const waited = g.joinedQueueAtMin == null ? 0 : now - g.joinedQueueAtMin;
         if (waited > 12 && (g.balks ?? 0) < 2) {
           const next = visit({
@@ -293,8 +294,8 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const duration = Math.max(0.1, Math.hypot(from.x - to.x, from.z - to.z) * TERRAIN.horizontalFeetPerUnit / 250);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
-        if (g.state === "walk_out" || now >= LIFT_CLOSE_MIN) return goHome(g);
-        if (lift && isWindHeld(lift.type, clock.wind ?? "calm", now)) {
+        if (g.state === "walk_out" || now >= closeMin) return goHome(g);
+        if (lift && isWindHeld(lift.type, clock.wind ?? "calm", now, clock.talentsOwned)) {
           return { ...g, progress: 1, joinedQueueAtMin: g.joinedQueueAtMin ?? now };
         }
         return { ...joinLine(g), trailIndex: g.trailIndex, joinedQueueAtMin: g.joinedQueueAtMin };
@@ -313,9 +314,9 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const done = { runs, energy, snowSum: g.snowSum + q };
         const returning = { ...g, runs };
         const openLift = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, now);
-        const allHeld = openLift < 0 && clock.wind === "gusty" && now >= WIND_HOLD.fromMin && now < WIND_HOLD.toMin;
+        const allHeld = openLift < 0 && clock.wind === "gusty" && now >= hold.fromMin && now < hold.toMin;
         const li = allHeld
-          ? chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, WIND_HOLD.toMin)
+          ? chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, hold.toMin)
           : openLift;
         const lapOverhead =
           clock.lifts[li]?.confirmed
@@ -330,12 +331,12 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
         const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
         const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
-        if (!remote && !allHeld && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= LIFT_CLOSE_MIN) {
+        if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
-        const waitForHold = allHeld ? Math.max(0, WIND_HOLD.toMin - now - walkingMin) : 0;
-        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > LIFT_CLOSE_MIN || li < 0) {
+        const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
+        if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > closeMin || li < 0) {
           const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > 0.5;
           return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
         }
@@ -498,12 +499,12 @@ export function applyOvernight(opts: {
   daysWithoutSnow: number;
 }): OvernightResult {
   const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
-  const hasTrailGuns = opts.talentsOwned.includes("trail_guns");
-  const hasGroom = opts.talentsOwned.includes("groom_pass") ||
-    opts.talentsOwned.includes("corduroy");
+  const hasTrailGuns = TALENT.trailGuns.learned(opts.talentsOwned);
+  const hasGroom = TALENT.groomPass.learned(opts.talentsOwned);
 
   const { kind: weather } = opts.weatherTomorrow;
-  const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom };
+  const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom,
+    corduroy: TALENT.corduroy.learned(opts.talentsOwned), snowFences: TALENT.snowFences.learned(opts.talentsOwned) };
   const gunCoverage = opts.gunCoverage?.map((coverage) =>
     opts.snow === "minimal" ? coverage.map(() => false) : coverage);
   const reach = gunCoverage ? 0 : gunReach(night);
@@ -519,7 +520,7 @@ export function applyOvernight(opts: {
   return {
     trails,
     ...deriveSnow(trails.map((trail, i) => ({ confirmed: opts.openTrails?.[i] !== false, trail }))),
-    cash: opts.cash - SNOW_NIGHT_COST[opts.snow],
+    cash: opts.cash - snowNightCost(opts.snow, opts.talentsOwned),
     groomVisible,
     gunCoverage,
     groomCoverage: opts.groomCoverage,
@@ -534,7 +535,7 @@ export function applyOvernight(opts: {
 }
 
 function learnNextTalent(owned: string[]) {
-  return CREW_TALENTS.find((t) => !owned.includes(t.id)) ?? null;
+  return CREW_TALENTS.find((t) => !t.learned(owned)) ?? null;
 }
 
 export function nextTalentName(owned: string[]): string | null {
@@ -560,16 +561,16 @@ export const DEMAND = {
 export function fareDemandMultiplier(
   fare: FarePreset,
   expectedValue: number,
-  weekend: boolean,
+  mix: GuestMix | boolean,
 ): number {
   const ratio = expectedValue / FARE_PRICES[fare];
   let mult = 0;
   for (const p of Object.values(PERSONAS)) {
-    const share = weekend ? p.weekendShare : p.weekdayShare;
+    const share = personaShare(p, mix);
     const m = 1 + DEMAND.ELASTICITY * p.valueWeight * (ratio - DEMAND.REF_RATIO);
     mult += share * Math.max(DEMAND.MIN_MULT, Math.min(DEMAND.MAX_MULT, m));
   }
-  return mult;
+  return Math.max(DEMAND.MIN_MULT, Math.min(DEMAND.MAX_MULT, mult));
 }
 
 export type ArrivalInputs = {
@@ -593,15 +594,15 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   base += noise;
   if (weekend) base = Math.round(base * 1.3);
   else if (inHolidayWeek(calendar, opts.dayIndex)) base = Math.round(base * 1.15);
-  const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings);
-  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, usesWeekendGuestMix(calendar, opts.dayIndex)));
+  const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings, opts.talentsOwned);
+  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, guestMixForDay(calendar, opts.dayIndex)));
   if (opts.weather === "snow") base += 3;
-  if (opts.weather === "storm") base -= 5;
+  if (opts.weather === "storm") base -= TALENT.earlyPlow.learned(opts.talentsOwned) ? TALENT.earlyPlow.stormPenalty : 5;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
   if (opts.buildings.includes("cafe")) base += 1;
-  if (opts.talentsOwned.includes("ticket_booth") && weekend) base += 1;
-  if (opts.talentsOwned.includes("school_day") && !weekend) base += 2;
+  if (TALENT.ticketBooth.learned(opts.talentsOwned) && weekend) base += TALENT.ticketBooth.visitors;
+  if (TALENT.schoolDay.learned(opts.talentsOwned) && !weekend) base += TALENT.schoolDay.visitors;
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
   return Math.max(12, Math.min(64, base));

@@ -160,6 +160,8 @@ export type TrailRun = {
   paidClearing?: ClearingCell[];
   groomed?: boolean[];
   gunCovered?: boolean[];
+  /** Finished runs yesterday, each of which wore every segment. Absent in older saves. */
+  previousRuns?: number;
   liftIndex: number;
   name: string;
   path: XZ[];

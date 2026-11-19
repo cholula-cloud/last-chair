@@ -5,16 +5,17 @@
  * Snow depth, snow-making and conditions (rows O2 and O3) join by adding an entry to `LAYERS`.
  */
 
+import { LAYERS as LABELS, LEGENDS, MARKS, overlayModel, readPoint, type MapLayer } from "./mapLayers";
 import { onLease } from "./lease";
 import { MAX_PAINTED_PITCH } from "./paintedTrail";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import { BLUE_MAX_PITCH, GREEN_MAX_PITCH, realGradeFactor } from "./trails";
 import type { GameState } from "./state";
 
-export type OverlayId = "slope";
+export type OverlayId = MapLayer;
 
 /** Fill patterns, so a layer reads without colour. The terrain shader and the legend both draw them. */
-export type OverlayPattern = "dots" | "stripes" | "hatch" | "dense-hatch";
+export type OverlayPattern = "dots" | "stripes" | "hatch" | "dense-hatch" | "symbol";
 
 export type LegendEntry = {
   id: string;
@@ -25,6 +26,7 @@ export type LegendEntry = {
   /** #rrggbb */
   color: string;
   pattern: OverlayPattern;
+  glyph?: string;
 };
 
 /** What a tap or hold on the map shows. The headline is a full sentence; live numbers go in chips. */
@@ -136,7 +138,16 @@ const SLOPE_LAYER: OverlayLayer = {
 };
 
 /** Layers in strip order. A layer is listed only once it is implemented. */
-const LAYERS: readonly OverlayLayer[] = [SLOPE_LAYER];
+const snowLayers = (["depth","guns","conditions"] as const).map((id,i): OverlayLayer => ({
+  id, label: LABELS[id], mode:i+2,
+  legend: LEGENDS[id].map(key => ({ id:key, label:MARKS[key].name, detail:MARKS[key].name, color:MARKS[key].color, pattern:"symbol", glyph:MARKS[key].glyph })),
+  readout(at, ctx) {
+    if (!ctx.state) return {headline:"Open a winter to inspect the snow.",chips:[]};
+    const r = readPoint(ctx.state,overlayModel(ctx.state,"Now",ctx.state.pendingSnow),id,at,false);
+    return {headline:r.detail,chips:[r.title,...r.personas]};
+  },
+}));
+const LAYERS: readonly OverlayLayer[] = [SLOPE_LAYER, ...snowLayers];
 
 export function overlayLayers(): readonly OverlayLayer[] {
   return LAYERS;

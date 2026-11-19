@@ -2,6 +2,12 @@
 
 import { useMemo, type ReactNode } from "react";
 import { needsAttention, type AttentionItem } from "@/game/attention";
+import { MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { dailyCosts, liquidNetWorth } from "@/game/economy";
+import { formatMoney } from "@/game/format";
+import { openingStep } from "@/game/rules";
+import { operatingGoalText } from "@/game/winterArc";
+import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
 import { daysLeftLine, goalChips } from "@/game/goals";
 import { useGameStore } from "@/game/store";
@@ -29,7 +35,7 @@ function showOnHill(item: AttentionItem) {
   requestFocus(item.focus);
 }
 
-function AttentionList({ items }: { items: AttentionItem[] }) {
+function AttentionList({ items, showFocus }: { items: AttentionItem[]; showFocus: boolean }) {
   if (items.length === 0) {
     return <p className="panel px-4 py-3 text-[1rem] font-bold">Nothing needs you right now.</p>;
   }
@@ -37,7 +43,7 @@ function AttentionList({ items }: { items: AttentionItem[] }) {
     <ul className="flex flex-col gap-2">
       {items.map((item) => (
         <li key={item.id}>
-          {item.focus ? (
+          {item.focus && showFocus ? (
             <button
               type="button"
               onClick={() => showOnHill(item)}
@@ -58,7 +64,21 @@ function AttentionList({ items }: { items: AttentionItem[] }) {
 /** Today's headline, the winter goal, the forecast, what needs attention and the radio. Reads state and changes none. */
 export function DeskTab() {
   const state = useGameStore((s) => s);
-  const attention = useMemo(() => needsAttention(state), [state]);
+  const attention = useMemo(() => {
+    const items = needsAttention(state);
+    const opening = openingStep(state);
+    if (opening === "lift") items.push({ id: "opening", text: "Place your first lift." });
+    if (opening === "trail" && !items.some(item => item.id.startsWith("lift-no-trail"))) {
+      items.push({ id: "opening", text: "Paint a trail from your lift to the base." });
+    }
+    const due = dailyCosts(state).draws;
+    if (due > 0) items.push({ id: "construction", text: `${formatMoney(due)} in construction payments comes due at closing.` });
+    if (state.schoolContract?.decision === "accepted" && state.schoolContract.day === state.dayIndex) {
+      items.push({ id: "school", text: "The Readsboro bus is scheduled for today." });
+    }
+    return items;
+  }, [state]);
+  const radioEnabled = useSettings(s => s.radioEnabled);
   const radio = latestRadio(state);
   const chips = goalChips(state);
   const weather = WEATHER[state.weather];
@@ -76,6 +96,7 @@ export function DeskTab() {
       </section>
 
       <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength)}>Winter goal</SectionHeading>
+      <p className="panel mb-2 px-4 py-3 font-bold">{formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(MOUNTAIN_CALENDARS[state.mountainId], state.dayHistory)}</p>
       <ul aria-label="Winter goal" className="panel divide-y-2 divide-snow-2 px-4">
         {chips.map((chip) => (
           <li key={chip.id} className="flex items-start gap-3 py-3">
@@ -114,11 +135,11 @@ export function DeskTab() {
       </section>
 
       <SectionHeading>Needs attention</SectionHeading>
-      <AttentionList items={attention} />
+      <AttentionList items={attention} showFocus={state.phase === "day"} />
 
       <SectionHeading>Route 100 Radio</SectionHeading>
-      {radio ? (
-        <RadioCard title={radio.title}>{tidy(radio.radio)}</RadioCard>
+      {!radioEnabled ? <p className="panel px-4 py-3 font-bold">Radio is off.</p> : radio ? (
+        <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
       ) : (
         <p className="panel px-4 py-3 text-[1rem] font-bold">
           Maris has not been on the air yet. She will be after the first closing.

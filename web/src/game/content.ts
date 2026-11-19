@@ -1,15 +1,19 @@
+import { CREW_TALENTS } from "./talents";
+export { CREW_TALENTS } from "./talents";
 import type {
   FounderDef,
   StoryBeatDef,
-  TalentDef,
 } from "./types";
+
+export const WINTER_GOAL = "Finish day 28 with enough cash to pay off your loan and any unpaid construction bills.";
 
 export const FOUNDERS: FounderDef[] = [
   {
     id: "elena",
     name: "Elena Vargas",
     title: "The Caretaker",
-    blurb: "Families arrive happier. Warming hut stays.",
+    bonus: "Happier families bring two extra guests.",
+    constraint: "Keep the warming hut.",
     arrivalMoodBonus: 0.08,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0,
@@ -18,17 +22,19 @@ export const FOUNDERS: FounderDef[] = [
     id: "tom",
     name: "Tom Keene",
     title: "The Refi",
-    blurb: "Softer cash stress. Warm weeks sting mood.",
+    bonus: "Borrow at 7% for the winter.",
+    constraint: "Repeated thaw days cost 3 welcome points.",
     arrivalMoodBonus: 0,
     fixedCostDelta: 0,
-    snowExpectationPenalty: 0.03,
+    snowExpectationPenalty: 0,
   },
   {
     id: "riley",
     name: "Riley Otis",
     title: "The Rigger",
-    blurb: "Lift limps overnight. Turns down Abominable Snowglomerate deals.",
-    arrivalMoodBonus: 0.02,
+    bonus: "Spend 15% less on lift operations.",
+    constraint: "Must decline Vivian’s offer.",
+    arrivalMoodBonus: 0,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0,
   },
@@ -36,7 +42,8 @@ export const FOUNDERS: FounderDef[] = [
     id: "amira",
     name: "Amira Chen",
     title: "The Forecast",
-    blurb: "Clearer weather read. Guests expect better snow.",
+    bonus: "See two days of forecasts.",
+    constraint: "Guests expect 5% better snow.",
     arrivalMoodBonus: 0,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0.05,
@@ -45,8 +52,9 @@ export const FOUNDERS: FounderDef[] = [
     id: "juniper",
     name: "Juniper Hale",
     title: "The Preservationist",
-    blurb: "Glade reputation. Clearing costs more later.",
-    arrivalMoodBonus: 0.04,
+    bonus: "Gain extra reputation each night.",
+    constraint: "Lift lines and tree clearing cost 15% more.",
+    arrivalMoodBonus: 0,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0,
   },
@@ -54,28 +62,26 @@ export const FOUNDERS: FounderDef[] = [
     id: "marco",
     name: "Marco Russo",
     title: "The Showman",
-    blurb: "Après buzz. Higher daily fixed cost.",
-    arrivalMoodBonus: 0.03,
+    bonus: "Earn 10% more from venues.",
+    constraint: "Pay $80 more per day.",
+    arrivalMoodBonus: 0,
     fixedCostDelta: 80,
     snowExpectationPenalty: 0,
   },
 ];
 
-/** Ordered crew overnight learning list (P1: 12 talents). */
-export const CREW_TALENTS: TalentDef[] = [
-  { id: "rope_tow", name: "Rope Tow", effect: "Surface lift ops +5% efficiency" },
-  { id: "trail_guns", name: "Trail Guns", effect: "Gun reach + snow depth overnight" },
-  { id: "house_band", name: "House Band", effect: "Village mood +3" },
-  { id: "groom_pass", name: "Groom Pass", effect: "Morning corduroy quality +0.05" },
-  { id: "ticket_booth", name: "Ticket Booth", effect: "Arrivals +1 on weekends" },
-  { id: "patrol_radio", name: "Patrol Radio", effect: "Lift capacity +5%" },
-  { id: "cafe_shift", name: "Café Shift", effect: "Café guests linger happier" },
-  { id: "school_day", name: "School Day", effect: "Weekday bus arrivals unlocked" },
-  { id: "wind_hold", name: "Wind Hold", effect: "Chair stays open in gusts" },
-  { id: "corduroy", name: "Corduroy", effect: "Groom visual stripes stronger" },
-  { id: "night_lights", name: "Night Lights", effect: "Evening ops stub ready" },
-  { id: "heritage_sign", name: "Heritage Sign", effect: "Reputation +2 each week" },
-];
+export function talentDescription(name: string, state: Pick<import("./state").GameState, "lifts" | "buildings" | "guns">): string {
+  const talent = CREW_TALENTS.find(entry => entry.name === name);
+  if (!talent) return name;
+  let waiting = "";
+  if (talent.needs === "chair" || talent.needs === "surface") {
+    if (!state.lifts.some(lift => lift.confirmed && lift.type === talent.needs)) {
+      waiting = talent.needs === "chair" ? "Waits for a chair." : "Waits for a surface lift.";
+    }
+  } else if (talent.needs === "cafe" && !state.buildings.includes("cafe")) waiting = "Waits for a café.";
+  else if (talent.needs === "gun" && !state.guns.length) waiting = "Waits for a snow gun.";
+  return [talent.name + " (" + talent.crew + ")", talent.effect, waiting].filter(Boolean).join(" ");
+}
 
 export const STORY_BEATS: StoryBeatDef[] = [
   {
@@ -112,7 +118,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "winter_review",
     title: "Winter review",
     radio:
-      "Last chair for the winter. Maris has the season’s news from Dutch Hill.",
+      "Last chair for the winter. Maris has the winter’s news from Dutch Hill.",
   },
 ];
 

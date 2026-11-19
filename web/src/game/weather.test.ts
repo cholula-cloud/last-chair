@@ -29,6 +29,11 @@ describe("season weather", () => {
     }
   });
 
+  it("raises storm odds in the second week before vacation demand rises", () => {
+    expect(chainRow("clear", 8).storm).toBeGreaterThan(chainRow("clear", 7).storm);
+    expect(chainRow("snow", 14).storm).toBeGreaterThan(chainRow("snow", 15).storm);
+  });
+
   it("produces occasional storms and clusters thaws over 2,000 winters", () => {
     const winters = 2_000;
     let storms = 0;

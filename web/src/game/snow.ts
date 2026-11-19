@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import type { SnowPreset, WeatherKind } from "./types";
 
 /**
@@ -137,7 +138,7 @@ export const GROOM_TARGET: Record<SnowPreset, number> = { minimal: 0, mid: 0.6, 
 /** Extra crispness a fresh groom adds on top of the target. */
 export const GROOM_CRISP: Record<SnowPreset, number> = { minimal: 0, mid: 0.03, high: 0.06 };
 /** `groom_pass` / `corduroy` talents raise the groom target. */
-export const GROOM_TALENT_BONUS = 0.07;
+export const GROOM_TALENT_BONUS = TALENT.groomPass.quality;
 export const QUALITY_CAP = 0.95;
 /** Scraped snow drifts down on a Minimal night (no groom). */
 export const MINIMAL_DRIFT = 0.04;
@@ -148,7 +149,7 @@ export const GROOM_PUSH: Record<SnowPreset, number> = { minimal: 0, mid: 0.04, h
 export const GUN_DEPTH: Record<SnowPreset, number> = { minimal: 0, mid: 0.14, high: 0.2 };
 /** Fraction of the trail, measured from the bottom, the guns reach. */
 export const GUN_REACH: Record<SnowPreset, number> = { minimal: 0, mid: 0.5, high: 1 };
-export const TRAIL_GUNS_EXTRA_REACH = 0.25;
+export const TRAIL_GUNS_EXTRA_REACH = TALENT.trailGuns.extraReach;
 /** Coverage a Mid groom wins back where depth allows. High restores it fully. */
 export const MID_COVERAGE_RECOVERY = 0.3;
 
@@ -158,11 +159,13 @@ export type NightInputs = {
   hasGuns: boolean;
   hasTrailGuns: boolean;
   hasGroom: boolean;
+  corduroy?: boolean;
+  snowFences?: boolean;
 };
 
 /** Fraction of the trail from the bottom that the guns cover tonight (0 when they do not fire). */
 export function gunReach(o: Pick<NightInputs, "snow" | "hasGuns" | "hasTrailGuns">): number {
-  const fires = o.snow !== "minimal" && (o.hasGuns || (o.snow === "high" && o.hasTrailGuns));
+  const fires = o.snow !== "minimal" && o.hasGuns;
   if (!fires) return 0;
   const extra = o.hasGuns && o.hasTrailGuns ? TRAIL_GUNS_EXTRA_REACH : 0;
   return Math.min(1, GUN_REACH[o.snow] + extra);
@@ -195,7 +198,7 @@ export function overnightTrail(
 ): Trail {
   const n = trail.length;
   const reach = gunCoverage ? 0 : gunReach(o);
-  const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0);
+  const target = GROOM_TARGET[o.snow] + (o.hasGroom ? GROOM_TALENT_BONUS : 0) + (o.corduroy ? TALENT.corduroy.quality : 0);
 
   return trail.map((seg, i) => {
     const e = elevationAt(i, n, elevations);
@@ -227,7 +230,7 @@ export function overnightTrail(
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.10);
       if (depth >= COVER_MIN) coverage = 1;
     } else if (o.weather === "thaw") {
-      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed);
+      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed * (o.snowFences && i >= n - TALENT.snowFences.segments ? TALENT.snowFences.depthLoss : 1));
       quality = Math.max(0.1, quality - (0.04 + 0.16 * low) * exposed);
     } else {
       depth = Math.max(0.02, depth - 0.01 * exposed);

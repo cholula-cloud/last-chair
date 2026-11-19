@@ -68,9 +68,9 @@ describe("slope readout", () => {
 });
 
 describe("layer registry", () => {
-  it("lists the slope layer only, with unique ids and non-zero modes", () => {
+  it("lists every implemented layer, with unique ids and non-zero modes", () => {
     const layers = overlayLayers();
-    expect(layers.map((l) => l.id)).toEqual(["slope"]);
+    expect(layers.map((l) => l.id)).toEqual(["slope","depth","guns","conditions"]);
     expect(new Set(layers.map((l) => l.mode)).size).toBe(layers.length);
     expect(layers.every((l) => l.mode > 0 && l.legend.length > 0)).toBe(true);
   });

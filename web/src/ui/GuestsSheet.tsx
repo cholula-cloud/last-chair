@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { AssetId } from "@/game/base";
 import { satisfactionContext } from "@/game/rules";
 import { guestSatisfaction } from "@/game/satisfaction";
@@ -47,17 +48,12 @@ export function GuestsSheet({
     () => allGuests.filter((g) => g.state !== "pending" && g.state !== "gone"),
     [allGuests],
   );
-  const fare = useGameStore((s) => s.fare);
-  const buildings = useGameStore((s) => s.buildings);
+  const ctx = useGameStore(useShallow(satisfactionContext));
   const assets = useGameStore((s) => s.assets);
-  const founderId = useGameStore((s) => s.founderId);
-  const weather = useGameStore((s) => s.weather);
-  const clockMin = useGameStore((s) => s.clockMin);
   const followId = useGameStore((s) => s.followId);
   const setFollowId = useGameStore((s) => s.setFollowId);
 
   if (!open) return null;
-  const ctx = satisfactionContext({ fare, buildings, assets, founderId, weather, clockMin });
 
   return (
     <Sheet

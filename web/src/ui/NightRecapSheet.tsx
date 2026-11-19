@@ -1,5 +1,7 @@
 "use client";
 
+import { TALENT } from "@/game/talents";
+
 import { ASSET_CATALOG, type AssetId } from "@/game/base";
 
 import { useState } from "react";
@@ -7,25 +9,32 @@ import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
-import { demandContext, guestsWantLine } from "@/game/guestsWant";
-import { CoachTip } from "@/ui/CoachTip";
+import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
+import { talentDescription } from "@/game/content";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { useSettings } from "@/ui/settingsStore";
+import { StoryEntries } from "@/ui/StoryLog";
 import { surpriseRadio } from "@/game/surprises";
 import { WHY_BASE, GUEST_MEASURE_LABELS, delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "@/game/why";
 import {
   FARE_LABELS,
   FARE_PRICES,
   SNOW_LABELS,
-  SNOW_NIGHT_COST,
   type FarePreset,
   type SnowPreset,
   type WeatherKind,
 } from "@/game/types";
 import { outlookFor } from "@/game/weather";
+import { problemGuide } from "@/game/coach";
+import { LAYERS, type MapLayer } from "@/game/mapLayers";
+import { founderById } from "@/game/content";
+import type { OfficeTabId } from "./officeStore";
+import { CoachCard } from "./CoachCard";
+import { useCoach } from "./coachStore";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
 import {
@@ -95,12 +104,12 @@ function moodWord(score: number): { word: string; tone: Tone } {
 /** Largest effect on the bars; anything bigger fills the half-track. */
 const BAR_FULL_PTS = 20;
 
-function WhyList({ recap }: { recap: NightRecap }) {
+function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
   const [open, setOpen] = useState(false);
   const lines = whyLines(recap);
   return (
     <div className="mt-3">
-      <DisclosureButton open={open} controls="why-list" onToggle={() => setOpen((o) => !o)}>
+      <DisclosureButton open={open} controls="why-list" onToggle={() => { if (!open) useCoach.getState().next(6); setOpen((o) => !o); }}>
         Why {Math.round(recap.satisfaction)}% happy?
       </DisclosureButton>
       {open && (
@@ -121,7 +130,7 @@ function WhyList({ recap }: { recap: NightRecap }) {
                       {formatPoints(line.points)}
                     </span>
                   </div>
-                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}</p>
+                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " · Patrol on hand" : ""}</p>
                   <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-snow-2" aria-hidden="true">
                     <span
                       className={`absolute inset-y-0 ${
@@ -202,7 +211,8 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
   const lines = [
     ...(recap.costs && recap.revenue != null ? [
       { label: "Tickets and venue sales", amount: recap.revenue },
-      { label: "Fixed operating costs", amount: -costs.fixed },
+      { label: "Fixed operating costs", amount: -(costs.fixed - (costs.vacationStaffing ?? 0)) },
+      { label: "Vacation-week staffing", amount: -(costs.vacationStaffing ?? 0) },
       { label: "Founder operating costs", amount: -costs.founder },
       { label: "Lift operations", amount: -costs.liftOps },
       { label: "Building upkeep", amount: -costs.upkeep },
@@ -277,27 +287,29 @@ function Choices({
   const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
     value: v,
     label: SNOW_LABELS[v],
-    detail: SNOW_NIGHT_COST[v] ? `${formatMoney(SNOW_NIGHT_COST[v])}/night` : "Free",
+    detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
     note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
   }));
-  const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
+  const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
   const chosen = previews[pendingSnow];
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading aside="Tomorrow’s public ticket">Fare</SectionHeading>
-      <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
+      <CoachCard slot="fare" />
+      <div data-coach="fare"><ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={(v) => { setPendingFare(v); useCoach.getState().next(7); }} /></div>
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
         Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
-      <ChoiceTiles
+      <CoachCard slot="snow" />
+      <div data-coach="snow"><ChoiceTiles
         label="Snow and service"
         options={snowOptions}
         value={pendingSnow}
-        onPick={setPendingSnow}
-      />
+        onPick={(v) => { setPendingSnow(v); useCoach.getState().next(8); }}
+      /></div>
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
         In the most likely weather, expect {chosen.label.toLowerCase()}.
@@ -313,11 +325,14 @@ function Choices({
   );
 }
 
-export function NightRecapSheet() {
+export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTabId) => void; onMap: (layer: MapLayer) => void }) {
   const night = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s : null));
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
+  const tipsOn = useSettings(s => s.tips);
+  const coachProblem = useCoach(s => !s.skipped && !s.problemSeen);
+  const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
 
   const recap = night?.nightRecap;
@@ -330,9 +345,11 @@ export function NightRecapSheet() {
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
   const surpriseCopy = surprise && surpriseRadio(surprise);
   const summitLinkOffer = summitLinkOfferOpen(night);
-  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged);
+  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
-  const guestsWant = hasGuests ? guestsWantLine(recap, demandContext(night)) : null;
+  const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
+  const guide = tipsOn && coachProblem ? problemGuide(recap, demand?.key) : null;
+  const guestsWant = demand?.line;
 
   return (
     <Sheet
@@ -350,10 +367,11 @@ export function NightRecapSheet() {
             setPendingSnow={setPendingSnow}
           />}
 
+          <CoachCard slot="sleep" />
           {dayIndex < night.seasonLength && nextTalent && (
             <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
               Tomorrow the crew learns{" "}
-              <span className="font-extrabold text-sign-green">{nextTalent}</span>
+              <span className="font-extrabold text-sign-green">{talentDescription(nextTalent, night)}</span>
             </p>
           )}
         </>
@@ -372,10 +390,16 @@ export function NightRecapSheet() {
             </p>
           )}
           <PrimaryButton
+            data-coach="sleep"
             tone="brown"
             disabled={!canSleep}
             aria-describedby={canSleep ? undefined : "sleep-hint"}
-            onClick={sleep}
+            onClick={() => {
+              if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
+              sleep();
+              if (guide) useCoach.getState().sawProblem();
+              if (dayIndex === 1) useCoach.getState().finishDay();
+            }}
           >
             <CocoaIcon size={24} />
             {dayIndex < night.seasonLength ? "Sleep until morning" : "Finish the winter"}
@@ -416,29 +440,25 @@ export function NightRecapSheet() {
         <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
-        <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
+        <CoachCard slot="recap-problem" />
+        <p data-coach="recap-problem" className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
           {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
+        {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
+          <p className="text-base"><strong>{night.founderId && founderById(night.founderId)?.name}</strong> · {guide.text}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map · {LAYERS[guide.layer]}</button>
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office · {guide.tab}</button>
+            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawProblem()}>Dismiss advice</button>
+          </div>
+        </aside>}
         <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
         {guestsWant && (
           <p data-coach="guests-want" className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
             {guestsWant}
           </p>
         )}
-        <div className="mt-3">
-          <CoachTip
-            context={{
-              phase: "night",
-              dayIndex,
-              opening: null,
-              running: true,
-              placementActive: false,
-              buildOpen: false,
-              hasGuestsWant: guestsWant !== null,
-            }}
-          />
-        </div>
 
         {recap.facts.venueRevenue && (
           <ul aria-label="Venue takings" className="mt-2 space-y-1 text-sm font-bold">
@@ -448,10 +468,10 @@ export function NightRecapSheet() {
           </ul>
         )}
         {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">{recap.facts.balked} stops to sit out a line</p>}
-        {hasGuests && <WhyList key={dayIndex} recap={recap} />}
+        {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 
         <SchoolContractCard night={night} />
-        {beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
+        {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={
@@ -467,7 +487,12 @@ export function NightRecapSheet() {
             {tidy(beat.radio)}
           </RadioCard>
         )}
-        {surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={() => onOffice("Desk")}>Office</button>
+        <details className="panel mt-4 p-3">
+          <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
+          <StoryEntries />
+        </details>
       </div>
     </Sheet>
   );

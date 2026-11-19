@@ -48,17 +48,20 @@ function VolumeSlider({ label, value, onChange }: { label: string; value: number
 
 /** The settings list, shared by the title screen and the Office. */
 export function SettingsControls() {
-  const { soundOn, masterVolume, effectsVolume, ambienceVolume, voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed, set } = useSettings();
+  const settings = useSettings();
+  const { captions, reduceMotion, defaultSpeed, set } = settings;
   const speedId = useId();
   return (
     <div className="flex flex-col gap-4">
-      <Toggle label="Sound" on={soundOn} onChange={(v) => set({ soundOn: v })} />
-      <VolumeSlider label="Master volume" value={masterVolume} onChange={(v) => set({ masterVolume: v })} />
-      <VolumeSlider label="Effects volume" value={effectsVolume} onChange={(v) => set({ effectsVolume: v })} />
-      <VolumeSlider label="Ambience volume" value={ambienceVolume} onChange={(v) => set({ ambienceVolume: v })} />
-      <VolumeSlider label="Voice volume" value={voiceVolume} onChange={(v) => set({ voiceVolume: v })} />
-      <Toggle label="Voice" on={voiceOn} onChange={(v) => set({ voiceOn: v })} />
-      <Toggle label="Coach tips" on={tips} onChange={(v) => set({ tips: v })} />
+      <Toggle label="Sound" on={!settings.muted} onChange={on => set({ muted: !on })} />
+      {([["masterVolume", "Master volume"], ["musicVolume", "Music volume"], ["effectsVolume", "Effects volume"], ["voiceVolume", "Voice volume"]] as const).map(([key, label]) => (
+        <VolumeSlider key={key} label={label} value={settings[key]} onChange={value => set({ [key]: value })} />
+      ))}
+      <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
+      <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />
+      <Toggle label="Pattern aids" on={settings.patternAids} onChange={on => set({ patternAids: on })} />
+      <Toggle label="Voice" on={settings.voiceOn} onChange={on => set({ voiceOn: on })} />
+      <Toggle label="Coach tips" on={settings.tips} onChange={on => set({ tips: on })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
       <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
       <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">

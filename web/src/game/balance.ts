@@ -17,9 +17,9 @@ import {
   trailOptions,
 } from "./rules";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
-import { MOUNTAIN_CALENDARS, dayKind } from "./calendar";
+import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
-import { liquidNetWorth, loanOffered, morningCash } from "./economy";
+import { dailyCosts, liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import type { NightRecap } from "./sim";
@@ -27,6 +27,8 @@ import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
+import { HEALTHY_GUEST_SCORE, VACATION_WAIT_GOAL } from "./winterArc";
+import { winterRecord } from "./winterMemory";
 import { outlookFor } from "./weather";
 
 /**
@@ -46,6 +48,7 @@ export type StrategyContext = {
   recap: NightRecap | null;
   /** The recap's biggest problem term, or null on a good day. */
   problem: keyof SatTerms | null;
+  sawSaturdayQueue: boolean;
 };
 
 export type NightPlan = { fare: FarePreset; snow: SnowPreset };
@@ -159,6 +162,14 @@ export const ADAPTIVE: Strategy = {
   },
 };
 
+/** Follows the first week's operating advice and waits for a Saturday queue before adding a chair. */
+export const COACHED: Strategy = {
+  id: "coached",
+  label: "Coached",
+  build: (ctx) => (ADAPTIVE.build?.(ctx) ?? []).filter((action) => action !== "chair" || ctx.sawSaturdayQueue),
+  night: (ctx) => ctx.state.dayIndex < 7 ? { fare: "balanced", snow: "mid" } : ADAPTIVE.night(ctx),
+};
+
 /** Starts the lodge upgrade on day 1, then builds its first chair at Tier 2. */
 export const BUILDER: Strategy = {
   id: "builder",
@@ -193,7 +204,7 @@ export const CARELESS: Strategy = {
   night: () => ({ fare: "cheap", snow: "high" }),
 };
 
-export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY, CARELESS];
+export const STRATEGIES: Strategy[] = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, STINGY, CARELESS, COACHED];
 
 export function strategyById(id: string): Strategy {
   const s = STRATEGIES.find((x) => x.id === id);
@@ -205,6 +216,8 @@ export function strategyById(id: string): Strategy {
 export type DayRecord = {
   day: number;
   weekend: boolean;
+  saturday: boolean;
+  holidayWeek: boolean;
   fare: FarePreset;
   snow: SnowPreset;
   hasChair: boolean;
@@ -235,6 +248,13 @@ export type SeasonResult = {
   wentBankrupt: boolean;
   tookLoan: boolean;
   endNetWorth: number;
+  events: GameState["surpriseLog"];
+  schoolOffers: number;
+  vivianOffers: number;
+  schoolVisits: NonNullable<NightRecap["facts"]["schoolBus"]>[];
+  solvent: boolean;
+  winterScore: number;
+  firstFrozenPressureDay: number | null;
   schoolContract: GameState["schoolContract"];
   summitLinkDecision: GameState["summitLinkDecision"];
   firstShortfallOfferedLoan: boolean;
@@ -261,11 +281,32 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
   return buyBuilding(state, action);
 }
 
+/**
+ * Continue the same night-14 hill with its fare, service and buildings frozen.
+ * A single failed operating day disproves that this hill could coast to close.
+ */
+function firstFrozenPressureDay(halfway: GameState): number | null {
+  let state = sleep(setPendingSnow(setPendingFare(halfway, halfway.fare), halfway.snow));
+  while (state.phase === "day") {
+    let night = skipToClose(state);
+    if (night.pendingBeat === "school_bus") night = decideSchoolContract(night, "declined");
+    else if (night.pendingBeat === "summit_link") night = replyToSummitLink(night, "declined");
+    else night = acknowledgeBeat(night);
+    const recap = night.nightRecap!;
+    night = setPendingSnow(setPendingFare(night, halfway.fare), halfway.snow);
+    if (morningCash(night) < 0 || recap.cashDelta < dailyCosts(night).snowNight ||
+        recap.satisfaction < HEALTHY_GUEST_SCORE || !recap.facts.dispatched ||
+        recap.facts.avgWaitMin > VACATION_WAIT_GOAL) return night.dayIndex;
+    state = sleep(night);
+  }
+  return winterRecord(state).goalMet ? null : state.dayIndex;
+}
+
 export function runSeason(
   seed: number,
   strategy: Strategy,
   founderId: FounderId = "elena",
-  options: { seasonLength?: number; takeLoan?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
+  options: { seasonLength?: number; takeLoan?: boolean; checkMidwinter?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
   const length = options.seasonLength ?? hill.seasonLength;
@@ -274,19 +315,25 @@ export function runSeason(
   const days: DayRecord[] = [];
   let minCash = state.cash;
   let firstShortfallOfferedLoan = false;
+  let frozenPressureDay: number | null = null;
   let runs = 0;
   let waitSum = 0;
   let dispatched = 0;
   const ctxOf = (): StrategyContext => ({
     state,
     recap,
+    sawSaturdayQueue: days.some((day) => day.saturday && biggestProblem(day.breakdown) === "queue"),
     problem: recap ? biggestProblem(recap.breakdown) : null,
   });
 
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const schoolVisits: SeasonResult["schoolVisits"] = [];
+  let schoolOffers = 0;
+  let vivianOffers = 0;
   let guard = 0;
   while (state.phase === "day" && guard++ < 400) {
     for (const action of strategy.build?.(ctxOf()) ?? []) state = applyBuild(state, action);
-    if (strategy.id === "builder" || strategy.id === "adaptive") {
+    if (strategy.id === "builder" || strategy.id === "adaptive" || strategy.id === "coached") {
       state = maybeCutChairGreen(state);
     }
     minCash = Math.min(minCash, state.cash);
@@ -294,13 +341,16 @@ export function runSeason(
     const snow = state.snow;
     const chair = hasChair(state);
     state = skipToClose(state);
-    if (state.pendingBeat === "school_bus") state = decideSchoolContract(state, options.school ?? "declined");
-    else if (state.pendingBeat === "summit_link") {
+    if (state.pendingBeat === "school_bus") {
+      schoolOffers++;
+      state = decideSchoolContract(state, options.school ?? "declined");
+    } else if (state.pendingBeat === "summit_link") {
+      vivianOffers++;
       const reply = founderId === "riley" ? "declined" : options.summitLink ?? "declined";
       state = replyToSummitLink(state, reply);
-    }
-    else state = acknowledgeBeat(state);
+    } else state = acknowledgeBeat(state);
     recap = state.nightRecap as NightRecap;
+    if (recap.facts.schoolBus) schoolVisits.push(recap.facts.schoolBus);
     const { dayStats } = state;
     runs += dayStats.completedRuns;
     waitSum += dayStats.waitSumMin;
@@ -308,7 +358,9 @@ export function runSeason(
 
     days.push({
       day: state.dayIndex,
-      weekend: dayKind(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) === "weekend",
+      weekend: dayKind(calendar, state.dayIndex) === "weekend",
+      saturday: weekdayForDay(calendar, state.dayIndex) === "Sat",
+      holidayWeek: inHolidayWeek(calendar, state.dayIndex),
       fare,
       snow,
       hasChair: chair,
@@ -320,6 +372,7 @@ export function runSeason(
       cashDelta: recap.cashDelta,
       problem: recap.problem,
     });
+    if (options.checkMidwinter && state.dayIndex === 14 && length > 14) frozenPressureDay = firstFrozenPressureDay(state);
     const plan = strategy.night(ctxOf());
     state = setPendingSnow(setPendingFare(state, plan.fare), plan.snow);
     const projected = morningCash(state);
@@ -332,6 +385,8 @@ export function runSeason(
   }
 
   if (state.phase !== "winter_review") throw new Error(`Season stopped on day ${state.dayIndex} in ${state.phase}`);
+  const record = winterRecord(state);
+  if (!record.score) throw new Error("Completed simulated season has no measured score");
   const n = Math.max(1, days.length);
   return {
     seed,
@@ -347,7 +402,14 @@ export function runSeason(
     wentNegative: minCash < 0,
     wentBankrupt: state.outcome === "bankrupt",
     tookLoan: state.loanTaken,
-    endNetWorth: liquidNetWorth(state),
+    endNetWorth: record.netWorth,
+    solvent: record.goalMet,
+    winterScore: record.score.total,
+    firstFrozenPressureDay: frozenPressureDay,
+    events: state.surpriseLog,
+    schoolOffers,
+    vivianOffers,
+    schoolVisits,
     schoolContract: state.schoolContract,
     summitLinkDecision: state.summitLinkDecision,
     firstShortfallOfferedLoan,
@@ -375,6 +437,8 @@ export type StrategySummary = {
   /** Mean over seeds of Saturday wait, game minutes, on days with a chair / without. */
   satWaitChair: number | null;
   satWaitNoChair: number | null;
+  holidaySatWaitChair: number | null;
+  holidaySatWaitNoChair: number | null;
 };
 
 function mean(xs: number[]): number {
@@ -383,9 +447,9 @@ function mean(xs: number[]): number {
 
 export function summarize(strategy: Strategy, results: SeasonResult[]): StrategySummary {
   const m = (f: (r: SeasonResult) => number) => mean(results.map(f));
-  const sat = (chair: boolean) => {
+  const sat = (chair: boolean, holidayOnly = false) => {
     const waits = results.flatMap((r) =>
-      r.days.filter((d) => d.day % 7 === 6 && d.hasChair === chair).map((d) => d.avgWaitMin),
+      r.days.filter((d) => d.saturday && (!holidayOnly || d.holidayWeek) && d.hasChair === chair).map((d) => d.avgWaitMin),
     );
     return waits.length ? mean(waits) : null;
   };
@@ -406,6 +470,8 @@ export function summarize(strategy: Strategy, results: SeasonResult[]): Strategy
     talents: m((r) => r.talents),
     satWaitChair: sat(true),
     satWaitNoChair: sat(false),
+    holidaySatWaitChair: sat(true, true),
+    holidaySatWaitNoChair: sat(false, true),
   };
 }
 
@@ -479,7 +545,7 @@ export function formatTable(all: StrategySummary[]): string {
     "probDays".padStart(9),
     "neg%".padStart(5),
     "beats".padStart(6),
-    "score".padStart(6),
+    "combo".padStart(6),
   ].join(" ");
   const rows = all.map((s) =>
     [

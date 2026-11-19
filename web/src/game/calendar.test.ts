@@ -70,9 +70,9 @@ describe("Dutch Hill calendar", () => {
       const rosters = Array.from({ length: 200 }, (_, seed) => sleep({ ...night, rngState: seed + 1 }).guests).flat();
       return rosters.filter((guest) => guest.persona === "regular").length / rosters.length;
     };
-    expect(share(16)).toBeCloseTo(0.4, 1);
-    expect(share(22)).toBeCloseTo(0.6, 1);
-    expect(share(23)).toBeCloseTo(0.6, 1);
+    expect(share(16)).toBeCloseTo(0.34, 1);
+    expect(share(22)).toBeCloseTo(0.35, 1);
+    expect(share(23)).toBeCloseTo(0.35, 1);
   });
 
   it("keeps the Saturday gate on its calendar day", () => {

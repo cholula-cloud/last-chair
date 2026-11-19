@@ -5,6 +5,8 @@ import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { readActiveSlot } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { closeOffice, OFFICE_TABS, setOfficeTab, useOffice, type OfficeTabId } from "@/ui/officeStore";
+import { Money, Reports, Crew } from "./Office";
+import { ReplayNotes } from "./ReplayNotes";
 import { DeskTab } from "@/ui/OfficeDesk";
 import { SettingsControls } from "@/ui/SettingsControls";
 import { CloseIcon } from "@/ui/kit/icons";
@@ -14,9 +16,16 @@ type Panel = "tabs" | "settings" | "slots";
 const HEADER_BTN = "key key-sm press flex min-h-11 items-center justify-center px-3 text-[0.9rem] font-extrabold";
 
 function TabPanel({ tab }: { tab: OfficeTabId }) {
+  const state = useGameStore();
   switch (tab) {
-    case "desk":
-      return <DeskTab />;
+    case "Desk":
+      return <><DeskTab /><ReplayNotes /></>;
+    case "Money":
+      return <Money s={state} />;
+    case "Reports":
+      return <Reports s={state} />;
+    case "Crew":
+      return <Crew s={state} />;
   }
 }
 
@@ -65,7 +74,7 @@ function Slots({ onLeave, onBack }: { onLeave: () => void; onBack: () => void })
 
 /** Full-screen Office. The day is paused while it is open (see `openOffice`). */
 export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
-  const open = useOffice((s) => s.open);
+  const dialog = useRef<HTMLDialogElement>(null);
   const tab = useOffice((s) => s.tab);
   const phase = useGameStore((s) => s.phase);
   const dayIndex = useGameStore((s) => s.dayIndex);
@@ -76,31 +85,16 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
   const stripRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // The Office only exists during a day; if the phase moves on, it closes without resuming anything.
   useEffect(() => {
-    if (open && phase !== "day") closeOffice();
-  }, [open, phase]);
-
-  // Leaving the hill with the Office open must not leave the flag set for the next visit.
-  useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
-
-  useEffect(() => {
-    if (!open) return;
+    const element = dialog.current;
+    element?.showModal();
     headingRef.current?.focus({ preventScroll: true });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (panel !== "tabs") setPanel("tabs");
-      else closeOffice();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, panel]);
+    return () => element?.close();
+  }, []);
 
   useEffect(() => {
-    if (open && panel === "tabs") centreTab(stripRef.current, prefersReducedMotion());
-  }, [open, panel, tab]);
-
-  if (!open) return null;
+    if (panel === "tabs") centreTab(stripRef.current, prefersReducedMotion());
+  }, [panel, tab]);
 
   const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
   const back = (body: ReactNode, label: string) => (
@@ -114,17 +108,22 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
   );
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      ref={dialog}
+      onCancel={event => {
+        event.preventDefault();
+        if (panel === "tabs") closeOffice();
+        else setPanel("tabs");
+      }}
       aria-modal="true"
       aria-labelledby={titleId}
       data-office
-      className="fixed inset-0 z-50 flex flex-col bg-sky text-ink"
+      className="office-dialog fixed inset-0 m-0 flex h-dvh max-h-none w-screen max-w-none flex-col p-0 bg-sky text-ink"
     >
       <header className="border-b-[3px] border-ink px-3 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
         <div className="flex flex-wrap items-center gap-2">
           <h2 id={titleId} ref={headingRef} tabIndex={-1} className="display min-w-[5rem] flex-1 text-[1.7rem] leading-none outline-none">
-            Office
+            Dutch Hill Office
           </h2>
           <button type="button" aria-pressed={panel === "settings"} onClick={() => setPanel("settings")} className={HEADER_BTN}>
             Settings
@@ -135,14 +134,14 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
           <button
             type="button"
             onClick={closeOffice}
-            aria-label="Close the Office"
+            aria-label="Close Office"
             className="key key-sm press flex size-11 shrink-0 items-center justify-center"
           >
             <CloseIcon />
           </button>
         </div>
         <p className="mt-1.5 text-[0.85rem] font-bold text-ink-soft">
-          Day {dayIndex} of {seasonLength}, {weekday} {date}. The day is paused.
+          Day {dayIndex} of {seasonLength}, {weekday} {date}.{phase === "day" && " The day is paused."}
         </p>
       </header>
 
@@ -155,18 +154,19 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
         >
           {OFFICE_TABS.map((t) => (
             <button
-              key={t.id}
+              key={t}
               type="button"
+              data-office-tab={t}
               role="tab"
-              id={`office-tab-${t.id}`}
-              aria-selected={tab === t.id}
+              id={`office-tab-${t}`}
+              aria-selected={tab === t}
               aria-controls="office-panel"
-              onClick={() => setOfficeTab(t.id)}
+              onClick={() => setOfficeTab(t)}
               className={`key press min-h-11 shrink-0 snap-center px-4 text-[0.95rem] font-extrabold ${
-                tab === t.id ? "key-solid [--key-fill:var(--ink)] [--key-ink:#fff]" : ""
+                tab === t ? "key-solid [--key-fill:var(--ink)] [--key-ink:#fff]" : ""
               }`}
             >
-              {t.label}
+              {t}
             </button>
           ))}
         </div>
@@ -178,12 +178,12 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
         aria-labelledby={panel === "tabs" ? `office-tab-${tab}` : undefined}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-2"
       >
-        <div className="mx-auto w-full max-w-xl">
+        <div className="mx-auto w-full max-w-xl space-y-3">
           {panel === "tabs" && <TabPanel tab={tab} />}
           {panel === "settings" && back(<div className="panel p-4"><SettingsControls /></div>, "Settings")}
           {panel === "slots" && back(<Slots onLeave={onLeave} onBack={() => setPanel("tabs")} />, "Save slots")}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

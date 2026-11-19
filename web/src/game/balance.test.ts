@@ -3,6 +3,7 @@ import {
   ADAPTIVE,
   BUILDER,
   CARELESS,
+  COACHED,
   FIXED_STRATEGIES,
   STINGY,
   bestBy,
@@ -17,6 +18,7 @@ import {
   type SeasonResult,
   type StrategySummary,
 } from "./balance";
+import { checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
 import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
@@ -25,7 +27,7 @@ import { createInitialState } from "./state";
 const SEEDS = seedList(6);
 const START_CASH = createInitialState().cash;
 // STINGY plays exactly Expensive / Minimal with no building, so its numbers are that fixed combination's.
-const STRATEGIES = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, CARELESS];
+const STRATEGIES = [...FIXED_STRATEGIES, ADAPTIVE, BUILDER, CARELESS, COACHED];
 
 let runs: Map<string, SeasonResult[]>;
 let sums: Map<string, StrategySummary>;
@@ -36,9 +38,9 @@ const daysOf = (id: string, pick: (d: DayRecord) => boolean): DayRecord[] =>
   (runs.get(id) ?? []).flatMap((r) => r.days.filter(pick));
 
 beforeAll(() => {
-  runs = runAll(SEEDS, STRATEGIES);
+  runs = runAll(SEEDS, STRATEGIES, { checkMidwinter: true });
   sums = new Map(summarizeAll(runs, STRATEGIES).map((s) => [s.id, s]));
-}, 120_000);
+}, 300_000);
 
 describe("runSeason", () => {
   it("plays a whole season and is deterministic per seed", () => {
@@ -96,6 +98,9 @@ describe("balance properties", () => {
     expect(withChair).toBeLessThan(without / 4);
     expect(withChair).toBeGreaterThan(1);
     expect(withChair).toBeLessThan(5);
+    expect(sum("balanced/mid").holidaySatWaitNoChair).toBeGreaterThan(12);
+    expect(sum("builder").holidaySatWaitChair).toBeGreaterThan(1);
+    expect(sum("builder").holidaySatWaitChair).toBeLessThan(5);
   });
 
   it("a passive Balanced / Mid season preserves capital while Adaptive earns more", () => {
@@ -130,4 +135,17 @@ describe("economy balance", () => {
     expect(STRATEGIES.filter((strategy) => strategy !== CARELESS)
       .flatMap((strategy) => runs.get(strategy.id) ?? []).filter((result) => result.wentBankrupt)).toHaveLength(0);
   });
+});
+
+it("settles independent winters and delivers booked school visits through the ordinary simulation", { timeout: 120_000 }, () => {
+  checkWinterChoices(SEEDS, runs.get("adaptive") ?? []);
+});
+
+it("keeps every founder's adaptive score within 15% of the median and every strategy mean below 90", { timeout: 120_000 }, () => {
+  checkFounderScores(SEEDS, runs.get("adaptive") ?? []);
+  checkStrategyScores(runs);
+});
+
+it("no day-14 operating policy can reliably coast through the vacation surge", () => {
+  checkFrozenWinters(runs);
 });

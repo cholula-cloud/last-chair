@@ -1,8 +1,10 @@
 "use client";
 
+import { founderById } from "@/game/content";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
-import { surpriseRadio } from "@/game/surprises";
+import { FARE_LABELS, SNOW_LABELS } from "@/game/types";
+import { StoryEntries } from "@/ui/StoryLog";
 import { schoolMemory } from "@/game/winterMemory";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
@@ -10,13 +12,17 @@ import { Sheet } from "@/ui/kit/Sheet";
 import { PinIcon } from "@/ui/kit/icons";
 import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
-export function WinterReviewSheet() {
+export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const phase = useGameStore((s) => s.phase);
   const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
+  const founder = useGameStore(s => founderById(s.founderId)?.name);
+  const day = useGameStore(s => s.dayIndex);
+  const seasonLength = useGameStore(s => s.seasonLength);
   const cash = useGameStore((s) => s.cash);
   const netWorth = useGameStore(liquidNetWorth);
   const solvent = !bankrupt && netWorth >= 0;
-  const localMemory = useGameStore((s) => s.surpriseLog?.at(-1));
+  const days = useGameStore(s => s.seasonDays);
+  const score = useGameStore(s => s.lastWinter?.score);
   const school = useGameStore((s) => s.schoolContract);
   const summitLink = useGameStore((s) => s.summitLinkDecision);
   const reputation = useGameStore((s) => s.reputation);
@@ -57,14 +63,14 @@ export function WinterReviewSheet() {
       modal
       z="z-50"
       title="Winter review"
-      subtitle="Dutch Hill, season one"
+      subtitle={`${founder ?? "Dutch Hill"} · ${day} of ${seasonLength} days completed`}
       footer={
         <PrimaryButton onClick={solvent ? finishWinterReview : startNewSeason}>
           {solvent ? "Continue to mountain 2" : "Replay Dutch Hill winter"}
         </PrimaryButton>
       }
     >
-      <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, season one">
+      <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, winter one">
         <p className="display text-[1.35rem] leading-tight text-white">
           {bankrupt ? "The bank called" : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
         </p>
@@ -81,18 +87,42 @@ export function WinterReviewSheet() {
           <StatTile onSign label="Crew talents" value={talentsOwned.length} />
         </div>
       </Sign>
-      {netWorth !== cash && (
-        <p className="chip mt-4 px-3.5 py-3 font-bold">
+      <p className="chip mt-4 px-3.5 py-3 font-bold">
           Cash {formatMoney(cash)} less loan {formatMoney(loan)} and unpaid construction {formatMoney(construction)} leaves <strong>{formatMoney(netWorth)}</strong>.
-        </p>
-      )}
+        <br />Winter solvency goal {solvent ? "met" : "unmet"}.
+      </p>
       <section className="panel mt-4 space-y-2 px-4 py-3" aria-label="What the town remembers">
         <h3 className="font-extrabold">What the town remembers</h3>
-        {localMemory && <p>From the day {localMemory.dayIndex} broadcast: “{surpriseRadio(localMemory).radio}”</p>}
         <p>{schoolMemory(school)}</p>
-        <p>{summitLink === "accepted" ? `Vivian put ${formatMoney(SUMMIT_LINK_PAYMENT)} into Dutch Hill. Tickets stayed at Balanced or below for the rest of the winter.`
-          : summitLink === "declined" ? "Vivian left without a deal. Dutch Hill set its own prices through closing day."
-          : "The ticket window stayed in local hands."}</p>
+        {days.map(day => day.schoolBus && <p key={day.day}>Day {day.day}: {day.schoolBus.arrived} of {day.schoolBus.invited} pupils arrived. School tickets brought in {formatMoney(day.schoolBus.ticketRevenue)}. {day.schoolBus.invited - day.schoolBus.taught} booked pupils missed a lesson.</p>)}
+        {summitLink && <p>{summitLink === "accepted" ? `Vivian put ${formatMoney(SUMMIT_LINK_PAYMENT)} into Dutch Hill. Tickets stayed at Balanced or below for the rest of the winter.`
+          : "Vivian left without a deal. Dutch Hill set its own prices through closing day."}</p>}
+      </section>
+      <section className="panel mt-4 space-y-2 px-4 py-3">
+        <h3 className="font-extrabold">Season score{score && ` · ${score.total}/100`}</h3>
+        {score ? <p>Guest satisfaction averaged {score.satisfaction.toFixed(1)} across {score.measuredDays} days with guests. {score.averageReputation === undefined
+            ? `Final reputation was ${reputation}.`
+            : `Closing reputation averaged ${score.averageReputation.toFixed(1)} over those same days.`} Each counts for half the score.</p>
+          : <p>A winter score needs daily satisfaction and closing reputation for every day with guests, and at least one guest day.</p>}
+        <details>
+          <summary className="min-h-11 cursor-pointer font-bold">Operating decisions</summary>
+          {!days.some((d, i) => i > 0 && (d.fare !== days[i-1].fare || d.snow !== days[i-1].snow)) && <p>No fare or service changes appear in the daily record.</p>}
+          {days.map((d, i) => {
+            const prev = days[i - 1];
+            if (!prev || prev.day + 1 !== d.day || (prev.fare === d.fare && prev.snow === d.snow)) return null;
+            return <p className="mb-2" key={d.day}><strong>Day {d.day}.</strong>{" "}
+              {prev.fare !== d.fare && `Fare changed from ${FARE_LABELS[prev.fare]} to ${FARE_LABELS[d.fare]}. `}
+              {prev.snow !== d.snow && `Service changed from ${SNOW_LABELS[prev.snow]} to ${SNOW_LABELS[d.snow]}. `}
+              Arrivals went from {prev.arrivals} to {d.arrivals}.
+              {prev.arrivals > 0 && d.arrivals > 0 && ` Satisfaction went from ${Math.round(prev.satisfaction)} to ${Math.round(d.satisfaction)}.`}
+            </p>;
+          })}
+        </details>
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={onOffice}>Office</button>
+        <details>
+          <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
+          <StoryEntries />
+        </details>
       </section>
       {solvent && <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-snow-2">

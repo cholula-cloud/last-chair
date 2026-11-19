@@ -80,7 +80,7 @@ export function liftReadout(
   const check = checkPlacement(state, type, line);
   return {
     ok: check.ok,
-    cost: check.ok ? check.cost : liftCost(type, line),
+    cost: check.ok ? check.cost : liftCost(type, line, TERRAIN, state.founderId),
     lengthFt: Math.round(liftLength(line) * TERRAIN.horizontalFeetPerUnit),
     verticalFt: Math.round(liftVertical(line) * TERRAIN.feetPerUnit),
     skiersPerHour: liftCapacityPerHour(type, state.talentsOwned),

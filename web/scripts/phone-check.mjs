@@ -120,19 +120,22 @@ async function cdpPinch(cdp, w, h, spread) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 }
 
-async function measureFps(page, ms = 5000) {
-  return page.evaluate(async (duration) => {
-    let frames = 0;
+async function measureFrames(page, ms = 5000) {
+  return page.evaluate(async duration => {
+    const frames = [];
     const start = performance.now();
-    await new Promise((resolve) => {
-      const tick = () => {
-        frames += 1;
-        if (performance.now() - start >= duration) resolve();
-        else requestAnimationFrame(tick);
+    let last = start;
+    await new Promise(resolve => {
+      const sample = now => {
+        frames.push(now - last);
+        last = now;
+        if (now - start >= duration) resolve();
+        else requestAnimationFrame(sample);
       };
-      requestAnimationFrame(tick);
+      requestAnimationFrame(sample);
     });
-    return frames / (duration / 1000);
+    frames.sort((a, b) => a - b);
+    return { fps: frames.length * 1000 / (last - start), p95FrameMs: frames[Math.floor(frames.length * 0.95)] };
   }, ms);
 }
 
@@ -217,9 +220,18 @@ async function runViewport(engine, launch, vp) {
   const touchNote = { pan: "skipped", pinch: "skipped", doubleTap: "skipped" };
   let fps = null;
   let stats = null;
+  let p95FrameMs = null;
+  let titleLoadMs = null;
+  const soak = [];
 
   try {
     await startPlay(page);
+    titleLoadMs = await page.evaluate(() => {
+      const entry = performance.getEntriesByType("navigation")[0];
+      return entry?.domContentLoadedEventEnd || performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+    });
+    if (!titleLoadMs || titleLoadMs > 5000) fail(`${engine} ${tag}: title load ${titleLoadMs} ms exceeds 5 seconds`);
+    await page.getByRole("button", { name: "Skip tips" }).click();
     const home = await shot(page, engine, tag, "home");
 
     const canvas = page.locator("canvas").first();
@@ -263,7 +275,7 @@ async function runViewport(engine, launch, vp) {
         await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         touchNote.doubleTap = "cdp";
       }
-      fps = await measureFps(page);
+      ({ fps, p95FrameMs } = await measureFrames(page));
       if (fps < 30) fail(`${engine} ${tag}: fps ${fps.toFixed(1)} < 30`);
       stats = await readRenderStats(page);
       if (!stats) fail(`${engine} ${tag}: no __lcStats`);
@@ -290,6 +302,18 @@ async function runViewport(engine, launch, vp) {
     await page.getByLabel("Game speed 2x, tap to change").waitFor();
     await shot(page, engine, tag, "speed-2x");
 
+    if (process.env.PHONE_CHECK_SOAK === "1") {
+      await page.getByRole("button", { name: /cancel/i }).first().click();
+      for (let minute = 1; minute <= 10; minute++) {
+        const sample = await measureFrames(page, 60_000);
+        soak.push({ minute, ...sample });
+        if (!(await page.locator('[data-scene-ready="true"]').isVisible())) {
+          fail(`${engine} ${tag}: scene disappeared at minute ${minute}`);
+          break;
+        }
+      }
+    }
+
     const fatal = errors.filter((e) => !/favicon|hydration|ResizeObserver/i.test(e));
     if (fatal.length) fail(`${engine} ${tag}: page errors\n${fatal.join("\n")}`);
   } catch (e) {
@@ -299,7 +323,7 @@ async function runViewport(engine, launch, vp) {
     await browser.close();
   }
 
-  return { engine, tag, touchNote, fps, stats };
+  return { engine, tag, touchNote, fps, p95FrameMs, titleLoadMs, stats, soak };
 }
 
 const results = [];

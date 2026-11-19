@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { DUTCH_HILL_CALENDAR } from "./calendar";
 import { liftLength, liftVertical, type LiftLine } from "./descent";
 import { TERRAIN, type Terrain } from "./terrain";
@@ -23,7 +24,7 @@ export type GuestState =
   | "depart"
   /** Left the car park for home; terminal, not drawn. */
   | "gone";
-export type PersonaId = "first_timer" | "regular";
+export type PersonaId = "first_timer" | "regular" | "family_pack" | "race_kid";
 export type TrailDifficulty = "green" | "blue" | "black";
 export type LiftType = "surface" | "chair";
 export type WeatherKind = "clear" | "snow" | "storm" | "thaw";
@@ -123,16 +124,11 @@ export type FounderDef = {
   id: FounderId;
   name: string;
   title: string;
-  blurb: string;
+  bonus: string;
+  constraint: string;
   arrivalMoodBonus: number;
   fixedCostDelta: number;
   snowExpectationPenalty: number;
-};
-
-export type TalentDef = {
-  id: string;
-  name: string;
-  effect: string;
 };
 
 export type StoryBeatDef = {
@@ -165,6 +161,11 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
   high: 350,
 };
 
+export function snowNightCost(preset: SnowPreset, owned: readonly string[]): number {
+  if (TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
+  return SNOW_NIGHT_COST[preset];
+}
+
 export const LIFT_LABELS: Record<LiftType, string> = {
   surface: "Surface lift",
   chair: "Double chair",
@@ -189,11 +190,12 @@ export const LIFT_COST_PARAMS: Record<LiftType, { base: number; perLength: numbe
 };
 
 /** Prices in design units: world length and vertical are divided by H and V first. */
-export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN): number {
+export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN, founder?: FounderId | null): number {
   const { base, perLength, perVertical } = LIFT_COST_PARAMS[type];
   const { horizontal: H, vertical: V } = terrain.scale;
   const raw = base + perLength * (liftLength(line) / H) + perVertical * (liftVertical(line, terrain) / V);
-  return Math.round(raw / 50) * 50;
+  const standard = Math.round(raw / 50) * 50;
+  return founder === "juniper" ? Math.round(standard * 115 / 5000) * 50 : standard;
 }
 
 export const BUILDING_LABELS: Record<BuildingId, string> = {
@@ -225,7 +227,7 @@ export const ARRIVAL_EARLY_LATEST_MIN = 10 * 60;
 /** Walk between the car park and the lift line (arriving) or the lodge and the car park (departing). */
 export const ARRIVE_WALK_MIN = 3;
 export const DEPART_WALK_MIN = 3;
-export const MS_PER_GAME_MINUTE = 500;
+export const MS_PER_GAME_MINUTE = 120_000 / (DAY_END_MIN - DAY_START_MIN);
 /** Internal P1 shortcut; scale to 28 for ship. */
 export const SEASON_LENGTH = DUTCH_HILL_CALENDAR.length;
 export const DAILY_FIXED_COST = 1095;

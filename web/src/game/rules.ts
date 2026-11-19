@@ -1,10 +1,11 @@
+import { TALENT } from "./talents";
 import { winterRecord } from "./winterMemory";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
-  liquidNetWorth, morningCash, operatingCosts, payoffAmount, type Payable,
+  liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
-import { MOUNTAIN_CALENDARS, usesWeekendGuestMix } from "./calendar";
+import { MOUNTAIN_CALENDARS, weekdayForDay, isFestiveDay, guestMixForDay } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   assetRevenue,
@@ -21,7 +22,8 @@ import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
-import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
+import { isWarmWeek } from "./founders";
+import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
 import {
   checkLiftLine,
   checkSpacing,
@@ -93,10 +95,14 @@ import {
   type FarePreset,
   type FounderId,
   type LiftType,
-  SNOW_NIGHT_COST,
+  snowNightCost,
   type SnowPreset,
   type WeatherKind,
 } from "./types";
+
+export function canDemolish(state: Pick<GameState, "founderId">, id: AssetId): boolean {
+  return state.founderId !== "elena" || id !== "warming_hut";
+}
 
 function clearedLand(state: Partial<Pick<GameState, "clearedCells">>): Set<ClearingCell> {
   return new Set(state.clearedCells);
@@ -138,16 +144,24 @@ export function satisfactionContext(
   state: Pick<
     GameState,
     "fare" | "buildings" | "founderId" | "weather" | "clockMin"
-  > & Partial<Pick<GameState, "assets">>,
+    | "assets" | "talentsOwned" | "mountainId" | "dayIndex" | "weatherDays"
+  >,
 ): SatisfactionContext {
   const founder = founderById(state.founderId);
+  const owned = state.talentsOwned;
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const day = state.dayIndex;
+  const band = TALENT.houseBand.learned(owned) && isFestiveDay(calendar, day);
+  const warmWeek = state.founderId === "tom" && isWarmWeek(state.weather, state.weatherDays, day);
   return {
     fare: state.fare,
-    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) +
+    firstTimerMoodBonus: TALENT.skiSchool.learned(owned) ? TALENT.skiSchool.mood : 0,
+    snowPenaltyScale: TALENT.firstAidHut.learned(owned) ? TALENT.firstAidHut.penaltyScale : 1,
+    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? TALENT.houseBand.mood : 0) - (warmWeek ? 0.075 : 0) +
       (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
-    venueValue: state.assets
+    venueValue: (TALENT.cafeShift.learned(owned) && state.buildings.includes("cafe") ? TALENT.cafeShift.value : 0) + (state.assets
       ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
-      : venueValue(state.buildings),
+      : venueValue(state.buildings)),
     snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
     now: state.clockMin,
   };
@@ -183,7 +197,7 @@ export function openNight(state: GameState): GameState {
     snowTrouble: readSnow(snowCarriers(state.trails)).trouble,
     snowLabel: readSnow(snowCarriers(state.trails)).label,
     day,
-    arrivalMood: ctx.arrivalMood,
+    arrivalMood: day.guests ? SAT.ARRIVAL_NEUTRAL + day.breakdown.arrivalMood / SAT.ARRIVAL_PTS : ctx.arrivalMood,
     costs: operatingCosts(state),
     schoolBus: invited ? { invited, arrived, taught, ticketRevenue: arrived * SCHOOL_BUS_FARE } : undefined,
     busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
@@ -193,10 +207,11 @@ export function openNight(state: GameState): GameState {
     }, undefined),
   });
   const rawReputation = recap.arrivals > 0
-    ? Math.round(state.reputation * 0.85 + recap.satisfaction * 0.15)
+    ? Math.round(state.reputation * 0.85 + recap.satisfaction * 0.15 + (state.founderId === "juniper" ? 0.5 : 0))
     : state.reputation;
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
-  const reputationAfterBeat = (beat: string | null) => rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0);
+  const reputationAfterBeat = (beat: string | null) => Math.min(100, rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0)
+    + (TALENT.heritageSign.learned(state.talentsOwned) && weekdayForDay(calendar, state.dayIndex) === "Sun" ? TALENT.heritageSign.reputation : 0));
   const pendingBeat = readyStoryBeat({
     calendar,
     dayIndex: state.dayIndex,
@@ -306,14 +321,14 @@ export function tick(state: GameState, deltaMs: number): GameState {
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
       if (asset?.id === "cafe" || asset?.id === "warming_hut") occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
-        const rate = assetRevenue(asset);
+        const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         if (asset.id === "cafe" || asset.id === "warming_hut") {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");
           if (shop && !was.refuelled && g.refuelled) {
-            venueRevenue.shop = (venueRevenue.shop ?? 0) + assetRevenue(shop);
+            venueRevenue.shop = (venueRevenue.shop ?? 0) + assetRevenue(shop, state.founderId);
           }
         }
       }
@@ -447,7 +462,7 @@ export function liftLineOf(lift: LiftSlot): LiftLine {
 }
 
 type LiftPlacementState = Pick<GameState, "lifts" | "cash"> &
-  Partial<Pick<GameState, "assets" | "lodgeTier">>;
+  Partial<Pick<GameState, "assets" | "lodgeTier" | "founderId">>;
 
 /** Terrain, buildings, lift count, spacing, crossing and cash checks. */
 export function checkPlacement(
@@ -470,7 +485,7 @@ export function checkPlacement(
     open.map((l) => ({ line: liftLineOf(l), type: l.type })),
   );
   if (conflict) return { ok: false, reason: conflict.reason, type: conflict.type };
-  const cost = liftCost(type, line);
+  const cost = liftCost(type, line, TERRAIN, state.founderId);
   const { deposit } = constructionDraw(cost);
   if (state.cash < deposit) return { ok: false, reason: "cash", need: deposit - state.cash };
   return { ok: true, cost, length: terrain.length, vertical: terrain.vertical };
@@ -623,11 +638,12 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   const cleared = isGlade || path.length < 2 || preview.deleteTrail
     ? { newCells: [], acres: 0, cost: 0 }
     : clearingQuote(path, widths, excludedCells);
+  if (state.founderId === "juniper") cleared.cost = Math.round(cleared.cost * 1.15);
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
   const reason = preview.reason ?? (state.phase !== "day" ? "Build during the day."
-    : state.cash < cost ? "Not enough cash." : null);
+    : state.cash < cost ? "You need more cash. Close a day and check your balance." : null);
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
@@ -672,7 +688,7 @@ export function commitPaint(state: GameState, strokes: readonly PaintStroke[], g
 export type TrailOffer = RouteOption & { cost: number };
 
 export function trailOptions(
-  state: Pick<GameState, "lifts" | "trails"> & Partial<Pick<GameState, "clearedCells">>,
+  state: Pick<GameState, "lifts" | "trails"> & Partial<Pick<GameState, "clearedCells" | "founderId">>,
   liftIndex: number,
   terrain: Terrain = TERRAIN,
 ): TrailOffer[] {
@@ -682,7 +698,7 @@ export function trailOptions(
   return routeOptions(lift.anchor, existing, terrain).map((opt) => ({
     ...opt,
     cost: state.clearedCells
-      ? 150 + clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost
+      ? 150 + Math.round(clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost * (state.founderId === "juniper" ? 1.15 : 1))
       : trailCost(opt.lengthFt),
   }));
 }
@@ -775,7 +791,7 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     return [bottom, top];
   });
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
-  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash." };
+  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "You need more cash. Close a day and check your balance." };
   return preview;
 }
 
@@ -784,7 +800,76 @@ export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
   if (!preview.ok) return state;
   const buildings = id === "cafe" || id === "shop" || id === "warming_hut"
     ? Array.from(new Set([...state.buildings, id])) : state.buildings;
-  return { ...state, ...purchaseConstruction(state, preview.cost, id), buildings, assets: [...state.assets, preview.placement] };
+  return { ...state, ...purchaseConstruction(state, preview.cost, id), buildings, assets: [...state.assets, { ...preview.placement, purchase: { day: state.dayIndex, minute: state.clockMin, price: preview.cost } }] };
+}
+
+/** Venue indices remain stable while guests are on the hill. */
+function venueChangeProblem(state: GameState, index: number, undo = false): string | null {
+  const asset = state.assets[index];
+  if (!asset || state.phase !== "day") return "Manage venues during the day.";
+  if (!undo && (state.clockMin !== DAY_START_MIN || state.guests.some(isOnHill))) return "Manage this venue before the lifts open.";
+  if (state.guests.some(g => g.state === "refuel" && g.venueIndex === index)) return "Wait for the guests to finish their visit.";
+  return null;
+}
+
+export function assetRemovalQuote(state: GameState, index: number) {
+  const asset = state.assets[index];
+  const purchase = asset?.purchase;
+  const undo = purchase?.day === state.dayIndex && purchase?.minute === state.clockMin;
+  let reason = venueChangeProblem(state, index, undo);
+  if (!reason && asset.id === "warming_hut" && state.assets.findIndex(a => a.id === asset.id) === index &&
+      !canDemolish(state, asset.id) && !undo) reason = "Elena keeps the original warming hut.";
+  if (!reason && asset.id === "ski_school" && state.schoolContract?.decision === "accepted" &&
+      state.schoolContract.day >= state.dayIndex && state.assets.filter(a => a.id === asset.id).length === 1) {
+    reason = "Keep the school open for the booked Readsboro visit.";
+  }
+  if (!reason && !undo && (purchase ? state.dayIndex < purchase.day + 2 : state.payables.some(p => p.what === asset.id))) {
+    reason = "Finish paying the construction installments first.";
+  }
+  const refund = purchase ? (undo ? constructionDraw(purchase.price).deposit : Math.floor(purchase.price / 2)) : 0;
+  return { undo, refund, reason };
+}
+
+export function removeAsset(state: GameState, index: number): GameState {
+  const { undo, refund, reason } = assetRemovalQuote(state, index);
+  if (reason) return state;
+  const asset = state.assets[index];
+  const assets = state.assets.filter((_, i) => i !== index);
+  const payables = [...state.payables];
+  if (undo && asset.purchase) {
+    // Two identical venues bought today have interchangeable installments. Remove exactly one pair.
+    for (const draw of constructionPayables(asset.purchase.price, state.dayIndex, asset.id)) {
+      const i = payables.findIndex(p => p.what === draw.what && p.amount === draw.amount && p.dueDay === draw.dueDay);
+      if (i < 0) return state;
+      payables.splice(i, 1);
+    }
+  }
+  const buildings = state.buildings.filter(id => id !== asset.id || assets.some(a => a.id === id));
+  return { ...state, assets, buildings, payables, cash: state.cash + refund,
+    constructionSpent: undo ? state.constructionSpent - refund : state.constructionSpent,
+    guests: state.guests.map(g => g.venueIndex === undefined ? g : {
+      ...g, venueIndex: g.venueIndex === index ? undefined : g.venueIndex > index ? g.venueIndex - 1 : g.venueIndex,
+    }),
+  };
+}
+
+export function checkAssetMove(state: GameState, index: number, at: XZ) {
+  const reason = venueChangeProblem(state, index);
+  if (reason) return { ok: false as const, reason };
+  const asset = state.assets[index];
+  const terminals = state.lifts.filter(l => l.confirmed).flatMap(l => {
+    const { bottom, top } = liftLineOf(l);
+    return [bottom, top];
+  });
+  const result = previewAssetPlacement(asset.id, at, state.lodgeTier, state.assets.filter((_, i) => i !== index), { terminals });
+  return result.ok ? { ...result, cost: 0 } : result;
+}
+
+export function moveAsset(state: GameState, index: number, at: XZ): GameState {
+  const check = checkAssetMove(state, index, at);
+  if (!check.ok) return state;
+  return { ...state, assets: state.assets.map((asset, i) => i === index
+    ? { ...check.placement, purchase: asset.purchase, styleId: asset.styleId } : asset) };
 }
 
 /** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */
@@ -820,7 +905,7 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
   const reason = state.phase !== "day" ? "Build during the day."
     : openingStep(state) ? "Build a lift and trail first."
     : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash." : null);
+    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "You need more cash. Close a day and check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,
@@ -857,7 +942,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     morningHeadline: `${state.morningHeadline} ${morningWeatherHeadline(state.weather)}`,
     phase: "day",
     paused: true,
-    guests: createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, state.dayIndex)),
+    guests: createInitialGuests(arrivals, rand, guestMixForDay(calendar, state.dayIndex)),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(state.lifts),
     talentToast: null,
@@ -876,6 +961,7 @@ function completeBeat(state: GameState): GameState {
   }
   return {
     ...state,
+    beatLog: [...state.beatLog, { id: state.pendingBeat, day: state.dayIndex }],
     completedBeats: state.completedBeats.includes(state.pendingBeat)
       ? state.completedBeats
       : [...state.completedBeats, state.pendingBeat],
@@ -985,7 +1071,7 @@ export function previewOvernight(state: GameState, snow: SnowPreset): OvernightP
     tone: reading.tone,
     meanQuality: outlook ? WEATHER_KINDS.reduce((sum, kind) =>
       sum + outlook[kind] * results[kind].overnight.snowQuality, 0) : overnight.snowQuality,
-    cost: SNOW_NIGHT_COST[snow],
+    cost: snowNightCost(snow, state.talentsOwned),
     weather,
     outlook,
     results,
@@ -1025,7 +1111,7 @@ export function takeLoan(state: GameState): GameState {
     cash: state.cash + principal,
     nightRecap: { ...state.nightRecap, loanReceived: principal },
     loanTaken: true,
-    loan: { principal, balance: principal, ratePerDay: LOAN_TERMS.rate / state.seasonLength, takenDay: state.dayIndex },
+    loan: { principal, balance: principal, ratePerDay: winterLoanRate(state) / state.seasonLength, takenDay: state.dayIndex },
   };
 }
 
@@ -1055,10 +1141,24 @@ export function sleep(state: GameState): GameState {
   const costs = dailyCosts(state);
   const cash = morningCash(state);
   const debtMornings = cash < 0 ? state.debtMornings + 1 : 0;
+  const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
+  const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
   state = {
     ...state,
     cash,
     debtMornings,
+    dayHistory: [...state.dayHistory, {
+      day: state.dayIndex, fare: state.fare, snow: state.snow, weather: state.weather, recap,
+      snowCost: costs.snowNight, constructionDue: costs.draws, closingCash: cash,
+    }],
+    seasonDays: [...state.seasonDays, { day: state.dayIndex, fare: state.fare, snow: state.snow,
+      arrivals: recap.arrivals, satisfaction: recap.satisfaction, closingReputation: state.reputation, ...(completedTier && { lodgeOpening: completedTier }),
+      ...(recap.summitLinkReply && { summitLink: {
+        reply: recap.summitLinkReply,
+        receipt: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0,
+        fareCap: recap.summitLinkReply === "accepted" ? "balanced" : null,
+      } }),
+      ...(recap.facts.schoolBus && { schoolBus: recap.facts.schoolBus }) }],
     loan: state.loan ? { ...state.loan, balance: state.loan.balance + costs.interest } : null,
     payables: state.payables.filter(({ dueDay }) => dueDay > state.dayIndex),
   };
@@ -1070,12 +1170,11 @@ export function sleep(state: GameState): GameState {
     satisfaction: recap.satisfaction,
     cashDelta: recap.cashDelta,
     avgWaitMin: recap.facts.avgWaitMin,
+    snowNightCost: costs.snowNight,
     ...(observation ? { observation } : {}),
     fare: state.fare,
     snow: state.snow,
   };
-  const upgrade = state.lodgeUpgrade && advanceLodgeUpgrade(state.lodgeUpgrade);
-  const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
   const bankrupt = debtMornings >= BANKRUPTCY_MORNINGS;
   if (bankrupt || nextDay > state.seasonLength) {
     const review: GameState = {
@@ -1090,11 +1189,13 @@ export function sleep(state: GameState): GameState {
       nightRecap: null,
       pendingBeat: null,
       talentToast: null,
+      beatLog: bankrupt ? state.beatLog : [...state.beatLog, { id: "winter_review", day: state.dayIndex }],
       completedBeats: bankrupt || state.completedBeats.includes("winter_review")
         ? state.completedBeats
         : [...state.completedBeats, "winter_review"],
     };
-    return { ...review, lastWinter: winterRecord(review) };
+    const record = winterRecord(review);
+    return { ...review, lastWinter: record, career: [...review.career, record] };
   }
 
   const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
@@ -1110,6 +1211,7 @@ export function sleep(state: GameState): GameState {
     trails: state.trails.map((t, i) => ({
       ...t,
       snow: overnight.trails[i] ?? t.snow,
+      previousRuns: state.dayStats.runsByTrail[i] ?? 0,
       gunCovered: overnight.gunCoverage?.[i],
       groomed: overnight.groomCoverage?.[i],
     })),
@@ -1150,13 +1252,13 @@ export function sleep(state: GameState): GameState {
     seasonSeed: state.seasonSeed,
     weather: overnight.weather,
     surpriseLog: state.surpriseLog,
-  }, createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, nextDay)));
+  }, createInitialGuests(arrivals, rand, guestMixForDay(calendar, nextDay)));
   return {
     ...carried,
     phase: "day",
     gunsVisible: overnight.gunsFired,
     talentToast: overnight.talentLearned
-      ? `Crew learned: ${overnight.talentLearned}. Next: ${overnight.nextTalentHint ?? "—"}`
+      ? talentDescription(overnight.talentLearned, carried)
       : overnight.nextTalentHint
         ? `Tomorrow the crew learns: ${overnight.nextTalentHint}`
         : null,
@@ -1180,8 +1282,11 @@ export function finishWinterReview(state: GameState): GameState {
 
 export function startNewSeason(state: GameState): GameState {
   const next = pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
-  if (state.outcome === "playing") return next;
-  return { ...next, lastWinter: state.lastWinter ?? winterRecord(state) };
+  if (state.lastWinter || state.outcome === "playing") {
+    return { ...next, career: state.career, ...(state.lastWinter && { lastWinter: state.lastWinter }) };
+  }
+  const record = winterRecord(state);
+  return { ...next, career: [...state.career, record], lastWinter: record };
 }
 
 export function nextTalentHint(state: GameState): string | null {

@@ -9,7 +9,7 @@ import {
   type ExportFile,
   type SlotNumber,
 } from "./saveSlots";
-import { activeSaveKey, discardPendingSave, flushSave, freshSeed, useGameStore, withoutSaving } from "./store";
+import { activeSaveKey, discardPendingSave, flushSave, freshSeed, resetSessionReplay, useGameStore, withoutSaving } from "./store";
 
 /** Store-level slot operations. Every one flushes the current slot before it moves away. */
 
@@ -29,7 +29,8 @@ function backUpIfUnreadable(key: string): void {
 }
 
 function resetInMemory(): void {
-  useGameStore.setState({ ...createInitialState(freshSeed()), saveNotice: null });
+  resetSessionReplay();
+  useGameStore.setState({ ...createInitialState(freshSeed()), lastWinter: undefined, saveNotice: null });
 }
 
 /** Loads a saved slot into the game. An unreadable save is backed up and replaced, with a notice. */
@@ -93,7 +94,7 @@ export function importIntoSlot(slot: SlotNumber, text: string): ImportOutcome {
   try {
     localStorage.setItem(key, JSON.stringify({ state: parsed.state, version: SAVE_VERSION, savedAt: Date.now() }));
   } catch {
-    return { ok: false, message: "This browser would not let Last Chair store that save." };
+    return { ok: false, message: "Allow this browser to store site data, then import the file again." };
   }
   return { ok: true };
 }

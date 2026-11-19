@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
-import { checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement } from "@/game/rules";
+import { checkAssetMove, checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
@@ -76,8 +76,9 @@ function LiftPreview() {
   const assets = useGameStore((s) => s.assets);
   const lodgeTier = useGameStore((s) => s.lodgeTier);
   const talentsOwned = useGameStore((s) => s.talentsOwned);
-  const rules = useMemo(() => ({ lifts, cash, assets, lodgeTier, talentsOwned }),
-    [lifts, cash, assets, lodgeTier, talentsOwned]);
+  const founderId = useGameStore(s => s.founderId);
+  const rules = useMemo(() => ({ lifts, cash, assets, lodgeTier, talentsOwned, founderId }),
+    [lifts, cash, assets, lodgeTier, talentsOwned, founderId]);
   const anchors = useMemo(() => review ? [] : LIFT_BUILD_ANCHORS
     .filter((at) => checkPlacement(rules, type, { bottom, top: at }).ok),
   [review, rules, type, bottom]);
@@ -142,7 +143,7 @@ function SitePreview() {
   const draft = usePlacementDraft();
   const state = useGameStore();
   if (!draft.tapPoint) return null;
-  const check = draft.kind === "gun"
+  const check = draft.movingAssetIndex !== undefined ? checkAssetMove(state, draft.movingAssetIndex, draft.tapPoint) : draft.kind === "gun"
     ? checkGunPlacement(state, draft.tapPoint)
     : draft.asset ? checkAssetPlacement(state, draft.asset, draft.tapPoint) : null;
   return (

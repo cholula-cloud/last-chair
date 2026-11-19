@@ -1,6 +1,6 @@
 /**
- * Procedural sounds. Every sound is built from oscillators and filtered noise, so the game
- * ships no audio files. Each recipe schedules its nodes, connects them to `out`, and lets them
+ * Procedural sounds. Every sound is built from oscillators and filtered noise, so these effects
+ * need no audio files. Each recipe schedules its nodes, connects them to `out`, and lets them
  * stop on their own.
  */
 

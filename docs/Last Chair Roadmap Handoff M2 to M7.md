@@ -16,7 +16,7 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 
 "PR 12" or "row 28" means a row in the MASTER_PLAN roadmap, not a GitHub pull request number. The two sets collide (GitHub PR 28 removed Vercel; roadmap row 28 is guest models). Use the row in branch names and titles, for example `claude/row28-guest-models`.
 
-## Where things stand (updated 2026-11-18)
+## Where things stand (updated 2026-11-19)
 
 - The starting point for the M2 finish work was `main` through #54. It included two-tap lift placement, the trail graph (13a to 13c, save v10), the restored 3D scene (#48), the smoothed trail ribbon (#49), and the convex Dutch Hill crest (#50).
 - The M2 release integrates the remaining builder features, lodge tiers, venue visits, lift operations, and snow and clearing rules. The automated gates pass on the integrated version. First-time player sign-off remains open.
@@ -30,7 +30,7 @@ PR #49 smoothed the rendered ribbon where tight path turns folded quads into dar
 
 ### Roadmap order
 
-Complete M2 and its gate before starting M3. The current sequence is **13e → B1 → L1 → B2 → B3 → B4 → 14 → 16a → 16b → 16c → 16d → 15 → 17 → B5**. Row 25 leads M3 save work. Wind holds belong to row 18.
+M2 implementation and its numerical checks shipped. Its uncoached opening remains a separate sign-off. M3 now covers the full 28-day winter, including four guest personas, founder coaching, map layers, the Office, vacation-week pressure and settlement. PR #80 integrates the remaining M3 rows. Device and external player sessions are optional. Use the [master roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for current row status.
 
 ## Corrections to earlier documents
 
@@ -973,13 +973,15 @@ Numbers marked proposed are design choices to be tuned with the balance harness 
 
 # Part B: M3, one full winter
 
-M3 turns Dutch Hill into a finished product: a player picks a founder, plays a 28-day winter with real weather, money pressure, crew talents and six radio beats, and ends in a winter review that records the season for the career. The gate is the P1 device playtest signed by three outside players (MASTER_PLAN section 8, Gate M3).
+### Current handoff
 
-This part assumes M2 is merged (PRs 12b to 17, world scale 2b to 2d, camera part 3). Where an M3 PR reads something M2 adds, the dependency line says so. Every number marked "proposed" is a first value invented for this plan; numbers without that label come from SIMULATION_SPEC.md, WORLD.md or the code on `main` at `a980e31`.
+The common goal is to finish day 28 with nonnegative cash after debt and unpaid construction. Readsboro is optional. Vivian’s offer trades $6,000 for a fare cap. GitHub PR #77 delivered the revised first-winter sequence and #78 recorded hosted verification. The briefs below preserve design history, including proposed values. Use the [M3 roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for delivery status and the [device playtest](./TESTING.md) for optional device sessions.
+
+PR #80 adds Family Pack and Race Kid, four map layers, the Office desk and ledger, all twenty crew talents, all six founder modifiers and a skippable coach. The Office stores daily results and keeps each slot’s career history separate. Schema v8 reads both the released v7 opening and earlier premerge winter histories. Use TESTING.md for browser and performance measurements, and SIMULATION_SPEC.md for the strategy comparison and staffing costs.
+
+The owner deferred all M3 human testing on November 19. Safari, VoiceOver and outside-player sessions are optional follow-up. The separate M2 opening also needs a first-time player.
 
 ## Rules for every M3 PR
-
-**Order.** Build in roadmap order 18 to 27, with one change: land PR 25 (save versioning) first. Every other M3 PR adds persisted fields, and each would otherwise extend the hand-written `migrate()` chain that PR 25 replaces. PR 25 has no dependency on the others. Its row number stays 25.
 
 **Determinism.** All randomness comes from seeded RNGs whose state lives in `GameState`. M3 adds one rule: season-level draws (weather, the radio filler pick) come from a second stream seeded once per season, `seasonSeed`, so they never consume draws from the day stream (`rngState`) that rosters and arrivals use. That keeps arrival noise identical when weather changes, which makes snapshot diffs readable.
 
@@ -1814,13 +1816,13 @@ Open decisions:
 
 ---
 
-## PR 27: MVP balance and external playtest
+## PR 27: MVP balance and winter playthrough
 
-**Goal:** tune the full 28-day winter with an expanded balance harness, then get three outside players through the P1 script on their own phone or tablet without help, and record the results.
+**Goal:** tune the full 28-day winter with an expanded balance harness, then verify the winter end to end with the automated P1 script.
 
 **Depends on:** PRs 18 to 26 merged.
 
-**Player-visible result:** numbers change where the harness says they must; nothing new to see. The output is a balanced winter and a signed TESTING.md log.
+**Player-visible result:** numbers change where the harness says they must; nothing new to see. The balance report and automated playthrough record the release evidence.
 
 ### Design: harness expansion
 
@@ -1839,7 +1841,7 @@ Properties for the MVP (`balance.test.ts`, 6 seeds; report on 40):
 | 3 | No strategy goes below $0 within 14 days | PR 20 |
 | 4 | Careless goes below $0 on ≥ 25% of 40 seeds over 28 days | PR 20 |
 | 5 | No fixed, adaptive, builder or coached run goes bankrupt | PR 20 |
-| 6 | Adaptive and coached mean grade ≥ "Solid winter"; stingy < "Held on" | PR 24 |
+| 6 | Adaptive and Coached mean winter scores reach 65 (the original “Solid winter” threshold). Stingy stays below 50 (“Held on”). Use measured season satisfaction and reputation. The settlement independently decides solvency. | PR 24 |
 | 7 | Each founder's adaptive mean score within ±15% of the median founder | PR 22 |
 | 8 | Holiday-week Saturdays without a chair average over 12 minutes in line; with a chair 1 to 5 | PR 19 |
 | 9 | The common solvency goal is achievable with no accepted offer. The Readsboro and Vivian paths resolve through the regular simulation. Report local event incidence and offer, reply, and delivery counts separately | PR 23, PR 24 |
@@ -1866,22 +1868,12 @@ The script in TESTING.md predates M3. Replace its table with this one (proposed)
 | 9 | Reload mid-night once during the winter | Night sheet restores exactly |
 | 10 | Continue → mountain 2 stub → Replay | New winter starts on day 1; career record kept |
 
-Session length. A full winter takes about 2 hours at 1x (PR 19 arithmetic). The P1 session is up to 90 minutes over at most two sittings on the same device, with 2x or 3x speed and "Skip to close" allowed. The tester finishes the winter at home if the second sitting is unobserved; the save on their device proves it (they screenshot the review).
+At 1×, 28 two-minute days take about 56 minutes of running time, plus time spent building and making night choices. Players can use 2× or 4× speed, close early and resume their saved winter later.
 
-### Design: recruiting and recording three outside players
+### Optional device sessions
 
-Who: three adults who have not seen Last Chair, own an iPhone or iPad with Safari, and are not on the project. At least one rarely plays games; at least one has skied in New England (proposed mix). Recruit from the owner's network by direct message with a fixed invite text; no public post. No payment in M3 (decision below).
+The owner will choose when to play on hardware. Use the P1 protocol in TESTING.md for any future session.
 
-How:
-
-1. Send the live link (`https://cholula-cloud.github.io/last-chair/play/`), the date of the observed sitting, and one line: "Play a winter at Dutch Hill; we won't help, we'll watch."
-2. Observed sitting (in person or video call with screen share from the phone): the observer reads a fixed opener, then only says "What are you thinking?" when the player is silent for 30 s. No hints. Any help given is logged and that player does not count for sign-off.
-3. Second sitting unobserved; the player sends a screenshot of the winter review.
-4. Debrief, five questions: Why did you change fare or snow on a night you remember? What was the hardest thing to understand? Did anything feel unfair? Did you want to play Tenney? Anything too small or hidden on your screen?
-
-Record per player in `docs/TESTING.md` sign-off log (date, gate "P1 external", initials, device and iOS version, result) and in a GitHub issue using a new template `.github/ISSUE_TEMPLATE/playtest.md` with: device, OS, Safari version, minutes per sitting, days skipped to close, finished yes or no, grade, help given (count and when), crashes or stuck states, debrief answers, top three friction points with screenshots. Use initials only; no names, emails or recordings in the repo.
-
-Pass for the gate: three players finish winter 1 with zero help, no crash or stuck state, and each can answer debrief question 1 with a cause they saw in the game. Any friction point seen by two of three players becomes an issue fixed before sign-off; a fix that changes sim numbers reruns the harness.
 
 ### Files
 
@@ -1897,19 +1889,19 @@ Pass for the gate: three players finish winter 1 with zero help, no crash or stu
 
 ### Verification
 
-Agent run of `playtest-p1.mjs` at the four viewports first; then the three external sessions on real devices. Accessibility spot check during the agent run: every interactive element at least 44x44 px (script measures bounding boxes), reduced motion on (`prefers-reduced-motion: reduce` emulation) shows no sheet or coach animation, radio off completes the winter.
+Agent run of `playtest-p1.mjs` at the four viewports for M3. Accessibility spot check during the agent run: every interactive element at least 44x44 px (script measures bounding boxes), reduced motion on (`prefers-reduced-motion: reduce` emulation) shows no sheet or coach animation, radio off completes the winter.
 
 ### Acceptance criteria
 
 - `npm run check` green with all ten properties.
 - 40-seed table and constant changes recorded in SIMULATION_SPEC.
-- TESTING.md shows three external P1 sign-offs with issues linked.
+- TESTING.md records the automated results and offers a device script for later.
 
 ### Risks and edge cases
 
 - Tuning one property breaks another; keep each change to one constant and rerun the full table.
 - External players find a blocking bug late; budget one fix round before the gate.
-- Real-device performance: nothing has run on a real iPhone yet (handoff known issues). Do one owner device run before recruiting.
+- Real-device performance: nothing has run on a real iPhone yet (handoff known issues). The owner can run this check when ready.
 
 ### Scope, docs, size, decisions
 
@@ -1928,23 +1920,21 @@ Open decisions:
 
 ## Gate M3 test plan
 
-Run in this order. Each line is pass or fail; the gate passes when every line passes.
+Use the automated checks below for M3 acceptance. Manual device and accessibility observations can be added when the owner is ready.
 
 | # | Check | How | Pass if |
 |---|---|---|---|
 | 1 | CI | `cd web && npm run check` on `main` | green |
-| 2 | Snapshot history | `git log -p -- web/src/game/__snapshots__/` since 2b | changes only in PRs 18, 19, 20, 21, 23, 24, 27, each with a diff summary in its PR description |
+| 2 | Snapshot history | `git log -p -- web/src/game/__snapshots__/` since 2b | review and explain the current snapshot diff. Historical terrain, lodge and trail changes also updated snapshots before M3. |
 | 3 | Determinism | test: `runSeason(s, adaptive)` twice for s in 1..6, and a serialize-reload in the middle of day 10 and night 10 | identical results |
 | 4 | Balance | `npm run balance` with `BALANCE_SEEDS=40` | ten PR 27 properties hold; table pasted in SIMULATION_SPEC |
 | 5 | Saves | M3 save fixtures v1 to current, in every slot | all load, validate and play one day |
 | 6 | Talents | `talents.test.ts` | 20 with-and-without tests pass |
 | 7 | Founders | `founders.test.ts` | twelve modifier tests pass |
-| 8 | Story | Rule tests and balance report | One item per night, no interruptions during the day, and recorded events and outcomes agree with the sim |
+| 8 | Story | Rule tests and balance report | At most one local moment and one eligible story beat per night. An offer can accompany a local observation. Recorded results agree with the sim |
 | 9 | Review | `review.test.ts`; a bankrupt run in the harness | every season ends in a review with a record |
 | 10 | Agent P1 | `playtest-p1.mjs` at 390x844, 844x390, 820x1180, 375x667 in Chromium and WebKit | completes; no console errors; no element under 44 px; no overlap in screenshots |
-| 11 | Accessibility | same run with reduced motion and radio off; manual VoiceOver pass on one device | no animation; winter completes; coach and radio announced once |
-| 12 | Owner device | owner plays days 1 to 3 on an iPhone in Safari | 30 fps or better by eye; no stuck state |
-| 13 | External P1 | three players per PR 27 | three signed rows in TESTING.md, zero help |
+| 11 | Accessibility | same run with reduced motion and radio off | no animation; winter completes; coach and radio announced once |
 
 Docs at the gate: MASTER_PLAN M3 rows all ☑ and Gate M3 status filled; SIMULATION_SPEC implementation table has no 🟡 or ❌ for Time, Economy, Crew talents, Founder modifiers, Story beat gates, Save format, Randomness; WORLD.md beats and founders match the sim.
 
@@ -1974,7 +1964,7 @@ Standard phone check for every player-visible PR in this part, unless a PR says 
 
 Use `web/scripts/phone-check.mjs` from world-scale part 3 when it exists (waits on `[data-scene-ready="true"]`, reports draw calls and triangles). Until then, take screenshots with Playwright Chromium at those sizes and attach them to the PR. Real iPhone Safari has not run anything since PR 10; each PR records whether a real device was used.
 
-Preconditions for the whole of Part C: M3 gate passed (rows 18 to 27 merged, P1 script signed), world scale 2b, 2c, 2d and part 3 merged, rows 12b, 12c, 13 to 17 merged. Where a PR below names a file or field from those rows, it is the planned name from Part B and the 2b handoff; confirm it exists before coding.
+Preconditions for the whole of Part C: M3 gate passed (rows 18 to 27 merged, automated P1 checks passed), world scale 2b, 2c, 2d and part 3 merged, rows 12b, 12c, 13 to 17 merged. Where a PR below names a file or field from those rows, it is the planned name from Part B and the 2b handoff; confirm it exists before coding.
 
 ---
 
@@ -2362,11 +2352,11 @@ About 220 lines.
 Make a muted run and an unmuted run feel different before the M3 gate, with sound, a day tint and a short confirm pop. Rows 31 to 33 finish each of these later.
 
 ### Scope
-- Sound: `web/src/audio/` holds a Web Audio engine with effects, ambience and voice buses feeding one master gain. Every sound is synthesized in code (oscillators and filtered noise), so no audio files ship and nothing is licensed. Sounds: a UI tap on every enabled button press, a low thunk on build confirm, a three-note radio sting when a Route 100 Radio card appears, a two-note chime when a lodge tier completes, and a looped wind bed that is quieter at night.
+- Sound: `web/src/audio/` holds a Web Audio engine with effects, ambience and voice buses feeding one master gain. Oscillators and filtered noise generate the sound effects and wind bed. The cold open uses recorded narration. Sounds: a UI tap on every enabled button press, a low thunk on build confirm, a three-note radio sting when a Route 100 Radio card appears, a two-note chime when a lodge tier completes, and a looped wind bed that is quieter at night.
 - Gesture rule: nothing is created until `pointerup`, `touchend`, `click` or `keydown` runs. The tab hiding suspends the context. The iOS session type is set to `ambient` where `navigator.audioSession` exists.
 - Settings (in `last-chair-settings`, no save migration): Sound on or off, master, effects and ambience volume, beside the existing Voice switch and volume. Sound can also be switched in the in-game Menu panel. The cold-open voice-over runs through the voice bus when the context is running.
 - Day tint: `render/dayTint.ts` gives a light multiplier from the clock, cool at 7:30, neutral from 11:30 to 1 PM, warm at 4 PM, at most 12 percent on a channel. `Atmosphere` multiplies it into the sun, hemisphere light and horizon colour, fading out as night comes in. Reduced motion keeps it.
-- Juice: a pop that scales and fades in over 240 ms on build confirm (trail, lift, building, lodge upgrade start) and on lodge tier completion. Transform and opacity only. Hidden under reduced motion.
+- Juice: a pop that scales and fades in over 240 ms on build confirm (trail, lift, building, lodge upgrade start) and on lodge tier completion. Transform and opacity only. Reduced motion presents a static confirmation.
 
 ### Files
 `web/src/audio/{mix,synth,engine}.ts`, `web/src/ui/{feel.ts,ConfirmPop.tsx}`, `web/src/render/dayTint.ts`, plus small edits to `settingsStore.ts`, `TitleScreen.tsx`, `Hud.tsx`, `ColdOpen.tsx`, `PlacementBar.tsx`, `BuildSheet.tsx`, `kit/RadioCard.tsx`, `PlayGate.tsx`, `PlayExperience.tsx`, `Atmosphere.tsx`, `globals.css`.
@@ -3483,3 +3473,11 @@ Add a test (`web/src/game/layering.test.ts`) that reads every file under `src/ga
 ## Limitations
 
 Rows 28 to 40 depend on M1 to M3 work that is not on `main` yet (rows 12b to 27, world scale 2b to part 3); file and field names taken from those plans are planned names, and every PR must confirm them before coding. Proposed numbers (lighting values, groom strengths, Tenney's H = 10 and V = 5.5, its 4,230 ft horizontal run, climate weights, economy multipliers, caretaker formula, boarder shares, audio sizes, bundle budgets, the draw-call table) are design starting points, labelled "proposed", to be tuned on screen and in the balance harness. Tenney facts come from the NELSAP page last updated January 2015; its later status, the access road name and all pin coordinates and one-liners are unverified. Draw-call and triangle figures are estimates until measured on a device. The bundle measurement comes from an `out/` build of unknown date. iOS behaviour notes (audio start on gesture, audio session, storage eviction and separation, downloads in standalone mode) reflect Safari as of 2026 and need a real-device check in each PR that relies on them.
+
+### P1 — Family Pack and Race Kid
+
+Sample a single persona per paid guest using the calendar and the existing seeded draw. Keep one ticket and seat per roster entry. Families prefer green descents and take a food stop sooner. Race kids prefer black runs, value snow most and seek the ski school for training. Readsboro brings a mix of beginners and race kids, all eligible for a lesson. Mature guests already present in a saved roster retain their identities. Verify roster shares by calendar, seating, trail preferences, weights, and the financial and characterization fixtures.
+
+### Q9 — Build forgiveness
+
+A fresh lift or trail can be undone at its construction minute, as today. An immediately placed base venue can likewise be undone for its deposit and canceled installments. Afterward, move a venue before opening without charge, or sell a purchased venue at opening for half its construction price after installments clear. A gifted or legacy venue with no purchase record can be removed for no proceeds. Preserve the last usable lift and descent, occupied sites, booked lessons, the lodge and Elena’s original warming hut. Installed lifts and cut trails remain tied to their corridors. The confirmation describes affected trails, cash and timing before any removal.

@@ -1,12 +1,17 @@
 import * as THREE from "three";
 import { CONTOUR_INTERVAL_FT, SLOPE_BAND_LIMITS, SLOPE_LEGEND } from "@/game/overlays";
+import { leaseBounds } from "@/game/lease";
 import { TERRAIN } from "@/game/terrain";
 
 /**
  * Shared uniforms for the map overlay. The terrain material reads them, so switching a layer on or
  * off writes a number and rebuilds nothing. Mode 0 is off; each layer in `game/overlays.ts` owns a mode.
  */
+const bounds = leaseBounds();
 export const overlayUniforms = {
+  uSnowLayer: {value:null as THREE.Texture | null},
+  uSnowRect: {value:new THREE.Vector4(bounds.xMin,bounds.zMin,1/(bounds.xMax-bounds.xMin),1/(bounds.zMax-bounds.zMin))},
+  uPatternStrength: {value:1},
   uOverlayMode: { value: 0 },
   uOverlayMask: { value: null as THREE.Texture | null },
   /** x0, z0, 1 / spanX, 1 / spanZ of the lease mask. */
@@ -33,6 +38,9 @@ export function patchOverlay<T extends THREE.Material>(material: T): T {
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>
 uniform float uOverlayMode;
+uniform float uPatternStrength;
+uniform sampler2D uSnowLayer;
+uniform vec4 uSnowRect;
 uniform sampler2D uOverlayMask;
 uniform vec4 uMaskRect;
 uniform float uBaseY;
@@ -48,7 +56,11 @@ float lineMask(float coord, float halfWidth, float aa) {
   return 1.0 - smoothstep(halfWidth - aa, halfWidth + aa, d);
 }`)
       .replace("#include <color_fragment>", `#include <color_fragment>
-if (uOverlayMode > 0.5) {
+if (uOverlayMode > 1.5) {
+  vec2 uv=(vOverlayPos.xz-uSnowRect.xy)*uSnowRect.zw;
+  vec4 snow=texture2D(uSnowLayer,vec2(uv.x,1.0-uv.y));
+  diffuseColor.rgb=mix(diffuseColor.rgb,snow.rgb,snow.a*0.83);
+} else if (uOverlayMode > 0.5) {
   vec2 p = vOverlayPos.xz;
   float inside = smoothstep(0.3, 0.7, texture2D(uOverlayMask, (p - uMaskRect.xy) * uMaskRect.zw).r);
   float band = vPitch <= uBandLimits.x ? 0.0 : vPitch <= uBandLimits.y ? 1.0 : vPitch <= uBandLimits.z ? 2.0 : 3.0;
@@ -73,7 +85,7 @@ if (uOverlayMode > 0.5) {
   float cf = fract(contourCoord);
   float contour = (1.0 - smoothstep(0.6 * cw, 1.4 * cw, min(cf, 1.0 - cf))) * clamp((1.0 / (cw + 1e-6) - 5.0) / 6.0, 0.0, 1.0);
   vec3 col = mix(diffuseColor.rgb, tint, 0.4 * inside);
-  col = mix(col, tint * 0.5, mark * fade * 0.65 * inside);
+  col = mix(col, tint * 0.5, mark * fade * 0.65 * inside * uPatternStrength);
   col = mix(col, vec3(0.05, 0.1, 0.18), contour * 0.55 * inside);
   diffuseColor.rgb = col;
 }`);

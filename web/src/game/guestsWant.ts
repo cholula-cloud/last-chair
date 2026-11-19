@@ -18,7 +18,7 @@ const SEATS_FULL_PER_POINT = 20;
 /** Runs per green trail beyond which beginner terrain counts as crowded. */
 const GREEN_CROWDED_RUNS = 25;
 
-type Demand = { key: "lines" | "seats" | "green" | "snow"; points: number; line: string };
+export type Demand = { key: "lines" | "seats" | "green" | "snow"; points: number; line: string };
 
 function lineText(recap: Pick<NightRecap, "facts">, liftCount: number): string {
   const busiest = recap.facts.busiestLift;
@@ -31,10 +31,10 @@ function lineText(recap: Pick<NightRecap, "facts">, liftCount: number): string {
  * One sentence naming the top unmet demand of the day, or null when nothing is pressing.
  * Pain is read from the same satisfaction terms the "Why?" list shows (`why.ts`).
  */
-export function guestsWantLine(
+export function topGuestDemand(
   recap: Pick<NightRecap, "breakdown" | "facts">,
   ctx: DemandContext,
-): string | null {
+): Demand | null {
   const demands: Demand[] = [];
   demands.push({ key: "lines", points: -recap.breakdown.queue, line: lineText(recap, ctx.liftCount) });
   demands.push({
@@ -55,7 +55,11 @@ export function guestsWantLine(
   const top = demands
     .filter((d) => d.points >= DEMAND_MIN_POINTS)
     .sort((a, b) => b.points - a.points)[0];
-  return top?.line ?? null;
+  return top ?? null;
+}
+
+export function guestsWantLine(recap: Pick<NightRecap, "breakdown" | "facts">, ctx: DemandContext): string | null {
+  return topGuestDemand(recap, ctx)?.line ?? null;
 }
 
 /** Reads the day's context from the game state at closing time. */

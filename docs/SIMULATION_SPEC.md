@@ -12,7 +12,7 @@
 |---|---|---|---|
 | Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14; day is about 4 minutes at 1×, row L-F targets about 2 | 19, L-F |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
-| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | P1 |
+| Personas | ✅ | Four guest types with calendar-specific shares, measured preferences, venue visits and satisfaction weights | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | ✅ | Types differ in capacity, line length, ride time and beginner appeal. Queues account for trail difficulty, closures and chair wind holds | 18 |
@@ -22,9 +22,9 @@
 | Economy | ✅ | Daily upkeep, construction installments, winter loan and bankruptcy. Verified over 40 seeds | 20 |
 | Lodge tiers | ✅ | Fixed HQ, paid two-night upgrades, Tier 2 lifts and services, and attach-pad bonus. Tier 3 activities follow in M4b | L1, 16a–16d |
 | Night choices | ✅ | Fare and snow/service choices use the forecast odds to estimate turnout and snow quality | 18 |
-| Crew talents | 🟡 | 12 in order; 6 referenced in code (`trail_guns`, `groom_pass`, `corduroy`, `ticket_booth`, `school_day`, `patrol_radio`) | 21 |
-| Founder modifiers | 🟡 | Mood, fixed cost, snow expectation live; loan rate, repair, forecast, clearing cost, demolition lock missing | 22 |
-| Story beat gates | 🟡 | Six beats gated; thresholds differ slightly from table (Saturday ≥22, dry week depth <0.35, school bus also on lodge) | 23 |
+| Crew talents | ✅ | Twenty ordered talents change lift operations, attendance, guest experience, operating costs or snow service | 21 |
+| Founder modifiers | ✅ | Each of the six founders has an operating advantage and a constraint | 22 |
+| Story beat gates | ✅ | Nightly events use operating results. School and pass offers require replies, and the season settles in winter review | 23 |
 | Save format | ✅ | Three slots (`last-chair-m3-slot-1` to `-3`) with an active-slot pointer, per-slot backup, validation and recovery, a throttled write cadence, and JSON export and import | 25, L-D |
 | Balance harness | ✅ | `balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the properties; `npm run balance` prints the 40-seed table (PR 10). Device re-sign pending | — |
 | Randomness | ✅ | Weather draws use a separate seeded stream from daily guest draws | 18 |
@@ -37,8 +37,8 @@
 |----------|--------|
 | Day start | 07:30 (first arrivals 08:00; moved from 06:00 in PR 6 to remove an empty two hours) |
 | Day end (close) | 16:00 |
-| Realtime 1× | 1 in-game minute ≈ 0.5 s (tunable) |
-| Speed | Implemented: 1×, 2×, 3× chip in the top bar, session-only, starting at the Settings default and resetting to it at night and on founder pick. Row L-F target: 1×, 2×, 4×, kept overnight |
+| Realtime 1× | 120 seconds from opening to close |
+| Speed | 1×, 2× and 4× in the top bar. The selected speed carries into the next morning. New sessions use the speed in Settings (initially 1×). |
 | Season | 28 days (internal test: 14) |
 
 **Pause:** `dayClock` frozen; build allowed.  
@@ -60,19 +60,21 @@ Implemented in `sim.ts` `tickGuests` and `lifts.ts` `stepLifts`. The whole roste
 - **QueueAtLift:** FIFO per lift; wait time affects satisfaction.
 - **RideLift:** fixed ride duration by lift type.
 - **SkiRun:** duration from the persona table, scaled by snow quality (`× (1 + 0.3 × (1 − quality))`, so Mid snow at 0.55 is +13%). At the bottom the run is counted. Stamina cost is the persona's per-run cost multiplied by the trail length relative to Dutch Meadows, with a 0.5 minimum multiplier for short runs. The guest laps unless energy ≤ 0, runs reach their target, or `now + expected wait + ride + next run > 15:45`.
-- **Refuel:** optional café if energy low and venue exists (P1, PR 16). Not built.
+- **Refuel:** a guest short on energy can visit an available café or warming hut when there is time left for a stop. Family Pack seeks lunch earlier.
 - **Depart:** 3 game minutes to the car park, then `gone`. Lifts stop loading at 15:45: everyone still in a line leaves it and departs, and counts in `turnedAway` if they had not ridden yet. By 16:00 every guest is `gone` or `depart`.
 
 ### Persona table (implemented values)
 
 Each guest draws a persona from the day's mix, a target run count in the persona's range, and an arrival minute.
 
-| Persona | Weekday / weekend mix | Energy cost per run (start 1.0) | Run time at quality 1 | Target runs | Observed runs per day |
+| Persona | Weekday / weekend / vacation | Energy per run | Reference run | Target runs | Terrain and venues |
 |---|---|---|---|---|---|
-| First-Timer | 60% / 40% | 0.13 (tired after 8) | 14 min | 4–8 | see Balance |
-| Saturday Regular | 40% / 60% | 0.075 (tired after 13) | 8 min | 9–13 | see Balance |
+| First-Timer | 48% / 30% / 25% | 0.13 | 14 min | 4–8 | Green runs, rentals, then lessons |
+| Saturday Regular | 34% / 45% / 35% | 0.075 | 8 min | 9–13 | Blue runs, skis up to black |
+| Family Pack | 12% / 17% / 30% | 0.12 | 13 min | 5–8 | Green runs, skis up to blue, rents equipment and seeks lunch below 65% energy |
+| Race Kid | 6% / 8% / 10% | 0.075 | 7 min | 9–13 | Black runs and ski school training |
 
-Targets and energy were raised in PR 10 so a long line can cut a guest's runs (before: First-Timer 0.18 energy, 3–6 runs; Regular 0.11, 6–10; observed 4.4 and 8.0–8.3 before the retune, at the PR 6 capacities). Family Pack and Race Kid are not modeled. The satisfaction weights in the next table apply to the queue, snow and value terms (see Satisfaction below).
+A family entry occupies one seat and pays one fare. A holiday or school-vacation weekday uses the vacation column. Every third Readsboro pupil is a Race Kid. Each pupil visits ski school first when a lesson seat is available.
 
 ### Personas (weights on satisfaction terms)
 
@@ -83,7 +85,7 @@ Targets and energy were raised in PR 10 so a long line can cut a guest's runs (b
 | Family Pack | 1.4 | 0.9 | 1.0 |
 | Race Kid | 1.0 | 1.4 | 0.9 |
 
-P0: pool **First-Timer + Saturday Regular** only.
+The same seeded persona draw sets each guest’s label, trail preferences, and scoring weights.
 
 ### Satisfaction (guest, 0–100)
 
@@ -108,7 +110,7 @@ Persona weights:
 | First-Timer | 1.2 | 1.0 | 0.8 |
 | Saturday Regular | 1.5 | 1.1 | 1.3 |
 
-Family Pack (1.4 / 0.9 / 1.0) and Race Kid (1.0 / 1.4 / 0.9) have weights in the design but are not modeled yet.
+Family Pack uses 1.4 / 0.9 / 1.0 and Race Kid uses 1.0 / 1.4 / 0.9.
 
 **Ticket value (`satisfaction.ts` `VALUE`).** A guest judges the ticket against what the day gave them, in dollars:
 
@@ -135,7 +137,7 @@ The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to
 ### Arrivals (Dutch Hill P0)
 
 - Base guests/day: **18–22** on a weekday and **24–28** on a weekend (uniform noise of 0–4), Sat/Sun ×1.3, then the fare multiplier and modifiers (`planArrivals`).
-- Fare elasticity: `expected = max(10, 45 + 0.6 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.8 × valueWeight × (expected / fare − 0.8125), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix (weekday 60% first-timers, weekend 60% regulars). The reference ratio 0.8125 (39 / 48) is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–48.
+- Fare elasticity: `expected = max(10, 45 + 0.6 × (reputation − 50) + venues)` is what the town expects a day here to be worth (word of mouth plus the lodge and café). Each persona's demand is `clamp(1 + 0.8 × valueWeight × (expected / fare − 0.8125), 0.75, 1.3)`, and the day's multiplier is the mean over the roster mix from the persona table above. The reference ratio 0.8125 (39 / 48) is Balanced at the starting reputation (40) with no venues, which gives 1.0. Cheaper fares, better reputation and venues raise arrivals; regulars swing further. The old flat ±10% is gone. The result is clamped to 12–48.
 - `meanArrivals` / `rules.expectedArrivals(state, fare, snow)` is the same count with the noise replaced by its mean (2) and no RNG; the night sheet shows it on each fare tile. `rules.previewOvernight(state, snow)` runs `applyOvernight` on the current trails and returns the morning's worst-segment word, mean quality and cost.
 - Spawn minute per guest (PR 10b): a mix of early birds (30%, triangle 08:00–10:00, mode 09:00) and the main crowd (70%, triangle 08:00–13:30, mode 09:30), seeded. The first guests arrive at 08:00, about 22% are in by 09:00, about 79% by 11:00, under 1% after 13:00, and no one comes after 13:30. The earlier mean-of-two-triangulars curve (PR 6) left the hill empty until about 09:25 while the clock ran from 07:30.
 - Day stats: `arrivals` (roster size), `guestsArrived`, `completedRuns`, `runsPerGuest`, `turnedAway`, `peakOnHill`, plus the lift waits below.
@@ -232,6 +234,14 @@ Each open lift has up to three named runs (paths stored on `TrailRun`); guests p
 
 ---
 
+## Mountain layers
+
+The Slope layer samples the heightfield throughout the lease. It uses the same pitch bands as trail painting and marks the ground above the 65% painting limit as double black. Contours are 50 vertical feet apart. Painting turns this layer on automatically.
+
+Depth, snow-making and conditions use the six segments of each trail. Untracked ground has a neutral pattern. Snow-making displays last night's stored coverage or the gun reach and grooming budget for Mid or High service. The dashed snow depth boundary is 0.15.
+
+Close simulates the rest of the day on a copy of the hill. Tomorrow combines the overnight outcomes using the forecast probabilities. Changing the preview leaves the player's service decision intact. Each trail stores its previous day's finished runs, which apply the same wear to every segment of that trail. Older saves show the previous run count as unavailable until another day closes. Wind holds affect chair access, while each segment keeps its own surface condition.
+
 ## Snow (PR 8)
 
 Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `coverage` in 0–1, plus `elevations[]` (0 = base, 1 ≈ Ridge top) for weather and gun reach. `snowQuality` and `snowDepth` in game state are derived: the means over every open segment (`deriveSnow`).
@@ -247,8 +257,8 @@ Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `co
 | Preset | Guns | Groom | Quality |
 |--------|------|-------|---------|
 | Minimal | off | none | −0.04 (floor 0.2); depth unchanged |
-| Mid | owned guns add +0.14 depth on the bottom half (+0.25 reach with `trail_guns`); groomer +0.04 everywhere | yes | `max(q, 0.6) + 0.03` |
-| High | owned guns (or `trail_guns`) add +0.20 on every segment; groomer +0.06 | yes | `max(q, 0.75) + 0.06` |
+| Mid | placed guns add +0.14 depth within reach; groomed segments gain +0.04 | yes | `max(q, 0.6) + 0.03` |
+| High | placed guns add +0.20 depth within reach; groomed segments gain +0.06 | yes | `max(q, 0.75) + 0.06` |
 
 `groom_pass` / `corduroy` add +0.07 to the groom target. Quality caps at 0.95. Cost unchanged (+$0 / +$150 / +$350).
 
@@ -332,51 +342,60 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ---
 
-## Crew talents (P0 stub)
+## Crew talents
 
-Overnight picks **first unowned** talent in crew order (list in `web/src/game/content.ts`). P0 implements **3 placeholders:**
+Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/talents.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
 
-1. **Rope Tow** — surface lift ops efficiency  
-2. **Trail Guns** — +gun reach P1  
-3. **House Band** — village mood stub P1  
+| Order | Talent | Crew | Effect |
+|---|---|---|---|
+| 1 | Rope Tow | Frank | Save $40 per operating surface lift. |
+| 2 | Trail Guns | Frank | Snow guns reach 25% farther. |
+| 3 | Groom Pass | Frank | Groom 20% farther and raise groom quality by 7 points. |
+| 4 | Ticket Booth | Elena | One more guest on weekends and holidays. |
+| 5 | Patrol Radio | Dana | All lifts load 5% faster. |
+| 6 | School Day | Elena | Two more guests on weekdays. |
+| 7 | House Band | Elena | Welcome mood rises 3 points Friday through Sunday and on holidays. |
+| 8 | Café Shift | Elena | Café adds $2 to perceived value. |
+| 9 | Wind Hold | Dana | Gusty chair holds run from 11:00 to 12:15. |
+| 10 | Corduroy | Frank | Groom quality rises another 3 points. |
+| 11 | Snow Fences | Frank | Bottom two segments lose 30% less depth in thaws. |
+| 12 | Heritage Sign | Elena | Gain 2 reputation each Sunday. |
+| 13 | Bull Wheel Tune | Frank | Chairs load 5% faster. |
+| 14 | Ski School | Elena | First-timer welcome mood rises 5 points. |
+| 15 | Early Plow | Frank | Three more guests reach the hill during storms. |
+| 16 | Volunteer Patrol | Dana | Save $50 in daily fixed costs. |
+| 17 | Night Lights | Frank | Lifts stay open ten extra minutes. |
+| 18 | Groomer Rebuild | Frank | Mid service costs $120 and High costs $300. |
+| 19 | First Aid Hut | Dana | Poor snow costs 15% fewer satisfaction points. |
+| 20 | Route 100 Billboard | Elena | Expected hill value rises by $2. |
 
-Player sees: “Tomorrow the crew learns: *Rope Tow*” on level readout.
-
----
-
-## Founder modifiers (P1 — numeric)
-
-Apply at career start; one founder:
+## Founder modifiers
 
 | Founder | Bonus | Constraint |
-|---------|-------|------------|
-| Elena Vargas | arrivalMood +0.08 | cannot demolish warming hut |
-| Tom Keene | loan rate −1% | warm-week satisfaction −3 |
-| Riley Otis | overnight repair 15% | no Abominable Snowglomerate equity |
-| Amira Chen | +1 day forecast | snow expectation +5% penalty |
-| Juniper Hale | glade rep + | clearing cost +15% |
-| Marco Russo | après rev +10% | starting fixed cost +$80/day |
-
-P0: founder pick UI only; apply Elena default silently for tests.
-
----
+|---|---|---|
+| Elena Vargas | +0.08 arrival mood and two additional planned guests | Keeps the warming hut |
+| Tom Keene | Winter loan rate of 7% | Loses three welcome points on a thaw day with at least three thaws in the last seven days |
+| Riley Otis | Lift operations cost 15% less | Must decline the pass offer |
+| Amira Chen | Two-day forecast | Expected snow quality rises by 0.05 |
+| Juniper Hale | +0.5 before rounding the nightly reputation update when guests arrive | Lift and clearing quotes rise by 15% |
+| Marco Russo | Venue revenue rises by 10% | Fixed operating costs rise by $80 per day |
 
 ## Story beat gates (Act I)
 
-| Beat | Gate (metric) |
-|------|----------------|
-| First uphill load | `lifts.open ≥ 1` and `guests.completedRun ≥ 5` |
-| Saturday | `dayIndex` is Sat and `arrivals ≥ 25` |
-| School bus | `lessons booked ≥ 1` OR `arrivals ≥ 40` on weekday (P1) |
-| Dry week | `daysWithoutSnow ≥ 3` and `snow.depth &lt; 0.2` |
-| Abominable Snowglomerate | `reputation ≥ 50` (stub from satisfaction avg) |
-| Winter review | `dayIndex == seasonLength` |
+The first eligible outstanding beat appears at closing. A delayed beat can appear on a later eligible night.
 
-Fail-forward: beats delay to next eligible day; no hard fail.
+| Beat | Gate and outcome |
+|---|---|
+| First uphill load | At least one open lift and five completed runs |
+| Saturday | Saturday with at least 22 arrivals |
+| School bus | Tier 2 lodge, installed ski school and a completed pupil lesson. Accept to book six pupils for the next eligible school day, or decline. |
+| Dry week | Three or more days without snowfall and snow depth below 0.35 |
+| Abominable Snowglomerate | Reputation of at least 55 from day 18 through the penultimate night. Acceptance pays $6,000 and limits fares. |
+| Winter review | The final night settles the winter. Three consecutive mornings with negative cash trigger early review. |
 
 ---
 
-## Save format (M3 v1)
+## Save format (M3 v8)
 
 Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
 
@@ -396,15 +415,70 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 **Export file.** `{ "app": "last-chair", "format": 1, "exportedAt": <ISO time>, "version": <save version>, "state": <PersistedState> }`, named like `last-chair-dutch-hill-day-12.json`. Import checks `app` and `format`, rejects a `version` newer than the game, then runs `state` through `migrate()` and `validateSave()`. A file that fails any check is rejected with a plain message and nothing is written. There is no checksum. Importing into an occupied slot asks first.
 
-**Settings.** Sound on or off, master, effects, ambience and voice volume, voice on or off, captions, reduce motion and default speed live apart from the save under `last-chair-settings`, so a save reset does not unmute. Sound settings drive the audio engine (row Q3: implemented). Captions have no consumer yet. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
+**Settings.** Sound, master, effects, ambience and voice levels, radio, captions, coach, display preferences and default speed live under `last-chair-settings` outside the winter save. The master switch silences every audio bus. Turning radio off hides optional broadcasts and leaves contract replies available. Cold-open captions follow the player’s preference while narration plays and remain visible when narration is silent. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
-Cloud sync: P2.
+Schema v6 records the school contract and pass offer. Schema v7 shipped with first-winter coach progress. A parallel v7 build recorded operating days, dated broadcasts and settled winters. Schema v8 accepts both v7 formats and preserves their known records. Its Office ledger starts with the next nightly settlement, when actual fare, costs, weather and receipts become available. Historical saves retain their recorded cash, season length and outcomes.
 
 ---
 
 ## Balance
+
+### M3 operating balance
+
+Run `npm run balance` from `web/` for the full 40-seed report. The harness starts with a surface lift, a trail and a warming hut so that it can compare operating policies. Opening construction is exercised separately in the browser playthrough. Coached uses Balanced and Mid for the first week, follows the recap thereafter and waits for a Saturday queue problem before buying a chair. Each founder plays the same Adaptive seeds.
+
+The winter score gives equal weight to mean satisfaction and mean daily closing reputation over days with guests. Solvency uses closing cash less debt and unpaid construction. A cheap fare and generous service can produce a high guest score while consuming capital. The harness reports both outcomes and tests the solvency rule. The best mean strategy score must stay below 90. Using only final-day reputation gave Careless a six-seed mean score of 93.3. Scoring the same days for guest satisfaction and reputation gave 88.0.
+
+For each strategy the report counts winters containing each of the three local events. It also counts school offers, bookings, declined visits, completed visit days, actual pupil arrivals and lessons. Vivian offers, acceptances and declines appear separately. Matched Adaptive runs answer both offers when eligible. Most runs decline, and the acceptance comparison takes both offers. A missing offer contributes to neither reply count.
+
+The vacation calendar charges $550 per day for staffing during days 20–28. The recap itemizes it and shorter winters do not incur it. With the original two personas, the crew benefits left Careless above zero on all six seeds and raised Balanced/Mid mean closing cash to $16,541. A $350 staffing charge produced 6 shortfalls across 40 Careless winters. At $425 there were 14, each offered a loan, with 7 bankruptcies when borrowing was declined. The full pre-P1/Q6 report passed at that setting.
+
+Family Pack, Race Kid and the storm-week pressure curve changed demand and venue receipts. With all four personas and 40 matched seeds, Careless had 4 shortfalls with $425 staffing, 6 with $500 and 11 with $550. At $550 all 11 received a loan offer before the first negative morning. Seven went bankrupt after declining the loan.
+
+**Winter arc.** Days 8–14 give storm transitions 1.5 times their usual weight before the weather probabilities are normalized. The forecasts use the same transition curve. Vivian can offer funding from day 18. Vacation demand and its staffing bill begin on day 20. The existing bank offer appears only when projected cash goes negative. Dutch Hill's common goal still settles on the last night. The supplemental operating goals first require an actual day with guest arrivals and a positive operating margin after snow service. A later vacation Saturday must also record a dispatched ride and a mean wait of five minutes or less. The Office and story log read the saved daily ledger for progress.
+
+**Day-14 check.** For each of the 14 strategies and each of 40 seeds, the harness branches from the actual night-14 state. It keeps that day's fare, snow service and buildings through close, declines later offers and borrowing, and uses the same weather and guest RNG. A frozen hill encounters pressure on the first subsequent day with a projected cash shortfall, an operating loss after snow service, no rides, satisfaction below 70 or mean wait above five minutes. It must also finish solvent to coast successfully. At least half of each strategy's winters must still encounter pressure. The normal strategy continues separately.
+
+#### Release results over 40 seeds
+
+Each row uses Elena and seeds 1–40. Cash, minimum cash, closing net worth, satisfaction, and winter score are means. Solvent and pressure count winters. Pressure uses the day-14 branch described above.
+
+| Strategy | End cash | Min cash | Net worth | Satisfaction | Score | Solvent | Pressure |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Cheap / Minimal | $7,640 | -$392 | -$1,944 | 30.3 | 32.7 | 0 | 40 |
+| Cheap / Mid | $6,803 | $6,752 | $6,803 | 53.9 | 54.0 | 40 | 40 |
+| Cheap / High | $5,517 | $5,342 | $5,517 | 67.0 | 65.8 | 40 | 40 |
+| Balanced / Minimal | $2,499 | $1,803 | $1,745 | 34.7 | 36.8 | 36 | 40 |
+| Balanced / Mid | $12,820 | $11,130 | $12,820 | 52.5 | 53.0 | 40 | 40 |
+| Balanced / High | $13,934 | $10,801 | $13,934 | 62.3 | 61.9 | 40 | 40 |
+| Expensive / Minimal | $5,086 | $5,086 | $5,086 | 37.0 | 38.6 | 40 | 40 |
+| Expensive / Mid | $17,627 | $11,553 | $17,627 | 55.2 | 55.4 | 40 | 40 |
+| Expensive / High | $18,876 | $11,249 | $18,876 | 64.1 | 63.4 | 40 | 40 |
+| Adaptive | $32,105 | $3,938 | $32,105 | 85.9 | 82.5 | 40 | 37 |
+| Builder | $14,688 | $5,357 | $14,688 | 80.8 | 77.8 | 40 | 40 |
+| Stingy | $5,086 | $5,086 | $5,086 | 37.0 | 38.6 | 40 | 40 |
+| Careless | $4,164 | $905 | $1,381 | 93.0 | 88.7 | 35 | 40 |
+| Coached | $32,545 | $6,218 | $32,545 | 81.7 | 78.3 | 40 | 33 |
+
+On vacation Saturdays, Balanced / Mid averaged 16.88 minutes without a chair and Builder averaged 2.69 minutes with one. All 560 shorter winters cleared the 14-day shortfall check.
+
+| Adaptive founder | Mean score | Mean closing net worth | Solvent winters |
+|---|---:|---:|---:|
+| Elena Vargas | 82.5 | $32,105 | 40 |
+| Tom Keene | 80.8 | $27,588 | 40 |
+| Riley Otis | 80.8 | $29,959 | 40 |
+| Amira Chen | 78.3 | $26,949 | 40 |
+| Juniper Hale | 82.0 | $28,425 | 40 |
+| Marco Russo | 80.8 | $28,051 | 40 |
+
+The matched Adaptive runs show how often each offer appeared and what happened after the reply. Local event totals count winters in which the event occurred.
+
+| Offer policy | Pie | Former regulars | Road delay | School offers / booked / declined | Visit days | Pupils / lessons | Vivian offers / accepted / declined |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Decline both | 19 | 11 | 33 | 40 / 0 / 40 | 0 | 0 / 0 | 40 / 0 / 40 |
+| Accept both | 19 | 11 | 33 | 40 / 40 / 0 | 40 | 240 / 213 | 40 / 40 / 0 |
 
 ### Row 20 economy checks
 
@@ -527,3 +601,15 @@ Refs: [MASTER_PLAN.md](./MASTER_PLAN.md) (session flow, mobile rules).
 New winters last 28 days, from Monday 26 January through Sunday 22 February. Presidents' Day is day 22; days 20–28 are February vacation. Holidays use weekend demand; vacation weekdays receive a 15% base demand increase and the weekend persona mix. Existing 14-day saves retain their length until the next winter.
 
 Before row 20's economy changes, the 40-seed 28-day baseline after row 19 gave mean ending cash of $10,227 for Cheap / Minimal, $23,644 for Balanced / Mid, $41,860 for Adaptive, and $25,303 for Builder. Every modeled strategy stayed above zero.
+
+
+## Build forgiveness (Q9)
+
+| Structure | Immediate correction | After the construction minute |
+|---|---|---|
+| Lift | Undo the last lift after undoing its new trails. Return the deposit and cancel its two installments. | Close an extra lift and its trails for $0 before opening or overnight. Installments remain due. Keep at least one usable lift. A new corridor requires a new lift. |
+| Trail | Undo the last new cut for its full price. Reverse the new clearing recorded with that cut. | Review brush edits before confirming them. Erasing a whole trail closes it for $0 and retains the cleared land. Keep one open descent per working lift. |
+| Base venue | Undo a new purchase at its construction day and minute. Return the 40% deposit and cancel exactly two matching installments. | Before opening, move a venue for $0 to a valid site, or sell a paid-off venue for half its original price. Assets carried from saves without a purchase record can be removed for $0. Moves preserve financing, and the preview shows any lodge-pad benefit. |
+| Lodge and snow guns | Cancel or reposition the placement draft before committing. | The lodge, its upgrades and installed snow guns are permanent. |
+
+The venue removal confirmation shows cash returned, canceled installments or lost upkeep, and any reason the action is unavailable. A booked Readsboro program retains a ski school through the visit. Elena keeps the first warming hut once its undo window passes. Operations during play retain stable venue and trail references for guests. A lift closure confirmation shows its timing, linked trail closures, zero refund and outstanding installments.

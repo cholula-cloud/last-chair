@@ -191,13 +191,13 @@ function CreditsView({ onBack }: { onBack: () => void }) {
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
       <p className="font-bold leading-snug">It is built with Next.js, React Three Fiber, three.js and zustand.</p>
       <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
-      <p className="font-bold leading-snug">Sounds are generated in the game. No sound files are used.</p>
+      <p className="font-bold leading-snug">The game synthesizes its wind, sound effects and radio sting.</p>
     </SubView>
   );
 }
 
-export function TitleScreen({ onStart }: { onStart: (opts?: { newWinter: boolean }) => void }) {
-  const [view, setView] = useState<View>("main");
+export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?: { newWinter: boolean }) => void; initialView?: View }) {
+  const [view, setView] = useState<View>(initialView);
   const [summaries, setSummaries] = useState<SlotSummary[]>(() => readAllSlotSummaries());
   const [active, setActive] = useState<SlotNumber>(() => readActiveSlot());
   const [confirm, setConfirm] = useState<Confirm | null>(null);
@@ -240,7 +240,7 @@ export function TitleScreen({ onStart }: { onStart: (opts?: { newWinter: boolean
   const exportOne = (slot: SlotNumber) => {
     const file = exportSlot(slot);
     if (!file) {
-      setMessage(`Slot ${slot} could not be exported.`);
+      setMessage("Choose a slot with a saved winter to export it.");
       return;
     }
     download(exportFilename(file), JSON.stringify(file, null, 2));
@@ -260,7 +260,7 @@ export function TitleScreen({ onStart }: { onStart: (opts?: { newWinter: boolean
     try {
       text = await file.text();
     } catch {
-      setMessage("That file could not be read.");
+      setMessage("Choose the saved winter file again.");
       return;
     }
     const check = parseExport(text);

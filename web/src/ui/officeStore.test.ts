@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createBuiltHill } from "@/game/__fixtures__/built-hill";
 import { pickFounder } from "@/game/rules";
 import { toPersisted } from "@/game/state";
-import { useGameStore } from "@/game/store";
+import { playReplay } from "@/game/replay";
+import { exportSessionReplay, resetSessionReplay, useGameStore } from "@/game/store";
 import { closeOffice, openOffice, useOffice } from "@/ui/officeStore";
 
 const setGame = (phase: "day" | "night", paused: boolean) =>
@@ -10,8 +11,9 @@ const setGame = (phase: "day" | "night", paused: boolean) =>
 
 describe("Office pause and resume", () => {
   beforeEach(() => {
+    resetSessionReplay();
     vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => undefined, removeItem: () => undefined });
-    useOffice.setState({ open: false, tab: "desk", resumeOnClose: false });
+    useOffice.setState({ open: false, tab: "Desk", resumeOnClose: false });
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -20,7 +22,9 @@ describe("Office pause and resume", () => {
     openOffice();
     expect(useOffice.getState().open).toBe(true);
     expect(useGameStore.getState().paused).toBe(true);
+    expect(playReplay(exportSessionReplay()).paused).toBe(true);
     closeOffice();
+    expect(playReplay(exportSessionReplay()).paused).toBe(false);
     expect(useOffice.getState().open).toBe(false);
     expect(useGameStore.getState().paused).toBe(false);
   });
@@ -40,10 +44,12 @@ describe("Office pause and resume", () => {
     expect(useGameStore.getState().paused).toBe(false);
   });
 
-  it("does not open outside the day", () => {
+  it("opens the ledger at night without resuming the day", () => {
     setGame("night", true);
-    openOffice();
-    expect(useOffice.getState().open).toBe(false);
+    openOffice("Money");
+    expect(useOffice.getState()).toMatchObject({ open: true, tab: "Money", resumeOnClose: false });
+    closeOffice();
+    expect(useGameStore.getState().paused).toBe(true);
   });
 
   it("does not resume when the phase has moved on", () => {
@@ -66,7 +72,7 @@ describe("Office pause and resume", () => {
   it("remembers the tab between visits and never changes sim state by opening", () => {
     setGame("day", true);
     const before = structuredClone(toPersisted(useGameStore.getState()));
-    openOffice("desk");
+    openOffice("Desk");
     closeOffice();
     const after = structuredClone(toPersisted(useGameStore.getState()));
     expect(after).toEqual(before);

@@ -203,8 +203,8 @@ describe("applyOvernight", () => {
     expect(run("minimal", { buildings: ["snow_guns"] }).gunsFired).toBe(false);
   });
 
-  it("trail_guns talent fires guns on high only", () => {
-    expect(run("high", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(true);
+  it("trail_guns stays dormant without equipment", () => {
+    expect(run("high", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(false);
     expect(run("mid", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(false);
   });
 
@@ -220,7 +220,7 @@ describe("applyOvernight", () => {
     expect(run("mid", { talentsOwned: ["trail_guns"] }).talentLearned).toBe("Rope Tow");
     expect(
       run("mid", { talentsOwned: ["rope_tow", "trail_guns"] }).talentLearned,
-    ).toBe("House Band");
+    ).toBe("Groom Pass");
   });
 
   it("returns no talent and no hint once all are owned", () => {
@@ -699,15 +699,15 @@ describe("arrival curve and roster", () => {
     }
   });
 
-  it("splits personas about 60/40 first-timer on weekdays and 40/60 on weekends", () => {
-    const share = (weekend: boolean) => {
-      const all = Array.from({ length: 20 }, (_, i) => rosterFor(i + 1, 40, weekend)).flat();
-      return all.filter((g) => g.persona === "first_timer").length / all.length;
-    };
-    expect(share(false)).toBeGreaterThan(0.53);
-    expect(share(false)).toBeLessThan(0.67);
-    expect(share(true)).toBeGreaterThan(0.33);
-    expect(share(true)).toBeLessThan(0.47);
+  it("draws every persona from its weekday, weekend and holiday mix", () => {
+    for (const mix of ["weekday", "weekend", "holiday"] as const) {
+      const rng = createRng(17);
+      const roster = createInitialGuests(5000, () => rng.next(), mix);
+      for (const p of Object.values(PERSONAS)) {
+        const share = roster.filter(g => g.persona === p.id).length / roster.length;
+        expect(Math.abs(share - p[`${mix}Share`])).toBeLessThan(0.03);
+      }
+    }
   });
 
   it("is deterministic for a given seed", () => {

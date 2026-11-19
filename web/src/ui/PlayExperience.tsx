@@ -1,5 +1,10 @@
 "use client";
 
+import { TALENT } from "@/game/talents";
+
+import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
+import { LAYERS, type MapLayer } from "@/game/mapLayers";
+import { LayerPanel } from "./MapLayers";
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +18,10 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
+import { CoachCard } from "./CoachCard";
+import { useCoach } from "./coachStore";
+import { useSettings } from "./settingsStore";
+import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
@@ -32,23 +41,63 @@ import {
   WindHoldCallout,
 } from "@/ui/Hud";
 import { PlacementBar } from "@/ui/PlacementBar";
-import { LayerStrip, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
+import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
-import { openOffice, useOffice } from "@/ui/officeStore";
+import { openOffice as enterOffice, useOffice, type OfficeTabId } from "@/ui/officeStore";
 import { OfficeSheet } from "@/ui/OfficeSheet";
-import { useSpeed } from "@/ui/speed";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
-export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
+export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | "load" | "settings") => void }) {
+  const inspectedLayer = useLayers(s => s.nightInspection ? s.layer : null);
+  const mapTrigger = useRef<HTMLElement | null>(null);
+  const openNightMap = (layer: MapLayer) => {
+    mapTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    openNightLayer(layer, useGameStore.getState().pendingSnow);
+  };
+  const closeNightMap = () => {
+    closeNightLayer();
+    requestAnimationFrame(() => mapTrigger.current?.focus({ preventScroll: true }));
+  };
+  useEffect(() => {
+    if (!inspectedLayer) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") closeNightMap(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [inspectedLayer]);
+  useEffect(() => closeNightLayer, []);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
   const officeOpen = useOffice((s) => s.open);
 
+  const officeTrigger = useRef<HTMLElement | null>(null);
+  const openOffice = (tab?: OfficeTabId) => {
+    officeTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    enterOffice(tab);
+  };
+  useEffect(() => {
+    if (officeOpen || !officeTrigger.current) return;
+    const trigger = officeTrigger.current;
+    officeTrigger.current = null;
+    const target = trigger.isConnected ? trigger : document.querySelector<HTMLElement>('[data-bar="office"]');
+    target?.focus({ preventScroll: true });
+  }, [officeOpen]);
+
+  const lowGraphics = useSettings(s => s.graphicsQuality === "low");
+  const tipsEnabled = useSettings(s => s.tips);
+  const coachPending = useCoach(s => s.index < TIPS.length);
+  const coaching = tipsEnabled && coachPending;
+  useEffect(() => {
+    if (!hydrated) return;
+    const observe = () => useCoach.getState().observe(useGameStore.getState());
+    observe();
+    return useGameStore.subscribe(observe);
+  }, [hydrated]);
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
@@ -68,9 +117,11 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   const anyOnHill = useGameStore((s) => s.guests.some(isOnHill));
   const weather = useGameStore((s) => s.weather);
   const chairHeld = useGameStore((s) => s.phase === "day" && s.lifts.some((lift, i) =>
-    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin) && isLiftOperational(lift, i, s.trails),
+    isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin, s.talentsOwned) && isLiftOperational(lift, i, s.trails),
   ));
   const morningHeadline = useGameStore((s) => s.morningHeadline);
+  const shortHold = useGameStore((s) => TALENT.windHold.learned(s.talentsOwned));
+  const paidForSnow = useGameStore((s) => s.lastDay?.snowNightCost ?? SNOW_NIGHT_COST[s.snow]);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
   const saveNotice = useGameStore((s) => s.saveNotice);
@@ -119,7 +170,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === "hidden") {
-        useGameStore.setState({ paused: true });
+        useOffice.setState({ resumeOnClose: false });
+        if (!useGameStore.getState().paused) useGameStore.getState().togglePause();
         flushSave();
       }
     };
@@ -127,31 +179,9 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
     return () => document.removeEventListener("visibilitychange", onHide);
   }, []);
 
-  // Closing the Office hands focus back to the bar button that opened it.
-  const officeWasOpen = useRef(false);
-  useEffect(() => {
-    if (officeWasOpen.current && !officeOpen) {
-      document.querySelector<HTMLElement>('[data-bar="office"]')?.focus({ preventScroll: true });
-    }
-    officeWasOpen.current = officeOpen;
-  }, [officeOpen]);
-
   useEffect(() => {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
-
-  useEffect(() => {
-    if (phase === "night") useSpeed.getState().reset();
-  }, [phase]);
-
-  useEffect(() => {
-    if (!talentToast) return;
-    const t = window.setTimeout(
-      () => useGameStore.setState({ talentToast: null }),
-      5000,
-    );
-    return () => window.clearTimeout(t);
-  }, [talentToast]);
 
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
   const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
@@ -194,9 +224,10 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
       data-scene-ready={sceneReady ? "true" : undefined}
     >
       <Canvas
+        frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
-        shadows="percentage"
-        dpr={[1, 2]}
+        shadows={lowGraphics ? false : "percentage"}
+        dpr={lowGraphics ? 1 : [1, 2]}
         camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
         gl={{
           antialias: true,
@@ -204,7 +235,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene />
+        <MountainScene coaching={coaching && dayIndex === 1} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
@@ -218,6 +249,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             cash={cash}
             paused={paused}
             notStarted={notStarted}
+            speedUnlocked={!coaching || dayIndex > 1}
             openingBlocked={opening !== null}
             onTogglePause={() => {
               setNoteDismissedDay(dayIndex);
@@ -225,10 +257,11 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
+          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeOpen && <CoachCard slot="day" />}
           {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
-          {chairHeld && <WindHoldCallout />}
+          {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
-        {phase === "day" && (
+        {coaching && dayIndex === 1 && (placementActive || buildOpen) && (
           <CoachTip
             context={{
               phase,
@@ -247,8 +280,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             headline={tidy(morningHeadline)}
             crewLine={talentToast ? tidy(talentToast) : null}
             overnightLine={
-              dayIndex > 1 && SNOW_NIGHT_COST[snowPreset] > 0
-                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-SNOW_NIGHT_COST[snowPreset])}`
+              dayIndex > 1 && paidForSnow > 0
+                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
                 : null
             }
             expanded={noteExpanded}
@@ -263,6 +296,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2">
             {!placementActive && <ReadoutCard />}
             <OverlayLegend />
+            {!placementActive && <SnowLayerControls />}
             {!placementActive && <LayerStrip />}
             {!placementActive && (
               <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
@@ -306,6 +340,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
                 buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
                 setBuildOpen(true);
               }}
+              onStoryLog={() => openOffice("Reports")}
               onGuests={() => setGuestsOpen(true)}
               onOffice={() => {
                 setMenuConfirmOpen(false);
@@ -315,7 +350,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
               openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
               onConfirmMenuChange={setMenuConfirmOpen}
-              onLeave={onLeave}
+              onLeave={() => onLeave()}
             />
           </div>
           )}
@@ -323,7 +358,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
       )}
 
       <OverlayStateSync />
-      <OfficeSheet onLeave={onLeave} />
+      {officeOpen && <OfficeSheet onLeave={() => onLeave("load")} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}
@@ -339,7 +374,14 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           setBuildOpen(false);
         }}
       />
-      <NightRecapSheet />
+      <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeOpen}>
+        <NightRecapSheet onOffice={openOffice} onMap={openNightMap} />
+      </div>
+      {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="fixed bottom-3 right-3 z-[61]">
+        <LayerPanel layer={inspectedLayer} />
+        <button type="button" autoFocus className="key min-h-11 px-3 font-bold" onClick={closeNightMap}>Back to recap</button>
+        <span className="sr-only" role="status">{LAYERS[inspectedLayer]} map at closing</span>
+      </section>}
       <FounderPick />
       <div className="pointer-events-none absolute inset-x-3 top-[max(0.6rem,env(safe-area-inset-top))] z-[70] mx-auto max-w-md">
         <div className={saveNotice ? "key pointer-events-auto flex items-center gap-2 p-1 pl-3" : undefined}>
@@ -357,7 +399,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
         </div>
       </div>
       <ConfirmPop />
-      <WinterReviewSheet />
+      <WinterReviewSheet onOffice={() => openOffice("Reports")} />
     </div>
   );
 }

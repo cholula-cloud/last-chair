@@ -1,6 +1,6 @@
 "use client";
 
-import { FOUNDERS } from "@/game/content";
+import { FOUNDERS, WINTER_GOAL } from "@/game/content";
 import { useGameStore } from "@/game/store";
 import { useSpeed } from "@/ui/speed";
 import { Sheet } from "@/ui/kit/Sheet";
@@ -25,8 +25,7 @@ function initials(name: string): string {
 
 export function FounderPick() {
   const phase = useGameStore((s) => s.phase);
-  const pickFounder = useGameStore((s) => s.pickFounder);
-
+  const pickFounder = useGameStore(s => s.pickFounder);
   if (phase !== "setup") return null;
 
   return (
@@ -34,10 +33,10 @@ export function FounderPick() {
       modal
       z="z-50"
       title="Dutch Hill, winter 1"
-      subtitle="Who signs the lease? Your founder’s quirks last the whole winter."
+      subtitle="The old lifts are gone. On Route 100, the lodge lights come on again. Who signs the lease?"
     >
       <p className="mb-3 text-sm font-bold leading-snug">
-        Keep Dutch Hill open through closing day with enough cash to cover its winter bills. If you open a ski school, Al would love to bring the Readsboro kids up.
+        <strong>Winter goal</strong> · {WINTER_GOAL}
       </p>
       <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
         {FOUNDERS.map((f, i) => (
@@ -72,7 +71,8 @@ export function FounderPick() {
                   {f.title}
                 </span>
                 <span className="mt-1 text-[0.85rem] font-bold leading-snug text-ink-soft">
-                  {f.blurb}
+                  <span className="block"><span aria-hidden="true">＋ </span><span className="sr-only">Bonus: </span>{f.bonus}</span>
+                  <span className="block"><span aria-hidden="true">◇ </span><span className="sr-only">Cost: </span>{f.constraint}</span>
                 </span>
               </span>
             </button>

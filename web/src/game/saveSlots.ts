@@ -1,4 +1,4 @@
-import { MOUNTAIN_CALENDARS, type MountainId } from "./calendar";
+import type { MountainId } from "./calendar";
 import { migrate } from "./migrations";
 import { SAVE_KEY, SAVE_VERSION, type PersistedState } from "./state";
 
@@ -97,32 +97,28 @@ export type SlotSummary =
 
 const isCount = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n) && n >= 1;
 
-/** Light read of a raw slot string. Full validation happens when the slot is loaded. */
+/** Read the same validated, migrated state that Play will restore. */
+function readEnvelope(raw: string) {
+  try {
+    const envelope: unknown = JSON.parse(raw);
+    if (!envelope || typeof envelope !== "object" || !("state" in envelope) ||
+        !("version" in envelope) || typeof envelope.version !== "number") return null;
+    const result = migrate(envelope.state, envelope.version);
+    if (result.reset) return null;
+    const timestamp = "savedAt" in envelope ? envelope.savedAt : null;
+    const savedAt = typeof timestamp === "number" && Number.isFinite(timestamp) ? timestamp : null;
+    return { state: result.state, savedAt };
+  } catch {
+    return null;
+  }
+}
+
 export function summarizeRaw(raw: string | null): SlotSummary {
   if (raw === null) return { kind: "empty" };
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { kind: "unreadable" };
-  }
-  if (!parsed || typeof parsed !== "object") return { kind: "unreadable" };
-  const envelope = parsed as { state?: unknown; savedAt?: unknown };
-  const state = envelope.state as Record<string, unknown> | null | undefined;
-  if (!state || typeof state !== "object") return { kind: "unreadable" };
-  const { mountainId, dayIndex, seasonLength, cash } = state;
-  if (typeof mountainId !== "string" || !Object.hasOwn(MOUNTAIN_CALENDARS, mountainId)) return { kind: "unreadable" };
-  if (!isCount(dayIndex) || !isCount(seasonLength) || dayIndex > seasonLength) return { kind: "unreadable" };
-  if (typeof cash !== "number" || !Number.isFinite(cash)) return { kind: "unreadable" };
-  return {
-    kind: "ok",
-    mountainId: mountainId as MountainId,
-    hill: mountainName(mountainId),
-    dayIndex,
-    seasonLength,
-    cash,
-    savedAt: typeof envelope.savedAt === "number" && Number.isFinite(envelope.savedAt) ? envelope.savedAt : null,
-  };
+  const saved = readEnvelope(raw);
+  if (!saved) return { kind: "unreadable" };
+  const { mountainId, dayIndex, seasonLength, cash } = saved.state;
+  return { kind: "ok", mountainId, hill: mountainName(mountainId), dayIndex, seasonLength, cash, savedAt: saved.savedAt };
 }
 
 export function readSlotSummary(slot: SlotNumber, storage: KeyValueStorage | null = defaultStorage()): SlotSummary {
@@ -158,13 +154,8 @@ export function buildExport(state: PersistedState, version: number, exportedAt: 
 /** Reads the state out of a raw slot string for export. Null when the slot cannot be read. */
 export function exportFromRaw(raw: string | null, exportedAt: Date | number = Date.now()): ExportFile | null {
   if (raw === null) return null;
-  try {
-    const envelope = JSON.parse(raw) as { state?: unknown; version?: unknown };
-    if (summarizeRaw(raw).kind !== "ok" || typeof envelope.version !== "number") return null;
-    return buildExport(envelope.state as PersistedState, envelope.version, exportedAt);
-  } catch {
-    return null;
-  }
+  const saved = readEnvelope(raw);
+  return saved ? buildExport(saved.state, SAVE_VERSION, exportedAt) : null;
 }
 
 function slug(text: string): string {
@@ -182,7 +173,7 @@ export type ImportResult =
   | { ok: true; state: PersistedState }
   | { ok: false; message: string };
 
-const BAD_FILE = "This file is not a Last Chair save.";
+const BAD_FILE = "Choose a save file exported from Last Chair.";
 
 /** Parses an export file and runs its state through the same migration and validation as a slot load. */
 export function parseExport(text: string): ImportResult {
@@ -190,27 +181,21 @@ export function parseExport(text: string): ImportResult {
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { ok: false, message: "This file is not a Last Chair save." };
+    return { ok: false, message: BAD_FILE };
   }
   if (!parsed || typeof parsed !== "object") return { ok: false, message: BAD_FILE };
   const file = parsed as Partial<Record<keyof ExportFile, unknown>>;
   if (file.app !== EXPORT_APP) return { ok: false, message: BAD_FILE };
-  if (file.format !== EXPORT_FORMAT) return { ok: false, message: "That save file comes from a different version of Last Chair." };
+  if (file.format !== EXPORT_FORMAT) return { ok: false, message: "Open this file in the version of Last Chair that exported it." };
   const version = file.version;
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) return { ok: false, message: BAD_FILE };
-  if (version > SAVE_VERSION) return { ok: false, message: "That save is from a newer version of Last Chair." };
+  if (version > SAVE_VERSION) return { ok: false, message: "Update Last Chair to open this newer save." };
   const result = migrate(file.state, version);
-  if (result.reset) return { ok: false, message: "That save is damaged, so it was not imported." };
+  if (result.reset) return { ok: false, message: "This save is damaged. Choose another copy to import." };
   return { ok: true, state: result.state };
 }
 
 /** True when a raw slot value would load without being reset. Used to decide if an overwrite needs a backup. */
 export function isReadableRaw(raw: string): boolean {
-  try {
-    const envelope = JSON.parse(raw) as { state?: unknown; version?: unknown } | null;
-    if (!envelope || typeof envelope !== "object" || typeof envelope.version !== "number") return false;
-    return !migrate(envelope.state, envelope.version).reset;
-  } catch {
-    return false;
-  }
+  return readEnvelope(raw) !== null;
 }

@@ -40,6 +40,7 @@ export function TopBar({
   cash,
   paused,
   notStarted,
+  speedUnlocked = true,
   openingBlocked = false,
   onTogglePause,
 }: {
@@ -50,6 +51,7 @@ export function TopBar({
   cash: number;
   paused: boolean;
   notStarted: boolean;
+  speedUnlocked?: boolean;
   openingBlocked?: boolean;
   onTogglePause: () => void;
 }) {
@@ -61,6 +63,7 @@ export function TopBar({
     <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
       <button
         type="button"
+        data-coach="opening"
         onClick={onTogglePause}
         disabled={openingBlocked}
         aria-label={paused ? "Resume day" : "Pause day"}
@@ -88,14 +91,14 @@ export function TopBar({
         </div>
         <ClockText text={formatClock(clockMin)} />
       </div>
-      <button
+      {speedUnlocked && <button
         type="button"
         onClick={cycleSpeed}
         aria-label={`Game speed ${speed}x, tap to change`}
         className="chip flex size-12 shrink-0 items-center justify-center text-[0.95rem] font-extrabold tabular-nums"
       >
-        {speed}x
-      </button>
+        {speed}×
+      </button>}
       <span
         className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
           cash < 0 ? "bg-barn-deep text-white" : lowCash ? "bg-sign-yellow" : "bg-gold"
@@ -131,11 +134,11 @@ const WEATHER: Record<WeatherKind, { label: string; icon: ReactNode }> = {
   thaw: { label: "Thaw", icon: <ThawIcon size={20} /> },
 };
 
-export function WindHoldCallout() {
+export function WindHoldCallout({ shortHold }: { shortHold: boolean }) {
   return (
     <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
       <WindIcon size={18} />
-      Chair on wind hold until 1 PM
+      Chair on wind hold until {shortHold ? "12:15 PM" : "1 PM"}
     </p>
   );
 }
@@ -160,6 +163,7 @@ export function MorningNote({
   onExpand?: () => void;
 }) {
   const w = WEATHER[weather];
+  const [skill, waiting] = crewLine?.split(" Waits for ") ?? [];
   return (
     <aside
       aria-label="Morning note"
@@ -180,8 +184,10 @@ export function MorningNote({
         {overnightLine && (
           <p className="mt-0.5 truncate text-[0.74rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
         )}
-        {crewLine && (
-          <p className="mt-0.5 truncate text-[0.8rem] font-extrabold text-sign-green">{crewLine}</p>
+        {skill && (
+          <p className={`mt-0.5 text-[0.8rem] font-extrabold leading-snug text-sign-green ${expanded ? "" : "line-clamp-2"}`}>
+            {skill}{waiting && <span className="text-ink-soft"> ◇ Waits for {waiting}</span>}
+          </p>
         )}
       </div>
       <button
@@ -265,7 +271,7 @@ export function ConditionsBoard({
       key: "queue",
       icon: <QueueIcon />,
       label: "Queue",
-      value: anyOnHill ? `${avgQueue.toFixed(1)}m` : "No line",
+      value: anyOnHill ? `${avgQueue.toFixed(1)} min` : "No line",
       state: anyOnHill
         ? { good: "Short", watch: "Busy", bad: "Long", plain: "" }[queueTone]
         : "yet",
@@ -279,7 +285,7 @@ export function ConditionsBoard({
       value: `${Math.round(snowQuality * 100)}%`,
       state: snowLabel,
       bare: true,
-      detail: `mean quality, depth ${Math.round(snowDepth * 100)}%`,
+      detail: `average quality, snow depth ${Math.round(snowDepth * 100)}%`,
       tone: snowTone,
     },
     {
@@ -301,6 +307,7 @@ export function ConditionsBoard({
       {items.map((c) => (
         <div
           key={c.key}
+          data-coach={`ops-${c.key}`}
           className="flex min-w-0 items-center gap-1.5 px-2"
           aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
           role="group"
@@ -343,6 +350,7 @@ function BarButton({
     <button
       type="button"
       onClick={onClick}
+      data-coach={label.toLowerCase()}
       aria-pressed={active}
       data-bar={barId}
       className="key press flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.85rem] font-extrabold [--lift:4px]"
@@ -412,6 +420,7 @@ export function ActionBar({
   confirmMenu = false,
   onConfirmMenuChange,
   onLeave,
+  onStoryLog,
 }: {
   buildActive: boolean;
   onBuild: () => void;
@@ -423,9 +432,10 @@ export function ActionBar({
   onConfirmMenuChange?: (open: boolean) => void;
   /** Saves and returns to the title screen. */
   onLeave?: () => void;
+  onStoryLog?: () => void;
 }) {
   const menuRef = useRef<HTMLButtonElement>(null);
-  const soundOn = useSettings((s) => s.soundOn);
+  const soundOn = useSettings((s) => !s.muted);
   const setSettings = useSettings((s) => s.set);
   const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
   useEffect(() => {
@@ -452,6 +462,9 @@ export function ActionBar({
           aria-label="Leave the hill?"
           className="panel absolute bottom-full left-0 mb-3 flex w-full flex-col gap-2 p-3"
         >
+          <button type="button" className="key press min-h-11" onClick={() => { setMenu(false); onStoryLog?.(); }}>
+            Story log
+          </button>
           <p className="text-[0.88rem] font-bold leading-snug">Leave the hill and go to the menu?</p>
           <div className="flex gap-2">
             <button
@@ -476,7 +489,7 @@ export function ActionBar({
           <button
             type="button"
             aria-pressed={soundOn}
-            onClick={() => setSettings({ soundOn: !soundOn })}
+            onClick={() => setSettings({ muted: soundOn })}
             className="key press h-11 text-[0.9rem] font-extrabold [--lift:3px]"
           >
             Sound {soundOn ? "on" : "off"}
@@ -504,6 +517,7 @@ export function ActionBar({
       <BarButton icon={<OfficeIcon />} label="Office" onClick={onOffice} barId="office" />
       <button
         type="button"
+        data-coach="close"
         onClick={onCloseHill}
         disabled={openingBlocked}
         className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"

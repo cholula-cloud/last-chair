@@ -7,7 +7,7 @@ import { BUILDING_COSTS, BUILDING_LABELS } from "./types";
 export type { LodgeTier } from "./site";
 export type LodgeUpgrade = { toTier: 2 | 3; nightsRemaining: number };
 export type AssetId = "warming_hut" | "cafe" | "shop" | "snow_guns" | "rentals" | "ski_school";
-export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; attachPad?: number };
+export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; attachPad?: number; purchase?: { day: number; minute: number; price: number } };
 
 type Footprint = { width: number; depth: number };
 type Asset = {
@@ -247,6 +247,6 @@ export function assetEffect(asset: PlacedAsset, key: keyof Asset["effect"]): num
   return (ASSET_CATALOG[asset.id].effect[key] ?? 0) * assetMultiplier(asset);
 }
 
-export function assetRevenue(asset: PlacedAsset): number {
-  return ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset);
+export function assetRevenue(asset: PlacedAsset, founder?: import("./types").FounderId | null): number {
+  return ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset) * (founder === "marco" ? 1.1 : 1);
 }

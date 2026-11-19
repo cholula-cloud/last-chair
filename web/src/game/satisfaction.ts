@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { formatMoney } from "./format";
 import { PERSONAS } from "./personas";
 import { SCHOOL_BUS_FARE } from "./schoolContract";
@@ -65,10 +66,10 @@ export function venueValue(buildings: readonly BuildingId[]): number {
 }
 
 /** What the town expects a day here to be worth: reputation and the venues they know about (no RNG). */
-export function expectedHillValue(reputation: number, buildings: readonly BuildingId[]): number {
+export function expectedHillValue(reputation: number, buildings: readonly BuildingId[], owned: readonly string[] = []): number {
   return Math.max(
     VALUE.FLOOR,
-    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings),
+    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings) + (TALENT.route100Billboard.learned(owned) ? TALENT.route100Billboard.value : 0),
   );
 }
 
@@ -94,6 +95,8 @@ export type SatisfactionContext = {
   venueValue: number;
   /** Snow quality guests expect today: `SAT.SNOW_EXPECTED` plus the founder's penalty. */
   snowExpectation: number;
+  firstTimerMoodBonus?: number;
+  snowPenaltyScale?: number;
   /** Game clock minute; sizes the wait of a guest still standing in a line. */
   now: number;
 };
@@ -161,16 +164,17 @@ function guestEvaluation(
   ctx: SatisfactionContext,
 ): { terms: SatTerms; hillValue: number } {
   const p = PERSONAS[g.persona];
-  const arrivalMood = SAT.ARRIVAL_PTS * (ctx.arrivalMood - SAT.ARRIVAL_NEUTRAL);
+  const arrivalMood = SAT.ARRIVAL_PTS * (ctx.arrivalMood + (g.persona === "first_timer" ? ctx.firstTimerMoodBonus ?? 0 : 0) - SAT.ARRIVAL_NEUTRAL);
   const queue = 0 - Math.min(
     SAT.QUEUE_CAP,
     SAT.QUEUE_PTS * p.queueWeight * queuePain(guestAvgWaitMin(g, ctx.now)),
   );
   // Guests with no run yet have felt no snow.
-  const snow =
+  const rawSnow =
     g.runs > 0
       ? SAT.SNOW_PTS * p.snowWeight * (g.snowSum / g.runs - ctx.snowExpectation)
       : 0;
+  const snow = rawSnow < 0 ? rawSnow * (ctx.snowPenaltyScale ?? 1) : rawSnow;
   const hillValue = guestHillValue(g, ctx);
   const price = g.schoolPupil ? SCHOOL_BUS_FARE : FARE_PRICES[ctx.fare];
   const value = Math.max(

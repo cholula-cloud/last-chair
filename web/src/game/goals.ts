@@ -1,4 +1,5 @@
 import { BANKRUPTCY_MORNINGS, liquidNetWorth } from "./economy";
+import { SCHOOL_BUS_PUPILS } from "./schoolContract";
 import type { GameState } from "./state";
 
 export type GoalChip = {
@@ -25,7 +26,9 @@ export function goalChips(state: GoalState): GoalChip[] {
   const bus = contract?.decision === "accepted" && contract.pupilsTaught !== null && contract.pupilsTaught > 0;
   const solvent = state.outcome !== "bankrupt" && liquidNetWorth(state) >= 0;
   let busExplainer = "Reach the school bus beat on the radio.";
-  if (bus) busExplainer = "The school bus came and the pupils skied.";
+  if (contract?.decision === "accepted" && contract.pupilsTaught !== null) {
+    busExplainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} visiting pupils finished a lesson.`;
+  }
   else if (contract?.decision === "declined") busExplainer = "You declined the Readsboro school visit.";
   else if (contract?.decision === "accepted") busExplainer = `The school bus comes on day ${contract.day}.`;
   return [
@@ -37,7 +40,7 @@ export function goalChips(state: GoalState): GoalChip[] {
     },
     {
       id: "bus",
-      label: "School bus",
+      label: "Optional school visit",
       done: bus,
       explainer: busExplainer,
     },
@@ -46,7 +49,7 @@ export function goalChips(state: GoalState): GoalChip[] {
       label: "Solvent",
       done: solvent,
       explainer: solvent
-        ? "Cash minus loans and unpaid construction is above zero. Keep it there to the last day."
+        ? "You have enough cash to cover your loan and unpaid construction. Keep the bills covered through the last day."
         : `Cash minus loans and unpaid construction is below zero. ${BANKRUPTCY_MORNINGS} mornings below zero end the winter.`,
     },
   ];

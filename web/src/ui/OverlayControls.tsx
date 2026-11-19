@@ -7,6 +7,8 @@ import {
   type LegendEntry,
   type OverlayPattern,
 } from "@/game/overlays";
+import { LayerLegend, LayerPanel } from "./MapLayers";
+import { useLayers } from "./mapLayerStore";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
@@ -18,7 +20,6 @@ import {
   toggleStrip,
   turnLayerOff,
   useActiveLayer,
-  useOverlayUi,
 } from "@/ui/overlayUi";
 
 const SWATCH = 16;
@@ -56,14 +57,21 @@ function LegendChip({ entry }: { entry: LegendEntry }) {
 /** Legend chips for the layer on the map, with a 44 px Off key. */
 export function OverlayLegend() {
   const layer = getOverlayLayer(useActiveLayer());
-  if (!layer) return null;
+  const placing = usePlacementDraft((s) => s.active);
+  const wear = useLayers((s) => s.wear);
+  const gunView = useLayers((s) => s.gunView);
+  if (!layer || (layer.id !== "slope" && !placing)) return null;
   return (
-    <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1" data-overlay-legend={layer.id}>
-      <ul className="flex flex-wrap items-center justify-end gap-1" aria-label={`${layer.label} legend`}>
+    <div className="pointer-events-none flex flex-wrap items-center justify-end gap-1" data-overlay-legend={layer.id}>
+      {layer.id === "slope" ? <ul className="flex flex-wrap items-center justify-end gap-1" aria-label={`${layer.label} legend`}>
         {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
-      </ul>
+      </ul> : (
+        <div className="panel min-w-0 flex-1 p-1.5">
+          <LayerLegend layer={layer.id} wear={layer.id === "conditions" && wear} gunView={gunView} />
+        </div>
+      )}
       <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
-        className="key press grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
+        className="key press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
         <CloseIcon size={18} />
       </button>
     </div>
@@ -72,7 +80,7 @@ export function OverlayLegend() {
 
 /** The layer strip: one button per implemented layer and Off. */
 export function LayerStrip() {
-  const open = useOverlayUi((s) => s.stripOpen);
+  const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   if (!open) return null;
   return (
@@ -92,7 +100,7 @@ export function LayerStrip() {
 }
 
 export function LayersButton() {
-  const open = useOverlayUi((s) => s.stripOpen);
+  const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   return (
     <button type="button" aria-pressed={open || shown !== null} onClick={toggleStrip}
@@ -104,10 +112,10 @@ export function LayersButton() {
 
 /** What a tap or hold on the map found, for the layer on screen. */
 export function ReadoutCard() {
-  const probe = useOverlayUi((s) => s.probe);
+  const probe = useLayers((s) => s.point);
   const layer = getOverlayLayer(useActiveLayer());
   const readout = useMemo(
-    () => (probe && layer ? layer.readout(probe, { terrain: TERRAIN, state: useGameStore.getState() }) : null),
+    () => (probe && layer?.id === "slope" ? layer.readout(probe, { terrain: TERRAIN, state: useGameStore.getState() }) : null),
     [probe, layer],
   );
   if (!readout) return null;
@@ -129,12 +137,18 @@ export function ReadoutCard() {
   );
 }
 
+export function SnowLayerControls() {
+  const layer = useActiveLayer();
+  if (!layer || layer === "slope") return null;
+  return <LayerPanel layer={layer} embedded />;
+}
+
 /** Keeps overlay state honest: the automatic slope layer resets when painting ends, a vanished layer drops its readout. */
 export function OverlayStateSync() {
   const painting = usePlacementDraft((s) => isPainting(s));
   const layer = useActiveLayer();
   useEffect(() => {
-    if (!painting) useOverlayUi.setState({ autoOff: false });
+    if (!painting) useLayers.setState({ autoOff: false });
   }, [painting]);
   useEffect(() => {
     if (!layer) setProbe(null);

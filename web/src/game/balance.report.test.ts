@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CARELESS, STRATEGIES, formatTable, runAll, seedList, summarizeAll } from "./balance";
+import { ADAPTIVE, CARELESS, STRATEGIES, formatTable, runAll, summarize, seedList, summarizeAll } from "./balance";
+import { checkFixedStrategies, checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
 import { gateMetrics, gateScenarios } from "./m2gate";
 
 /**
@@ -17,11 +18,33 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
     console.info(`\nM2 gate, ${n} paired seeds\n${rows.join("\n")}\n`);
   });
 
-  it("verifies the economy and prints the strategy table", { timeout: 600_000 }, () => {
+  it("verifies the economy and prints the strategy table", { timeout: 1_800_000 }, () => {
     const n = Number(process.env.BALANCE_SEEDS ?? 40);
     const seeds = seedList(n);
-    const long = runAll(seeds);
+    const long = runAll(seeds, STRATEGIES, { checkMidwinter: true });
     const all = summarizeAll(long);
+    checkFrozenWinters(long);
+    const adaptive = long.get(ADAPTIVE.id) ?? [];
+    const accepted = checkWinterChoices(seeds, adaptive);
+    for (const [id, runs] of [...long, ["adaptive/accept", accepted] as const]) {
+      const net = runs.reduce((sum, run) => sum + run.endNetWorth, 0) / n;
+      const summary = summarize(STRATEGIES.find((strategy) => strategy.id === id) ?? ADAPTIVE, runs);
+      console.info(id, JSON.stringify({
+        ...(id !== "adaptive/accept" && { frozenHillsUnderPressure: runs.filter((run) => run.firstFrozenPressureDay !== null).length }),
+        winterScore: meanWinterScore(runs).toFixed(1),
+        netWorth: Math.round(net), solvent: runs.filter((run) => run.solvent).length,
+        bankrupt: runs.filter((run) => run.wentBankrupt).length,
+        holidaySaturdayWaitNoChair: summary.holidaySatWaitNoChair?.toFixed(2) ?? null, holidaySaturdayWaitChair: summary.holidaySatWaitChair?.toFixed(2) ?? null,
+        ...storyCounts(runs),
+      }));
+    }
+    for (const row of checkFounderScores(seeds, adaptive)) console.info(row.founder, JSON.stringify(row));
+    expect(all.find((row) => row.id === "balanced/mid")?.holidaySatWaitNoChair).toBeGreaterThan(12);
+    const holidayChair = all.find((row) => row.id === "builder")?.holidaySatWaitChair;
+    expect(holidayChair).toBeGreaterThan(1);
+    expect(holidayChair).toBeLessThan(5);
+    checkFixedStrategies(all);
+    checkStrategyScores(long);
     const short = runAll(seeds, STRATEGIES, { seasonLength: 14 });
     const careful = STRATEGIES.filter((strategy) => strategy !== CARELESS)
       .flatMap((strategy) => long.get(strategy.id) ?? []);

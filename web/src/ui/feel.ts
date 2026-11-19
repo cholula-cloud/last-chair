@@ -25,11 +25,12 @@ export function buildConfirmed(label: string): void {
 
 /** The radio card arrived: the three-note sting. */
 export function radioArrived(): void {
-  audio.play("sting");
+  if (useSettings.getState().radioEnabled) audio.play("sting");
 }
 
 function applyMix(): void {
-  audio.setMix(mixGains(useSettings.getState()));
+  const prefs = useSettings.getState();
+  audio.setMix(mixGains({ ...prefs, soundOn: !prefs.muted, ambienceVolume: prefs.musicVolume }));
 }
 
 /** Presses on real controls get a tap. Disabled ones stay silent. */
@@ -44,10 +45,10 @@ function isPressable(target: EventTarget | null): boolean {
  * when the tab hides, follows the sound settings, plays UI taps, switches the wind bed with the
  * phase and chimes when a lodge tier completes. Mount it once, above the title screen.
  */
-export function useFeel(): void {
+export function useFeel(playing: boolean): void {
   useEffect(() => {
     // iOS counts pointerup, touchend, click and keydown as activation. pointerdown alone is not enough.
-    const unlock = () => audio.unlock();
+    const unlock = () => { if (!useSettings.getState().muted) audio.unlock(); };
     const events = ["pointerup", "touchend", "click", "keydown"] as const;
     for (const name of events) window.addEventListener(name, unlock, { capture: true, passive: true });
     const onDown = (e: PointerEvent) => {
@@ -60,17 +61,9 @@ export function useFeel(): void {
     onVisibility();
 
     applyMix();
-    const offSettings = useSettings.subscribe(applyMix);
-
-    const bedFor = (phase: string) => (phase === "night" ? "night" : "day");
-    audio.setBed(bedFor(useGameStore.getState().phase));
-    const offGame = useGameStore.subscribe((s, prev) => {
-      if (s.phase !== prev.phase) audio.setBed(bedFor(s.phase));
-      // A lodge upgrade finishes overnight, one day on. A save loading a later day does not count.
-      if (s.lodgeTier > prev.lodgeTier && s.mountainId === prev.mountainId && s.dayIndex === prev.dayIndex + 1) {
-        audio.play("chime");
-        usePop.getState().fire(`Lodge upgraded to Tier ${s.lodgeTier}.`);
-      }
+    const offSettings = useSettings.subscribe((next, prev) => {
+      applyMix();
+      if (prev.muted && !next.muted && navigator.userActivation?.isActive) unlock();
     });
 
     return () => {
@@ -78,7 +71,27 @@ export function useFeel(): void {
       window.removeEventListener("pointerdown", onDown, { capture: true });
       document.removeEventListener("visibilitychange", onVisibility);
       offSettings();
-      offGame();
+      audio.setHidden(true);
     };
   }, []);
+
+  useEffect(() => {
+    if (!playing) return;
+    const bedFor = (phase: string) => phase === "day" || phase === "setup" ? "day" : "night";
+    audio.setBed(bedFor(useGameStore.getState().phase));
+    const offGame = useGameStore.subscribe((s, prev) => {
+      if (s.phase !== prev.phase) audio.setBed(bedFor(s.phase));
+      // A lodge upgrade finishes overnight, one day on. A save loading a later day does not count.
+      if (s.lodgeTier > prev.lodgeTier && s.seasonSeed === prev.seasonSeed && s.mountainId === prev.mountainId && s.dayIndex === prev.dayIndex + 1) {
+        audio.play("chime");
+        usePop.getState().fire(`Lodge Tier ${s.lodgeTier} is open`);
+      }
+    });
+
+    return () => {
+      offGame();
+      audio.setBed(null);
+      usePop.getState().clear();
+    };
+  }, [playing]);
 }

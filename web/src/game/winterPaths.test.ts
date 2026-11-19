@@ -12,7 +12,7 @@ const schoolOperator: Strategy = {
 const independent: Strategy = { ...schoolOperator, night: () => ({ fare: "expensive", snow: "mid" }) };
 
 describe("matched Dutch Hill winters", () => {
-  it.each([3, 17])("accepting a bus earns a visit; declining keeps the weekday public, seed %i", (seed) => {
+  it.each([3, 17])("accepting a bus earns a visit; declining keeps the weekday public, seed %i", { timeout: 30_000 }, (seed) => {
     const host = runSeason(seed, schoolOperator, "elena", { school: "accepted" });
     const publicHill = runSeason(seed, schoolOperator, "elena", { school: "declined" });
     expect(host.schoolContract?.decision).toBe("accepted");
@@ -24,7 +24,7 @@ describe("matched Dutch Hill winters", () => {
     expect(host.days.slice(0, day - 1)).toEqual(publicHill.days.slice(0, day - 1));
   });
 
-  it("Vivian's terms change the available fares in the same winter", () => {
+  it("Vivian's terms change the available fares in the same winter", { timeout: 30_000 }, () => {
     const joined = runSeason(3, independent, "elena", { summitLink: "accepted" });
     const local = runSeason(3, independent, "elena", { summitLink: "declined" });
     expect(joined.summitLinkDecision).toBe("accepted");

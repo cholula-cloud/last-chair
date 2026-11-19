@@ -1,4 +1,5 @@
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
+import { winterRecord } from "./winterMemory";
 import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
@@ -7,6 +8,12 @@ import { COACH_TIP_IDS } from "./coach";
 
 export type Raw = Record<string, unknown>;
 export type Migration = { to: number; note: string; up: (p: Raw) => Raw };
+
+function legacyTips(raw: Raw) {
+  const started = (typeof raw.dayIndex === "number" && raw.dayIndex > 1) ||
+    (raw.phase !== undefined && raw.phase !== "setup" && raw.phase !== "day");
+  return started ? [...COACH_TIP_IDS] : [];
+}
 
 /** Schema 1 is the M3 baseline. Append one step for each later schema. */
 export const MIGRATIONS: readonly Migration[] = [
@@ -59,10 +66,23 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   {
     to: 7,
-    note: "Add the coach tips the player has seen. A winter already under way has seen them all.",
+    note: "Add first-winter tips to existing winters.",
     up(raw) {
-      const started = (typeof raw.dayIndex === "number" && raw.dayIndex > 1) || (raw.phase !== undefined && raw.phase !== "setup" && raw.phase !== "day");
-      return { ...raw, tipsSeen: started ? [...COACH_TIP_IDS] : [] };
+      return { ...raw, tipsSeen: legacyTips(raw) };
+    },
+  },
+  {
+    to: 8,
+    note: "Keep coach and winter records from both schema 7 shapes and start the Office ledger.",
+    up(raw) {
+      return {
+        tipsSeen: legacyTips(raw),
+        seasonDays: [],
+        beatLog: Array.isArray(raw.completedBeats) ? raw.completedBeats.map(id => ({ id, day: null })) : [],
+        career: raw.lastWinter ? [raw.lastWinter] : [],
+        ...raw,
+        dayHistory: [],
+      };
     },
   },
 ];
@@ -79,6 +99,7 @@ export function migrate(persisted: unknown, fromVersion: number): MigrationResul
   if (!Number.isInteger(fromVersion) || fromVersion < 1) return reset("invalid version");
   if (!persisted || typeof persisted !== "object" || Array.isArray(persisted)) return reset("invalid save");
   let raw = persisted as Raw;
+  const missingSettlementHistory = fromVersion < 7 || (fromVersion === 7 && !("seasonDays" in raw));
   try {
     for (const migration of MIGRATIONS.slice(fromVersion - 1)) raw = migration.up(raw);
   } catch {
@@ -86,5 +107,15 @@ export function migrate(persisted: unknown, fromVersion: number): MigrationResul
   }
   const errors = validateSave(raw);
   if (errors.length) return reset(errors.join(", "));
-  return { state: toPersisted(raw as PersistedState), reset: false };
+  const state = toPersisted(raw as PersistedState);
+  if (missingSettlementHistory && (state.phase === "winter_review" || state.phase === "mountain2")) {
+    const record = winterRecord({ ...state, talentToast: null });
+    const previous = state.lastWinter;
+    const sameSettlement = previous && previous.day === record.day && previous.founder === record.founder &&
+      previous.cash === record.cash && previous.loan === record.loan && previous.construction === record.construction &&
+      previous.bankrupt === record.bankrupt && previous.summitLink === record.summitLink;
+    state.career = [...(sameSettlement ? state.career.slice(0, -1) : state.career), record];
+    state.lastWinter = record;
+  }
+  return { state, reset: false };
 }

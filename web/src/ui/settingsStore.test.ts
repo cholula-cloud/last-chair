@@ -3,8 +3,12 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
-    const s = { soundOn: false, masterVolume: 40, effectsVolume: 10, ambienceVolume: 0, voiceVolume: 35, voiceOn: false, tips: false, captions: false, reduceMotion: true, defaultSpeed: 3 as const };
-    expect(cleanSettings(s)).toEqual(s);
+    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: true, defaultSpeed: 4 as const };
+    expect(cleanSettings(s)).toEqual({ ...DEFAULT_SETTINGS, ...s });
+  });
+
+  it("preserves the fastest setting from older winters", () => {
+    expect(cleanSettings({ defaultSpeed: 3 }).defaultSpeed).toBe(4);
   });
 
   it("falls back to defaults and clamps out-of-range values", () => {
@@ -18,14 +22,18 @@ describe("cleanSettings", () => {
     const s = cleanSettings(old);
     expect(s.voiceVolume).toBe(60);
     expect(s.voiceOn).toBe(false);
-    expect(s.soundOn).toBe(true);
+    expect(s.muted).toBe(false);
     expect(s.masterVolume).toBe(DEFAULT_SETTINGS.masterVolume);
     expect(s.effectsVolume).toBe(DEFAULT_SETTINGS.effectsVolume);
-    expect(s.ambienceVolume).toBe(DEFAULT_SETTINGS.ambienceVolume);
+    expect(s.musicVolume).toBe(DEFAULT_SETTINGS.musicVolume);
+  });
+
+  it("restores preferences from the ambience and sound switch settings", () => {
+    expect(cleanSettings({ soundOn: false, ambienceVolume: 35 })).toMatchObject({ muted: true, musicVolume: 35 });
   });
 
   it("clamps the new volumes", () => {
     const s = cleanSettings({ masterVolume: 900, effectsVolume: -1, ambienceVolume: Number.NaN });
-    expect([s.masterVolume, s.effectsVolume, s.ambienceVolume]).toEqual([100, 0, DEFAULT_SETTINGS.ambienceVolume]);
+    expect([s.masterVolume, s.effectsVolume, s.musicVolume]).toEqual([100, 0, DEFAULT_SETTINGS.musicVolume]);
   });
 });

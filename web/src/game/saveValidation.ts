@@ -51,13 +51,13 @@ const trailShape = shape({
   difficulty: oneOf("green", "blue", "black"), open: boolean,
   snow: array(shape(numbers("depth", "quality", "coverage"))), elevations: array(number),
   glade: optional(boolean), widths: optional(array(number)), paidClearing: optional(array(cell)),
-  groomed: optional(array(boolean)), gunCovered: optional(array(boolean)),
+  groomed: optional(array(boolean)), gunCovered: optional(array(boolean)), previousRuns: optional(index),
   builtDay: optional(number), builtAtMin: optional(number), paid: optional(number),
 });
 
 const guest = shape({
   id: string, label: string, state: oneOf("pending", "arrive", "queue", "ride", "ski", "walk_lift", "walk_out", "refuel", "depart", "gone"),
-  persona: oneOf("first_timer", "regular"),
+  persona: oneOf("first_timer", "regular", "family_pack", "race_kid"),
   ...numbers("progress", "mood", "waitMin", "waitCount", "snowSum", "energy", "runs", "targetRuns", "arriveAtMin", "stateSinceMin"),
   liftIndex: optional(index), trailIndex: optional(index), venueIndex: optional(index),
   joinedQueueAtMin: optional(number), rideStartMin: optional(number), visitMinutes: optional(number),
@@ -69,7 +69,10 @@ const schoolContract: Check = (value) => record(value) && (
   (value.decision === "accepted" && integer(value.day) && value.day >= 1 &&
     (value.pupilsTaught === null || (integer(value.pupilsTaught) && value.pupilsTaught >= 0 && value.pupilsTaught <= SCHOOL_BUS_PUPILS))
   ));
-const operatingCosts = shape(numbers("fixed", "founder", "liftOps", "upkeep"));
+const operatingCosts = shape({
+  ...numbers("fixed", "founder", "liftOps", "upkeep"),
+  vacationStaffing: optional(index),
+});
 const payable = shape({
   what: (value) => assetId(value) || value === "lift" || value === "lodge",
   liftIndex: optional(index),
@@ -100,6 +103,24 @@ const dayStats = shape({
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
+const seasonDay = shape({
+  closingReputation: optional(number),
+  summitLink: optional(shape({ reply: summitLinkDecision, receipt: number, fareCap: nullable(oneOf("balanced")) })),
+  lodgeOpening: optional(oneOf(2, 3)), day: index, fare, snow, arrivals: index, satisfaction: number,
+  schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })),
+});
+const broadcast = shape({ id: beat, day: nullable(index) });
+const moment = shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index });
+const winterRecord = shape({
+  completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
+  days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
+  moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, averageReputation: optional(number), measuredDays: index, total: number }))),
+  day: index, founder,
+  bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
+  school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
+  localMoment: nullable(moment),
+});
+
 const fields: Record<keyof PersistedState, Check> = {
   mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
   dayIndex: (value) => integer(value) && value >= 1,
@@ -127,7 +148,7 @@ const fields: Record<keyof PersistedState, Check> = {
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
-  assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index) })),
+  assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),
   guns: array(shape({ at: point, builtDay: number, paid: number })),
   clearedCells: array(cell),
   lifts: (value) => Array.isArray(value) && value.length <= MAX_LIFT_SLOTS && value.every(lift) &&
@@ -154,15 +175,15 @@ const fields: Record<keyof PersistedState, Check> = {
   seasonLength: (value) => integer(value) && value >= 1,
   rngState: number,
   nightRecap: nullable(recap),
-  lastWinter: optional(shape({
-    day: index, founder,
-    bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
-    school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
-    localMoment: nullable(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index })),
-  })),
+  lastWinter: optional(winterRecord),
+  dayHistory: array(shape({ day: index, fare, snow, weather, recap, ...numbers("snowCost", "constructionDue", "closingCash") })),
+  seasonDays: array(seasonDay),
+  beatLog: array(broadcast),
+  career: array(winterRecord),
   surprise: optional(nullable(shape({ dayIndex: index, kind: surpriseKind, guestIds: array(string) }))),
   surpriseLog: optional(array(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index }))),
   lastDay: nullable(shape({
+    snowNightCost: optional(number),
     ...numbers("arrivals", "satisfaction", "cashDelta", "avgWaitMin"), fare, snow,
     observation: optional(shape({ measure: oneOf(...SAT_TERM_KEYS), value: number })),
   })),

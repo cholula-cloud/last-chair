@@ -1,3 +1,9 @@
+import { winterRecord } from "./winterMemory";
+import historicalSaves from "./__fixtures__/m3-saves.json";
+import { createBuiltHill, referencePaint } from "./__fixtures__/built-hill";
+import { REFERENCE_TOPS } from "./descent";
+import { TERRAIN } from "./terrain";
+import { validateSave } from "./saveValidation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACTIVE_SLOT_KEY,
@@ -21,7 +27,10 @@ import {
   useGameStore,
 } from "./store";
 
-const dayState = () => ({ ...toPersisted(createInitialState(7)), cash: 9160, founderId: "riley" as const, phase: "day" as const, paused: false });
+function dayState(dayIndex = 1) {
+  const state = toPersisted(createBuiltHill(7));
+  return { ...state, dayIndex, weather: state.weatherDays[dayIndex - 1].kind, cash: 9160, founderId: "riley" as const, phase: "day" as const, paused: false };
+}
 const envelope = (state: unknown, extra: object = {}) => JSON.stringify({ state, version: SAVE_VERSION, ...extra });
 
 describe("save slots", () => {
@@ -76,9 +85,40 @@ describe("save slots", () => {
     });
   });
 
+  describe("historical schema compatibility", () => {
+    // Serialized by each schema's own createInitialState(71) and toPersisted.
+    it("covers the full sequence of released M3 versions", () => {
+      expect(historicalSaves.map(save => save.version)).toEqual(
+        Array.from({ length: SAVE_VERSION }, (_, i) => i + 1),
+      );
+    });
+
+    for (const slot of [1, 2, 3] as const) {
+      it.each(historicalSaves)(`plays a day from v$version in slot ${slot}`, async (save) => {
+        data.set(slotKey(slot), JSON.stringify(save));
+        expect(readAllSlotSummaries()[slot - 1]).toMatchObject({ kind: "ok", hill: "Dutch Hill", cash: save.state.cash });
+        const exported = exportSlot(slot);
+        expect(exported && exportFilename(exported)).toBe("last-chair-dutch-hill-day-1.json");
+        expect(parseExport(JSON.stringify(exported))).toMatchObject({ ok: true, state: { rngState: save.state.rngState } });
+        await playSlot(slot);
+        const game = useGameStore.getState;
+        expect(game().saveNotice).toBeNull();
+        expect(game().rngState).toBe(save.state.rngState);
+        expect(validateSave(toPersisted(game()))).toEqual([]);
+        game().pickFounder("elena");
+        game().placeLift({ type: "surface", bottom: TERRAIN.base, top: REFERENCE_TOPS[0] });
+        game().commitPaint(referencePaint(game(), 0, "green"));
+        game().skipToClose();
+        expect(game().phase).toBe("night");
+        expect(game().nightRecap?.arrivals).toBeGreaterThan(0);
+        expect(validateSave(JSON.parse(data.get(slotKey(slot))!).state)).toEqual([]);
+      });
+    }
+  });
+
   describe("summaries", () => {
     it("reads day, season length, cash and last played time", () => {
-      const state = { ...dayState(), dayIndex: 12, cash: 4321 };
+      const state = { ...dayState(12), cash: 4321 };
       expect(summarizeRaw(envelope(state, { savedAt: 99 }))).toEqual({
         kind: "ok", mountainId: "dutch_hill", hill: "Dutch Hill", dayIndex: 12, seasonLength: 28, cash: 4321, savedAt: 99,
       });
@@ -110,7 +150,7 @@ describe("save slots", () => {
     });
 
     it("builds the file from a raw slot and names it after the hill and day", () => {
-      const state = { ...dayState(), dayIndex: 12 };
+      const state = dayState(12);
       const file = exportFromRaw(envelope(state));
       expect(file && exportFilename(file)).toBe("last-chair-dutch-hill-day-12.json");
       expect(exportFromRaw("{broken")).toBeNull();
@@ -130,7 +170,7 @@ describe("save slots", () => {
     });
 
     it("writes a valid import into the chosen slot and refuses a bad one", () => {
-      const state = { ...dayState(), dayIndex: 5 };
+      const state = dayState(5);
       const text = JSON.stringify(buildExport(state, SAVE_VERSION));
       expect(importIntoSlot(2, text)).toEqual({ ok: true });
       expect(summarizeRaw(data.get(slotKey(2)) ?? null)).toMatchObject({ kind: "ok", dayIndex: 5 });
@@ -318,6 +358,20 @@ describe("save slots", () => {
       expect(before1).toBeDefined();
       if (how === "playSlot") expect(data.get(slotKey(2))).toBe(slot2);
       if (how === "startNewWinter") expect(JSON.parse(data.get(slotKey(2))!).state.phase).toBe("setup");
+    });
+
+    it("keeps settlement history inside its slot when playing or starting a fresh winter", async () => {
+      const record = winterRecord({ ...createInitialState(1), cash: 11500, outcome: "finished" });
+      data.set(slotKey(1), envelope({ ...dayState(), lastWinter: record, career: [record] }));
+      data.set(slotKey(2), envelope(dayState()));
+      await playSlot(1);
+      expect(useGameStore.getState().lastWinter).toEqual(record);
+      await playSlot(2);
+      expect(useGameStore.getState().lastWinter).toBeUndefined();
+      expect(useGameStore.getState().career).toEqual([]);
+      await playSlot(1);
+      startNewWinter(3);
+      expect(JSON.parse(data.get(slotKey(3))!).state.lastWinter).toBeUndefined();
     });
 
     it("round-trips export, import and play to an equal state", async () => {

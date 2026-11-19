@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { STREAM, streamFor } from "./rng";
 import type { GameState } from "./state";
 import { LIFT_SPECS, type DayWeather, type LiftType, type Outlook, type WeatherKind, type Wind } from "./types";
@@ -21,8 +22,9 @@ export const DUTCH_HILL_CALENDAR: CalendarDef = { earlyThrough: 9, lateFrom: 20 
 export function chainRow(prev: WeatherKind, day: number, calendar = DUTCH_HILL_CALENDAR): Outlook {
   const [clear, snow, storm, thaw] = TRANSITIONS[prev];
   const thawInSeason = thaw * (day <= calendar.earlyThrough ? 0.7 : day >= calendar.lateFrom ? 1.3 : 1);
-  const total = clear + snow + storm + thawInSeason;
-  return { clear: clear / total, snow: snow / total, storm: storm / total, thaw: thawInSeason / total };
+  const stormInSeason = storm * (day >= 8 && day <= 14 ? 1.5 : 1);
+  const total = clear + snow + stormInSeason + thawInSeason;
+  return { clear: clear / total, snow: snow / total, storm: stormInSeason / total, thaw: thawInSeason / total };
 }
 
 function drawKind(row: Outlook, unit: number): WeatherKind {
@@ -83,9 +85,14 @@ export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
 
 export const WIND_HOLD = { fromMin: 630, toMin: 780 } as const;
 
-export function isWindHeld(type: LiftType, wind: Wind, clockMin: number): boolean {
+export function windHoldWindow(owned: readonly string[]) {
+  return TALENT.windHold.learned(owned) ? TALENT.windHold : WIND_HOLD;
+}
+
+export function isWindHeld(type: LiftType, wind: Wind, clockMin: number, owned: readonly string[] = []): boolean {
+  const hold = windHoldWindow(owned);
   return wind === "gusty" && LIFT_SPECS[type].windHold &&
-    clockMin >= WIND_HOLD.fromMin && clockMin < WIND_HOLD.toMin;
+    clockMin >= hold.fromMin && clockMin < hold.toMin;
 }
 
 export function morningWeatherHeadline(kind: WeatherKind): string {

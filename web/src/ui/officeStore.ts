@@ -3,9 +3,8 @@
 import { create } from "zustand";
 import { useGameStore } from "@/game/store";
 
-/** Every tab the Office can show. Tabs join this list as the rows that build them land. */
-export const OFFICE_TABS = [{ id: "desk", label: "Desk" }] as const;
-export type OfficeTabId = (typeof OFFICE_TABS)[number]["id"];
+export const OFFICE_TABS = ["Desk", "Money", "Reports", "Crew"] as const;
+export type OfficeTabId = (typeof OFFICE_TABS)[number];
 
 type OfficeUi = {
   open: boolean;
@@ -15,7 +14,7 @@ type OfficeUi = {
 };
 
 /** Session-only Office state. Nothing here is saved with the hill. */
-export const useOffice = create<OfficeUi>(() => ({ open: false, tab: "desk", resumeOnClose: false }));
+export const useOffice = create<OfficeUi>(() => ({ open: false, tab: "Desk", resumeOnClose: false }));
 
 /** Opens the Office and pauses a running day. Opening while it is already open changes nothing. */
 export function openOffice(tab?: OfficeTabId): void {
@@ -25,9 +24,9 @@ export function openOffice(tab?: OfficeTabId): void {
     return;
   }
   const game = useGameStore.getState();
-  if (game.phase !== "day") return;
-  const running = !game.paused;
-  if (running) useGameStore.setState({ paused: true });
+  if (game.phase === "setup") return;
+  const running = game.phase === "day" && !game.paused;
+  if (running) game.togglePause();
   useOffice.setState({ open: true, tab: tab ?? ui.tab, resumeOnClose: running });
 }
 
@@ -37,7 +36,7 @@ export function closeOffice(): void {
   if (!open) return;
   useOffice.setState({ open: false, resumeOnClose: false });
   const game = useGameStore.getState();
-  if (resumeOnClose && game.phase === "day" && game.paused) useGameStore.setState({ paused: false });
+  if (resumeOnClose && game.phase === "day" && game.paused) game.togglePause();
 }
 
 export function setOfficeTab(tab: OfficeTabId): void {

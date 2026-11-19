@@ -41,12 +41,14 @@ export function RadioCard({
   title,
   children,
   action,
+  announce = true,
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  announce?: boolean;
 }) {
-  useEffect(radioArrived, []);
+  useEffect(() => { if (announce) radioArrived(); }, [announce]);
   return (
     <section
       aria-label={`Route 100 Radio: ${title}`}

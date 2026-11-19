@@ -1,11 +1,14 @@
 "use client";
 
+import { useCoach } from "./coachStore";
+import { useSettings } from "./settingsStore";
+import { founderById } from "@/game/content";
 import { useState } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
 import { constructionDraw } from "@/game/economy";
-import { openingStep } from "@/game/rules";
+import { assetRemovalQuote, openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
@@ -21,6 +24,10 @@ function LodgeCard() {
   const cash = useGameStore((s) => s.cash);
   const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
   const [review, setReview] = useState(false);
+  const tipsOn = useSettings(s => s.tips);
+  const coachLodge = useCoach(s => !s.skipped && !s.lodgeSeen);
+  const founder = useGameStore(s => s.founderId && founderById(s.founderId)?.name);
+  const showCoach = tipsOn && coachLodge && tier === 1 && !construction;
   const next = nextLodgeTier(tier);
   const unlocks = next ? lodgeTierUnlocks(next) : [];
   const payment = next ? constructionDraw(LODGE_TIERS[next].cost) : null;
@@ -38,6 +45,12 @@ function LodgeCard() {
           <p className="mt-2 text-sm font-bold">
             Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
           </p>
+          {showCoach && <aside aria-label="Lodge upgrade tip" className="panel my-2 p-2 text-base">
+            <p><strong>{founder}</strong> · {review
+              ? "Check the deposit and both night payments below before committing."
+              : "Review the Tier 2 addition to see when the ski school and double chair can open."}</p>
+            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawLodge()}>Dismiss lodge tip</button>
+          </aside>}
           {review ? (
             <BuildImpactCard
               title={`Upgrade to ${LODGE_TIERS[next].label}`}
@@ -48,17 +61,20 @@ function LodgeCard() {
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
-              problem={cash < payment.deposit ? "Not enough cash for the deposit." : null}
+              problem={cash < payment.deposit ? "You need more cash for the deposit. Check your balance after closing." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
               onConfirm={() => {
                 upgrade();
-                if (useGameStore.getState().lodgeUpgrade) buildConfirmed("Lodge upgrade started.");
+                if (useGameStore.getState().lodgeUpgrade) {
+                  useCoach.getState().sawLodge();
+                  buildConfirmed("Lodge upgrade started.");
+                }
                 setReview(false);
               }}
             />
           ) : (
-            <PrimaryButton className="mt-2 min-h-11" onClick={() => setReview(true)}>
+            <PrimaryButton data-coach="lodge-upgrade" className={`mt-2 min-h-11 ${showCoach ? "coach-target" : ""}`} onClick={() => setReview(true)}>
               Review Tier {next} upgrade
             </PrimaryButton>
           )}
@@ -66,6 +82,32 @@ function LodgeCard() {
       )}
     </div>
   );
+}
+
+function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void }) {
+  const state = useGameStore();
+  const [review, setReview] = useState<number | null>(null);
+  if (!state.assets.length) return null;
+  const quote = review === null ? null : assetRemovalQuote(state, review);
+  return <div className="mt-3">
+    <SectionHeading>Manage venues</SectionHeading>
+    {state.assets.map((asset, i) => <div key={i} className="flex items-center gap-2 text-sm">
+      <span className="flex-1 font-bold">{ASSET_CATALOG[asset.id].label}</span>
+      <button type="button" className="key min-h-11 px-2" onClick={() => {
+        startAssetPlacement(asset.id, i);
+        onStartPlacement();
+      }}>Move</button>
+      <button type="button" className="key min-h-11 px-2" onClick={() => setReview(i)}>
+        {assetRemovalQuote(state, i).undo ? "Undo" : "Remove"}
+      </button>
+    </div>)}
+    {review !== null && state.assets[review] && quote && <BuildImpactCard
+      title={`${quote.undo ? "Undo" : "Remove"} ${ASSET_CATALOG[state.assets[review].id].label}?`}
+      facts={[{ label: "Cash returned", value: formatMoney(quote.refund) },
+        { label: "Effect", value: quote.undo ? "Cancel both construction installments." : "Remove this venue and stop its upkeep." }]}
+      problem={quote.reason} confirmLabel={quote.undo ? "Undo purchase" : "Confirm removal"}
+      onCancel={() => setReview(null)} onConfirm={() => { state.removeAsset(review); setReview(null); }} />}
+  </div>;
 }
 
 const BASE_ASSETS = (Object.keys(ASSET_CATALOG) as AssetId[])
@@ -85,6 +127,7 @@ export function BuildSheet({
   const lifts = useGameStore((s) => s.lifts);
   const cash = useGameStore((s) => s.cash);
   const tier = useGameStore((s) => s.lodgeTier);
+  const [reviewLift, setReviewLift] = useState<number | null>(null);
   const closeLift = useGameStore((s) => s.closeLift);
   const opening = useGameStore(openingStep);
   const activeLifts = lifts.filter((lift) => lift.confirmed && !lift.closing).length;
@@ -122,12 +165,18 @@ export function BuildSheet({
             onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
             Place lift
           </PrimaryButton>
+          {reviewLift !== null && <BuildImpactCard title={`Close lift ${reviewLift + 1}?`}
+            facts={[{ label: "Routes", value: "All trails on this lift close with it." },
+              { label: "Refund", value: "$0. Outstanding installments remain due." },
+              { label: "Timing", value: "Before opening, close now. Otherwise, close overnight." }]}
+            confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
+            onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
           {lifts.map((lift, i) => lift.confirmed && (
             <div key={i} className="mt-2 flex items-center justify-between gap-2 text-sm font-bold">
               <span>{LIFT_LABELS[lift.type]} {i + 1}</span>
               {lift.closing ? "Closing tonight" : (
                 <button className="key min-h-11 px-2" disabled={activeLifts <= 1} type="button"
-                  aria-label={`Close lift ${i + 1}`} onClick={() => closeLift(i)}>Close lift</button>
+                  aria-label={`Close lift ${i + 1}`} onClick={() => setReviewLift(i)}>Close lift</button>
               )}
             </div>
           ))}
@@ -148,6 +197,7 @@ export function BuildSheet({
               );
             })}
           </div>
+          <VenueManagement onStartPlacement={onStartPlacement} />
           <SectionHeading>Snow</SectionHeading>
           <button type="button" className="key press min-h-11 px-3 font-extrabold"
             disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
