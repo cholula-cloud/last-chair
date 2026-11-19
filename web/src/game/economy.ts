@@ -83,7 +83,7 @@ export function payoffAmount(loan: Loan): number {
   return Math.round(loan.balance * 100) / 100;
 }
 
-export function liquidNetWorth(state: GameState): number {
+export function liquidNetWorth(state: Pick<GameState, "cash" | "loan" | "payables">): number {
   return state.cash - (state.loan ? payoffAmount(state.loan) : 0)
     - state.payables.reduce((sum, item) => sum + item.amount, 0);
 }

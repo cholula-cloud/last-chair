@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
-    const s = { voiceVolume: 35, captions: false, reduceMotion: true, defaultSpeed: 3 as const };
+    const s = { voiceVolume: 35, voiceOn: false, tips: false, captions: false, reduceMotion: true, defaultSpeed: 3 as const };
     expect(cleanSettings(s)).toEqual(s);
   });
 

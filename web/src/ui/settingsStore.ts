@@ -9,8 +9,12 @@ export const SPEEDS: readonly GameSpeed[] = [1, 2, 3];
 export const SETTINGS_KEY = "last-chair-settings";
 
 export type Settings = {
-  /** 0 to 100. Stored for the voice lines that come later. */
+  /** 0 to 100. Volume of the voice-over. */
   voiceVolume: number;
+  /** Voice-over on or off. Captions stay on either way. */
+  voiceOn: boolean;
+  /** Coach tips during the first winter. */
+  tips: boolean;
   captions: boolean;
   reduceMotion: boolean;
   defaultSpeed: GameSpeed;
@@ -22,6 +26,8 @@ type SettingsStore = Settings & {
 
 export const DEFAULT_SETTINGS: Settings = {
   voiceVolume: 80,
+  voiceOn: true,
+  tips: true,
   captions: true,
   reduceMotion: false,
   defaultSpeed: 1,
@@ -36,6 +42,8 @@ export function cleanSettings(raw: Partial<Record<keyof Settings, unknown>> | nu
   const speed = SPEEDS.find((s) => s === r.defaultSpeed) ?? DEFAULT_SETTINGS.defaultSpeed;
   return {
     voiceVolume: volume,
+    voiceOn: typeof r.voiceOn === "boolean" ? r.voiceOn : DEFAULT_SETTINGS.voiceOn,
+    tips: typeof r.tips === "boolean" ? r.tips : DEFAULT_SETTINGS.tips,
     captions: typeof r.captions === "boolean" ? r.captions : DEFAULT_SETTINGS.captions,
     reduceMotion: typeof r.reduceMotion === "boolean" ? r.reduceMotion : DEFAULT_SETTINGS.reduceMotion,
     defaultSpeed: speed,
@@ -52,7 +60,7 @@ export const useSettings = create<SettingsStore>()(
       name: SETTINGS_KEY,
       version: 1,
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ voiceVolume, captions, reduceMotion, defaultSpeed }) => ({ voiceVolume, captions, reduceMotion, defaultSpeed }),
+      partialize: ({ voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed }) => ({ voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed }),
       merge: (persisted, current) => ({ ...current, ...cleanSettings(persisted as Partial<Settings> | undefined) }),
     },
   ),

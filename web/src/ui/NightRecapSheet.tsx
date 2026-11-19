@@ -7,6 +7,8 @@ import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
+import { demandContext, guestsWantLine } from "@/game/guestsWant";
+import { CoachTip } from "@/ui/CoachTip";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
@@ -330,6 +332,7 @@ export function NightRecapSheet() {
   const summitLinkOffer = summitLinkOfferOpen(night);
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged);
   const hasGuests = recap.arrivals > 0;
+  const guestsWant = hasGuests ? guestsWantLine(recap, demandContext(night)) : null;
 
   return (
     <Sheet
@@ -418,6 +421,24 @@ export function NightRecapSheet() {
           {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
         <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
+        {guestsWant && (
+          <p data-coach="guests-want" className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
+            {guestsWant}
+          </p>
+        )}
+        <div className="mt-3">
+          <CoachTip
+            context={{
+              phase: "night",
+              dayIndex,
+              opening: null,
+              running: true,
+              placementActive: false,
+              buildOpen: false,
+              hasGuestsWant: guestsWant !== null,
+            }}
+          />
+        </div>
 
         {recap.facts.venueRevenue && (
           <ul aria-label="Venue takings" className="mt-2 space-y-1 text-sm font-bold">

@@ -3,6 +3,7 @@ import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
 import { resumeSeasonWeather } from "./weather";
+import { COACH_TIP_IDS } from "./coach";
 
 export type Raw = Record<string, unknown>;
 export type Migration = { to: number; note: string; up: (p: Raw) => Raw };
@@ -54,6 +55,14 @@ export const MIGRATIONS: readonly Migration[] = [
       const clearTeaser = pendingBeat === "school_bus" || (pendingBeat === "summit_link" && !validSummitLinkNight);
       const migrated = { ...raw, schoolContract: null, schoolProgramProven: false, summitLinkDecision: null };
       return clearTeaser ? { ...migrated, pendingBeat: null, beatAcknowledged: true } : migrated;
+    },
+  },
+  {
+    to: 7,
+    note: "Add the coach tips the player has seen. A winter already under way has seen them all.",
+    up(raw) {
+      const started = (typeof raw.dayIndex === "number" && raw.dayIndex > 1) || (raw.phase !== undefined && raw.phase !== "setup" && raw.phase !== "day");
+      return { ...raw, tipsSeen: started ? [...COACH_TIP_IDS] : [] };
     },
   },
 ];
