@@ -88,7 +88,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     target?.focus({ preventScroll: true });
   }, [officeOpen]);
 
-  const lowGraphics = useSettings(s => s.graphicsQuality === "low");
+  const [softwareRenderer, setSoftwareRenderer] = useState(false);
+  const preferLowGraphics = useSettings(s => s.graphicsQuality === "low");
+  const lowGraphics = preferLowGraphics || softwareRenderer;
   const tipsEnabled = useSettings(s => s.tips);
   const coachPending = useCoach(s => s.index < TIPS.length);
   const coaching = tipsEnabled && coachPending;
@@ -227,15 +229,22 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
         shadows={lowGraphics ? false : "percentage"}
-        dpr={lowGraphics ? 1 : [1, 2]}
+        dpr={softwareRenderer ? 0.75 : lowGraphics ? 1 : [1, 2]}
+        onCreated={({ gl }) => {
+          const context = gl.getContext();
+          const info = context.getExtension("WEBGL_debug_renderer_info");
+          if (info) setSoftwareRenderer(/swiftshader|llvmpipe|softpipe|software rasterizer/i.test(
+            context.getParameter(info.UNMASKED_RENDERER_WEBGL),
+          ));
+        }}
         camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
         gl={{
-          antialias: true,
+          antialias: window.devicePixelRatio < 2,
           powerPreference: "high-performance",
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene coaching={coaching && dayIndex === 1} />
+        <MountainScene lowDetail={lowGraphics} coaching={coaching && dayIndex === 1} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
