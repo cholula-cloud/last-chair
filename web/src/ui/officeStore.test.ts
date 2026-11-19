@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createBuiltHill } from "@/game/__fixtures__/built-hill";
 import { pickFounder } from "@/game/rules";
 import { toPersisted } from "@/game/state";
-import { useGameStore } from "@/game/store";
+import { playReplay } from "@/game/replay";
+import { exportSessionReplay, resetSessionReplay, useGameStore } from "@/game/store";
 import { closeOffice, openOffice, useOffice } from "@/ui/officeStore";
 
 const setGame = (phase: "day" | "night", paused: boolean) =>
@@ -10,6 +11,7 @@ const setGame = (phase: "day" | "night", paused: boolean) =>
 
 describe("Office pause and resume", () => {
   beforeEach(() => {
+    resetSessionReplay();
     vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => undefined, removeItem: () => undefined });
     useOffice.setState({ open: false, tab: "Desk", resumeOnClose: false });
   });
@@ -20,7 +22,9 @@ describe("Office pause and resume", () => {
     openOffice();
     expect(useOffice.getState().open).toBe(true);
     expect(useGameStore.getState().paused).toBe(true);
+    expect(playReplay(exportSessionReplay()).paused).toBe(true);
     closeOffice();
+    expect(playReplay(exportSessionReplay()).paused).toBe(false);
     expect(useOffice.getState().open).toBe(false);
     expect(useGameStore.getState().paused).toBe(false);
   });

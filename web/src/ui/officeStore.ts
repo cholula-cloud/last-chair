@@ -26,7 +26,7 @@ export function openOffice(tab?: OfficeTabId): void {
   const game = useGameStore.getState();
   if (game.phase === "setup") return;
   const running = game.phase === "day" && !game.paused;
-  if (running) useGameStore.setState({ paused: true });
+  if (running) game.togglePause();
   useOffice.setState({ open: true, tab: tab ?? ui.tab, resumeOnClose: running });
 }
 
@@ -36,7 +36,7 @@ export function closeOffice(): void {
   if (!open) return;
   useOffice.setState({ open: false, resumeOnClose: false });
   const game = useGameStore.getState();
-  if (resumeOnClose && game.phase === "day" && game.paused) useGameStore.setState({ paused: false });
+  if (resumeOnClose && game.phase === "day" && game.paused) game.togglePause();
 }
 
 export function setOfficeTab(tab: OfficeTabId): void {
