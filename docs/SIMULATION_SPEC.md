@@ -10,9 +10,9 @@
 
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
-| Time | 🟡 | Clock, pause, 6–16h work; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14 | 19 |
+| Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14; day is about 4 minutes at 1×, row L-F targets about 2 | 19, L-F |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
-| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | 9 |
+| Personas | 🟡 | 2 of 4 (First-Timer, Regular) drive energy, run time, target runs and the satisfaction weights (PR 7); Family Pack and Race Kid not modeled | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
 | Arrivals | ✅ | Count from `planArrivals`; spawn minutes from a two-part curve over 08:00–13:30 (PR 6, reshaped in PR 10b). Fare elasticity by persona mix against a reputation-based expected value (PR 9) | — |
 | Lift types / capacity | ✅ | Types differ in capacity, line length, ride time and beginner appeal. Queues account for trail difficulty, closures and chair wind holds | 18 |

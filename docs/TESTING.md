@@ -84,6 +84,22 @@ The follow-up Chromium touch opening completed in 92.6 seconds with the updated 
 
 The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.08 minutes, improved satisfaction by 7.97 points, and increased distinct beginner chair boardings in all 40 seeds. Moving the developed chair met both mean floors and changed completed-run counts in 39 of 40 seeds. See the [calibration table](./SIMULATION_SPEC.md#m2-acceptance-calibration).
 
+## Install on iPhone (row Q1)
+
+Run on a real iPhone with Safari, against the deployed Pages site (the manifest only resolves under its real base path).
+
+| Step | Action | Pass if |
+|---|---|---|
+| 1 | Open the site in Safari, tap Share, then Add to Home Screen | The name field shows "Last Chair" and the icon preview shows the chairlift, not a page screenshot |
+| 2 | Add it, then open it from the Home Screen | It opens full screen with no Safari address bar or toolbar, and the status bar is dark with a readable clock |
+| 3 | Reach the title screen, then Continue or New winter | The top bar and the bottom bar sit clear of the notch or Dynamic Island and the home indicator in portrait |
+| 4 | Turn the phone to landscape | Nothing sits under the notch side or the rounded corners; the app does not lock rotation |
+| 5 | Drag, pinch and rotate on the mountain, then pull down from the top of the screen | The camera moves; the page does not bounce, refresh or zoom |
+| 6 | Swipe in from the left edge | Note what happens. iOS may treat it as back; record whether it leaves the app or does nothing |
+| 7 | Play a day, close the app from the app switcher, reopen it | It reopens to the title screen with Continue available |
+
+The installed app has its own storage. A winter saved in a Safari tab does not appear in it. Record device, iOS version and any step that fails.
+
 ## Sign-off log
 
 | Date | Gate | Who / how | Result |

@@ -17,14 +17,26 @@ const nunito = Nunito({
   display: "swap",
 });
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export const metadata: Metadata = {
   title: "Last Chair",
   description:
     "A cozy ski-hill tycoon for your phone: reopen Dutch Hill, Vermont, for one more winter.",
+  // Pages serves under a repo path, so icon URLs carry the base path explicitly.
+  icons: {
+    icon: [{ url: `${basePath}/favicon.ico`, sizes: "48x48" }],
+    apple: [{ url: `${basePath}/icons/apple-touch-icon.png`, sizes: "180x180", type: "image/png" }],
+  },
   appleWebApp: {
     capable: true,
     title: "Last Chair",
+    // Opaque dark bar above the page: the scene is full bleed, and a translucent bar would put white clock text over light sky.
+    statusBarStyle: "black",
   },
+  formatDetection: { telephone: false },
+  // Next emits only the unprefixed tag; iOS Safari still reads the Apple one.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = {
