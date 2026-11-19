@@ -120,7 +120,7 @@ export function MountainScene({ coaching = false, lowDetail = false }: { coachin
         <Village />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
         <SnowGuns />
-        <Trees lines={clearingLines} paths={forestPaths} />
+        <Trees lowDetail={lowDetail} lines={clearingLines} paths={forestPaths} />
 
         {trailRuns.map((run, ti) => {
           if (!run.open || !lifts[run.liftIndex]?.confirmed) return null;
