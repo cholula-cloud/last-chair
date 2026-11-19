@@ -29,6 +29,7 @@ import { Lift } from "./Lift";
 import { Village } from "./Lodge";
 import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
+import { OverlayScene } from "./OverlayScene";
 import { Road, Terrain } from "./Terrain";
 import { TrailSign } from "./TrailSign";
 import { Trees } from "./Trees";
@@ -112,6 +113,7 @@ export function MountainScene() {
       />
       <Road />
       <LeaseBoundary />
+      <OverlayScene />
       <BuildGrid />
       <Suspense fallback={null}>
         <Village />

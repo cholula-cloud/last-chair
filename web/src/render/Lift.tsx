@@ -35,6 +35,7 @@ import {
   liftTowers,
 } from "./liftLine";
 import { PALETTE } from "./palette";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 const CARRIERS = 16;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -202,7 +203,7 @@ export function Lift({
           {preview ? (
             <meshBasicMaterial color={ghostColor} transparent opacity={0.55} depthWrite={false} />
           ) : (
-            <meshBasicMaterial ref={glowMat} vertexColors toneMapped={false} />
+            <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
           )}
         </mesh>
       )}
@@ -215,7 +216,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors color={closing ? "#e8b46a" : "white"} />
+          <meshLambertMaterial vertexColors {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
         )}
       </mesh>
       <instancedMesh
@@ -232,7 +233,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors color={closing ? "#e8b46a" : "white"} />
+          <meshLambertMaterial vertexColors {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
         )}
       </instancedMesh>
     </group>

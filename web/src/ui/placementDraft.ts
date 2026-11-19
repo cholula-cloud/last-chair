@@ -19,8 +19,6 @@ type PlacementKind = "lift" | "trail" | "asset" | "gun";
 export const usePlacementDraft = create<{
   active: boolean;
   showBuildGrid: boolean;
-  /** The steepness grid in trail mode. Remembered for the session, not saved. */
-  showSteepness: boolean;
   moveCamera: boolean;
   kind: PlacementKind;
   asset?: AssetId;
@@ -44,7 +42,6 @@ export const usePlacementDraft = create<{
 }>(() => ({
   active: false,
   showBuildGrid: false,
-  showSteepness: false,
   moveCamera: false,
   kind: "lift",
   review: false,

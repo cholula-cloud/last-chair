@@ -205,9 +205,7 @@ async function paintTrail(page, cdp, top, resume = false) {
     world(top.x - 2, top.z + 6), world(-3, 11), world(TERRAIN.base.x, TERRAIN.base.z),
   ];
   if (resume) {
-    assert.equal(await page.getByText("Downhill slope", { exact: true }).count(), 0, "The steepness key starts hidden");
-    await click(page, "Steepness");
-    assert(await page.getByText("Downhill slope", { exact: true }).isVisible());
+    assert(await page.locator('[data-overlay-legend="slope"]').isVisible(), "The slope legend shows while painting");
     await drag(page, cdp, locations.slice(0, 3));
     await moveDraftMap(page, cdp, locations[2], "Paint");
     await drag(page, cdp, locations.slice(2));

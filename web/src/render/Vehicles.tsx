@@ -12,6 +12,7 @@ import type { StallSlot } from "./parking";
 import { buildParkingSurface } from "./parkingSurface";
 import { PALETTE } from "./palette";
 import { useStallMap } from "./useStallMap";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 const CAR_COLORS = ["#2f7de1", "#a8382b", "#e8e4dc", "#3f6b4a", "#5c4a3a", "#8b4513"] as const;
 
@@ -56,7 +57,7 @@ function GravelLot({ tier }: { tier: LodgeTier }) {
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshLambertMaterial vertexColors />
+      <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
     </mesh>
   );
 }
@@ -91,7 +92,7 @@ function CarInstances({ kind, list }: { kind: 0 | 1 | 2; list: CarSpot[] }) {
 
   return (
     <instancedMesh ref={ref} args={[geo, undefined, max]} castShadow receiveShadow>
-      <meshLambertMaterial vertexColors />
+      <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
     </instancedMesh>
   );
 }

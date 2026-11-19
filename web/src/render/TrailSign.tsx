@@ -5,6 +5,7 @@ import { useEffect, useMemo } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import { TERRAIN } from "@/game/terrain";
 import type { TrailRun } from "@/game/trails";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 const BOARD_WIDTH = 2.55;
 const BOARD_HEIGHT = 0.72;
@@ -60,12 +61,12 @@ export function TrailSign({ run, lane }: { run: TrailRun; lane: number }) {
     <group position={[x, TERRAIN.height(x, z), z]} name={`${run.name} trail sign`}>
       <mesh position={[0, 0.52, 0]}>
         <boxGeometry args={[0.11, 1.04, 0.11]} />
-        <meshStandardMaterial color="#72523a" />
+        <meshStandardMaterial color="#72523a" {...OVERLAY_DIM} />
       </mesh>
       <Billboard position={[0, 1.08, 0]}>
         <mesh>
           <planeGeometry args={[BOARD_WIDTH, BOARD_HEIGHT]} />
-          <meshBasicMaterial map={texture} transparent alphaTest={0.15} toneMapped={false} />
+          <meshBasicMaterial map={texture} transparent alphaTest={0.15} toneMapped={false} {...OVERLAY_DIM} />
         </mesh>
       </Billboard>
     </group>

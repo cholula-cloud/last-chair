@@ -20,7 +20,8 @@ const MIN_WIDTH = 15;
 const SQ_FT_PER_ACRE = 43_560;
 // Preserve the previous $0.40 per foot cost for a standard-width corridor.
 export const CLEARING_PER_ACRE = (0.4 * SQ_FT_PER_ACRE) / STANDARD_BRUSH_WIDTH;
-const MAX_PAINTED_PITCH = 0.65;
+/** Real pitch above which a painted trail is too steep for the guests. The slope layer calls this double black. */
+export const MAX_PAINTED_PITCH = 0.65;
 const MAX_SAVED_TRAILS = 24;
 // A draft can update twice per pointer event. Bound the authored points before
 // simplification and the derived points before sustained pitch scans pairs.
