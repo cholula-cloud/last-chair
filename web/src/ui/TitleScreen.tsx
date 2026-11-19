@@ -191,6 +191,7 @@ function CreditsView({ onBack }: { onBack: () => void }) {
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
       <p className="font-bold leading-snug">It is built with Next.js, React Three Fiber, three.js and zustand.</p>
       <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
+      <p className="font-bold leading-snug">Sounds are generated in the game. No sound files are used.</p>
     </SubView>
   );
 }

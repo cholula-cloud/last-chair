@@ -29,6 +29,7 @@ import {
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 import { undoChipLabel, type UndoKind } from "@/ui/undoLabel";
 import { useSpeed } from "@/ui/speed";
+import { useSettings } from "@/ui/settingsStore";
 
 /** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
 export function TopBar({
@@ -424,6 +425,8 @@ export function ActionBar({
   onLeave?: () => void;
 }) {
   const menuRef = useRef<HTMLButtonElement>(null);
+  const soundOn = useSettings((s) => s.soundOn);
+  const setSettings = useSettings((s) => s.set);
   const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
   useEffect(() => {
     if (!confirmMenu) return;
@@ -470,6 +473,14 @@ export function ActionBar({
               Leave
             </button>
           </div>
+          <button
+            type="button"
+            aria-pressed={soundOn}
+            onClick={() => setSettings({ soundOn: !soundOn })}
+            className="key press h-11 text-[0.9rem] font-extrabold [--lift:3px]"
+          >
+            Sound {soundOn ? "on" : "off"}
+          </button>
         </div>
       )}
       <button

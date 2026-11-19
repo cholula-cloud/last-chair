@@ -5,6 +5,7 @@ import { useState } from "react";
 import { flushSave, useGameStore } from "@/game/store";
 import { ColdOpen } from "@/ui/ColdOpen";
 import { TitleScreen } from "@/ui/TitleScreen";
+import { useFeel } from "@/ui/feel";
 
 const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
   ssr: false,
@@ -22,6 +23,7 @@ const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
 export default function PlayGate() {
   const [playing, setPlaying] = useState(false);
   const [coldOpen, setColdOpen] = useState(false);
+  useFeel();
 
   if (!playing) {
     return (

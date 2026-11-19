@@ -23,30 +23,40 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
   );
 }
 
+function VolumeSlider({ label, value, onChange }: { label: string; value: number; onChange: (next: number) => void }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="flex items-center justify-between font-extrabold">
+        <span>{label}</span>
+        <span aria-hidden="true">{value}%</span>
+      </label>
+      <input
+        id={id}
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={value}
+        aria-valuetext={`${value} percent`}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-11 w-full accent-[var(--sign-green)]"
+      />
+    </div>
+  );
+}
+
 /** The settings list, shared by the title screen and the Office. */
 export function SettingsControls() {
-  const { voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed, set } = useSettings();
-  const volumeId = useId();
+  const { soundOn, masterVolume, effectsVolume, ambienceVolume, voiceVolume, voiceOn, tips, captions, reduceMotion, defaultSpeed, set } = useSettings();
   const speedId = useId();
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <label htmlFor={volumeId} className="flex items-center justify-between font-extrabold">
-          <span>Voice volume</span>
-          <span aria-hidden="true">{voiceVolume}%</span>
-        </label>
-        <input
-          id={volumeId}
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={voiceVolume}
-          aria-valuetext={`${voiceVolume} percent`}
-          onChange={(e) => set({ voiceVolume: Number(e.target.value) })}
-          className="h-11 w-full accent-[var(--sign-green)]"
-        />
-      </div>
+      <Toggle label="Sound" on={soundOn} onChange={(v) => set({ soundOn: v })} />
+      <VolumeSlider label="Master volume" value={masterVolume} onChange={(v) => set({ masterVolume: v })} />
+      <VolumeSlider label="Effects volume" value={effectsVolume} onChange={(v) => set({ effectsVolume: v })} />
+      <VolumeSlider label="Ambience volume" value={ambienceVolume} onChange={(v) => set({ ambienceVolume: v })} />
+      <VolumeSlider label="Voice volume" value={voiceVolume} onChange={(v) => set({ voiceVolume: v })} />
       <Toggle label="Voice" on={voiceOn} onChange={(v) => set({ voiceOn: v })} />
       <Toggle label="Coach tips" on={tips} onChange={(v) => set({ tips: v })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
