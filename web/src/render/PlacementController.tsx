@@ -11,7 +11,8 @@ import { liftDrag, liftPress, type LiftGrab } from "@/ui/liftGesture";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { brushState } from "./brushState";
 import { cameraBus } from "./cameraBus";
-import { MAX_STROKE_POINTS, edgePanInput, edgePanVelocity, usableHeight } from "./paintAssist";
+import { limitShift } from "./cameraControls";
+import { MAX_STROKE_POINTS, PAN_MOVE_PX, edgePanInput, edgePanVelocity, panDrive, usableHeight } from "./paintAssist";
 import { pickTerrain } from "./terrainPick";
 import { useReducedMotion } from "./useReducedMotion";
 import { LIFT_BUILD_ANCHORS, snapRadiusAtHit } from "./placementTap";
@@ -42,7 +43,7 @@ export function PlacementController() {
     const pending: XZ[] = [];
     let full = false;
     // Last screen position of the painting finger, for edge auto-pan between pointer events.
-    const screen = { x: 0, y: 0, down: false };
+    const screen = { x: 0, y: 0, down: false, movedAt: 0 };
     let panFrame = 0;
     let panLast = 0;
     const panVelocity = { x: 0, z: 0 };
@@ -115,8 +116,13 @@ export function PlacementController() {
 
       if (draft.kind === "trail") {
         const rect = dom.getBoundingClientRect();
-        screen.x = event.clientX - rect.left;
-        screen.y = event.clientY - rect.top;
+        const sx = event.clientX - rect.left;
+        const sy = event.clientY - rect.top;
+        if (pressing || !screen.down || Math.hypot(sx - screen.x, sy - screen.y) >= PAN_MOVE_PX) {
+          screen.movedAt = performance.now();
+        }
+        screen.x = sx;
+        screen.y = sy;
         screen.down = true;
         brushState.x = raw.x;
         brushState.z = raw.z;
@@ -168,15 +174,22 @@ export function PlacementController() {
       forward.z = -e[10] / fl;
       edgePanInput(screen.x, screen.y, layout.width, layout.usable, undefined, input);
       edgePanVelocity(input, right, forward, camera.position.distanceTo(controls.target), undefined, want);
+      // A finger resting at the edge stops the map; only a moving one keeps it sliding.
+      const drive = panDrive(now - screen.movedAt);
+      want.x *= drive;
+      want.z *= drive;
       const k = reduced.current ? 1 : 1 - Math.exp(-dt / PAN_TAU);
       panVelocity.x += (want.x - panVelocity.x) * k;
       panVelocity.z += (want.z - panVelocity.z) * k;
-      const dx = panVelocity.x * dt;
-      const dz = panVelocity.z * dt;
+      if (Math.abs(panVelocity.x * dt) + Math.abs(panVelocity.z * dt) < 1e-5) return;
+      // The shift is limited to the lease so the target never leaves it, even for a frame.
+      const shift = limitShift(controls.target, panVelocity.x * dt, panVelocity.z * dt);
+      const dx = shift.x;
+      const dz = shift.z;
       if (Math.abs(dx) + Math.abs(dz) < 1e-5) return;
       // A tilt or glide in flight would fight the pan, so it stops here.
       cameraBus.cancelMotion?.();
-      // The camera rig soft-clamps the target to the play area on its next frame.
+      // The camera rig also clamps the target to the lease on its next frame.
       camera.position.x += dx;
       camera.position.z += dz;
       controls.target.x += dx;
