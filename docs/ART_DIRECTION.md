@@ -1,7 +1,7 @@
 # Last Chair — art direction
 
-**Version:** 1.0 · **Updated:** 2026-11-17  
-**Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs; the dedicated art pass is M4 in [MASTER_PLAN.md](./MASTER_PLAN.md#8-roadmap); lighting and VFX juice is M7.
+**Version:** 1.1 · **Updated:** 2026-11-19  
+**Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs. **M4** (code) covers snow shader, lighting, licensed audio, UI juice, and build-overlay polish — see [MASTER_PLAN.md](./MASTER_PLAN.md#m4-polish-and-feel-code-only). **M4b** is the Blender-only asset pass (guest silhouettes, lodge/lift kit, styles, activities). Extra lighting and VFX juice beyond M4 row 31 lives in M7.
 
 ---
 
@@ -42,7 +42,7 @@ What we are matching emotionally—not copying literally:
 
 **Phase 3:** Lodge tiers, night lights, chalet on slope.
 
-Phase 2 and 3 map to M4 (PRs 27–32) in the master plan. The 110% lighting pass is M7.
+Phase 2 and 3 (village/lift kit, lodge tiers, extra silhouettes) map to **M4b** (rows 28–29, S, A). Snow shader and day/night rig map to **M4** rows 30–31. The 110% lighting pass is M7.
 
 ---
 

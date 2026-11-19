@@ -10,7 +10,7 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 |---|---|
 | Part A | Foundation briefs, M2 builder and operations rows, M2 gate |
 | Part B | M3, rows 18 to 27, M3 gate |
-| Part C | M4 to M7, rows 28 to 40, 110% pass and cross-cutting work |
+| Part C | M4 (code: B6, B7, P4, rows 30 to 33, O4, F3), M4b (Blender: rows 28, 29, S1 to S3, A1 to A5), M5 to M7, rows 34 to 40, 110% pass and cross-cutting work |
 
 ## Numbering
 
@@ -1956,6 +1956,20 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 # Part C: M4 to M7
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
+
+**M4 vs M4b (MASTER_PLAN v2.3).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), then handoff sections for rows **30 to 33**, **O4**, and **F3**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; write new briefs for B6, B7, and P4 before implementing them.
+
+### Row B6 — Build grid and lift placement guide (M4, brief TBD)
+
+Owner report: the placement dot grid does not appear during lift placement and the grid elsewhere feels wrong. Today `BuildGrid.tsx` turns the dot field off for `lift` and `trail` modes; L-A relied on anchor dots only. **Goal:** one coherent guide in lift mode (anchors plus optional faint lease grid or ring) and a tuned dot field for assets and guns (cell step tied to `terrain.scale.horizontal`, contrast, valid-only vs valid+invalid cells). **Files (likely):** `web/src/render/BuildGrid.tsx`, `LiftGhost.tsx`, `placementTap.ts`, `MapOverlay.tsx` or build overlay layer. **Acceptance:** lift placement on phone shows snap targets without fighting the cable ghost; venue placement grid matches valid cells in playtests.
+
+### Row B7 — Trail paint context and freer endpoints (M4, brief TBD)
+
+Owner report: other trails disappear while painting; new runs snap to the base too often. **Goal:** render confirmed trail ribbons whenever `placementDraft.kind === "trail"` (dim existing, full opacity on draft). In `web/src/game/paintedTrail.ts`, tighten when `atBase` pushes `terrain.base`, and when prefix/suffix merge reuses another trail — prefer the painted polyline unless required for connectivity or guest pathing. **Files (likely):** `TrailRibbon.tsx`, `paintedTrail.ts`, `PlacementController.tsx`. **Tests:** characterization on preview paths; visual screenshots with two trails visible during a third draft. **Acceptance:** player can plan a run beside an existing trail; ending above the village does not auto-yank to base unless they finish in the base area on purpose.
+
+### Row P4 — M4 polish pass (M4, brief TBD)
+
+One coordinated pass after B6/B7 or in parallel with early feel rows: design (coach, night flow, copy vs ART_DIRECTION), engineering (`npm run check`, layering, bundle, known TODOs), UI (44px targets, sheet scroll, Office/HUD). Deliverable: punch list with every item ☑ or an explicit follow-up row before M4 gate.
 
 Every PR below follows MASTER_PLAN section 7: one goal, under about 400 changed lines of non-test code, `cd web && npm run check` green, phone check, docs in the same PR, merge with `gh pr merge <n> --merge` after green CI. Layering holds throughout: `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included. The season characterization snapshot (`web/src/game/__snapshots__/season.characterization.test.ts.snap`) is the sim safety net. A PR marked "no snapshot change" must leave it byte-identical; a PR that changes it pastes the exact `.snap` diff into its description and explains every line.
 
