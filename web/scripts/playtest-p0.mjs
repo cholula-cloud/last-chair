@@ -63,7 +63,7 @@ try {
   await page.goto(base + "/", { waitUntil: "domcontentloaded" });
   await screenshot("home.png", true);
 
-  await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
+  await page.getByRole("link", { name: "Play", exact: true }).tap();
   await heading("Last Chair").waitFor();
   assert.equal(await button(page, /^Continue/).count(), 0, "A fresh browser has no saved winter");
   await enterGame(page);

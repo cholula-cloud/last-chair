@@ -92,6 +92,17 @@ Run `npm run check:bundle` after the production build. The limits are 450 KiB gz
 
 The November 19 integrated production export loaded the title in 185 ms at 390×844 in Chromium. Initial play-page JS was 177,496 bytes gzip, with the largest chunk at 337,558 bytes gzip. The scene used 28 draw calls and 182,221 triangles. Those checks passed. Under 4× CPU throttling with Mesa software rendering, the same run measured 1.8 fps and a 717 ms p95 frame. It failed the 30 fps target. Physical iPhone frame time and the device soak remain unmeasured.
 
+PR #88 repeated the production benchmark under the same 4× CPU throttle using Chromium and Mesa software rendering. The canvas uses a lighter terrain and pine mesh on this renderer. UI text stays at native resolution. Pan, pinch, double tap, placement and speed controls passed at every size.
+
+| CSS viewport | Mean FPS | p95 frame time |
+|---|---:|---:|
+| 390×844 | 47.1 | 33.4 ms |
+| 844×390 | 34.7 | 66.6 ms |
+| 820×1180 | 43.4 | 33.4 ms |
+| 375×667 | 44.6 | 33.4 ms |
+
+The quiet-recap audit at 375×667 checks both the OS motion preference and the saved game setting. It observes one live-region update per coach tip and per enabled broadcast, zero broadcasts when the radio is off, and no active CSS animation or transition on the tested recap elements. [Release browser matrix](https://github.com/cholula-cloud/last-chair/pull/88/checks)
+
 In the Office, open **Playtest notes** and export the replay, or use **Send notes** to share the replay and typed feedback together. On browsers without file sharing, the attachment downloads. Reproduce the session from `web/` with `npm run replay -- /path/to/last-chair-replay.json`. The file contains the starting checkpoint, RNG seed and game actions since that checkpoint. Loading a slot starts a fresh recording. Long sessions checkpoint every 30,000 recorded actions. The replay uses the same release’s rules.
 
 ## Optional install on iPhone (row Q1)
