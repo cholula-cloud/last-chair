@@ -1,14 +1,14 @@
 # Last Chair game plan and design
 
-**Version:** 2.3 · **Updated:** 2026-11-19
+**Version:** 2.4 · **Updated:** 2026-11-19
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes).
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes.
 
 | Doc | Job |
 |---|---|
 | **MASTER_PLAN.md** (this) | Game plan and design: vision, story, the lodge, modes, build experience, roadmap, how we work |
-| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: B6, B7, P4, S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C; write briefs for B6, B7 and P4 before building them. Write one before building each |
+| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: B6, B7, P4, O5, T1, S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C; write briefs for B6, B7, P4, O5 and T1 before building them. Write one before building each |
 | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Numbers and formulas, marked spec vs implemented |
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
@@ -361,13 +361,13 @@ Roadmap: row updated
 
 ### Numbering
 
-A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a test the game has to pass before the next milestone starts. A **row** is one line in a milestone table; big rows split into lettered PRs (13a, 13b). Row numbers are not GitHub PR numbers. Rows with a letter prefix (B, L, S, A, P, Q) belong to a named track: builder, lodge, styles, activities, personas, quality. **Milestone M4b** is reserved for Blender output only (rows 28, 29, S1 to S3, A1 to A5); gameplay hooks for activities ship in the same PR as their GLB when a row needs sim or catalog changes.
+A **milestone** (M0 to M8) is a group of small PRs that ends in a **gate**: a test the game has to pass before the next milestone starts. A **row** is one line in a milestone table; big rows split into lettered PRs (13a, 13b). Row numbers are not GitHub PR numbers. Rows with a letter prefix (B, L, S, A, T, P, Q) belong to a named track: builder, lodge, styles, activities, **trail signage (Blender)**, personas, quality. **Milestone M4b** is reserved for Blender output only (rows 28, 29, T1, S1 to S3, A1 to A5); gameplay hooks for activities ship in the same PR as their GLB when a row needs sim or catalog changes. Row **T1** replaces procedural lift-top billboards with kit signage meshes.
 
 ---
 
 ## 9. Roadmap
 
-Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (B6, B7, P4, S1 to S3, A1 to A5, 41 to 48) need one before building. **M4b is Blender-only** (`tools/blender/`, export to `web/public/models/`); do not mix Blender asset work into M4 rows.
+Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the handoff doc, by row number. Unbuilt rows with no handoff section yet (B6, B7, P4, O5, T1, S1 to S3, A1 to A5, 41 to 48) need one before building. **M4b is Blender-only** (`tools/blender/`, export to `web/public/models/`); do not mix Blender asset work into M4 rows.
 
 ### What each milestone means
 
@@ -378,7 +378,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M2** Build the mountain | Building feels good, the lodge is your HQ, and where and what you build matters | Moving a lift or adding a trail measurably changes tomorrow; upgrading the lodge opens a new build option and a new revenue source; a new player builds a lift and paints a trail in 3 minutes |
 | **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Automated winter playthrough, save/reload and balance checks pass |
 | **M4** Polish and feel (code) | Build UX fixes, shaders, lighting, audio, juice, overlays, Office charts, and a cross-cutting design/engineering/UI pass. **No Blender.** | Owner can place a lift with a readable guide; trail paint shows other trails and does not over-snap to base; muted vs unmuted and day vs night read clearly; phone check green |
-| **M4b** Blender assets | Guest silhouettes, lodge/lift kit finish, cosmetic style variants, and activity/decoration GLBs plus catalog rows | Every M4b asset is built in Blender, in manifest v2, and wired through the asset table; Tier 3 activity placeholders render on the hill |
+| **M4b** Blender assets | Guest silhouettes, lodge/lift kit, **trail signage**, style variants, activity/decoration GLBs plus catalog rows | Every M4b asset is built in Blender, in manifest v2, and wired through the asset table; trail entrances use realistic signs (not stacked billboards at the lift); Tier 3 activity placeholders render on the hill |
 | **M5** Career | Tenney Mountain, the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
 | **M6** Sandbox | Free-build mode and save slots | Sandbox hill saves and reloads |
 | **M7** 110% pass | Polish the best ideas after a side-by-side with ICR | Owner sign-off |
@@ -482,6 +482,7 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | 32 | ☐ | Audio | Licensed ambient bed, UI sounds, radio sting; builds on Q3 synth floor (handoff PR 32) |
 | 33 | ☐ | Mobile juice | Sheet motion, build-place and lodge-upgrade feedback; reduced motion respected (handoff PR 33) |
 | O4 | ☐ | Crowd and revenue layers, demand pins | Guest density and queue length, venue takings, and "Guests want" pins on the map (§12) |
+| O5 | ☐ | Trails map layer | Named trail centerlines with difficulty colour on the hill; labels readable on phone; lift-top **trail map** readout (UI card or single board) instead of one billboard per run. Pairs with T1: detailed names live on the layer when signs stay compact |
 | F3 | ☐ | Stats and Reports tabs | Daily charts from `dayHistory`, recap archive, story log, season calendar, trail report |
 
 Suggested order: **B6, B7, P4** (build trust and sweep friction), then **30 to 33**, then **O4** and **F3**. Rows 31 to 33 finish what Q3 (§11) started so outside players judge a game that sounds and looks alive.
@@ -494,13 +495,14 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 |---|---|---|---|
 | 28 | ☐ | Guest models (Blender) | Five skier and snowboarder silhouettes; jacket/helmet tint in render (handoff PR 28) |
 | 29 | ☐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
+| T1 | ☐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
 | S1 | ☐ | Style system (Blender) | Style picker on the building card; default style per mountain; saved `styleId` per building; each style is a Blender variant |
 | S2 | ☐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
 | S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
 | A1 | ☐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
 | A2 | ☐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
 | A3 | ☐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
-| A4 | ☐ | Decor (Blender + catalog) | Fire pits, string lights, signs; small arrival-mood terms |
+| A4 | ☐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
 | A5 | ☐ | Events (Blender + catalog) | Winter carnival night choice using rink and tubing assets |
 
 ### M5: Career
@@ -632,8 +634,12 @@ Extras on the same layer:
 - **Wear map.** Which segments yesterday's runs scraped, so the player sees where guests wore the snow out.
 - **Tap to why.** One sentence of cause from the sim for any segment.
 - **Who can ski it.** Persona chips on a segment (First-Timer, Regular, Family Pack and Race Kid) that combine its difficulty and its condition.
-- **In-world trail signs.** The same glyph on the trail sign at each entrance, as on a real trail-status board.
+- **In-world trail signs (row T1, M4b).** Realistic post-and-board props at trail entrances (Blender kit), not floating canvas rectangles at the lift top. Today’s implementation (`TrailSign.tsx`) stacks one billboard per open trail near the unload; T1 removes that clutter. Compact signs show difficulty shape; full name and condition detail are available on the **Trails** layer (O5) and on tap readouts.
 - **Static fallback.** With reduced motion the textures stay and the movement stops.
+
+| Layer | Row | What it shows |
+|---|---|---|
+| **Trails** | O5 | Every open trail’s centerline with difficulty colour and name labels; optional lift-top summary card listing runs served by that lift. Used for planning and for players who want a trail map on screen without crowding the 3D scene |
 
 Later layers (row O4): Crowds (guest density and queue length), Revenue (venue takings from the per-venue receipts), and "Guests want" pins from the night recap.
 

@@ -1,6 +1,6 @@
 # Last Chair — art direction
 
-**Version:** 1.1 · **Updated:** 2026-11-19  
+**Version:** 1.2 · **Updated:** 2026-11-19  
 **Strategy:** Match ICR's cozy New England diorama feel with original assets. Readability is gameplay: each M1–M3 PR adds the visuals it needs. **M4** (code) covers snow shader, lighting, licensed audio, UI juice, and build-overlay polish — see [MASTER_PLAN.md](./MASTER_PLAN.md#m4-polish-and-feel-code-only). **M4b** is the Blender-only asset pass (guest silhouettes, lodge/lift kit, styles, activities). Extra lighting and VFX juice beyond M4 row 31 lives in M7.
 
 ---
@@ -88,6 +88,7 @@ Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Sc
 | `Terrain.tsx` | Valley heightfield (dense grid in the play area, coarse toward the fog) with vertex colours: blue hollows, warm sun-facing slopes, rock on steep faces, bare earth that spreads from the bottom as `snowDepth` falls. Also the valley road. |
 | `game/terrain.ts` | The heightfield (`TERRAIN.height`) read by the sim and the renderer; Dutch Hill is data in `game/mountains/dutchHill.ts` (flat base apron, meadow, steep face with a rollover, summit dome, side ridges). Render helpers `liftLine.ts`, `trail.ts` and `guestPlacement.ts` hold the lift tower layout, trail curve, tidy queue snake, guest placement and poses. |
 | `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture (crisper when `groomVisible`); green/red translucent preview in build mode. |
+| `TrailSign.tsx` | **Placeholder (M3):** canvas texture on a billboard plane + box post at each trail entrance; stacks near lift tops. **Target (M4b row T1):** Blender `trail-sign-*` kit; names and conditions also on the **Trails** map layer (M4 row O5). |
 | `Lift.tsx` | Merged towers, crossarms, bull wheels, up/return cables and two terminal huts; instanced moving T-bars or chairs; translucent green/red ghost for the build preview. |
 | `Trees.tsx` | Three tiered conifer variants with a snow cap on every tier, instanced (up to 480 each), cleared along trails, lift lines, the base and the road. |
 | `Lodge.tsx` | Base village: red clapboard lodge with steep snowy gable, stone chimney, deck and warm windows; café and shop when built; parked cars; lamp posts with additive light pools that glow at dusk and night. |

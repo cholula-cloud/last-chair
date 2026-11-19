@@ -10,7 +10,7 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 |---|---|
 | Part A | Foundation briefs, M2 builder and operations rows, M2 gate |
 | Part B | M3, rows 18 to 27, M3 gate |
-| Part C | M4 (code: B6, B7, P4, rows 30 to 33, O4, F3), M4b (Blender: rows 28, 29, S1 to S3, A1 to A5), M5 to M7, rows 34 to 40, 110% pass and cross-cutting work |
+| Part C | M4 (code: B6, B7, P4, rows 30 to 33, O4, O5, F3), M4b (Blender: rows 28, 29, T1, S1 to S3, A1 to A5), M5 to M7, rows 34 to 40, 110% pass and cross-cutting work |
 
 ## Numbering
 
@@ -1957,7 +1957,7 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
 
-**M4 vs M4b (MASTER_PLAN v2.3).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), then handoff sections for rows **30 to 33**, **O4**, and **F3**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; write new briefs for B6, B7, and P4 before implementing them.
+**M4 vs M4b (MASTER_PLAN v2.4).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), then handoff sections for rows **30 to 33**, **O4**, **O5**, and **F3**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; write new briefs for B6, B7, P4, O5, and T1 before implementing them.
 
 ### Row B6 — Build grid and lift placement guide (M4, brief TBD)
 
@@ -1970,6 +1970,14 @@ Owner report: other trails disappear while painting; new runs snap to the base t
 ### Row P4 — M4 polish pass (M4, brief TBD)
 
 One coordinated pass after B6/B7 or in parallel with early feel rows: design (coach, night flow, copy vs ART_DIRECTION), engineering (`npm run check`, layering, bundle, known TODOs), UI (44px targets, sheet scroll, Office/HUD). Deliverable: punch list with every item ☑ or an explicit follow-up row before M4 gate.
+
+### Row O5 — Trails map layer (M4, brief TBD)
+
+Owner direction: lift tops should not be cluttered with one canvas billboard per trail (`TrailSign.tsx` today). **Goal:** add a **Trails** entry to the layer strip (§12). Paint each open trail centerline with difficulty colour; show trail names as screen-stable labels along the line (same overlay framework as O1–O3). At a lift unload, show a compact **trail map** readout (layer legend card or list of runs on that lift) instead of requiring in-world boxes for every name. **Files (likely):** `web/src/game/mapLayers.ts`, `web/src/render/OverlayScene.tsx` or trail overlay module, `MapLayers.tsx`, `terrainOverlay.ts`. **Depends on:** O1 framework. **Acceptance:** with Trails layer on, a player can read every trail name without zooming to lift-top billboards; with layer off, T1 signs remain readable at toy scale.
+
+### Row T1 — Trail signage kit (M4b, brief TBD)
+
+Replace procedural signs with Blender assets. **Today:** `TrailSign.tsx` builds a canvas texture on a `Billboard` plane plus a box post; `MountainScene` mounts one sign per open trail with `lane` offset, clustering near each lift top. **Goal:** `tools/blender/props.py` (or new `signage.py`): `trail-sign-post.glb`, `trail-sign-board.glb` (timber post, metal-backed US trail sign silhouette), optional `trail-map-kiosk.glb` (single object at lift unload). Placement: sign at **trail entrance** along the corridor (first segment heading), not fan-out from lift anchor. Render: load from manifest v2; keep condition glyph updates from `mapLayers` (texture or small overlay mesh). **Same PR:** delete or gut canvas billboard path; keep tests for placement and dimming under layers. **Acceptance:** no stack of floating boxes at lift top; signs read as physical props in screenshots at 390×844.
 
 Every PR below follows MASTER_PLAN section 7: one goal, under about 400 changed lines of non-test code, `cd web && npm run check` green, phone check, docs in the same PR, merge with `gh pr merge <n> --merge` after green CI. Layering holds throughout: `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included. The season characterization snapshot (`web/src/game/__snapshots__/season.characterization.test.ts.snap`) is the sim safety net. A PR marked "no snapshot change" must leave it byte-identical; a PR that changes it pastes the exact `.snap` diff into its description and explains every line.
 
