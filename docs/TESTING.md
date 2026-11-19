@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.0 · **Updated:** 2026-11-18
+**Version:** 1.0 · **Updated:** 2026-11-19
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -11,7 +11,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|---|---|
 | Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents | `npm test`, CI on every PR | Set up (PR 2) |
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
-| Balance harness | Vitest (PR 10): `web/src/game/balance.ts` plays whole seasons through the real rules; `balance.test.ts` asserts the balance properties on 6 seeds (about 4 s, always on); `balance.report.test.ts` prints the strategy and founder tables over 40 seeds | `cd web && npm run balance` (`BALANCE_SEEDS=N` changes the seed count). The property test runs in `npm test` and CI | Set up (PR 10) |
+| Balance harness | Vitest and seeded seasons | Six-seed operating, settlement and story properties. The extended report compares 14 strategies, six founders and paired offer choices over 40 seeds. | Six seeds in `npm test` and CI. From `web/`, run `npm run balance` for the extended report. | Automated |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |
 | Phone check | Playwright Chromium + WebKit, `npm run phone-check` (viewports 390×844, 844×390, 820×1180, 375×667; waits on `[data-scene-ready="true"]`; screenshots and perf gates to `PLAYTEST_OUT/phone-check/`, default `web/playtest-artifacts/phone-check/`) | Home pan/zoom, Build feet, speed chip, optional `?stats=1` draw-call budget (Chromium) | Local, before merge | Exists |
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |

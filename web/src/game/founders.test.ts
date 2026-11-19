@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { assetRevenue, placedAssetsFromLegacy } from "./base";
 import { REFERENCE_TOPS } from "./descent";
-import { operatingCosts } from "./economy";
-import { arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, takeLoan } from "./rules";
+import { morningCash, operatingCosts } from "./economy";
+import { acknowledgeBeat, sleep, arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, takeLoan } from "./rules";
 import { makeGuest, meanArrivals } from "./sim";
 import { TERRAIN } from "./terrain";
 import type { FounderId, WeatherKind } from "./types";
@@ -23,8 +23,15 @@ describe("founder bonuses and constraints", () => {
   });
   it("Tom pays 7% across the season", () => {
     const state = hill("tom");
-    const loan = takeLoan(openNight({ ...state, cash: -5000 })).loan!;
-    expect(loan.ratePerDay * state.seasonLength).toBeCloseTo(0.07);
+    let night = takeLoan(acknowledgeBeat(openNight({ ...state, cash: -5000 })));
+    expect(night.loan!.ratePerDay * state.seasonLength).toBeCloseTo(0.07);
+    for (let i = 1; i < state.seasonLength; i++) {
+      const funded = { ...night, cash: night.cash + 1000 - morningCash(night) };
+      night = acknowledgeBeat(openNight(sleep(funded)));
+    }
+    const review = sleep(night);
+    expect(review.phase).toBe("winter_review");
+    expect(review.loan!.balance).toBeCloseTo(10_700);
   });
   it("Tom loses three welcome points only on repeated thaw days", () => {
     const mood = (kinds: WeatherKind[]) => satisfactionContext({ ...hill("tom"), dayIndex: kinds.length,

@@ -57,7 +57,7 @@ Real arc (public record):
 
 | Field | Value |
 |-------|--------|
-| Vertical (game scale) | ~400–570′ stepped by upgrades |
+| Vertical (game scale) | 570′ terrain reference. The lift terminals determine the vertical available to ski. |
 | Start state | Tier 1 lodge. The player places the first surface lift and paints its descent before opening. |
 | Archetypes | `rural_sticks`, `natural_snow_only`, `weekends_family`, `no_snowmaking_start` |
 | Weather | Southern VT snow belt — good winters **or** 1970s-style drought arcs |
@@ -103,43 +103,43 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 #### 1. **Elena Vargas — *The Caretaker***
 
 - **Background:** Taught the last lessons at **Dutch Hill** before the **1985** closure (fiction: you’re back for the revival).
-- **Bonus:** Higher arrival mood and two more planned guests.
-- **Constraint:** Cannot demolish the original warming hut (upgrade in place only).
-- **Story:** Knows every bus driver by name; pushes school-day beats early.
+- **Bonus:** Happier families bring two extra guests.
+- **Constraint:** Keep the warming hut.
+- **Story:** Knows every bus driver by name.
 
 #### 2. **Tom “Ledger” Keene — *The Refi***
 
 - **Background:** Community banker who lost the last loan.
-- **Bonus:** Borrows at 7% for the winter.
-- **Constraint:** Repeated thaw days cost three welcome points.
+- **Bonus:** Borrow at 7% for the winter.
+- **Constraint:** Repeated thaw days cost 3 welcome points.
 - **Story:** Abominable Snowglomerate calls him first—creates tension on buyout offers.
 
 #### 3. **Riley Otis — *The Rigger***
 
 - **Background:** Lift mechanic; can keep one marginal lift “limping” safely.
-- **Bonus:** Lift operations cost 15% less.
-- **Constraint:** Cannot take equity investment from Abominable Snowglomerate (hard lock on “sell out” ending).
+- **Bonus:** Spend 15% less on lift operations.
+- **Constraint:** Must decline Vivian’s offer.
 - **Story:** Patrollog sidequests about wind holds.
 
 #### 4. **Dr. Amira Chen — *The Forecast***
 
 - **Background:** Former NWS adjacent researcher; moved to valley for “quiet.”
-- **Bonus:** Longer reliable weather outlook UI (1 extra day detail).
-- **Constraint:** Higher guest expectation on snow quality (satisfaction harder).
+- **Bonus:** See two days of forecasts.
+- **Constraint:** Guests expect 5% better snow.
 - **Story:** “Ledger & Cocoa” segments explain weather in plain language.
 
 #### 5. **Juniper Hale — *The Preservationist***
 
 - **Background:** Land trust liaison; clearing trees is politically visible.
-- **Bonus:** A small nightly reputation bonus when guests arrive.
+- **Bonus:** Gain extra reputation each night.
 - **Constraint:** Lift lines and tree clearing cost 15% more.
 - **Story:** Vermont land-trust politics arc synergy (e.g. Hogback / Maple Valley region beats).
 
 #### 6. **Marco Russo — *The Showman***
 
 - **Background:** Ran a failed festival series; loves night skiing and music.
-- **Bonus:** Venues bring in 10% more revenue.
-- **Constraint:** Daily fixed operating costs rise by $80.
+- **Bonus:** Earn 10% more from venues.
+- **Constraint:** Pay $80 more per day.
 - **Story:** Headliner beats, Trampoline/Arena content later.
 
 ---
@@ -179,9 +179,9 @@ Guests are **agents** with a **persona tag** affecting needs, venues, and mood w
 
 In **Story Mode (ICR Simple)**, overnight crew talent order is **framed as NPCs**:
 
-- **Frank** biases snowmaking maintenance.
-- **Dana** biases patrol talents.
-- **Elena** biases school/lesson talents.
+- **Frank** maintains the lifts, plows the road and works the snow.
+- **Dana** runs patrol, first aid and gusty-day chair operations.
+- **Elena** handles lessons, the café, tickets and community events.
 
 Same fixed priority idea as ICR **Build the Mountain**—but **named**, so radio can joke about their stubbornness.
 

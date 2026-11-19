@@ -1,4 +1,6 @@
+import { TALENT } from "./talents";
 import { ASSET_CATALOG, type AssetId } from "./base";
+import { inHolidayWeek, MOUNTAIN_CALENDARS } from "./calendar";
 import { founderById } from "./content";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
@@ -6,8 +8,13 @@ import { DAILY_FIXED_COST, LIFT_OPS_COST, snowNightCost } from "./types";
 
 export const LOW_CASH = 1500;
 export const LOAN_TERMS = { principal: 10_000, rate: 0.08, reserve: 2_000 } as const;
+export function winterLoanRate(state: Pick<GameState, "founderId">): number {
+  return state.founderId === "tom" ? 0.07 : LOAN_TERMS.rate;
+}
+
 export const BANKRUPTCY_MORNINGS = 3;
 const CHAIR_DAILY_SURCHARGE = 5;
+const VACATION_STAFFING_COST = 425;
 
 export type Payable = {
   what: "lift" | "lodge" | AssetId;
@@ -23,7 +30,7 @@ export type Loan = {
   takenDay: number;
 };
 
-export type OperatingCosts = { fixed: number; founder: number; liftOps: number; upkeep: number };
+export type OperatingCosts = { fixed: number; vacationStaffing?: number; founder: number; liftOps: number; upkeep: number };
 export type CostLines = OperatingCosts & { snowNight: number; draws: number; interest: number; constructionSpent: number };
 
 export function constructionDraw(total: number) {
@@ -45,9 +52,11 @@ export function operatingCosts(state: GameState): OperatingCosts {
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails));
   const liftCost = openLifts.reduce((sum, lift) => sum + LIFT_OPS_COST
     + (lift.type === "chair" ? CHAIR_DAILY_SURCHARGE : 0)
-    - (lift.type === "surface" && state.talentsOwned.includes("rope_tow") ? 40 : 0), 0);
+    - (lift.type === "surface" && TALENT.ropeTow.learned(state.talentsOwned) ? TALENT.ropeTow.savings : 0), 0);
+  const staffing = inHolidayWeek(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) ? VACATION_STAFFING_COST : 0;
   return {
-    fixed: DAILY_FIXED_COST - (state.talentsOwned.includes("volunteer_patrol") ? 50 : 0),
+    ...(staffing ? { vacationStaffing: staffing } : {}),
+    fixed: DAILY_FIXED_COST + staffing - (TALENT.volunteerPatrol.learned(state.talentsOwned) ? TALENT.volunteerPatrol.savings : 0),
     founder: founderById(state.founderId)?.fixedCostDelta ?? 0,
     liftOps: Math.round((liftCost || LIFT_OPS_COST) * (state.founderId === "riley" ? 0.85 : 1)),
     upkeep: 60 + state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0)

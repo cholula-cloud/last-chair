@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import type { OperatingCosts } from "./economy";
 import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
@@ -195,7 +196,7 @@ export type GuestClock = {
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
-  const closeMin = LIFT_CLOSE_MIN + (clock.talentsOwned.includes("night_lights") ? 10 : 0);
+  const closeMin = LIFT_CLOSE_MIN + (TALENT.nightLights.learned(clock.talentsOwned) ? TALENT.nightLights.minutes : 0);
   const hold = windHoldWindow(clock.talentsOwned);
   const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
     // Sent home from a line: the wait so far counts as a completed wait.
@@ -500,12 +501,12 @@ export function applyOvernight(opts: {
   daysWithoutSnow: number;
 }): OvernightResult {
   const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
-  const hasTrailGuns = opts.talentsOwned.includes("trail_guns");
-  const hasGroom = opts.talentsOwned.includes("groom_pass");
+  const hasTrailGuns = TALENT.trailGuns.learned(opts.talentsOwned);
+  const hasGroom = TALENT.groomPass.learned(opts.talentsOwned);
 
   const { kind: weather } = opts.weatherTomorrow;
   const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom,
-    corduroy: opts.talentsOwned.includes("corduroy"), snowFences: opts.talentsOwned.includes("snow_fences") };
+    corduroy: TALENT.corduroy.learned(opts.talentsOwned), snowFences: TALENT.snowFences.learned(opts.talentsOwned) };
   const gunCoverage = opts.gunCoverage?.map((coverage) =>
     opts.snow === "minimal" ? coverage.map(() => false) : coverage);
   const reach = gunCoverage ? 0 : gunReach(night);
@@ -536,7 +537,7 @@ export function applyOvernight(opts: {
 }
 
 function learnNextTalent(owned: string[]) {
-  return CREW_TALENTS.find((t) => !owned.includes(t.id)) ?? null;
+  return CREW_TALENTS.find((t) => !t.learned(owned)) ?? null;
 }
 
 export function nextTalentName(owned: string[]): string | null {
@@ -598,12 +599,12 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings, opts.talentsOwned);
   base = Math.round(base * fareDemandMultiplier(opts.fare, expected, usesWeekendGuestMix(calendar, opts.dayIndex)));
   if (opts.weather === "snow") base += 3;
-  if (opts.weather === "storm") base -= opts.talentsOwned.includes("early_plow") ? 2 : 5;
+  if (opts.weather === "storm") base -= TALENT.earlyPlow.learned(opts.talentsOwned) ? TALENT.earlyPlow.stormPenalty : 5;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
   if (opts.buildings.includes("cafe")) base += 1;
-  if (opts.talentsOwned.includes("ticket_booth") && weekend) base += 1;
-  if (opts.talentsOwned.includes("school_day") && !weekend) base += 2;
+  if (TALENT.ticketBooth.learned(opts.talentsOwned) && weekend) base += TALENT.ticketBooth.visitors;
+  if (TALENT.schoolDay.learned(opts.talentsOwned) && !weekend) base += TALENT.schoolDay.visitors;
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
   return Math.max(12, Math.min(64, base));

@@ -1,5 +1,7 @@
 "use client";
 
+import { TALENT } from "@/game/talents";
+
 import { ASSET_CATALOG, type AssetId } from "@/game/base";
 
 import { useState } from "react";
@@ -97,7 +99,7 @@ function moodWord(score: number): { word: string; tone: Tone } {
 /** Largest effect on the bars; anything bigger fills the half-track. */
 const BAR_FULL_PTS = 20;
 
-function WhyList({ recap }: { recap: NightRecap }) {
+function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
   const [open, setOpen] = useState(false);
   const lines = whyLines(recap);
   return (
@@ -123,7 +125,7 @@ function WhyList({ recap }: { recap: NightRecap }) {
                       {formatPoints(line.points)}
                     </span>
                   </div>
-                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}</p>
+                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " · Patrol on hand" : ""}</p>
                   <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-snow-2" aria-hidden="true">
                     <span
                       className={`absolute inset-y-0 ${
@@ -204,7 +206,8 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
   const lines = [
     ...(recap.costs && recap.revenue != null ? [
       { label: "Tickets and venue sales", amount: recap.revenue },
-      { label: "Fixed operating costs", amount: -costs.fixed },
+      { label: "Fixed operating costs", amount: -(costs.fixed - (costs.vacationStaffing ?? 0)) },
+      { label: "Vacation-week staffing", amount: -(costs.vacationStaffing ?? 0) },
       { label: "Founder operating costs", amount: -costs.founder },
       { label: "Lift operations", amount: -costs.liftOps },
       { label: "Building upkeep", amount: -costs.upkeep },
@@ -441,7 +444,7 @@ export function NightRecapSheet() {
           </ul>
         )}
         {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">{recap.facts.balked} stops to sit out a line</p>}
-        {hasGuests && <WhyList key={dayIndex} recap={recap} />}
+        {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 
         <SchoolContractCard night={night} />
         {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (

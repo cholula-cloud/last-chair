@@ -34,10 +34,10 @@ export function FounderPick() {
       modal
       z="z-50"
       title="Dutch Hill, winter 1"
-      subtitle="Who signs the lease? Your founder’s quirks last the whole winter."
+      subtitle="The old lifts are gone. On Route 100, the lodge lights come on again. Who signs the lease?"
     >
       <p className="mb-3 text-sm font-bold leading-snug">
-        {WINTER_GOAL}
+        <strong>Winter goal</strong> · {WINTER_GOAL}
       </p>
       <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
         {FOUNDERS.map((f, i) => (

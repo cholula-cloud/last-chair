@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { formatMoney } from "./format";
 import { PERSONAS } from "./personas";
 import { SCHOOL_BUS_FARE } from "./schoolContract";
@@ -68,7 +69,7 @@ export function venueValue(buildings: readonly BuildingId[]): number {
 export function expectedHillValue(reputation: number, buildings: readonly BuildingId[], owned: readonly string[] = []): number {
   return Math.max(
     VALUE.FLOOR,
-    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings) + (owned.includes("route100_billboard") ? 2 : 0),
+    VALUE.BASE + VALUE.REP_PER_POINT * (reputation - 50) + venueValue(buildings) + (TALENT.route100Billboard.learned(owned) ? TALENT.route100Billboard.value : 0),
   );
 }
 

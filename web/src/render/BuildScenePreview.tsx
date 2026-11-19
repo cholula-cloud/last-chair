@@ -77,8 +77,9 @@ function LiftPreview() {
   const assets = useGameStore((s) => s.assets);
   const lodgeTier = useGameStore((s) => s.lodgeTier);
   const talentsOwned = useGameStore((s) => s.talentsOwned);
-  const rules = useMemo(() => ({ lifts, cash, assets, lodgeTier, talentsOwned }),
-    [lifts, cash, assets, lodgeTier, talentsOwned]);
+  const founderId = useGameStore(s => s.founderId);
+  const rules = useMemo(() => ({ lifts, cash, assets, lodgeTier, talentsOwned, founderId }),
+    [lifts, cash, assets, lodgeTier, talentsOwned, founderId]);
   const anchors = useMemo(() => review ? [] : LIFT_BUILD_ANCHORS
     .filter((at) => checkPlacement(rules, type, { bottom, top: at }).ok),
   [review, rules, type, bottom]);

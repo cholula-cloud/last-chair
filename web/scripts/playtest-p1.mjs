@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const runner = fileURLToPath(new URL("playtest-p0.mjs", import.meta.url));
+const schoolRunner = fileURLToPath(new URL("playtest-school.mjs", import.meta.url));
 const engines = (process.env.PLAYTEST_ENGINES ?? "chromium,webkit").split(",");
 const viewports = (process.env.PLAYTEST_VIEWPORTS ?? "390x844,844x390,820x1180,375x667").split(",");
 for (const engine of engines) {
@@ -22,5 +23,9 @@ for (const engine of engines) {
         },
       });
     }
+    execFileSync(process.execPath, [schoolRunner], {
+      stdio: "inherit",
+      env: { ...process.env, PLAYTEST_ENGINE: engine, PLAYTEST_VIEWPORT: viewport },
+    });
   }
 }

@@ -1,6 +1,10 @@
 "use client";
 
+import { TIPS } from "@/game/coach";
 import { STORY_BEATS, WINTER_GOAL } from "@/game/content";
+import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
+import { liquidNetWorth } from "@/game/economy";
+import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { surpriseRadio } from "@/game/surprises";
 import { schoolMemory } from "@/game/winterMemory";
@@ -10,9 +14,15 @@ import { Sheet } from "@/ui/kit/Sheet";
 
 export function StoryEntries() {
   const beats = useGameStore(s => s.beatLog);
+  const firstDay = useGameStore(s => s.dayIndex === 1 && s.outcome === "playing");
+  const tipIndex = useCoach(s => s.index);
+  const tipsReady = tipIndex === 0;
+  const remaining = useGameStore(s => s.outcome === "playing" ? s.seasonLength - s.dayIndex + Number(s.phase !== "night") : 0);
+  const netCash = useGameStore(liquidNetWorth);
   const days = useGameStore(s => s.seasonDays);
   const moments = useGameStore(s => s.surpriseLog);
   const playing = useGameStore(s => s.outcome === "playing");
+  const schoolOffer = useGameStore(s => s.pendingBeat === "school_bus");
   const school = useGameStore(s => s.schoolContract);
   const deal = useGameStore(s => s.summitLinkDecision);
   const radio = useSettings(s => s.radioEnabled);
@@ -32,10 +42,25 @@ export function StoryEntries() {
     }),
   ].sort((a, b) => (a.day ?? 0) - (b.day ?? 0));
   return <div className="space-y-3">
-    <p><strong>Winter goal</strong> · {WINTER_GOAL}</p>
+    <section className="panel px-3 py-2">
+      <h3 className="font-extrabold">Winter goal</h3>
+      <p>{WINTER_GOAL}</p>
+      <p>{remaining} {remaining === 1 ? "day" : "days"} left · {formatMoney(netCash)} after debt and construction</p>
+      {(schoolOffer || school) && <p className="mt-2"><strong>Optional Readsboro goal</strong> · {
+        school?.decision === "declined" ? "Visit declined."
+          : school?.decision === "accepted" && school.pupilsTaught !== null
+            ? `${school.pupilsTaught} of ${SCHOOL_BUS_PUPILS} pupils finished a lesson.`
+            : `Give each of the ${SCHOOL_BUS_PUPILS} visiting pupils a lesson.`
+      }</p>}
+    </section>
     <div className="flex flex-wrap gap-2">
       <button className="key min-h-11 px-3" aria-pressed={radio} onClick={() => set({ radioEnabled: !radio })}>Radio {radio ? "on" : "off"}</button>
-      <button className="key min-h-11 px-3" onClick={() => useCoach.getState().replay()}>Replay tips</button>
+      {firstDay && tipIndex < TIPS.length && <button className="key min-h-11 px-3" onClick={() => useCoach.getState().skip()}>Skip tips</button>}
+      <button className="key min-h-11 px-3" disabled={!firstDay && tipsReady} onClick={() => {
+        const coach = useCoach.getState();
+        coach.replay();
+        coach.observe(useGameStore.getState());
+      }}>{firstDay ? "Replay tips" : tipsReady ? "Tips ready for next winter" : "Replay tips next winter"}</button>
     </div>
     {!entries.length && <p>The first broadcast comes after the hill opens.</p>}
     {entries.map(entry => <article className="border-b border-ink/20 pb-2" key={`${entry.day}-${entry.title}`}>

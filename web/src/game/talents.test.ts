@@ -28,6 +28,9 @@ describe("crew order and operations", () => {
       expect(state.talentToast).toContain(talent.effect);
     }
     expect(state.dayIndex).toBe(21);
+    while (state.phase === "day") state = sleep(acknowledgeBeat(openNight(state)));
+    expect(state.phase).toBe("winter_review");
+    expect(state.talentsOwned).toEqual(CREW_TALENTS.map(talent => talent.id));
     expect(talentDescription("Wind Hold", state)).toContain("Waits for a chair");
   });
   it("rope tow saves $40 per open surface lift", () => {
@@ -43,6 +46,9 @@ describe("crew order and operations", () => {
   });
   it.each([6, 22])("ticket booth adds one visitor on day %i", dayIndex => {
     expect(meanArrivals({ ...withTalent("ticket_booth"), dayIndex })).toBe(meanArrivals({ ...hill, dayIndex }) + 1);
+  });
+  it("ticket booth leaves weekday demand alone", () => {
+    expect(meanArrivals({ ...withTalent("ticket_booth"), dayIndex: 2 })).toBe(meanArrivals({ ...hill, dayIndex: 2 }));
   });
   it("patrol radio increases capacity by five percent", () => {
     expect(liftCapacityPerHour("surface", ["patrol_radio"])).toBeCloseTo(liftCapacityPerHour("surface", []) * 1.05);

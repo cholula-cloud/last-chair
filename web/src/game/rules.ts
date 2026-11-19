@@ -1,8 +1,9 @@
+import { TALENT } from "./talents";
 import { winterRecord } from "./winterMemory";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
-  liquidNetWorth, morningCash, operatingCosts, payoffAmount, type Payable,
+  liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
 import { MOUNTAIN_CALENDARS, weekdayForDay, dayKind, usesWeekendGuestMix } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
@@ -142,22 +143,23 @@ export function satisfactionContext(
   state: Pick<
     GameState,
     "fare" | "buildings" | "founderId" | "weather" | "clockMin"
-  > & Partial<Pick<GameState, "assets" | "talentsOwned" | "mountainId" | "dayIndex" | "weatherDays">>,
+    | "assets" | "talentsOwned" | "mountainId" | "dayIndex" | "weatherDays"
+  >,
 ): SatisfactionContext {
   const founder = founderById(state.founderId);
-  const owned = state.talentsOwned ?? [];
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId ?? "dutch_hill"];
-  const day = state.dayIndex ?? 1;
-  const band = owned.includes("house_band") && (weekdayForDay(calendar, day) === "Fri" || dayKind(calendar, day) !== "weekday");
+  const owned = state.talentsOwned;
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const day = state.dayIndex;
+  const band = TALENT.houseBand.learned(owned) && (weekdayForDay(calendar, day) === "Fri" || dayKind(calendar, day) !== "weekday");
   const warmWeek = state.founderId === "tom" && state.weather === "thaw" &&
-    (state.weatherDays ?? []).slice(Math.max(0, day - 7), day).filter(w => w.kind === "thaw").length >= 3;
+    state.weatherDays.slice(Math.max(0, day - 7), day).filter(w => w.kind === "thaw").length >= 3;
   return {
     fare: state.fare,
-    firstTimerMoodBonus: owned.includes("ski_school") ? 0.05 : 0,
-    snowPenaltyScale: owned.includes("first_aid_hut") ? 0.85 : 1,
-    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? 0.03 : 0) - (warmWeek ? 0.075 : 0) +
+    firstTimerMoodBonus: TALENT.skiSchool.learned(owned) ? TALENT.skiSchool.mood : 0,
+    snowPenaltyScale: TALENT.firstAidHut.learned(owned) ? TALENT.firstAidHut.penaltyScale : 1,
+    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? TALENT.houseBand.mood : 0) - (warmWeek ? 0.075 : 0) +
       (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
-    venueValue: (owned.includes("cafe_shift") && state.buildings.includes("cafe") ? 2 : 0) + (state.assets
+    venueValue: (TALENT.cafeShift.learned(owned) && state.buildings.includes("cafe") ? TALENT.cafeShift.value : 0) + (state.assets
       ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
       : venueValue(state.buildings)),
     snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
@@ -195,7 +197,7 @@ export function openNight(state: GameState): GameState {
     snowTrouble: readSnow(snowCarriers(state.trails)).trouble,
     snowLabel: readSnow(snowCarriers(state.trails)).label,
     day,
-    arrivalMood: ctx.arrivalMood,
+    arrivalMood: day.guests ? SAT.ARRIVAL_NEUTRAL + day.breakdown.arrivalMood / SAT.ARRIVAL_PTS : ctx.arrivalMood,
     costs: operatingCosts(state),
     schoolBus: invited ? { invited, arrived, taught, ticketRevenue: arrived * SCHOOL_BUS_FARE } : undefined,
     busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
@@ -209,7 +211,7 @@ export function openNight(state: GameState): GameState {
     : state.reputation;
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => Math.min(100, rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0)
-    + (state.talentsOwned.includes("heritage_sign") && weekdayForDay(calendar, state.dayIndex) === "Sun" ? 2 : 0));
+    + (TALENT.heritageSign.learned(state.talentsOwned) && weekdayForDay(calendar, state.dayIndex) === "Sun" ? TALENT.heritageSign.reputation : 0));
   const pendingBeat = readyStoryBeat({
     calendar,
     dayIndex: state.dayIndex,
@@ -483,8 +485,7 @@ export function checkPlacement(
     open.map((l) => ({ line: liftLineOf(l), type: l.type })),
   );
   if (conflict) return { ok: false, reason: conflict.reason, type: conflict.type };
-  const standard = liftCost(type, line);
-  const cost = state.founderId === "juniper" ? Math.round(standard * 115 / 5000) * 50 : standard;
+  const cost = liftCost(type, line, TERRAIN, state.founderId);
   const { deposit } = constructionDraw(cost);
   if (state.cash < deposit) return { ok: false, reason: "cash", need: deposit - state.cash };
   return { ok: true, cost, length: terrain.length, vertical: terrain.vertical };
@@ -1041,7 +1042,7 @@ export function takeLoan(state: GameState): GameState {
     cash: state.cash + principal,
     nightRecap: { ...state.nightRecap, loanReceived: principal },
     loanTaken: true,
-    loan: { principal, balance: principal, ratePerDay: (LOAN_TERMS.rate - (state.founderId === "tom" ? 0.01 : 0)) / state.seasonLength, takenDay: state.dayIndex },
+    loan: { principal, balance: principal, ratePerDay: winterLoanRate(state) / state.seasonLength, takenDay: state.dayIndex },
   };
 }
 

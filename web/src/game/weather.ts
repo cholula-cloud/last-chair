@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { STREAM, streamFor } from "./rng";
 import type { GameState } from "./state";
 import { LIFT_SPECS, type DayWeather, type LiftType, type Outlook, type WeatherKind, type Wind } from "./types";
@@ -83,9 +84,8 @@ export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
 
 export const WIND_HOLD = { fromMin: 630, toMin: 780 } as const;
 
-const SHORT_HOLD = { fromMin: 660, toMin: 735 } as const;
 export function windHoldWindow(owned: readonly string[]) {
-  return owned.includes("wind_hold") ? SHORT_HOLD : WIND_HOLD;
+  return TALENT.windHold.learned(owned) ? TALENT.windHold : WIND_HOLD;
 }
 
 export function isWindHeld(type: LiftType, wind: Wind, clockMin: number, owned: readonly string[] = []): boolean {

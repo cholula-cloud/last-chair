@@ -1,4 +1,5 @@
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
+import { winterRecord } from "./winterMemory";
 import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
@@ -89,5 +90,15 @@ export function migrate(persisted: unknown, fromVersion: number): MigrationResul
   }
   const errors = validateSave(raw);
   if (errors.length) return reset(errors.join(", "));
-  return { state: toPersisted(raw as PersistedState), reset: false };
+  const state = toPersisted(raw as PersistedState);
+  if (fromVersion < 7 && (state.phase === "winter_review" || state.phase === "mountain2")) {
+    const record = winterRecord({ ...state, talentToast: null });
+    const previous = state.lastWinter;
+    const sameSettlement = previous && previous.day === record.day && previous.founder === record.founder &&
+      previous.cash === record.cash && previous.loan === record.loan && previous.construction === record.construction &&
+      previous.bankrupt === record.bankrupt && previous.summitLink === record.summitLink;
+    state.career = [...(sameSettlement ? state.career.slice(0, -1) : state.career), record];
+    state.lastWinter = record;
+  }
+  return { state, reset: false };
 }

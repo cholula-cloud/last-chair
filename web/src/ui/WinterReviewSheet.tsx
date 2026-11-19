@@ -1,5 +1,6 @@
 "use client";
 
+import { founderById } from "@/game/content";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
 import { FARE_LABELS, SNOW_LABELS } from "@/game/types";
@@ -14,6 +15,9 @@ import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 export function WinterReviewSheet() {
   const phase = useGameStore((s) => s.phase);
   const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
+  const founder = useGameStore(s => founderById(s.founderId)?.name);
+  const day = useGameStore(s => s.dayIndex);
+  const seasonLength = useGameStore(s => s.seasonLength);
   const cash = useGameStore((s) => s.cash);
   const netWorth = useGameStore(liquidNetWorth);
   const solvent = !bankrupt && netWorth >= 0;
@@ -59,7 +63,7 @@ export function WinterReviewSheet() {
       modal
       z="z-50"
       title="Winter review"
-      subtitle="Dutch Hill, winter one"
+      subtitle={`${founder ?? "Dutch Hill"} · ${day} of ${seasonLength} days completed`}
       footer={
         <PrimaryButton onClick={solvent ? finishWinterReview : startNewSeason}>
           {solvent ? "Continue to mountain 2" : "Replay Dutch Hill winter"}
@@ -97,7 +101,7 @@ export function WinterReviewSheet() {
       <section className="panel mt-4 space-y-2 px-4 py-3">
         <h3 className="font-extrabold">Season score{score && ` · ${score.total}/100`}</h3>
         {score ? <p>Guest satisfaction averaged {score.satisfaction.toFixed(1)} across {score.measuredDays} days with guests. Closing reputation was {reputation}. Each counts for half the score.</p>
-          : <p>A season score needs a complete daily record and at least one day with guests.</p>}
+          : <p>A winter score needs a complete daily record and at least one day with guests.</p>}
         <details>
           <summary className="min-h-11 cursor-pointer font-bold">Operating decisions</summary>
           {!days.some((d, i) => i > 0 && (d.fare !== days[i-1].fare || d.snow !== days[i-1].snow)) && <p>No fare or service changes appear in the daily record.</p>}

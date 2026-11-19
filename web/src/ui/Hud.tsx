@@ -161,6 +161,7 @@ export function MorningNote({
   onExpand?: () => void;
 }) {
   const w = WEATHER[weather];
+  const [skill, waiting] = crewLine?.split(" Waits for ") ?? [];
   return (
     <aside
       aria-label="Morning note"
@@ -181,8 +182,10 @@ export function MorningNote({
         {overnightLine && (
           <p className="mt-0.5 truncate text-[0.74rem] font-bold tabular-nums text-ink-soft">{overnightLine}</p>
         )}
-        {crewLine && (
-          <p className="mt-0.5 truncate text-[0.8rem] font-extrabold text-sign-green">{crewLine}</p>
+        {skill && (
+          <p className={`mt-0.5 text-[0.8rem] font-extrabold leading-snug text-sign-green ${expanded ? "" : "line-clamp-2"}`}>
+            {skill}{waiting && <span className="text-ink-soft"> ◇ Waits for {waiting}</span>}
+          </p>
         )}
       </div>
       <button

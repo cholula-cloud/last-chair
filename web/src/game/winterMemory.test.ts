@@ -64,4 +64,18 @@ describe("Dutch Hill winter review", () => {
     expect(record.score).toBeNull();
   });
 
+  it("settles a legacy review while retaining a distinct earlier replay record", () => {
+    const settled = { ...createBuiltHill(2), founderId: "elena", dayIndex: 28, phase: "winter_review", outcome: "finished" } as const;
+    const review = { ...settled, weather: settled.weatherDays[27].kind };
+    const earlier = winterRecord({ ...review, cash: 7300 });
+    const current = winterRecord(review);
+    for (const previous of [undefined, earlier, current]) {
+      const result = migrate({ ...toPersisted(review), lastWinter: previous }, 6);
+      expect(result.reset).toBe(false);
+      expect(result.state.lastWinter).toMatchObject({ cash: review.cash, goalMet: true, score: null });
+      expect(result.state.career).toHaveLength(previous === earlier ? 2 : 1);
+      if (previous === earlier) expect(result.state.career[0]).toEqual(earlier);
+    }
+  });
+
 });

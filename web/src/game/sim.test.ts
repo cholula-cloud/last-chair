@@ -203,8 +203,8 @@ describe("applyOvernight", () => {
     expect(run("minimal", { buildings: ["snow_guns"] }).gunsFired).toBe(false);
   });
 
-  it("trail_guns talent fires guns on high only", () => {
-    expect(run("high", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(true);
+  it("trail_guns stays dormant without equipment", () => {
+    expect(run("high", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(false);
     expect(run("mid", { talentsOwned: ["trail_guns"] }).gunsFired).toBe(false);
   });
 

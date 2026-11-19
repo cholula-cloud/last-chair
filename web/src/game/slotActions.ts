@@ -29,7 +29,7 @@ function backUpIfUnreadable(key: string): void {
 }
 
 function resetInMemory(): void {
-  useGameStore.setState({ ...createInitialState(freshSeed()), saveNotice: null });
+  useGameStore.setState({ ...createInitialState(freshSeed()), lastWinter: undefined, saveNotice: null });
 }
 
 /** Loads a saved slot into the game. An unreadable save is backed up and replaced, with a notice. */

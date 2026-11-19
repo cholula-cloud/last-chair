@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { DUTCH_HILL_CALENDAR } from "./calendar";
 import { liftLength, liftVertical, type LiftLine } from "./descent";
 import { TERRAIN, type Terrain } from "./terrain";
@@ -130,13 +131,6 @@ export type FounderDef = {
   snowExpectationPenalty: number;
 };
 
-export type TalentDef = {
-  id: string;
-  name: string;
-  effect: string;
-  crew: "Frank" | "Dana" | "Elena";
-};
-
 export type StoryBeatDef = {
   id: StoryBeatId;
   title: string;
@@ -168,7 +162,7 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
 };
 
 export function snowNightCost(preset: SnowPreset, owned: readonly string[]): number {
-  if (owned.includes("groomer_rebuild") && preset !== "minimal") return preset === "mid" ? 120 : 300;
+  if (TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
   return SNOW_NIGHT_COST[preset];
 }
 
@@ -196,11 +190,12 @@ export const LIFT_COST_PARAMS: Record<LiftType, { base: number; perLength: numbe
 };
 
 /** Prices in design units: world length and vertical are divided by H and V first. */
-export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN): number {
+export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERRAIN, founder?: FounderId | null): number {
   const { base, perLength, perVertical } = LIFT_COST_PARAMS[type];
   const { horizontal: H, vertical: V } = terrain.scale;
   const raw = base + perLength * (liftLength(line) / H) + perVertical * (liftVertical(line, terrain) / V);
-  return Math.round(raw / 50) * 50;
+  const standard = Math.round(raw / 50) * 50;
+  return founder === "juniper" ? Math.round(standard * 115 / 5000) * 50 : standard;
 }
 
 export const BUILDING_LABELS: Record<BuildingId, string> = {

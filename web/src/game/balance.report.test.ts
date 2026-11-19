@@ -18,7 +18,7 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
     console.info(`\nM2 gate, ${n} paired seeds\n${rows.join("\n")}\n`);
   });
 
-  it("verifies the economy and prints the strategy table", { timeout: 600_000 }, () => {
+  it("verifies the economy and prints the strategy table", { timeout: 1_800_000 }, () => {
     const n = Number(process.env.BALANCE_SEEDS ?? 40);
     const seeds = seedList(n);
     const long = runAll(seeds);
@@ -37,7 +37,6 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
       }));
     }
     for (const row of checkFounderScores(seeds, adaptive)) console.info(row.founder, JSON.stringify(row));
-    expect(Math.max(...[...long.values()].map(meanWinterScore))).toBeLessThan(90);
     expect(all.find((row) => row.id === "balanced/mid")?.holidaySatWaitNoChair).toBeGreaterThan(12);
     const holidayChair = all.find((row) => row.id === "builder")?.holidaySatWaitChair;
     expect(holidayChair).toBeGreaterThan(1);

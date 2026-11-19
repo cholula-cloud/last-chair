@@ -112,7 +112,7 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 
 | Story element | Gameplay effect |
 |---|---|
-| **Founder pick** (six founders) | One permanent modifier for the career: happier families, softer cash stress, a limping lift that fixes itself overnight, better weather reads, glade reputation, après buzz. Each has a cost. Numbers in SIMULATION_SPEC |
+| **Founder pick** (six founders) | One permanent modifier for the career: happier families, cheaper borrowing, lower lift operating costs, better forecasts, extra reputation, higher venue receipts. Each has a cost. Numbers in SIMULATION_SPEC |
 | **Goal card per winter** | Dutch Hill’s common goal is to finish the 28-day winter with nonnegative liquid net worth after debt and unpaid construction. Show days remaining and use the same formula as the winter review. The Readsboro visit is an optional local goal. Later hills set their own goals |
 | **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
 | **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
@@ -430,14 +430,14 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-A | ☑ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density pines and birch on the lease, a sparse far forest in one draw call beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
-| L-D | ◐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
-| L-E | ◐ | Cold open and goal card | Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible. See the first-winter sequence below |
-| L-F | ☐ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
-| 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
-| 22 | ◐ | Founders complete | All six modifiers live |
-| 23 | ◐ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log |
-| 24 | ◐ | Winter review | Common goal outcome, season score, recorded choices and consequences, and carry-forward data |
-| 26 | ☐ | Coached first winter | Skippable help from placing the first lift and painting the first trail through the first night choice |
+| L-D | ☑ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
+| L-E | ☑ | Cold open and goal card | Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible. See the first-winter sequence below |
+| L-F | ☑ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
+| 21 | ☑ | Crew talents with real effects | 20 talents in crew order, each with a test |
+| 22 | ☑ | Founders complete | All six modifiers live |
+| 23 | ☑ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log |
+| 24 | ☑ | Winter review | Common goal outcome, season score, recorded choices and consequences, and carry-forward data |
+| 26 | ☑ | Coached first winter | Skippable help from placing the first lift and painting the first trail through the first night choice |
 | 27 | ☐ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
 
 #### Dutch Hill first-winter sequence

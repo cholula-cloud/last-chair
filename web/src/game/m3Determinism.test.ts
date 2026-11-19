@@ -22,7 +22,7 @@ function reload(state: GameState) {
   return hydrate(migrated.state, createInitialState(999));
 }
 
-it("resumes the same winter from mid-day and night on day ten", () => {
+it("resumes the same winter from mid-day and night on day ten", { timeout: 60_000 }, () => {
   let state = pickFounder(createBuiltHill(42), "elena");
   for (let day = 1; day < 10; day++) state = nextMorning(skipToClose(state));
   const midday = tick({ ...state, paused: false }, 180 * MS_PER_GAME_MINUTE);

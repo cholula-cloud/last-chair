@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { canRepayLoan, LOAN_TERMS, loanOffered, payoffAmount } from "@/game/economy";
+import { canRepayLoan, LOAN_TERMS, loanOffered, payoffAmount, winterLoanRate } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import type { GameState } from "@/game/state";
 import { WarningDiamondIcon } from "@/ui/kit/icons";
@@ -57,7 +57,7 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
         The bank offers a winter loan
       </p>
       <p className="mt-1 text-sm font-bold leading-snug text-ink-soft">
-        Borrow {amount} at {LOAN_TERMS.rate * 100}% simple interest for the winter and repay it in full on any night the payment leaves at least {RESERVE} for morning.
+        Borrow {amount} at {Math.round(winterLoanRate(night) * 100)}% simple interest for the winter and repay it in full on any night the payment leaves at least {RESERVE} for morning.
       </p>
       <div className="mt-3 grid gap-2">
         <button type="button" className={`${ACTION} key-solid [--key-fill:var(--sign-yellow)]`} onClick={onTake}>

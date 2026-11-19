@@ -1,5 +1,7 @@
 "use client";
 
+import { TALENT } from "@/game/talents";
+
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
@@ -75,7 +77,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
     isWindHeld(lift.type, weatherForDay(s).wind, s.clockMin, s.talentsOwned) && isLiftOperational(lift, i, s.trails),
   ));
   const morningHeadline = useGameStore((s) => s.morningHeadline);
-  const shortHold = useGameStore((s) => s.talentsOwned.includes("wind_hold"));
+  const shortHold = useGameStore((s) => TALENT.windHold.learned(s.talentsOwned));
   const paidForSnow = useGameStore((s) => s.lastDay?.snowNightCost ?? SNOW_NIGHT_COST[s.snow]);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
@@ -136,15 +138,6 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   useEffect(() => {
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
-
-  useEffect(() => {
-    if (!talentToast) return;
-    const t = window.setTimeout(
-      () => useGameStore.setState({ talentToast: null }),
-      5000,
-    );
-    return () => window.clearTimeout(t);
-  }, [talentToast]);
 
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
   const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);

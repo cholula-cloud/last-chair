@@ -69,7 +69,10 @@ const schoolContract: Check = (value) => record(value) && (
   (value.decision === "accepted" && integer(value.day) && value.day >= 1 &&
     (value.pupilsTaught === null || (integer(value.pupilsTaught) && value.pupilsTaught >= 0 && value.pupilsTaught <= SCHOOL_BUS_PUPILS))
   ));
-const operatingCosts = shape(numbers("fixed", "founder", "liftOps", "upkeep"));
+const operatingCosts = shape({
+  ...numbers("fixed", "founder", "liftOps", "upkeep"),
+  vacationStaffing: optional(index),
+});
 const payable = shape({
   what: (value) => assetId(value) || value === "lift" || value === "lodge",
   liftIndex: optional(index),
@@ -100,19 +103,21 @@ const dayStats = shape({
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
 });
-const seasonDay = shape({ summitLink: optional(shape({ reply: summitLinkDecision, receipt: number, fareCap: nullable(oneOf("balanced")) })),
+const seasonDay = shape({
+  summitLink: optional(shape({ reply: summitLinkDecision, receipt: number, fareCap: nullable(oneOf("balanced")) })),
   lodgeOpening: optional(oneOf(2, 3)), day: index, fare, snow, arrivals: index, satisfaction: number,
-  schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })) });
+  schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })),
+});
 const broadcast = shape({ id: beat, day: nullable(index) });
 const moment = shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index });
 const winterRecord = shape({
-    completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
-    days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
-    moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, measuredDays: index, total: number }))),
-    day: index, founder,
-    bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
-    school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
-    localMoment: nullable(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index })),
+  completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
+  days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
+  moments: optional(array(moment)), score: optional(nullable(shape({ satisfaction: number, measuredDays: index, total: number }))),
+  day: index, founder,
+  bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
+  school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
+  localMoment: nullable(moment),
 });
 
 const fields: Record<keyof PersistedState, Check> = {

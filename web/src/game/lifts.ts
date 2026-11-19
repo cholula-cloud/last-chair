@@ -1,3 +1,4 @@
+import { TALENT } from "./talents";
 import { liftLength, type LiftLine } from "./descent";
 import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain } from "./terrain";
@@ -6,7 +7,7 @@ import { LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
 import { isWindHeld, windHoldWindow } from "./weather";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
-export const PATROL_RADIO_CAPACITY = 1.05;
+export const PATROL_RADIO_CAPACITY = TALENT.patrolRadio.capacity;
 const LOAD_MIN = 0.5;
 const SPEED_FPM: Record<LiftType, number> = { surface: 345, chair: 333 };
 const SKILL_AVOID_MIN = 30;
@@ -24,8 +25,8 @@ export function rideMinutesForLift(lift: LiftSlot): number {
 
 export function liftCapacityPerHour(type: LiftType, talentsOwned: string[]): number {
   const base = LIFT_SPECS[type].capacityPerHour;
-  return base * (talentsOwned.includes("patrol_radio") ? PATROL_RADIO_CAPACITY : 1)
-    * (type === "chair" && talentsOwned.includes("bull_wheel") ? 1.05 : 1);
+  return base * (TALENT.patrolRadio.learned(talentsOwned) ? PATROL_RADIO_CAPACITY : 1)
+    * (type === "chair" && TALENT.bullWheel.learned(talentsOwned) ? TALENT.bullWheel.capacity : 1);
 }
 
 /** Minutes a guest at the back of this lift's queue would wait right now. */

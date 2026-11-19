@@ -22,4 +22,12 @@ export const useCoach = create<CoachStore>()(persist((set, get) => ({
   next: (index) => { if (get().index === index) set({ index: index + 1, entered: null }); },
   skip: () => set({ index: TIPS.length, entered: null }),
   replay: () => set(freshCoach),
-}), { name: "last-chair-coach", partialize: ({ index, entered }) => ({ index, entered }) }));
+}), {
+  name: "last-chair-coach",
+  partialize: ({ index, entered }) => ({ index, entered }),
+  merge: (stored, current) => {
+    const saved = stored as Partial<CoachProgress> | null;
+    if (typeof saved?.index !== "number" || !Number.isInteger(saved.index) || saved.index < 0 || saved.index > TIPS.length) return current;
+    return { ...current, index: saved.index, entered: typeof saved.entered === "number" && Number.isFinite(saved.entered) ? saved.entered : null };
+  },
+}));

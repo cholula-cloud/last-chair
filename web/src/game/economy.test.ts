@@ -23,6 +23,11 @@ describe("construction payments", () => {
     expect(dailyCosts(buyBuilding(opened(), "cafe")).upkeep).toBe(100);
   });
 
+  it("adds staffing to fixed costs during February vacation", () => {
+    const hill = opened();
+    expect(dailyCosts({ ...hill, dayIndex: 20 }).fixed - dailyCosts({ ...hill, dayIndex: 19 }).fixed).toBe(425);
+  });
+
   it("charges $480 up front and two $360 installments for a day-two café", () => {
     const day2 = sleep(close(opened()));
     const built = buyBuilding(day2, "cafe");

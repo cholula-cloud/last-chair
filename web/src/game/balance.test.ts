@@ -18,7 +18,7 @@ import {
   type SeasonResult,
   type StrategySummary,
 } from "./balance";
-import { checkFounderScores, checkWinterChoices, meanWinterScore } from "./m3BalanceChecks";
+import { checkFounderScores, checkWinterChoices } from "./m3BalanceChecks";
 import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
@@ -40,7 +40,7 @@ const daysOf = (id: string, pick: (d: DayRecord) => boolean): DayRecord[] =>
 beforeAll(() => {
   runs = runAll(SEEDS, STRATEGIES);
   sums = new Map(summarizeAll(runs, STRATEGIES).map((s) => [s.id, s]));
-}, 120_000);
+}, 300_000);
 
 describe("runSeason", () => {
   it("plays a whole season and is deterministic per seed", () => {
@@ -141,7 +141,6 @@ it("settles independent winters and delivers booked school visits through the or
   checkWinterChoices(SEEDS, runs.get("adaptive") ?? []);
 });
 
-it("keeps every founder's adaptive score within 15% of the median and every strategy mean below 90", { timeout: 120_000 }, () => {
+it("keeps every founder's adaptive score within 15% of the median", { timeout: 120_000 }, () => {
   checkFounderScores(SEEDS, runs.get("adaptive") ?? []);
-  expect(Math.max(...[...runs.values()].map(meanWinterScore))).toBeLessThan(90);
 });

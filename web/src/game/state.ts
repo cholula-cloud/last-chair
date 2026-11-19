@@ -288,10 +288,7 @@ export function toPersisted(state: PersistedState): PersistedState {
 /** Merge a validated saved slice into the current session. */
 export function hydrate<T extends GameState>(p: PersistedState | undefined, current: T): T {
   if (!p) return current;
-  if (p.phase === "setup" || !p.founderId) {
-    return { ...current, ...p, phase: "setup" as const };
-  }
-  return { ...current, ...p };
+  return { ...current, ...p, lastWinter: p.lastWinter, phase: p.founderId ? p.phase : "setup" };
 }
 
 /** M3 starts with a clean hill and a separate save slot. */

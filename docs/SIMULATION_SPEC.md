@@ -245,8 +245,8 @@ Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `co
 | Preset | Guns | Groom | Quality |
 |--------|------|-------|---------|
 | Minimal | off | none | −0.04 (floor 0.2); depth unchanged |
-| Mid | owned guns add +0.14 depth on the bottom half (+0.25 reach with `trail_guns`); groomer +0.04 everywhere | yes | `max(q, 0.6) + 0.03` |
-| High | owned guns (or `trail_guns`) add +0.20 on every segment; groomer +0.06 | yes | `max(q, 0.75) + 0.06` |
+| Mid | placed guns add +0.14 depth within reach; groomed segments gain +0.04 | yes | `max(q, 0.6) + 0.03` |
+| High | placed guns add +0.20 depth within reach; groomed segments gain +0.06 | yes | `max(q, 0.75) + 0.06` |
 
 `groom_pass` / `corduroy` add +0.07 to the groom target. Quality caps at 0.95. Cost unchanged (+$0 / +$150 / +$350).
 
@@ -332,7 +332,30 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ## Crew talents
 
-Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/content.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
+Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/talents.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
+
+| Order | Talent | Crew | Effect |
+|---|---|---|---|
+| 1 | Rope Tow | Frank | Save $40 per operating surface lift. |
+| 2 | Trail Guns | Frank | Snow guns reach 25% farther. |
+| 3 | Groom Pass | Frank | Groom 20% farther and raise groom quality by 7 points. |
+| 4 | Ticket Booth | Elena | One more guest on weekends and holidays. |
+| 5 | Patrol Radio | Dana | All lifts load 5% faster. |
+| 6 | School Day | Elena | Two more guests on weekdays. |
+| 7 | House Band | Elena | Welcome mood rises 3 points Friday through Sunday and on holidays. |
+| 8 | Café Shift | Elena | Café adds $2 to perceived value. |
+| 9 | Wind Hold | Dana | Gusty chair holds run from 11:00 to 12:15. |
+| 10 | Corduroy | Frank | Groom quality rises another 3 points. |
+| 11 | Snow Fences | Frank | Bottom two segments lose 30% less depth in thaws. |
+| 12 | Heritage Sign | Elena | Gain 2 reputation each Sunday. |
+| 13 | Bull Wheel Tune | Frank | Chairs load 5% faster. |
+| 14 | Ski School | Elena | First-timer welcome mood rises 5 points. |
+| 15 | Early Plow | Frank | Three more guests reach the hill during storms. |
+| 16 | Volunteer Patrol | Dana | Save $50 in daily fixed costs. |
+| 17 | Night Lights | Frank | Lifts stay open ten extra minutes. |
+| 18 | Groomer Rebuild | Frank | Mid service costs $120 and High costs $300. |
+| 19 | First Aid Hut | Dana | Poor snow costs 15% fewer satisfaction points. |
+| 20 | Route 100 Billboard | Elena | Expected hill value rises by $2. |
 
 ## Founder modifiers
 
@@ -380,7 +403,7 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 **Export file.** `{ "app": "last-chair", "format": 1, "exportedAt": <ISO time>, "version": <save version>, "state": <PersistedState> }`, named like `last-chair-dutch-hill-day-12.json`. Import checks `app` and `format`, rejects a `version` newer than the game, then runs `state` through `migrate()` and `validateSave()`. A file that fails any check is rejected with a plain message and nothing is written. There is no checksum. Importing into an occupied slot asks first.
 
-**Settings.** Voice volume, captions, reduce motion and default speed live apart from the save under `last-chair-settings`. Voice volume and captions have no consumer yet. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
+**Settings.** Radio, voice volume, captions, reduce motion and default speed live apart from the save under `last-chair-settings`. Turning radio off hides optional broadcasts and leaves contract replies available. Voice volume and captions are stored for future voice playback. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
@@ -389,6 +412,16 @@ Schema v6 records the school contract and pass offer. Schema v7 adds dated opera
 ---
 
 ## Balance
+
+### M3 operating balance
+
+Run `npm run balance` from `web/` for the full 40-seed report. The harness starts with a surface lift, a trail and a warming hut so that it can compare operating policies. Opening construction is exercised separately in the browser playthrough. Coached uses Balanced and Mid for the first week, follows the recap thereafter and waits for a Saturday queue problem before buying a chair. Each founder plays the same Adaptive seeds.
+
+The winter score averages measured satisfaction and closing reputation. Solvency uses closing cash less debt and unpaid construction. A cheap fare and generous service can produce a high guest score while consuming capital. The harness reports both outcomes and tests the solvency rule. The earlier proposed letter-grade cutoffs and blanket sub-90 score ceiling do not apply to this measured review.
+
+For each strategy the report counts winters containing each of the three local events. It also counts school offers, bookings, declined visits, completed visit days, actual pupil arrivals and lessons. Vivian offers, acceptances and declines appear separately. Matched Adaptive runs answer both offers when eligible. Most runs decline, and the acceptance comparison takes both offers. A missing offer contributes to neither reply count.
+
+The crew benefits raised mean six-seed Balanced/Mid closing cash to $16,541 and left Careless above zero in all six winters. The February vacation calendar now adds $425 per day to fixed operating costs on days 20–28. The recap itemizes staffing and shorter winters do not incur it. At $350, 6 of 40 Careless winters had projected shortfalls. At $425, 14 of 40 had shortfalls; each received a loan offer and 7 went bankrupt when the operator declined borrowing.
 
 ### Row 20 economy checks
 

@@ -1,7 +1,8 @@
+import { CREW_TALENTS } from "./talents";
+export { CREW_TALENTS } from "./talents";
 import type {
   FounderDef,
   StoryBeatDef,
-  TalentDef,
 } from "./types";
 
 export const WINTER_GOAL = "Finish day 28 with enough cash to pay off your loan and any unpaid construction bills.";
@@ -69,35 +70,16 @@ export const FOUNDERS: FounderDef[] = [
   },
 ];
 
-export const CREW_TALENTS: TalentDef[] = [
-  { id: "rope_tow", name: "Rope Tow", crew: "Frank", effect: "Save $40 per operating surface lift." },
-  { id: "trail_guns", name: "Trail Guns", crew: "Frank", effect: "Snow guns reach 25% farther." },
-  { id: "groom_pass", name: "Groom Pass", crew: "Frank", effect: "Groom 20% farther and raise groom quality by 7 points." },
-  { id: "ticket_booth", name: "Ticket Booth", crew: "Elena", effect: "One more guest on weekends and holidays." },
-  { id: "patrol_radio", name: "Patrol Radio", crew: "Dana", effect: "All lifts load 5% faster." },
-  { id: "school_day", name: "School Day", crew: "Elena", effect: "Two more guests on weekdays." },
-  { id: "house_band", name: "House Band", crew: "Elena", effect: "Welcome mood rises 3 points Friday through Sunday and on holidays." },
-  { id: "cafe_shift", name: "Café Shift", crew: "Elena", effect: "Café adds $2 to perceived value." },
-  { id: "wind_hold", name: "Wind Hold", crew: "Dana", effect: "Gusty chair holds run from 11:00 to 12:15." },
-  { id: "corduroy", name: "Corduroy", crew: "Frank", effect: "Groom quality rises another 3 points." },
-  { id: "snow_fences", name: "Snow Fences", crew: "Frank", effect: "Bottom two segments lose 30% less depth in thaws." },
-  { id: "heritage_sign", name: "Heritage Sign", crew: "Elena", effect: "Gain 2 reputation each Sunday." },
-  { id: "bull_wheel", name: "Bull Wheel Tune", crew: "Frank", effect: "Chairs load 5% faster." },
-  { id: "ski_school", name: "Ski School", crew: "Elena", effect: "First-timer welcome mood rises 5 points." },
-  { id: "early_plow", name: "Early Plow", crew: "Frank", effect: "Three more guests reach the hill during storms." },
-  { id: "volunteer_patrol", name: "Volunteer Patrol", crew: "Dana", effect: "Save $50 in daily fixed costs." },
-  { id: "night_lights", name: "Night Lights", crew: "Frank", effect: "Lifts stay open ten extra minutes." },
-  { id: "groomer_rebuild", name: "Groomer Rebuild", crew: "Frank", effect: "Mid service costs $120 and High costs $300." },
-  { id: "first_aid_hut", name: "First Aid Hut", crew: "Dana", effect: "Poor snow costs 15% fewer satisfaction points." },
-  { id: "route100_billboard", name: "Route 100 Billboard", crew: "Elena", effect: "Expected hill value rises by $2." },
-];
-
 export function talentDescription(name: string, state: Pick<import("./state").GameState, "lifts" | "buildings" | "guns">): string {
   const talent = CREW_TALENTS.find(entry => entry.name === name);
   if (!talent) return name;
-  const waiting = (talent.id === "wind_hold" || talent.id === "bull_wheel") && !state.lifts.some(l => l.confirmed && l.type === "chair")
-    ? "Waits for a chair." : talent.id === "cafe_shift" && !state.buildings.includes("cafe")
-      ? "Waits for a café." : talent.id === "trail_guns" && !state.guns.length ? "Waits for a snow gun." : "";
+  let waiting = "";
+  if (talent.needs === "chair" || talent.needs === "surface") {
+    if (!state.lifts.some(lift => lift.confirmed && lift.type === talent.needs)) {
+      waiting = talent.needs === "chair" ? "Waits for a chair." : "Waits for a surface lift.";
+    }
+  } else if (talent.needs === "cafe" && !state.buildings.includes("cafe")) waiting = "Waits for a café.";
+  else if (talent.needs === "gun" && !state.guns.length) waiting = "Waits for a snow gun.";
   return [talent.name + " (" + talent.crew + ")", talent.effect, waiting].filter(Boolean).join(" ");
 }
 

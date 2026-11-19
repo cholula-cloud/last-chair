@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 import { enterGame, resolveRadio } from "./playtest-m2.mjs";
 const { createInitialState, SAVE_VERSION, toPersisted } = await import("../src/game/state.ts");
-const { checkPaint, commitPaint, pickFounder, placeLift, trailOptions } = await import("../src/game/rules.ts");
+const { checkPaint, commitPaint, pickFounder, placeLift, tick, trailOptions } = await import("../src/game/rules.ts");
 const { REFERENCE_TOPS } = await import("../src/game/descent.ts");
 const { TERRAIN } = await import("../src/game/terrain.ts");
 const { STANDARD_BRUSH_WIDTH } = await import("../src/game/paintedTrail.ts");
+
+const { MS_PER_GAME_MINUTE } = await import("../src/game/types.ts");
 
 const engine = process.env.PLAYTEST_ENGINE ?? "chromium";
 const browser = await ({ chromium, webkit })[engine].launch(engine === "chromium" ? {
@@ -21,13 +23,16 @@ const strokes = trailOptions(hill, 0)
   .map(option => [{ points: option.path, widthFt: STANDARD_BRUSH_WIDTH }])
   .find(draft => checkPaint(hill, draft).reason === null);
 assert(strokes);
-const prepared = commitPaint(hill, strokes);
+let prepared = { ...commitPaint(hill, strokes), paused: false };
+while (prepared.clockMin < 840) prepared = tick(prepared, 4 * MS_PER_GAME_MINUTE);
+assert(prepared.dayStats.dispatched > 0 && prepared.dayStats.completedRuns >= 5);
+prepared = { ...prepared, paused: true };
 
 try {
   for (const size of (process.env.PLAYTEST_VIEWPORTS ?? "390x844,844x390,820x1180,375x667").split(",")) {
     const [width, height] = size.split("x").map(Number);
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
-    page.setDefaultTimeout(18000);
+    page.setDefaultTimeout(90000);
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.addInitScript(value => {
@@ -35,8 +40,8 @@ try {
     }, JSON.stringify({ version: SAVE_VERSION, state: toPersisted(prepared) }));
     await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
     await enterGame(page);
-    const press = label => page.getByRole("button", { name: label, exact: true }).tap();
-    const next = () => press("Next");
+    const press = label => page.getByRole("button", { name: label, exact: true }).tap({ force: true });
+    const next = () => page.getByRole("button", { name: "Next", exact: true }).tap();
     const target = key => page.locator('[data-coach="' + key + '"]');
     await page.getByText("Give families a lift up and a trail back to the lodge.", { exact: false }).waitFor();
     assert.equal(await page.getByRole("button", { name: /Game speed/ }).count(), 0);
@@ -44,8 +49,19 @@ try {
       assert.equal(await target(anchor).count(), 1, anchor);
     }
     await press("Resume day");
+    // Stop game time while inspecting the measured afternoon so each anchor can be exercised.
+    await press("Pause day");
+    for (const anchor of ["ops-queue", "ops-mood", "guests", "build"]) {
+      await page.locator('[data-coach="' + anchor + '"].coach-target').waitFor();
+      const card = await page.locator(".coach-card").boundingBox();
+      const control = await target(anchor).boundingBox();
+      assert(card && control && card.y + card.height <= control.y, "Tip overlaps " + anchor);
+      await next();
+    }
+    await page.locator('[data-coach="close"].coach-target').waitFor();
     await press("Close hill");
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
+    await page.locator('section[data-state="open"]').waitFor();
     for (const anchor of ["recap-problem", "fare", "snow", "sleep"]) {
       const element = target(anchor);
       await element.scrollIntoViewIfNeeded();

@@ -178,8 +178,17 @@ async function drag(page, cdp, locations) {
 async function moveDraftMap(page, cdp, anchor, resumeLabel) {
   await click(page, "Move map");
   const [before] = await waitForFraming(page, [anchor]);
-  const bounds = page.viewportSize();
-  const center = { x: bounds.width / 2, y: bounds.height * 0.43 };
+  // Short screens can put the paint tools over the middle of the viewport.
+  const center = await page.evaluate(() => {
+    for (const y of [0.43, 0.32, 0.52, 0.23, 0.62]) {
+      for (const x of [0.5, 0.3, 0.7, 0.15]) {
+        const point = { x: innerWidth * x, y: innerHeight * y };
+        if ([0, 16, 32].every(dx => document.elementFromPoint(point.x + dx, point.y)?.tagName === "CANVAS")) return point;
+      }
+    }
+    return null;
+  });
+  assert(center, "Move map needs an exposed canvas area for the drag");
   if (cdp) {
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });

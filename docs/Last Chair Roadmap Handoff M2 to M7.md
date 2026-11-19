@@ -1795,13 +1795,13 @@ Open decisions:
 
 ---
 
-## PR 27: MVP balance and external playtest
+## PR 27: MVP balance and winter playthrough
 
 **Goal:** tune the full 28-day winter with an expanded balance harness, then verify the winter end to end with the automated P1 script.
 
 **Depends on:** PRs 18 to 26 merged.
 
-**Player-visible result:** numbers change where the harness says they must; nothing new to see. The output is a balanced winter and a signed TESTING.md log.
+**Player-visible result:** numbers change where the harness says they must; nothing new to see. The balance report and automated playthrough record the release evidence.
 
 ### Design: harness expansion
 
@@ -1847,7 +1847,7 @@ The script in TESTING.md predates M3. Replace its table with this one (proposed)
 | 9 | Reload mid-night once during the winter | Night sheet restores exactly |
 | 10 | Continue → mountain 2 stub → Replay | New winter starts on day 1; career record kept |
 
-Session length. A full winter takes about 2 hours at 1x (PR 19 arithmetic). The P1 session is up to 90 minutes over at most two sittings on the same device, with 2x or 3x speed and "Skip to close" allowed. The tester finishes the winter at home if the second sitting is unobserved; the save on their device proves it (they screenshot the review).
+At 1×, 28 two-minute days take about 56 minutes of running time, plus time spent building and making night choices. Players can use 2× or 4× speed, close early and resume their saved winter later.
 
 ### Optional device sessions
 
@@ -1904,13 +1904,13 @@ Use the automated checks below for M3 acceptance. Manual device and accessibilit
 | # | Check | How | Pass if |
 |---|---|---|---|
 | 1 | CI | `cd web && npm run check` on `main` | green |
-| 2 | Snapshot history | `git log -p -- web/src/game/__snapshots__/` since 2b | changes only in PRs 18, 19, 20, 21, 23, 24, 27, each with a diff summary in its PR description |
+| 2 | Snapshot history | `git log -p -- web/src/game/__snapshots__/` since 2b | review and explain the current snapshot diff. Historical terrain, lodge and trail changes also updated snapshots before M3. |
 | 3 | Determinism | test: `runSeason(s, adaptive)` twice for s in 1..6, and a serialize-reload in the middle of day 10 and night 10 | identical results |
 | 4 | Balance | `npm run balance` with `BALANCE_SEEDS=40` | ten PR 27 properties hold; table pasted in SIMULATION_SPEC |
 | 5 | Saves | M3 save fixtures v1 to current, in every slot | all load, validate and play one day |
 | 6 | Talents | `talents.test.ts` | 20 with-and-without tests pass |
 | 7 | Founders | `founders.test.ts` | twelve modifier tests pass |
-| 8 | Story | Rule tests and balance report | One item per night, no interruptions during the day, and recorded events and outcomes agree with the sim |
+| 8 | Story | Rule tests and balance report | At most one local moment and one eligible story beat per night. An offer can accompany a local observation. Recorded results agree with the sim |
 | 9 | Review | `review.test.ts`; a bankrupt run in the harness | every season ends in a review with a record |
 | 10 | Agent P1 | `playtest-p1.mjs` at 390x844, 844x390, 820x1180, 375x667 in Chromium and WebKit | completes; no console errors; no element under 44 px; no overlap in screenshots |
 | 11 | Accessibility | same run with reduced motion and radio off | no animation; winter completes; coach and radio announced once |
