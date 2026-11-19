@@ -31,8 +31,8 @@ try {
     (save) => {
       localStorage.setItem("last-chair-m3-slot-1", save);
       localStorage.setItem(
-        "last-chair-coach",
-        JSON.stringify({ state: { index: 10, entered: null }, version: 0 }),
+        "last-chair-settings",
+        JSON.stringify({ state: { tips: false }, version: 1 }),
       );
     },
     JSON.stringify({ version: SAVE_VERSION, state: toPersisted(state) }),

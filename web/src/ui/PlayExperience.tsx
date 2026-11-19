@@ -4,7 +4,6 @@ import { TALENT } from "@/game/talents";
 
 import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
-import { LayerPanel } from "./MapLayers";
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
@@ -18,10 +17,7 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
-import { CoachCard } from "./CoachCard";
-import { useCoach } from "./coachStore";
 import { useSettings } from "./settingsStore";
-import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
@@ -100,15 +96,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [softwareRenderer]);
   const preferLowGraphics = useSettings(s => s.graphicsQuality === "low");
   const lowGraphics = preferLowGraphics || softwareRenderer;
-  const tipsEnabled = useSettings(s => s.tips);
-  const coachPending = useCoach(s => s.index < TIPS.length);
-  const coaching = tipsEnabled && coachPending;
-  useEffect(() => {
-    if (!hydrated) return;
-    const observe = () => useCoach.getState().observe(useGameStore.getState());
-    observe();
-    return useGameStore.subscribe(observe);
-  }, [hydrated]);
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
@@ -253,7 +240,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene lowDetail={lowGraphics} coaching={coaching && dayIndex === 1} />
+        <MountainScene lowDetail={lowGraphics} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
@@ -267,7 +254,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             cash={cash}
             paused={paused}
             notStarted={notStarted}
-            speedUnlocked={!coaching || dayIndex > 1}
             openingBlocked={opening !== null}
             onTogglePause={() => {
               setNoteDismissedDay(dayIndex);
@@ -275,11 +261,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeOpen && <CoachCard slot="day" />}
           {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
           {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
-        {coaching && dayIndex === 1 && (placementActive || buildOpen) && (
+        {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && (
           <CoachTip
             context={{
               phase,
@@ -287,7 +272,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               opening,
               running: !notStarted,
               placementActive,
-              buildOpen,
+              buildOpen: false,
               hasGuestsWant: false,
             }}
           />
@@ -395,9 +380,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeOpen}>
         <NightRecapSheet onOffice={openOffice} onMap={openNightMap} />
       </div>
-      {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="fixed bottom-3 right-3 z-[61]">
-        <LayerPanel layer={inspectedLayer} />
-        <button type="button" autoFocus className="key min-h-11 px-3 font-bold" onClick={closeNightMap}>Back to recap</button>
+      {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="pointer-events-none fixed inset-x-3 bottom-3 z-[61] flex flex-col items-end gap-2">
+        <ReadoutCard />
+        <OverlayLegend allowOff={false} />
+        <SnowLayerControls />
+        <LayerStrip allowOff={false} />
+        <button type="button" autoFocus className="key pointer-events-auto min-h-11 px-3 font-bold" onClick={closeNightMap}>Back to recap</button>
         <span className="sr-only" role="status">{LAYERS[inspectedLayer]} map at closing</span>
       </section>}
       <FounderPick />

@@ -72,10 +72,11 @@ describe("layer registry", () => {
     const layers = overlayLayers();
     expect(layers.map((l) => l.id)).toEqual(["slope","depth","guns","conditions"]);
     expect(new Set(layers.map((l) => l.mode)).size).toBe(layers.length);
-    expect(layers.every((l) => l.mode > 0 && l.legend.length > 0)).toBe(true);
+    expect(layers.every((l) => l.mode > 0)).toBe(true);
   });
   it("looks layers up by id", () => {
-    expect(getOverlayLayer("slope")?.label).toBe("Slope");
+    const slope = getOverlayLayer("slope");
+    expect(slope).toMatchObject({ label: "Slope", legend: SLOPE_LEGEND });
     expect(getOverlayLayer(null)).toBeUndefined();
   });
   it("shows one layer at a time and toggles it off on a second pick", () => {

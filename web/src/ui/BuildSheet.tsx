@@ -1,8 +1,6 @@
 "use client";
 
-import { useCoach } from "./coachStore";
-import { useSettings } from "./settingsStore";
-import { founderById } from "@/game/content";
+import { CoachTip } from "./CoachTip";
 import { useState } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
@@ -24,10 +22,6 @@ function LodgeCard() {
   const cash = useGameStore((s) => s.cash);
   const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
   const [review, setReview] = useState(false);
-  const tipsOn = useSettings(s => s.tips);
-  const coachLodge = useCoach(s => !s.skipped && !s.lodgeSeen);
-  const founder = useGameStore(s => s.founderId && founderById(s.founderId)?.name);
-  const showCoach = tipsOn && coachLodge && tier === 1 && !construction;
   const next = nextLodgeTier(tier);
   const unlocks = next ? lodgeTierUnlocks(next) : [];
   const payment = next ? constructionDraw(LODGE_TIERS[next].cost) : null;
@@ -45,12 +39,6 @@ function LodgeCard() {
           <p className="mt-2 text-sm font-bold">
             Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
           </p>
-          {showCoach && <aside aria-label="Lodge upgrade tip" className="panel my-2 p-2 text-base">
-            <p><strong>{founder}</strong> · {review
-              ? "Check the deposit and both night payments below before committing."
-              : "Review the Tier 2 addition to see when the ski school and double chair can open."}</p>
-            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawLodge()}>Dismiss lodge tip</button>
-          </aside>}
           {review ? (
             <BuildImpactCard
               title={`Upgrade to ${LODGE_TIERS[next].label}`}
@@ -67,14 +55,13 @@ function LodgeCard() {
               onConfirm={() => {
                 upgrade();
                 if (useGameStore.getState().lodgeUpgrade) {
-                  useCoach.getState().sawLodge();
                   buildConfirmed("Lodge upgrade started.");
                 }
                 setReview(false);
               }}
             />
           ) : (
-            <PrimaryButton data-coach="lodge-upgrade" className={`mt-2 min-h-11 ${showCoach ? "coach-target" : ""}`} onClick={() => setReview(true)}>
+            <PrimaryButton className="mt-2 min-h-11" onClick={() => setReview(true)}>
               Review Tier {next} upgrade
             </PrimaryButton>
           )}
@@ -122,6 +109,7 @@ export function BuildSheet({
   onClose: () => void;
   onStartPlacement: () => void;
 }) {
+  const dayIndex = useGameStore((s) => s.dayIndex);
   const selected = useGameStore((s) => s.selectedLiftType);
   const select = useGameStore((s) => s.setSelectedLiftType);
   const lifts = useGameStore((s) => s.lifts);
@@ -142,6 +130,15 @@ export function BuildSheet({
   return open ? (
     <Sheet title="Build" subtitle={<>Cash on hand <b>{formatMoney(cash)}</b></>} onClose={onClose}
       closeLabel="Close build sheet" dataMarker="build-sheet" focusClose wide>
+      <CoachTip context={{
+        phase: "day",
+        dayIndex,
+        opening,
+        running: false,
+        placementActive: false,
+        buildOpen: true,
+        hasGuestsWant: false,
+      }} />
       {opening && <p className="mb-3 text-sm font-bold">
         {opening === "lift" ? "Place a surface lift at one of the marked sites."
           : "Paint a trail from the lift’s top station down to the base."}

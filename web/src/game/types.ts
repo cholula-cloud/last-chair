@@ -1,3 +1,4 @@
+import { clearingCostFor } from "./founders";
 import { TALENT } from "./talents";
 import { DUTCH_HILL_CALENDAR } from "./calendar";
 import { liftLength, liftVertical, type LiftLine } from "./descent";
@@ -129,6 +130,25 @@ export type FounderDef = {
   arrivalMoodBonus: number;
   fixedCostDelta: number;
   snowExpectationPenalty: number;
+  loanRateDelta: number;
+  /** Tom: arrival mood lost on a thaw day in a warm week. */
+  warmWeekMoodPenalty: number;
+  /** Riley: share taken off lift operating cost (the overnight repair crew). */
+  liftOpsDiscount: number;
+  /** Riley: SummitLink cannot buy in. The SummitLink offer (row 23) reads this. */
+  noSummitLinkEquity: boolean;
+  /** Amira: how many days ahead the forecast reaches. */
+  forecastDays: 1 | 2;
+  /** Amira: how much of tomorrow's true weather the forecast knows (0 to 1). */
+  forecastSkill: number;
+  /** Juniper: reputation gained each night before rounding. */
+  reputationDrift: number;
+  /** Juniper: multiplier on lift and trail clearing cost. */
+  clearingCostMult: number;
+  /** Marco: multiplier on venue revenue. */
+  apresRevenueMult: number;
+  /** Elena: buildings that cannot be demolished. */
+  lockedBuildings: readonly import("./base").AssetId[];
 };
 
 export type StoryBeatDef = {
@@ -195,7 +215,7 @@ export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERR
   const { horizontal: H, vertical: V } = terrain.scale;
   const raw = base + perLength * (liftLength(line) / H) + perVertical * (liftVertical(line, terrain) / V);
   const standard = Math.round(raw / 50) * 50;
-  return founder === "juniper" ? Math.round(standard * 115 / 5000) * 50 : standard;
+  return clearingCostFor(founder ?? null, standard, 50);
 }
 
 export const BUILDING_LABELS: Record<BuildingId, string> = {

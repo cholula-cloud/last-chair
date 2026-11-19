@@ -449,22 +449,6 @@ body {
   inset: -5px;
 }
 
-.coach-target { outline: 3px solid var(--barn-deep); outline-offset: 2px; }
-
-.coach-card[data-points-down="true"]::after {
-  content: "";
-  position: absolute;
-  left: var(--coach-arrow);
-  bottom: -9px;
-  width: 14px;
-  height: 14px;
-  transform: rotate(45deg);
-  background: inherit;
-  border-right: 3px solid var(--ink);
-  border-bottom: 3px solid var(--ink);
-  pointer-events: none;
-}
-
 /* Keep the trail endpoint reachable when the full brush controls reopen between strokes. */
 @media (orientation: portrait) and (max-height: 740px) {
   [data-placement-kind="trail"] {

@@ -1,3 +1,4 @@
+import { canTakeSummitLinkEquity } from "@/game/founders";
 import { formatMoney } from "@/game/format";
 import { summitLinkOfferOpen } from "@/game/rules";
 import type { GameState } from "@/game/state";
@@ -22,7 +23,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
   }
   if (!summitLinkOfferOpen(night)) return null;
 
-  const blocked = night.founderId === "riley";
+  const blocked = !canTakeSummitLinkEquity(night);
   const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
   return (
     <RadioCard

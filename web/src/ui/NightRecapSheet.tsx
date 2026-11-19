@@ -29,12 +29,12 @@ import {
   type WeatherKind,
 } from "@/game/types";
 import { outlookFor } from "@/game/weather";
-import { problemGuide } from "@/game/coach";
+import { PROBLEM_GUIDE_ID, problemGuide } from "@/game/coach";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
 import { founderById } from "@/game/content";
 import type { OfficeTabId } from "./officeStore";
-import { CoachCard } from "./CoachCard";
-import { useCoach } from "./coachStore";
+import { CoachTip } from "./CoachTip";
+import { LiveMessage } from "./kit/LiveMessage";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
 import {
@@ -109,7 +109,7 @@ function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
   const lines = whyLines(recap);
   return (
     <div className="mt-3">
-      <DisclosureButton open={open} controls="why-list" onToggle={() => { if (!open) useCoach.getState().next(6); setOpen((o) => !o); }}>
+      <DisclosureButton open={open} controls="why-list" onToggle={() => setOpen((o) => !o)}>
         Why {Math.round(recap.satisfaction)}% happy?
       </DisclosureButton>
       {open && (
@@ -295,21 +295,19 @@ function Choices({
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading aside="Tomorrow’s public ticket">Fare</SectionHeading>
-      <CoachCard slot="fare" />
-      <div data-coach="fare"><ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={(v) => { setPendingFare(v); useCoach.getState().next(7); }} /></div>
+      <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
         Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
-      <CoachCard slot="snow" />
-      <div data-coach="snow"><ChoiceTiles
+      <ChoiceTiles
         label="Snow and service"
         options={snowOptions}
         value={pendingSnow}
-        onPick={(v) => { setPendingSnow(v); useCoach.getState().next(8); }}
-      /></div>
+        onPick={setPendingSnow}
+      />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
         In the most likely weather, expect {chosen.label.toLowerCase()}.
@@ -331,7 +329,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
   const tipsOn = useSettings(s => s.tips);
-  const coachProblem = useCoach(s => !s.skipped && !s.problemSeen);
+  const guideSeen = useGameStore(s => s.tipsSeen.includes(PROBLEM_GUIDE_ID));
+  const markTipSeen = useGameStore(s => s.markTipSeen);
   const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
 
@@ -348,7 +347,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
-  const guide = tipsOn && coachProblem ? problemGuide(recap, demand?.key) : null;
+  const guide = tipsOn && !guideSeen ? problemGuide(recap, demand?.key) : null;
   const guestsWant = demand?.line;
 
   return (
@@ -367,7 +366,6 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             setPendingSnow={setPendingSnow}
           />}
 
-          <CoachCard slot="sleep" />
           {dayIndex < night.seasonLength && nextTalent && (
             <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
               Tomorrow the crew learns{" "}
@@ -390,15 +388,13 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             </p>
           )}
           <PrimaryButton
-            data-coach="sleep"
             tone="brown"
             disabled={!canSleep}
             aria-describedby={canSleep ? undefined : "sleep-hint"}
             onClick={() => {
               if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
+              if (guide) markTipSeen(PROBLEM_GUIDE_ID);
               sleep();
-              if (guide) useCoach.getState().sawProblem();
-              if (dayIndex === 1) useCoach.getState().finishDay();
             }}
           >
             <CocoaIcon size={24} />
@@ -440,22 +436,30 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
         <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
-        <CoachCard slot="recap-problem" />
-        <p data-coach="recap-problem" className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
+        <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
           {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
         {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
-          <p className="text-base"><strong>{night.founderId && founderById(night.founderId)?.name}</strong> · {guide.text}</p>
+          <p className="text-base"><LiveMessage><strong>{night.founderId && founderById(night.founderId)?.name}</strong> · {guide.text}</LiveMessage></p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map · {LAYERS[guide.layer]}</button>
             <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office · {guide.tab}</button>
-            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawProblem()}>Dismiss advice</button>
+            <button type="button" className="min-h-11 px-1 underline" onClick={() => markTipSeen(PROBLEM_GUIDE_ID)}>Dismiss advice</button>
           </div>
         </aside>}
+        {!guide && <CoachTip context={{
+          phase: "night",
+          dayIndex,
+          opening: null,
+          running: false,
+          placementActive: false,
+          buildOpen: false,
+          hasGuestsWant: !!guestsWant,
+        }} />}
         <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
         {guestsWant && (
-          <p data-coach="guests-want" className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
+          <p className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
             {guestsWant}
           </p>
         )}

@@ -45,7 +45,7 @@ async function checkQuietRecap(radioEnabled) {
           if (status) touched.add(status);
         }
         for (const status of touched) {
-          const source = status.closest(".coach-card") ? "coach"
+          const source = status.closest('aside[aria-label="Tip"], aside[aria-label="First problem guide"]') ? "coach"
             : status.closest('section[aria-label^="Route 100 Radio:"]') ? "radio" : null;
           if (source && status.textContent) window.liveUpdates.push({ source, text: status.textContent });
         }
@@ -53,14 +53,15 @@ async function checkQuietRecap(radioEnabled) {
     }, { radioEnabled, save: { version: SAVE_VERSION, state: toPersisted(night) } });
     await recap.goto(base + "/play/", { waitUntil: "domcontentloaded" });
     await enterGame(recap);
-    const coach = recap.locator(".coach-card").getByRole("status");
-    await coach.filter({ hasText: /Read what happened today/ }).waitFor();
+    const guide = recap.getByRole("complementary", { name: "First problem guide" });
+    await guide.getByRole("status").filter({ hasText: /check|inspect|find/i }).waitFor();
+    const coach = recap.getByRole("complementary", { name: "Tip", exact: true }).getByRole("status");
     const radio = recap.getByRole("region", { name: /Route 100 Radio: First uphill load/ });
     if (radioEnabled) await radio.getByRole("status").filter({ hasText: /First tickets since 1985/ }).waitFor();
     else assert.equal(await radio.count(), 0);
 
     const motion = await recap.evaluate(() => [...document.querySelectorAll(
-      ".sheet, .scrim, .coach-card, .coach-target, .arrive, .pop",
+      '.sheet, .scrim, aside[aria-label="Tip"], aside[aria-label="First problem guide"], .arrive, .pop',
     )].flatMap(element => {
       const css = getComputedStyle(element);
       const animated = css.animationName !== "none" || css.transitionDuration.split(",").some(value => parseFloat(value) > 0);
@@ -68,13 +69,13 @@ async function checkQuietRecap(radioEnabled) {
     }));
     assert.deepEqual(motion, [], "Coach, radio and sheet have no CSS animation or transition");
     // An unrelated recap update must leave the first broadcast alone.
-    await recap.locator(".coach-card").getByRole("button", { name: "Next", exact: true }).click();
-    await coach.filter({ hasText: /Compare the ticket price/ }).waitFor();
+    await guide.getByRole("button", { name: "Dismiss advice" }).click();
+    await coach.filter({ hasText: /The night recap shows/ }).waitFor();
     const updates = await recap.evaluate(() => window.liveUpdates);
     const tips = updates.filter(update => update.source === "coach");
     assert.equal(tips.length, 2);
-    assert.match(tips[0].text, /Read what happened today/);
-    assert.match(tips[1].text, /Compare the ticket price/);
+    assert.match(tips[0].text, /check|inspect|find/i);
+    assert.match(tips[1].text, /The night recap shows/);
     const broadcasts = updates.filter(update => update.source === "radio" && update.text.includes("First uphill load"));
     assert.equal(broadcasts.length, radioEnabled ? 1 : 0);
     if (!radioEnabled) assert.equal(updates.filter(update => update.source === "radio").length, 0);

@@ -1,3 +1,4 @@
+import { canTakeSummitLinkEquity } from "./founders";
 import {
   acknowledgeBeat,
   decideSchoolContract,
@@ -346,7 +347,7 @@ export function runSeason(
       state = decideSchoolContract(state, options.school ?? "declined");
     } else if (state.pendingBeat === "summit_link") {
       vivianOffers++;
-      const reply = founderId === "riley" ? "declined" : options.summitLink ?? "declined";
+      const reply = !canTakeSummitLinkEquity({ founderId }) ? "declined" : options.summitLink ?? "declined";
       state = replyToSummitLink(state, reply);
     } else state = acknowledgeBeat(state);
     recap = state.nightRecap as NightRecap;

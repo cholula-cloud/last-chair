@@ -452,7 +452,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | F1 | ☑ | Office shell and Desk | An Office button in the bottom bar that pauses the day and opens a full-screen sheet with a tab strip. Desk shows the headline, goal detail, tomorrow's forecast, a needs-attention list and the radio card. The winter review and the recap archive move in. No new sim state (§12) |
 | F2 | ☑ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38 |
 | F4 | ☑ | Crew tab | Lodge tier and what the next tier opens, the goal checklist, talents learned and next, the founder's modifier, the winter score. Rows 21 to 24 build the data; this is where the player sees it |
-| 26 | ☑ | Coached first winter | Skippable help: the founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice, and points at the overlay and Office tab when the first problem appears; skippable |
+| 26 | ☑ | Coached first winter | Contextual tips cover the first lift, trail, build controls and night recap. The first problem guide links to a relevant map layer and Office tab. Dismissals are saved with the winter. |
 | 27 | ☑ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
 
 #### Dutch Hill first-winter sequence

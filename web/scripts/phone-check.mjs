@@ -225,13 +225,13 @@ async function runViewport(engine, launch, vp) {
   const soak = [];
 
   try {
+    await page.addInitScript(() => localStorage.setItem("last-chair-settings", JSON.stringify({ state: { tips: false }, version: 1 })));
     await startPlay(page);
     titleLoadMs = await page.evaluate(() => {
       const entry = performance.getEntriesByType("navigation")[0];
       return entry?.domContentLoadedEventEnd || performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
     });
     if (!titleLoadMs || titleLoadMs > 5000) fail(`${engine} ${tag}: title load ${titleLoadMs} ms exceeds 5 seconds`);
-    await page.getByRole("button", { name: "Skip tips" }).click();
     const home = await shot(page, engine, tag, "home");
 
     const canvas = page.locator("canvas").first();

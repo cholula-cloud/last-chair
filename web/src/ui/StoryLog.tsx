@@ -2,7 +2,6 @@
 
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
-import { TIPS } from "@/game/coach";
 import { STORY_BEATS, WINTER_GOAL } from "@/game/content";
 import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
 import { liquidNetWorth } from "@/game/economy";
@@ -11,15 +10,9 @@ import { useGameStore } from "@/game/store";
 import { surpriseRadio } from "@/game/surprises";
 import { schoolMemory } from "@/game/winterMemory";
 import { useSettings } from "@/ui/settingsStore";
-import { useCoach } from "@/ui/coachStore";
-import { Sheet } from "@/ui/kit/Sheet";
 
 export function StoryEntries() {
   const beats = useGameStore(s => s.beatLog);
-  const firstDay = useGameStore(s => s.dayIndex === 1 && s.outcome === "playing");
-  const tipIndex = useCoach(s => s.index);
-  const tipsEnabled = useSettings(s => s.tips);
-  const tipsReady = tipsEnabled && tipIndex === 0;
   const remaining = useGameStore(s => s.outcome === "playing" ? s.seasonLength - s.dayIndex + Number(s.phase !== "night") : 0);
   const netCash = useGameStore(liquidNetWorth);
   const days = useGameStore(s => s.seasonDays);
@@ -62,13 +55,10 @@ export function StoryEntries() {
     <div className="flex flex-wrap gap-2">
       <button className="key min-h-11 px-3" aria-pressed={!muted} onClick={() => set({ muted: !muted })}>Sound {muted ? "off" : "on"}</button>
       <button className="key min-h-11 px-3" aria-pressed={radio} onClick={() => set({ radioEnabled: !radio })}>Radio {radio ? "on" : "off"}</button>
-      {firstDay && tipsEnabled && tipIndex < TIPS.length && <button className="key min-h-11 px-3" onClick={() => useCoach.getState().skip()}>Skip tips</button>}
-      <button className="key min-h-11 px-3" disabled={!firstDay && tipsReady} onClick={() => {
+      <button className="key min-h-11 px-3" onClick={() => {
+        useGameStore.getState().resetTips();
         set({ tips: true });
-        const coach = useCoach.getState();
-        coach.replay();
-        coach.observe(useGameStore.getState());
-      }}>{firstDay ? "Replay tips" : tipsReady ? "Tips ready for next winter" : "Replay tips next winter"}</button>
+      }}>Replay tips</button>
     </div>
     {!entries.length && <p>The first broadcast comes after the hill opens.</p>}
     {entries.map(entry => <article className="border-b border-ink/20 pb-2" key={`${entry.day}-${entry.title}`}>
@@ -78,8 +68,4 @@ export function StoryEntries() {
       ? `The Readsboro visit is booked for day ${school.day}.` : schoolMemory(school)}</p>}
     {deal && <p>{deal === "accepted" ? "Vivian paid $6,000. The fare ceiling is Balanced." : "You declined Vivian’s offer."}</p>}
   </div>;
-}
-
-export function StoryLogSheet({ onClose }: { onClose: () => void }) {
-  return <Sheet modal focusClose title="Story log" onClose={onClose}><StoryEntries /></Sheet>;
 }

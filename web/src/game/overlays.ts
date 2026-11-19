@@ -5,17 +5,16 @@
  * Snow depth, snow-making and conditions (rows O2 and O3) join by adding an entry to `LAYERS`.
  */
 
-import { LAYERS as LABELS, LEGENDS, MARKS, overlayModel, readPoint, type MapLayer } from "./mapLayers";
+import { LAYERS as LABELS, type MapLayer, type SnowLayer } from "./mapLayers";
 import { onLease } from "./lease";
 import { MAX_PAINTED_PITCH } from "./paintedTrail";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import { BLUE_MAX_PITCH, GREEN_MAX_PITCH, realGradeFactor } from "./trails";
-import type { GameState } from "./state";
 
 export type OverlayId = MapLayer;
 
 /** Fill patterns, so a layer reads without colour. The terrain shader and the legend both draw them. */
-export type OverlayPattern = "dots" | "stripes" | "hatch" | "dense-hatch" | "symbol";
+export type OverlayPattern = "dots" | "stripes" | "hatch" | "dense-hatch";
 
 export type LegendEntry = {
   id: string;
@@ -26,7 +25,6 @@ export type LegendEntry = {
   /** #rrggbb */
   color: string;
   pattern: OverlayPattern;
-  glyph?: string;
 };
 
 /** What a tap or hold on the map shows. The headline is a full sentence; live numbers go in chips. */
@@ -39,18 +37,18 @@ export type Readout = {
 
 export type ReadoutContext = {
   terrain: Terrain;
-  state?: Readonly<GameState>;
 };
 
-export type OverlayLayer = {
-  id: OverlayId;
+type OverlayLayer = {
   /** The label on the strip button. */
   label: string;
-  legend: readonly LegendEntry[];
   /** Mode the terrain shader branches on. Non-zero and unique per layer; 0 is off. */
   mode: number;
+} & ({
+  id: "slope";
+  legend: readonly LegendEntry[];
   readout(at: XZ, ctx: ReadoutContext): Readout;
-};
+} | { id: SnowLayer });
 
 // ---- Slope ----------------------------------------------------------------------------------
 
@@ -131,23 +129,19 @@ const LEGEND_LABEL: Record<SlopeBand, string> = Object.fromEntries(
 
 const SLOPE_LAYER: OverlayLayer = {
   id: "slope",
-  label: "Slope",
+  label: LABELS.slope,
   legend: SLOPE_LEGEND,
   mode: 1,
   readout: slopeReadout,
 };
 
 /** Layers in strip order. A layer is listed only once it is implemented. */
-const snowLayers = (["depth","guns","conditions"] as const).map((id,i): OverlayLayer => ({
-  id, label: LABELS[id], mode:i+2,
-  legend: LEGENDS[id].map(key => ({ id:key, label:MARKS[key].name, detail:MARKS[key].name, color:MARKS[key].color, pattern:"symbol", glyph:MARKS[key].glyph })),
-  readout(at, ctx) {
-    if (!ctx.state) return {headline:"Open a winter to inspect the snow.",chips:[]};
-    const r = readPoint(ctx.state,overlayModel(ctx.state,"Now",ctx.state.pendingSnow),id,at,false);
-    return {headline:r.detail,chips:[r.title,...r.personas]};
-  },
-}));
-const LAYERS: readonly OverlayLayer[] = [SLOPE_LAYER, ...snowLayers];
+const LAYERS: readonly OverlayLayer[] = [
+  SLOPE_LAYER,
+  { id: "depth", label: LABELS.depth, mode: 2 },
+  { id: "guns", label: LABELS.guns, mode: 3 },
+  { id: "conditions", label: LABELS.conditions, mode: 4 },
+];
 
 export function overlayLayers(): readonly OverlayLayer[] {
   return LAYERS;

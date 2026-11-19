@@ -1,3 +1,4 @@
+import { founderMods } from "./founders";
 import { TALENT } from "./talents";
 import { STREAM, streamFor } from "./rng";
 import type { GameState } from "./state";
@@ -69,11 +70,12 @@ export function weatherForDay(state: Pick<GameState, "weatherDays" | "dayIndex">
 type ForecastState = Pick<GameState, "weatherDays" | "dayIndex" | "seasonLength" | "founderId">;
 export function outlookFor(state: ForecastState, ahead: 1 | 2): Outlook | null {
   const target = state.dayIndex + ahead;
-  if (target > state.seasonLength || (ahead === 2 && state.founderId !== "amira")) return null;
+  const founder = founderMods(state.founderId);
+  if (target > state.seasonLength || ahead > founder.forecastDays) return null;
   const actual = state.weatherDays[target - 1];
   if (!actual) return null;
   const base = chainRow(weatherForDay(state).kind, state.dayIndex + 1);
-  const skill = ahead === 2 ? 0.4 : state.founderId === "amira" ? 0.7 : 0.5;
+  const skill = ahead === 2 ? 0.4 : founder.forecastSkill;
   const forecast: Outlook = { clear: 0, snow: 0, storm: 0, thaw: 0 };
   for (const kind of WEATHER_KINDS) {
     const prior = ahead === 1 ? base[kind] : WEATHER_KINDS.reduce((sum, previous) =>

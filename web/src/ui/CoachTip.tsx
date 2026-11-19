@@ -13,6 +13,7 @@ import { CloseIcon } from "@/ui/kit/icons";
  */
 export function CoachTip({ context }: { context: Omit<CoachContext, "enabled"> }) {
   const tips = useSettings((s) => s.tips);
+  const setSettings = useSettings((s) => s.set);
   const seen = useGameStore((s) => s.tipsSeen);
   const markTipSeen = useGameStore((s) => s.markTipSeen);
   const tip = nextTip(seen, { ...context, enabled: tips });
@@ -22,9 +23,9 @@ export function CoachTip({ context }: { context: Omit<CoachContext, "enabled"> }
   // A tip that was on screen and then went away counts as seen.
   useEffect(() => {
     const previous = shownId.current;
-    if (previous && previous !== id) markTipSeen(previous);
+    if (tips && previous && previous !== id) markTipSeen(previous);
     shownId.current = id;
-  }, [id, markTipSeen]);
+  }, [id, markTipSeen, tips]);
 
   if (!tip) return null;
   return (
@@ -33,6 +34,9 @@ export function CoachTip({ context }: { context: Omit<CoachContext, "enabled"> }
       className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-center gap-2 py-1 pl-3 pr-1.5 [--lift:3px]"
     >
       <p className="min-w-0 flex-1 text-[0.9rem] font-extrabold leading-snug"><LiveMessage>{tip.text}</LiveMessage></p>
+      <button type="button" className="min-h-11 shrink-0 px-2 text-xs underline" onClick={() => setSettings({ tips: false })}>
+        Skip tips
+      </button>
       <button
         type="button"
         onClick={() => markTipSeen(tip.id)}
