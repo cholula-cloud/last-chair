@@ -47,7 +47,7 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Menu and saves | One save key, no title screen | Title screen, three slots, throttled autosave | 39, 40 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** the builder pass (L-A lift tool and L-B trail painting are built; L-C lease boundary and forest is next), then the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
+**Next up:** the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
 
 ---
 
@@ -262,7 +262,7 @@ ICR's lessons from its patches and player reviews still apply: keep the day unin
 
 ### Where, why and what building means
 
-**Where: the lease.** Heartwellville leases you the old ski area. Each mountain defines a lease polygon in its data file. Every placement rule checks it and refuses with "Outside the Dutch Hill lease." The camera stays over the lease with a margin. In build modes the boundary shows as a thin dashed survey line and the land outside dims a little. Outside the lease the world continues at lower detail: terrain, a far forest and the ridges, so the hill sits in a real valley.
+**Where: the lease.** Heartwellville leases you the old ski area. Each mountain defines a lease polygon in its data file. Every placement rule checks it and refuses with "Outside the Dutch Hill lease. Build inside the dashed line." The camera stays over the lease with a margin. In build modes the boundary shows as a thin dashed survey line and the land outside dims a little. Outside the lease the world continues at lower detail: terrain, a far forest and the ridges, so the hill sits in a real valley.
 
 **Why: guests ask.** Every build should answer something the player can see. Long lines call for a lift, crowded beginner terrain for a green trail, a full lodge for a café. In M3 the night recap names the top unmet demand in one sentence ("Guests want"). Map pins can follow in M4.
 
@@ -436,7 +436,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
 | L-A | ☑ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
-| L-C | ☐ | The lease and a continuous world | A lease boundary per mountain that every placement checks. Outside it the world continues in lower detail. A forest fixed in world space that no longer swaps style around the camera |
+| L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density pines and birch on the lease, a sparse far forest in one draw call beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
 | L-D | ◐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
 | L-E | ☐ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions, a goal strip on the HUD, and a "Guests want" line in the night recap |
 | L-F | ☐ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |

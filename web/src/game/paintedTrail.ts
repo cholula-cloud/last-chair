@@ -1,4 +1,5 @@
 import { rulesFor } from "./descent";
+import { OFF_LEASE_MESSAGE, onLease } from "./lease";
 import type { GameState } from "./state";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
@@ -122,6 +123,11 @@ function subdivide(path: readonly XZ[], widths: readonly number[], spacing: numb
 
 function trailWidth(trail: TrailRun, i: number): number {
   return trail.widths?.[i] ?? STANDARD_BRUSH_WIDTH;
+}
+
+/** Saved trails may run past the lease; only newly painted ground must stay inside it. */
+function onExistingTrail(p: XZ, state: PaintState): boolean {
+  return state.trails.some((trail) => withinPath(p, trail.path, 0.05));
 }
 
 function trailHit(p: XZ, state: PaintState, radius: number) {
@@ -398,6 +404,9 @@ export function previewPaintedTrail(
     climbFloor = Math.min(climbFloor, height);
     let problem: string | null = null;
     if (!boundsContains(a, terrain) || !boundsContains(b, terrain)) problem = "Keep the trail inside the mountain.";
+    else if ((!onLease(a, terrain) && !onExistingTrail(a, state)) || (!onLease(b, terrain) && !onExistingTrail(b, state))) {
+      problem = OFF_LEASE_MESSAGE;
+    }
     else if ((height - climbFloor) * terrain.feetPerUnit > 16.4) problem = "The trail climbs too far uphill.";
     else if (state.lifts.some((lift) => lift.confirmed
       && crossesLift(a, b, full.path[i + 1], lift.anchor, lift.bottom ?? terrain.base, terrain, baseRadius))) {

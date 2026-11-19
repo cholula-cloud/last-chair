@@ -7,6 +7,22 @@ export const DUTCH_HILL_SHOULDERS = [
 ] as const;
 
 /**
+ * The Dutch Hill lease, in world units at the 6x horizontal scale. Heartwellville leases
+ * the old ski area: the base, the road frontage, and the hill with its slopes and shoulders.
+ * Every lift anchor, the lodge and the base sit well inside it.
+ */
+const LEASE_WORLD: readonly { x: number; z: number }[] = [
+  { x: -38, z: -32 },
+  { x: -12, z: -40 },
+  { x: 20, z: -38 },
+  { x: 42, z: -26 },
+  { x: 46, z: 2 },
+  { x: 40, z: 30 },
+  { x: -30, z: 30 },
+  { x: -42, z: 4 },
+];
+
+/**
  * Dutch Hill: a Vermont hill rising toward -Z from a flat village apron at +Z,
  * with a broad rounded summit and a crest the lift runs up; the ground falls away to both sides.
  * Distances uphill (`d`) are measured from the apron edge, z = 2.1.
@@ -17,6 +33,7 @@ export const DUTCH_HILL: TerrainDef = {
   // 70 ft per world unit at 6x horizontal.
   horizontalFeetPerUnit: 420,
   bounds: { xMin: -24, xMax: 24, zMin: -20, zMax: 20 },
+  lease: LEASE_WORLD.map((p) => ({ x: p.x / 6, z: p.z / 6 })),
   base: { x: 0.45, z: 2.55 },
   verticalFeet: 570,
   summit: { x: -1.1, z: -2.0 },

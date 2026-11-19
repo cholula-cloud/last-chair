@@ -145,6 +145,7 @@ describe("placementReason", () => {
     const codes: PlacementReason[] = [
       "max_lifts",
       "off_map",
+      "off_lease",
       "bottom_far",
       "too_steep",
       "too_low",

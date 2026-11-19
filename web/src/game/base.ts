@@ -1,3 +1,4 @@
+import { footprintOnLease, OFF_LEASE_MESSAGE } from "./lease";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import type { LodgeTier, SiteDef } from "./site";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
@@ -181,6 +182,7 @@ export function previewAssetPlacement(
     : undefined;
   const position = snap?.point ?? at;
   const size = asset.footprint;
+  if (!footprintOnLease(position, size.width, size.depth, terrain)) return { ok: false, reason: OFF_LEASE_MESSAGE };
   if (snap && assets.some((placed) => placed.attachPad === snap.index)) {
     return { ok: false, reason: "That lodge pad is occupied." };
   }

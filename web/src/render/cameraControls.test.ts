@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { distanceOutsideLease, leaseBounds } from "@/game/lease";
+import { TERRAIN } from "@/game/terrain";
 import { homeView } from "./cameraFraming";
 import {
   DOUBLE_TAP_MAX_DIST_PX,
@@ -7,7 +9,12 @@ import {
   HARD_MARGIN_FRACTION,
   MAX_DISTANCE,
   MIN_DISTANCE,
+  LEASE_CAMERA_MARGIN,
+  LEASE_TARGET_MARGIN,
+  clampToLease,
+  insideLease,
   PLAY_AREA as A,
+  playArea,
   SOFT_MARGIN,
   TAP_MAX_MOVE_PX,
   TAP_MAX_MS,
@@ -27,6 +34,56 @@ const cx = (A.xMin + A.xMax) / 2;
 const cz = (A.zMin + A.zMax) / 2;
 const hardX = (A.xMax - A.xMin) * HARD_MARGIN_FRACTION;
 const hardZ = (A.zMax - A.zMin) * HARD_MARGIN_FRACTION;
+
+describe("play area", () => {
+  it("is the lease bounding box plus the camera margin", () => {
+    const b = leaseBounds();
+    expect(LEASE_CAMERA_MARGIN).toBe(8);
+    expect(A).toEqual({ xMin: b.xMin - 8, xMax: b.xMax + 8, zMin: b.zMin - 8, zMax: b.zMax + 8 });
+    expect(playArea(TERRAIN, 0)).toEqual(b);
+  });
+
+  it("keeps the camera over the lease and well inside the map", () => {
+    for (const p of TERRAIN.lease!) {
+      expect(p.x).toBeGreaterThanOrEqual(A.xMin);
+      expect(p.x).toBeLessThanOrEqual(A.xMax);
+      expect(p.z).toBeGreaterThanOrEqual(A.zMin);
+      expect(p.z).toBeLessThanOrEqual(A.zMax);
+    }
+    expect(A.xMax - A.xMin).toBeLessThan(TERRAIN.bounds.xMax - TERRAIN.bounds.xMin);
+  });
+});
+
+describe("lease clamp", () => {
+  it("leaves the target alone on the lease and within the margin", () => {
+    expect(clampToLease(TERRAIN.base)).toEqual(TERRAIN.base);
+    const edge = TERRAIN.lease![0];
+    const out = { x: edge.x - 1, z: edge.z - 1 };
+    expect(distanceOutsideLease(out)).toBeLessThan(LEASE_TARGET_MARGIN);
+    expect(clampToLease(out)).toEqual(out);
+  });
+
+  it("stops a target dragged far outside close to the outline, at the polygon rather than the box", () => {
+    // The north-west box corner is far from the polygon.
+    const b = leaseBounds();
+    const corner = { x: b.xMin, z: b.zMin };
+    expect(distanceOutsideLease(corner)).toBeGreaterThan(8);
+    const clamped = clampToLease(corner);
+    expect(distanceOutsideLease(clamped)).toBeLessThan(LEASE_TARGET_MARGIN + 4);
+    const resting = insideLease(corner);
+    expect(distanceOutsideLease(resting)).toBeCloseTo(LEASE_TARGET_MARGIN, 5);
+    expect(distanceOutsideLease(clampToLease({ x: 500, z: 500 }))).toBeLessThan(LEASE_TARGET_MARGIN + 7);
+  });
+
+  it("is monotonic: pulling further out never moves the target further out by more than the cap", () => {
+    let last = 0;
+    for (let o = 0; o < 80; o += 4) {
+      const d = distanceOutsideLease(clampToLease({ x: TERRAIN.lease![4].x + o, z: TERRAIN.lease![4].z }));
+      expect(d).toBeGreaterThanOrEqual(last - 1e-9);
+      last = d;
+    }
+  });
+});
 
 describe("clampTarget", () => {
   it("leaves points inside the area unchanged", () => {

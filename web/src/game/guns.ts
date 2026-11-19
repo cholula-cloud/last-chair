@@ -1,13 +1,16 @@
+import { footprintOnLease } from "./lease";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import type { TrailRun } from "./trails";
 import type { SnowPreset } from "./types";
 
 export type SnowGun = { at: XZ; builtDay: number; paid: number };
-export type GunPlacementReason = "off_map" | "out_of_pipe_reach" | "max_guns" | "gun_here";
+export type GunPlacementReason = "off_map" | "off_lease" | "out_of_pipe_reach" | "max_guns" | "gun_here";
 
 export const GUN_COST = 400;
 export const MAX_GUNS = 10;
 export const PIPE_REACH_DESIGN = 0.6;
+/** Ground a snow gun and its hydrant box occupy, as a square side in design units. */
+export const GUN_FOOTPRINT_DESIGN = 0.1;
 export const GUN_RADIUS_DESIGN = 0.5;
 export const GROOM_FT: Record<SnowPreset, number> = { minimal: 0, mid: 3000, high: 5000 };
 
@@ -21,6 +24,7 @@ export function gunPlacementReason(
   const { xMin, xMax, zMin, zMax } = terrain.bounds;
   if (!Number.isFinite(at.x) || !Number.isFinite(at.z) ||
     at.x < xMin || at.x > xMax || at.z < zMin || at.z > zMax) return "off_map";
+  if (!footprintOnLease(at, GUN_FOOTPRINT_DESIGN * terrain.scale.horizontal, GUN_FOOTPRINT_DESIGN * terrain.scale.horizontal, terrain)) return "off_lease";
   if (guns.length >= MAX_GUNS) return "max_guns";
   if (guns.some((gun) => distance(at, gun.at) < 0.01 * terrain.scale.horizontal)) return "gun_here";
   const reach = PIPE_REACH_DESIGN * terrain.scale.horizontal;
