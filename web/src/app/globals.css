@@ -527,3 +527,33 @@ body {
 :root[data-reduce-motion="true"] .cold-card {
   transition: none;
 }
+
+/* Build and tier-up pop: scale and fade in over 240 ms, hold, fade out. Transform and opacity only. */
+.feel-pop {
+  animation:
+    feel-pop-in 240ms var(--ease-out) both,
+    feel-pop-out 220ms ease-out 1250ms forwards;
+}
+@keyframes feel-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes feel-pop-out {
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feel-pop {
+    animation: none;
+  }
+}
+:root[data-reduce-motion="true"] .feel-pop {
+  animation: none;
+}

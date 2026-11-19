@@ -19,6 +19,7 @@ import { LIFT_LABELS, type TrailDifficulty } from "@/game/types";
 import { STROKE_FULL_REASON } from "@/render/paintAssist";
 import { trailPanelMode } from "@/ui/trailPanel";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
+import { buildConfirmed } from "@/ui/feel";
 import { liftReadout } from "@/ui/liftGesture";
 import { DifficultyIcon } from "@/ui/kit/icons";
 import { PrimaryButton } from "@/ui/kit/parts";
@@ -107,7 +108,10 @@ function TrailBar() {
         onCancel={backToDraft}
         onConfirm={() => {
           state.commitPaint(strokes, draft.glade);
-          if (useGameStore.getState().trails !== state.trails) finishPlacement();
+          if (useGameStore.getState().trails !== state.trails) {
+            buildConfirmed(preview.deleteTrail ? "Trail closed." : preview.trailIndex !== null ? "Trail changed." : preview.glade ? "Glade marked." : "Trail cut.");
+            finishPlacement();
+          }
         }}
       />
     );
@@ -218,7 +222,10 @@ function LiftBar() {
         onCancel={backToDraft}
         onConfirm={() => {
           state.placeLift({ type, ...line });
-          if (useGameStore.getState().lifts !== state.lifts) finishPlacement();
+          if (useGameStore.getState().lifts !== state.lifts) {
+            buildConfirmed("Lift placed.");
+            finishPlacement();
+          }
         }}
       />
     );
@@ -278,7 +285,10 @@ function SiteBar() {
           if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
           else if (gun) state.placeGun(check.placement.at);
           else if (asset) state.placeAsset(asset, check.placement.at);
-          if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) finishPlacement();
+          if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
+            buildConfirmed(`${item.label} placed.`);
+            finishPlacement();
+          }
         }}
       />
     );

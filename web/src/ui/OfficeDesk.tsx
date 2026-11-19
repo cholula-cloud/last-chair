@@ -139,7 +139,7 @@ export function DeskTab() {
 
       <SectionHeading>Route 100 Radio</SectionHeading>
       {!radioEnabled ? <p className="panel px-4 py-3 font-bold">Radio is off.</p> : radio ? (
-        <RadioCard title={radio.title}>{tidy(radio.radio)}</RadioCard>
+        <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
       ) : (
         <p className="panel px-4 py-3 text-[1rem] font-bold">
           Maris has not been on the air yet. She will be after the first closing.

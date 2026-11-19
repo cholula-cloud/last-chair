@@ -25,6 +25,7 @@ import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
+import { ConfirmPop } from "@/ui/ConfirmPop";
 import { GoalStrip } from "@/ui/GoalStrip";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
@@ -397,6 +398,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           )}
         </div>
       </div>
+      <ConfirmPop />
       <WinterReviewSheet onOffice={() => openOffice("Reports")} />
     </div>
   );

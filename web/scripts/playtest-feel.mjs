@@ -47,9 +47,13 @@ try {
         if (value >= 32) audio.notes.push(value);
         return schedule.call(this, value, at);
       };
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function(...args) {
+        if (this.loop) audio.loops++;
+        return start.apply(this, args);
+      };
       window.AudioContext = class extends AudioContext {
         constructor(...args) { super(...args); audio.devices++; }
-        createBufferSource() { audio.loops++; return super.createBufferSource(); }
       };
     }, { save, muted });
     await page.goto((process.env.PLAY_URL ?? "http://127.0.0.1:3000") + "/play/", { waitUntil: "domcontentloaded" });
@@ -89,7 +93,7 @@ try {
     else {
       assert.equal(audio.devices, 1);
       assert.equal(audio.loops, 1);
-      for (const hz of [420, 115, 523, 494]) assert(audio.notes.includes(hz), `Missing ${hz} Hz cue`);
+      for (const hz of [1900, 130, 523.25, 1318.5]) assert(audio.notes.includes(hz), `Missing ${hz} Hz cue`);
     }
     console.log(muted ? "390×844 muted winter: silent device, occupied chairs and grooming passed"
       : "390×844 sound-on winter: wind, taps, construction, radio, tier-up and grooming passed");
