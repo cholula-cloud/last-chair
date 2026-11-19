@@ -89,6 +89,15 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [officeOpen]);
 
   const [softwareRenderer, setSoftwareRenderer] = useState(false);
+  const [softwareDpr, setSoftwareDpr] = useState(0.75);
+  useEffect(() => {
+    if (!softwareRenderer) return;
+    // Bound software rasterization cost as the canvas grows. HUD text stays at native resolution.
+    const resize = () => setSoftwareDpr(Math.min(0.75, Math.sqrt(220_000 / (window.innerWidth * window.innerHeight))));
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [softwareRenderer]);
   const preferLowGraphics = useSettings(s => s.graphicsQuality === "low");
   const lowGraphics = preferLowGraphics || softwareRenderer;
   const tipsEnabled = useSettings(s => s.tips);
@@ -229,7 +238,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
         shadows={lowGraphics ? false : "percentage"}
-        dpr={softwareRenderer ? 0.75 : lowGraphics ? 1 : [1, 2]}
+        dpr={softwareRenderer ? softwareDpr : lowGraphics ? 1 : [1, 2]}
         onCreated={({ gl }) => {
           const context = gl.getContext();
           const info = context.getExtension("WEBGL_debug_renderer_info");
