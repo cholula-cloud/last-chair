@@ -414,36 +414,19 @@ body {
   }
 }
 
-/* Reduced motion keeps opacity and colour, drops movement. */
+/* Recaps, coach tips and radio updates appear immediately in reduced motion. */
 @media (prefers-reduced-motion: reduce) {
-  .press {
-    transition:
-      background-color 120ms ease,
-      color 120ms ease;
+  .sheet, .scrim, .trail-bar-in, .note-in, .callout-in, .arrive, .pop {
+    transition: none;
+  }
+  .sheet[data-state="enter"], .sheet[data-state="closing"] {
+    transform: none;
   }
   .press:active:not(:disabled):not([aria-pressed="true"]) {
     transform: none;
   }
-  .sheet {
-    transition: opacity 200ms ease;
-  }
-  .sheet[data-state="enter"],
-  .sheet[data-state="closing"] {
-    transform: none;
-    opacity: 0;
-  }
-  .trail-bar-in {
-    transition: none;
-  }
-  .note-in,
-  .callout-in,
-  .arrive,
-  .pop {
-    transition: opacity 200ms ease;
-    @starting-style {
-      opacity: 0;
-      transform: none;
-    }
+  .press {
+    transition-property: background-color, color;
   }
   .pulse-ring::after {
     animation: none;
@@ -451,36 +434,19 @@ body {
   }
 }
 
-/* The Settings toggle applies the same rules. */
-:root[data-reduce-motion="true"] .press {
-    transition:
-      background-color 120ms ease,
-      color 120ms ease;
+:root[data-reduce-motion="true"] :is(.sheet, .scrim, .trail-bar-in, .note-in, .callout-in, .arrive, .pop) {
+  transition: none;
 }
+:root[data-reduce-motion="true"] .sheet:is([data-state="enter"], [data-state="closing"]),
 :root[data-reduce-motion="true"] .press:active:not(:disabled):not([aria-pressed="true"]) {
-    transform: none;
+  transform: none;
 }
-:root[data-reduce-motion="true"] .sheet {
-    transition: opacity 200ms ease;
-}
-:root[data-reduce-motion="true"] .sheet[data-state="enter"],
-:root[data-reduce-motion="true"] .sheet[data-state="closing"] {
-    transform: none;
-    opacity: 0;
-}
-:root[data-reduce-motion="true"] .note-in,
-:root[data-reduce-motion="true"] .callout-in,
-:root[data-reduce-motion="true"] .arrive,
-:root[data-reduce-motion="true"] .pop {
-    transition: opacity 200ms ease;
-    @starting-style {
-      opacity: 0;
-      transform: none;
-    }
+:root[data-reduce-motion="true"] .press {
+  transition-property: background-color, color;
 }
 :root[data-reduce-motion="true"] .pulse-ring::after {
-    animation: none;
-    inset: -5px;
+  animation: none;
+  inset: -5px;
 }
 
 .coach-target { outline: 3px solid var(--barn-deep); outline-offset: 2px; }

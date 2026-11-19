@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { LiveMessage } from "./LiveMessage";
 import { radioArrived } from "@/ui/feel";
 
 /** Yellow warning diamond holding a broadcast-waves glyph. */
@@ -63,7 +64,7 @@ export function RadioCard({
         </p>
         <p className="display mt-1.5 text-[1.2rem] text-ink">{title}</p>
         <p className="mt-1 text-[1rem] font-bold leading-[1.4] text-ink">
-          {children}
+          <LiveMessage enabled={announce}><span className="sr-only">{title}. </span>{children}</LiveMessage>
         </p>
         {action && <div className="mt-3">{action}</div>}
       </div>
