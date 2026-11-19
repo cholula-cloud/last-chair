@@ -18,7 +18,8 @@ export function StoryEntries() {
   const beats = useGameStore(s => s.beatLog);
   const firstDay = useGameStore(s => s.dayIndex === 1 && s.outcome === "playing");
   const tipIndex = useCoach(s => s.index);
-  const tipsReady = tipIndex === 0;
+  const tipsEnabled = useSettings(s => s.tips);
+  const tipsReady = tipsEnabled && tipIndex === 0;
   const remaining = useGameStore(s => s.outcome === "playing" ? s.seasonLength - s.dayIndex + Number(s.phase !== "night") : 0);
   const netCash = useGameStore(liquidNetWorth);
   const days = useGameStore(s => s.seasonDays);
@@ -61,8 +62,9 @@ export function StoryEntries() {
     <div className="flex flex-wrap gap-2">
       <button className="key min-h-11 px-3" aria-pressed={!muted} onClick={() => set({ muted: !muted })}>Sound {muted ? "off" : "on"}</button>
       <button className="key min-h-11 px-3" aria-pressed={radio} onClick={() => set({ radioEnabled: !radio })}>Radio {radio ? "on" : "off"}</button>
-      {firstDay && tipIndex < TIPS.length && <button className="key min-h-11 px-3" onClick={() => useCoach.getState().skip()}>Skip tips</button>}
+      {firstDay && tipsEnabled && tipIndex < TIPS.length && <button className="key min-h-11 px-3" onClick={() => useCoach.getState().skip()}>Skip tips</button>}
       <button className="key min-h-11 px-3" disabled={!firstDay && tipsReady} onClick={() => {
+        set({ tips: true });
         const coach = useCoach.getState();
         coach.replay();
         coach.observe(useGameStore.getState());

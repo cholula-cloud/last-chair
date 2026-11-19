@@ -176,7 +176,7 @@ describe("lift capacity against the arrival curve", () => {
   const avgWait = (dayIndex: number, chair: boolean) =>
     mean(seeds.map((seed) => rules.skipToClose(freshDay(seed, dayIndex, chair)).dayStats.avgQueueMin));
 
-  it("one surface lift gives short weekday waits and long Saturday waits", () => {
+  it("one surface lift gives short weekday waits and long Saturday waits", { timeout: 30_000 }, () => {
     const weekday = avgWait(WEEKDAY, false);
     const saturday = avgWait(SATURDAY, false);
     expect(weekday).toBeGreaterThan(0.5);

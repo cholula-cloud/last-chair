@@ -5,6 +5,8 @@ import {
   LEGENDS,
   MARKS,
   readPoint,
+  type MarkId,
+  type GunView,
   type MapLayer,
   type MapTime,
 } from "@/game/mapLayers";
@@ -15,16 +17,25 @@ const control = "key press min-h-11 shrink-0 px-2 text-xs font-bold";
 export function LayerLegend({
   layer,
   wear = false,
+  gunView = "Last night",
 }: {
   layer: MapLayer;
   wear?: boolean;
+  gunView?: GunView;
 }) {
+  const legend: MarkId[] = wear
+    ? ["noWear", "wear", "heavyWear", "neutral"]
+    : layer === "guns"
+      ? gunView === "Last night"
+        ? ["last", "out", "neutral"]
+        : ["both", "reach", "groom", "out", "neutral"]
+      : LEGENDS[layer];
   return (
     <div
       aria-label={`${LAYERS[layer]} legend`}
       className="flex flex-wrap gap-x-2 gap-y-1 text-xs font-bold"
     >
-      {[...LEGENDS[layer], ...(wear ? ["wear" as const] : [])].map((id) => (
+      {legend.map((id) => (
         <span key={id} className="inline-flex items-center gap-1">
           <b
             aria-hidden="true"
@@ -41,9 +52,9 @@ export function LayerLegend({
 }
 
 function LayerPanel({ layer }: { layer: MapLayer }) {
-  const { time, preset, point, wear } = useLayers();
+  const { time, preset, point, wear, gunView } = useLayers();
   const { state, model } = useLayerSnapshot(layer);
-  const read = point && readPoint(state, model, layer, point, wear);
+  const read = point && readPoint(state, model, layer, point, wear, gunView);
   return (
     <section
       aria-label="Map layers"
@@ -62,6 +73,21 @@ function LayerPanel({ layer }: { layer: MapLayer }) {
           </button>
         ))}
       </div>
+      {layer === "guns" && (
+        <div className="flex gap-1" aria-label="Snow-making service">
+          {(["Last night", "Mid", "High"] as const).map((view) => (
+            <button
+              type="button"
+              key={view}
+              className={control}
+              aria-pressed={gunView === view}
+              onClick={() => useLayers.setState({ gunView: view })}
+            >
+              {view}
+            </button>
+          ))}
+        </div>
+      )}
       {layer === "conditions" && (
         <>
           <div className="flex flex-wrap gap-1" aria-label="Conditions time">
@@ -119,7 +145,11 @@ function LayerPanel({ layer }: { layer: MapLayer }) {
           )}
         </>
       )}
-      <LayerLegend layer={layer} wear={layer === "conditions" && wear} />
+      <LayerLegend
+        layer={layer}
+        gunView={gunView}
+        wear={layer === "conditions" && wear}
+      />
       <p className="text-xs font-bold">
         {layer === "slope"
           ? "Contour lines mark 50 ft of elevation."
@@ -153,7 +183,7 @@ function LayerPanel({ layer }: { layer: MapLayer }) {
 export function MapLayers() {
   const layer = useLayers((s) => s.layer);
   return (
-    <div className="relative">
+    <div>
       <button
         type="button"
         className="key press min-h-11 px-3 text-sm font-extrabold"

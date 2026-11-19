@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: m3-winter-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   winter:
     runs-on: ubuntu-latest

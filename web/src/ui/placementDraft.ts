@@ -19,7 +19,7 @@ type PlacementKind = "lift" | "trail" | "asset" | "gun";
 export const usePlacementDraft = create<{
   active: boolean;
   showBuildGrid: boolean;
-  /** The steepness grid in trail mode. Remembered for the session, not saved. */
+  /** Expanded slope legend while painting. The map always shows the pitch bands. */
   showSteepness: boolean;
   moveCamera: boolean;
   kind: PlacementKind;

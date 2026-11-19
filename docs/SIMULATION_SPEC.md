@@ -232,6 +232,14 @@ Each open lift has up to three named runs (paths stored on `TrailRun`); guests p
 
 ---
 
+## Mountain layers
+
+The Slope layer samples the heightfield throughout the lease. It uses the same pitch bands as trail painting and marks the ground above the 65% painting limit as double black. Contours are 50 vertical feet apart. Painting turns this layer on automatically.
+
+Depth, snow-making and conditions use the six segments of each trail. Untracked ground has a neutral pattern. Snow-making displays last night's stored coverage or the gun reach and grooming budget for Mid or High service. The dashed snow depth boundary is 0.15.
+
+Close simulates the rest of the day on a copy of the hill. Tomorrow combines the overnight outcomes using the forecast probabilities. Changing the preview leaves the player's service decision intact. Each trail stores its previous day's finished runs, which apply the same wear to every segment of that trail. Older saves show the previous run count as unavailable until another day closes. Wind holds affect chair access, while each segment keeps its own surface condition.
+
 ## Snow (PR 8)
 
 Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `coverage` in 0–1, plus `elevations[]` (0 = base, 1 ≈ Ridge top) for weather and gun reach. `snowQuality` and `snowDepth` in game state are derived: the means over every open segment (`deriveSnow`).
@@ -409,7 +417,7 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
-Schema v6 records the school contract and pass offer. Schema v7 adds dated operating and radio history and winter career records. Schema v8 records each new nightly settlement in the Office ledger. Earlier saves begin with an empty ledger, preserving the outcomes already known. Historical saves retain their recorded cash, season length and outcomes.
+Schema v6 records the school contract and pass offer. Schema v7 shipped with first-winter coach progress. A parallel v7 build recorded operating days, dated broadcasts and settled winters. Schema v8 accepts both v7 formats and preserves their known records. Its Office ledger starts with the next nightly settlement, when actual fare, costs, weather and receipts become available. Historical saves retain their recorded cash, season length and outcomes.
 
 ---
 
@@ -423,7 +431,13 @@ The winter score gives equal weight to mean satisfaction and mean daily closing 
 
 For each strategy the report counts winters containing each of the three local events. It also counts school offers, bookings, declined visits, completed visit days, actual pupil arrivals and lessons. Vivian offers, acceptances and declines appear separately. Matched Adaptive runs answer both offers when eligible. Most runs decline, and the acceptance comparison takes both offers. A missing offer contributes to neither reply count.
 
-The crew benefits raised mean six-seed Balanced/Mid closing cash to $16,541 and left Careless above zero in all six winters. The February vacation calendar now adds $425 per day to fixed operating costs on days 20–28. The recap itemizes staffing and shorter winters do not incur it. At $350, 6 of 40 Careless winters had projected shortfalls. At $425, 14 of 40 had shortfalls; each received a loan offer and 7 went bankrupt when the operator declined borrowing.
+The vacation calendar charges $550 per day for staffing during days 20–28. The recap itemizes it and shorter winters do not incur it. With the original two personas, the crew benefits left Careless above zero on all six seeds and raised Balanced/Mid mean closing cash to $16,541. A $350 staffing charge produced 6 shortfalls across 40 Careless winters. At $425 there were 14, each offered a loan, with 7 bankruptcies when borrowing was declined. The full pre-P1/Q6 report passed at that setting.
+
+Family Pack, Race Kid and the storm-week pressure curve changed demand and venue receipts. With all four personas and 40 matched seeds, Careless had 4 shortfalls with $425 staffing, 6 with $500 and 11 with $550. At $550 all 11 received a loan offer before the first negative morning. Seven went bankrupt after declining the loan.
+
+**Winter arc.** Days 8–14 give storm transitions 1.5 times their usual weight before the weather probabilities are normalized. The forecasts use the same transition curve. Vivian can offer funding from day 18. Vacation demand and its staffing bill begin on day 20. The existing bank offer appears only when projected cash goes negative. Dutch Hill's common goal still settles on the last night. The supplemental operating goals first require an actual day with guest arrivals and a positive operating margin after snow service. A later vacation Saturday must also record a dispatched ride and a mean wait of five minutes or less. The Office and story log read the saved daily ledger for progress.
+
+**Day-14 check.** For each of the 14 strategies and each of 40 seeds, the harness branches from the actual night-14 state. It keeps that day's fare, snow service and buildings through close, declines later offers and borrowing, and uses the same weather and guest RNG. A frozen hill encounters pressure on the first subsequent day with a projected cash shortfall, an operating loss after snow service, no rides, satisfaction below 70 or mean wait above five minutes. It must also finish solvent to coast successfully. At least half of each strategy's winters must still encounter pressure. The normal strategy continues separately.
 
 ### Row 20 economy checks
 

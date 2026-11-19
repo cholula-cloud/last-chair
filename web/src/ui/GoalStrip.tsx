@@ -15,7 +15,8 @@ export function GoalStrip() {
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
   const [open, setOpen] = useState<string | null>(null);
-  const chips = goalChips({ lodgeTier, schoolContract, outcome, cash, loan, payables });
+  const chips = goalChips({ lodgeTier, schoolContract, outcome, cash, loan, payables })
+    .filter(chip => chip.id !== "bus" || lodgeTier >= 2 || schoolContract !== null);
   const shown = chips.find((c) => c.id === open);
 
   return (

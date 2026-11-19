@@ -115,17 +115,23 @@ export function Guests({
     let tbars = 0;
     let chairs = 0;
     followedRef.current = null;
-    const followedIndex = guests.findIndex(g => g.id === followId);
-    // Reserve the first slot for the followed skier, including on a crowded day.
-    const order = guests.map((_, i) => i);
-    if (followedIndex > 0) [order[0], order[followedIndex]] = [order[followedIndex], order[0]];
+    const game = useGameStore.getState();
+    const downhill = guests.filter(g => g.state === "ski").length;
+    const decorative = routes.length && game.phase === "day"
+      ? Math.max(0, Math.min(5, Math.floor(game.dayStats.guestsArrived / 4)) - downhill) : 0;
+    // Keep the followed skier, occupied chairs and active descents visible on crowded days.
+    const priority = (i: number) => {
+      const guest = guests[i];
+      return guest.id === followId ? 0 : guest.state === "ride" || guest.state === "ski" ? 1 : 2;
+    };
+    const order = guests.map((_, i) => i).sort((a, b) => priority(a) - priority(b));
     order.forEach(gi => {
       const g = guests[gi];
       if (g.state === "pending" || g.state === "gone") return;
       const p = placements[gi];
       const isFollowed = g.id === followId;
       if (isFollowed) followedRef.current = p;
-      if (n >= MAX) return;
+      if (n >= MAX - decorative) return;
       const i = n++;
       dummy.position.set(p.x, p.y, p.z);
       dummy.rotation.set(p.lean * 0.6, p.yaw, p.roll * 0.6, "YXZ");
@@ -162,9 +168,8 @@ export function Guests({
       }
     });
     // Fill spare instance slots with distant downhill traffic as the actual roster arrives.
-    const game = useGameStore.getState();
-    const target = Math.min(MAX, game.dayStats.guestsArrived);
-    if (game.phase === "day" && routes.length && n > 0) {
+    const target = Math.min(MAX, n + decorative);
+    if (n > 0 && decorative > 0) {
       for (let j = 0; n < target; j++, n++) {
         const sample = routes[j % routes.length];
         const progress = (0.17 + j * 0.618 + (reduced.current ? 0 : game.clockMin / 27)) % 1;
@@ -206,8 +211,8 @@ export function Guests({
   });
 
   return (
-    <group>
-      <instancedMesh ref={baseRef} args={[geos.base, undefined, MAX]} frustumCulled={false}>
+    <group name="guests">
+      <instancedMesh name="skiers" ref={baseRef} args={[geos.base, undefined, MAX]} frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
       <instancedMesh ref={jacketRef} args={[geos.jacket, undefined, MAX]} frustumCulled={false}>
@@ -228,7 +233,7 @@ export function Guests({
       <instancedMesh ref={tbarRef} args={[tbar, undefined, MAX]} castShadow frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
-      <instancedMesh ref={chairRef} args={[chair, undefined, MAX]} castShadow frustumCulled={false}>
+      <instancedMesh name="occupied-chairs" ref={chairRef} args={[chair, undefined, MAX]} castShadow frustumCulled={false}>
         <meshLambertMaterial vertexColors />
       </instancedMesh>
       <group ref={ringRef} visible={false}>

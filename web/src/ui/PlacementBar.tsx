@@ -135,6 +135,7 @@ function TrailBar() {
     return (
       <div key="compact" className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
         <p className="text-sm font-extrabold">Lift your finger to finish.</p>
+        <LayerLegend layer="slope" />
         {stats}
         {problem}
       </div>
@@ -151,11 +152,11 @@ function TrailBar() {
             ? "Drag from the marked end to keep painting, or tap Review."
             : "Drag down the hill from a lift to paint a trail. Use two fingers to move the map."}
       </p>
-      {!draft.showSteepness && <span className="text-xs font-bold" aria-label="Slope legend">● Green · ■ Blue · ◆ Black · ❖ Double black</span>}
+      <LayerLegend layer="slope" />
       {draft.showSteepness && (
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
           <span>Downhill slope</span>
-          <LayerLegend layer="slope" />
+          <span>Contours rise 50 ft. Traversing can make your trail gentler.</span>
         </div>
       )}
       <div className="grid grid-cols-2 gap-1" aria-label="Trail type">

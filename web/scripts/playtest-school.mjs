@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { chromium, webkit } from "playwright";
 import { enterGame } from "./playtest-m2.mjs";
 
 const { createBuiltHill } = await import("../src/game/__fixtures__/built-hill.ts");
 const { pickFounder, skipToClose } = await import("../src/game/rules.ts");
 const { SAVE_VERSION, toPersisted } = await import("../src/game/state.ts");
+const { playReplay } = await import("../src/game/replay.ts");
 const { ASSET_CATALOG } = await import("../src/game/base.ts");
 
 const day = pickFounder(createBuiltHill(), "elena");
@@ -70,6 +72,16 @@ try {
       const office = page.getByRole("dialog", { name: "Dutch Hill Office" });
       await office.getByRole("heading", { name: "Needs attention" }).waitFor();
       assert.equal((await read()).paused, true);
+      await office.locator("summary").filter({ hasText: "Playtest notes" }).tap();
+      await office.getByLabel("What happened?").fill("Booked the Readsboro visit and checked its receipts.");
+      const downloadReady = page.waitForEvent("download");
+      await office.getByRole("button", { name: "Export replay" }).tap();
+      const download = await downloadReady;
+      assert.equal(download.suggestedFilename(), "last-chair-replay.json");
+      const replay = JSON.parse(await readFile(await download.path(), "utf8"));
+      assert.equal(replay.notes, "Booked the Readsboro visit and checked its receipts.");
+      assert.ok(replay.actions.some(action => action.rule === "decideSchoolContract"));
+      assert.deepEqual(JSON.parse(JSON.stringify(toPersisted(playReplay(replay)))), await read());
       await office.getByRole("button", { name: "Money", exact: true }).tap();
       await office.getByText(/School tickets \$150/).waitFor();
       await office.getByRole("button", { name: "Crew", exact: true }).tap();

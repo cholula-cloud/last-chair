@@ -32,6 +32,7 @@ describe("goalChips", () => {
     expect(delivered.done).toBe(true);
     const missed = goalChips({ ...fresh, schoolContract: { decision: "accepted", day: 9, pupilsTaught: 0 } })[1];
     expect(missed.done).toBe(false);
+    expect(missed.explainer).toMatch(/0 of 6/);
     const declined = goalChips({ ...fresh, schoolContract: { decision: "declined" } })[1];
     expect(declined.done).toBe(false);
     expect(declined.explainer).toBe("You declined the Readsboro school visit.");

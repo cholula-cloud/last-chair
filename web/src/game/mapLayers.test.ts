@@ -77,6 +77,17 @@ describe("map layers", () => {
       gunCoverage(trail, s.guns, next.talentsOwned),
     );
     expect(model.trails[0].map((c) => c.reached)).toEqual(trail.gunCovered);
+    for (const cell of model.trails[0]) {
+      expect(cellMark("guns", cell, false, "Last night")).toBe(
+        cell.reached ? "last" : "out",
+      );
+      for (const service of ["Mid", "High"] as const) {
+        const groom = service === "High" ? cell.highGroom : cell.midGroom;
+        expect(cellMark("guns", cell, false, service)).toBe(
+          cell.reach ? (groom ? "both" : "reach") : groom ? "groom" : "out",
+        );
+      }
+    }
     expect(trail.previousRuns).toBe(night.dayStats.runsByTrail[0]);
     const read = readPoint(
       next,
@@ -105,6 +116,6 @@ describe("map layers", () => {
     expect(s).toEqual(before);
     expect(
       cellMark("depth", { ...high.trails[0][0], snow: freshTrail(0.1)[0] }),
-    ).toBe("bare");
+    ).toBe("breakup");
   });
 });

@@ -28,7 +28,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 | Area | What exists |
 |---|---|
 | Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v8 with validation and recovery |
-| Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
+| Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, four personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48), lift tool with cable ghost (L-A), visible brush and ribbon (L-B), lease boundary with a fixed far forest (L-C) |
 | Season | Seeded forecast, storms and thaw runs, chair wind holds, 28-day calendar with weekends and holiday weeks |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
@@ -421,7 +421,7 @@ Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder 
 
 ### M3: One full winter (product MVP)
 
-M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements land ahead of the season systems. Rows O1 to O3 (overlays) and F1, F2, F4 (the Office) come from §12, and quality rows Q1 to Q9 from §11; the owner accepted all of them into M3 on 2026-11-19. If M3 grows too large, Q2, Q4, Q7 and Q8 move to M4 first.
+M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements lead into the season systems. Rows O1 to O3 (overlays) and F1, F2, F4 (the Office) come from §12, and quality rows Q1 to Q9 from §11; the owner accepted all of them into M3 on 2026-11-19. If M3 grows too large, Q2, Q4, Q7 and Q8 move to M4 first.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
@@ -437,20 +437,20 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density pines and birch on the lease, a sparse far forest in one draw call beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
 | L-D | ☑ | Title screen and save slots (Story half of rows 39 and 40, from M6; PR #71) | Continue, New winter, Load (three slots, export and import), Settings (voice volume, captions, reduced motion, default speed), Credits. Autosave on build actions and phase changes, on tab hide, and at most every 10 seconds during the day |
-| L-E | ◐ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions. Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible (see the first-winter sequence below). A "Guests want" line in the night recap |
+| L-E | ☑ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions. Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible (see the first-winter sequence below). A "Guests want" line in the night recap |
 | L-F | ☑ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ☑ | Crew talents with real effects | 20 talents in crew order, each with a test |
 | 22 | ☑ | Founders complete | All six modifiers live |
-| 23 | ◐ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log. Still to build: the radio feed (the live card on the Office Desk, F1), lodge tier-up lines, and the story log in Reports (F3) |
-| 24 | ◐ | Winter review | Common goal outcome, season score, recorded choices and consequences, lodge tier, talents; carry-forward data |
+| 23 | ☑ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log. The Office Desk carries the radio feed and tier-up lines. Reports keeps the story log |
+| 24 | ☑ | Winter review | Common goal outcome, season score, recorded choices and consequences, lodge tier, talents; carry-forward data |
 | P1 | ☑ | Family Pack and Race Kid personas | Two more guest types with the weights already in SIMULATION_SPEC (queue, snow, value), their venue and trail needs, and mixes by weekday, weekend and holiday. The Readsboro school visit and the rink (A2) depend on them. Re-baselines the characterization snapshot and the balance harness. Replaces the "row 9" tag in the spec |
-| O1 | ☐ | Overlay framework and slope layer | A Layers button on the mountain view, a layer strip, a legend that pairs every colour with a pattern, a tap or hold readout card, buildings and guests dimmed while a layer is on, reduced motion respected. The slope layer covers the whole lease in the same bands that colour a painted trail, with contour lines; it absorbs the steepness grid from L-B (§12) |
-| O2 | ☐ | Snow depth and snow-making layers | Depth shaded from bare to deep with the 0.15 break-up line drawn; gun reach, the pipe network and the segments tonight's Mid and High presets would add depth to. Ground the sim does not model shows a neutral tint (§12) |
-| O3 | ☐ | Conditions layer | A named condition for every trail segment drawn as texture and motion on the snow, a tap-to-why sentence, a Now, Close, Tomorrow scrub that repaints the hill for the chosen overnight preset, a wear map, and persona suitability chips. Trail signs show the condition glyph (§12) |
-| F1 | ☐ | Office shell and Desk | An Office button in the bottom bar that pauses the day and opens a full-screen sheet with a tab strip. Desk shows the headline, goal detail, tomorrow's forecast, a needs-attention list and the radio card. The winter review and the recap archive move in. No new sim state (§12) |
-| F2 | ☐ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38 |
-| F4 | ☐ | Crew tab | Lodge tier and what the next tier opens, the goal checklist, talents learned and next, the founder's modifier, the winter score. Rows 21 to 24 build the data; this is where the player sees it |
-| 26 | ☐ | Coached first winter | Skippable help: the founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice, and points at the overlay and Office tab when the first problem appears; skippable |
+| O1 | ☑ | Overlay framework and slope layer | A Layers button on the mountain view, a layer strip, a legend that pairs every colour with a pattern, a tap or hold readout card, buildings and guests dimmed while a layer is on, reduced motion respected. The slope layer covers the whole lease in the same bands that colour a painted trail, with contour lines; it absorbs the steepness grid from L-B (§12) |
+| O2 | ☑ | Snow depth and snow-making layers | Depth shaded from bare to deep with the 0.15 break-up line drawn; gun reach, the pipe network and the segments tonight's Mid and High presets would add depth to. Ground the sim does not model shows a neutral tint (§12) |
+| O3 | ☑ | Conditions layer | A named condition for every trail segment drawn as texture and motion on the snow, a tap-to-why sentence, a Now, Close, Tomorrow scrub that repaints the hill for the chosen overnight preset, a wear map, and persona suitability chips. Trail signs show the condition glyph (§12) |
+| F1 | ☑ | Office shell and Desk | An Office button in the bottom bar that pauses the day and opens a full-screen sheet with a tab strip. Desk shows the headline, goal detail, tomorrow's forecast, a needs-attention list and the radio card. The winter review and the recap archive move in. No new sim state (§12) |
+| F2 | ☑ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38 |
+| F4 | ☑ | Crew tab | Lodge tier and what the next tier opens, the goal checklist, talents learned and next, the founder's modifier, the winter score. Rows 21 to 24 build the data; this is where the player sees it |
+| 26 | ☑ | Coached first winter | Skippable help: the founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice, and points at the overlay and Office tab when the first problem appears; skippable |
 | 27 | ☐ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
 
 #### Dutch Hill first-winter sequence
@@ -534,7 +534,11 @@ Design first, then build. Every row is proposed and gets a handoff section befor
 
 ## 10. Accessibility
 
-Satisfaction shown as icon plus colour (colour-blind safe). Touch targets ≥44 px. Reduced motion disables follow-camera swings and sheet animation. Radio can be turned off; heritage reading is optional. Styles never carry information that a default style hides. Map overlays pair every colour with a pattern, so a layer reads without colour vision. Row Q8 turns this section into a full Settings and accessibility spec.
+Settings persist on the device across winter slots. Master volume scales music, effects and voice independently. Sound mutes every channel while preserving the saved levels. Voice and captions have independent switches. The cold open keeps its captions visible whenever the narration cannot play. Radio and coach tips can also be turned off.
+
+Large text changes the root text size from 16 to 19 CSS pixels. Low graphics limits rendering to one device pixel per CSS pixel and disables shadows. Players can select a default speed of 1×, 2× or 4×. Reduced motion follows the device preference or the in-game switch, removes sheet animation and keeps the viewing angle steady when following guests.
+
+Controls need an accessible name and a touch target at least 44 by 44 CSS pixels. Sheets expose a dialog name for VoiceOver. Satisfaction and goal states use words or symbols alongside colour. Map layers use patterns and labels, with a Pattern aids switch for extra contrast. Check normal text against a 4.5:1 contrast threshold in the day and night palettes. The M3 audit runs the palette tests and the small-phone Settings, captions, keyboard and dialog checks in [TESTING.md](./TESTING.md).
 
 ---
 
@@ -571,12 +575,12 @@ Audit of this plan and the repo on 2026-11-19. Each finding below was checked ag
 |---|---|---|---|
 | Q1 | Optional owner follow-up | Optional device check: run the phone-check list by hand on an iPhone and an iPad in Safari, and close the M2 sign-off with three observed people who have not seen the game | Findings fixed or ticketed; sign-off logged in TESTING.md |
 | Q2 | M3 | ☑ PWA shell (PR #81): manifest, icons, standalone display, theme colour, iOS meta tags, safe-area check | Installs from Safari, opens full screen, gestures do not trigger Safari navigation |
-| Q3 | M3, before row 27 | Feel floor: an ambient bed, UI taps, a build thunk and the radio sting; a day tint; confirm and tier-up juice. A thin version of rows 31 to 33 that those rows later finish | A muted run and an unmuted run feel different; sound starts after the first gesture; reduced motion and mute respected |
-| Q4 | M3 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
-| Q5 | M3 | Playtest log: export a replay (seed plus action list) and a "Send notes" button that attaches it | A recorded session replays to the point where the player got stuck |
+| Q3 | ☑ M3, before row 27 | Feel floor: an ambient bed, UI taps, a build thunk and the radio sting; a day tint; confirm and tier-up juice. A thin version of rows 31 to 33 that those rows later finish | A muted run and an unmuted run feel different; sound starts after the first gesture; reduced motion and mute respected |
+| Q4 | ☑ M3 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
+| Q5 | M3 ☑ | Playtest log: export a replay (seed plus action list) and a "Send notes" button that attaches it | A recorded session replays to the point where the player got stuck |
 | Q6 | M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Abominable Snowglomerate offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
 | Q7 | M3 | Performance gate: Playwright measures load time, bundle size and frame time at phone size; an optional ten-minute device soak | Budgets and pass or fail written in TESTING.md |
-| Q8 | M3 | Settings and accessibility spec: master, music, effects and voice volume, captions, reduced motion, text size, speed, graphics quality, pattern aids; VoiceOver labels on sheets; a contrast check; the audit runs at the M3 gate, not in M7 | Spec merged into §10; audit logged |
+| Q8 | M3 ☑ | Settings and accessibility spec: master, music, effects and voice volume, captions, reduced motion, text size, speed, graphics quality, pattern aids; VoiceOver labels on sheets; a contrast check; the audit runs at the M3 gate, not in M7 | Spec merged into §10; audit logged |
 | Q9 | M3 ☑ | Venue move, sale, purchase undo, protected structures, lift and trail closure confirmations | Rules in SIMULATION_SPEC and regression coverage in buildForgiveness.test.ts |
 | Q10 | Before any public share | Rights check: the voice-over terms, the real names, the credits | A written decision in WORLD.md |
 

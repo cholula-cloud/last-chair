@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createRng } from "@/game/rng";
 import { useGameStore } from "@/game/store";
 import { useSettings } from "./settingsStore";
 
@@ -48,9 +49,10 @@ export function HillSound({ playing }: { playing: boolean }) {
           const wind = ctx.createBufferSource();
           const buffer = ctx.createBuffer(1, ctx.sampleRate * 3, ctx.sampleRate);
           const samples = buffer.getChannelData(0);
+          const windNoise = createRng(1968);
           let last = 0;
           for (let i = 0; i < samples.length; i++) {
-            last = (last + (Math.random() - 0.5) * 0.13) / 1.02;
+            last = (last + (windNoise.next() - 0.5) * 0.13) / 1.02;
             samples[i] = last * (0.8 + 0.2 * Math.sin(2 * Math.PI * i / samples.length));
           }
           wind.buffer = buffer;
@@ -86,6 +88,8 @@ export function HillSound({ playing }: { playing: boolean }) {
       }
     }
     const tap = (event: MouseEvent) => {
+      // Touch browsers may grant audio activation on release rather than pointerdown.
+      if (event.isTrusted) unlock();
       if (event.target instanceof Element && event.target.closest("button:not(:disabled),summary")) cue("tap");
     };
     const notify = (message: string) => {

@@ -226,7 +226,10 @@ async function runViewport(engine, launch, vp) {
 
   try {
     await startPlay(page);
-    titleLoadMs = await page.evaluate(() => performance.getEntriesByType("navigation")[0]?.domContentLoadedEventEnd);
+    titleLoadMs = await page.evaluate(() => {
+      const entry = performance.getEntriesByType("navigation")[0];
+      return entry?.domContentLoadedEventEnd || performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
+    });
     if (!titleLoadMs || titleLoadMs > 5000) fail(`${engine} ${tag}: title load ${titleLoadMs} ms exceeds 5 seconds`);
     await page.getByRole("button", { name: "Skip tips" }).click();
     const home = await shot(page, engine, tag, "home");

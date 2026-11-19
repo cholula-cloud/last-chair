@@ -4,6 +4,7 @@ import {
   MARKS,
   pitchBand,
   segmentPath,
+  type GunView,
   type MapLayer,
   type MarkId,
   type OverlayModel,
@@ -88,9 +89,14 @@ export function drawLayer(
   layer: MapLayer,
   wear: boolean,
   strong: boolean,
+  gunView: GunView,
 ) {
   const canvas = surface(SIZE),
     ctx = canvas.getContext("2d")!;
+  // Transparent border prevents clamped texture pixels extending outside the lease.
+  ctx.beginPath();
+  ctx.rect(1, 1, SIZE - 2, SIZE - 2);
+  ctx.clip();
   if (TERRAIN.lease) {
     line(ctx, TERRAIN.lease);
     ctx.closePath();
@@ -140,7 +146,7 @@ export function drawLayer(
     model.trails[i].forEach((cell, j) => {
       const path = segmentPath(trail, j);
       if (path.length < 2) return;
-      const id = cellMark(layer, cell, wear);
+      const id = cellMark(layer, cell, wear, gunView);
       ctx.strokeStyle = style(id);
       const sample = Math.round(
         ((j + 0.5) / trail.snow.length) * (trail.path.length - 1),

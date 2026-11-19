@@ -23,7 +23,7 @@ export default function PlayGate() {
   const [menu, setMenu] = useState<"main" | "load" | "settings">("main");
 
   return (<>
-    <HillSound playing={playing} />
+    <HillSound playing={playing && !coldOpen} />
     {!playing ? <TitleScreen initialView={menu} onStart={opts => {
       setColdOpen(opts?.newWinter === true);
       setPlaying(true);

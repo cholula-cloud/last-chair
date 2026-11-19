@@ -1,3 +1,4 @@
+import historicalSaves from "./__fixtures__/m3-saves.json";
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { migrate } from "./migrations";
@@ -53,7 +54,7 @@ describe("Dutch Hill winter review", () => {
   });
 
   it("keeps pre-log broadcasts undated and never manufactures missing scores or contract decisions", () => {
-    const raw = toPersisted(createBuiltHill(5));
+    const raw = historicalSaves.find(save => save.version === 6)!.state;
     const old = { ...raw, completedBeats: ["school_bus", "summit_link"] };
     const migrated = migrate(old, 6);
     expect(migrated).toMatchObject({ reset: false, state: {
@@ -67,10 +68,13 @@ describe("Dutch Hill winter review", () => {
   it("settles a legacy review while retaining a distinct earlier replay record", () => {
     const settled = { ...createBuiltHill(2), founderId: "elena", dayIndex: 28, phase: "winter_review", outcome: "finished" } as const;
     const review = { ...settled, weather: settled.weatherDays[27].kind };
+    const old = historicalSaves.find(save => save.version === 6)!.state;
+    const legacy = { ...old, dayIndex: review.dayIndex, weather: old.weatherDays![27].kind,
+      phase: review.phase, outcome: review.outcome, founderId: review.founderId, cash: review.cash };
     const earlier = winterRecord({ ...review, cash: 7300 });
     const current = winterRecord(review);
     for (const previous of [undefined, earlier, current]) {
-      const result = migrate({ ...toPersisted(review), lastWinter: previous }, 6);
+      const result = migrate({ ...legacy, lastWinter: previous }, 6);
       expect(result.reset).toBe(false);
       expect(result.state.lastWinter).toMatchObject({ cash: review.cash, goalMet: true, score: null });
       expect(result.state.career).toHaveLength(previous === earlier ? 2 : 1);

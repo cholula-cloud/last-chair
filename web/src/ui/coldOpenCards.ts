@@ -2,7 +2,7 @@
 
 export type ColdOpenCard = {
   id: string;
-  /** Caption shown over the still, always on. */
+  /** Caption shown over the still when captions are enabled or narration is unavailable. */
   caption: string;
   /** Still image under /story. */
   image: string;

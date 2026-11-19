@@ -958,6 +958,8 @@ Numbers marked proposed are design choices to be tuned with the balance harness 
 
 The common goal is to finish day 28 with nonnegative cash after debt and unpaid construction. Readsboro is optional. Vivian’s offer trades $6,000 for a fare cap. GitHub PR #77 delivered the revised first-winter sequence and #78 recorded hosted verification. The briefs below preserve design history, including proposed values. Use the [M3 roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for delivery status and the [device playtest](./TESTING.md) for optional device sessions.
 
+PR #80 adds Family Pack and Race Kid, four map layers, the Office desk and ledger, all twenty crew talents, all six founder modifiers and a skippable coach. The Office stores daily results and keeps each slot’s career history separate. Schema v8 reads both the released v7 opening and earlier premerge winter histories. Use TESTING.md for browser and performance measurements, and SIMULATION_SPEC.md for the strategy comparison and staffing costs.
+
 The owner deferred all M3 human testing on November 19. Safari, VoiceOver and outside-player sessions are optional follow-up. The separate M2 opening also needs a first-time player.
 
 ## Rules for every M3 PR

@@ -21,6 +21,7 @@ function PaintedLayer({ layer }: { layer: MapLayer }) {
   const { state, model } = useLayerSnapshot(layer);
   const wear = useLayers((s) => s.wear),
     strong = useSettings((s) => s.patternAids);
+  const gunView = useLayers((s) => s.gunView);
   const painting = usePlacementDraft((s) => s.active);
   const { gl, camera, scene } = useThree();
   const reduced = useReducedMotion();
@@ -38,11 +39,11 @@ function PaintedLayer({ layer }: { layer: MapLayer }) {
   }, []);
   const texture = useMemo(() => {
     const out = new THREE.CanvasTexture(
-      drawLayer(state, model, layer, wear, strong),
+      drawLayer(state, model, layer, wear, strong, gunView),
     );
     out.colorSpace = THREE.SRGBColorSpace;
     return out;
-  }, [state, model, layer, wear, strong]);
+  }, [state, model, layer, wear, strong, gunView]);
   useEffect(() => () => texture.dispose(), [texture]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 

@@ -204,6 +204,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       data-scene-ready={sceneReady ? "true" : undefined}
     >
       <Canvas
+        frameloop={officeTab ? "never" : "always"}
         className="block h-full w-full touch-none"
         shadows={lowGraphics ? false : "percentage"}
         dpr={lowGraphics ? 1 : [1, 2]}

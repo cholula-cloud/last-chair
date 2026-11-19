@@ -82,7 +82,7 @@ async function buildMenu(page) {
   if (!(await page.locator("[data-build-sheet]").isVisible())) await opener.click();
 }
 
-async function project(page, locations) {
+export async function project(page, locations) {
   const element = page.locator("canvas").first();
   return element.evaluate((canvas, points) => {
     // Read R3F's live camera from its Canvas rootState ref. No debug state is

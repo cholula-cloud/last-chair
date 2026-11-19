@@ -1,4 +1,9 @@
-import { gunCoverage, GUN_RADIUS_DESIGN, sampleSnowPath } from "./guns";
+import {
+  groomCoverage,
+  gunCoverage,
+  GUN_RADIUS_DESIGN,
+  sampleSnowPath,
+} from "./guns";
 import { onLease } from "./lease";
 import { MAX_PAINTED_PITCH } from "./paintedTrail";
 import { PERSONAS } from "./personas";
@@ -9,6 +14,7 @@ import {
   THIN_COVERAGE,
   THAW_START_MIN,
   GUN_DEPTH,
+  GROOM_PUSH,
   WEAR_PER_RUN,
   type Segment,
 } from "./snow";
@@ -33,6 +39,7 @@ export const LAYERS = {
 } as const;
 export type MapLayer = keyof typeof LAYERS;
 export type MapTime = "Now" | "Close" | "Tomorrow";
+export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };
 export const MARKS = {
   green: { name: "Green", color: "#87bd86", glyph: "●" },
@@ -45,7 +52,9 @@ export const MARKS = {
   covered: { name: "Covered", color: "#9bd1df", glyph: "≈" },
   deep: { name: "Deep", color: "#e1edf7", glyph: "≋" },
   last: { name: "Reached last night", color: "#76b4bd", glyph: "◎" },
-  reach: { name: "Within reach", color: "#c0e3d0", glyph: "+" },
+  groom: { name: "Groomer only", color: "#c7c3da", glyph: "╳" },
+  both: { name: "Gun and groomer", color: "#57a918", glyph: "✣" },
+  reach: { name: "Gun only", color: "#c0e3d0", glyph: "+" },
   out: { name: "Out of reach", color: "#a3978f", glyph: "╱" },
   fresh: { name: "Fresh corduroy", color: "#def1fc", glyph: "≡" },
   powder: { name: "Packed powder", color: "#edf4ee", glyph: "○" },
@@ -54,12 +63,15 @@ export const MARKS = {
   ice: { name: "Ice", color: "#9fc8e3", glyph: "▧" },
   thin: { name: "Thin", color: "#c6ae8b", glyph: "▦" },
   hold: { name: "Wind hold", color: "#d7b5d4", glyph: "↝" },
-  wear: { name: "Yesterday’s wear", color: "#bb8393", glyph: "⋮" },
+  wear: { name: "1–99 runs", color: "#d4bd99", glyph: "·" },
+  heavyWear: { name: "100+ runs", color: "#ae728a", glyph: "⋮" },
+  noWear: { name: "No runs", color: "#d7e0d3", glyph: "○" },
+  breakup: { name: "Broken cover", color: "#b18b66", glyph: "×" },
 } satisfies Record<string, Mark>;
 export type MarkId = keyof typeof MARKS;
 export const LEGENDS: Record<MapLayer, MarkId[]> = {
   slope: ["green", "blue", "black", "double"],
-  depth: ["bare", "shallow", "covered", "deep", "neutral"],
+  depth: ["breakup", "shallow", "covered", "deep", "neutral"],
   guns: ["last", "reach", "out", "neutral"],
   conditions: [
     "fresh",
@@ -112,6 +124,18 @@ export function overlayModel(
   const probable = forecast?.results[forecast.weather].overnight;
   const weather = forecast?.weather ?? state.weather;
   const clock = time === "Tomorrow" ? DAY_START_MIN : close.clockMin;
+  const serviceTrails = close.trails.map((t) =>
+    close.lifts[t.liftIndex]?.closing ? { ...t, open: false } : t,
+  );
+  const service = (snow: SnowPreset) =>
+    groomCoverage(
+      serviceTrails,
+      close.dayStats.runsByTrail,
+      snow,
+      state.talentsOwned,
+    );
+  const mid = service("mid"),
+    high = service("high");
   const trails = close.trails.map((trail, i) => {
     const runs = time === "Tomorrow" ? 0 : (close.dayStats.runsByTrail[i] ?? 0);
     const reach = gunCoverage(trail, state.guns, state.talentsOwned);
@@ -158,7 +182,9 @@ export function overlayModel(
         elevation: trail.elevations[j],
         yesterday: trail.previousRuns,
         reached: !!trail.gunCovered?.[j],
-        reach: trail.open && reach[j],
+        reach: serviceTrails[i].open && reach[j],
+        midGroom: mid[i][j],
+        highGroom: high[i][j],
         guns: byGun.flatMap((row, index) =>
           row[j]
             ? [{ number: index + 1, count: row.filter(Boolean).length }]
@@ -171,13 +197,26 @@ export function overlayModel(
 }
 export type OverlayModel = ReturnType<typeof overlayModel>;
 type Cell = OverlayModel["trails"][number][number];
-export function cellMark(layer: MapLayer, cell: Cell, wear = false): MarkId {
-  if (layer === "conditions")
-    return wear && cell.yesterday ? "wear" : cell.condition;
-  if (layer === "guns")
-    return cell.reached ? "last" : cell.reach ? "reach" : "out";
+export function cellMark(
+  layer: MapLayer,
+  cell: Cell,
+  wear = false,
+  gunView: GunView = "Last night",
+): MarkId {
+  if (layer === "conditions") {
+    if (!wear) return cell.condition;
+    if (cell.yesterday === undefined) return "neutral";
+    if (!cell.yesterday) return "noWear";
+    return cell.yesterday >= 100 ? "heavyWear" : "wear";
+  }
+  if (layer === "guns") {
+    if (gunView === "Last night") return cell.reached ? "last" : "out";
+    const groomed = gunView === "High" ? cell.highGroom : cell.midGroom;
+    if (cell.reach) return groomed ? "both" : "reach";
+    return groomed ? "groom" : "out";
+  }
   return cell.snow.depth < COVER_MIN
-    ? "bare"
+    ? "breakup"
     : cell.snow.depth < 0.3
       ? "shallow"
       : cell.snow.depth < 0.65
@@ -237,6 +276,7 @@ export function readPoint(
   layer: MapLayer,
   point: XZ,
   wear: boolean,
+  gunView: GunView = "Last night",
 ) {
   const result = {
     title: "Not simulated",
@@ -287,7 +327,19 @@ export function readPoint(
           `Gun ${g.number} reaches ${g.count} of ${trail.snow.length} segments.`,
       )
       .join(" ");
-    result.detail = `${cell.reached ? "Guns reached this segment last night." : "Guns did not reach this segment last night."} ${cell.reach ? `${reach} Mid adds ${GUN_DEPTH.mid.toFixed(2)} depth and High adds ${GUN_DEPTH.high.toFixed(2)}.` : "This segment will receive no machine-made snow."}`;
+    if (gunView === "Last night") {
+      result.detail = cell.reached
+        ? "Guns reached this segment last night."
+        : "Guns did not reach this segment last night.";
+    } else {
+      const service = gunView === "High" ? "high" : "mid";
+      const groomed = service === "high" ? cell.highGroom : cell.midGroom;
+      const added =
+        (cell.reach ? GUN_DEPTH[service] : 0) +
+        (groomed ? GROOM_PUSH[service] : 0);
+      result.detail =
+        `${reach} ${gunView} service adds ${added.toFixed(2)} depth before weather and the depth limit.`.trim();
+    }
   }
   if (layer === "conditions") {
     const cause: Partial<Record<MarkId, string>> = {
