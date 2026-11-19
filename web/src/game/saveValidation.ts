@@ -51,13 +51,13 @@ const trailShape = shape({
   difficulty: oneOf("green", "blue", "black"), open: boolean,
   snow: array(shape(numbers("depth", "quality", "coverage"))), elevations: array(number),
   glade: optional(boolean), widths: optional(array(number)), paidClearing: optional(array(cell)),
-  groomed: optional(array(boolean)), gunCovered: optional(array(boolean)),
+  groomed: optional(array(boolean)), gunCovered: optional(array(boolean)), previousRuns: optional(index),
   builtDay: optional(number), builtAtMin: optional(number), paid: optional(number),
 });
 
 const guest = shape({
   id: string, label: string, state: oneOf("pending", "arrive", "queue", "ride", "ski", "walk_lift", "walk_out", "refuel", "depart", "gone"),
-  persona: oneOf("first_timer", "regular"),
+  persona: oneOf("first_timer", "regular", "family_pack", "race_kid"),
   ...numbers("progress", "mood", "waitMin", "waitCount", "snowSum", "energy", "runs", "targetRuns", "arriveAtMin", "stateSinceMin"),
   liftIndex: optional(index), trailIndex: optional(index), venueIndex: optional(index),
   joinedQueueAtMin: optional(number), rideStartMin: optional(number), visitMinutes: optional(number),
@@ -148,7 +148,7 @@ const fields: Record<keyof PersistedState, Check> = {
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
-  assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index) })),
+  assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),
   guns: array(shape({ at: point, builtDay: number, paid: number })),
   clearedCells: array(cell),
   lifts: (value) => Array.isArray(value) && value.length <= MAX_LIFT_SLOTS && value.every(lift) &&
@@ -175,6 +175,7 @@ const fields: Record<keyof PersistedState, Check> = {
   rngState: number,
   nightRecap: nullable(recap),
   lastWinter: optional(winterRecord),
+  dayHistory: array(shape({ day: index, fare, snow, weather, recap, ...numbers("snowCost", "constructionDue", "closingCash") })),
   seasonDays: array(seasonDay),
   beatLog: array(broadcast),
   career: array(winterRecord),

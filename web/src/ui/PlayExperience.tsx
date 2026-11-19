@@ -2,6 +2,7 @@
 
 import { TALENT } from "@/game/talents";
 
+import { MapLayers } from "./MapLayers";
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
@@ -17,6 +18,7 @@ import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { CoachCard } from "./CoachCard";
 import { useCoach } from "./coachStore";
+import { useSettings } from "./settingsStore";
 import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
@@ -38,16 +40,33 @@ import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
-import { StoryLogSheet } from "@/ui/StoryLog";
+import { Office, type OfficeTab } from "./Office";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
-export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
-  const [storyOpen, setStoryOpen] = useState(false);
+export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | "load" | "settings") => void }) {
+  const [officeTab, setOfficeTab] = useState<OfficeTab | null>(null);
+  const resumeOfficeDay = useRef(false);
+  const officeTrigger = useRef<HTMLElement | null>(null);
+  const openOffice = (tab: OfficeTab) => {
+    const game = useGameStore.getState();
+    officeTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    resumeOfficeDay.current = game.phase === "day" && !game.paused;
+    if (resumeOfficeDay.current) game.togglePause();
+    setOfficeTab(tab);
+  };
+  const closeOffice = () => {
+    setOfficeTab(null);
+    const game = useGameStore.getState();
+    if (resumeOfficeDay.current && !document.hidden && game.phase === "day" && game.paused) game.togglePause();
+    resumeOfficeDay.current = false;
+    officeTrigger.current?.focus({ preventScroll: true });
+  };
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
+  const lowGraphics = useSettings(s => s.graphicsQuality === "low");
   const coaching = useCoach((s) => s.index < TIPS.length);
   useEffect(() => {
     if (!hydrated) return;
@@ -127,7 +146,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === "hidden") {
-        useGameStore.setState({ paused: true });
+        resumeOfficeDay.current = false;
+        if (!useGameStore.getState().paused) useGameStore.getState().togglePause();
         flushSave();
       }
     };
@@ -181,8 +201,8 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
     >
       <Canvas
         className="block h-full w-full touch-none"
-        shadows="percentage"
-        dpr={[1, 2]}
+        shadows={lowGraphics ? false : "percentage"}
+        dpr={lowGraphics ? 1 : [1, 2]}
         camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
         gl={{
           antialias: true,
@@ -212,7 +232,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !storyOpen && <CoachCard slot="day" />}
+          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeTab && <CoachCard slot="day" />}
           {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
         {showNote && !placementActive && (
@@ -247,6 +267,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
                   }}
                 />
               )}
+              <MapLayers />
               <button type="button" aria-pressed={showBuildGrid} onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
                 className="key press min-h-11 px-3 text-sm font-extrabold">Grid {showBuildGrid ? "on" : "off"}</button>
               <RecenterButton onClick={requestRecenter} />
@@ -274,20 +295,21 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
                 buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
                 setBuildOpen(true);
               }}
-              onStoryLog={() => setStoryOpen(true)}
+              onOffice={() => openOffice("Desk")}
+              onStoryLog={() => openOffice("Reports")}
               onGuests={() => setGuestsOpen(true)}
               onCloseHill={skipToClose}
               openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
               onConfirmMenuChange={setMenuConfirmOpen}
-              onLeave={onLeave}
+              onLeave={() => onLeave()}
             />
           </div>
           )}
         </div>
       )}
 
-      {storyOpen && <StoryLogSheet onClose={() => setStoryOpen(false)} />}
+      {officeTab && <Office initial={officeTab} onClose={closeOffice} onLeave={onLeave} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}
@@ -303,7 +325,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           setBuildOpen(false);
         }}
       />
-      <NightRecapSheet />
+      <NightRecapSheet onOffice={() => openOffice("Desk")} />
       <FounderPick />
       <div className="pointer-events-none absolute inset-x-3 top-[max(0.6rem,env(safe-area-inset-top))] z-[70] mx-auto max-w-md">
         <div className={saveNotice ? "key pointer-events-auto flex items-center gap-2 p-1 pl-3" : undefined}>
@@ -320,7 +342,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
           )}
         </div>
       </div>
-      <WinterReviewSheet />
+      <WinterReviewSheet onOffice={() => openOffice("Reports")} />
     </div>
   );
 }

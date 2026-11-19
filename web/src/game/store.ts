@@ -8,6 +8,7 @@ import type { PaintStroke } from "./paintedTrail";
 import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
 import { STORY_BEATS } from "./content";
+import { applyRule, newReplay, type Replay, type RuleName, type RuleArgs } from "./replay";
 import * as rules from "./rules";
 import {
   createInitialState,
@@ -213,6 +214,13 @@ function initialSaveKey(): string {
   return slotKey(readActiveSlot(storage));
 }
 
+let sessionReplay: Replay | null = null;
+export function resetSessionReplay() { sessionReplay = null; }
+
+export function exportSessionReplay() {
+  return sessionReplay ?? newReplay(useGameStore.getState());
+}
+
 export const useGameStore = create<GameStore>()(
   persist<GameStore, [], [], SavedRead>(
     (set, get) => {
@@ -221,37 +229,49 @@ export const useGameStore = create<GameStore>()(
         set(update);
         flushSave();
       };
+      function action<K extends RuleName>(rule: K, immediate = true) {
+        return (...args: RuleArgs<K>) => {
+          const current = get();
+          const next = applyRule(current, rule, args);
+          if (next === current) return;
+          // Checkpoint long sessions to bound the memory used by frame-by-frame inputs.
+          if (!sessionReplay || sessionReplay.actions.length >= 30_000) sessionReplay = newReplay(current);
+          sessionReplay.actions.push({ rule, args });
+          set(next);
+          if (immediate) flushSave();
+        };
+      }
       return {
         ...createInitialState(freshSeed()),
         saveNotice: null,
         dismissSaveNotice: () => commit(() => ({ saveNotice: null })),
-        tick: (deltaMs) => set((s) => rules.tick(s, deltaMs)),
-        togglePause: () => commit((s) => rules.togglePause(s)),
-        skipToClose: () => commit((s) => rules.skipToClose(s)),
-        openNightIfReady: () => commit((s) => rules.openNightIfReady(s)),
-        setPendingFare: (f) => commit((s) => rules.setPendingFare(s, f)),
-        setPendingSnow: (x) => commit((s) => rules.setPendingSnow(s, x)),
-        sleep: () => commit((s) => rules.sleep(s)),
-        takeLoan: () => commit((s) => rules.takeLoan(s)),
-        repayLoan: () => commit((s) => rules.repayLoan(s)),
-        setFollowId: (id) => set((s) => rules.setFollowId(s, id)),
-        setBuildMode: (on) => set((s) => rules.setBuildMode(s, on)),
-        setSelectedLiftType: (t) => set((s) => rules.setSelectedLiftType(s, t)),
-        placeLift: (req) => commit((s) => rules.placeLift(s, req)),
-        undoLift: () => commit((s) => rules.undoLift(s)),
-        closeLift: (index) => commit((s) => rules.closeLift(s, index)),
-        commitPaint: (strokes, glade) => commit((s) => rules.commitPaint(s, strokes, glade)),
-        placeAsset: (id, at) => commit((s) => rules.placeAsset(s, id, at)),
-        placeGun: (at) => commit((s) => rules.placeGun(s, at)),
-        beginLodgeUpgrade: () => commit((s) => rules.beginLodgeUpgrade(s)),
-        undoTrail: () => commit((s) => rules.undoTrail(s)),
-        buyBuilding: (id) => commit((s) => rules.buyBuilding(s, id)),
-        pickFounder: (id) => commit((s) => rules.pickFounder(s, id)),
-        acknowledgeBeat: () => commit((s) => rules.acknowledgeBeat(s)),
-        replyToSummitLink: (reply) => commit((s) => rules.replyToSummitLink(s, reply)),
-        decideSchoolContract: (decision) => commit((s) => rules.decideSchoolContract(s, decision)),
-        finishWinterReview: () => commit((s) => rules.finishWinterReview(s)),
-        startNewSeason: () => commit((s) => rules.startNewSeason(s)),
+        tick: action("tick", false),
+        togglePause: action("togglePause"),
+        skipToClose: action("skipToClose"),
+        openNightIfReady: action("openNightIfReady"),
+        setPendingFare: action("setPendingFare"),
+        setPendingSnow: action("setPendingSnow"),
+        sleep: action("sleep"),
+        takeLoan: action("takeLoan"),
+        repayLoan: action("repayLoan"),
+        setFollowId: action("setFollowId", false),
+        setBuildMode: action("setBuildMode", false),
+        setSelectedLiftType: action("setSelectedLiftType", false),
+        placeLift: action("placeLift"),
+        undoLift: action("undoLift"),
+        closeLift: action("closeLift"),
+        commitPaint: action("commitPaint"),
+        placeAsset: action("placeAsset"),
+        placeGun: action("placeGun"),
+        beginLodgeUpgrade: action("beginLodgeUpgrade"),
+        undoTrail: action("undoTrail"),
+        buyBuilding: action("buyBuilding"),
+        pickFounder: action("pickFounder"),
+        acknowledgeBeat: action("acknowledgeBeat"),
+        replyToSummitLink: action("replyToSummitLink"),
+        decideSchoolContract: action("decideSchoolContract"),
+        finishWinterReview: action("finishWinterReview"),
+        startNewSeason: action("startNewSeason"),
         nextTalentHint: () => rules.nextTalentHint(get()),
       };
     },
@@ -260,7 +280,10 @@ export const useGameStore = create<GameStore>()(
       version: SAVE_VERSION,
       storage: saveStorage(),
       partialize: toPersisted,
-      merge: (persisted, current) => hydrate(persisted as SavedRead | undefined, current),
+      merge: (persisted, current) => {
+        resetSessionReplay();
+        return hydrate(persisted as SavedRead | undefined, current);
+      },
     },
   ),
 );

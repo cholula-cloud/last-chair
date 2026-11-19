@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGameStore } from "@/game/store";
 import { SHADOW_LAYER } from "./kit";
+import { useReducedMotion } from "./useReducedMotion";
 import { smoothstep } from "./math";
 import { fbm } from "@/game/terrain";
 import { sceneCameraTarget } from "./sceneCamera";
@@ -38,6 +39,7 @@ const DAY = {
   top: new THREE.Color(PALETTE.skyTop),
   horizon: new THREE.Color(PALETTE.skyHorizon),
   sun: new THREE.Color(PALETTE.sunDay),
+  dawn: new THREE.Color("#ffd7ab"),
   dusk: new THREE.Color(PALETTE.sunDusk),
   hemiSky: new THREE.Color(PALETTE.hemiSkyDay),
   hemiGround: new THREE.Color(PALETTE.hemiGroundDay),
@@ -95,6 +97,7 @@ const SHADOW_TEXEL = 28 / 1024;
  * and weather from the store each frame, so it never re-renders on a tick.
  */
 export function Atmosphere() {
+  const reduced = useReducedMotion();
   const fog = useRef<THREE.Fog>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
   // Shadow-only proxies (trees, skiers) live on SHADOW_LAYER.
@@ -136,10 +139,11 @@ export function Atmosphere() {
 
   useFrame((_, delta) => {
     const { phase, clockMin, weather } = useGameStore.getState();
-    const goal = phase === "night" ? 1 : 0;
-    mood.current += (goal - mood.current) * Math.min(1, delta * 1.8);
+    const goal = phase === "night" || phase === "winter_review" || phase === "mountain2" ? 1 : 0;
+    mood.current += (goal - mood.current) * (reduced.current ? 1 : Math.min(1, delta * 1.8));
     const n = mood.current;
     const dusk = smoothstep(14 * 60, 16 * 60, clockMin) * (1 - n);
+    const dawn = (1 - smoothstep(7.5 * 60, 10 * 60, clockMin)) * (1 - n);
     sceneMood.night = n;
     sceneMood.dusk = dusk;
     const overcast = weather === "storm" ? 1.55 : weather === "snow" ? 1 : 0;
@@ -147,12 +151,12 @@ export function Atmosphere() {
     const top = sky.uniforms.topColor.value as THREE.Color;
     const hor = sky.uniforms.horizonColor.value as THREE.Color;
     top.copy(DAY.top).lerp(DAY.overcastTop, overcast * 0.6).lerp(NIGHT.top, n);
-    hor.copy(DAY.horizon).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
+    hor.copy(DAY.horizon).lerp(DAY.dawn, dawn * 0.4).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
     if (weather === "storm") hor.lerp(DAY.overcastTop, (1 - n) * 0.55);
     if (fog.current) fog.current.color.copy(hor);
 
     if (sun.current) {
-      sun.current.color.copy(DAY.sun).lerp(DAY.dusk, dusk).lerp(NIGHT.sun, n);
+      sun.current.color.copy(DAY.sun).lerp(DAY.dawn, dawn * 0.55).lerp(DAY.dusk, dusk).lerp(NIGHT.sun, n);
       sun.current.intensity =
         (2.5 - dusk * 0.6 - overcast * 0.9 + (weather === "thaw" ? 0.2 : 0)) *
           (1 - n) +

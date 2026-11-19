@@ -7,6 +7,8 @@ import * as THREE from "three";
 import type { LiftType } from "@/game/types";
 import type { LiftLine } from "@/game/descent";
 import { useGameStore } from "@/game/store";
+import { useReducedMotion } from "./useReducedMotion";
+import { pathSampler } from "./trail";
 import { placeGuests, type GuestPlacement } from "./guestPlacement";
 import { useStallMap } from "./useStallMap";
 import { bakeKit, METERS_TO_WORLD, SHADOW_LAYER_MASK, TOY_SCALE, useKit } from "./kit";
@@ -17,7 +19,7 @@ import { HATS, JACKETS, PALETTE } from "./palette";
 
 const SPLIT = ["jacket", "helmet"] as const;
 
-const MAX = 48;
+const MAX = 24;
 /** Kit skier (1.8 m) at toy scale so guests read on a phone. */
 const SCALE = METERS_TO_WORLD * TOY_SCALE;
 /** Hip height of the kit skier, metres. */
@@ -52,6 +54,9 @@ export function Guests({
   followedRef: FollowedRef;
 }) {
   const guests = useGameStore((s) => s.guests);
+  const trails = useGameStore(s => s.trails);
+  const routes = useMemo(() => trails.filter(t => t.open && t.path.length > 1).map(t => pathSampler(t.path)), [trails]);
+  const reduced = useReducedMotion();
   const assets = useGameStore((s) => s.assets);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const followId = useGameStore((s) => s.followId);
@@ -110,7 +115,12 @@ export function Guests({
     let tbars = 0;
     let chairs = 0;
     followedRef.current = null;
-    guests.forEach((g, gi) => {
+    const followedIndex = guests.findIndex(g => g.id === followId);
+    // Reserve the first slot for the followed skier, including on a crowded day.
+    const order = guests.map((_, i) => i);
+    if (followedIndex > 0) [order[0], order[followedIndex]] = [order[followedIndex], order[0]];
+    order.forEach(gi => {
+      const g = guests[gi];
       if (g.state === "pending" || g.state === "gone") return;
       const p = placements[gi];
       const isFollowed = g.id === followId;
@@ -151,6 +161,24 @@ export function Guests({
         else tbarMesh.setMatrixAt(tbars++, dummy.matrix);
       }
     });
+    // Fill spare instance slots with distant downhill traffic as the actual roster arrives.
+    const game = useGameStore.getState();
+    const target = Math.min(MAX, game.dayStats.guestsArrived);
+    if (game.phase === "day" && routes.length && n > 0) {
+      for (let j = 0; n < target; j++, n++) {
+        const sample = routes[j % routes.length];
+        const progress = (0.17 + j * 0.618 + (reduced.current ? 0 : game.clockMin / 27)) % 1;
+        const point = sample(progress);
+        const ahead = sample(Math.min(1, progress + 0.01));
+        dummy.position.set(point.x, point.y, point.z);
+        dummy.rotation.set(0.18, Math.atan2(ahead.x - point.x, ahead.z - point.z), 0, "YXZ");
+        dummy.scale.setScalar(SCALE * sizeScale);
+        dummy.updateMatrix();
+        for (const mesh of [base, jacket, hat, shadow]) mesh.setMatrixAt(n, dummy.matrix);
+        jacket.setColorAt(n, tint.set(JACKETS[j % JACKETS.length]));
+        hat.setColorAt(n, tint.set(HATS[j % HATS.length]));
+      }
+    }
     for (const m of [base, jacket, hat, shadow]) {
       m.count = n;
       m.instanceMatrix.needsUpdate = true;
@@ -160,7 +188,7 @@ export function Guests({
     tbarMesh.instanceMatrix.needsUpdate = true;
     chairMesh.count = chairs;
     chairMesh.instanceMatrix.needsUpdate = true;
-  }, [guests, placements, followId, placedLifts, followedRef, camera, controls]);
+  }, [guests, placements, followId, placedLifts, followedRef, camera, controls, routes, reduced]);
 
   useFrame(({ clock }) => {
     const p = followedRef.current;
@@ -169,7 +197,7 @@ export function Guests({
     if (!ring || !marker) return;
     ring.visible = marker.visible = !!p;
     if (!p) return;
-    const t = clock.elapsedTime;
+    const t = reduced.current ? 0 : clock.elapsedTime;
     ring.position.set(p.x, p.y + 0.03, p.z);
     const s = 1 + Math.sin(t * 4) * 0.08;
     ring.scale.set(s, s, s);

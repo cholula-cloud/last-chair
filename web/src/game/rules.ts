@@ -5,7 +5,7 @@ import {
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
   liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
-import { MOUNTAIN_CALENDARS, weekdayForDay, dayKind, usesWeekendGuestMix } from "./calendar";
+import { MOUNTAIN_CALENDARS, weekdayForDay, dayKind, guestMixForDay } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   assetRevenue,
@@ -99,7 +99,7 @@ import {
   type WeatherKind,
 } from "./types";
 
-export function canDemolish(state: Pick<GameState, "founderId">, id: BuildingId): boolean {
+export function canDemolish(state: Pick<GameState, "founderId">, id: AssetId): boolean {
   return state.founderId !== "elena" || id !== "warming_hut";
 }
 
@@ -800,7 +800,76 @@ export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
   if (!preview.ok) return state;
   const buildings = id === "cafe" || id === "shop" || id === "warming_hut"
     ? Array.from(new Set([...state.buildings, id])) : state.buildings;
-  return { ...state, ...purchaseConstruction(state, preview.cost, id), buildings, assets: [...state.assets, preview.placement] };
+  return { ...state, ...purchaseConstruction(state, preview.cost, id), buildings, assets: [...state.assets, { ...preview.placement, purchase: { day: state.dayIndex, minute: state.clockMin, price: preview.cost } }] };
+}
+
+/** Venue indices remain stable while guests are on the hill. */
+function venueChangeProblem(state: GameState, index: number, undo = false): string | null {
+  const asset = state.assets[index];
+  if (!asset || state.phase !== "day") return "Manage venues during the day.";
+  if (!undo && (state.clockMin !== DAY_START_MIN || state.guests.some(isOnHill))) return "Manage this venue before the lifts open.";
+  if (state.guests.some(g => g.state === "refuel" && g.venueIndex === index)) return "Wait for the guests to finish their visit.";
+  return null;
+}
+
+export function assetRemovalQuote(state: GameState, index: number) {
+  const asset = state.assets[index];
+  const purchase = asset?.purchase;
+  const undo = purchase?.day === state.dayIndex && purchase?.minute === state.clockMin;
+  let reason = venueChangeProblem(state, index, undo);
+  if (!reason && asset.id === "warming_hut" && state.assets.findIndex(a => a.id === asset.id) === index &&
+      !canDemolish(state, asset.id) && !undo) reason = "Elena keeps the original warming hut.";
+  if (!reason && asset.id === "ski_school" && state.schoolContract?.decision === "accepted" &&
+      state.schoolContract.day >= state.dayIndex && state.assets.filter(a => a.id === asset.id).length === 1) {
+    reason = "Keep the school open for the booked Readsboro visit.";
+  }
+  if (!reason && !undo && (purchase ? state.dayIndex < purchase.day + 2 : state.payables.some(p => p.what === asset.id))) {
+    reason = "Finish paying the construction installments first.";
+  }
+  const refund = purchase ? (undo ? constructionDraw(purchase.price).deposit : Math.floor(purchase.price / 2)) : 0;
+  return { undo, refund, reason };
+}
+
+export function removeAsset(state: GameState, index: number): GameState {
+  const { undo, refund, reason } = assetRemovalQuote(state, index);
+  if (reason) return state;
+  const asset = state.assets[index];
+  const assets = state.assets.filter((_, i) => i !== index);
+  const payables = [...state.payables];
+  if (undo && asset.purchase) {
+    // Two identical venues bought today have interchangeable installments. Remove exactly one pair.
+    for (const draw of constructionPayables(asset.purchase.price, state.dayIndex, asset.id)) {
+      const i = payables.findIndex(p => p.what === draw.what && p.amount === draw.amount && p.dueDay === draw.dueDay);
+      if (i < 0) return state;
+      payables.splice(i, 1);
+    }
+  }
+  const buildings = state.buildings.filter(id => id !== asset.id || assets.some(a => a.id === id));
+  return { ...state, assets, buildings, payables, cash: state.cash + refund,
+    constructionSpent: undo ? state.constructionSpent - refund : state.constructionSpent,
+    guests: state.guests.map(g => g.venueIndex === undefined ? g : {
+      ...g, venueIndex: g.venueIndex === index ? undefined : g.venueIndex > index ? g.venueIndex - 1 : g.venueIndex,
+    }),
+  };
+}
+
+export function checkAssetMove(state: GameState, index: number, at: XZ) {
+  const reason = venueChangeProblem(state, index);
+  if (reason) return { ok: false as const, reason };
+  const asset = state.assets[index];
+  const terminals = state.lifts.filter(l => l.confirmed).flatMap(l => {
+    const { bottom, top } = liftLineOf(l);
+    return [bottom, top];
+  });
+  const result = previewAssetPlacement(asset.id, at, state.lodgeTier, state.assets.filter((_, i) => i !== index), { terminals });
+  return result.ok ? { ...result, cost: 0 } : result;
+}
+
+export function moveAsset(state: GameState, index: number, at: XZ): GameState {
+  const check = checkAssetMove(state, index, at);
+  if (!check.ok) return state;
+  return { ...state, assets: state.assets.map((asset, i) => i === index
+    ? { ...check.placement, purchase: asset.purchase, styleId: asset.styleId } : asset) };
 }
 
 /** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */
@@ -873,7 +942,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     morningHeadline: `${state.morningHeadline} ${morningWeatherHeadline(state.weather)}`,
     phase: "day",
     paused: true,
-    guests: createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, state.dayIndex)),
+    guests: createInitialGuests(arrivals, rand, guestMixForDay(calendar, state.dayIndex)),
     dayStats: { ...emptyDayStats(), arrivals },
     lifts: resetLiftQueues(state.lifts),
     talentToast: null,
@@ -1078,6 +1147,10 @@ export function sleep(state: GameState): GameState {
     ...state,
     cash,
     debtMornings,
+    dayHistory: [...state.dayHistory, {
+      day: state.dayIndex, fare: state.fare, snow: state.snow, weather: state.weather, recap,
+      snowCost: costs.snowNight, constructionDue: costs.draws, closingCash: cash,
+    }],
     seasonDays: [...state.seasonDays, { day: state.dayIndex, fare: state.fare, snow: state.snow,
       arrivals: recap.arrivals, satisfaction: recap.satisfaction, closingReputation: state.reputation, ...(completedTier && { lodgeOpening: completedTier }),
       ...(recap.summitLinkReply && { summitLink: {
@@ -1138,6 +1211,7 @@ export function sleep(state: GameState): GameState {
     trails: state.trails.map((t, i) => ({
       ...t,
       snow: overnight.trails[i] ?? t.snow,
+      previousRuns: state.dayStats.runsByTrail[i] ?? 0,
       gunCovered: overnight.gunCoverage?.[i],
       groomed: overnight.groomCoverage?.[i],
     })),
@@ -1178,7 +1252,7 @@ export function sleep(state: GameState): GameState {
     seasonSeed: state.seasonSeed,
     weather: overnight.weather,
     surpriseLog: state.surpriseLog,
-  }, createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, nextDay)));
+  }, createInitialGuests(arrivals, rand, guestMixForDay(calendar, nextDay)));
   return {
     ...carried,
     phase: "day",

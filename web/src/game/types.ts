@@ -24,7 +24,7 @@ export type GuestState =
   | "depart"
   /** Left the car park for home; terminal, not drawn. */
   | "gone";
-export type PersonaId = "first_timer" | "regular";
+export type PersonaId = "first_timer" | "regular" | "family_pack" | "race_kid";
 export type TrailDifficulty = "green" | "blue" | "black";
 export type LiftType = "surface" | "chair";
 export type WeatherKind = "clear" | "snow" | "storm" | "thaw";

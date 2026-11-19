@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ADAPTIVE, CARELESS, STRATEGIES, formatTable, runAll, summarize, seedList, summarizeAll } from "./balance";
-import { checkFixedStrategies, checkFounderScores, checkStrategyScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
+import { checkFixedStrategies, checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices, meanWinterScore, storyCounts } from "./m3BalanceChecks";
 import { gateMetrics, gateScenarios } from "./m2gate";
 
 /**
@@ -21,14 +21,16 @@ describe.runIf(process.env.BALANCE_REPORT === "1")("balance report", () => {
   it("verifies the economy and prints the strategy table", { timeout: 1_800_000 }, () => {
     const n = Number(process.env.BALANCE_SEEDS ?? 40);
     const seeds = seedList(n);
-    const long = runAll(seeds);
+    const long = runAll(seeds, STRATEGIES, { checkMidwinter: true });
     const all = summarizeAll(long);
+    checkFrozenWinters(long);
     const adaptive = long.get(ADAPTIVE.id) ?? [];
     const accepted = checkWinterChoices(seeds, adaptive);
     for (const [id, runs] of [...long, ["adaptive/accept", accepted] as const]) {
       const net = runs.reduce((sum, run) => sum + run.endNetWorth, 0) / n;
       const summary = summarize(STRATEGIES.find((strategy) => strategy.id === id) ?? ADAPTIVE, runs);
       console.info(id, JSON.stringify({
+        ...(id !== "adaptive/accept" && { frozenHillsUnderPressure: runs.filter((run) => run.firstFrozenPressureDay !== null).length }),
         winterScore: meanWinterScore(runs).toFixed(1),
         netWorth: Math.round(net), solvent: runs.filter((run) => run.solvent).length,
         bankrupt: runs.filter((run) => run.wentBankrupt).length,

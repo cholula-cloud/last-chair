@@ -88,3 +88,10 @@ export function checkFixedStrategies(summaries: StrategySummary[]) {
   const middle = median(fixed.map((row) => combined.get(row.id)!));
   expect(combined.get(ADAPTIVE.id)).toBeGreaterThan(middle + 0.15);
 }
+
+export function checkFrozenWinters(strategies: Map<string, SeasonResult[]>) {
+  for (const [strategy, runs] of strategies) {
+    const pressured = runs.filter((run) => run.firstFrozenPressureDay !== null);
+    expect(pressured.length, strategy).toBeGreaterThanOrEqual(Math.ceil(runs.length / 2));
+  }
+}

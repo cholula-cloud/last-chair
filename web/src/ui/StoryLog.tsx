@@ -1,5 +1,7 @@
 "use client";
 
+import { MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { operatingGoalText } from "@/game/winterArc";
 import { TIPS } from "@/game/coach";
 import { STORY_BEATS, WINTER_GOAL } from "@/game/content";
 import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
@@ -20,11 +22,13 @@ export function StoryEntries() {
   const remaining = useGameStore(s => s.outcome === "playing" ? s.seasonLength - s.dayIndex + Number(s.phase !== "night") : 0);
   const netCash = useGameStore(liquidNetWorth);
   const days = useGameStore(s => s.seasonDays);
+  const operatingGoal = useGameStore(s => operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory));
   const moments = useGameStore(s => s.surpriseLog);
   const playing = useGameStore(s => s.outcome === "playing");
   const schoolOffer = useGameStore(s => s.pendingBeat === "school_bus");
   const school = useGameStore(s => s.schoolContract);
   const deal = useGameStore(s => s.summitLinkDecision);
+  const muted = useSettings(s => s.muted);
   const radio = useSettings(s => s.radioEnabled);
   const set = useSettings(s => s.set);
   const entries = [
@@ -46,6 +50,7 @@ export function StoryEntries() {
       <h3 className="font-extrabold">Winter goal</h3>
       <p>{WINTER_GOAL}</p>
       <p>{remaining} {remaining === 1 ? "day" : "days"} left · {formatMoney(netCash)} after debt and construction</p>
+      <p className="mt-2"><strong>Operating goals</strong> · {operatingGoal}</p>
       {(schoolOffer || school) && <p className="mt-2"><strong>Optional Readsboro goal</strong> · {
         school?.decision === "declined" ? "Visit declined."
           : school?.decision === "accepted" && school.pupilsTaught !== null
@@ -54,6 +59,7 @@ export function StoryEntries() {
       }</p>}
     </section>
     <div className="flex flex-wrap gap-2">
+      <button className="key min-h-11 px-3" aria-pressed={!muted} onClick={() => set({ muted: !muted })}>Sound {muted ? "off" : "on"}</button>
       <button className="key min-h-11 px-3" aria-pressed={radio} onClick={() => set({ radioEnabled: !radio })}>Radio {radio ? "on" : "off"}</button>
       {firstDay && tipIndex < TIPS.length && <button className="key min-h-11 px-3" onClick={() => useCoach.getState().skip()}>Skip tips</button>}
       <button className="key min-h-11 px-3" disabled={!firstDay && tipsReady} onClick={() => {

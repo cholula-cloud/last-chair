@@ -9,7 +9,7 @@ import {
   type ExportFile,
   type SlotNumber,
 } from "./saveSlots";
-import { activeSaveKey, discardPendingSave, flushSave, freshSeed, useGameStore, withoutSaving } from "./store";
+import { activeSaveKey, discardPendingSave, flushSave, freshSeed, resetSessionReplay, useGameStore, withoutSaving } from "./store";
 
 /** Store-level slot operations. Every one flushes the current slot before it moves away. */
 
@@ -29,6 +29,7 @@ function backUpIfUnreadable(key: string): void {
 }
 
 function resetInMemory(): void {
+  resetSessionReplay();
   useGameStore.setState({ ...createInitialState(freshSeed()), lastWinter: undefined, saveNotice: null });
 }
 

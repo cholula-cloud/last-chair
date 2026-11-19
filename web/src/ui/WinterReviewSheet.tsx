@@ -12,7 +12,7 @@ import { Sheet } from "@/ui/kit/Sheet";
 import { PinIcon } from "@/ui/kit/icons";
 import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
-export function WinterReviewSheet() {
+export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const phase = useGameStore((s) => s.phase);
   const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
   const founder = useGameStore(s => founderById(s.founderId)?.name);
@@ -118,6 +118,7 @@ export function WinterReviewSheet() {
             </p>;
           })}
         </details>
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={onOffice}>Office</button>
         <details>
           <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
           <StoryEntries />

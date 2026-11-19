@@ -69,6 +69,7 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  { to: 8, note: "Start the daily ledger with the next recorded settlement.", up: raw => ({ ...raw, dayHistory: [] }) },
 ];
 
 type MigrationResult =

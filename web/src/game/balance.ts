@@ -19,7 +19,7 @@ import {
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
 import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
-import { liquidNetWorth, loanOffered, morningCash } from "./economy";
+import { dailyCosts, liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
 import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
 import type { NightRecap } from "./sim";
@@ -27,6 +27,7 @@ import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { TERRAIN } from "./terrain";
 import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPreset } from "./types";
+import { HEALTHY_GUEST_SCORE, VACATION_WAIT_GOAL } from "./winterArc";
 import { winterRecord } from "./winterMemory";
 import { outlookFor } from "./weather";
 
@@ -253,6 +254,7 @@ export type SeasonResult = {
   schoolVisits: NonNullable<NightRecap["facts"]["schoolBus"]>[];
   solvent: boolean;
   winterScore: number;
+  firstFrozenPressureDay: number | null;
   schoolContract: GameState["schoolContract"];
   summitLinkDecision: GameState["summitLinkDecision"];
   firstShortfallOfferedLoan: boolean;
@@ -279,11 +281,32 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
   return buyBuilding(state, action);
 }
 
+/**
+ * Continue the same night-14 hill with its fare, service and buildings frozen.
+ * A single failed operating day disproves that this hill could coast to close.
+ */
+function firstFrozenPressureDay(halfway: GameState): number | null {
+  let state = sleep(setPendingSnow(setPendingFare(halfway, halfway.fare), halfway.snow));
+  while (state.phase === "day") {
+    let night = skipToClose(state);
+    if (night.pendingBeat === "school_bus") night = decideSchoolContract(night, "declined");
+    else if (night.pendingBeat === "summit_link") night = replyToSummitLink(night, "declined");
+    else night = acknowledgeBeat(night);
+    const recap = night.nightRecap!;
+    night = setPendingSnow(setPendingFare(night, halfway.fare), halfway.snow);
+    if (morningCash(night) < 0 || recap.cashDelta < dailyCosts(night).snowNight ||
+        recap.satisfaction < HEALTHY_GUEST_SCORE || !recap.facts.dispatched ||
+        recap.facts.avgWaitMin > VACATION_WAIT_GOAL) return night.dayIndex;
+    state = sleep(night);
+  }
+  return winterRecord(state).goalMet ? null : state.dayIndex;
+}
+
 export function runSeason(
   seed: number,
   strategy: Strategy,
   founderId: FounderId = "elena",
-  options: { seasonLength?: number; takeLoan?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
+  options: { seasonLength?: number; takeLoan?: boolean; checkMidwinter?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
   const length = options.seasonLength ?? hill.seasonLength;
@@ -292,6 +315,7 @@ export function runSeason(
   const days: DayRecord[] = [];
   let minCash = state.cash;
   let firstShortfallOfferedLoan = false;
+  let frozenPressureDay: number | null = null;
   let runs = 0;
   let waitSum = 0;
   let dispatched = 0;
@@ -348,6 +372,7 @@ export function runSeason(
       cashDelta: recap.cashDelta,
       problem: recap.problem,
     });
+    if (options.checkMidwinter && state.dayIndex === 14 && length > 14) frozenPressureDay = firstFrozenPressureDay(state);
     const plan = strategy.night(ctxOf());
     state = setPendingSnow(setPendingFare(state, plan.fare), plan.snow);
     const projected = morningCash(state);
@@ -380,6 +405,7 @@ export function runSeason(
     endNetWorth: record.netWorth,
     solvent: record.goalMet,
     winterScore: record.score.total,
+    firstFrozenPressureDay: frozenPressureDay,
     events: state.surpriseLog,
     schoolOffers,
     vivianOffers,

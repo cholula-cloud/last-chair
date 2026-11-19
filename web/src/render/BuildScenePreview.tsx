@@ -12,7 +12,6 @@ import { BrushCursor } from "./BrushCursor";
 import { LiftGhost } from "./LiftGhost";
 import { DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
 import { PALETTE } from "./palette";
-import { SlopeGrid } from "./SlopeGrid";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
 
@@ -93,13 +92,12 @@ function LiftPreview() {
  * adds no stroke point does not rebuild the ribbon.
  */
 function TrailPreview() {
-  const { strokes, activeStroke, review, erasing, moveCamera, showSteepness } = usePlacementDraft(useShallow((s) => ({
+  const { strokes, activeStroke, review, erasing, moveCamera } = usePlacementDraft(useShallow((s) => ({
     strokes: s.strokes,
     activeStroke: s.activeStroke,
     review: s.review,
     erasing: s.erasing,
     moveCamera: s.moveCamera,
-    showSteepness: s.showSteepness,
   })));
   const lifts = useGameStore((s) => s.lifts);
   const trails = useGameStore((s) => s.trails);
@@ -121,7 +119,6 @@ function TrailPreview() {
   const color = painted ? ribbonColor(painted.difficulty, !painted.reason) : DIFFICULTY_COLOR.green;
   return (
     <>
-      {!review && showSteepness && <SlopeGrid />}
       {!review && !erasing && (
         <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
       )}

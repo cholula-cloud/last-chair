@@ -506,3 +506,5 @@ body {
     overscroll-behavior: contain;
   }
 }
+
+:root[data-text-size="large"] { font-size: 118.75%; }

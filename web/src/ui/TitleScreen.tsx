@@ -195,28 +195,26 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
 }
 
 function SettingsView({ onBack }: { onBack: () => void }) {
-  const { voiceVolume, captions, reduceMotion, defaultSpeed, set } = useSettings();
+  const settings = useSettings();
+  const { captions, reduceMotion, defaultSpeed, set } = settings;
   const volumeId = useId();
   const speedId = useId();
   return (
     <SubView title="Settings" onBack={onBack}>
-      <div className="flex flex-col gap-2">
-        <label htmlFor={volumeId} className="flex items-center justify-between font-extrabold">
-          <span>Voice volume</span>
-          <span aria-hidden="true">{voiceVolume}%</span>
-        </label>
-        <input
-          id={volumeId}
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={voiceVolume}
-          aria-valuetext={`${voiceVolume} percent`}
-          onChange={(e) => set({ voiceVolume: Number(e.target.value) })}
-          className="h-11 w-full accent-[var(--sign-green)]"
-        />
-      </div>
+      <Toggle label="Sound" on={!settings.muted} onChange={on => set({ muted: !on })} />
+      {([["masterVolume", "Master volume"], ["musicVolume", "Music volume"], ["effectsVolume", "Effects volume"], ["voiceVolume", "Voice volume"]] as const).map(([key, label]) => (
+        <div key={key} className="flex flex-col gap-2">
+          <label htmlFor={volumeId + key} className="flex justify-between font-extrabold">
+            {label}<span aria-hidden="true">{settings[key]}%</span>
+          </label>
+          <input id={volumeId + key} type="range" min={0} max={100} step={5} value={settings[key]}
+            aria-valuetext={settings[key] + " percent"} onChange={e => set({ [key]: Number(e.target.value) })}
+            className="h-11 w-full accent-[var(--sign-green)]" />
+        </div>
+      ))}
+      <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
+      <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />
+      <Toggle label="Pattern aids" on={settings.patternAids} onChange={on => set({ patternAids: on })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
       <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
       <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">
@@ -252,8 +250,8 @@ function CreditsView({ onBack }: { onBack: () => void }) {
   );
 }
 
-export function TitleScreen({ onStart }: { onStart: () => void }) {
-  const [view, setView] = useState<View>("main");
+export function TitleScreen({ onStart, initialView = "main" }: { onStart: () => void; initialView?: View }) {
+  const [view, setView] = useState<View>(initialView);
   const [summaries, setSummaries] = useState<SlotSummary[]>(() => readAllSlotSummaries());
   const [active, setActive] = useState<SlotNumber>(() => readActiveSlot());
   const [confirm, setConfirm] = useState<Confirm | null>(null);

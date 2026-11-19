@@ -22,8 +22,9 @@ export const DUTCH_HILL_CALENDAR: CalendarDef = { earlyThrough: 9, lateFrom: 20 
 export function chainRow(prev: WeatherKind, day: number, calendar = DUTCH_HILL_CALENDAR): Outlook {
   const [clear, snow, storm, thaw] = TRANSITIONS[prev];
   const thawInSeason = thaw * (day <= calendar.earlyThrough ? 0.7 : day >= calendar.lateFrom ? 1.3 : 1);
-  const total = clear + snow + storm + thawInSeason;
-  return { clear: clear / total, snow: snow / total, storm: storm / total, thaw: thawInSeason / total };
+  const stormInSeason = storm * (day >= 8 && day <= 14 ? 1.5 : 1);
+  const total = clear + snow + stormInSeason + thawInSeason;
+  return { clear: clear / total, snow: snow / total, storm: stormInSeason / total, thaw: thawInSeason / total };
 }
 
 function drawKind(row: Outlook, unit: number): WeatherKind {

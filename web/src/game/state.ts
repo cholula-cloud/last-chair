@@ -68,6 +68,17 @@ export type LastDay = {
   snow: SnowPreset;
 };
 
+export type DayReport = {
+  day: number;
+  fare: FarePreset;
+  snow: SnowPreset;
+  weather: WeatherKind;
+  recap: NightRecap;
+  snowCost: number;
+  constructionDue: number;
+  closingCash: number;
+};
+
 export type SeasonDay = Pick<LastDay, "fare" | "snow" | "arrivals" | "satisfaction"> & {
   day: number;
   /** Missing on days settled before daily reputation was recorded. */
@@ -141,6 +152,7 @@ export type PersistedState = {
   surpriseLog: SurpriseEntry[];
   /** Set at Sleep; shown as deltas on the next night's recap. */
   lastDay: LastDay | null;
+  dayHistory: DayReport[];
   seasonDays: SeasonDay[];
   beatLog: { id: StoryBeatId; day: number | null }[];
   career: WinterRecord[];
@@ -185,6 +197,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     nightRecap: null,
     surprise: null,
     surpriseLog: [],
+    dayHistory: [],
     seasonDays: [],
     beatLog: [],
     career: [],
@@ -227,6 +240,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
 export function toPersisted(state: PersistedState): PersistedState {
   return {
     mountainId: state.mountainId,
+    dayHistory: state.dayHistory,
     seasonDays: state.seasonDays,
     beatLog: state.beatLog,
     career: state.career,
@@ -295,4 +309,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;

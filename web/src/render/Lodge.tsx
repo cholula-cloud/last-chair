@@ -7,6 +7,8 @@ import { LODGE_FOOTPRINT, type AssetId, type LodgeTier, type PlacedAsset } from 
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { requestLodge, usePlacementDraft } from "@/ui/placementDraft";
+import { useReducedMotion } from "./useReducedMotion";
+import { pathSampler } from "./trail";
 import { sceneMood } from "./Atmosphere";
 import { box, merge, placeParts, type Part } from "./geo";
 import {
@@ -68,7 +70,6 @@ function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Pla
   const list: Placement[] = [
     { name: "base-lodge", x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B * [1, 1.17, 1.31][tier - 1] },
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
-    { name: "snowcat", ...SNOWCAT_POS, scale: B * 1.25 },
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   ];
   for (const asset of assets) {
@@ -165,6 +166,12 @@ export function Village() {
   const shopKit = useKit("ski-shop");
   const hutKit = useKit("warming-hut");
   const catKit = useKit("snowcat");
+  const cat = bakeKit(catKit);
+  const catRef = useRef<THREE.Group>(null);
+  const reduced = useReducedMotion();
+  const trail = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength && s.pendingSnow !== "minimal"
+    ? s.trails.find(run => run.open && !run.glade && run.path.length > 1)?.path : undefined);
+  const groom = useMemo(() => trail && pathSampler(trail), [trail]);
   const lampKit = useKit("lamp-post");
 
   const { body, glow } = useMemo(() => {
@@ -174,7 +181,6 @@ export function Village() {
       cafe: cafeKit,
       "ski-shop": shopKit,
       "warming-hut": hutKit,
-      snowcat: catKit,
       "lamp-post": lampKit,
     };
     const bodies: THREE.BufferGeometry[] = [];
@@ -191,7 +197,7 @@ export function Village() {
     if (additions.length > 0) bodies.push(merge(additions));
 
     return { body: mergePlaced(bodies), glow: mergePlaced(glows) };
-  }, [assets, tier, construction, lodgeKit, houseKit, cafeKit, shopKit, hutKit, catKit, lampKit]);
+  }, [assets, tier, construction, lodgeKit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
 
   useEffect(
     () => () => {
@@ -226,7 +232,21 @@ export function Village() {
     m.instanceMatrix.needsUpdate = true;
   }, []);
 
-  useFrame(() => {
+  useFrame(({ clock }) => {
+    if (catRef.current) {
+      const cat = catRef.current;
+      if (groom) {
+        const cycle = reduced.current ? 0.55 : (clock.elapsedTime / 90) % 2;
+        const t = cycle <= 1 ? cycle : 2 - cycle;
+        const p = groom(t);
+        const next = groom(Math.max(0, Math.min(1, t + (cycle < 1 ? 0.008 : -0.008))));
+        cat.position.set(p.x, p.y, p.z);
+        cat.rotation.y = Math.atan2(next.x - p.x, next.z - p.z);
+      } else {
+        cat.position.set(SNOWCAT_POS.x, TERRAIN.height(SNOWCAT_POS.x, SNOWCAT_POS.z) - 0.02, SNOWCAT_POS.z);
+        cat.rotation.y = SNOWCAT_POS.yaw;
+      }
+    }
     const k = Math.max(sceneMood.night, sceneMood.dusk * 0.6);
     if (glowMat.current) glowMat.current.color.setScalar(GLOW_DAY + (GLOW_NIGHT - GLOW_DAY) * k);
     if (poolMat.current) poolMat.current.opacity = 0.05 + k * 0.75;
@@ -234,6 +254,10 @@ export function Village() {
 
   return (
     <group>
+      <group name="snowcat" ref={catRef} scale={METERS_TO_WORLD * 1.25} dispose={null}>
+        <mesh geometry={cat.body} castShadow><meshLambertMaterial vertexColors /></mesh>
+        {cat.glow && <mesh geometry={cat.glow}><meshBasicMaterial vertexColors toneMapped={false} /></mesh>}
+      </group>
       <mesh geometry={body} castShadow receiveShadow>
         <meshLambertMaterial vertexColors />
       </mesh>

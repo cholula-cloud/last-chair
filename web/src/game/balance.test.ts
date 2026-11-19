@@ -18,7 +18,7 @@ import {
   type SeasonResult,
   type StrategySummary,
 } from "./balance";
-import { checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
+import { checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
 import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
@@ -38,7 +38,7 @@ const daysOf = (id: string, pick: (d: DayRecord) => boolean): DayRecord[] =>
   (runs.get(id) ?? []).flatMap((r) => r.days.filter(pick));
 
 beforeAll(() => {
-  runs = runAll(SEEDS, STRATEGIES);
+  runs = runAll(SEEDS, STRATEGIES, { checkMidwinter: true });
   sums = new Map(summarizeAll(runs, STRATEGIES).map((s) => [s.id, s]));
 }, 300_000);
 
@@ -144,4 +144,8 @@ it("settles independent winters and delivers booked school visits through the or
 it("keeps every founder's adaptive score within 15% of the median and every strategy mean below 90", { timeout: 120_000 }, () => {
   checkFounderScores(SEEDS, runs.get("adaptive") ?? []);
   checkStrategyScores(runs);
+});
+
+it("no day-14 operating policy can reliably coast through the vacation surge", () => {
+  checkFrozenWinters(runs);
 });

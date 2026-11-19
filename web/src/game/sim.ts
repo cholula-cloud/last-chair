@@ -1,11 +1,11 @@
 import { TALENT } from "./talents";
 import type { OperatingCosts } from "./economy";
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, usesWeekendGuestMix, weekdayForDay, type CalendarDef } from "./calendar";
+import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
-import { PERSONAS, skiMinutes } from "./personas";
+import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
@@ -45,7 +45,6 @@ import {
   type FarePreset,
   type FounderId,
   type Guest,
-  type PersonaId,
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
@@ -120,14 +119,11 @@ export function makeGuest(over: Partial<Guest> = {}): Guest {
 export function createInitialGuests(
   count: number,
   rand: Rand = Math.random,
-  weekend = false,
+  mix: GuestMix | boolean = "weekday",
 ): Guest[] {
   const seed = daySeed(rand);
-  const firstShare = weekend
-    ? PERSONAS.first_timer.weekendShare
-    : PERSONAS.first_timer.weekdayShare;
   const drawn = Array.from({ length: count }, (_, i) => {
-    const persona: PersonaId = rand() < firstShare ? "first_timer" : "regular";
+    const persona = drawPersona(rand(), mix);
     const [lo, hi] = PERSONAS[persona].targetRuns;
     const targetRuns = lo + Math.floor(rand() * (hi - lo + 1));
     const arriveAtMin = drawArrivalMin(rand);
@@ -157,7 +153,7 @@ export function schoolBusGuests(day: number, pupils: number): Guest[] {
   return Array.from({ length: pupils }, (_, i) => makeGuest({
     id: `school-${day}-${i}`,
     label: `Readsboro pupil ${i + 1}`,
-    persona: "first_timer",
+    persona: i % 3 === 2 ? "race_kid" : "first_timer",
     schoolPupil: true,
     state: "pending",
     arriveAtMin: SCHOOL_BUS_ARRIVAL_MIN,
@@ -248,8 +244,10 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
     return joinLine(guest);
   };
   const beginnerService = (guest: Guest): Guest | null => {
-    if (guest.persona !== "first_timer") return null;
     if (guest.schoolPupil && !guest.lesson) return visit(guest, ["ski_school"]);
+    if (guest.persona === "race_kid") return !guest.lesson ? visit(guest, ["ski_school"]) : null;
+    if (guest.persona === "family_pack") return !guest.rented ? visit(guest, ["rentals"]) : null;
+    if (guest.persona !== "first_timer") return null;
     return (!guest.rented ? visit(guest, ["rentals"]) : null) ??
       (!guest.lesson ? visit(guest, ["ski_school"]) : null);
   };
@@ -333,7 +331,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
         const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
         const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
-        if (!remote && !allHeld && energy < 0.4 && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
+        if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
@@ -563,16 +561,16 @@ export const DEMAND = {
 export function fareDemandMultiplier(
   fare: FarePreset,
   expectedValue: number,
-  weekend: boolean,
+  mix: GuestMix | boolean,
 ): number {
   const ratio = expectedValue / FARE_PRICES[fare];
   let mult = 0;
   for (const p of Object.values(PERSONAS)) {
-    const share = weekend ? p.weekendShare : p.weekdayShare;
+    const share = personaShare(p, mix);
     const m = 1 + DEMAND.ELASTICITY * p.valueWeight * (ratio - DEMAND.REF_RATIO);
     mult += share * Math.max(DEMAND.MIN_MULT, Math.min(DEMAND.MAX_MULT, m));
   }
-  return mult;
+  return Math.max(DEMAND.MIN_MULT, Math.min(DEMAND.MAX_MULT, mult));
 }
 
 export type ArrivalInputs = {
@@ -597,7 +595,7 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   if (weekend) base = Math.round(base * 1.3);
   else if (inHolidayWeek(calendar, opts.dayIndex)) base = Math.round(base * 1.15);
   const expected = expectedHillValue(opts.reputation ?? DEMAND.START_REPUTATION, opts.buildings, opts.talentsOwned);
-  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, usesWeekendGuestMix(calendar, opts.dayIndex)));
+  base = Math.round(base * fareDemandMultiplier(opts.fare, expected, guestMixForDay(calendar, opts.dayIndex)));
   if (opts.weather === "snow") base += 3;
   if (opts.weather === "storm") base -= TALENT.earlyPlow.learned(opts.talentsOwned) ? TALENT.earlyPlow.stormPenalty : 5;
   if (opts.weather === "thaw") base -= 4;

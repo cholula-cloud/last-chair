@@ -27,7 +27,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 
 | Area | What exists |
 |---|---|
-| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v7 with validation and recovery |
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v8 with validation and recovery |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48), lift tool with cable ghost (L-A), visible brush and ribbon (L-B), lease boundary with a fixed far forest (L-C) |
 | Season | Seeded forecast, storms and thaw runs, chair wind holds, 28-day calendar with weekends and holiday weeks |

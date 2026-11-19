@@ -31,6 +31,7 @@ try {
   await newWinter.waitFor({ timeout: 20000 });
   await newWinter.tap();
   const founder = page.getByRole("button", { name: /Elena Vargas/ });
+  await page.getByRole("button", { name: "Skip opening", exact: true }).tap();
   await founder.waitFor({ timeout: 20000 });
   assert.deepEqual(await page.evaluate(() => ["last-chair-v1", "last-chair-v1-backup", "unrelated-preference"]
     .map((key) => localStorage.getItem(key))), [null, null, "kept"]);

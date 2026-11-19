@@ -7,24 +7,10 @@
  */
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
-import { registerHooks } from "node:module";
+import "./register-game.mjs";
 import path from "node:path";
 import { chromium, webkit } from "playwright";
 
-// Load the game's exact terrain/rules for coordinates and the prepared save.
-registerHooks({
-  resolve(specifier, context, next) {
-    if (context.parentURL?.includes("/src/game/") && specifier.startsWith(".") && !/\.[cm]?[jt]sx?$/.test(specifier)) {
-      return next(specifier + ".ts", context);
-    }
-    return next(specifier, context);
-  },
-  load(url, context, next) {
-    return next(url, url.includes("/src/game/") && url.endsWith(".ts")
-      ? { ...context, format: "module-typescript" }
-      : context);
-  },
-});
 const [{ TERRAIN }, { createInitialState, SAVE_KEY, SAVE_VERSION, toPersisted },
   { checkPaint, commitPaint, pickFounder, placeLift, trailOptions }, { REFERENCE_TOPS }, { STANDARD_BRUSH_WIDTH }] =
   await Promise.all([import("../src/game/terrain.ts"), import("../src/game/state.ts"), import("../src/game/rules.ts"),
@@ -261,6 +247,7 @@ export async function buildOpening(page, cdp) {
 
 async function opening(page, cdp, engine) {
   await openPlay(page);
+  await click(page, "Skip opening");
   await click(page, /Elena Vargas/);
   await page.getByText(/Day 1\/\d+/).waitFor();
   const scriptedSeconds = await buildOpening(page, cdp);

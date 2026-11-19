@@ -4,7 +4,7 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
     const s = { radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: true, defaultSpeed: 4 as const };
-    expect(cleanSettings(s)).toEqual(s);
+    expect(cleanSettings(s)).toEqual({ ...DEFAULT_SETTINGS, ...s });
   });
 
   it("preserves the fastest setting from older winters", () => {

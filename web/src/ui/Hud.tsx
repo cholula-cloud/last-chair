@@ -414,6 +414,7 @@ export function ActionBar({
   onConfirmMenuChange,
   onLeave,
   onStoryLog,
+  onOffice,
 }: {
   buildActive: boolean;
   onBuild: () => void;
@@ -425,6 +426,7 @@ export function ActionBar({
   /** Saves and returns to the title screen. */
   onLeave?: () => void;
   onStoryLog?: () => void;
+  onOffice: () => void;
 }) {
   const menuRef = useRef<HTMLButtonElement>(null);
   const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
@@ -496,6 +498,7 @@ export function ActionBar({
         active={buildActive}
       />
       <BarButton icon={<GuestsIcon />} label="Guests" onClick={onGuests} />
+      <BarButton icon={<FlagIcon />} label="Office" onClick={onOffice} />
       <button
         type="button"
         data-coach="close"

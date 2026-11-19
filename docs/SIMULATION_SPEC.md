@@ -383,7 +383,7 @@ The first eligible outstanding beat appears at closing. A delayed beat can appea
 
 ---
 
-## Save format (M3 v7)
+## Save format (M3 v8)
 
 Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
 
@@ -407,7 +407,7 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
-Schema v6 records the school contract and pass offer. Schema v7 adds dated operating and radio history and winter career records. Historical saves retain their recorded cash, season length and outcomes.
+Schema v6 records the school contract and pass offer. Schema v7 adds dated operating and radio history and winter career records. Schema v8 records each new nightly settlement in the Office ledger. Earlier saves begin with an empty ledger, preserving the outcomes already known. Historical saves retain their recorded cash, season length and outcomes.
 
 ---
 

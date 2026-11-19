@@ -1,6 +1,6 @@
 import { winterRecord } from "./winterMemory";
 import historicalSaves from "./__fixtures__/m3-saves.json";
-import { referencePaint } from "./__fixtures__/built-hill";
+import { createBuiltHill, referencePaint } from "./__fixtures__/built-hill";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
 import { validateSave } from "./saveValidation";
@@ -28,7 +28,7 @@ import {
 } from "./store";
 
 function dayState(dayIndex = 1) {
-  const state = toPersisted(createInitialState(7));
+  const state = toPersisted(createBuiltHill(7));
   return { ...state, dayIndex, weather: state.weatherDays[dayIndex - 1].kind, cash: 9160, founderId: "riley" as const, phase: "day" as const, paused: false };
 }
 const envelope = (state: unknown, extra: object = {}) => JSON.stringify({ state, version: SAVE_VERSION, ...extra });

@@ -35,6 +35,11 @@ export function inHolidayWeek(cal: CalendarDef, day: number): boolean {
   return cal.holidayWeeks.some(({ from, to }) => day >= from && day <= to);
 }
 
+export type GuestMix = "weekday" | "weekend" | "holiday";
+export function guestMixForDay(cal: CalendarDef, day: number): GuestMix {
+  return inHolidayWeek(cal, day) ? "holiday" : dayKind(cal, day);
+}
+
 export function usesWeekendGuestMix(cal: CalendarDef, day: number): boolean {
   return dayKind(cal, day) !== "weekday" || inHolidayWeek(cal, day);
 }

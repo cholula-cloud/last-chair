@@ -67,6 +67,8 @@ async function startPlay(page) {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "New winter", exact: true }).click({ timeout: 30_000 });
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Next card", exact: true }).click();
+  await page.getByRole("button", { name: "Choose your founder", exact: true }).click();
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: /Elena Vargas/i }).click();
   await waitSceneReady(page);

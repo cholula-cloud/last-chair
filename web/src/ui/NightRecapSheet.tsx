@@ -320,7 +320,7 @@ function Choices({
   );
 }
 
-export function NightRecapSheet() {
+export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
   const night = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s : null));
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
@@ -464,6 +464,7 @@ export function NightRecapSheet() {
           </RadioCard>
         )}
         {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={onOffice}>Office</button>
         <details className="panel mt-4 p-3">
           <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
           <StoryEntries />

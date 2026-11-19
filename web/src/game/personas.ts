@@ -1,3 +1,4 @@
+import type { GuestMix } from "./calendar";
 import type { PersonaId, TrailDifficulty } from "./types";
 
 export type PersonaDef = {
@@ -8,6 +9,7 @@ export type PersonaDef = {
   /** Share of a weekday / weekend roster. */
   weekdayShare: number;
   weekendShare: number;
+  holidayShare: number;
   /** Energy at arrival (1 = fresh). */
   startEnergy: number;
   /** Energy spent by each finished run; the guest goes home at 0. */
@@ -29,8 +31,9 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     label: "First-timer",
     maxDifficulty: "green",
     preferred: "green",
-    weekdayShare: 0.6,
-    weekendShare: 0.4,
+    weekdayShare: 0.48,
+    weekendShare: 0.30,
+    holidayShare: 0.25,
     startEnergy: 1,
     energyPerRun: 0.13,
     skiMin: 14,
@@ -44,8 +47,9 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     label: "Regular",
     maxDifficulty: "black",
     preferred: "blue",
-    weekdayShare: 0.4,
-    weekendShare: 0.6,
+    weekdayShare: 0.34,
+    weekendShare: 0.45,
+    holidayShare: 0.35,
     startEnergy: 1,
     energyPerRun: 0.075,
     skiMin: 8,
@@ -54,7 +58,33 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     snowWeight: 1.1,
     valueWeight: 1.3,
   },
+  family_pack: {
+    id: "family_pack", label: "Family Pack", maxDifficulty: "blue", preferred: "green",
+    weekdayShare: 0.12, weekendShare: 0.17, holidayShare: 0.30,
+    startEnergy: 1, energyPerRun: 0.12, skiMin: 13, targetRuns: [5, 8],
+    queueWeight: 1.4, snowWeight: 0.9, valueWeight: 1.0,
+  },
+  race_kid: {
+    id: "race_kid", label: "Race Kid", maxDifficulty: "black", preferred: "black",
+    weekdayShare: 0.06, weekendShare: 0.08, holidayShare: 0.10,
+    startEnergy: 1, energyPerRun: 0.075, skiMin: 7, targetRuns: [9, 13],
+    queueWeight: 1.0, snowWeight: 1.4, valueWeight: 0.9,
+  },
 };
+
+export function personaShare(persona: PersonaDef, mix: GuestMix | boolean): number {
+  if (mix === "holiday") return persona.holidayShare;
+  return mix === "weekend" || mix === true ? persona.weekendShare : persona.weekdayShare;
+}
+
+export function drawPersona(draw: number, mix: GuestMix | boolean): PersonaId {
+  let cumulative = 0;
+  for (const persona of Object.values(PERSONAS)) {
+    cumulative += personaShare(persona, mix);
+    if (draw < cumulative) return persona.id;
+  }
+  return "race_kid";
+}
 
 /** Minutes one run takes at the reference trail length; worse snow is a bit slower. */
 export function skiMinutes(persona: PersonaId, snowQuality: number): number {
