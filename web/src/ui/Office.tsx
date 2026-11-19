@@ -1,63 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/game/base";
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
-import { CREW_TALENTS, founderById, STORY_BEATS } from "@/game/content";
-import { dailyCosts, liquidNetWorth, LOW_CASH, morningCash, payoffAmount } from "@/game/economy";
+import { CREW_TALENTS, founderById } from "@/game/content";
+import { dailyCosts, liquidNetWorth, morningCash, payoffAmount } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, openingStep } from "@/game/rules";
+import { expectedArrivals } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import type { GameState } from "@/game/state";
-import { useGameStore } from "@/game/store";
-import { surpriseRadio } from "@/game/surprises";
 import { FARE_LABELS, FARE_PRICES } from "@/game/types";
-import { outlookFor } from "@/game/weather";
 import { schoolMemory } from "@/game/winterMemory";
-import { ReplayNotes } from "./ReplayNotes";
 import { StoryEntries } from "./StoryLog";
-import { useSettings } from "./settingsStore";
-
-export type OfficeTab = "Desk" | "Money" | "Reports" | "Crew";
-const tabs: OfficeTab[] = ["Desk", "Money", "Reports", "Crew"];
-const keyClass = "key min-h-11 px-4 py-2 text-sm font-bold";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="panel space-y-2 p-4"><h3 className="display text-xl">{title}</h3>{children}</section>;
 }
 
-function Desk({ s }: { s: GameState }) {
-  const radio = useSettings(settings => settings.radioEnabled);
-  const forecast = outlookFor(s, 1);
-  const opening = openingStep(s);
-  const costs = dailyCosts(s);
-  const attention = [
-    opening && (opening === "lift" ? "Place your first lift." : "Paint a trail from your lift to the base."),
-    s.cash < LOW_CASH && "Cash is running low. Check your installments and loan balance in Money.",
-    costs.draws > 0 && `${formatMoney(costs.draws)} in construction payments comes due at closing.`,
-    s.schoolContract?.decision === "accepted" && s.schoolContract.day === s.dayIndex && "The Readsboro bus is scheduled for today.",
-  ].filter(Boolean);
-  const lastBeat = s.pendingBeat ? { day: s.dayIndex, id: s.pendingBeat } : s.beatLog.at(-1);
-  const lastMoment = s.surpriseLog.at(-1);
-  const lastLodge = s.seasonDays.findLast(d => d.lodgeOpening);
-  const broadcasts = [
-    ...(lastBeat ? [{ day: lastBeat.day, text: STORY_BEATS.find(b => b.id === lastBeat.id)?.radio }] : []),
-    ...(lastMoment ? [{ day: lastMoment.dayIndex, text: surpriseRadio(lastMoment).radio }] : []),
-    ...(lastLodge ? [{ day: lastLodge.day, text: `The crew finished the lodge addition. Dutch Hill reached Tier ${lastLodge.lodgeOpening}.` }] : []),
-  ].sort((a, b) => (b.day ?? 0) - (a.day ?? 0));
-  const latest = broadcasts[0];
-  return <>
-    <Section title={`Day ${s.dayIndex} at Dutch Hill`}><p>{s.morningHeadline}</p></Section>
-    <Section title="Winter goal"><p>Finish day {s.seasonLength} with enough cash to settle the loan and unpaid construction.</p>
-      <p>{formatMoney(liquidNetWorth(s))} after outstanding bills.</p><p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p></Section>
-    <Section title="Tomorrow’s forecast">{forecast ? <p>{Object.entries(forecast).map(([kind, p]) => `${kind} ${Math.round(100*p)}%`).join(" · ")}</p> : <p>This is closing day.</p>}</Section>
-    <Section title="Needs attention">{attention.length ? <ul className="list-disc space-y-1 pl-5">{attention.map(item => <li key={String(item)}>{item}</li>)}</ul> : <p>No outstanding notices.</p>}</Section>
-    <Section title="Route 100 Radio">{!radio ? <p>Radio is off.</p> : latest ? <p>{latest.day && <strong>Day {latest.day}. </strong>}{latest.text}</p> : <p>The first broadcast comes after the hill opens.</p>}</Section>
-  </>;
-}
-
-function Money({ s }: { s: GameState }) {
+export function Money({ s }: { s: GameState }) {
   const report = s.dayHistory.at(-1);
   const recap = s.nightRecap ?? report?.recap;
   const costs = dailyCosts(s);
@@ -93,7 +54,7 @@ function Money({ s }: { s: GameState }) {
   </>;
 }
 
-function Reports({ s }: { s: GameState }) {
+export function Reports({ s }: { s: GameState }) {
   return <>
     <Section title="Recap archive">{s.dayHistory.length === 0 && <p>Settled days appear here as this winter progresses.</p>}
       {s.dayHistory.slice().reverse().map(d => <details key={d.day}><summary className="min-h-11 cursor-pointer py-2 font-bold">Day {d.day} · {d.weather} · {formatMoney(d.recap.cashDelta, {signed:true})}</summary>
@@ -111,7 +72,7 @@ function Reports({ s }: { s: GameState }) {
   </>;
 }
 
-function Crew({ s }: { s: GameState }) {
+export function Crew({ s }: { s: GameState }) {
   const founder = founderById(s.founderId);
   const next = CREW_TALENTS.find(t => !s.talentsOwned.includes(t.id));
   const nextTier = s.lodgeTier === 1 ? 2 : s.lodgeTier === 2 ? 3 : null;
@@ -128,29 +89,4 @@ function Crew({ s }: { s: GameState }) {
     <Section title="Crew talents">{next && <p><strong>Next · {next.name}</strong> ({next.crew}). {next.effect}</p>}
       {CREW_TALENTS.filter(t => s.talentsOwned.includes(t.id)).map(t => <p key={t.id}><strong>{t.name}</strong> ({t.crew}). {t.effect}</p>)}</Section>
   </>;
-}
-
-export function Office({ initial, onClose, onLeave }: { initial: OfficeTab; onClose: () => void; onLeave: (view: "load" | "settings") => void }) {
-  const [tab, setTab] = useState(initial);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const active = useRef<HTMLButtonElement>(null);
-  const s = useGameStore();
-  useEffect(() => { dialog.current?.showModal(); }, []);
-  useEffect(() => { active.current?.scrollIntoView({ block: "nearest", inline: "center" }); }, [tab]);
-  return <dialog ref={dialog} aria-labelledby="office-title" onCancel={event => { event.preventDefault(); onClose(); }}
-    className="office-dialog fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none bg-snow-2 p-0 text-ink">
-    <div className="mx-auto flex h-full max-w-3xl flex-col pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]">
-      <header className="flex items-center justify-between gap-3 px-4 pt-3"><h2 id="office-title" className="display text-3xl">Dutch Hill Office</h2>
-        <button type="button" autoFocus className={keyClass} onClick={onClose}>Close Office</button></header>
-      <nav className="flex shrink-0 gap-2 overflow-x-auto p-4" aria-label="Office sections">{tabs.map(t =>
-        <button ref={tab === t ? active : undefined} key={t} type="button" data-office-tab={t} aria-pressed={tab === t} onClick={() => setTab(t)}
-          className={keyClass + (tab === t ? " key-solid [--key-fill:var(--sign-green)] [--key-ink:#fff]" : "")}>{t}</button>)}</nav>
-      <div key={tab} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4">
-        {tab === "Desk" && <><Desk s={s}/><ReplayNotes /><div className="flex gap-2"><button className={keyClass} onClick={() => onLeave("settings")}>Settings</button><button className={keyClass} onClick={() => onLeave("load")}>Save slots</button></div></>}
-        {tab === "Money" && <Money s={s}/>}
-        {tab === "Reports" && <Reports s={s}/>}
-        {tab === "Crew" && <Crew s={s}/>}
-      </div>
-    </div>
-  </dialog>;
 }

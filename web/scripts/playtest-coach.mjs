@@ -89,7 +89,7 @@ try {
         assert.equal(await view.getByRole("button", { name: layer, exact: true }).getAttribute("aria-pressed"), "true");
         await press("Back to recap");
         await officeButton.tap();
-        assert.equal(await page.locator('[data-office-tab="' + tab + '"]').getAttribute("aria-pressed"), "true");
+        assert.equal(await page.locator('[data-office-tab="' + tab + '"]').getAttribute("aria-selected"), "true");
         await press("Close Office");
         assert.deepEqual(await readWinter(), beforeInspection, "Map and Office inspections preserve the closed day");
         await guide.getByRole("button", { name: "Dismiss advice" }).tap();

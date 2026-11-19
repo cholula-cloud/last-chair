@@ -30,7 +30,7 @@ PR #49 smoothed the rendered ribbon where tight path turns folded quads into dar
 
 ### Roadmap order
 
-M2 implementation and its numerical checks shipped. Its uncoached opening remains a separate sign-off. M3 rows 25, 18, 19 and 20 shipped in that order. Use the [master roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for current row status.
+M2 implementation and its numerical checks shipped. Its uncoached opening remains a separate sign-off. M3 now covers the full 28-day winter, including four guest personas, founder coaching, map layers, the Office, vacation-week pressure and settlement. PR #80 integrates the remaining M3 rows. Device and external player sessions are optional. Use the [master roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for current row status.
 
 ## Corrections to earlier documents
 
@@ -1901,7 +1901,7 @@ Agent run of `playtest-p1.mjs` at the four viewports for M3. Accessibility spot 
 
 - Tuning one property breaks another; keep each change to one constant and rerun the full table.
 - External players find a blocking bug late; budget one fix round before the gate.
-- Real-device performance: nothing has run on a real iPhone yet (handoff known issues). Do one owner device run before recruiting.
+- Real-device performance: nothing has run on a real iPhone yet (handoff known issues). The owner can run this check when ready.
 
 ### Scope, docs, size, decisions
 
@@ -3367,6 +3367,24 @@ Built. Files: `web/src/ui/ColdOpen.tsx`, `coldOpenCards.ts` (cards and cues), `G
 **Guests want.** `guestsWantLine(recap, ctx)` names the largest unmet demand among long lift lines, a full lodge, crowded green trails and poor snow, or nothing. It reads the same satisfaction terms as the "Why?" list.
 
 **Coach tips.** `COACH_TIPS` in `game/coach.ts` is a table of ten tips with `when(context)` predicates; `nextTip` returns at most one. Seen ids live in the save as `tipsSeen` (schema 6; saves already past day 1 migrate as having seen every tip). Settings has a Coach tips switch. Row 26 extends the table and the context.
+
+---
+
+## F1: Office shell and Desk
+
+**Goal.** An Office button in the bottom bar opens a full-screen sheet that pauses the day and holds everything that is not building. F1 ships the shell and the Desk tab. Other tabs (Money F2, Stats F3, Reports, Crew F4, Atlas) join `OFFICE_TABS` when their rows land; no placeholders.
+
+**Scope.** The bar reads Menu, Build, Guests, Office, Close hill. Opening the Office pauses a running day and closing it resumes a day that was running (`openOffice` and `closeOffice` in `ui/officeStore.ts`; Office open and tab state live in that UI store, never in the save, and no sim state is added). The tab strip scrolls sideways with 44 px targets and keeps the active tab centred. The header has Settings (the same controls as the title screen, now `ui/SettingsControls.tsx`) and Save slots (names the active slot and offers the menu, where Load lists the slots). The Office reads and plans: fare and snow choices stay at Night.
+
+**Desk.** Today's weather and `morningHeadline`; the winter goal in detail from `goalChips`; tomorrow's forecast (and two-day for Amira) from `outlookFor`; a needs-attention list; the latest Route 100 Radio item.
+
+**Needs attention.** `game/attention.ts` `needsAttention(state)`, most urgent first: cash below zero, a built lift with no open trail, a wind hold, bad snow on the worst segment, the "Guests want" line (`guestsWantLine` over live `daySatisfaction`, shown from 5 arrivals), low cash (`LOW_CASH`). Each item is one sentence. Items with a place on the map carry `focus` points; tapping one closes the Office and frames them with the existing `requestFocus` camera glide. `game/deskRadio.ts` `latestRadio` picks the radio card: a local moment from yesterday or today, else the latest story beat heard, else the latest older local moment.
+
+**Not moved.** The winter review is a forced end-of-winter phase screen, not a reachable screen, and no recap archive exists yet. Both stay where they are; the Reports tab (F3) is where they join the Office.
+
+**Tests.** `attention.test.ts`, `deskRadio.test.ts`, `officeStore.test.ts` (pause, resume, already paused, phase moved on, repeated open or close, no sim change).
+
+**Done when.** Office opens and closes from the bar at 375 px, the day pauses and resumes, Desk shows all five blocks, a focus tap frames the problem and resumes the day, `npm run check` passes.
 
 ---
 

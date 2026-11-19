@@ -45,11 +45,11 @@ import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
-import { Office, type OfficeTab } from "./Office";
+import { openOffice as enterOffice, useOffice, type OfficeTabId } from "@/ui/officeStore";
+import { OfficeSheet } from "@/ui/OfficeSheet";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | "load" | "settings") => void }) {
-  const [officeTab, setOfficeTab] = useState<OfficeTab | null>(null);
   const inspectedLayer = useLayers(s => s.nightInspection ? s.layer : null);
   const mapTrigger = useRef<HTMLElement | null>(null);
   const openNightMap = (layer: MapLayer) => {
@@ -67,26 +67,25 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     return () => window.removeEventListener("keydown", onKey);
   }, [inspectedLayer]);
   useEffect(() => closeNightLayer, []);
-  const resumeOfficeDay = useRef(false);
-  const officeTrigger = useRef<HTMLElement | null>(null);
-  const openOffice = (tab: OfficeTab) => {
-    const game = useGameStore.getState();
-    officeTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    resumeOfficeDay.current = game.phase === "day" && !game.paused;
-    if (resumeOfficeDay.current) game.togglePause();
-    setOfficeTab(tab);
-  };
-  const closeOffice = () => {
-    setOfficeTab(null);
-    const game = useGameStore.getState();
-    if (resumeOfficeDay.current && !document.hidden && game.phase === "day" && game.paused) game.togglePause();
-    resumeOfficeDay.current = false;
-    requestAnimationFrame(() => officeTrigger.current?.focus({ preventScroll: true }));
-  };
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
+  const officeOpen = useOffice((s) => s.open);
+
+  const officeTrigger = useRef<HTMLElement | null>(null);
+  const openOffice = (tab?: OfficeTabId) => {
+    officeTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    enterOffice(tab);
+  };
+  useEffect(() => {
+    if (officeOpen || !officeTrigger.current) return;
+    const trigger = officeTrigger.current;
+    officeTrigger.current = null;
+    const target = trigger.isConnected ? trigger : document.querySelector<HTMLElement>('[data-bar="office"]');
+    target?.focus({ preventScroll: true });
+  }, [officeOpen]);
 
   const lowGraphics = useSettings(s => s.graphicsQuality === "low");
   const tipsEnabled = useSettings(s => s.tips);
@@ -170,7 +169,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === "hidden") {
-        resumeOfficeDay.current = false;
+        useOffice.setState({ resumeOnClose: false });
         if (!useGameStore.getState().paused) useGameStore.getState().togglePause();
         flushSave();
       }
@@ -224,7 +223,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       data-scene-ready={sceneReady ? "true" : undefined}
     >
       <Canvas
-        frameloop={officeTab ? "never" : "always"}
+        frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
         shadows={lowGraphics ? false : "percentage"}
         dpr={lowGraphics ? 1 : [1, 2]}
@@ -239,7 +238,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
-      <header data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
+      <header inert={officeOpen} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
         <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
           <TopBar
             mountainId={mountainId}
@@ -257,7 +256,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             }}
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeTab && <CoachCard slot="day" />}
+          {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeOpen && <CoachCard slot="day" />}
           {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
           {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
@@ -292,7 +291,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       </header>
 
       {phase === "day" && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
+        <div inert={officeOpen} className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2">
             {!placementActive && <ReadoutCard />}
             <OverlayLegend />
@@ -340,9 +339,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                 buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
                 setBuildOpen(true);
               }}
-              onOffice={() => openOffice("Desk")}
               onStoryLog={() => openOffice("Reports")}
               onGuests={() => setGuestsOpen(true)}
+              onOffice={() => {
+                setMenuConfirmOpen(false);
+                openOffice();
+              }}
               onCloseHill={skipToClose}
               openingBlocked={opening !== null}
               confirmMenu={menuConfirmOpen}
@@ -354,8 +356,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         </div>
       )}
 
-      {officeTab && <Office initial={officeTab} onClose={closeOffice} onLeave={onLeave} />}
       <OverlayStateSync />
+      {officeOpen && <OfficeSheet onLeave={() => onLeave("load")} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}
@@ -371,7 +373,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           setBuildOpen(false);
         }}
       />
-      <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeTab}>
+      <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeOpen}>
         <NightRecapSheet onOffice={openOffice} onMap={openNightMap} />
       </div>
       {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="fixed bottom-3 right-3 z-[61]">

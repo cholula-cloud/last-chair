@@ -14,7 +14,7 @@ import {
 } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { deleteSlot, exportSlot, importIntoSlot, playSlot, startNewWinter } from "@/game/slotActions";
-import { SPEEDS, useSettings } from "@/ui/settingsStore";
+import { SettingsControls } from "@/ui/SettingsControls";
 import { useSpeed } from "@/ui/speed";
 
 type View = "main" | "load" | "settings" | "credits";
@@ -177,68 +177,10 @@ function SlotCard({
   );
 }
 
-function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange: (next: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="font-extrabold">{label}</span>
-      <button
-        type="button"
-        aria-pressed={on}
-        aria-label={label}
-        onClick={() => onChange(!on)}
-        className={`${BTN_SM} w-20`}
-      >
-        {on ? "On" : "Off"}
-      </button>
-    </div>
-  );
-}
-
 function SettingsView({ onBack }: { onBack: () => void }) {
-  const settings = useSettings();
-  const { captions, reduceMotion, defaultSpeed, set } = settings;
-  const volumeId = useId();
-  const speedId = useId();
   return (
     <SubView title="Settings" onBack={onBack}>
-      <Toggle label="Sound" on={!settings.muted} onChange={on => set({ muted: !on })} />
-      {([["masterVolume", "Master volume"], ["musicVolume", "Music volume"], ["effectsVolume", "Effects volume"], ["voiceVolume", "Voice volume"]] as const).map(([key, label]) => (
-        <div key={key} className="flex flex-col gap-2">
-          <label htmlFor={volumeId + key} className="flex justify-between font-extrabold">
-            {label}<span aria-hidden="true">{settings[key]}%</span>
-          </label>
-          <input id={volumeId + key} type="range" min={0} max={100} step={5} value={settings[key]}
-            aria-valuetext={settings[key] + " percent"} onChange={e => set({ [key]: Number(e.target.value) })}
-            className="h-11 w-full accent-[var(--sign-green)]" />
-        </div>
-      ))}
-      <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
-      <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />
-      <Toggle label="Pattern aids" on={settings.patternAids} onChange={on => set({ patternAids: on })} />
-      <Toggle label="Voice" on={settings.voiceOn} onChange={on => set({ voiceOn: on })} />
-      <Toggle label="Coach tips" on={settings.tips} onChange={on => set({ tips: on })} />
-      <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
-      <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
-      <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">
-        <span id={speedId} className="font-extrabold">Default speed</span>
-        <div className="flex gap-2">
-          {SPEEDS.map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={defaultSpeed === s}
-              aria-label={`${s} times speed`}
-              onClick={() => {
-                set({ defaultSpeed: s });
-                useSpeed.getState().reset();
-              }}
-              className={`${BTN_SM} flex-1`}
-            >
-              {s}×
-            </button>
-          ))}
-        </div>
-      </div>
+      <SettingsControls />
     </SubView>
   );
 }

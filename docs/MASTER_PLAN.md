@@ -421,7 +421,7 @@ Order: 13e, B1, L1, B2, B3, B4, 14, 16a, 16b, 16c, 16d, 15, 17, B5. The builder 
 
 ### M3: One full winter (product MVP)
 
-M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements lead into the season systems. Rows O1 to O3 (overlays) and F1, F2, F4 (the Office) come from §12, and quality rows Q1 to Q9 from §11; the owner accepted all of them into M3 on 2026-11-19. If M3 grows too large, Q2, Q4, Q7 and Q8 move to M4 first.
+M3 starts every player with a fresh winter and its own save key. Row 25 provides validation and recovery for M3 saves. The opening and builder refinements lead into the season systems. Rows O1 to O3 (overlays) and F1, F2, F4 (the Office) come from §12, and quality rows Q1 to Q9 from §11; the owner accepted all of them into M3 on 2026-11-19. The owner deferred external and device playtests until they are ready.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
@@ -451,7 +451,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | F2 | ☑ | Money tab and day history | A compact `dayHistory` record per day in state (schema bump, old saves start empty). Ledger: income by source, costs, construction installments, loan and projected morning cash. Economy: fare against turnout, reputation, hill value against fare. This is the first version of the Ledger in row 38 |
 | F4 | ☑ | Crew tab | Lodge tier and what the next tier opens, the goal checklist, talents learned and next, the founder's modifier, the winter score. Rows 21 to 24 build the data; this is where the player sees it |
 | 26 | ☑ | Coached first winter | Skippable help: the founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice, and points at the overlay and Office tab when the first problem appears; skippable |
-| 27 | ☐ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
+| 27 | ☑ | MVP balance and winter playthrough | Verify the solvency goal and the optional Readsboro path. Verify the winter review and replay. Owner device testing is optional. |
 
 #### Dutch Hill first-winter sequence
 
@@ -580,13 +580,13 @@ These November 19 observations explain why Q1–Q10 were added. The roadmap belo
 | Q3 | ☑ M3, before row 27 | Feel floor: an ambient bed, UI taps, a build thunk and the radio sting; a day tint; confirm and tier-up juice. A thin version of rows 31 to 33 that those rows later finish | A muted run and an unmuted run feel different; sound starts after the first gesture; reduced motion and mute respected |
 | Q4 | ☑ M3 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
 | Q5 | M3 ☑ | Playtest log: export a replay (seed plus action list) and a "Send notes" button that attaches it | A recorded session replays to the point where the player got stuck |
-| Q6 | M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Abominable Snowglomerate offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
-| Q7 | M3 | Performance gate: Playwright measures load time, bundle size and frame time at phone size; an optional ten-minute device soak | Budgets and pass or fail written in TESTING.md |
+| Q6 | ☑ M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Abominable Snowglomerate offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
+| Q7 | ☑ M3 measurement | Performance gate: Playwright measures load time, bundle size and frame time at phone size; an optional ten-minute device soak | Budgets and pass or fail written in TESTING.md |
 | Q8 | M3 ☑ | Settings and accessibility spec: master, music, effects and voice volume, captions, reduced motion, text size, speed, graphics quality, pattern aids; VoiceOver labels on sheets; a contrast check; the audit runs at the M3 gate, not in M7 | Spec merged into §10; audit logged |
 | Q9 | M3 ☑ | Venue move, sale, purchase undo, protected structures, lift and trail closure confirmations | Rules in SIMULATION_SPEC and regression coverage in buildForgiveness.test.ts |
 | Q10 | Before any public share | Rights check: the voice-over terms, the real names, the credits | A written decision in WORLD.md |
 
-If M3 must stay small, keep Q1, Q3, Q5 and Q9 in it and move Q2, Q4, Q7 and Q8 to M4. Automated M3 checks are the release gate. The owner will test on hardware when ready.
+The automated winter playthrough and simulation checks are the M3 release gate. The phone benchmark records a 30 FPS target and the software renderer missed it. The owner will test on hardware when ready.
 
 ---
 

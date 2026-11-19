@@ -84,11 +84,11 @@ try {
       assert.equal(replay.notes, "Booked the Readsboro visit and checked its receipts.");
       assert.ok(replay.actions.some(action => action.rule === "decideSchoolContract"));
       assert.deepEqual(JSON.parse(JSON.stringify(toPersisted(playReplay(replay)))), await read());
-      await office.getByRole("button", { name: "Money", exact: true }).tap();
+      await office.getByRole("tab", { name: "Money", exact: true }).tap();
       await office.getByText(/School tickets \$150/).waitFor();
-      await office.getByRole("button", { name: "Crew", exact: true }).tap();
+      await office.getByRole("tab", { name: "Crew", exact: true }).tap();
       await office.getByRole("heading", { name: "Crew talents" }).waitFor();
-      await office.getByRole("button", { name: "Reports", exact: true }).tap();
+      await office.getByRole("tab", { name: "Reports", exact: true }).tap();
       await office.locator("summary").filter({ hasText: /^Day 3 ·/ }).tap();
       await office.getByText(`School tickets $150 · ${bus.taught} of 6 pupils taught`).waitFor();
       await office.getByRole("button", { name: "Close Office" }).tap();

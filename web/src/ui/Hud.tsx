@@ -14,6 +14,7 @@ import {
   HomeIcon,
   MoodIcon,
   MountainMoonIcon,
+  OfficeIcon,
   PauseIcon,
   PlayIcon,
   QueueIcon,
@@ -335,11 +336,14 @@ function BarButton({
   label,
   onClick,
   active,
+  barId,
 }: {
   icon: ReactNode;
   label: string;
   onClick: () => void;
   active?: boolean;
+  /** Lets the screen return focus to this button when a sheet it opened closes. */
+  barId?: string;
 }) {
   return (
     <button
@@ -347,6 +351,7 @@ function BarButton({
       onClick={onClick}
       data-coach={label.toLowerCase()}
       aria-pressed={active}
+      data-bar={barId}
       className="key press flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.85rem] font-extrabold [--lift:4px]"
     >
       {icon}
@@ -403,22 +408,23 @@ export function LiftUndoChip({
   );
 }
 
-/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and the barn-red Close hill. */
+/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, Office, and the barn-red Close hill. */
 export function ActionBar({
   buildActive,
   onBuild,
   onGuests,
+  onOffice,
   onCloseHill,
   openingBlocked = false,
   confirmMenu = false,
   onConfirmMenuChange,
   onLeave,
   onStoryLog,
-  onOffice,
 }: {
   buildActive: boolean;
   onBuild: () => void;
   onGuests: () => void;
+  onOffice: () => void;
   onCloseHill: () => void;
   openingBlocked?: boolean;
   confirmMenu?: boolean;
@@ -426,7 +432,6 @@ export function ActionBar({
   /** Saves and returns to the title screen. */
   onLeave?: () => void;
   onStoryLog?: () => void;
-  onOffice: () => void;
 }) {
   const menuRef = useRef<HTMLButtonElement>(null);
   const setMenu = (open: boolean) => onConfirmMenuChange?.(open);
@@ -445,7 +450,7 @@ export function ActionBar({
   return (
     <nav
       aria-label="Hill actions"
-      className="pointer-events-auto relative flex w-full gap-2"
+      className="pointer-events-auto relative flex w-full gap-1.5 min-[400px]:gap-2"
     >
       {confirmMenu && (
         <div
@@ -486,7 +491,7 @@ export function ActionBar({
         onClick={() => setMenu(!confirmMenu)}
         aria-expanded={confirmMenu}
         aria-haspopup="dialog"
-        className="key press flex h-14 w-14 shrink-0 flex-col items-center justify-center gap-0.5 text-[0.8rem] font-extrabold [--lift:4px]"
+        className="key press flex h-14 w-12 shrink-0 flex-col min-[400px]:w-14 items-center justify-center gap-0.5 text-[0.8rem] font-extrabold [--lift:4px]"
       >
         <HomeIcon size={20} />
         Menu
@@ -498,7 +503,7 @@ export function ActionBar({
         active={buildActive}
       />
       <BarButton icon={<GuestsIcon />} label="Guests" onClick={onGuests} />
-      <BarButton icon={<FlagIcon />} label="Office" onClick={onOffice} />
+      <BarButton icon={<OfficeIcon />} label="Office" onClick={onOffice} barId="office" />
       <button
         type="button"
         data-coach="close"
@@ -507,7 +512,7 @@ export function ActionBar({
         className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"
       >
         <MountainMoonIcon size={22} />
-        <span className="display text-[1.2rem]">Close hill</span>
+        <span className="display whitespace-nowrap text-[1.05rem] min-[400px]:text-[1.2rem]">Close hill</span>
       </button>
     </nav>
   );

@@ -441,6 +441,45 @@ Family Pack, Race Kid and the storm-week pressure curve changed demand and venue
 
 **Day-14 check.** For each of the 14 strategies and each of 40 seeds, the harness branches from the actual night-14 state. It keeps that day's fare, snow service and buildings through close, declines later offers and borrowing, and uses the same weather and guest RNG. A frozen hill encounters pressure on the first subsequent day with a projected cash shortfall, an operating loss after snow service, no rides, satisfaction below 70 or mean wait above five minutes. It must also finish solvent to coast successfully. At least half of each strategy's winters must still encounter pressure. The normal strategy continues separately.
 
+#### Release results over 40 seeds
+
+Each row uses Elena and seeds 1–40. Cash, minimum cash, closing net worth, satisfaction, and winter score are means. Solvent and pressure count winters. Pressure uses the day-14 branch described above.
+
+| Strategy | End cash | Min cash | Net worth | Satisfaction | Score | Solvent | Pressure |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Cheap / Minimal | $7,640 | -$392 | -$1,944 | 30.3 | 32.7 | 0 | 40 |
+| Cheap / Mid | $6,803 | $6,752 | $6,803 | 53.9 | 54.0 | 40 | 40 |
+| Cheap / High | $5,517 | $5,342 | $5,517 | 67.0 | 65.8 | 40 | 40 |
+| Balanced / Minimal | $2,499 | $1,803 | $1,745 | 34.7 | 36.8 | 36 | 40 |
+| Balanced / Mid | $12,820 | $11,130 | $12,820 | 52.5 | 53.0 | 40 | 40 |
+| Balanced / High | $13,934 | $10,801 | $13,934 | 62.3 | 61.9 | 40 | 40 |
+| Expensive / Minimal | $5,086 | $5,086 | $5,086 | 37.0 | 38.6 | 40 | 40 |
+| Expensive / Mid | $17,627 | $11,553 | $17,627 | 55.2 | 55.4 | 40 | 40 |
+| Expensive / High | $18,876 | $11,249 | $18,876 | 64.1 | 63.4 | 40 | 40 |
+| Adaptive | $32,105 | $3,938 | $32,105 | 85.9 | 82.5 | 40 | 37 |
+| Builder | $14,688 | $5,357 | $14,688 | 80.8 | 77.8 | 40 | 40 |
+| Stingy | $5,086 | $5,086 | $5,086 | 37.0 | 38.6 | 40 | 40 |
+| Careless | $4,164 | $905 | $1,381 | 93.0 | 88.7 | 35 | 40 |
+| Coached | $32,545 | $6,218 | $32,545 | 81.7 | 78.3 | 40 | 33 |
+
+On vacation Saturdays, Balanced / Mid averaged 16.88 minutes without a chair and Builder averaged 2.69 minutes with one. All 560 shorter winters cleared the 14-day shortfall check.
+
+| Adaptive founder | Mean score | Mean closing net worth | Solvent winters |
+|---|---:|---:|---:|
+| Elena Vargas | 82.5 | $32,105 | 40 |
+| Tom Keene | 80.8 | $27,588 | 40 |
+| Riley Otis | 80.8 | $29,959 | 40 |
+| Amira Chen | 78.3 | $26,949 | 40 |
+| Juniper Hale | 82.0 | $28,425 | 40 |
+| Marco Russo | 80.8 | $28,051 | 40 |
+
+The matched Adaptive runs show how often each offer appeared and what happened after the reply. Local event totals count winters in which the event occurred.
+
+| Offer policy | Pie | Former regulars | Road delay | School offers / booked / declined | Visit days | Pupils / lessons | Vivian offers / accepted / declined |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Decline both | 19 | 11 | 33 | 40 / 0 / 40 | 0 | 0 / 0 | 40 / 0 / 40 |
+| Accept both | 19 | 11 | 33 | 40 / 40 / 0 | 40 | 240 / 213 | 40 / 40 / 0 |
+
 ### Row 20 economy checks
 
 `web/src/game/balance.ts` uses the regular build and Sleep rules to play a seeded winter with Elena by default. Strategy runs record cash, attendance, satisfaction, reputation, waits, runs and story progress, plus projected cash shortfalls, loans taken, bankruptcy and ending liquid net worth. It reports projected shortfalls even when borrowing covers the payment. Runs use 28 days by default and can also use 14 days to check legacy winters. `npm run balance` verifies the economy over 40 seeds by default and prints a strategy table. `balance.test.ts` checks the same thresholds on six seeds.

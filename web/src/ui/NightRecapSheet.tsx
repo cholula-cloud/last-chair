@@ -32,7 +32,7 @@ import { outlookFor } from "@/game/weather";
 import { problemGuide } from "@/game/coach";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
 import { founderById } from "@/game/content";
-import type { OfficeTab } from "./Office";
+import type { OfficeTabId } from "./officeStore";
 import { CoachCard } from "./CoachCard";
 import { useCoach } from "./coachStore";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
@@ -74,7 +74,7 @@ const FORECAST = {
   thaw: { name: "Thaw", Icon: ThawIcon },
 };
 
-function Forecast({ state, ahead }: { state: GameState; ahead: 1 | 2 }) {
+export function Forecast({ state, ahead }: { state: Parameters<typeof outlookFor>[0]; ahead: 1 | 2 }) {
   const outlook = outlookFor(state, ahead);
   if (!outlook) return null;
   const odds = (Object.keys(FORECAST) as WeatherKind[]).sort((a, b) => outlook[b] - outlook[a]);
@@ -325,7 +325,7 @@ function Choices({
   );
 }
 
-export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab) => void; onMap: (layer: MapLayer) => void }) {
+export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTabId) => void; onMap: (layer: MapLayer) => void }) {
   const night = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s : null));
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
