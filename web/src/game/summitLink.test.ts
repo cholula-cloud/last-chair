@@ -27,7 +27,7 @@ function openingNight(founder: FounderId = "elena") {
   });
 }
 
-describe("SummitLink offer", () => {
+describe("Abominable Snowglomerate offer", () => {
   it("requires an explicit answer and pays immediately with a season-long Balanced fare cap", () => {
     const night = openingNight();
     expect(night.pendingBeat).toBe("summit_link");

@@ -18,13 +18,13 @@
 | GDV coherence | **Strong** | Cozy tycoon + honest sim + Route 100 tone align |
 | NYFA characters | **Partial** | Six founders read well; *player* and recurring cast thin in play |
 | NYFA world | **Strong** | Dutch Hill / Ice Coast / heritage hooks land in copy |
-| NYFA main conflict | **Weak in play** | SummitLink and “one more winter” are told more than played |
+| NYFA main conflict | **Weak in play** | Abominable Snowglomerate and “one more winter” are told more than played |
 
 **Planning themes from the playtest**
 
 1. **Onboarding coach (MASTER_PLAN ~26)** — GDV goals + learnability gate.
 2. **Nightly operating decisions** — GDV meaningful choices and feedback for fare and snow.
-3. **Story as systems (rows 23–24)** — NYFA conflict + GDV consequences for radio / SummitLink.
+3. **Story as systems (rows 23–24)** — NYFA conflict + GDV consequences for radio / Abominable Snowglomerate.
 4. **Founder legibility** — NYFA characters + GDV rule comprehension.
 5. **Opening UX load** — GDV challenge vs friction + mobile checklist.
 
@@ -83,7 +83,7 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 | Build lift / trail / venue | **Yes** | Cash, capacity, revenue, satisfaction deltas observed |
 | Fare / snow nightly | **Partial** | Thematic tradeoffs in design; player cannot easily see **which** fixes tonight’s problem line |
 | Founder (once per winter) | **Partial** | Different sim curves; weak perceived difference session 1 |
-| Radio / SummitLink | **No (yet)** | “Got it” only; choices and carry-forward in MASTER_PLAN not shipped |
+| Radio / Abominable Snowglomerate | **No (yet)** | “Got it” only; choices and carry-forward in MASTER_PLAN not shipped |
 | Speed / pause / skip close | **Yes** | Affects time and learning, not pay-to-win |
 
 **GDV tradeoff table (design intent vs playtest):**
@@ -165,7 +165,7 @@ For the first-winter work, show supported expected directions on the night contr
 |------------|----------------|
 | Heavy tutorial text walls | Breaks cozy mobile pacing |
 | Real-time narrative mid-day | Breaks pause-and-plan pillar |
-| SummitLink without tradeoffs | Breaks antagonist fantasy |
+| Abominable Snowglomerate without tradeoffs | Breaks antagonist fantasy |
 | More HUD widgets | Competes with mountain (already crowded at opening) |
 
 **Contrast used well:** Calm day build vs night recap; storm/wind vs clear mornings.
@@ -203,17 +203,17 @@ NYFA emphasizes **characters**, **world**, and **main conflict** as ingredients 
 
 - **Player role:** Operator who signed the lease — understated; agency through build and nightly levers.
 - **Founders:** Six distinct lease-signers with permanent winter modifiers.
-- **Recurring cast:** Frank, Dana, Elena (crew); Maris (radio); Vivian Cho (SummitLink); guest personas.
+- **Recurring cast:** Frank, Dana, Elena (crew); Maris (radio); Vivian Cho (Abominable Snowglomerate); guest personas.
 - **NYFA criterion:** Relatable motives, strengths/weaknesses, visible intentions.
 
 **Pressure test**
 
 | Element | On paper | In play (playtest) | Gap |
 |---------|----------|-------------------|-----|
-| Founders | Strong blurbs + color identity | Readable cards; **quirks feel cosmetic** (SummitLink equity, cash stress) | Tie one HUD/conditions signal per founder |
+| Founders | Strong blurbs + color identity | Readable cards; **quirks feel cosmetic** (Abominable Snowglomerate equity, cash stress) | Tie one HUD/conditions signal per founder |
 | Player character | Implied caretaker | Little voice or reflection | Winter review / optional reply lines (row 24) |
 | Crew | Talent order personified | Toast names effects; light personality | Named line when talent lands (row 23) |
-| Vivian / SummitLink | Antagonist with trades | Radio tease only | Choices with consequences |
+| Vivian / Abominable Snowglomerate | Antagonist with trades | Radio tease only | Choices with consequences |
 | Guests | Personas in sim | Follow guest works; stories anonymous | Optional guest “postcard” in recap |
 
 **Planning hooks:** Row **22–23**; short **player intention** line on founder pick (“You’re here to…”); keep Faulkner-style **show through radio + receipts**, not cutscenes.
@@ -247,7 +247,7 @@ NYFA emphasizes **characters**, **world**, and **main conflict** as ingredients 
 **Design intent**
 
 - **Survival conflict:** One more winter before forest reclaims hill; cash, weather, queues.
-- **Ideological conflict:** Independents vs SummitLink Pass consolidation.
+- **Ideological conflict:** Independents vs Abominable Snowglomerate Pass consolidation.
 - **Character conflict:** Boromir-style temptations (sell, join pass, lower fare caps).
 
 **Pressure test**
@@ -257,11 +257,11 @@ NYFA emphasizes **characters**, **world**, and **main conflict** as ingredients 
 | Run a viable day | Yes | Yes — cash and happy % |
 | Beat the hill’s physical limits | Yes | Yes — snow, wind, lines |
 | Save the valley’s lit slope (emotional) | Partial | Radio helps; needs review beat |
-| Resist SummitLink | **No** | Setup only — **main NYFA gap** |
+| Resist Abominable Snowglomerate | **No** | Setup only — **main NYFA gap** |
 
 **NYFA criterion:** Without an interesting problem, story fails to captivate. Today the **simulation conflict** carries the game; the **narrative antagonist** does not yet pull weight.
 
-The playtest identified the need for an operating choice with SummitLink, a school visit the hill can actually serve, and a visible winter goal. The approved follow-through is in Part E.
+The playtest identified the need for an operating choice with Abominable Snowglomerate, a school visit the hill can actually serve, and a visible winter goal. The approved follow-through is in Part E.
 
 ---
 
@@ -283,7 +283,7 @@ Retained for planning; details in agent playtest report.
 ### Narrative
 
 - **Strengths:** Beat copy, Route 100 frame, Dutch Hill dignity.
-- **Major:** Story night-only; SummitLink no choice; feed/log missing.
+- **Major:** Story night-only; Abominable Snowglomerate no choice; feed/log missing.
 
 ### Challenge
 
@@ -371,7 +371,7 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 - **Give offers consequences.** Readsboro changes one weekday and the school outcome depends on lessons delivered. Vivian exchanges cash now for a real fare ceiling. The pie gives locals a moment on the hill with no change to the operating numbers.
 - **Show the town in sim hooks:** bus day, après revenue, heritage sign — tie NYFA **world** to counters players already watch.
 - **Give the operator a voice sparingly:** one-line reactions in winter review or after hard nights; no dialogue trees required for Dutch Hill.
-- **Career map as long-term goal:** when Tenney unlocks, frame it as **escape velocity** from SummitLink pressure, not a generic level select.
+- **Career map as long-term goal:** when Tenney unlocks, frame it as **escape velocity** from Abominable Snowglomerate pressure, not a generic level select.
 
 ### Content, scope, and discipline
 

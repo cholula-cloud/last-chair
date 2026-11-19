@@ -45,7 +45,7 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   {
     to: 6,
-    note: "Start tracking school-bus and SummitLink offers.",
+    note: "Start tracking school-bus and Abominable Snowglomerate offers.",
     up(raw) {
       const { pendingBeat, dayIndex, seasonLength, reputation } = raw;
       const validSummitLinkNight = typeof dayIndex === "number" && typeof seasonLength === "number" &&

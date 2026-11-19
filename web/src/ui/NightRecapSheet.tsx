@@ -210,7 +210,7 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
     { label: "Construction payments tonight", amount: -costs.draws },
     { label: "Loan received tonight", amount: recap.loanReceived },
     { label: "Loan repaid tonight", amount: -recap.loanRepaid },
-    { label: "SummitLink payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
+    { label: "Abominable Snowglomerate payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
   ];
 
   return (
@@ -264,7 +264,7 @@ function Choices({
       glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
       label: FARE_LABELS[v],
       detail: formatMoney(FARE_PRICES[v]),
-      note: locked ? "SummitLink fare cap" : `~${skiers(v)} skiers`,
+      note: locked ? "Abominable Snowglomerate fare cap" : `~${skiers(v)} skiers`,
       disabled: locked,
     };
   });

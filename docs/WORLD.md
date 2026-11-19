@@ -21,7 +21,7 @@ Merged from the former Act I, characters, mountains and lore docs. Game plan and
 
 **Story Mode structure (player effort):** daily ski sim → nightly fare + snow/service (+ rare story reply) → metric-gated radio beats → winter review (real peak name). Tone: hopeful operator; **dignified** history (NELSAP, DHASH). No fourth mandatory nightly control in Act I; heritage optional; radio can be off.
 
-**World:** New England Ice Coast. You start on Dutch Hill — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**. **SummitLink Pass** (fictional) = consolidation pressure. Career continues to [Part 3](#part-3-career-mountains); copy pantry: [Part 4](#part-4-lore-pantry).
+**World:** New England Ice Coast. You start on Dutch Hill — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**. **Abominable Snowglomerate Pass** (fictional) = consolidation pressure. Career continues to [Part 3](#part-3-career-mountains); copy pantry: [Part 4](#part-4-lore-pantry).
 
 ---
 
@@ -75,7 +75,7 @@ Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**,
 | 2 | **Saturday** | Plates from **Bennington**, **Williamstown**, **Brattleboro** |
 | 3 | **School bus** | Readsboro / Wilmington corridor; one bus = payroll |
 | 4 | **Dry week** | No guns—**wait for cold** or close trails (ICR lesson) |
-| 5 | **SummitLink** | Pass rep stops on Route 100; “add us to the map” |
+| 5 | **Abominable Snowglomerate** | Pass rep stops on Route 100; “add us to the map” |
 | 6 | **Winter review** | Win → career pin **Tenney Mountain, NH** |
 
 ---
@@ -112,13 +112,13 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 - **Background:** Community banker who lost the last loan.
 - **Bonus:** Better loan terms while reputation &gt; threshold.
 - **Constraint:** +interest stress on warm weeks (narrative: covenant anxiety).
-- **Story:** SummitLink calls him first—creates tension on buyout offers.
+- **Story:** Abominable Snowglomerate calls him first—creates tension on buyout offers.
 
 #### 3. **Riley Otis — *The Rigger***
 
 - **Background:** Lift mechanic; can keep one marginal lift “limping” safely.
 - **Bonus:** Overnight repair chance on one lift without call-out cost.
-- **Constraint:** Cannot take equity investment from SummitLink (hard lock on “sell out” ending).
+- **Constraint:** Cannot take equity investment from Abominable Snowglomerate (hard lock on “sell out” ending).
 - **Story:** Patrollog sidequests about wind holds.
 
 #### 4. **Dr. Amira Chen — *The Forecast***
@@ -151,7 +151,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 | **Maris Shaw** | Route 100 Radio host (NH accent; Lakes Region idioms) | Story delivery, tutorials, [Part 4](#part-4-lore-pantry) |
 | **Chief Dana Holt** | Patrol captain | Injuries, wind holds, glade openings |
 | **Superintendent Al Waters** | School district | Bus days, lesson seats |
-| **Vivian Cho** | SummitLink regional rep | Buyouts, poaching, race sponsorship |
+| **Vivian Cho** | Abominable Snowglomerate regional rep | Buyouts, poaching, race sponsorship |
 | **Frank Oka** | Garage & diesel | Groomer/snowmaking reliability events |
 | **The Caretaker** (per hill) | Off-screen manager | Idle income sim on departed mountains |
 
@@ -193,7 +193,7 @@ In **Sandbox** (optional **ICR Complex** later), player may pick talents manuall
 
 - New England **specific, not parody**—no excessive “wicked” tone.
 - Humor from **operations** (corduroy, lift tickets, chowder), not from mocking guests.
-- SummitLink speaks corporate-plain; locals speak concrete (*“the T-bar sounded like a coffee grinder”*).
+- Abominable Snowglomerate speaks corporate-plain; locals speak concrete (*“the T-bar sounded like a coffee grinder”*).
 
 ---
 
@@ -221,7 +221,7 @@ Same design contract as the reference genre leader: **lost and struggling New En
 - State ski history societies, local newspapers, area obituaries  
 - USGS / town names for geography only  
 
-**We invent:** your foreclosure timeline, SummitLink, fictional locals, exact dollar amounts, and “what you built last winter.”
+**We invent:** your foreclosure timeline, Abominable Snowglomerate, fictional locals, exact dollar amounts, and “what you built last winter.”
 
 ---
 
@@ -344,7 +344,7 @@ Hundreds of NE areas operated rope tows and T-bars after WWII; consolidation, in
 
 Boston’s industrial age built **Lowell / Lawrence** mills; **James B. Francis** (Lowell Hydraulic Experiments) is a real New England engineering hero. ICR’s “Lifer” founder nods to **craft engineers** who keep lifts alive.
 
-**Our founder parallel:** **Riley Otis — The Rigger** — overnight repairs, no sellout to SummitLink.
+**Our founder parallel:** **Riley Otis — The Rigger** — overnight repairs, no sellout to Abominable Snowglomerate.
 
 **Lore:** “The headgate doesn’t care about your feelings” — **mill race mentality** applied to lift maintenance.
 
@@ -367,7 +367,7 @@ NE skiing is **forested**, not alpine bowls. Clearing runs was **literal logging
 
 Real history: **Ikon / Epic / Indy** reshaped pass economics; locals debate **skiing as subscription**.
 
-**Fictional SummitLink** stands in for consolidation pressure—**do not** use Epic/Vail trademarks in UI.
+**Fictional Abominable Snowglomerate** stands in for consolidation pressure—**do not** use Epic/Vail trademarks in UI.
 
 **Lore lines:**
 
@@ -431,7 +431,7 @@ Use for **founder flavor**:
 |-------|-----------|
 | **Maris Shaw** | Concord NH radio veteran; pronounces Worcester wrong on purpose |
 | Call-ins | Real town names near active mountain |
-| SummitLink rep | Boston office, skis twice a season |
+| Abominable Snowglomerate rep | Boston office, skis twice a season |
 | Patrol chief | References **4437** culture without hero worship |
 
 **Boston vs Albany media markets:** eastern MA hills “live or die on the Pike”; western MA / VT on **I-91**.
@@ -450,7 +450,7 @@ Beat table and ship notes live in **[Part 1](#part-1-dutch-hill-act-i)** — do 
 - **Alpenwald** across-the-street development failure — optional economic B-text.  
 - **1990 lodge burn** — mention only with dignity (fire dept training).  
 - Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.  
-- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; SummitLink map-dot pressure; winter review → Tenney.
+- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; Abominable Snowglomerate map-dot pressure; winter review → Tenney.
 
 ---
 
