@@ -396,7 +396,7 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 
 **Export file.** `{ "app": "last-chair", "format": 1, "exportedAt": <ISO time>, "version": <save version>, "state": <PersistedState> }`, named like `last-chair-dutch-hill-day-12.json`. Import checks `app` and `format`, rejects a `version` newer than the game, then runs `state` through `migrate()` and `validateSave()`. A file that fails any check is rejected with a plain message and nothing is written. There is no checksum. Importing into an occupied slot asks first.
 
-**Settings.** Voice volume, captions, reduce motion and default speed live apart from the save under `last-chair-settings`. Voice volume and captions have no consumer yet. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
+**Settings.** Sound on or off, master, effects, ambience and voice volume, voice on or off, captions, reduce motion and default speed live apart from the save under `last-chair-settings`, so a save reset does not unmute. Sound settings drive the audio engine (row Q3: implemented). Captions have no consumer yet. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
 
