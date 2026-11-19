@@ -3395,6 +3395,22 @@ Hill Cup, dailies, leaderboards and live-service features stay out (MASTER_PLAN 
 
 Output: a short ranked list in MASTER_PLAN M7 with the five picks, each becoming a PR with the same template as rows 28 to 40.
 
+### Q2 PWA shell
+
+Goal: Last Chair installs from Safari, opens full screen, and gestures do not trigger Safari navigation. No service worker and no offline play; that stays in M7.2.
+
+Files:
+- `web/src/app/manifest.ts` (new): static manifest, written to `out/manifest.webmanifest`. `start_url` "/play/" and `scope` "/" under the base path (`NEXT_PUBLIC_BASE_PATH`, set from `PAGES_BASE_PATH`), `display` "standalone", `orientation` "any" (the game works in portrait and landscape and never forces rotation), `background_color` sky, `theme_color` ink.
+- `web/public/icons/` (new): `icon.svg` source plus `apple-touch-icon.png` (180), `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`. Rendered by `web/scripts/gen-icons.mjs` (Playwright Chromium, no new dependency). Each file is under 60 KB.
+- `web/src/app/layout.tsx`: `icons`, `appleWebApp` with `statusBarStyle: "black"` (an opaque bar keeps the clock readable over the light sky; `black-translucent` would draw white text over it), `viewportFit: "cover"` and `themeColor` were already set.
+- `web/src/app/globals.css`: `overscroll-behavior: none` on `html` and `body`, `-webkit-touch-callout: none` on `body`. The 3D canvas already has `touch-none`; sheets use `overscroll-contain`.
+
+Safe areas: the HUD top bar, bottom bar, toast, title screen and sheet footers already pad with `env(safe-area-inset-*)`. No change needed.
+
+Limits: iOS draws the left-edge back swipe itself and a page cannot cancel it. The game never pushes history entries, so a back swipe from `/play/` leaves the app rather than undoing a tap. Only a real device confirms install, icon, status bar and gesture behaviour (docs/TESTING.md, "Install on iPhone").
+
+Tests: build output check (manifest and icon URLs carry the base path, meta tags present). Device: the TESTING.md check.
+
 ### M7.2 PWA install
 
 Goal: Last Chair installs to the iPhone Home Screen, opens full screen, works offline after one visit, and updates cleanly.

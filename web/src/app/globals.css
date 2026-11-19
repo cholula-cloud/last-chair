@@ -89,6 +89,8 @@
 html {
   background: var(--ink);
   -webkit-tap-highlight-color: transparent;
+  /* No rubber-band pull or pull-to-refresh over the game. Sheets scroll inside themselves (overscroll-contain). */
+  overscroll-behavior: none;
 }
 
 body {
@@ -97,6 +99,9 @@ body {
   font-family: var(--font-nunito), system-ui, sans-serif;
   font-weight: 700;
   line-height: 1.4;
+  overscroll-behavior: none;
+  /* No long-press callout or text-selection loupe on HUD and canvas taps. */
+  -webkit-touch-callout: none;
 }
 
 /* Yellow ring plus a navy ring around it, so focus reads on white, sky and
