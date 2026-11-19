@@ -36,18 +36,19 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
+The first-winter implementation on this branch uses save schema v6. The night recap follows up on the previous guest measure, Route 100 can report three local surprises, and the school and SummitLink offers have operating consequences. The winter review checks cash after debt and unpaid construction, records the optional commitments, and retains the settlement through replay.
+
 **Partly built**
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
 | Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
-| Radio | Beat card in the night recap | Feed UI, story log, lodge tier-up lines, SummitLink offer as a choice | 23 |
-| Winter review | Sheet with score | Beats, choices, lodge tier, carry-forward data | 24 |
-| Menu and saves | One save key, no title screen | Title screen, three slots, throttled autosave | 39, 40 |
+| Radio | Beat card, local moments, school visit and SummitLink choice | Feed UI, full story log, lodge tier-up lines | 23 |
+| Winter review | Settlement, optional commitments, lodge tier and saved winter record | Career effects on later mountains | 24 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
+The next evidence for the coach and balance rows comes from an uncoached opening on Safari and three outside winter playthroughs. The cold open, day-length pass, remaining talents and founder effects retain their roadmap rows.
 
 ---
 
@@ -441,7 +442,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density pines and birch on the lease, a sparse far forest in one draw call beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
 | L-D | ◐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
-| L-E | ☐ | Cold open and goal card | Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible. See the first-winter sequence below |
+| L-E | ◐ | Cold open and goal card | Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible. See the first-winter sequence below |
 | L-F | ☐ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ◐ | Founders complete | All six modifiers live |
@@ -458,7 +459,7 @@ The PR numbers below name the six increments in this sequence. The roadmap row n
 |---|---|---|---|
 | 1 | Design decisions | L-E, 22, 23, 24, 26, 27 | Align the plan, handoff and review brief on the goal, choices and measured outcomes. |
 | 2 | First operating decision | L-E, 26 | After the opening teaches lift and trail placement, use the first night recap to explain a fare or snow tradeoff based on what the hill measured. Compare the next day with the prior day's actual result when both are available. |
-| 3 | Local surprises | 23 | Deliver the three measured events through the night recap and keep their days and facts in the story log. |
+| 3 | Local surprises | 23 | Report local moments in the night recap and retain their dates and observed results for the winter review. |
 | 4 | Readsboro visit | 23, L-E | Offer one optional weekday of six discounted pupils. Show the cost and the visit result, with goal credit based on lessons served. |
 | 5 | Vivian's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
 | 6 | Winter memory | 24, 27 | End with the measured settlement, the same common goal for all paths and a truthful record of choices and outcomes. Check the balance and playtest the whole arc. |

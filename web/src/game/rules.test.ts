@@ -7,13 +7,16 @@ import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
 import { makeGuest, meanArrivals, planArrivals } from "./sim";
 import { createRng } from "./rng";
+import { migrate } from "./migrations";
 import {
   hydrate,
+  SAVE_VERSION,
   toPersisted,
   type GameState,
 } from "./state";
 import { BUILDING_COSTS, SNOW_NIGHT_COST, type Guest } from "./types";
 import { WEATHER_KINDS } from "./weather";
+import { observeGuests } from "./why";
 
 const started = () => rules.pickFounder(createBuiltHill(7), "elena");
 
@@ -391,6 +394,7 @@ describe("lastDay", () => {
       satisfaction: recap.satisfaction,
       cashDelta: recap.cashDelta,
       avgWaitMin: recap.facts.avgWaitMin,
+      observation: observeGuests(recap),
       fare: "expensive",
       snow: "high",
     });
@@ -401,13 +405,34 @@ describe("lastDay", () => {
   it("survives a save and reload", () => {
     const next = rules.sleep(atNight());
     const saved = JSON.parse(JSON.stringify(toPersisted(next)));
-    expect(hydrate(saved, createBuiltHill()).lastDay).toEqual(next.lastDay);
+    const loaded = migrate(saved, SAVE_VERSION);
+    expect(loaded.reset).toBe(false);
+    expect(hydrate(loaded.state, createBuiltHill()).lastDay).toEqual(next.lastDay);
+
+    delete saved.lastDay.observation;
+    expect(migrate(saved, SAVE_VERSION)).toMatchObject({ reset: false, state: { lastDay: saved.lastDay } });
+  });
+
+  it("uses actual skiers and records no guest observations from an empty day", () => {
+    const day = started();
+    expect(day.dayStats.arrivals).toBeGreaterThan(0);
+    const night = rules.openNight(day);
+    const recap = night.nightRecap!;
+    expect(recap).toMatchObject({ arrivals: 0, revenue: 0, problem: "No skiers arrived today." });
+    expect(night.reputation).toBe(day.reputation);
+    expect(observeGuests(recap)).toBeNull();
+    expect(rules.sleep(night).lastDay?.observation).toBeUndefined();
   });
 });
 
 describe("building and save continuity", () => {
   const chair = { type: "chair" as const, top: REFERENCE_TOPS[1], bottom: TERRAIN.base };
-  const overnight = (state: GameState) => rules.sleep(rules.acknowledgeBeat(rules.skipToClose(state)));
+  const overnight = (state: GameState) => {
+    let night = rules.skipToClose(state);
+    night = rules.decideSchoolContract(night, "declined");
+    night = rules.replyToSummitLink(night, "declined");
+    return rules.sleep(rules.acknowledgeBeat(night));
+  };
 
   it("finishes a saved lodge upgrade after exactly two nights and gates chairs and guns", () => {
     const base = started();

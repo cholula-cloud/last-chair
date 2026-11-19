@@ -407,7 +407,7 @@ describe("readyStoryBeat", () => {
     snowDepth: 1,
     daysWithoutSnow: 0,
     reputation: 0,
-    lessonsBooked: false,
+    schoolOfferReady: false,
     completedBeats: [],
   };
 
@@ -430,11 +430,9 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat({ ...at, dayIndex: 5 })).toBeNull();
   });
 
-  it("school_bus fires on lessons or 28 weekday arrivals", () => {
-    expect(readyStoryBeat({ ...quiet, lessonsBooked: true })).toBe("school_bus");
-    const weekday = { ...quiet, dayIndex: 2, arrivals: 28 };
-    expect(readyStoryBeat(weekday)).toBe("school_bus");
-    expect(readyStoryBeat({ ...weekday, arrivals: 27 })).toBeNull();
+  it("school_bus fires only when an offer is available", () => {
+    expect(readyStoryBeat({ ...quiet, schoolOfferReady: true })).toBe("school_bus");
+    expect(readyStoryBeat({ ...quiet, dayIndex: 2, arrivals: 28 })).toBeNull();
   });
 
   it("dry_week fires at 3 dry days and depth under 0.35, not at the edge", () => {
@@ -444,9 +442,13 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat({ ...at, snowDepth: 0.35 })).toBeNull();
   });
 
-  it("summit_link fires at reputation 50, not below", () => {
-    expect(readyStoryBeat({ ...quiet, reputation: 50 })).toBe("summit_link");
-    expect(readyStoryBeat({ ...quiet, reputation: 49 })).toBeNull();
+  it("summit_link requires reputation 55 from day 18 through the penultimate day", () => {
+    const eligible = { ...quiet, reputation: 55, dayIndex: 18 };
+    expect(readyStoryBeat(eligible)).toBe("summit_link");
+    expect(readyStoryBeat({ ...eligible, reputation: 54 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, dayIndex: 17 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, dayIndex: 27 })).toBe("summit_link");
+    expect(readyStoryBeat({ ...eligible, dayIndex: 28 })).toBeNull();
   });
 
   it("returns the earliest beat in STORY_BEATS order when several are ready", () => {
@@ -455,7 +457,7 @@ describe("readyStoryBeat", () => {
       liftsOpen: 1,
       completedRuns: 5,
       reputation: 80,
-      lessonsBooked: true,
+      schoolOfferReady: true,
     };
     expect(readyStoryBeat(many)).toBe("first_load");
     expect(readyStoryBeat({ ...many, completedBeats: ["first_load"] })).toBe(
@@ -464,7 +466,7 @@ describe("readyStoryBeat", () => {
   });
 
   it("skips completed beats", () => {
-    const input = { ...quiet, reputation: 50, completedBeats: ["summit_link" as const] };
+    const input = { ...quiet, dayIndex: 18, reputation: 55, completedBeats: ["summit_link" as const] };
     expect(readyStoryBeat(input)).toBeNull();
   });
 

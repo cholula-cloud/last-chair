@@ -27,7 +27,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "riley",
     name: "Riley Otis",
     title: "The Rigger",
-    blurb: "Lift limps overnight. No SummitLink equity.",
+    blurb: "Lift limps overnight. Turns down SummitLink deals.",
     arrivalMoodBonus: 0.02,
     fixedCostDelta: 0,
     snowExpectationPenalty: 0,
@@ -82,7 +82,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "first_load",
     title: "First uphill load",
     radio:
-      "Last adult ticket here was 1985. DHASH hikers wave from the meadow — you just turned the tow.",
+      "First tickets since 1985, and Superintendent Al Waters is listening. He wants the Readsboro bus back up here. Get the lodge to Tier 2, run a ski lesson, and give him a hill that can stay open.",
   },
   {
     id: "saturday",
@@ -94,7 +94,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "school_bus",
     title: "School bus",
     radio:
-      "Al Waters: one Readsboro bus equals payroll lights. Treat those kids like the future of Dutch Meadows.",
+      "Al Waters: Readsboro wants to bring a school bus to Dutch Hill. Can you make room?",
   },
   {
     id: "dry_week",
@@ -112,7 +112,7 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "winter_review",
     title: "Winter review",
     radio:
-      "You held one more winter in the sticks. Career pin unlocked: Tenney Mountain, NH — when you’re ready.",
+      "Last chair for the winter. Maris has the season’s news from Dutch Hill.",
   },
 ];
 

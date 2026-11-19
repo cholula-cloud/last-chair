@@ -36,6 +36,9 @@ export function FounderPick() {
       title="Dutch Hill, winter 1"
       subtitle="Who signs the lease? Your founder’s quirks last the whole winter."
     >
+      <p className="mb-3 text-sm font-bold leading-snug">
+        Keep Dutch Hill open through closing day with enough cash to cover its winter bills. If you open a ski school, Al would love to bring the Readsboro kids up.
+      </p>
       <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
         {FOUNDERS.map((f, i) => (
           <li

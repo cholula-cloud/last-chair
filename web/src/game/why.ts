@@ -1,6 +1,7 @@
 import { formatMoney } from "./format";
+import { SCHOOL_BUS_FARE } from "./schoolContract";
 import type { NightRecap } from "./sim";
-import { SAT_TERM_KEYS, SAT, type SatTerms } from "./satisfaction";
+import { biggestProblem, SAT_TERM_KEYS, SAT, type SatTerms } from "./satisfaction";
 
 /** One row of the recap's "Why?" list. */
 export type WhyLine = {
@@ -23,12 +24,16 @@ const LABEL: Record<keyof SatTerms, string> = {
 function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]): string {
   switch (key) {
     case "queue":
+      if (f.dispatched === 0) return "No completed lift waits to average";
       return `waited ${f.avgWaitMin.toFixed(1)} min a ride${f.busiestLift ? `, longest at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}`;
     case "snow":
       return `Today's average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%`;
     case "value": {
       const worth = `guests felt today was worth about ${formatMoney(f.hillValue)}`;
       const price = formatMoney(f.farePrice);
+      if (f.schoolBus?.arrived) {
+        return `Public tickets were ${price}, with ${formatMoney(SCHOOL_BUS_FARE)} school tickets. On average, ${worth}.`;
+      }
       if (points <= -1) return `${price} felt steep for the day (${worth})`;
       if (points >= 1) return `${price} felt like a fair deal (${worth})`;
       return `${price} about right (${worth})`;
@@ -63,6 +68,48 @@ export function formatPoints(points: number): string {
 }
 
 export const WHY_BASE = SAT.BASE;
+
+export type GuestMeasure = keyof SatTerms;
+export type GuestObservation = { measure: GuestMeasure; value: number };
+
+/** Reuse the same reading even if a different problem tops the next recap. */
+export function observeGuests(recap: NightRecap, measure?: GuestMeasure): GuestObservation | null {
+  if (recap.arrivals === 0) return null;
+  const facts = recap.facts;
+  const chosen = measure ?? biggestProblem(recap.breakdown) ?? "runs";
+  if (chosen === "queue" && !facts.dispatched) {
+    return measure ? null : { measure: "runs", value: facts.runsPerGuest };
+  }
+  const readings = {
+    queue: facts.avgWaitMin,
+    snow: facts.snowQuality,
+    value: facts.hillValue - facts.farePrice,
+    runs: facts.runsPerGuest,
+    arrivalMood: facts.arrivalMood,
+  };
+  return { measure: chosen, value: readings[chosen] };
+}
+
+export const GUEST_MEASURE_LABELS: Record<GuestMeasure, string> = {
+  queue: "Average wait per ride",
+  snow: "Average snow quality at closing",
+  value: "Estimated value minus ticket price",
+  runs: "Average runs per skier",
+  arrivalMood: "Average mood on arrival",
+};
+
+export function formatGuestObservation({ measure, value }: GuestObservation): string {
+  switch (measure) {
+    case "queue": return `${value.toFixed(1)} min`;
+    case "runs": return `${value.toFixed(1)} runs`;
+    case "value": {
+      const dollars = Math.round(value);
+      return formatMoney(dollars, { signed: dollars !== 0 });
+    }
+    case "snow":
+    case "arrivalMood": return `${Math.round(value * 100)}%`;
+  }
+}
 
 export type Delta = { direction: "up" | "down" | "same"; text: string };
 

@@ -1,7 +1,8 @@
+import { winterRecord } from "./winterMemory";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
-  morningCash, operatingCosts, payoffAmount, type Payable,
+  liquidNetWorth, morningCash, operatingCosts, payoffAmount, type Payable,
 } from "./economy";
 import { MOUNTAIN_CALENDARS, usesWeekendGuestMix } from "./calendar";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
@@ -40,6 +41,7 @@ import {
   stepLifts,
 } from "./lifts";
 import { createRng } from "./rng";
+import { nextSchoolBusDay, schoolBusPupils, SCHOOL_BUS_FARE, type SchoolContractDecision } from "./schoolContract";
 import {
   THAW_START_MIN,
   averageTrail,
@@ -51,6 +53,7 @@ import {
   wearTrail,
 } from "./snow";
 import { SAT, daySatisfaction, venueValue, type SatisfactionContext } from "./satisfaction";
+import { observeGuests } from "./why";
 import {
   DAY_END_MIN,
   DAY_START_MIN,
@@ -63,9 +66,12 @@ import {
   nextTalentName,
   planArrivals,
   readyStoryBeat,
+  schoolBusGuests,
   tickGuests,
 } from "./sim";
 import { createInitialState, type GameState, type LiftSlot } from "./state";
+import { SUMMIT_LINK_PAYMENT, type SummitLinkDecision } from "./summitLink";
+import { arrangeSurprise, resolveSurprise } from "./surprises";
 import {
   routeOptions,
   segmentElevationsForPath,
@@ -156,53 +162,75 @@ export function liveSatisfaction(state: GameState): number {
 const BEAT_REPUTATION_BONUS = 2;
 
 export function openNight(state: GameState): GameState {
-  if (openingStep(state)) return state;
+  if (state.phase !== "day" || openingStep(state)) return state;
+  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails)).length;
   const avgQueueMin = measuredWaitMin(state);
   const ctx = satisfactionContext(state);
+  const day = daySatisfaction(state.guests, ctx);
   const stats = { ...state.dayStats, avgQueueMin };
+  const invited = schoolBusPupils(state.schoolContract, state.dayIndex);
+  const pupils = invited ? state.guests.filter((guest) => guest.schoolPupil) : [];
+  const arrived = pupils.filter((guest) => guest.state !== "pending").length;
+  const taught = pupils.filter((guest) => guest.schoolLessonCompleted).length;
+  const schoolProgramProven = state.schoolProgramProven || (
+    state.lodgeTier >= 2 && state.guests.some((guest) => guest.schoolLessonCompleted)
+  );
   const recap = buildNightRecap({
-    stats,
+    stats: { ...stats, arrivals: day.guests },
     fare: state.fare,
     snowQuality: state.snowQuality,
     snowTrouble: readSnow(snowCarriers(state.trails)).trouble,
     snowLabel: readSnow(snowCarriers(state.trails)).label,
-    day: daySatisfaction(state.guests, ctx),
+    day,
     arrivalMood: ctx.arrivalMood,
     costs: operatingCosts(state),
+    schoolBus: invited ? { invited, arrived, taught, ticketRevenue: arrived * SCHOOL_BUS_FARE } : undefined,
     busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
       const min = record.rides ? record.waitSumMin / record.rides : 0;
       const lift = state.lifts[i];
       return min > (busiest?.min ?? 0) && lift ? { min, label: `${LIFT_LABELS[lift.type]} ${i + 1}` } : busiest;
     }, undefined),
   });
-  const rawReputation = Math.round(
-    state.reputation * 0.85 + recap.satisfaction * 0.15,
-  );
+  const rawReputation = recap.arrivals > 0
+    ? Math.round(state.reputation * 0.85 + recap.satisfaction * 0.15)
+    : state.reputation;
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0);
   const pendingBeat = readyStoryBeat({
-    calendar: MOUNTAIN_CALENDARS[state.mountainId],
+    calendar,
     dayIndex: state.dayIndex,
+    seasonLength: state.seasonLength,
     liftsOpen: openLifts,
     completedRuns: state.dayStats.completedRuns,
-    arrivals: state.dayStats.arrivals,
+    arrivals: recap.arrivals,
     snowDepth: state.snowDepth,
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: rawReputation,
-    lessonsBooked: (stats.venueRevenue.ski_school ?? 0) > 0 || state.talentsOwned.includes("school_day"),
-    completedBeats: state.completedBeats,
+    schoolOfferReady: schoolContractOfferDay({ ...state, schoolProgramProven }) !== null,
+    completedBeats: state.completedBeats.filter((id) =>
+      (id !== "school_bus" || state.schoolContract !== null) &&
+      (id !== "summit_link" || state.summitLinkDecision !== null)),
   });
+  const surprise = resolveSurprise(state.surprise, state.guests);
   return {
     ...state,
     phase: "night",
     paused: true,
     nightRecap: recap,
+    surprise: null,
+    surpriseLog: surprise ? [...state.surpriseLog, surprise] : state.surpriseLog,
     pendingFare: state.fare,
     pendingSnow: state.snow,
-    reputation: reputationAfterBeat(pendingBeat),
+    reputation: reputationAfterBeat(
+      pendingBeat === "summit_link" && state.completedBeats.includes(pendingBeat) ? null : pendingBeat,
+    ),
     pendingBeat,
     beatAcknowledged: pendingBeat == null,
+    schoolProgramProven,
+    schoolContract: invited && state.schoolContract?.decision === "accepted"
+      ? { ...state.schoolContract, pupilsTaught: taught }
+      : state.schoolContract,
     dayStats: stats,
   };
 }
@@ -388,6 +416,7 @@ export function skipToClose(state: GameState): GameState {
 }
 
 export function setPendingFare(state: GameState, fare: FarePreset): GameState {
+  if (state.summitLinkDecision === "accepted" && fare === "expensive") return state;
   return { ...state, pendingFare: fare };
 }
 
@@ -837,15 +866,57 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
 }
 
 export function acknowledgeBeat(state: GameState): GameState {
+  if (state.pendingBeat === "school_bus" || summitLinkOfferOpen(state)) return state;
+  return completeBeat(state);
+}
+
+function completeBeat(state: GameState): GameState {
   if (!state.pendingBeat) {
     return state.beatAcknowledged ? state : { ...state, beatAcknowledged: true };
   }
   return {
     ...state,
-    completedBeats: [...state.completedBeats, state.pendingBeat],
+    completedBeats: state.completedBeats.includes(state.pendingBeat)
+      ? state.completedBeats
+      : [...state.completedBeats, state.pendingBeat],
     pendingBeat: null,
     beatAcknowledged: true,
   };
+}
+
+export function schoolContractOfferDay(state: GameState): number | null {
+  if (state.schoolContract !== null || state.lodgeTier < 2 || !state.schoolProgramProven ||
+      !state.assets.some((asset) => asset.id === "ski_school")) return null;
+  return nextSchoolBusDay(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex, state.seasonLength);
+}
+
+export function decideSchoolContract(state: GameState, decision: SchoolContractDecision): GameState {
+  if (state.phase !== "night" || state.pendingBeat !== "school_bus") return state;
+  const day = schoolContractOfferDay(state);
+  if (day === null) return state;
+  return completeBeat({
+    ...state,
+    schoolContract: decision === "accepted" ? { decision, day, pupilsTaught: null } : { decision },
+  });
+}
+
+export function summitLinkOfferOpen(state: GameState): boolean {
+  return state.phase === "night" && state.nightRecap !== null && state.dayIndex < state.seasonLength &&
+    state.pendingBeat === "summit_link" && state.summitLinkDecision === null;
+}
+
+export function replyToSummitLink(state: GameState, reply: SummitLinkDecision): GameState {
+  if (!summitLinkOfferOpen(state) || !state.nightRecap) return state;
+  if (reply !== "accepted" && reply !== "declined") return state;
+  if (reply === "accepted" && state.founderId === "riley") return state;
+  const accepted = reply === "accepted";
+  return completeBeat({
+    ...state,
+    cash: state.cash + (accepted ? SUMMIT_LINK_PAYMENT : 0),
+    pendingFare: accepted && state.pendingFare === "expensive" ? "balanced" : state.pendingFare,
+    summitLinkDecision: reply,
+    nightRecap: { ...state.nightRecap, summitLinkReply: reply },
+  });
 }
 
 /** One night's overnight result and the crew talents owned in the morning (the learned talent counts). */
@@ -940,7 +1011,10 @@ export function expectedArrivals(
     founderId: state.founderId,
     reputation: state.reputation,
   });
-  return outlook ? WEATHER_KINDS.reduce((sum, kind) => sum + outlook[kind] * arrivals(kind), 0) : arrivals(state.weather);
+  const publicArrivals = outlook
+    ? WEATHER_KINDS.reduce((sum, kind) => sum + outlook[kind] * arrivals(kind), 0)
+    : arrivals(state.weather);
+  return publicArrivals + schoolBusPupils(state.schoolContract, state.dayIndex + 1);
 }
 
 export function takeLoan(state: GameState): GameState {
@@ -975,7 +1049,7 @@ export function repayLoan(state: GameState, amount?: number): GameState {
 
 export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
-  if (state.pendingBeat && !state.beatAcknowledged) return state;
+  if (summitLinkOfferOpen(state) || (state.pendingBeat && !state.beatAcknowledged)) return state;
 
   const recap = state.nightRecap;
   const costs = dailyCosts(state);
@@ -990,11 +1064,13 @@ export function sleep(state: GameState): GameState {
   };
   state = closeLiftsNow(state, new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : [])));
   const nextDay = state.dayIndex + 1;
+  const observation = observeGuests(recap);
   const lastDay = {
     arrivals: recap.arrivals,
     satisfaction: recap.satisfaction,
     cashDelta: recap.cashDelta,
     avgWaitMin: recap.facts.avgWaitMin,
+    ...(observation ? { observation } : {}),
     fare: state.fare,
     snow: state.snow,
   };
@@ -1002,7 +1078,7 @@ export function sleep(state: GameState): GameState {
   const completedTier = state.lodgeUpgrade && !upgrade ? state.lodgeUpgrade.toTier : null;
   const bankrupt = debtMornings >= BANKRUPTCY_MORNINGS;
   if (bankrupt || nextDay > state.seasonLength) {
-    return {
+    const review: GameState = {
       ...state,
       phase: "winter_review",
       outcome: bankrupt ? "bankrupt" : "finished",
@@ -1018,6 +1094,7 @@ export function sleep(state: GameState): GameState {
         ? state.completedBeats
         : [...state.completedBeats, "winter_review"],
     };
+    return { ...review, lastWinter: winterRecord(review) };
   }
 
   const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
@@ -1066,6 +1143,14 @@ export function sleep(state: GameState): GameState {
     reputation: state.reputation,
     rand,
   });
+  const pupils = schoolBusPupils(state.schoolContract, nextDay);
+  const { guests, surprise } = arrangeSurprise({
+    calendar,
+    dayIndex: nextDay,
+    seasonSeed: state.seasonSeed,
+    weather: overnight.weather,
+    surpriseLog: state.surpriseLog,
+  }, createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, nextDay)));
   return {
     ...carried,
     phase: "day",
@@ -1078,20 +1163,25 @@ export function sleep(state: GameState): GameState {
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,
-    guests: createInitialGuests(arrivals, rand, usesWeekendGuestMix(calendar, nextDay)),
-    dayStats: { ...emptyDayStats(), arrivals },
+    guests: pupils
+      ? [...guests, ...schoolBusGuests(nextDay, pupils)].sort((a, b) => a.arriveAtMin - b.arriveAtMin)
+      : guests,
+    surprise,
+    dayStats: { ...emptyDayStats(), arrivals: guests.length + pupils },
     lifts: resetLiftQueues(carried.lifts),
     rngState: rng.state(),
   };
 }
 
 export function finishWinterReview(state: GameState): GameState {
-  if (state.phase !== "winter_review" || state.outcome !== "finished") return state;
+  if (state.phase !== "winter_review" || state.outcome !== "finished" || liquidNetWorth(state) < 0) return state;
   return { ...state, phase: "mountain2" };
 }
 
 export function startNewSeason(state: GameState): GameState {
-  return pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
+  const next = pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
+  if (state.outcome === "playing") return next;
+  return { ...next, lastWinter: state.lastWinter ?? winterRecord(state) };
 }
 
 export function nextTalentHint(state: GameState): string | null {

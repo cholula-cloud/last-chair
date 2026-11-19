@@ -10,6 +10,7 @@ import {
   pickFounder,
   placeAsset,
   placeLift,
+  replyToSummitLink,
   setPendingFare,
   setPendingSnow,
   skipToClose,
@@ -32,7 +33,10 @@ const EAST_TRAVERSE = [
 ];
 
 export function playGateDay(state: GameState): GameState {
-  return acknowledgeBeat(skipToClose(state));
+  const night = skipToClose(state);
+  return night.pendingBeat === "summit_link"
+    ? replyToSummitLink(night, "declined")
+    : acknowledgeBeat(night);
 }
 
 function balancedNight(state: GameState): GameState {

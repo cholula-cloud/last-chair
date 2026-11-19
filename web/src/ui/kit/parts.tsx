@@ -127,6 +127,7 @@ export type ChoiceOption<T extends string> = {
   value: T;
   label: string;
   detail?: string;
+  disabled?: boolean;
   /** Expected effect, one short line under the detail (e.g. "~27 skiers"). */
   note?: string;
   /** Small decorative glyph above the label (elevation peaks for fares). */
@@ -156,6 +157,7 @@ export function ChoiceTiles<T extends string>({
           <button
             key={opt.value}
             type="button"
+            disabled={opt.disabled}
             aria-pressed={on}
             onClick={() => onPick(opt.value)}
             className="key press relative flex min-h-[84px] flex-col items-center justify-center px-1.5 py-2 text-center"

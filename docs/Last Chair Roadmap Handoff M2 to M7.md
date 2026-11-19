@@ -1556,19 +1556,19 @@ Implement this row in Dutch Hill first-winter PRs 3–5. PR 3 delivers the local
 
 ### Local surprises (first-winter PR 3)
 
-Deliver these after the first operating day. Use the seeded winter and genuine day records. Each night may present at most one story item. Keep queued events linked to their original day and facts, even if delivered later. Radio filler and acknowledgement do not change the simulation. A radio preference can hide optional filler. Decisions remain visible and require an explicit reply or decline.
+Deliver these after the first operating day. Use the seeded winter and genuine day records. Each day can generate one local moment, which the night recap can report alongside a contract. Keep each occurrence linked to its original day and facts. Hearing a local report requires no acknowledgement. Contract decisions require an explicit reply.
 
 | Event | What happens | What the recap can say |
 |---|---|---|
-| Pie at the lodge | A quiet local moment at the lodge after operations begin. | Say who brought the pie and where it was left. This event has no hidden changes to cash, arrivals, mood or reputation. |
+| Pie at the lodge | A quiet local moment at the lodge after operations begin. | Report the pie on the lodge counter. Its baker can remain a mystery. This event has no hidden changes to cash, arrivals, mood or reputation. |
 | Former regulars | On some weekdays former regulars arrive together. Use the simulated group and arrival time for the account. | Report the group that actually arrived and use measured wait or demand when it shows up in the recap. |
 | Frosty road | Road frost delays some planned arrivals. The same total remains scheduled that day. | Report the delay when it occurs. A quiet opening from delayed arrivals is different from weak demand over the whole day. |
 
-Record the event facts in the log. Treat radio and the story log as two views of the same events. Test the seeded arrival changes through normal day simulation, a reload with an event queued, one presentation per night, and the pie's lack of mechanical effects. Preserve readable controls on a 390×844 viewport.
+Record the event facts in the save so the recap, winter review and a future story-log screen can draw on the same occurrence. Test the seeded arrival changes through normal day simulation, reload during an event day, a single local report per day, and the pie's lack of mechanical effects. Preserve readable controls on a 390×844 viewport.
 
 ### Readsboro school visit (first-winter PR 4)
 
-Once the Tier 2 ski school is ready and at least one bookable weekday remains, offer one visit from Readsboro. Show the upcoming weekday, six pupils, the discounted ticket fare and the school capacity needed; allow the operator to accept or decline. The offer is optional and does not change the posted fare for the rest of the guests. Acceptance schedules six pupils for one weekday; it does not credit the optional goal. Record the booked count, actual visits, discounted ticket receipts, lessons delivered and lessons missed. Report the actual visit after close and credit the optional goal from delivered lessons. A visit with no lessons delivered is incomplete. Show any partial result as a count out of six.
+Once a pupil completes a lesson at the Tier 2 ski school and at least one school weekday outside weekends, holidays and school vacations remains, offer one visit from Readsboro. Show the upcoming weekday, six pupils, the discounted ticket fare and the school capacity needed; allow the operator to accept or decline. The offer is optional and does not change the posted fare for the rest of the guests. Acceptance schedules six pupils for one weekday; it does not credit the optional goal. Record the booked count, actual visits, discounted ticket receipts, lessons delivered and lessons missed. Report the actual visit after close and credit the optional goal from delivered lessons. A visit with no lessons delivered is incomplete. Show any partial result as a count out of six.
 
 Verify accepting, declining, reloading after booking and submitting a repeated reply without rescheduling the visit. Verify an accepted visit that cannot deliver all the lessons through the same guest and school rules used on other days. Keep the common solvency goal visible for either path.
 

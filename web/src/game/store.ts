@@ -5,6 +5,7 @@ import { persist, type PersistStorage, type StorageValue } from "zustand/middlew
 import { migrate } from "./migrations";
 import type { AssetId } from "./base";
 import type { PaintStroke } from "./paintedTrail";
+import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
 import { STORY_BEATS } from "./content";
 import * as rules from "./rules";
@@ -17,6 +18,7 @@ import {
   type PersistedState,
 } from "./state";
 import type { XZ } from "./terrain";
+import type { SummitLinkDecision } from "./summitLink";
 import type {
   BuildingId,
   FarePreset,
@@ -52,6 +54,8 @@ type GameActions = {
   buyBuilding: (id: BuildingId) => void;
   pickFounder: (id: FounderId) => void;
   acknowledgeBeat: () => void;
+  replyToSummitLink: (reply: SummitLinkDecision) => void;
+  decideSchoolContract: (decision: SchoolContractDecision) => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
@@ -244,6 +248,8 @@ export const useGameStore = create<GameStore>()(
         buyBuilding: (id) => commit((s) => rules.buyBuilding(s, id)),
         pickFounder: (id) => commit((s) => rules.pickFounder(s, id)),
         acknowledgeBeat: () => commit((s) => rules.acknowledgeBeat(s)),
+        replyToSummitLink: (reply) => commit((s) => rules.replyToSummitLink(s, reply)),
+        decideSchoolContract: (decision) => commit((s) => rules.decideSchoolContract(s, decision)),
         finishWinterReview: () => commit((s) => rules.finishWinterReview(s)),
         startNewSeason: () => commit((s) => rules.startNewSeason(s)),
         nextTalentHint: () => rules.nextTalentHint(get()),
