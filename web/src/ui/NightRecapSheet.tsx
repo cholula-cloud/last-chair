@@ -29,6 +29,10 @@ import {
   type WeatherKind,
 } from "@/game/types";
 import { outlookFor } from "@/game/weather";
+import { problemGuide } from "@/game/coach";
+import { LAYERS, type MapLayer } from "@/game/mapLayers";
+import { founderById } from "@/game/content";
+import type { OfficeTab } from "./Office";
 import { CoachCard } from "./CoachCard";
 import { useCoach } from "./coachStore";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
@@ -321,11 +325,13 @@ function Choices({
   );
 }
 
-export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
+export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab) => void; onMap: (layer: MapLayer) => void }) {
   const night = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s : null));
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
+  const tipsOn = useSettings(s => s.tips);
+  const coachProblem = useCoach(s => !s.skipped && !s.problemSeen);
   const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
 
@@ -341,6 +347,7 @@ export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
   const summitLinkOffer = summitLinkOfferOpen(night);
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
+  const guide = tipsOn && coachProblem ? problemGuide(recap) : null;
   const guestsWant = hasGuests ? guestsWantLine(recap, demandContext(night)) : null;
 
   return (
@@ -389,7 +396,8 @@ export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
             onClick={() => {
               if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
               sleep();
-              if (dayIndex === 1) useCoach.getState().skip();
+              if (guide) useCoach.getState().sawProblem();
+              if (dayIndex === 1) useCoach.getState().finishDay();
             }}
           >
             <CocoaIcon size={24} />
@@ -436,6 +444,14 @@ export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
           <span className="sr-only">Problem: </span>
           {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
+        {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
+          <p className="text-base"><strong>{night.founderId && founderById(night.founderId)?.name}</strong> · {guide.text}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map · {LAYERS[guide.layer]}</button>
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office · {guide.tab}</button>
+            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawProblem()}>Dismiss advice</button>
+          </div>
+        </aside>}
         <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
         {guestsWant && (
           <p data-coach="guests-want" className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
@@ -471,7 +487,7 @@ export function NightRecapSheet({ onOffice }: { onOffice?: () => void }) {
           </RadioCard>
         )}
         {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
-        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={onOffice}>Office</button>
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={() => onOffice("Desk")}>Office</button>
         <details className="panel mt-4 p-3">
           <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
           <StoryEntries />

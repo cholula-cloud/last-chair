@@ -244,40 +244,46 @@ export const useGameStore = create<GameStore>()(
           if (immediate) flushSave();
         };
       }
+      // React passes its click event to callback props. Commands take no gameplay input.
+      type CommandRule = { [K in RuleName]: [] extends RuleArgs<K> ? K : never }[RuleName];
+      function command(rule: CommandRule) {
+        const run = action(rule);
+        return () => run();
+      }
       return {
         ...createInitialState(freshSeed()),
         saveNotice: null,
         dismissSaveNotice: () => commit(() => ({ saveNotice: null })),
         markTipSeen: action("markTipSeen"),
         tick: action("tick", false),
-        togglePause: action("togglePause"),
-        skipToClose: action("skipToClose"),
-        openNightIfReady: action("openNightIfReady"),
+        togglePause: command("togglePause"),
+        skipToClose: command("skipToClose"),
+        openNightIfReady: command("openNightIfReady"),
         setPendingFare: action("setPendingFare"),
         setPendingSnow: action("setPendingSnow"),
-        sleep: action("sleep"),
-        takeLoan: action("takeLoan"),
-        repayLoan: action("repayLoan"),
+        sleep: command("sleep"),
+        takeLoan: command("takeLoan"),
+        repayLoan: command("repayLoan"),
         setFollowId: action("setFollowId", false),
         setBuildMode: action("setBuildMode", false),
         setSelectedLiftType: action("setSelectedLiftType", false),
         placeLift: action("placeLift"),
-        undoLift: action("undoLift"),
+        undoLift: command("undoLift"),
         closeLift: action("closeLift"),
         commitPaint: action("commitPaint"),
         removeAsset: action("removeAsset"),
         moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
         placeGun: action("placeGun"),
-        beginLodgeUpgrade: action("beginLodgeUpgrade"),
-        undoTrail: action("undoTrail"),
+        beginLodgeUpgrade: command("beginLodgeUpgrade"),
+        undoTrail: command("undoTrail"),
         buyBuilding: action("buyBuilding"),
         pickFounder: action("pickFounder"),
-        acknowledgeBeat: action("acknowledgeBeat"),
+        acknowledgeBeat: command("acknowledgeBeat"),
         replyToSummitLink: action("replyToSummitLink"),
         decideSchoolContract: action("decideSchoolContract"),
-        finishWinterReview: action("finishWinterReview"),
-        startNewSeason: action("startNewSeason"),
+        finishWinterReview: command("finishWinterReview"),
+        startNewSeason: command("startNewSeason"),
         nextTalentHint: () => rules.nextTalentHint(get()),
       };
     },

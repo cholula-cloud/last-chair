@@ -168,8 +168,9 @@ export function Guests({
       }
     });
     // Fill spare instance slots with distant downhill traffic as the actual roster arrives.
-    const target = Math.min(MAX, n + decorative);
-    if (n > 0 && decorative > 0) {
+    // Busy afternoons show more distant skiers. Traffic thins again as the last guests leave.
+    const target = Math.min(MAX, game.dayStats.guestsArrived, n * 3);
+    if (game.phase === "day" && routes.length && n < target) {
       for (let j = 0; n < target; j++, n++) {
         const sample = routes[j % routes.length];
         const progress = (0.17 + j * 0.618 + (reduced.current ? 0 : game.clockMin / 27)) % 1;

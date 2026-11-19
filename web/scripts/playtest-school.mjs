@@ -74,9 +74,11 @@ try {
       assert.equal((await read()).paused, true);
       await office.locator("summary").filter({ hasText: "Playtest notes" }).tap();
       await office.getByLabel("What happened?").fill("Booked the Readsboro visit and checked its receipts.");
-      const downloadReady = page.waitForEvent("download");
-      await office.getByRole("button", { name: "Export replay" }).tap();
-      const download = await downloadReady;
+      const downloadReady = Promise.race([
+        page.waitForEvent("download"),
+        page.waitForEvent("pageerror").then(error => { throw error; }),
+      ]);
+      const [download] = await Promise.all([downloadReady, office.getByRole("button", { name: "Export replay" }).tap()]);
       assert.equal(download.suggestedFilename(), "last-chair-replay.json");
       const replay = JSON.parse(await readFile(await download.path(), "utf8"));
       assert.equal(replay.notes, "Booked the Readsboro visit and checked its receipts.");

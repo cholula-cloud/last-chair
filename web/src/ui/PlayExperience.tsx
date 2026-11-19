@@ -2,7 +2,9 @@
 
 import { TALENT } from "@/game/talents";
 
-import { MapLayers } from "./MapLayers";
+import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
+import { LAYERS, type MapLayer } from "@/game/mapLayers";
+import { LayerPanel, MapLayers } from "./MapLayers";
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
 import { useEffect, useRef, useState } from "react";
@@ -47,6 +49,23 @@ import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
 
 export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | "load" | "settings") => void }) {
   const [officeTab, setOfficeTab] = useState<OfficeTab | null>(null);
+  const inspectedLayer = useLayers(s => s.nightInspection ? s.layer : null);
+  const mapTrigger = useRef<HTMLElement | null>(null);
+  const openNightMap = (layer: MapLayer) => {
+    mapTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    openNightLayer(layer, useGameStore.getState().pendingSnow);
+  };
+  const closeNightMap = () => {
+    closeNightLayer();
+    requestAnimationFrame(() => mapTrigger.current?.focus({ preventScroll: true }));
+  };
+  useEffect(() => {
+    if (!inspectedLayer) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") closeNightMap(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [inspectedLayer]);
+  useEffect(() => closeNightLayer, []);
   const resumeOfficeDay = useRef(false);
   const officeTrigger = useRef<HTMLElement | null>(null);
   const openOffice = (tab: OfficeTab) => {
@@ -344,7 +363,14 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           setBuildOpen(false);
         }}
       />
-      <NightRecapSheet onOffice={() => openOffice("Desk")} />
+      <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeTab}>
+        <NightRecapSheet onOffice={openOffice} onMap={openNightMap} />
+      </div>
+      {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="fixed bottom-3 right-3 z-[61]">
+        <LayerPanel layer={inspectedLayer} />
+        <button type="button" autoFocus className="key min-h-11 px-3 font-bold" onClick={closeNightMap}>Back to recap</button>
+        <span className="sr-only" role="status">{LAYERS[inspectedLayer]} map at closing</span>
+      </section>}
       <FounderPick />
       <div className="pointer-events-none absolute inset-x-3 top-[max(0.6rem,env(safe-area-inset-top))] z-[70] mx-auto max-w-md">
         <div className={saveNotice ? "key pointer-events-auto flex items-center gap-2 p-1 pl-3" : undefined}>

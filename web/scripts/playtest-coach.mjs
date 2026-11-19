@@ -56,7 +56,15 @@ try {
       const card = await page.locator(".coach-card").boundingBox();
       const control = await target(anchor).boundingBox();
       assert(card && control && card.y + card.height <= control.y, "Tip overlaps " + anchor);
-      await next();
+      if (anchor === "build") {
+        await press("Build");
+        await page.getByRole("complementary", { name: "Lodge upgrade tip" }).waitFor();
+        await press("Review Tier 2 upgrade");
+        await page.getByText("Check the deposit and both night payments below before committing.", { exact: false }).waitFor();
+        await press("Start lodge upgrade");
+        await page.getByText(/Tier 2 under construction/).waitFor();
+        await press("Close build sheet");
+      } else await next();
     }
     await page.locator('[data-coach="close"].coach-target').waitFor();
     await press("Close hill");
@@ -67,7 +75,22 @@ try {
       await element.scrollIntoViewIfNeeded();
       assert.equal(await element.count(), 1, anchor);
       await page.locator('[data-coach="' + anchor + '"].coach-target').waitFor();
-      if (anchor === "recap-problem") await page.getByRole("button", { name: /^Why .*happy/ }).tap();
+      if (anchor === "recap-problem") {
+        await page.getByRole("button", { name: /^Why .*happy/ }).tap();
+        const guide = page.getByRole("complementary", { name: "First problem guide" });
+        const mapButton = guide.getByRole("button", { name: /^Map · / });
+        const layer = (await mapButton.innerText()).split(" · ")[1];
+        const officeButton = guide.getByRole("button", { name: /^Office · / });
+        const tab = (await officeButton.innerText()).split(" · ")[1];
+        await mapButton.tap();
+        const view = page.getByRole("region", { name: "Inspect nightly map" });
+        assert.equal(await view.getByRole("button", { name: layer, exact: true }).getAttribute("aria-pressed"), "true");
+        await press("Back to recap");
+        await officeButton.tap();
+        assert.equal(await page.locator('[data-office-tab="' + tab + '"]').getAttribute("aria-pressed"), "true");
+        await press("Close Office");
+        await guide.getByRole("button", { name: "Dismiss advice" }).tap();
+      }
       if (anchor === "fare" || anchor === "snow") {
         await element.getByRole("button").first().tap();
       }

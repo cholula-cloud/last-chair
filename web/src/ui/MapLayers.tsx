@@ -51,7 +51,7 @@ export function LayerLegend({
   );
 }
 
-function LayerPanel({ layer }: { layer: MapLayer }) {
+export function LayerPanel({ layer }: { layer: MapLayer }) {
   const { time, preset, point, wear, gunView } = useLayers();
   const { state, model } = useLayerSnapshot(layer);
   const read = point && readPoint(state, model, layer, point, wear, gunView);

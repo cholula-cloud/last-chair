@@ -37,7 +37,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
-The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. The M3 roadmap below tracks the remaining acceptance work. Career effects on later mountains belong to M5.
+The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. PR #80 adds the Office and map layers, new guest types, the twenty crew talents, founder effects, replay exports and the winter score. Career effects on later mountains belong to M5.
 
 
 The M3 roadmap below includes the November 19 expansion. Device sessions are deferred at the owner’s request.
@@ -296,14 +296,14 @@ Lodge card    → tier, what the next tier opens, Upgrade (also opens by tapping
 Guests sheet  → list + Follow (no tiny 3D picking on phone)
 Night recap   → recap + fare + snow/service tiles + Continue
 Layers strip  → Slope · Snow depth · Snow-making · Conditions (§12)
-Office        → full-screen, pauses the day: Desk · Money · Stats · Reports · Crew · Atlas (§12). Replaces the career hub; the Ledger and the career map arrive as Office tabs
+Office        → full-screen, pauses the day: Desk · Money · Reports · Crew. Stats and Atlas expand the Office in later milestones (§12).
 ```
 
 **Touch:** one-finger pan, pinch zoom, two-finger orbit and tilt, tap select, double-tap focus; recenter button. Build mode is an explicit toggle; inside it, one finger paints or drags and two fingers move the camera.
 
 **Performance budgets:** 20–30 simulated guests on iPhone (40 on iPad); ≤24 drawn guest meshes on iPhone; instanced trees; 30 fps acceptable on a mid iPhone; heightfield ≤2K; GLB <500 KB each, with styles sharing meshes and swapping palettes where they can. A cap on placed buildings per base area is set in row 16a (proposed 12 on iPhone). Pause the clock and flush the save when the page is hidden. Never assume 60 Hz. Audio only after a user gesture. No component in `web/src/render/` passes a positive `useFrame` priority unless it calls `gl.render` itself (that bug blanked the scene from #39 to #48).
 
-**Speed:** 1× default, with faster speeds available from the first day. The code has 1×, 2× and 3× today and resets to the Settings default each night; row L-F moves to 1×, 2× and 4× and keeps the choice overnight. "Skip to close" after 2 PM.
+**Speed.** A standard day runs for two minutes at 1×. Players can choose 2× or 4× once the opening tips finish or are skipped. Speed carries overnight.
 
 **Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; wanted item locked → lodge tier). The closing recap offers a one-time winter loan when projected morning cash falls below zero before the final night. Three consecutive negative mornings end the winter and open the winter review.
 
@@ -546,7 +546,9 @@ Controls need an accessible name and a touch target at least 44 by 44 CSS pixels
 
 Audit of this plan and the repo on 2026-11-19. Each finding below was checked against the code or the docs.
 
-### What the audit found
+### Findings before the M3 implementation
+
+These November 19 observations explain why Q1–Q10 were added. The roadmap below and the testing log track what shipped.
 
 1. **Effort is inverted.** §4 spends about 15 lines on Capitalist Mode and M8 has eight rows, all after v1. The feel layer (guest models, snow shader, lighting, audio, juice) is six one-line rows in M4, after the MVP gate. The code plays no sound: Settings stores a voice volume and nothing uses it. Outside players at the M3 gate will judge a silent, flat-lit game.
 2. **The biggest unknown is still open.** The M2 gate asks whether a new player builds a lift and paints a trail in three minutes. No person has run it. Every phone check uses Playwright Chromium at phone sizes; no iPhone or iPad Safari run is recorded. Touch painting, edge auto-pan (Safari's left-edge swipe goes back), pinch zoom, the collapsing address bar and WebGL memory limits show up only there.

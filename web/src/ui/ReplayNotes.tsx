@@ -22,7 +22,9 @@ export function ReplayNotes() {
     const link = document.createElement("a");
     link.href = url;
     link.download = file.name;
+    document.body.appendChild(link);
     link.click();
+    link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     setMessage(share ? "Notes and replay downloaded. Attach the file to your feedback." : "Replay downloaded.");
   }

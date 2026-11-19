@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeTip, COACH_INTROS, freshCoach, observeCoach, TIPS } from "./coach";
+import { activeTip, COACH_INTROS, freshCoach, observeCoach, problemGuide, TIPS } from "./coach";
 import { FOUNDERS } from "./content";
 import { createInitialState, type GameState } from "./state";
 
@@ -129,5 +129,19 @@ describe("coach tips", () => {
     expect(withTipSeen([], "lift")).toEqual(["lift"]);
     expect(withTipSeen(["lift"], "lift")).toEqual(["lift"]);
     expect(withTipSeen(["lift"], "nope")).toEqual(["lift"]);
+  });
+});
+
+describe("contextual problem guidance", () => {
+  const neutral = { queue: 0, snow: 0, runs: 0, arrivalMood: 0, value: 0 };
+  it.each([
+    ["queue", "slope", "Money"], ["snow", "conditions", "Desk"], ["value", "conditions", "Money"],
+    ["runs", "slope", "Crew"], ["arrivalMood", "slope", "Crew"],
+  ])("matches %s to an available layer and Office section", (issue, layer, tab) => {
+    expect(problemGuide({ arrivals: 20, breakdown: { ...neutral, [issue]: -10 }, cashDelta: 12 })).toMatchObject({ layer, tab });
+  });
+  it("offers a real cash shortfall and stays silent on a quiet profitable day", () => {
+    expect(problemGuide({ arrivals: 0, breakdown: neutral, cashDelta: -40 })?.tab).toBe("Money");
+    expect(problemGuide({ arrivals: 5, breakdown: neutral, cashDelta: 40 })).toBeNull();
   });
 });

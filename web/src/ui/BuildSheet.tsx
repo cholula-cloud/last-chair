@@ -1,5 +1,8 @@
 "use client";
 
+import { useCoach } from "./coachStore";
+import { useSettings } from "./settingsStore";
+import { founderById } from "@/game/content";
 import { useState } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
@@ -20,6 +23,10 @@ function LodgeCard() {
   const cash = useGameStore((s) => s.cash);
   const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
   const [review, setReview] = useState(false);
+  const tipsOn = useSettings(s => s.tips);
+  const coachLodge = useCoach(s => !s.skipped && !s.lodgeSeen);
+  const founder = useGameStore(s => s.founderId && founderById(s.founderId)?.name);
+  const showCoach = tipsOn && coachLodge && tier === 1 && !construction;
   const next = nextLodgeTier(tier);
   const unlocks = next ? lodgeTierUnlocks(next) : [];
   const payment = next ? constructionDraw(LODGE_TIERS[next].cost) : null;
@@ -37,6 +44,12 @@ function LodgeCard() {
           <p className="mt-2 text-sm font-bold">
             Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
           </p>
+          {showCoach && <aside aria-label="Lodge upgrade tip" className="panel my-2 p-2 text-base">
+            <p><strong>{founder}</strong> · {review
+              ? "Check the deposit and both night payments below before committing."
+              : "Review the Tier 2 addition to see when the ski school and double chair can open."}</p>
+            <button type="button" className="min-h-11 px-1 underline" onClick={() => useCoach.getState().sawLodge()}>Dismiss lodge tip</button>
+          </aside>}
           {review ? (
             <BuildImpactCard
               title={`Upgrade to ${LODGE_TIERS[next].label}`}
@@ -50,10 +63,10 @@ function LodgeCard() {
               problem={cash < payment.deposit ? "You need more cash for the deposit. Check your balance after closing." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
-              onConfirm={() => { upgrade(); setReview(false); }}
+              onConfirm={() => { upgrade(); if (useGameStore.getState().lodgeUpgrade) useCoach.getState().sawLodge(); setReview(false); }}
             />
           ) : (
-            <PrimaryButton className="mt-2 min-h-11" onClick={() => setReview(true)}>
+            <PrimaryButton data-coach="lodge-upgrade" className={`mt-2 min-h-11 ${showCoach ? "coach-target" : ""}`} onClick={() => setReview(true)}>
               Review Tier {next} upgrade
             </PrimaryButton>
           )}

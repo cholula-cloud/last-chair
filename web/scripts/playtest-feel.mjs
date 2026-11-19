@@ -29,12 +29,13 @@ async function renderedHill(page) {
           capacity: skiers?.instanceMatrix.count, riders: state.scene.getObjectByName("occupied-chairs")?.count };
       }
     }
-    throw new Error("Mountain scene is unavailable");
+    return null;
   });
 }
 
 try {
   for (const muted of [false, true]) {
+    console.log(`Opening the ${muted ? "muted" : "sound-on"} winter`);
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     page.setDefaultTimeout(60000);
     await page.addInitScript(({ save, muted }) => {
@@ -56,8 +57,15 @@ try {
     await page.getByRole("button", { name: /^Continue/ }).waitFor();
     assert.equal(await page.evaluate(() => window.audioEvidence.devices), 0);
     await enterGame(page);
-    const day = await renderedHill(page);
-    assert(day.cat && day.skiers > 0 && day.skiers <= 24 && day.capacity === 24 && day.riders > 0);
+    // The HUD can open while the GLB models are still suspended.
+    let day = await renderedHill(page);
+    const deadline = Date.now() + 60000;
+    while ((!day?.cat || !day?.skiers) && Date.now() < deadline) {
+      await page.waitForTimeout(120);
+      day = await renderedHill(page);
+    }
+    assert(day?.cat && day.skiers > 0 && day.skiers <= 24 && day.capacity === 24 && day.riders > 0);
+    console.log(`Rendered ${day.skiers} skiers and ${day.riders} occupied chairs`);
     const tap = name => page.getByRole("button", { name, exact: true }).tap({ force: true });
     if (!muted) {
       await tap("Build");
