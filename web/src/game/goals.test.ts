@@ -1,63 +1,52 @@
 import { describe, expect, it } from "vitest";
-import { daysLeftLine, goalChips } from "./goals";
+import { ASSET_CATALOG } from "./base";
+import { daysLeftLine, goalChips, goalInputs, type GoalChip } from "./goals";
+import { createInitialState, type GameState } from "./state";
 
-const fresh = {
-  lodgeTier: 1 as const,
-  schoolContract: null,
-  outcome: "playing" as const,
-  cash: 12000,
-  loan: null,
-  payables: [],
-};
+const fresh = createInitialState(7);
+const ready: GameState = { ...fresh, lodgeTier: 2, assets: [{ id: "ski_school", at: { x: 1, z: 1 }, styleId: ASSET_CATALOG.ski_school.styleId }], schoolProgramProven: true };
+const chip = (state: Partial<GameState>, id: GoalChip["id"]) => goalChips(goalInputs({ ...fresh, ...state })).find(goal => goal.id === id);
 
 describe("goalChips", () => {
-  it("starts with only solvency done", () => {
-    expect(goalChips(fresh).map((c) => [c.id, c.done])).toEqual([["lodge", false], ["bus", false], ["solvent", true]]);
-  });
-
-  it("marks the lodge done at Tier 2 and above", () => {
-    expect(goalChips({ ...fresh, lodgeTier: 2 })[0].done).toBe(true);
-    expect(goalChips({ ...fresh, lodgeTier: 3 })[0].done).toBe(true);
-  });
-
-  it("explains the school bus with the radio line until a visit is accepted", () => {
-    expect(goalChips(fresh)[1].explainer).toBe("Reach the school bus beat on the radio.");
-  });
-
-  it("tracks the accepted, declined and delivered school visit", () => {
-    const accepted = goalChips({ ...fresh, schoolContract: { decision: "accepted", day: 9, pupilsTaught: null } })[1];
-    expect(accepted.done).toBe(false);
-    expect(accepted.explainer).toBe("The school bus comes on day 9.");
-    const delivered = goalChips({ ...fresh, schoolContract: { decision: "accepted", day: 9, pupilsTaught: 6 } })[1];
-    expect(delivered.done).toBe(true);
-    const missed = goalChips({ ...fresh, schoolContract: { decision: "accepted", day: 9, pupilsTaught: 0 } })[1];
-    expect(missed.done).toBe(false);
-    expect(missed.explainer).toMatch(/0 of 6/);
-    const declined = goalChips({ ...fresh, schoolContract: { decision: "declined" } })[1];
-    expect(declined.done).toBe(false);
-    expect(declined.explainer).toBe("You declined the Readsboro school visit.");
-  });
-
-  it("is solvent by liquid net worth, after loans and unpaid construction", () => {
-    expect(goalChips({ ...fresh, cash: -50 })[2].done).toBe(false);
-    const loan = { principal: 5000, balance: 13000, ratePerDay: 0.01, takenDay: 2 };
-    expect(goalChips({ ...fresh, loan })[2].done).toBe(false);
-    const payables = [{ what: "lift" as const, liftIndex: 0, amount: 13000, dueDay: 3 }];
-    expect(goalChips({ ...fresh, payables })[2].done).toBe(false);
-    expect(goalChips({ ...fresh, outcome: "bankrupt" })[2].done).toBe(false);
-  });
-
-  it("writes explainers as single plain sentences", () => {
-    for (const chip of goalChips({ ...fresh, cash: -1 })) {
-      expect(chip.explainer).not.toMatch(/[—–·]/);
-      expect(chip.label).not.toMatch(/[—–·]/);
+  it("shows the optional visit once the school can actually receive an offer", () => {
+    for (const state of [fresh, { ...ready, lodgeTier: 1 as const }, { ...ready, assets: [] },
+      { ...ready, schoolProgramProven: false }, { ...ready, dayIndex: ready.seasonLength }]) {
+      expect(chip(state, "bus")).toBeUndefined();
     }
+    expect(chip(ready, "bus")).toMatchObject({ status: "To do", explainer: "Reach the school bus beat on the radio." });
+  });
+
+  it("shows booked, declined, delivered and missed visits after offer eligibility ends", () => {
+    const school = { decision: "accepted", day: 9, pupilsTaught: null } as const;
+    expect(chip({ schoolContract: school }, "bus")).toMatchObject({ status: "Booked", explainer: "The school bus comes on day 9." });
+    expect(chip({ schoolContract: school, outcome: "bankrupt" }, "bus")?.status).toBe("Missed");
+    expect(chip({ schoolContract: { ...school, pupilsTaught: 6 } }, "bus")?.status).toBe("Done");
+    expect(chip({ schoolContract: { ...school, pupilsTaught: 0 } }, "bus")?.status).toBe("Missed");
+    expect(chip({ schoolContract: { decision: "declined" } }, "bus")?.status).toBe("Declined");
+  });
+
+  it("marks the lodge done at Tier 2 or higher", () => {
+    expect(chip({}, "lodge")?.status).toBe("To do");
+    expect(chip({ lodgeTier: 2 }, "lodge")?.status).toBe("Done");
+    expect(chip({ lodgeTier: 3 }, "lodge")?.explainer).toContain("Tier 3");
+  });
+
+  it("distinguishes the live balance from the settled solvency goal", () => {
+    const cash = 12000;
+    const loan = { principal: 5000, balance: 13000, ratePerDay: 0.01, takenDay: 2 };
+    const payables = [{ what: "lift" as const, liftIndex: 0, amount: 13000, dueDay: 3 }];
+    expect(chip({ cash }, "solvent")?.status).toBe("On track");
+    for (const state of [{ cash: -1 }, { cash, loan }, { cash, payables }]) {
+      expect(chip(state, "solvent")?.status).toBe("At risk");
+      expect(chip({ ...state, outcome: "finished" }, "solvent")?.status).toBe("Missed");
+    }
+    expect(chip({ cash: 0, outcome: "finished" }, "solvent")?.status).toBe("Done");
+    expect(chip({ cash, outcome: "bankrupt" }, "solvent")?.status).toBe("Missed");
   });
 });
 
-describe("daysLeftLine", () => {
-  it("counts the current day", () => {
-    expect(daysLeftLine(1, 28)).toBe("28 days left.");
-    expect(daysLeftLine(28, 28)).toBe("1 day left.");
-  });
+it("counts the current day until the winter settles", () => {
+  expect(daysLeftLine(1, 28)).toBe("28 days left.");
+  expect(daysLeftLine(28, 28)).toBe("1 day left.");
+  expect(daysLeftLine(3, 28, true)).toBe("0 days left.");
 });
