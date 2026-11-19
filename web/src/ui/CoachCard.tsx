@@ -5,6 +5,7 @@ import { activeTip, COACH_INTROS, TIPS } from "@/game/coach";
 import { openingStep } from "@/game/rules";
 import { founderById } from "@/game/content";
 import { useGameStore } from "@/game/store";
+import { useSettings } from "./settingsStore";
 import { useCoach } from "./coachStore";
 
 /** Render in normal flow so even a compact night sheet keeps choices reachable. */
@@ -15,7 +16,8 @@ export function CoachCard({ slot }: { slot: "day" | "recap-problem" | "fare" | "
   const founder = useGameStore((s) => s.founderId);
   const opening = useGameStore((s) => openingStep(s) ? "build" : "opening");
   const anchor = step === null ? null : TIPS[step][0];
-  const visible = step !== null && (slot === "day" ? step < 6 : anchor === slot);
+  const enabled = useSettings(s => s.tips);
+  const visible = enabled && step !== null && (slot === "day" ? step < 6 : anchor === slot);
   useEffect(() => {
     if (!visible || step === null) return;
     const target = document.querySelector(`[data-coach="${step === 0 ? opening : anchor}"]`);

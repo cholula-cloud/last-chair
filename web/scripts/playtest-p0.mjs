@@ -67,7 +67,6 @@ try {
   await heading("Last Chair").waitFor();
   assert.equal(await button(page, /^Continue/).count(), 0, "A fresh browser has no saved winter");
   await enterGame(page);
-  await tap("Skip opening");
   await heading(/Dutch Hill, winter 1/).waitFor();
   await screenshot("founder-pick.png");
   await tap(/Elena Vargas/i);

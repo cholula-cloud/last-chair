@@ -215,6 +215,8 @@ function SettingsView({ onBack }: { onBack: () => void }) {
       <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
       <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />
       <Toggle label="Pattern aids" on={settings.patternAids} onChange={on => set({ patternAids: on })} />
+      <Toggle label="Voice" on={settings.voiceOn} onChange={on => set({ voiceOn: on })} />
+      <Toggle label="Coach tips" on={settings.tips} onChange={on => set({ tips: on })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
       <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
       <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">
@@ -246,11 +248,12 @@ function CreditsView({ onBack }: { onBack: () => void }) {
     <SubView title="Credits" onBack={onBack}>
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
       <p className="font-bold leading-snug">It is built with Next.js, React Three Fiber, three.js and zustand.</p>
+      <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
     </SubView>
   );
 }
 
-export function TitleScreen({ onStart, initialView = "main" }: { onStart: () => void; initialView?: View }) {
+export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?: { newWinter: boolean }) => void; initialView?: View }) {
   const [view, setView] = useState<View>(initialView);
   const [summaries, setSummaries] = useState<SlotSummary[]>(() => readAllSlotSummaries());
   const [active, setActive] = useState<SlotNumber>(() => readActiveSlot());
@@ -270,9 +273,9 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: () => 
   const summaryOf = (slot: SlotNumber): SlotSummary => summaries[slot - 1] ?? { kind: "empty" };
   const activeSummary = summaryOf(active);
 
-  const enterGame = () => {
+  const enterGame = (opts?: { newWinter: boolean }) => {
     useSpeed.getState().reset();
-    onStart();
+    onStart(opts);
   };
 
   const play = async (slot: SlotNumber) => {
@@ -282,7 +285,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: () => 
 
   const begin = (slot: SlotNumber) => {
     startNewWinter(slot);
-    enterGame();
+    enterGame({ newWinter: true });
   };
 
   const newWinter = () => {

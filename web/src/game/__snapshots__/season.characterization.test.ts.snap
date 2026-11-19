@@ -694,6 +694,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     "surpriseLog": [],
     "talentToast": null,
     "talentsOwned": [],
+    "tipsSeen": [],
     "trails": [],
     "weather": "clear",
     "weatherDays": [
@@ -1958,6 +1959,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     "surpriseLog": [],
     "talentToast": null,
     "talentsOwned": [],
+    "tipsSeen": [],
     "trails": [],
     "weather": "clear",
     "weatherDays": [

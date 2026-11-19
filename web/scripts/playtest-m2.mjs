@@ -65,7 +65,10 @@ export async function enterGame(page) {
   const continueButton = button(page, /^Continue/);
   const newWinter = button(page, "New winter");
   await newWinter.waitFor({ timeout: 20000 });
-  await press((await continueButton.count()) > 0 ? continueButton : newWinter);
+  const resuming = (await continueButton.count()) > 0;
+  await press(resuming ? continueButton : newWinter);
+  // New winter opens the cold open first; Continue never does.
+  if (!resuming) await click(page, "Skip");
   await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
 }
 
@@ -247,7 +250,6 @@ export async function buildOpening(page, cdp) {
 
 async function opening(page, cdp, engine) {
   await openPlay(page);
-  await click(page, "Skip opening");
   await click(page, /Elena Vargas/);
   await page.getByText(/Day 1\/\d+/).waitFor();
   const scriptedSeconds = await buildOpening(page, cdp);

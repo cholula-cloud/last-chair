@@ -4,9 +4,16 @@ import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
 import { resumeSeasonWeather } from "./weather";
+import { COACH_TIP_IDS } from "./coach";
 
 export type Raw = Record<string, unknown>;
 export type Migration = { to: number; note: string; up: (p: Raw) => Raw };
+
+function legacyTips(raw: Raw) {
+  const started = (typeof raw.dayIndex === "number" && raw.dayIndex > 1) ||
+    (raw.phase !== undefined && raw.phase !== "setup" && raw.phase !== "day");
+  return started ? [...COACH_TIP_IDS] : [];
+}
 
 /** Schema 1 is the M3 baseline. Append one step for each later schema. */
 export const MIGRATIONS: readonly Migration[] = [
@@ -59,17 +66,25 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   {
     to: 7,
-    note: "Retain settled winters and start recording dated operating and radio history.",
+    note: "Add first-winter tips to existing winters.",
+    up(raw) {
+      return { ...raw, tipsSeen: legacyTips(raw) };
+    },
+  },
+  {
+    to: 8,
+    note: "Keep coach and winter records from both schema 7 shapes and start the Office ledger.",
     up(raw) {
       return {
-        ...raw,
+        tipsSeen: legacyTips(raw),
         seasonDays: [],
         beatLog: Array.isArray(raw.completedBeats) ? raw.completedBeats.map(id => ({ id, day: null })) : [],
         career: raw.lastWinter ? [raw.lastWinter] : [],
+        ...raw,
+        dayHistory: [],
       };
     },
   },
-  { to: 8, note: "Start the daily ledger with the next recorded settlement.", up: raw => ({ ...raw, dayHistory: [] }) },
 ];
 
 type MigrationResult =
@@ -84,6 +99,7 @@ export function migrate(persisted: unknown, fromVersion: number): MigrationResul
   if (!Number.isInteger(fromVersion) || fromVersion < 1) return reset("invalid version");
   if (!persisted || typeof persisted !== "object" || Array.isArray(persisted)) return reset("invalid save");
   let raw = persisted as Raw;
+  const missingSettlementHistory = fromVersion < 7 || (fromVersion === 7 && !("seasonDays" in raw));
   try {
     for (const migration of MIGRATIONS.slice(fromVersion - 1)) raw = migration.up(raw);
   } catch {
@@ -92,7 +108,7 @@ export function migrate(persisted: unknown, fromVersion: number): MigrationResul
   const errors = validateSave(raw);
   if (errors.length) return reset(errors.join(", "));
   const state = toPersisted(raw as PersistedState);
-  if (fromVersion < 7 && (state.phase === "winter_review" || state.phase === "mountain2")) {
+  if (missingSettlementHistory && (state.phase === "winter_review" || state.phase === "mountain2")) {
     const record = winterRecord({ ...state, talentToast: null });
     const previous = state.lastWinter;
     const sameSettlement = previous && previous.day === record.day && previous.founder === record.founder &&

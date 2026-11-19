@@ -48,6 +48,8 @@ type GameActions = {
   undoLift: () => void;
   closeLift: (index: number) => void;
   commitPaint: (strokes: readonly PaintStroke[], glade?: boolean) => void;
+  removeAsset: (index: number) => void;
+  moveAsset: (index: number, at: XZ) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
   placeGun: (at: XZ) => void;
   beginLodgeUpgrade: () => void;
@@ -57,6 +59,7 @@ type GameActions = {
   acknowledgeBeat: () => void;
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
+  markTipSeen: (id: string) => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
@@ -245,6 +248,7 @@ export const useGameStore = create<GameStore>()(
         ...createInitialState(freshSeed()),
         saveNotice: null,
         dismissSaveNotice: () => commit(() => ({ saveNotice: null })),
+        markTipSeen: action("markTipSeen"),
         tick: action("tick", false),
         togglePause: action("togglePause"),
         skipToClose: action("skipToClose"),
@@ -261,6 +265,8 @@ export const useGameStore = create<GameStore>()(
         undoLift: action("undoLift"),
         closeLift: action("closeLift"),
         commitPaint: action("commitPaint"),
+        removeAsset: action("removeAsset"),
+        moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
         placeGun: action("placeGun"),
         beginLodgeUpgrade: action("beginLodgeUpgrade"),

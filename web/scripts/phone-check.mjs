@@ -67,8 +67,8 @@ async function startPlay(page) {
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "New winter", exact: true }).click({ timeout: 30_000 });
-  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Next card", exact: true }).click();
-  await page.getByRole("button", { name: "Choose your founder", exact: true }).click();
+  // New winter opens the cold open first.
+  await page.getByRole("button", { name: "Skip", exact: true }).click({ timeout: 30_000 });
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: /Elena Vargas/i }).click();
   await waitSceneReady(page);
@@ -120,19 +120,22 @@ async function cdpPinch(cdp, w, h, spread) {
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
 }
 
-async function measureFps(page, ms = 5000) {
-  return page.evaluate(async (duration) => {
-    let frames = 0;
+async function measureFrames(page, ms = 5000) {
+  return page.evaluate(async duration => {
+    const frames = [];
     const start = performance.now();
-    await new Promise((resolve) => {
-      const tick = () => {
-        frames += 1;
-        if (performance.now() - start >= duration) resolve();
-        else requestAnimationFrame(tick);
+    let last = start;
+    await new Promise(resolve => {
+      const sample = now => {
+        frames.push(now - last);
+        last = now;
+        if (now - start >= duration) resolve();
+        else requestAnimationFrame(sample);
       };
-      requestAnimationFrame(tick);
+      requestAnimationFrame(sample);
     });
-    return frames / (duration / 1000);
+    frames.sort((a, b) => a - b);
+    return { fps: frames.length * 1000 / (last - start), p95FrameMs: frames[Math.floor(frames.length * 0.95)] };
   }, ms);
 }
 
@@ -217,9 +220,13 @@ async function runViewport(engine, launch, vp) {
   const touchNote = { pan: "skipped", pinch: "skipped", doubleTap: "skipped" };
   let fps = null;
   let stats = null;
+  let p95FrameMs = null;
+  let titleLoadMs = null;
 
   try {
     await startPlay(page);
+    titleLoadMs = await page.evaluate(() => performance.getEntriesByType("navigation")[0]?.domContentLoadedEventEnd);
+    if (!titleLoadMs || titleLoadMs > 5000) fail(`${engine} ${tag}: title load ${titleLoadMs} ms exceeds 5 seconds`);
     await page.getByRole("button", { name: "Skip tips" }).click();
     const home = await shot(page, engine, tag, "home");
 
@@ -264,7 +271,7 @@ async function runViewport(engine, launch, vp) {
         await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         touchNote.doubleTap = "cdp";
       }
-      fps = await measureFps(page);
+      ({ fps, p95FrameMs } = await measureFrames(page));
       if (fps < 30) fail(`${engine} ${tag}: fps ${fps.toFixed(1)} < 30`);
       stats = await readRenderStats(page);
       if (!stats) fail(`${engine} ${tag}: no __lcStats`);
@@ -300,7 +307,7 @@ async function runViewport(engine, launch, vp) {
     await browser.close();
   }
 
-  return { engine, tag, touchNote, fps, stats };
+  return { engine, tag, touchNote, fps, p95FrameMs, titleLoadMs, stats };
 }
 
 const results = [];

@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { ColdOpen } from "./ColdOpen";
 import { FOUNDERS, WINTER_GOAL } from "@/game/content";
 import { useGameStore } from "@/game/store";
 import { useSpeed } from "@/ui/speed";
@@ -27,13 +25,8 @@ function initials(name: string): string {
 
 export function FounderPick() {
   const phase = useGameStore((s) => s.phase);
-  return phase === "setup" ? <OpeningAndFounder /> : null;
-}
-
-function OpeningAndFounder() {
-  const [opening, setOpening] = useState(true);
   const pickFounder = useGameStore(s => s.pickFounder);
-  if (opening) return <ColdOpen onDone={() => setOpening(false)} />;
+  if (phase !== "setup") return null;
 
   return (
     <Sheet

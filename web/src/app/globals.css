@@ -508,3 +508,22 @@ body {
 }
 
 :root[data-text-size="large"] { font-size: 118.75%; }
+/* Cold open: stills cross-fade in 400 ms; reduced motion switches instantly. */
+.cold-card {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out);
+}
+.cold-card[data-active="true"] {
+  opacity: 1;
+}
+.cold-caption {
+  text-shadow: 0 2px 10px rgba(8, 14, 22, 0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cold-card {
+    transition: none;
+  }
+}
+:root[data-reduce-motion="true"] .cold-card {
+  transition: none;
+}

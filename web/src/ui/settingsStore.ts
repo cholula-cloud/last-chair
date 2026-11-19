@@ -17,6 +17,8 @@ export type Settings = {
   graphicsQuality: "standard" | "low";
   patternAids: boolean;
   voiceVolume: number;
+  voiceOn: boolean;
+  tips: boolean;
   captions: boolean;
   radioEnabled: boolean;
   reduceMotion: boolean;
@@ -32,6 +34,8 @@ export const DEFAULT_SETTINGS: Settings = {
   musicVolume: 55,
   effectsVolume: 75,
   voiceVolume: 80,
+  voiceOn: true,
+  tips: true,
   muted: false,
   textSize: "standard",
   graphicsQuality: "standard",
@@ -58,6 +62,8 @@ export function cleanSettings(raw: Partial<Record<keyof Settings, unknown>> | nu
     musicVolume: volume("musicVolume"),
     effectsVolume: volume("effectsVolume"),
     voiceVolume: volume("voiceVolume"),
+    voiceOn: typeof r.voiceOn === "boolean" ? r.voiceOn : DEFAULT_SETTINGS.voiceOn,
+    tips: typeof r.tips === "boolean" ? r.tips : DEFAULT_SETTINGS.tips,
     muted: typeof r.muted === "boolean" ? r.muted : DEFAULT_SETTINGS.muted,
     textSize: r.textSize === "large" ? "large" : "standard",
     graphicsQuality: r.graphicsQuality === "low" ? "low" : "standard",

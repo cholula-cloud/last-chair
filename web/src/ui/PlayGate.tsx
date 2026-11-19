@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { flushSave, useGameStore } from "@/game/store";
+import { ColdOpen } from "@/ui/ColdOpen";
 import { HillSound } from "@/ui/HillSound";
 import { TitleScreen } from "@/ui/TitleScreen";
 
@@ -18,17 +19,22 @@ const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
 /** Shows the title screen first. The 3D scene mounts only after the player picks a winter. */
 export default function PlayGate() {
   const [playing, setPlaying] = useState(false);
+  const [coldOpen, setColdOpen] = useState(false);
   const [menu, setMenu] = useState<"main" | "load" | "settings">("main");
 
   return (<>
     <HillSound playing={playing} />
-    {!playing ? <TitleScreen initialView={menu} onStart={() => setPlaying(true)} /> : <PlayExperience
+    {!playing ? <TitleScreen initialView={menu} onStart={opts => {
+      setColdOpen(opts?.newWinter === true);
+      setPlaying(true);
+    }} /> : <div inert={coldOpen}><PlayExperience
       onLeave={(view = "main") => {
         setMenu(view);
         if (!useGameStore.getState().paused) useGameStore.getState().togglePause();
         flushSave();
         setPlaying(false);
       }}
-    />}
+    /></div>}
+    {coldOpen && <ColdOpen onDone={() => setColdOpen(false)} />}
   </>);
 }

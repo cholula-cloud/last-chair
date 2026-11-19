@@ -159,6 +159,7 @@ const fields: Record<keyof PersistedState, Check> = {
   talentsOwned: array(string),
   completedBeats: array(beat),
   summitLinkDecision: nullable(summitLinkDecision),
+  tipsSeen: array(string),
   pendingBeat: nullable(beat),
   beatAcknowledged: boolean,
   schoolContract: nullable(schoolContract),

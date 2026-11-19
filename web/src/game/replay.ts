@@ -1,8 +1,10 @@
+import { withTipSeen } from "./coach";
 import * as rules from "./rules";
 import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 
 /** Only game actions are replayable. Camera movement and device settings stay local. */
 export const replayRules = {
+  markTipSeen: (state: GameState, id: string): GameState => ({ ...state, tipsSeen: withTipSeen(state.tipsSeen, id) }),
   tick: rules.tick,
   togglePause: rules.togglePause,
   skipToClose: rules.skipToClose,
@@ -20,6 +22,8 @@ export const replayRules = {
   closeLift: rules.closeLift,
   commitPaint: rules.commitPaint,
   placeAsset: rules.placeAsset,
+  moveAsset: rules.moveAsset,
+  removeAsset: rules.removeAsset,
   placeGun: rules.placeGun,
   beginLodgeUpgrade: rules.beginLodgeUpgrade,
   undoTrail: rules.undoTrail,

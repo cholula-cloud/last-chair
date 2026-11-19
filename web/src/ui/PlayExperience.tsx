@@ -22,6 +22,8 @@ import { useSettings } from "./settingsStore";
 import { TIPS } from "@/game/coach";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
+import { CoachTip } from "@/ui/CoachTip";
+import { GoalStrip } from "@/ui/GoalStrip";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
@@ -67,7 +69,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const [hydrated, setHydrated] = useState(false);
 
   const lowGraphics = useSettings(s => s.graphicsQuality === "low");
-  const coaching = useCoach((s) => s.index < TIPS.length);
+  const tipsEnabled = useSettings(s => s.tips);
+  const coachPending = useCoach(s => s.index < TIPS.length);
+  const coaching = tipsEnabled && coachPending;
   useEffect(() => {
     if (!hydrated) return;
     const observe = () => useCoach.getState().observe(useGameStore.getState());
@@ -233,8 +237,22 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           />
           {showStartHint && !placementActive && <StartCallout step={opening} />}
           {hydrated && phase === "day" && !placementActive && !buildOpen && !guestsOpen && !officeTab && <CoachCard slot="day" />}
+          {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
           {chairHeld && <WindHoldCallout shortHold={shortHold} />}
         </div>
+        {coaching && dayIndex === 1 && (placementActive || buildOpen) && (
+          <CoachTip
+            context={{
+              phase,
+              dayIndex,
+              opening,
+              running: !notStarted,
+              placementActive,
+              buildOpen,
+              hasGuestsWant: false,
+            }}
+          />
+        )}
         {showNote && !placementActive && (
           <MorningNote
             weather={weather}
