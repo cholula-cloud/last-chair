@@ -28,9 +28,6 @@ import {
 
 const BRUSH_NAMES = ["Narrow", "Standard", "Wide", "Boulevard"];
 const DIFFICULTY_WORDS: Record<TrailDifficulty, string> = { green: "Green", blue: "Blue", black: "Black" };
-const SLOPES: readonly [TrailDifficulty, string][] = [
-  ["green", "Gentle"], ["blue", "Moderate"], ["black", "Steep"],
-];
 const actionClass = "key press min-h-11 px-2 text-sm font-extrabold";
 const acres = (area: number) => `${area.toFixed(2)} acres`;
 const toolClass = "key press min-h-11 px-0 text-[0.62rem] font-extrabold";
@@ -152,17 +149,6 @@ function TrailBar() {
             ? "Drag from the marked end to keep painting, or tap Review."
             : "Drag down the hill from a lift to paint a trail. Use two fingers to move the map."}
       </p>
-      {draft.showSteepness && (
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-bold" title="Slope straight downhill. A traverse can be easier.">
-          <span>Downhill slope</span>
-          {SLOPES.map(([difficulty, label]) => (
-            <span key={difficulty} className="inline-flex items-center gap-0.5">
-              <DifficultyIcon difficulty={difficulty} size={12} />
-              {label}
-            </span>
-          ))}
-        </div>
-      )}
       <div className="grid grid-cols-2 gap-1" aria-label="Trail type">
         <button type="button" className={actionClass} aria-pressed={!draft.glade} onClick={() => usePlacementDraft.setState({ glade: false })}>Cleared trail</button>
         <button type="button" className={actionClass} aria-pressed={draft.glade} onClick={() => usePlacementDraft.setState({ glade: true })}>Glade (keeps trees)</button>
@@ -177,12 +163,10 @@ function TrailBar() {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-4 gap-1">
         <MoveMapButton resumeLabel="Paint" className={toolClass} />
         <button type="button" className={toolClass} aria-pressed={draft.erasing}
           onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}>Erase</button>
-        <button type="button" className={toolClass} aria-pressed={draft.showSteepness}
-          onClick={() => usePlacementDraft.setState({ showSteepness: !draft.showSteepness })}>Steepness</button>
         <button type="button" className={toolClass} disabled={!draft.strokes.length} onClick={undoStroke}>Undo</button>
         <button type="button" className={toolClass} disabled={!draft.redo.length} onClick={redoStroke}>Redo</button>
       </div>

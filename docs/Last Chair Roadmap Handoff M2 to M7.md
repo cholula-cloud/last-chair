@@ -945,6 +945,25 @@ Check equal guest IDs and arrival counts per seed. After B5, report the same com
 
 After the headless gate passes, use fresh saves at 390×844 in mobile WebKit and Chromium. Time a first-time tester placing a lift and painting a trail, using the game's own cues, from the first playable frame. The target is three minutes. Use a prepared save to exercise a lodge upgrade, an unlocked revenue source, and the recap after changing the hill. Document results, friction, and screenshots in `TESTING.md`. Scripted checks can verify interactions. Record first-time usability separately.
 
+## Row O1: overlay framework and slope layer
+
+### Goal
+A Layers button on the mountain view opens a strip of map layers. One layer shows at a time, with a legend of colour plus pattern, a readout card for a tapped or held point, and buildings and guests dimmed. The slope layer is the first layer and replaces the L-B steepness toggle.
+
+### Scope
+- `game/overlays.ts`: layer registry (id, label, legend, shader mode, readout), slope bands, `resolveActiveLayer`. O2 and O3 add an entry to `LAYERS`, a legend and a readout, and a mode in the terrain shader.
+- `ui/overlayUi.ts` (session state, not saved) and `ui/OverlayControls.tsx` (button, strip, legend, card).
+- `render/terrainOverlay.ts` (shader patch and shared uniforms), `render/overlayMask.ts` (lease mask), `render/OverlayScene.tsx` (uniforms, tap and hold probe, marker). Building and guest materials spread `OVERLAY_DIM`.
+- Slope shows automatically while painting a trail. The Off key on the legend turns it off for that paint session.
+
+### Tests
+Band thresholds, readout text, registry behaviour, lease mask. The m2 playtest asserts the slope legend appears while painting.
+
+### Done when
+Slope layer on shows bands, patterns and contours inside the lease only; tap or hold reads "N% pitch" with the band; draw calls and triangles stay within budget; no per-frame work while the layer is static.
+
+---
+
 ## Limitations
 
 Numbers marked proposed are design choices to be tuned with the balance harness and on screen. The route lengths, pitches and valid-top list come from a prototype run of the described A* and straight-line probes against `main`'s Dutch Hill at an explicit 6/3 scale, before 2b merged; 2b changes nothing in the terrain function, but smoothing and grid choices will move the figures by a few percent. Snapshot predictions assume the characterization scenario stays as written (café day 2, chair at Mid day 4, seed 42). The PR 31 description relies on a read of the uncommitted working tree, which has not been run or reviewed. Triangle, draw-call and frame-rate budgets are estimates until part 3's throttled script runs. Real touch input and real iPhone Safari remain unverified for every PR here. Section 1.3 line references and file line counts drift with each merge.

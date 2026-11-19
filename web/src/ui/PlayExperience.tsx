@@ -29,6 +29,7 @@ import {
   WindHoldCallout,
 } from "@/ui/Hud";
 import { PlacementBar } from "@/ui/PlacementBar";
+import { LayerStrip, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon } from "@/ui/kit/icons";
@@ -230,24 +231,30 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
 
       {phase === "day" && (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
-          {!placementActive && (
-            <div className="pointer-events-auto absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex flex-wrap items-center justify-end gap-2">
-              {undoIndex >= 0 && (
-                <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
-              )}
-              {canResume && (
-                <ResumeFollowChip
-                  onClick={() => {
-                    setFollowId(resumeFollowId);
-                    useCameraUi.setState({ resumeFollowId: null });
-                  }}
-                />
-              )}
-              <button type="button" aria-pressed={showBuildGrid} onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
-                className="key press min-h-11 px-3 text-sm font-extrabold">Grid {showBuildGrid ? "on" : "off"}</button>
-              <RecenterButton onClick={requestRecenter} />
-            </div>
-          )}
+          <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2">
+            {!placementActive && <ReadoutCard />}
+            <OverlayLegend />
+            {!placementActive && <LayerStrip />}
+            {!placementActive && (
+              <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+                {undoIndex >= 0 && (
+                  <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
+                )}
+                {canResume && (
+                  <ResumeFollowChip
+                    onClick={() => {
+                      setFollowId(resumeFollowId);
+                      useCameraUi.setState({ resumeFollowId: null });
+                    }}
+                  />
+                )}
+                <LayersButton />
+                <button type="button" aria-pressed={showBuildGrid} onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
+                  className="key press min-h-11 px-3 text-sm font-extrabold">Grid {showBuildGrid ? "on" : "off"}</button>
+                <RecenterButton onClick={requestRecenter} />
+              </div>
+            )}
+          </div>
           {!placementActive && (
           <div className="w-full sm:max-w-[400px]">
             <ConditionsBoard
@@ -282,6 +289,7 @@ export default function PlayExperience({ onLeave }: { onLeave: () => void }) {
         </div>
       )}
 
+      <OverlayStateSync />
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
         open={buildOpen}

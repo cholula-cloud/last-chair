@@ -21,6 +21,7 @@ import {
   useKit,
 } from "./kit";
 import { HOUSES, LODGE, ROAD_Z, SNOWCAT_POS } from "./layout";
+import { OVERLAY_DIM } from "./terrainOverlay";
 
 /** Lamp posts along the road and around the base, with soft light pools. */
 const LAMPS: [number, number][] = [
@@ -235,10 +236,10 @@ export function Village() {
   return (
     <group>
       <mesh geometry={body} castShadow receiveShadow>
-        <meshLambertMaterial vertexColors />
+        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </mesh>
       <mesh geometry={glow}>
-        <meshBasicMaterial ref={glowMat} vertexColors toneMapped={false} />
+        <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
       </mesh>
       <mesh
         position={[LODGE.x, LODGE_GROUND + 0.61, LODGE.z]}
