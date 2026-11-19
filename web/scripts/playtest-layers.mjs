@@ -22,6 +22,11 @@ try {
   });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && /THREE.WebGLProgram|Shader Error|VALIDATE_STATUS/.test(message.text())) {
+      errors.push(message.text());
+    }
+  });
   await page.addInitScript(
     (save) => {
       localStorage.setItem("last-chair-m3-slot-1", save);

@@ -40,8 +40,7 @@ try {
     page.setDefaultTimeout(60000);
     await page.addInitScript(({ save, muted }) => {
       localStorage.setItem("last-chair-m3-slot-1", JSON.stringify(save));
-      localStorage.setItem("last-chair-settings", JSON.stringify({ version: 1, state: { muted, reduceMotion: true } }));
-      localStorage.setItem("last-chair-coach", JSON.stringify({ version: 0, state: { index: 99, entered: null } }));
+      localStorage.setItem("last-chair-settings", JSON.stringify({ version: 1, state: { muted, reduceMotion: true, tips: false } }));
       const audio = window.audioEvidence = { devices: 0, loops: 0, notes: [] };
       const schedule = AudioParam.prototype.setValueAtTime;
       AudioParam.prototype.setValueAtTime = function(value, at) {
