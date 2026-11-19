@@ -21,13 +21,13 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weather, the 28-day calendar and the economy (rows 25, 18, 19, 20, PRs 59 to 68); saves are M3 schema v5 under `last-chair-m3`. A builder and quality-of-life pass (rows L-A to L-F) comes next, then rows 21 to 24, the coach and balance. The M2 sign-off with an uncoached first-time player is still open.
+M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a 28-day winter from the founder pick to settlement. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. Three outside players still need to finish the winter without help on Safari. Record their results in [the P1 sign-off log](./TESTING.md#external-sign-off-m3-gate).
 
 **Built and merged**
 
 | Area | What exists |
 |---|---|
-| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v5 with validation and recovery |
+| Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, versioned M3 saves with validation and recovery |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, two personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48) |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
@@ -36,19 +36,8 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
-The first-winter implementation on this branch uses save schema v6. The night recap follows up on the previous guest measure, Route 100 can report three local surprises, and the school and Abominable Snowglomerate offers have operating consequences. The winter review checks cash after debt and unpaid construction, records the optional commitments, and retains the settlement through replay.
+The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. The M3 roadmap below tracks the remaining acceptance work. Career effects on later mountains belong to M5.
 
-**Partly built**
-
-| Area | Built | Missing | Row |
-|---|---|---|---|
-| Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
-| Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
-| Radio | Beat card, local moments, school visit and Abominable Snowglomerate choice | Feed UI, full story log, lodge tier-up lines | 23 |
-| Winter review | Settlement, optional commitments, lodge tier and saved winter record | Career effects on later mountains | 24 |
-| Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
-
-The next evidence for the coach and balance rows comes from an uncoached opening on Safari and three outside winter playthroughs. The cold open, day-length pass, remaining talents and founder effects retain their roadmap rows.
 
 ---
 
@@ -453,7 +442,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 
 #### Dutch Hill first-winter sequence
 
-The PR numbers below name the six increments in this sequence. The roadmap row numbers still identify the related milestone work.
+Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted validation. The three outside-player sessions for increment 6 are pending. The PR numbers below name the six increments in this sequence. The roadmap row numbers still identify the related milestone work.
 
 | PR | Increment | Roadmap rows | Acceptance |
 |---|---|---|---|

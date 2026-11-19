@@ -16,7 +16,7 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 
 "PR 12" or "row 28" means a row in the MASTER_PLAN roadmap, not a GitHub pull request number. The two sets collide (GitHub PR 28 removed Vercel; roadmap row 28 is guest models). Use the row in branch names and titles, for example `claude/row28-guest-models`.
 
-## Where things stand (updated 2026-11-18)
+## Where things stand (updated 2026-11-19)
 
 - The starting point for the M2 finish work was `main` through #54. It included two-tap lift placement, the trail graph (13a to 13c, save v10), the restored 3D scene (#48), the smoothed trail ribbon (#49), and the convex Dutch Hill crest (#50).
 - The M2 release integrates the remaining builder features, lodge tiers, venue visits, lift operations, and snow and clearing rules. The automated gates pass on the integrated version. First-time player sign-off remains open.
@@ -30,7 +30,7 @@ PR #49 smoothed the rendered ribbon where tight path turns folded quads into dar
 
 ### Roadmap order
 
-Complete M2 and its gate before starting M3. The current sequence is **13e → B1 → L1 → B2 → B3 → B4 → 14 → 16a → 16b → 16c → 16d → 15 → 17 → B5**. Row 25 leads M3 save work. Wind holds belong to row 18.
+M2 implementation and its numerical checks shipped. Its uncoached opening remains a separate sign-off. M3 rows 25, 18, 19 and 20 shipped in that order. Use the [master roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for current row status.
 
 ## Corrections to earlier documents
 
@@ -954,13 +954,13 @@ Numbers marked proposed are design choices to be tuned with the balance harness 
 
 # Part B: M3, one full winter
 
-M3 turns Dutch Hill into a finished product: a player picks a founder, plays a 28-day winter with real weather, money pressure, crew talents and six radio beats, and ends in a winter review that records the season for the career. The gate is the P1 device playtest signed by three outside players (MASTER_PLAN section 8, Gate M3).
+### Current handoff
 
-This part assumes M2 is merged (PRs 12b to 17, world scale 2b to 2d, camera part 3). Where an M3 PR reads something M2 adds, the dependency line says so. Every number marked "proposed" is a first value invented for this plan; numbers without that label come from SIMULATION_SPEC.md, WORLD.md or the code on `main` at `a980e31`.
+The common goal is to finish day 28 with nonnegative cash after debt and unpaid construction. Readsboro is optional. Vivian’s offer trades $6,000 for a fare cap. GitHub PR #77 delivered the revised first-winter sequence and #78 recorded hosted verification. The briefs below preserve design history, including proposed values. Use the [M3 roadmap](./MASTER_PLAN.md#m3-one-full-winter-product-mvp) for delivery status and the [device playtest](./TESTING.md) for sign-offs.
+
+M3 still needs an owner-device check, a VoiceOver pass and three unassisted outside-player completions. Record the build, device, observed outcome and help given for each session. The separate M2 opening also needs a first-time player.
 
 ## Rules for every M3 PR
-
-**Order.** Build in roadmap order 18 to 27, with one change: land PR 25 (save versioning) first. Every other M3 PR adds persisted fields, and each would otherwise extend the hand-written `migrate()` chain that PR 25 replaces. PR 25 has no dependency on the others. Its row number stays 25.
 
 **Determinism.** All randomness comes from seeded RNGs whose state lives in `GameState`. M3 adds one rule: season-level draws (weather, the radio filler pick) come from a second stream seeded once per season, `seasonSeed`, so they never consume draws from the day stream (`rngState`) that rosters and arrivals use. That keeps arrival noise identical when weather changes, which makes snapshot diffs readable.
 
