@@ -15,6 +15,7 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "playtest:p0": "node scripts/playtest-p0.mjs",
     "playtest:m2": "node scripts/playtest-m2.mjs",
+    "playwright:install": "playwright install chromium",
     "phone-check": "node scripts/phone-check.mjs"
   },
   "dependencies": {
