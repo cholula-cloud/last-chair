@@ -1,3 +1,4 @@
+import { liftOpsAfterRepair, loanRateFor } from "./founders";
 import { TALENT } from "./talents";
 import { ASSET_CATALOG, type AssetId } from "./base";
 import { inHolidayWeek, MOUNTAIN_CALENDARS } from "./calendar";
@@ -9,7 +10,7 @@ import { DAILY_FIXED_COST, LIFT_OPS_COST, snowNightCost } from "./types";
 export const LOW_CASH = 1500;
 export const LOAN_TERMS = { principal: 10_000, rate: 0.08, reserve: 2_000 } as const;
 export function winterLoanRate(state: Pick<GameState, "founderId">): number {
-  return state.founderId === "tom" ? 0.07 : LOAN_TERMS.rate;
+  return loanRateFor(state.founderId, LOAN_TERMS.rate);
 }
 
 export const BANKRUPTCY_MORNINGS = 3;
@@ -58,7 +59,7 @@ export function operatingCosts(state: GameState): OperatingCosts {
     ...(staffing ? { vacationStaffing: staffing } : {}),
     fixed: DAILY_FIXED_COST + staffing - (TALENT.volunteerPatrol.learned(state.talentsOwned) ? TALENT.volunteerPatrol.savings : 0),
     founder: founderById(state.founderId)?.fixedCostDelta ?? 0,
-    liftOps: Math.round((liftCost || LIFT_OPS_COST) * (state.founderId === "riley" ? 0.85 : 1)),
+    liftOps: liftOpsAfterRepair(state.founderId, liftCost || LIFT_OPS_COST),
     upkeep: 60 + state.assets.reduce((sum, asset) => sum + ASSET_CATALOG[asset.id].upkeep, 0)
       + state.guns.length * ASSET_CATALOG.snow_guns.upkeep,
   };

@@ -8,6 +8,11 @@ describe("playtest replay", () => {
     useGameStore.setState(createInitialState(42));
     resetSessionReplay();
     useGameStore.getState().pickFounder("riley");
+    useGameStore.getState().markTipSeen("lift");
+    useGameStore.getState().markTipSeen("lift");
+    useGameStore.getState().resetTips();
+    useGameStore.getState().markTipSeen("pan");
+    expect(useGameStore.getState().tipsSeen).toEqual(["pan"]);
     useGameStore.getState().setBuildMode(true);
     useGameStore.getState().setSelectedLiftType("chair");
     useGameStore.getState().setBuildMode(false);
@@ -16,6 +21,8 @@ describe("playtest replay", () => {
     Reflect.apply(useGameStore.getState().startNewSeason, null, [event]);
     const log: Replay = JSON.parse(JSON.stringify(exportSessionReplay()));
     expect(log.actions.at(-1)).toEqual({ rule: "startNewSeason", args: [] });
+    expect(log.actions.filter(a => a.rule === "markTipSeen")).toHaveLength(2);
+    expect(log.actions.map(a => a.rule)).toContain("resetTips");
     expect(log.actions.map(a => a.rule)).toContain("pickFounder");
     expect(toPersisted(playReplay(log))).toEqual(toPersisted(useGameStore.getState()));
     resetSessionReplay();

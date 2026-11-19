@@ -17,8 +17,10 @@ export function currentLayer(): OverlayId | null {
 }
 
 /** Strip button: turns the shown layer off, or switches to the picked one. */
-export function pickLayer(picked: OverlayId) {
-  const next = nextSelection(currentLayer(), picked);
+export function pickLayer(picked: OverlayId, allowOff: boolean) {
+  const shown = currentLayer();
+  if (!allowOff && shown === picked) return;
+  const next = nextSelection(shown, picked);
   useLayers.setState({ layer: next, autoOff: next === null, point: null });
 }
 

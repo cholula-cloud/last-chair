@@ -40,7 +40,6 @@ export function TopBar({
   cash,
   paused,
   notStarted,
-  speedUnlocked = true,
   openingBlocked = false,
   onTogglePause,
 }: {
@@ -51,7 +50,6 @@ export function TopBar({
   cash: number;
   paused: boolean;
   notStarted: boolean;
-  speedUnlocked?: boolean;
   openingBlocked?: boolean;
   onTogglePause: () => void;
 }) {
@@ -63,7 +61,6 @@ export function TopBar({
     <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
       <button
         type="button"
-        data-coach="opening"
         onClick={onTogglePause}
         disabled={openingBlocked}
         aria-label={paused ? "Resume day" : "Pause day"}
@@ -91,14 +88,14 @@ export function TopBar({
         </div>
         <ClockText text={formatClock(clockMin)} />
       </div>
-      {speedUnlocked && <button
+      <button
         type="button"
         onClick={cycleSpeed}
         aria-label={`Game speed ${speed}x, tap to change`}
         className="chip flex size-12 shrink-0 items-center justify-center text-[0.95rem] font-extrabold tabular-nums"
       >
         {speed}×
-      </button>}
+      </button>
       <span
         className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
           cash < 0 ? "bg-barn-deep text-white" : lowCash ? "bg-sign-yellow" : "bg-gold"
@@ -307,7 +304,6 @@ export function ConditionsBoard({
       {items.map((c) => (
         <div
           key={c.key}
-          data-coach={`ops-${c.key}`}
           className="flex min-w-0 items-center gap-1.5 px-2"
           aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
           role="group"
@@ -350,7 +346,6 @@ function BarButton({
     <button
       type="button"
       onClick={onClick}
-      data-coach={label.toLowerCase()}
       aria-pressed={active}
       data-bar={barId}
       className="key press flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.85rem] font-extrabold [--lift:4px]"
@@ -517,7 +512,6 @@ export function ActionBar({
       <BarButton icon={<OfficeIcon />} label="Office" onClick={onOffice} barId="office" />
       <button
         type="button"
-        data-coach="close"
         onClick={onCloseHill}
         disabled={openingBlocked}
         className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"

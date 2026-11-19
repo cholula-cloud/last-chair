@@ -60,6 +60,7 @@ type GameActions = {
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
   markTipSeen: (id: string) => void;
+  resetTips: () => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
@@ -255,6 +256,7 @@ export const useGameStore = create<GameStore>()(
         saveNotice: null,
         dismissSaveNotice: () => commit(() => ({ saveNotice: null })),
         markTipSeen: action("markTipSeen"),
+        resetTips: command("resetTips"),
         tick: action("tick", false),
         togglePause: command("togglePause"),
         skipToClose: command("skipToClose"),

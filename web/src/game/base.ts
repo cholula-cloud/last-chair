@@ -1,3 +1,4 @@
+import { apresRevenueFor } from "./founders";
 import { footprintOnLease, OFF_LEASE_MESSAGE } from "./lease";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import type { LodgeTier, SiteDef } from "./site";
@@ -248,5 +249,5 @@ export function assetEffect(asset: PlacedAsset, key: keyof Asset["effect"]): num
 }
 
 export function assetRevenue(asset: PlacedAsset, founder?: import("./types").FounderId | null): number {
-  return ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset) * (founder === "marco" ? 1.1 : 1);
+  return apresRevenueFor(founder ?? null, ASSET_CATALOG[asset.id].revenuePerUse * assetMultiplier(asset));
 }

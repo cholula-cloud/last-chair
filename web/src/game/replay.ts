@@ -4,7 +4,11 @@ import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 
 /** Only game actions are replayable. Camera movement and device settings stay local. */
 export const replayRules = {
-  markTipSeen: (state: GameState, id: string): GameState => ({ ...state, tipsSeen: withTipSeen(state.tipsSeen, id) }),
+  markTipSeen: (state: GameState, id: string): GameState => {
+    const tipsSeen = withTipSeen(state.tipsSeen, id);
+    return tipsSeen === state.tipsSeen ? state : { ...state, tipsSeen };
+  },
+  resetTips: (state: GameState): GameState => state.tipsSeen.length ? { ...state, tipsSeen: [] } : state,
   tick: rules.tick,
   togglePause: rules.togglePause,
   skipToClose: rules.skipToClose,

@@ -1,3 +1,4 @@
+import { canTakeSummitLinkEquity } from "./founders";
 import { ASSET_CATALOG } from "./base";
 import { MOUNTAIN_CALENDARS } from "./calendar";
 import { checkLiftLine, MAX_LIFTS, MAX_LIFT_SLOTS } from "./descent";
@@ -205,7 +206,9 @@ export function validateSave(value: unknown): string[] {
       (value.phase === "winter_review" && value.outcome === "playing") ||
       (value.phase === "mountain2" && value.outcome !== "finished")) errors.push("outcome");
   if (value.loan && value.loanTaken !== true) errors.push("loanTaken");
-  if (value.summitLinkDecision === "accepted" && (value.pendingFare === "expensive" || value.founderId === "riley")) {
+  const founderId = typeof value.founderId === "string" ? value.founderId : null;
+  if (value.summitLinkDecision === "accepted" &&
+      (value.pendingFare === "expensive" || !canTakeSummitLinkEquity({ founderId }))) {
     errors.push("summitLinkDecision");
   }
   if (Array.isArray(value.payables) && Array.isArray(value.lifts) && integer(value.seasonLength)) {

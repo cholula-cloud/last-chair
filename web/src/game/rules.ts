@@ -22,7 +22,7 @@ import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
-import { isWarmWeek } from "./founders";
+import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
 import {
   checkLiftLine,
@@ -100,9 +100,7 @@ import {
   type WeatherKind,
 } from "./types";
 
-export function canDemolish(state: Pick<GameState, "founderId">, id: AssetId): boolean {
-  return state.founderId !== "elena" || id !== "warming_hut";
-}
+export { canDemolish } from "./founders";
 
 function clearedLand(state: Partial<Pick<GameState, "clearedCells">>): Set<ClearingCell> {
   return new Set(state.clearedCells);
@@ -152,12 +150,11 @@ export function satisfactionContext(
   const calendar = MOUNTAIN_CALENDARS[state.mountainId];
   const day = state.dayIndex;
   const band = TALENT.houseBand.learned(owned) && isFestiveDay(calendar, day);
-  const warmWeek = state.founderId === "tom" && isWarmWeek(state.weather, state.weatherDays, day);
   return {
     fare: state.fare,
     firstTimerMoodBonus: TALENT.skiSchool.learned(owned) ? TALENT.skiSchool.mood : 0,
     snowPenaltyScale: TALENT.firstAidHut.learned(owned) ? TALENT.firstAidHut.penaltyScale : 1,
-    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? TALENT.houseBand.mood : 0) - (warmWeek ? 0.075 : 0) +
+    arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? TALENT.houseBand.mood : 0) - warmWeekPenalty(state) +
       (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
     venueValue: (TALENT.cafeShift.learned(owned) && state.buildings.includes("cafe") ? TALENT.cafeShift.value : 0) + (state.assets
       ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
@@ -207,7 +204,7 @@ export function openNight(state: GameState): GameState {
     }, undefined),
   });
   const rawReputation = recap.arrivals > 0
-    ? Math.round(state.reputation * 0.85 + recap.satisfaction * 0.15 + (state.founderId === "juniper" ? 0.5 : 0))
+    ? Math.round(state.reputation * 0.85 + recap.satisfaction * 0.15 + reputationDriftFor(state.founderId))
     : state.reputation;
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => Math.min(100, rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0)
@@ -638,7 +635,7 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   const cleared = isGlade || path.length < 2 || preview.deleteTrail
     ? { newCells: [], acres: 0, cost: 0 }
     : clearingQuote(path, widths, excludedCells);
-  if (state.founderId === "juniper") cleared.cost = Math.round(cleared.cost * 1.15);
+  cleared.cost = clearingCostFor(state.founderId, cleared.cost);
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
@@ -698,7 +695,7 @@ export function trailOptions(
   return routeOptions(lift.anchor, existing, terrain).map((opt) => ({
     ...opt,
     cost: state.clearedCells
-      ? 150 + Math.round(clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost * (state.founderId === "juniper" ? 1.15 : 1))
+      ? 150 + clearingCostFor(state.founderId ?? null, clearingQuote(opt.path, opt.path.map(() => STANDARD_BRUSH_WIDTH), clearedLand(state), terrain).cost)
       : trailCost(opt.lengthFt),
   }));
 }
@@ -994,7 +991,7 @@ export function summitLinkOfferOpen(state: GameState): boolean {
 export function replyToSummitLink(state: GameState, reply: SummitLinkDecision): GameState {
   if (!summitLinkOfferOpen(state) || !state.nightRecap) return state;
   if (reply !== "accepted" && reply !== "declined") return state;
-  if (reply === "accepted" && state.founderId === "riley") return state;
+  if (reply === "accepted" && !canTakeSummitLinkEquity(state)) return state;
   const accepted = reply === "accepted";
   return completeBeat({
     ...state,

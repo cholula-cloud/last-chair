@@ -9,7 +9,6 @@ import {
 } from "@/game/overlays";
 import { LayerLegend, LayerPanel } from "./MapLayers";
 import { useLayers } from "./mapLayerStore";
-import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { CloseIcon } from "@/ui/kit/icons";
@@ -25,7 +24,7 @@ import {
 const SWATCH = 16;
 
 /** A legend swatch: the layer colour as a light fill with the pattern drawn in the same colour. */
-export function PatternSwatch({ color, pattern }: { color: string; pattern: OverlayPattern }) {
+function PatternSwatch({ color, pattern }: { color: string; pattern: OverlayPattern }) {
   const id = useId();
   const dense = pattern === "dense-hatch";
   return (
@@ -55,7 +54,7 @@ function LegendChip({ entry }: { entry: LegendEntry }) {
 }
 
 /** Legend chips for the layer on the map, with a 44 px Off key. */
-export function OverlayLegend() {
+export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
   const layer = getOverlayLayer(useActiveLayer());
   const placing = usePlacementDraft((s) => s.active);
   const wear = useLayers((s) => s.wear);
@@ -70,31 +69,31 @@ export function OverlayLegend() {
           <LayerLegend layer={layer.id} wear={layer.id === "conditions" && wear} gunView={gunView} />
         </div>
       )}
-      <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
+      {allowOff && <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
         className="key press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
         <CloseIcon size={18} />
-      </button>
+      </button>}
     </div>
   );
 }
 
 /** The layer strip: one button per implemented layer and Off. */
-export function LayerStrip() {
+export function LayerStrip({ allowOff = true }: { allowOff?: boolean }) {
   const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   if (!open) return null;
   return (
     <div className="pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Map layers" data-layer-strip>
       {overlayLayers().map((layer) => (
-        <button key={layer.id} type="button" aria-pressed={shown === layer.id} onClick={() => pickLayer(layer.id)}
+        <button key={layer.id} type="button" aria-pressed={shown === layer.id} onClick={() => pickLayer(layer.id, allowOff)}
           className="key press min-h-11 shrink-0 px-4 text-sm font-extrabold">
           {layer.label}
         </button>
       ))}
-      <button type="button" aria-pressed={shown === null} onClick={turnLayerOff}
+      {allowOff && <button type="button" aria-pressed={shown === null} onClick={turnLayerOff}
         className="key press min-h-11 shrink-0 px-4 text-sm font-extrabold">
         Off
-      </button>
+      </button>}
     </div>
   );
 }
@@ -115,7 +114,7 @@ export function ReadoutCard() {
   const probe = useLayers((s) => s.point);
   const layer = getOverlayLayer(useActiveLayer());
   const readout = useMemo(
-    () => (probe && layer?.id === "slope" ? layer.readout(probe, { terrain: TERRAIN, state: useGameStore.getState() }) : null),
+    () => (probe && layer?.id === "slope" ? layer.readout(probe, { terrain: TERRAIN }) : null),
     [probe, layer],
   );
   if (!readout) return null;
@@ -140,7 +139,7 @@ export function ReadoutCard() {
 export function SnowLayerControls() {
   const layer = useActiveLayer();
   if (!layer || layer === "slope") return null;
-  return <LayerPanel layer={layer} embedded />;
+  return <LayerPanel layer={layer} />;
 }
 
 /** Keeps overlay state honest: the automatic slope layer resets when painting ends, a vanished layer drops its readout. */

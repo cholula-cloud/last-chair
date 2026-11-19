@@ -312,7 +312,6 @@ async function upgrade(page, cdp, engine) {
     value: JSON.stringify({ state: toPersisted(prepared), version: SAVE_VERSION }),
   });
   await openPlay(page);
-  await click(page, "Skip tips");
   await buildMenu(page);
   const rentals = button(page, /^Rentals\b/i);
   assert(await rentals.isDisabled(), "Rentals should require the Tier 2 lodge");
