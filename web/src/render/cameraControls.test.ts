@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { leaseBounds } from "@/game/lease";
+import { distanceOutsideLease, leaseBounds } from "@/game/lease";
 import { TERRAIN } from "@/game/terrain";
 import { homeView } from "./cameraFraming";
 import {
@@ -10,6 +10,9 @@ import {
   MAX_DISTANCE,
   MIN_DISTANCE,
   LEASE_CAMERA_MARGIN,
+  LEASE_TARGET_MARGIN,
+  clampToLease,
+  insideLease,
   PLAY_AREA as A,
   playArea,
   SOFT_MARGIN,
@@ -48,6 +51,37 @@ describe("play area", () => {
       expect(p.z).toBeLessThanOrEqual(A.zMax);
     }
     expect(A.xMax - A.xMin).toBeLessThan(TERRAIN.bounds.xMax - TERRAIN.bounds.xMin);
+  });
+});
+
+describe("lease clamp", () => {
+  it("leaves the target alone on the lease and within the margin", () => {
+    expect(clampToLease(TERRAIN.base)).toEqual(TERRAIN.base);
+    const edge = TERRAIN.lease![0];
+    const out = { x: edge.x - 1, z: edge.z - 1 };
+    expect(distanceOutsideLease(out)).toBeLessThan(LEASE_TARGET_MARGIN);
+    expect(clampToLease(out)).toEqual(out);
+  });
+
+  it("stops a target dragged far outside close to the outline, at the polygon rather than the box", () => {
+    // The north-west box corner is far from the polygon.
+    const b = leaseBounds();
+    const corner = { x: b.xMin, z: b.zMin };
+    expect(distanceOutsideLease(corner)).toBeGreaterThan(8);
+    const clamped = clampToLease(corner);
+    expect(distanceOutsideLease(clamped)).toBeLessThan(LEASE_TARGET_MARGIN + 4);
+    const resting = insideLease(corner);
+    expect(distanceOutsideLease(resting)).toBeCloseTo(LEASE_TARGET_MARGIN, 5);
+    expect(distanceOutsideLease(clampToLease({ x: 500, z: 500 }))).toBeLessThan(LEASE_TARGET_MARGIN + 7);
+  });
+
+  it("is monotonic: pulling further out never moves the target further out by more than the cap", () => {
+    let last = 0;
+    for (let o = 0; o < 80; o += 4) {
+      const d = distanceOutsideLease(clampToLease({ x: TERRAIN.lease![4].x + o, z: TERRAIN.lease![4].z }));
+      expect(d).toBeGreaterThanOrEqual(last - 1e-9);
+      last = d;
+    }
   });
 });
 

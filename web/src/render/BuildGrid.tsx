@@ -4,6 +4,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { leaseBounds, onLease } from "@/game/lease";
+import { ASSET_CATALOG } from "@/game/base";
+import { constructionDraw } from "@/game/economy";
+import { GUN_COST } from "@/game/guns";
 import { checkAssetPlacement, checkGunPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
@@ -37,6 +40,11 @@ export function gridDots(
   return dots;
 }
 
+/** The rules read cash only as "enough or not", so stand in a figure that gives the same answer. */
+function withCash<T extends { canAfford: boolean }>(state: T) {
+  return { ...state, cash: state.canAfford ? Number.MAX_SAFE_INTEGER : 0 };
+}
+
 /**
  * A sampled guide: faint dots at the centres of cells where the chosen item fits. The
  * placement preview remains the final authority. Lift and trail tools draw none.
@@ -49,20 +57,22 @@ export function BuildGrid() {
       : draft.showBuildGrid ? "overview" : null;
     return { mode, asset: mode === "asset" ? draft.asset : undefined };
   }));
+  const draftAsset = asset;
   const state = useGameStore(useShallow((state) => mode && mode !== "overview" ? {
     lifts: state.lifts,
     trails: state.trails,
     assets: state.assets,
     guns: state.guns,
-    cash: state.cash,
+    // Only whether the item is affordable matters, so a cash tick does not rebuild the dots.
+    canAfford: state.cash >= constructionDraw(mode === "gun" ? GUN_COST : ASSET_CATALOG[draftAsset ?? "cafe"]?.cost ?? 0).deposit,
     phase: state.phase,
     dayIndex: state.dayIndex,
     lodgeTier: state.lodgeTier,
   } : null));
   const dots = useMemo(() => {
     if (!mode) return [];
-    if (state && mode === "asset" && asset) return gridDots((at) => checkAssetPlacement(state, asset, at).ok);
-    if (state && mode === "gun") return gridDots((at) => checkGunPlacement(state, at).ok);
+    if (state && mode === "asset" && asset) return gridDots((at) => checkAssetPlacement(withCash(state), asset, at).ok);
+    if (state && mode === "gun") return gridDots((at) => checkGunPlacement(withCash(state), at).ok);
     return gridDots(null);
   }, [mode, asset, state]);
 

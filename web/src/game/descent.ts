@@ -98,16 +98,18 @@ function onMap(p: XZ, terrain: Terrain): boolean {
   );
 }
 
-/** Terrain-only checks, in reason order: off_map, off_lease, bottom_far, too_steep, too_low, too_long. */
+/** Terrain checks for a new placement (`enforceLease: false` revalidates a saved lift), in reason order: off_map, off_lease, bottom_far, too_steep, too_low, too_long. */
 export function checkLiftLine(
   line: LiftLine,
   terrain: Terrain = TERRAIN,
   type: LiftType = "chair",
+  options: { enforceLease?: boolean } = {},
 ): LineCheck {
   const { bottom, top } = line;
   const r = rulesFor(terrain, type);
   if (!onMap(bottom, terrain) || !onMap(top, terrain)) return { ok: false, reason: "off_map" };
-  if (!onLease(bottom, terrain) || !onLease(top, terrain) || !segmentOnLease(bottom, top, terrain)) {
+  if (options.enforceLease !== false &&
+    (!onLease(bottom, terrain) || !onLease(top, terrain) || !segmentOnLease(bottom, top, terrain))) {
     return { ok: false, reason: "off_lease" };
   }
   if (Math.hypot(bottom.x - terrain.base.x, bottom.z - terrain.base.z) > r.baseAreaRadius) {

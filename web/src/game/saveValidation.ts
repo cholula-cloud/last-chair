@@ -35,7 +35,9 @@ function lift(value: unknown): boolean {
       !array(string)(value.queue) || !number(value.dispatchCredit) || !optional(boolean)(value.closing) ||
       !["builtDay", "builtAtMin", "paid"].every((key) => optional(number)(value[key]))) return false;
   const bottom = value.bottom === undefined ? TERRAIN.base : value.bottom;
-  return point(bottom) && checkLiftLine({ bottom, top: value.anchor }, TERRAIN, value.type === "chair" ? "chair" : "surface").ok;
+  return point(bottom) && checkLiftLine({ bottom, top: value.anchor }, TERRAIN, value.type === "chair" ? "chair" : "surface",
+    // A save keeps lifts built before the lease existed. Only new placements face the lease.
+    { enforceLease: false }).ok;
 }
 
 const cell: Check = (value) => typeof value === "string" && /^-?\d+:-?\d+$/.test(value);

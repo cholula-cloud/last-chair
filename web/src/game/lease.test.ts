@@ -5,6 +5,7 @@ import { gunPlacementReason } from "./guns";
 import {
   depthInsideLease,
   distanceOutsideLease,
+  footprintOnLease,
   leaseBounds,
   OFF_LEASE_MESSAGE,
   onLease,
@@ -14,7 +15,9 @@ import {
 } from "./lease";
 import { DUTCH_HILL_SHOULDERS } from "./mountains/dutchHill";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
-import { previewAssetPlacement } from "./base";
+import { ASSET_CATALOG, previewAssetPlacement } from "./base";
+import { migrate } from "./migrations";
+import { SAVE_VERSION, toPersisted } from "./state";
 import { previewPaintedTrail } from "./paintedTrail";
 import { checkAssetPlacement, checkGunPlacement, checkPlacement, pickFounder } from "./rules";
 import { TERRAIN } from "./terrain";
@@ -127,7 +130,7 @@ describe("placement rules refuse land outside the lease", () => {
     expect(checkLiftLine({ bottom: TERRAIN.base, top: inMap }).ok).toBe(false);
     expect(checkLiftLine({ bottom: TERRAIN.base, top: inMap })).toMatchObject({ reason: "off_lease" });
     expect(placementReason("off_lease")).toBe(OFF_LEASE_MESSAGE);
-    expect(OFF_LEASE_MESSAGE).toBe("Outside the Dutch Hill lease.");
+    expect(OFF_LEASE_MESSAGE).toBe("Outside the Dutch Hill lease. Build inside the dashed line.");
   });
 
   it("still accepts the reference lifts", () => {
@@ -159,5 +162,47 @@ describe("placement rules refuse land outside the lease", () => {
     const preview = previewPaintedTrail(state, [{ points: [top, { x: (top.x + out.x) / 2, z: top.z + 2 }, out], widthFt: 60 }]);
     expect(preview.reason).toBe(OFF_LEASE_MESSAGE);
     expect(preview.problemSegments.length).toBeGreaterThan(0);
+  });
+});
+
+describe("saves and footprints", () => {
+  const small = [{ x: -3, z: -3 }, { x: 3, z: -3 }, { x: 3, z: 3 }, { x: -3, z: 3 }];
+
+  it("keeps a saved lift that stands outside the lease, while a new one is refused", () => {
+    const built = createBuiltHill(7);
+    const saved = JSON.parse(JSON.stringify(toPersisted(built)));
+    const original = TERRAIN.lease;
+    (TERRAIN as { lease?: unknown }).lease = small;
+    try {
+      expect(checkLiftLine({ bottom: TERRAIN.base, top: REFERENCE_TOPS[0] }, TERRAIN, "surface")).toEqual({ ok: false, reason: "off_lease" });
+      const loaded = migrate(saved, SAVE_VERSION);
+      expect(loaded.reset).toBe(false);
+      expect(loaded.state?.lifts).toHaveLength(built.lifts.length);
+    } finally {
+      (TERRAIN as { lease?: unknown }).lease = original;
+    }
+  });
+
+  it("refuses an asset whose footprint crosses the lease edge even when its centre is inside", () => {
+    const poly = TERRAIN.lease!;
+    const edge = { x: (poly[5].x + poly[6].x) / 2, z: poly[5].z };
+    const { width, depth } = ASSET_CATALOG.cafe.footprint;
+    expect(footprintOnLease({ x: edge.x, z: edge.z - 0.05 }, width, depth)).toBe(false);
+    expect(onLease({ x: edge.x, z: edge.z - 0.05 })).toBe(true);
+    expect(previewAssetPlacement("cafe", { x: edge.x, z: edge.z - 0.05 }, 2, [])).toEqual({ ok: false, reason: OFF_LEASE_MESSAGE });
+    expect(footprintOnLease({ x: edge.x, z: edge.z - 5 }, width, depth)).toBe(true);
+  });
+
+  it("does not flag the segments of an existing trail that runs past the lease", () => {
+    const state = createBuiltHill(7);
+    const trail = state.trails[0];
+    const original = TERRAIN.lease;
+    (TERRAIN as { lease?: unknown }).lease = small;
+    try {
+      const preview = previewPaintedTrail(state, [{ points: trail.path, widthFt: 60 }]);
+      expect(preview.reason).not.toBe(OFF_LEASE_MESSAGE);
+    } finally {
+      (TERRAIN as { lease?: unknown }).lease = original;
+    }
   });
 });

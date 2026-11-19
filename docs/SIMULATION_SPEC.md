@@ -174,7 +174,7 @@ A lift placement is **valid** iff:
 
 Invalid preview: red ghost; cannot confirm.
 
-**Implemented (PR 12a):** rule 1 is a terrain test; rules 2 and 3 are not yet. A lift is a line `{bottom, top}`; `bottom` is absent on a lift stored without one and means `TERRAIN.base`. `checkLiftLine(line)` in `game/descent.ts` returns `{ok: true, length, vertical}` or `{ok: false, reason}`. Vertical and length are measured from the bottom. Reasons in check order (`off_lease` is the PR L-C lease rule; painted trails, base assets and snow guns refuse every point outside the lease with the same copy, "Outside the Dutch Hill lease."):
+**Implemented (PR 12a):** rule 1 is a terrain test; rules 2 and 3 are not yet. A lift is a line `{bottom, top}`; `bottom` is absent on a lift stored without one and means `TERRAIN.base`. `checkLiftLine(line)` in `game/descent.ts` returns `{ok: true, length, vertical}` or `{ok: false, reason}`. Vertical and length are measured from the bottom. Reasons in check order (`off_lease` is the PR L-C lease rule; painted trails, base assets and snow guns refuse every point outside the lease with the same copy, "Outside the Dutch Hill lease. Build inside the dashed line."):
 
 | Code | Fails when |
 |------|-----------|

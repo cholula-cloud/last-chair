@@ -18,11 +18,9 @@ export const CHUNK_SIZE = 32;
 export const GRID_SPACING = 0.82;
 
 /** Width of the band at the lease edge where tree density eases from full to far density. */
-export const FADE_BAND = 6;
+export const FADE_BAND = 14;
 /** Share of candidates the far tier keeps, outside the lease and at its edge. */
-export const FAR_KEEP = 0.09;
-/** Far trees grow to this multiple of a lease tree, so a sparse stand still reads as forest. */
-export const FAR_SCALE = 1.7;
+export const FAR_KEEP = 0.14;
 /** Side of one lease cell, in world units. Each cell is drawn as its own instanced mesh so it can be culled. */
 export const LEASE_CELL = 44;
 /** Far trees thin out to nothing this far beyond the lease; past it the canopy tint on the ground carries the forest. */
@@ -242,8 +240,16 @@ export function leaseForest(clearings: ForestClearings): LeaseCell[] {
 
 let farTrees: TreeSpot[] | null = null;
 
-/** Sparse trees from the lease edge to the edge of the drawn terrain. Built once; the lease never moves. */
-export function farForest(): TreeSpot[] {
+/** Sparse trees from the lease edge to the edge of the drawn terrain. The candidates are built once; clearings filter them. */
+export function farForest(clearings?: ForestClearings): TreeSpot[] {
+  const base = farBase();
+  if (!clearings) return base;
+  // Trails and lifts at the lease edge clear far trees too.
+  const canGrow = forestMask(clearings);
+  return base.filter((t) => canGrow(t.x, t.z));
+}
+
+function farBase(): TreeSpot[] {
   if (farTrees) return farTrees;
   const canGrow = forestMask({ lines: [] });
   const out: TreeSpot[] = [];
@@ -251,9 +257,8 @@ export function farForest(): TreeSpot[] {
     if (c.keep >= FAR_KEEP || onLease(c)) continue;
     const away = distanceOutsideLease(c);
     if (c.keep >= FAR_KEEP * (1 - smoothstep(FAR_REACH * 0.55, FAR_REACH, away)) || !canGrow(c.x, c.z)) continue;
-    // Grow from lease size at the edge to full far size, so the tiers meet at the same height.
-    const grow = 1 + (FAR_SCALE - 1) * smoothstep(0, FADE_BAND * 2, away);
-    out.push(spotFrom(c, grow));
+    // Same size distribution as the lease trees, so there is no seam at the edge.
+    out.push(spotFrom(c, 1));
   }
   farTrees = out;
   return out;

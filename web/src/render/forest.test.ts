@@ -6,7 +6,6 @@ import {
   FADE_BAND,
   FAR_KEEP,
   FAR_REACH,
-  FAR_SCALE,
   LEASE_CELL,
   LIFT_CLEAR,
   TRAIL_CLEAR,
@@ -173,8 +172,9 @@ describe("the far forest", () => {
     expect(far.length).toBeGreaterThan(500);
     expect(far.every((t) => !onLease(t))).toBe(true);
     expect(far.length).toBeLessThan(8000);
-    const maxGrow = Math.max(...far.map((t) => t.s));
-    expect(maxGrow).toBeLessThanOrEqual(1.2 * FAR_SCALE + 1e-9);
+    // The same scale range as a lease tree: far trees never grow.
+    expect(Math.min(...far.map((t) => t.s))).toBeGreaterThanOrEqual(0.78);
+    expect(Math.max(...far.map((t) => t.s))).toBeLessThanOrEqual(1.2 + 1e-9);
   });
 
   it("is built once", () => {
@@ -192,5 +192,20 @@ describe("the far forest", () => {
 describe("hash stability", () => {
   it("hash01 is stable", () => {
     expect(hash01(1, 2, 3)).toBe(hash01(1, 2, 3));
+  });
+});
+
+describe("far trees and trails at the lease edge", () => {
+  it("clears far trees from a trail that runs along the lease edge", () => {
+    const poly = TERRAIN.lease!;
+    const a = poly[3];
+    const b = poly[4];
+    const path = Array.from({ length: 12 }, (_, i) => ({ x: a.x + ((b.x - a.x) * i) / 11, z: a.z + ((b.z - a.z) * i) / 11 }));
+    const clears = { lines: [], paths: [path] };
+    const before = farForest();
+    const after = farForest(clears);
+    expect(after.length).toBeLessThan(before.length);
+    const line = trailPolyline({ bottom: path[0], top: path[11] }, 28);
+    for (const t of after) expect(distSqToPolyline(t.x, t.z, path.length > 1 ? path : line)).toBeGreaterThanOrEqual(0);
   });
 });

@@ -1,6 +1,6 @@
 /** Pure camera-control helpers: the play area, a soft target clamp and a tap/drag classifier. */
 
-import { leaseBounds } from "@/game/lease";
+import { distanceOutsideLease, leaseBounds, nearestLeaseEdge } from "@/game/lease";
 import { TERRAIN, type Terrain } from "@/game/terrain";
 import { marchToTerrain as marchTerrainCore } from "./terrainPick";
 
@@ -16,10 +16,45 @@ export const WORLD_SCALE = 6;
 /** How far past the lease bounding box the camera target may roam, in world units. */
 export const LEASE_CAMERA_MARGIN = 8;
 
-/** Scaled ground rectangle the camera target may roam: the lease bounding box plus a margin. */
+/** The lease bounding box plus a margin. The camera target itself follows the lease polygon (see `clampToLease`). */
 export function playArea(terrain: Terrain = TERRAIN, margin = LEASE_CAMERA_MARGIN): Rect {
   const b = leaseBounds(terrain);
   return { xMin: b.xMin - margin, xMax: b.xMax + margin, zMin: b.zMin - margin, zMax: b.zMax + margin };
+}
+
+/** How far past the lease outline the camera target may rest, in world units. */
+export const LEASE_TARGET_MARGIN = 3;
+/** Overshoot beyond the margin where panning meets resistance, and the hard limit past it. */
+const TARGET_SOFT = 2;
+const TARGET_HARD = 6;
+
+/** The nearest point the camera target may rest on: inside the lease outline plus the margin. */
+export function insideLease(p: XZ, terrain: Terrain = TERRAIN, margin = LEASE_TARGET_MARGIN): XZ {
+  if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) return leaseCentre(terrain);
+  if (distanceOutsideLease(p, terrain) <= margin) return p;
+  const edge = nearestLeaseEdge(p, terrain);
+  if (!edge) return insideArea(p, playArea(terrain));
+  const k = margin / Math.max(edge.distance, 1e-9);
+  return { x: edge.at.x + (p.x - edge.at.x) * k, z: edge.at.z + (p.z - edge.at.z) * k };
+}
+
+function leaseCentre(terrain: Terrain): XZ {
+  const b = leaseBounds(terrain);
+  return { x: (b.xMin + b.xMax) / 2, z: (b.zMin + b.zMax) / 2 };
+}
+
+/**
+ * Soft clamp to the lease polygon: unchanged on it, eased past the margin, flat at the hard limit.
+ * The mountain edge, not its bounding box, stops the camera.
+ */
+export function clampToLease(p: XZ, terrain: Terrain = TERRAIN, margin = LEASE_TARGET_MARGIN): XZ {
+  if (!Number.isFinite(p.x) || !Number.isFinite(p.z)) return leaseCentre(terrain);
+  const edge = nearestLeaseEdge(p, terrain);
+  if (!edge || distanceOutsideLease(p, terrain) <= margin) return p;
+  const over = edge.distance - margin;
+  const eased = margin + easeOvershoot(over, TARGET_SOFT, TARGET_HARD);
+  const k = eased / edge.distance;
+  return { x: edge.at.x + (p.x - edge.at.x) * k, z: edge.at.z + (p.z - edge.at.z) * k };
 }
 
 /** Play area for the current mountain. */

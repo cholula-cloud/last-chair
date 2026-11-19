@@ -36,13 +36,12 @@ import {
   GLIDE_MAX_FRAMES,
   MAX_DISTANCE,
   MIN_DISTANCE,
-  PLAY_AREA,
   TARGET_Y_MAX,
   classifyPointer,
-  clampTarget,
+  clampToLease,
   elevationOf,
   exceedsTapSlop,
-  insideArea,
+  insideLease,
   marchToTerrain,
   paintTiltElevation,
   withElevation,
@@ -210,7 +209,7 @@ function CameraRig({
       if (!hit) return;
       endFollow();
       userMoved.current = true;
-      const snapped = insideArea(hit, PLAY_AREA);
+      const snapped = insideLease(hit);
       glideTo(new THREE.Vector3(snapped.x, TERRAIN.height(snapped.x, snapped.z), snapped.z), FOCUS_DISTANCE);
     };
     const onDown = (e: PointerEvent) => {
@@ -454,12 +453,12 @@ function CameraRig({
     }
     r.add(GOAL.copy(controls.target).sub(applied.current));
     if (!interacting.current) {
-      const inside = insideArea(r, PLAY_AREA);
+      const inside = insideLease(r);
       r.x += (inside.x - r.x) * 0.1;
       r.z += (inside.z - r.z) * 0.1;
     }
     r.y = Math.min(TARGET_Y_MAX, Math.max(0, r.y));
-    const c = clampTarget(r, PLAY_AREA);
+    const c = clampToLease(r);
     GOAL.set(c.x, r.y, c.z).sub(controls.target);
     if (GOAL.lengthSq() > 1e-10) {
       // Shift the camera with the target so the view slides rather than re-aims.

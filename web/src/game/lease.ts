@@ -3,7 +3,7 @@
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 
 /** Player-facing copy when a placement leaves the lease. */
-export const OFF_LEASE_MESSAGE = "Outside the Dutch Hill lease.";
+export const OFF_LEASE_MESSAGE = "Outside the Dutch Hill lease. Build inside the dashed line.";
 
 /** Even-odd point-in-polygon test; points on an edge count as inside. */
 export function pointInPolygon(p: XZ, polygon: readonly XZ[]): boolean {
@@ -68,6 +68,33 @@ export function depthInsideLease(p: XZ, terrain: Terrain = TERRAIN): number {
   const poly = terrain.lease;
   if (!poly || poly.length < 3 || !pointInPolygon(p, poly)) return 0;
   return edgeDistance(p, poly);
+}
+
+/** The point on the lease outline nearest to `p`, with its distance. Undefined without a lease polygon. */
+export function nearestLeaseEdge(p: XZ, terrain: Terrain = TERRAIN): { at: XZ; distance: number } | undefined {
+  const poly = terrain.lease;
+  if (!poly || poly.length < 3) return undefined;
+  let best: { at: XZ; distance: number } | undefined;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i];
+    const b = poly[j];
+    const dx = b.x - a.x;
+    const dz = b.z - a.z;
+    const len2 = dx * dx + dz * dz;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / len2));
+    const at = { x: a.x + t * dx, z: a.z + t * dz };
+    const distance = Math.hypot(p.x - at.x, p.z - at.z);
+    if (!best || distance < best.distance) best = { at, distance };
+  }
+  return best;
+}
+
+/** True when a rectangle centred on `at` (axis aligned, `width` by `depth`) lies wholly on the lease. */
+export function footprintOnLease(at: XZ, width: number, depth: number, terrain: Terrain = TERRAIN): boolean {
+  const hw = width / 2;
+  const hd = depth / 2;
+  return [[0, 0], [-hw, -hd], [hw, -hd], [-hw, hd], [hw, hd]].every(([dx, dz]) =>
+    onLease({ x: at.x + dx, z: at.z + dz }, terrain));
 }
 
 /** True when the straight segment a to b stays on the lease (sampled; exact for a convex lease). */

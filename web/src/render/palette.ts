@@ -44,7 +44,7 @@ export const PALETTE = {
 
   /** Build-preview ghosts and the followed-guest marker. */
   valid: "#3fd27a",
-  invalid: "#f25c5c",
+  invalid: "#ff2a2a",
   marker: "#ffb020",
 
   /** Skier kit. */

@@ -215,8 +215,7 @@ function LeaseCellTrees({ cell, shared }: { cell: LeaseCell; shared: Shared }) {
 }
 
 /** The far tier: every tree in one instanced mesh, one draw call. */
-function FarTrees({ geo }: { geo: THREE.BufferGeometry }) {
-  const spots = useMemo(() => farForest(), []);
+function FarTrees({ geo, spots }: { geo: THREE.BufferGeometry; spots: readonly TreeSpot[] }) {
   const far = useMemo(() => {
     const g = geo.clone();
     const weights = new Float32Array(spots.length);
@@ -263,10 +262,17 @@ export const Trees = memo(function Trees({ lines, paths }: ForestClearings) {
     return cells.map((cell) => ({ ...cell, pines: cell.pines.filter(keep), birch: cell.birch.filter(keep) }));
   }, [cells, clearedCells]);
 
+  const farSpots = useMemo(() => {
+    const spots = farForest({ lines, paths });
+    if (!clearedCells.length) return spots;
+    const cut = new Set(clearedCells);
+    return spots.filter((spot) => !isClearedAt(spot, cut));
+  }, [lines, paths, clearedCells]);
+
   return (
     <group>
       {visible.map((cell) => <LeaseCellTrees key={cell.key} cell={cell} shared={shared} />)}
-      <FarTrees geo={far} />
+      <FarTrees geo={far} spots={farSpots} />
     </group>
   );
 }, sameForestClearings);
