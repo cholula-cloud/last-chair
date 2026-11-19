@@ -276,7 +276,7 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
 | Daily fixed cost | $1,095 plus the founder's fixed cost adjustment |
 | Lift operations per day | $180 per operating lift, with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
-| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $40 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
+| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $60 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
 | Snow and service | Minimal $0 / Mid $150 / High $350 per night |
 | Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
 
@@ -317,7 +317,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 
 - The build rules quote survey and preparation at $150 for a new painted trail. Clearing is $300 per acre of new 15-foot cells. Repainting charges only for newly cleared ground. Erasing a route leaves its clearing in place. The clear proportion within 90 ft of each snow segment raises thaw losses by up to 30%.
 - The warming hut charges $2 per stop. Café, shop, rentals and lessons record receipts from actual visits. First-timers can visit rentals and lessons before their first lift. After tiring or facing a long queue, guests can stop in the café or hut if seats are available. Attach pads add 5% to the venue's effects and receipts.
-- Snow guns cost $400 each in Tier 2. They extend pipe reach from the base or an existing gun. Mid and High groom 3,000 and 5,000 ft respectively, busiest trails first. The Groom Pass adds 20%. Actual segments drive groomed stripes and covered trails.
+- Snow guns cost $250 each in Tier 2. They extend pipe reach from the base or an existing gun. Mid and High groom 3,000 and 5,000 ft respectively, busiest trails first. The Groom Pass adds 20%. Actual segments drive groomed stripes and covered trails.
 
 ## Night choices (ICR Simple mapping)
 
@@ -414,7 +414,7 @@ Fixed strategies use the nine fare and snow combinations. Builder upgrades the l
 2. Careless has a projected cash shortfall within 28 days in at least two of six test seeds and at least a quarter of the report seeds.
 3. The fixed fare and snow combinations, Adaptive and Builder finish the 28-day test winters without bankruptcy.
 
-The 40-seed report passed all three checks. In 28 days, Careless had 10 projected shortfalls and received a loan offer before each first shortfall. All 10 offers were taken in the default runs. Five winters ended in bankruptcy when Careless declined borrowing.
+The original row 20 calibration passed all three checks. In 28 days, Careless had 10 projected shortfalls and received a loan offer before each first shortfall. All 10 offers were taken in the default runs. Five winters ended in bankruptcy when Careless declined borrowing.
 
 | Strategy | Mean ending cash over 28 days |
 |---|---:|
@@ -422,6 +422,8 @@ The 40-seed report passed all three checks. In 28 days, Careless had 10 projecte
 | Adaptive | $30,925 |
 | Builder | $15,093 |
 | Careless | $5,335 |
+
+The first-winter story pass made the Careless shortfall less frequent (7 of 40 seeds). Setting gun installation to $250 and daily upkeep to $60 moved more cost into the operating winter. The full 40-seed report passed. No strategy had a shortfall in the 14-day check. In 28 days, Careless had 10 projected shortfalls and 6 bankruptcies when borrowing was declined. Mean ending cash was $13,388 for Balanced/Mid, $30,467 for Adaptive, $14,974 for Builder and $5,070 for Careless. Placement review displays daily upkeep alongside the construction terms.
 
 ### Historical 14-day calibration (PR 10 and PR 10b)
 

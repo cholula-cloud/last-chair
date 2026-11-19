@@ -1,6 +1,7 @@
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
 import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
+import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
 import { resumeSeasonWeather } from "./weather";
 
 export type Raw = Record<string, unknown>;
@@ -40,6 +41,19 @@ export const MIGRATIONS: readonly Migration[] = [
           ? { ...nightRecap, costs: null, revenue: null, loanReceived: 0, loanRepaid: 0 }
           : nightRecap,
       };
+    },
+  },
+  {
+    to: 6,
+    note: "Start tracking school-bus and SummitLink offers.",
+    up(raw) {
+      const { pendingBeat, dayIndex, seasonLength, reputation } = raw;
+      const validSummitLinkNight = typeof dayIndex === "number" && typeof seasonLength === "number" &&
+        typeof reputation === "number" && dayIndex >= SUMMIT_LINK_FIRST_DAY && dayIndex < seasonLength &&
+        reputation >= SUMMIT_LINK_MIN_REPUTATION;
+      const clearTeaser = pendingBeat === "school_bus" || (pendingBeat === "summit_link" && !validSummitLinkNight);
+      const migrated = { ...raw, schoolContract: null, schoolProgramProven: false, summitLinkDecision: null };
+      return clearTeaser ? { ...migrated, pendingBeat: null, beatAcknowledged: true } : migrated;
     },
   },
 ];

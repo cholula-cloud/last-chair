@@ -1,5 +1,6 @@
 import { formatMoney } from "./format";
 import { PERSONAS } from "./personas";
+import { SCHOOL_BUS_FARE } from "./schoolContract";
 import { FARE_PRICES, type BuildingId, type FarePreset, type Guest } from "./types";
 
 /** Constants of the satisfaction formula (see SIMULATION_SPEC, Satisfaction). All points are on the 0–100 scale. */
@@ -107,6 +108,7 @@ export type SatGuest = Pick<
   | "waitCount"
   | "snowSum"
   | "joinedQueueAtMin"
+  | "schoolPupil"
 >;
 
 /** Pain in minutes for a mean wait per ride: free up to a minute, 1:1 to the knee, half slope beyond. */
@@ -170,7 +172,7 @@ function guestEvaluation(
       ? SAT.SNOW_PTS * p.snowWeight * (g.snowSum / g.runs - ctx.snowExpectation)
       : 0;
   const hillValue = guestHillValue(g, ctx);
-  const price = FARE_PRICES[ctx.fare];
+  const price = g.schoolPupil ? SCHOOL_BUS_FARE : FARE_PRICES[ctx.fare];
   const value = Math.max(
     VALUE.MIN_PTS,
     Math.min(VALUE.MAX_PTS, p.valueWeight * VALUE.K * ((hillValue - price) / price)),
@@ -249,6 +251,7 @@ export function daySatisfaction(
 /** Facts quoted in the problem line. */
 export type ProblemFacts = {
   avgWaitMin: number;
+  dispatched?: number;
   snowQuality: number;
   /** Where the worst segment is, e.g. "Bare patches at the bottom of the trail" (see snow.ts `readSnow`). */
   snowTrouble?: string;
@@ -279,7 +282,9 @@ export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
 export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
   switch (biggestProblem(breakdown)) {
     case "queue":
-      return `Long lift lines — guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More capacity or a cheaper fare to spread the crowd.`;
+      return facts.dispatched === 0
+        ? "Guests spent time in line but no one boarded a lift. Check which lifts and trails are open."
+        : `Long lift lines — guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More lift capacity or a higher fare can ease the crowd.`;
     case "snow":
       return facts.snowTrouble
         ? `${facts.snowTrouble} (mean quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`

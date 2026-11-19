@@ -20,10 +20,10 @@
 | NYFA world | **Strong** | Dutch Hill / Ice Coast / heritage hooks land in copy |
 | NYFA main conflict | **Weak in play** | SummitLink and “one more winter” are told more than played |
 
-**Top planning themes (use for roadmap slicing):**
+**Planning themes from the playtest**
 
 1. **Onboarding coach (MASTER_PLAN ~26)** — GDV goals + learnability gate.
-2. **Night lever previews** — GDV meaningful choices + feedback for fare/snow.
+2. **Nightly operating decisions** — GDV meaningful choices and feedback for fare and snow.
 3. **Story as systems (rows 23–24)** — NYFA conflict + GDV consequences for radio / SummitLink.
 4. **Founder legibility** — NYFA characters + GDV rule comprehension.
 5. **Opening UX load** — GDV challenge vs friction + mobile checklist.
@@ -51,7 +51,7 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 - During opening: objective yes, **steps** often no without experimentation (matches M2 human gate still open).
 - Mid-winter: yes when recap problem line is clear (queues, snow, venues).
 
-**Planning hooks:** Coach L-* / row **26**; consider **optional** first-trail corridor (objective without micro-solution spoil); heritage **goal card** on winter 1 (MASTER_PLAN goal card table).
+**Planning hooks:** Coach L-* / row **26**; consider **optional** first-trail corridor (objective without micro-solution spoil); a visible common solvency goal and an optional Readsboro visit in winter 1.
 
 ---
 
@@ -90,12 +90,12 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 
 | Decision | Advantage | Cost | Playtest |
 |----------|-----------|------|----------|
-| Cheap fare | More guests, spread queue | Lower revenue, value hit | Recap suggests fare for queues; **no preview** |
+| Cheap fare | Better ticket value and usually more guests | Less ticket revenue per guest and more pressure on lift lines | The recap points to the fare lever. The playtest lacked a clear explanation of which direction would help. |
 | High snow tier | Better cover / ops | Nightly cash burn | Obvious tie to snow % |
 | Second lift / trail | Capacity | Capital + build skill | Clear in recap after change |
 | Lodge Tier 2 | Rentals, school path | Time + cash | m2 path felt purposeful |
 
-**Planning hooks:** Night **preview chips** (queue/mood delta vs yesterday for each fare/snow tile); rows **23–24** for choices with consequences; avoid redundant presets (GDV: don’t confuse option count with agency).
+For the first-winter work, show supported expected directions on the night controls and reserve numeric comparisons for closed days. Rows 23–24 add story decisions and record their results.
 
 ---
 
@@ -176,7 +176,7 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 
 ## Part B — GDV playtest seven questions (Nov 2026 session)
 
-Use these as **repeatable gate questions** for the next device sign-off.
+Use the seven recorded questions again at the next device sign-off. The last row is a follow-up for the first-winter work.
 
 | Question | Result | Notes |
 |----------|--------|-------|
@@ -187,6 +187,7 @@ Use these as **repeatable gate questions** for the next device sign-off.
 | **Challenge diagnosis** | Pass post-opening | “Long lines” → build/fare intelligible in recap |
 | **Learning progression** | Pass in m2 | Same paint mechanic reused for second trail |
 | **Experience coherence** | Pass | Players would describe “cozy ski tycoon on phone” |
+| **Surprise** | To test | What surprised you about the hill or town? Could you tell what happened and what, if anything, it changed about your next decision? |
 
 **Diagnostic rule (GDV):** If opening fails, **do not** only shorten the paint puzzle — check UI overlap, wind callouts, and placement bar occlusion first.
 
@@ -260,7 +261,7 @@ NYFA emphasizes **characters**, **world**, and **main conflict** as ingredients 
 
 **NYFA criterion:** Without an interesting problem, story fails to captivate. Today the **simulation conflict** carries the game; the **narrative antagonist** does not yet pull weight.
 
-**Planning hooks:** First **real** SummitLink choice before or at winter review; school bus contract as weekday fare trade (MASTER_PLAN beats table); goal card so winter win condition is legible, not only solvency.
+The playtest identified the need for an operating choice with SummitLink, a school visit the hill can actually serve, and a visible winter goal. The approved follow-through is in Part E.
 
 ---
 
@@ -295,19 +296,34 @@ Retained for planning; details in agent playtest report.
 
 ---
 
-## Part E — Planning matrix (principle → work item)
+## Part E — First-winter plan and review backlog
 
-Use this table when prioritizing PRs. **Impact** = effect on GDV/NYFA gaps; **Effort** = rough (S/M/L) for discussion only — not calendar estimates.
+**2026-11-19 design response.** The observations above describe the Nov 2026 playtest. The approved first-winter sequence follows the decisions in [MASTER_PLAN.md](./MASTER_PLAN.md#dutch-hill-first-winter-sequence).
+
+| PR | Work | What to verify |
+|----|------|----------------|
+| 1 | Align the three planning docs | Finish the 28-day winter with nonnegative liquid net worth after debt and unpaid construction. Readsboro is optional. |
+| 2 | First operating decision | Use the measured problem in the first recap to explain the fare or snow tradeoff. Show the following day's actual comparison when there are two observations. |
+| 3 | Three local surprises | A pie at the lodge stays a social moment. Former regulars sometimes arrive together on weekdays. A frosty road delays some arrivals while preserving their scheduled total. |
+| 4 | Readsboro visit | Accept or decline one weekday visit for six discounted pupils. Show how many lessons the hill actually delivered. |
+| 5 | Vivian’s offer | Accept $6,000 once with a Balanced fare ceiling for the remaining winter or stay independent. Riley can decline and sees why accepting is unavailable. |
+| 6 | Winter memory | Show the settlement and common goal outcome, plus only the choices and results the season recorded. Test the complete winter. |
+
+Two implementation checks put numbers on the tradeoffs. On the same morning, an eight-seat school taught all six Readsboro pupils with its seats open, four with four seats occupied by public guests, and zero with all eight occupied. With a second school, all six received lessons even under that pressure. The bus paid $150 in lift tickets in each case. The town remembers the lessons.
+
+Vivian’s check used seed 3, Elena, a Tier 2 school and an accepted bus visit. An operator keeping fares Cheap ended with $9,974 independent or $15,974 after signing, with the same 1,107 guests. An operator aiming for Expensive ended with $16,840 independent or $22,633 after signing, and served 831 or 892 guests respectively. The cap changed service and pricing freedom while the payment still won on cash in both examples. The size of that inducement remains a question for human playtesting.
+
+The matrix retains other review findings for prioritization. Impact describes the GDV or NYFA gap. Effort is a rough sizing estimate.
 
 | ID | Work item | GDV principles | NYFA | Impact | Effort | Suggested row |
 |----|-----------|------------------|------|--------|--------|----------------|
-| P1 | Contextual coach (lift → trail → play) | 1, 2, 5 | — | High | M | 26, L-* |
-| P2 | Night fare/snow preview deltas | 3, 4 | — | High | M | — |
+| P1 | Contextual coach (lift → trail → play) | 1, 2, 5 | — | High | M | L-E, 26 |
+| P2 | Measured night recap and fare/snow tradeoffs | 3, 4 | — | High | M | L-E, 26 |
 | P3 | Founder effect surfacing (1 metric each) | 2, 3 | Characters | Med | S | 22 |
-| P4 | Radio feed + story log | 4, 7 | World, conflict | High | L | 23 |
-| P5 | Winter review choices + SummitLink offer v1 | 3, 6, 7 | Conflict | High | L | 24 |
+| P4 | Local surprises and story log | 4, 7 | World, conflict | High | L | 23 |
+| P5 | Readsboro, Vivian’s offer and winter review | 3, 6, 7 | Conflict | High | L | 22–24 |
 | P6 | Defer wind-hold UI until post-opening | 5, 7 | — | Med | S | — |
-| P7 | Goal card (winter win visible) | 1, 7 | Conflict | Med | M | WORLD / review |
+| P7 | Goal card with common solvency and optional Readsboro visit | 1, 7 | Conflict | Med | M | L-E, 24 |
 | P8 | Talent effects completion (12→20) | 6 | — | Med | L | 21 |
 | P9 | Night sheet layout (radio before sleep) | 4 | — | Med | S | — |
 | P10 | Fix `playtest:p0` + human M2 sign-off | — | — | High | S | TESTING |
@@ -338,21 +354,21 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 
 - **Protect the build canvas.** During placement, collapse or dim non-essential HUD; keep placement bar and undo above the action bar without intercepting taps (known Playwright/touch issue).
 - **One thumb zone for urgency:** play/pause, close hill, and Sleep should stay predictable; avoid moving speed or recenter during opening week.
-- **Night sheet information order:** problem line → suggested levers (fare/snow) with previews → radio (if any) → forecast → Sleep. Radio should not feel like a gate without narrative payoff.
+- **Night sheet information order.** Show the measured problem and fare/snow tradeoffs, followed by any radio item, the forecast and Sleep. Radio should not feel like a gate without narrative payoff.
 - **Founder copy:** add one **gameplay sentence** per card (“Families +8% mood at arrival”) alongside flavor; keep blurbs for tone.
 - **Landscape:** spot-check 844×390 whenever changing Hud or night sheet (historical overlap issues in TESTING.md).
 
 ### Gameplay feel and diagnosis
 
-- **Strengthen the nightly decision triangle:** recap names the bottleneck (queue, snow, value, venue); each fare/snow tile shows **expected direction** on that bottleneck (even rough arrows, not false precision).
-- **Celebrate fixes on the mountain.** When yesterday’s problem was queues, show a small morning chip if wait dropped (“Lines eased overnight”) so feedback is not recap-only.
+- **Tie night choices to measured results.** Name the bottleneck (queue, snow, value or venue) using the day’s figures. Show the choice’s cost and label any supported expected direction. Compare actual outcomes when the next day closes.
+- **Show a measured improvement.** If wait drops after the next operating day, report the actual difference. Keep other recorded changes visible so the player can interpret it.
 - **Follow guest as tutorial affordance.** After opening, one gentle nudge: “Follow a guest to see the line” when queue tone turns watch/bad.
 - **Skip-to-close is a feature, not a crutch:** keep it; optionally show one frame of “while you were open” stats so skippers still feel cause and effect.
 - **Balance expressive progression:** each lodge tier and talent should unlock a **verb** (place guns, school day, rentals) the recap can name next week — not only +% in the sim.
 
 ### Story and emotional retention
 
-- **Play the conflict, don’t recite it.** Every Act I beat should either (a) teach a system, or (b) force a trade players feel in cash/reputation/fare — “Got it” alone is insufficient for SummitLink and school bus.
+- **Give offers consequences.** Readsboro changes one weekday and the school outcome depends on lessons delivered. Vivian exchanges cash now for a real fare ceiling. The pie gives locals a moment on the hill with no change to the operating numbers.
 - **Show the town in sim hooks:** bus day, après revenue, heritage sign — tie NYFA **world** to counters players already watch.
 - **Give the operator a voice sparingly:** one-line reactions in winter review or after hard nights; no dialogue trees required for Dutch Hill.
 - **Career map as long-term goal:** when Tenney unlocks, frame it as **escape velocity** from SummitLink pressure, not a generic level select.
@@ -361,7 +377,7 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 
 - **Finish half-shipped rows before expanding cast or mountains.** Talents with no effect, founders without full modifiers, and radio without feed dilute trust (GDV rule comprehension).
 - **Avoid feature sprawl that fights cozy diagnosis.** Crafting, deep staffing, or mid-day story pop-ups are high coherence risk (Part A §7).
-- **Preserve honest simulation marketing internally:** any UI preview must come from the same functions as recap; never “approximate” deltas for night tiles.
+- **Keep results and forecasts clear.** Use the simulation for expected directions and the closed day for numeric results.
 - **Personas:** when Family Pack and Race Kid land, ensure each changes **visible** hill behavior (arrivals, trail choice), not only spreadsheet mix.
 
 ### Quality, testing, and team process

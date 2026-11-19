@@ -1,8 +1,10 @@
 import { ASSET_CATALOG } from "./base";
 import { MOUNTAIN_CALENDARS } from "./calendar";
 import { checkLiftLine, MAX_LIFTS, MAX_LIFT_SLOTS } from "./descent";
+import { SCHOOL_BUS_PUPILS } from "./schoolContract";
 import type { PersistedState } from "./state";
 import { TERRAIN, type XZ } from "./terrain";
+import { SAT_TERM_KEYS } from "./satisfaction";
 
 type Check = (value: unknown) => boolean;
 
@@ -27,6 +29,9 @@ const snow = oneOf("minimal", "mid", "high");
 const weather = oneOf("clear", "snow", "storm", "thaw");
 const liftType = oneOf("surface", "chair");
 const beat = oneOf("first_load", "saturday", "school_bus", "dry_week", "summit_link", "winter_review");
+const founder = nullable(oneOf("elena", "tom", "riley", "amira", "juniper", "marco"));
+const summitLinkDecision = oneOf("accepted", "declined");
+const surpriseKind = oneOf("pie", "former_regulars", "road_delay");
 const assetId: Check = (value) => typeof value === "string" && Object.hasOwn(ASSET_CATALOG, value);
 const revenue: Check = (value) => record(value) && Object.entries(value).every(([key, amount]) => assetId(key) && number(amount));
 
@@ -57,7 +62,13 @@ const guest = shape({
   liftIndex: optional(index), trailIndex: optional(index), venueIndex: optional(index),
   joinedQueueAtMin: optional(number), rideStartMin: optional(number), visitMinutes: optional(number),
   refuelled: optional(boolean), rented: optional(boolean), lesson: optional(boolean), balks: optional(number),
+  schoolPupil: optional(boolean), schoolLessonCompleted: optional(boolean),
 });
+const schoolContract: Check = (value) => record(value) && (
+  value.decision === "declined" ||
+  (value.decision === "accepted" && integer(value.day) && value.day >= 1 &&
+    (value.pupilsTaught === null || (integer(value.pupilsTaught) && value.pupilsTaught >= 0 && value.pupilsTaught <= SCHOOL_BUS_PUPILS))
+  ));
 const operatingCosts = shape(numbers("fixed", "founder", "liftOps", "upkeep"));
 const payable = shape({
   what: (value) => assetId(value) || value === "lift" || value === "lodge",
@@ -73,12 +84,15 @@ const loan = shape({
 });
 const recap = shape({
   ...numbers("arrivals", "satisfaction", "cashDelta", "loanReceived", "loanRepaid"), problem: string,
+  summitLinkReply: optional(summitLinkDecision),
   costs: nullable(operatingCosts), revenue: nullable(number),
   breakdown: shape(numbers("arrivalMood", "queue", "snow", "value", "runs")),
   facts: shape({
     ...numbers("avgWaitMin", "snowQuality", "farePrice", "hillValue", "runsPerGuest", "turnedAway", "arrivalMood"),
     snowLabel: string, venueRevenue: optional(revenue), balked: optional(number),
+    dispatched: optional(index),
     busiestLift: optional(shape({ label: string, min: number })),
+    schoolBus: optional(shape({ invited: index, arrived: index, taught: index, ticketRevenue: number })),
   }),
 });
 const dayStats = shape({
@@ -109,7 +123,7 @@ const fields: Record<keyof PersistedState, Check> = {
   pendingFare: fare,
   pendingSnow: snow,
   buildMode: boolean,
-  founderId: nullable(oneOf("elena", "tom", "riley", "amira", "juniper", "marco")),
+  founderId: founder,
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
@@ -123,8 +137,11 @@ const fields: Record<keyof PersistedState, Check> = {
   selectedLiftType: liftType,
   talentsOwned: array(string),
   completedBeats: array(beat),
+  summitLinkDecision: nullable(summitLinkDecision),
   pendingBeat: nullable(beat),
   beatAcknowledged: boolean,
+  schoolContract: nullable(schoolContract),
+  schoolProgramProven: boolean,
   weather,
   seasonSeed: index,
   weatherDays: array(shape({ kind: weather, wind: oneOf("calm", "gusty") })),
@@ -136,7 +153,18 @@ const fields: Record<keyof PersistedState, Check> = {
   seasonLength: (value) => integer(value) && value >= 1,
   rngState: number,
   nightRecap: nullable(recap),
-  lastDay: nullable(shape({ ...numbers("arrivals", "satisfaction", "cashDelta", "avgWaitMin"), fare, snow })),
+  lastWinter: optional(shape({
+    day: index, founder,
+    bankrupt: boolean, ...numbers("cash", "loan", "construction", "netWorth"),
+    school: nullable(schoolContract), summitLink: nullable(summitLinkDecision),
+    localMoment: nullable(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index })),
+  })),
+  surprise: optional(nullable(shape({ dayIndex: index, kind: surpriseKind, guestIds: array(string) }))),
+  surpriseLog: optional(array(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index }))),
+  lastDay: nullable(shape({
+    ...numbers("arrivals", "satisfaction", "cashDelta", "avgWaitMin"), fare, snow,
+    observation: optional(shape({ measure: oneOf(...SAT_TERM_KEYS), value: number })),
+  })),
   dayStats,
 };
 
@@ -144,6 +172,9 @@ export function validateSave(value: unknown): string[] {
   if (!record(value)) return ["invalid save"];
   const errors = Object.entries(fields).flatMap(([key, check]) => check(value[key]) ? [] : [key]);
   if (number(value.dayIndex) && number(value.seasonLength) && value.dayIndex > value.seasonLength) errors.push("dayIndex");
+  if (record(value.schoolContract) && value.schoolContract.decision === "accepted" &&
+      number(value.schoolContract.day) && number(value.seasonLength) &&
+      value.schoolContract.day > value.seasonLength) errors.push("schoolContract");
   if (Array.isArray(value.weatherDays) && (value.weatherDays.length !== value.seasonLength ||
     (integer(value.dayIndex) && value.weatherDays[value.dayIndex - 1]?.kind !== value.weather))) errors.push("weatherDays");
   if (value.phase === "night" && value.nightRecap === null) errors.push("nightRecap");
@@ -152,6 +183,9 @@ export function validateSave(value: unknown): string[] {
       (value.phase === "winter_review" && value.outcome === "playing") ||
       (value.phase === "mountain2" && value.outcome !== "finished")) errors.push("outcome");
   if (value.loan && value.loanTaken !== true) errors.push("loanTaken");
+  if (value.summitLinkDecision === "accepted" && (value.pendingFare === "expensive" || value.founderId === "riley")) {
+    errors.push("summitLinkDecision");
+  }
   if (Array.isArray(value.payables) && Array.isArray(value.lifts) && integer(value.seasonLength)) {
     const maxDueDay = value.seasonLength + 1;
     const liftCount = value.lifts.length;

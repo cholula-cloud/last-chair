@@ -31,7 +31,7 @@ export function mix32(value: number): number {
 }
 
 /** Fixed stream salts. Keep these stable so old seeds reproduce their weather. */
-export const STREAM = { WEATHER: 0x57ea7e2, RADIO: 0x4ad10 } as const;
+export const STREAM = { WEATHER: 0x57ea7e2, RADIO: 0x4ad10, SURPRISE: 0x5a79e31 } as const;
 
 export function streamFor(seed: number, stream: number): Rng {
   return createRng(mix32(seed ^ stream));

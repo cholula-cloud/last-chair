@@ -52,13 +52,15 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Step | Action | Pass if |
 |---|---|---|
 | 1 | Pick a founder | Modifiers listed; HUD shows Day 1 of the season |
-| 2 | Unpause; read morning headline + weather | Clock advances; ops strip readable |
+| 2 | Open the hill and start the clock without coaching | Player places a lift, paints a trail and sees the first guests ride |
 | 3 | Guests → Follow | Camera tracks the guest |
 | 4 | Build surface + chair; buy lodge / café / guns | Valid/invalid descent; cash drops; visible change on the mountain |
-| 5 | Close hill → fare + snow; read radio beat if shown | Beat must be acknowledged before Sleep |
+| 5 | Close the hill and choose fare and snow service | Player can explain what they observed and what they chose to protect. At the next close, the same measure can be compared if both days produced a reading. |
 | 6 | Sleep several mornings | Snow/groom/guns visible after Mid/High; crew talent toast |
-| 7 | Reach the last day → Winter review | Cash, reputation, beats, talents summary; Tenney pin |
-| 8 | Continue → mountain 2 stub → Replay | New winter starts cleanly |
+| 7 | Read the winter review | Settlement agrees with cash less debt and unpaid construction. The review recalls the school and SummitLink decisions actually made. A solvent winter earns the Tenney pin. |
+| 8 | Replay from the review or the Tenney stub | New operating state, prior settlement saved, and no active fare cap or school contract. |
+
+Ask after play: “What surprised you this winter? Did it change what you did?” Give each player room to decline either offer.
 
 ### External sign-off (M3 gate)
 
@@ -94,6 +96,9 @@ The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.
 | 2026-11-16 | P1 (stub sim) | Agent, `smoke-winter.mjs`, 14-day season | Click-through passed; external players not run. Re-sign in M3 |
 | 2026-11-16 | Smoke after M0 (PRs 1–4) | Sonnet agent, Playwright Chromium: iPhone 390×844 portrait + landscape, iPad 1180×820; stopped at day 6 | No app errors; night reload, run count and day-1 beat confirmed. Found: portrait HUD overlap, ops-strip mood ≠ recap happy %, `$-104` formatting, Sleep disabled with no reason during a radio beat → PR 4b |
 | 2026-11-17 | M1 playtest (honest sim, PRs 5–10) | Sonnet agent, Playwright Chromium phone sizes (portrait and 844×390 landscape), 14-day season; real-device and external playtests not run | Passed with findings, all fixed in PR 10b: arrivals started too late, "0.0m Short queue" on an empty hill, losing days unexplained, snow charge hidden in the recap, unlabeled value/snow numbers, previews shifted on "Got it", duplicate Happy label, cramped landscape night sheet, chair placeable on the surface lift's slot |
+| 2026-11-19 | Dutch Hill first-winter choices | Scripted portrait Chromium, including prepared school and Day 18 offer saves | School booking and decline, six pupil arrivals, $150 ticket receipt, both Vivian replies, accepted cap, 5/6 lesson memory, solvent review and Tenney transition passed. P0 reached bankruptcy review with zero page errors. Save recovery passed. |
+| 2026-11-19 | M2 scripted touch opening | Portrait Chromium, isolated run | Opened in 75.9 seconds. Tier 2 rentals earned $180, the wind hold and forecasts passed, and the script observed zero page errors. |
+| 2026-11-19 | Phone renderer | 390×844 headless Chromium, SwiftShader and 4× CPU throttle | Gestures, placement and speed controls passed. 25 draw calls and 182,221 triangles met scene budgets. Measured 2.8 FPS against the 30 FPS target. Device Safari and uncoached human sign-off remain open. |
 
 Log friction as a GitHub issue with device and OS version.
 

@@ -1,7 +1,9 @@
 "use client";
 
-import { STORY_BEATS } from "@/game/content";
-import { liquidNetWorth } from "@/game/economy";
+import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { liquidNetWorth, payoffAmount } from "@/game/economy";
+import { surpriseRadio } from "@/game/surprises";
+import { schoolMemory } from "@/game/winterMemory";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { Sheet } from "@/ui/kit/Sheet";
@@ -13,8 +15,14 @@ export function WinterReviewSheet() {
   const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
   const cash = useGameStore((s) => s.cash);
   const netWorth = useGameStore(liquidNetWorth);
+  const solvent = !bankrupt && netWorth >= 0;
+  const localMemory = useGameStore((s) => s.surpriseLog?.at(-1));
+  const school = useGameStore((s) => s.schoolContract);
+  const summitLink = useGameStore((s) => s.summitLinkDecision);
   const reputation = useGameStore((s) => s.reputation);
-  const completedBeats = useGameStore((s) => s.completedBeats);
+  const lodgeTier = useGameStore((s) => s.lodgeTier);
+  const loan = useGameStore((s) => s.loan ? payoffAmount(s.loan) : 0);
+  const construction = useGameStore((s) => s.payables.reduce((sum, item) => sum + item.amount, 0));
   const talentsOwned = useGameStore((s) => s.talentsOwned);
   const finishWinterReview = useGameStore((s) => s.finishWinterReview);
   const startNewSeason = useGameStore((s) => s.startNewSeason);
@@ -51,14 +59,14 @@ export function WinterReviewSheet() {
       title="Winter review"
       subtitle="Dutch Hill, season one"
       footer={
-        <PrimaryButton onClick={bankrupt ? startNewSeason : finishWinterReview}>
-          {bankrupt ? "Replay Dutch Hill winter" : "Continue to mountain 2"}
+        <PrimaryButton onClick={solvent ? finishWinterReview : startNewSeason}>
+          {solvent ? "Continue to mountain 2" : "Replay Dutch Hill winter"}
         </PrimaryButton>
       }
     >
       <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, season one">
         <p className="display text-[1.35rem] leading-tight text-white">
-          {bankrupt ? "The bank called" : "You held one more winter in the sticks."}
+          {bankrupt ? "The bank called" : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
         </p>
         {bankrupt && <p className="mt-1 text-sm font-bold text-sign-green-ink">Cash stayed below zero for three mornings in a row.</p>}
         <div className="sign-rule my-3" aria-hidden="true" />
@@ -67,18 +75,26 @@ export function WinterReviewSheet() {
           <StatTile onSign label="Reputation" value={reputation} />
           <StatTile
             onSign
-            label="Story beats"
-            value={`${completedBeats.length}/${STORY_BEATS.length}`}
+            label="Lodge tier"
+            value={lodgeTier}
           />
           <StatTile onSign label="Crew talents" value={talentsOwned.length} />
         </div>
       </Sign>
       {netWorth !== cash && (
         <p className="chip mt-4 px-3.5 py-3 font-bold">
-          Net worth after outstanding debts <strong>{formatMoney(netWorth)}</strong>
+          Cash {formatMoney(cash)} less loan {formatMoney(loan)} and unpaid construction {formatMoney(construction)} leaves <strong>{formatMoney(netWorth)}</strong>.
         </p>
       )}
-      {!bankrupt && <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
+      <section className="panel mt-4 space-y-2 px-4 py-3" aria-label="What the town remembers">
+        <h3 className="font-extrabold">What the town remembers</h3>
+        {localMemory && <p>From the day {localMemory.dayIndex} broadcast: “{surpriseRadio(localMemory).radio}”</p>}
+        <p>{schoolMemory(school)}</p>
+        <p>{summitLink === "accepted" ? `Vivian put ${formatMoney(SUMMIT_LINK_PAYMENT)} into Dutch Hill. Tickets stayed at Balanced or below for the rest of the winter.`
+          : summitLink === "declined" ? "Vivian left without a deal. Dutch Hill set its own prices through closing day."
+          : "The ticket window stayed in local hands."}</p>
+      </section>
+      {solvent && <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-snow-2">
           <PinIcon size={20} />
         </span>

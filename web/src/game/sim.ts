@@ -6,6 +6,8 @@ import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./ba
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
+import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
+import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
 import { pickTrailIndex, runEnergyCost, runSkiMinutes } from "./trails";
 import type { LiftSlot } from "./state";
 import type { TrailRun } from "./trails";
@@ -150,6 +152,18 @@ function daySeed(rand: Rand): string {
   return rand().toString(36).slice(2, 7);
 }
 
+export function schoolBusGuests(day: number, pupils: number): Guest[] {
+  return Array.from({ length: pupils }, (_, i) => makeGuest({
+    id: `school-${day}-${i}`,
+    label: `Readsboro pupil ${i + 1}`,
+    persona: "first_timer",
+    schoolPupil: true,
+    state: "pending",
+    arriveAtMin: SCHOOL_BUS_ARRIVAL_MIN,
+    stateSinceMin: SCHOOL_BUS_ARRIVAL_MIN,
+  }));
+}
+
 /** Guests on the hill: walking in, in a line, on a lift or skiing. */
 export function isOnHill(g: Guest): boolean {
   return g.state === "arrive" || g.state === "refuel" || g.state === "queue" || g.state === "ride" || g.state === "ski" || g.state === "walk_lift" || g.state === "walk_out";
@@ -232,6 +246,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   };
   const beginnerService = (guest: Guest): Guest | null => {
     if (guest.persona !== "first_timer") return null;
+    if (guest.schoolPupil && !guest.lesson) return visit(guest, ["ski_school"]);
     return (!guest.rented ? visit(guest, ["rentals"]) : null) ??
       (!guest.lesson ? visit(guest, ["ski_school"]) : null);
   };
@@ -253,6 +268,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const asset = assets[g.venueIndex ?? -1];
         const returning = {
           ...g,
+          ...(asset?.id === "ski_school" ? { schoolLessonCompleted: true } : {}),
           energy: asset && (asset.id === "cafe" || asset.id === "warming_hut") && g.visitMinutes !== 15
             ? Math.min(1, g.energy + 0.35 * (asset.attachPad == null ? 1 : 1.05)) : g.energy,
         };
@@ -351,6 +367,8 @@ export function computeDayRevenue(
 export type RecapFacts = {
   /** Mean measured wait per ride, game minutes. */
   avgWaitMin: number;
+  /** Number of completed waits behind the mean, absent in older recaps. */
+  dispatched?: number;
   /** Hill-wide mean snow quality at close, 0–1. */
   snowQuality: number;
   /** The conditions board word for the worst segment at close ("Good cover", "Icy bottom"). */
@@ -366,6 +384,7 @@ export type RecapFacts = {
   venueRevenue?: DayStats["venueRevenue"];
   balked?: number;
   busiestLift?: { label: string; min: number };
+  schoolBus?: { invited: number; arrived: number; taught: number; ticketRevenue: number };
 };
 
 export type NightRecap = {
@@ -380,6 +399,7 @@ export type NightRecap = {
   revenue: number | null;
   loanReceived: number;
   loanRepaid: number;
+  summitLinkReply?: SummitLinkDecision;
   problem: string;
   facts: RecapFacts;
 };
@@ -396,9 +416,11 @@ export function buildNightRecap(opts: {
   arrivalMood: number;
   costs: OperatingCosts;
   busiestLift?: RecapFacts["busiestLift"];
+  schoolBus?: RecapFacts["schoolBus"];
 }): NightRecap {
-  const { stats, fare, day } = opts;
-  const revenue = computeDayRevenue(fare, day.score, stats.arrivals)
+  const { stats, fare, day, schoolBus } = opts;
+  const revenue = computeDayRevenue(fare, day.score, stats.arrivals - (schoolBus?.arrived ?? 0))
+    + (schoolBus?.ticketRevenue ?? 0)
     + Object.values(stats.venueRevenue ?? {}).reduce((sum, amount) => sum + amount, 0);
   const { costs } = opts;
   const cashDelta = Math.round(revenue - costs.fixed - costs.founder - costs.liftOps - costs.upkeep);
@@ -411,8 +433,9 @@ export function buildNightRecap(opts: {
     revenue,
     loanReceived: 0,
     loanRepaid: 0,
-    problem: problemLine(day.breakdown, {
+    problem: stats.arrivals === 0 ? "No skiers arrived today." : problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
+      dispatched: stats.dispatched,
       snowQuality: opts.snowQuality,
       snowTrouble: opts.snowTrouble,
       fare,
@@ -423,6 +446,7 @@ export function buildNightRecap(opts: {
     }),
     facts: {
       avgWaitMin: stats.avgQueueMin,
+      dispatched: stats.dispatched,
       snowQuality: opts.snowQuality,
       snowLabel: opts.snowLabel ?? "Good cover",
       farePrice: FARE_PRICES[fare],
@@ -433,6 +457,7 @@ export function buildNightRecap(opts: {
       ...(Object.keys(stats.venueRevenue ?? {}).length ? { venueRevenue: stats.venueRevenue } : {}),
       ...(stats.balked ? { balked: stats.balked } : {}),
       ...(opts.busiestLift ? { busiestLift: opts.busiestLift } : {}),
+      ...(schoolBus ? { schoolBus } : {}),
     },
   };
 }
@@ -595,6 +620,7 @@ export function meanArrivals(opts: ArrivalInputs): number {
 
 export type BeatCheckInput = {
   calendar?: CalendarDef;
+  seasonLength?: number;
   dayIndex: number;
   liftsOpen: number;
   completedRuns: number;
@@ -602,7 +628,7 @@ export type BeatCheckInput = {
   snowDepth: number;
   daysWithoutSnow: number;
   reputation: number;
-  lessonsBooked: boolean;
+  schoolOfferReady: boolean;
   completedBeats: StoryBeatId[];
 };
 
@@ -623,11 +649,12 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
     case "saturday":
       return weekdayForDay(calendar, input.dayIndex) === "Sat" && input.arrivals >= 22;
     case "school_bus":
-      return input.lessonsBooked || (dayKind(calendar, input.dayIndex) === "weekday" && input.arrivals >= 28);
+      return input.schoolOfferReady;
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
-      return input.reputation >= 50;
+      return input.reputation >= SUMMIT_LINK_MIN_REPUTATION && input.dayIndex >= SUMMIT_LINK_FIRST_DAY &&
+        input.dayIndex < (input.seasonLength ?? calendar.length);
     default:
       return false;
   }

@@ -58,6 +58,8 @@ export type Guest = {
   refuelled?: boolean;
   rented?: boolean;
   lesson?: boolean;
+  schoolPupil?: boolean;
+  schoolLessonCompleted?: boolean;
   balks?: number;
   /** Index into `GameState.lifts` of the lift this guest last queued for or rode. */
   liftIndex?: number;

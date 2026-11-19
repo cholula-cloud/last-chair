@@ -1,5 +1,7 @@
 import {
   acknowledgeBeat,
+  decideSchoolContract,
+  replyToSummitLink,
   beginLodgeUpgrade,
   buyBuilding,
   cutTrail,
@@ -233,6 +235,8 @@ export type SeasonResult = {
   wentBankrupt: boolean;
   tookLoan: boolean;
   endNetWorth: number;
+  schoolContract: GameState["schoolContract"];
+  summitLinkDecision: GameState["summitLinkDecision"];
   firstShortfallOfferedLoan: boolean;
   /** Story beats fired (the winter review excluded). */
   beats: number;
@@ -261,7 +265,7 @@ export function runSeason(
   seed: number,
   strategy: Strategy,
   founderId: FounderId = "elena",
-  options: { seasonLength?: number; takeLoan?: boolean } = {},
+  options: { seasonLength?: number; takeLoan?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
   const length = options.seasonLength ?? hill.seasonLength;
@@ -290,7 +294,12 @@ export function runSeason(
     const snow = state.snow;
     const chair = hasChair(state);
     state = skipToClose(state);
-    state = acknowledgeBeat(state);
+    if (state.pendingBeat === "school_bus") state = decideSchoolContract(state, options.school ?? "declined");
+    else if (state.pendingBeat === "summit_link") {
+      const reply = founderId === "riley" ? "declined" : options.summitLink ?? "declined";
+      state = replyToSummitLink(state, reply);
+    }
+    else state = acknowledgeBeat(state);
     recap = state.nightRecap as NightRecap;
     const { dayStats } = state;
     runs += dayStats.completedRuns;
@@ -322,6 +331,7 @@ export function runSeason(
     minCash = Math.min(minCash, state.cash);
   }
 
+  if (state.phase !== "winter_review") throw new Error(`Season stopped on day ${state.dayIndex} in ${state.phase}`);
   const n = Math.max(1, days.length);
   return {
     seed,
@@ -338,6 +348,8 @@ export function runSeason(
     wentBankrupt: state.outcome === "bankrupt",
     tookLoan: state.loanTaken,
     endNetWorth: liquidNetWorth(state),
+    schoolContract: state.schoolContract,
+    summitLinkDecision: state.summitLinkDecision,
     firstShortfallOfferedLoan,
     beats: state.completedBeats.filter((b) => b !== "winter_review").length,
     talents: state.talentsOwned.length,

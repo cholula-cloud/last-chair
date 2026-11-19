@@ -5,13 +5,15 @@ import { ASSET_CATALOG, type AssetId } from "@/game/base";
 import { useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, previewOvernight } from "@/game/rules";
+import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
-import { WHY_BASE, delta, formatPoints, whyLines } from "@/game/why";
+import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { surpriseRadio } from "@/game/surprises";
+import { WHY_BASE, GUEST_MEASURE_LABELS, delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "@/game/why";
 import {
   FARE_LABELS,
   FARE_PRICES,
@@ -38,6 +40,8 @@ import {
 } from "@/ui/kit/parts";
 import { RadioCard } from "@/ui/kit/RadioCard";
 import { LoanCard } from "@/ui/LoanCard";
+import { SummitLinkCard } from "@/ui/SummitLinkCard";
+import { SchoolContractCard } from "@/ui/SchoolContractCard";
 
 const WEEKDAY_FULL: Record<string, string> = {
   Mon: "Monday",
@@ -149,12 +153,40 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
       aria-label={`Change since day ${dayIndex - 1}`}
     >
       <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
-      <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
+      {recap.arrivals > 0 && last.arrivals > 0
+        ? <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
+        : <span className="text-xs font-bold text-ink-soft">Happiness unavailable</span>}
       <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
       <p className="col-span-3 text-[0.78rem] font-bold leading-snug text-ink-soft">
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
       </p>
     </div>
+  );
+}
+
+function GuestExperience({ recap, last, finalNight }: { recap: NightRecap; last: LastDay | null; finalNight: boolean }) {
+  const today = observeGuests(recap);
+  const yesterday = last?.observation;
+  const comparison = yesterday ? observeGuests(recap, yesterday.measure) : null;
+  if (!today && !yesterday) return null;
+  return (
+    <section aria-label="Guest experience" className="chip mt-2 px-3.5 py-2.5 text-sm font-bold">
+      {today && (
+        <p className="flex flex-wrap justify-between gap-x-2">
+          <span>{GUEST_MEASURE_LABELS[today.measure]}</span>
+          <strong className="tabular-nums">{formatGuestObservation(today)}</strong>
+        </p>
+      )}
+      {yesterday && (
+        <p className="mt-1 text-ink-soft">
+          Yesterday’s {GUEST_MEASURE_LABELS[yesterday.measure].toLowerCase()} was {formatGuestObservation(yesterday)}.
+          {comparison ? ` Today it was ${formatGuestObservation(comparison)}.` : " No reading today."}
+        </p>
+      )}
+      {today && !finalNight && (
+        <p className="mt-1 text-xs text-ink-soft">Check this measure again at tomorrow’s close.</p>
+      )}
+    </section>
   );
 }
 
@@ -178,6 +210,7 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
     { label: "Construction payments tonight", amount: -costs.draws },
     { label: "Loan received tonight", amount: recap.loanReceived },
     { label: "Loan repaid tonight", amount: -recap.loanRepaid },
+    { label: "SummitLink payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
   ];
 
   return (
@@ -224,13 +257,17 @@ function Choices({
 }) {
   const { pendingFare, pendingSnow } = night;
   const skiers = (f: FarePreset) => Math.round(expectedArrivals(night, f, pendingSnow));
-  const fareOptions: ChoiceOption<FarePreset>[] = FARES.map((v, i) => ({
-    value: v,
-    glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
-    label: FARE_LABELS[v],
-    detail: formatMoney(FARE_PRICES[v]),
-    note: `~${skiers(v)} skiers`,
-  }));
+  const fareOptions: ChoiceOption<FarePreset>[] = FARES.map((v, i) => {
+    const locked = v === "expensive" && night.summitLinkDecision === "accepted";
+    return {
+      value: v,
+      glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
+      label: FARE_LABELS[v],
+      detail: formatMoney(FARE_PRICES[v]),
+      note: locked ? "SummitLink fare cap" : `~${skiers(v)} skiers`,
+      disabled: locked,
+    };
+  });
   const previews = Object.fromEntries(SNOWS.map((v) => [v, previewOvernight(night, v)])) as Record<
     SnowPreset,
     ReturnType<typeof previewOvernight>
@@ -239,19 +276,17 @@ function Choices({
     value: v,
     label: SNOW_LABELS[v],
     detail: SNOW_NIGHT_COST[v] ? `${formatMoney(SNOW_NIGHT_COST[v])}/night` : "Free",
-    note: `${previews[v].label}, ${Math.round(previews[v].meanQuality * 100)}%`,
+    note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
   }));
   const worth = Math.round(expectedHillValue(night.reputation, night.buildings));
   const chosen = previews[pendingSnow];
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
-      <Forecast state={night} ahead={1} />
-      <Forecast state={night} ahead={2} />
-      <SectionHeading aside="Tomorrow’s ticket">Fare</SectionHeading>
+      <SectionHeading aside="Tomorrow’s public ticket">Fare</SectionHeading>
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
-        Tomorrow, locals expect a day here to be worth about {formatMoney(worth)}.{" "}
-        {FARE_LABELS[pendingFare]} {formatMoney(FARE_PRICES[pendingFare])} brings about {skiers(pendingFare)} skiers.
+        At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
+        Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
@@ -262,13 +297,16 @@ function Choices({
         onPick={setPendingSnow}
       />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
-        Tomorrow morning: {chosen.label.toLowerCase()}, average quality{" "}
-        {Math.round(chosen.meanQuality * 100)}%.
+        Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
+        In the most likely weather, expect {chosen.label.toLowerCase()}.
       </p>
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
-        Tonight&rsquo;s snow &amp; service:{" "}
-        {chosen.cost ? `${formatMoney(-chosen.cost)}, charged at Sleep` : "free, nothing charged"}
+        {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Tonight’s service is free."}
       </p>
+      <div className="mt-3 border-t border-snow-2 pt-1">
+        <Forecast state={night} ahead={1} />
+        <Forecast state={night} ahead={2} />
+      </div>
     </div>
   );
 }
@@ -287,8 +325,11 @@ export function NightRecapSheet() {
   const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], dayIndex);
   const nextTalent = nextTalentName(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat);
-  const canSleep = !pendingBeat || beatAcknowledged;
-  const mood = moodWord(recap.satisfaction);
+  const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
+  const surpriseCopy = surprise && surpriseRadio(surprise);
+  const summitLinkOffer = summitLinkOfferOpen(night);
+  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged);
+  const hasGuests = recap.arrivals > 0;
 
   return (
     <Sheet
@@ -321,7 +362,10 @@ export function NightRecapSheet() {
               id="sleep-hint"
               className="mb-2 text-center text-[0.88rem] font-bold text-ink short:mb-1.5"
             >
-              Read the radio message, then tap Got it.
+              {summitLinkOffer && "Reply to Vivian before sleeping."}
+              {!summitLinkOffer && (pendingBeat === "school_bus"
+                ? "Reply to the school bus offer before sleeping."
+                : "Read the radio message, then tap Got it.")}
             </p>
           )}
           <PrimaryButton
@@ -355,8 +399,8 @@ export function NightRecapSheet() {
             <StatTile
               onSign
               label="Happiness"
-              value={`${Math.round(recap.satisfaction)}%`}
-              note={mood.word}
+              value={hasGuests ? `${Math.round(recap.satisfaction)}%` : "—"}
+              note={hasGuests ? moodWord(recap.satisfaction).word : "No skiers"}
             />
             <StatTile
               onSign
@@ -365,13 +409,15 @@ export function NightRecapSheet() {
             />
           </div>
         </Sign>
+        <SummitLinkCard night={night} />
         <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
         <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
-          {tidy(recap.problem)}
+          {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
         </p>
+        <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
 
         {recap.facts.venueRevenue && (
           <ul aria-label="Venue takings" className="mt-2 space-y-1 text-sm font-bold">
@@ -381,9 +427,10 @@ export function NightRecapSheet() {
           </ul>
         )}
         {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">{recap.facts.balked} stops to sit out a line</p>}
-        <WhyList key={dayIndex} recap={recap} />
+        {hasGuests && <WhyList key={dayIndex} recap={recap} />}
 
-        {beat && !beatAcknowledged && (
+        <SchoolContractCard night={night} />
+        {beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={
@@ -399,6 +446,7 @@ export function NightRecapSheet() {
             {tidy(beat.radio)}
           </RadioCard>
         )}
+        {surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
       </div>
     </Sheet>
   );

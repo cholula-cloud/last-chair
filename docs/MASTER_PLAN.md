@@ -1,9 +1,9 @@
 # Last Chair game plan and design
 
-**Version:** 2.1 · **Updated:** 2026-11-18
+**Version:** 2.2 · **Updated:** 2026-11-19
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaces the v2.0 plans for the lodge, village venues and Rival Mode.
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. Version 2.2 sets the Dutch Hill first-winter decisions, story choices and review.
 
 | Doc | Job |
 |---|---|
@@ -36,18 +36,19 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
 
+The first-winter implementation on this branch uses save schema v6. The night recap follows up on the previous guest measure, Route 100 can report three local surprises, and the school and SummitLink offers have operating consequences. The winter review checks cash after debt and unpaid construction, records the optional commitments, and retains the settlement through replay.
+
 **Partly built**
 
 | Area | Built | Missing | Row |
 |---|---|---|---|
 | Talents | 12 in order; about half have effects in code (patrol radio, trail guns, groom pass, corduroy, ticket booth, school day) | The rest, 12 → 20 | 21 |
 | Founders | Mood, fixed cost, snow expectation | Loan rate, repair, forecast, clearing cost, demolition lock | 22 |
-| Radio | Beat card in the night recap | Feed UI, story log, lodge tier-up lines, SummitLink offer as a choice | 23 |
-| Winter review | Sheet with score | Beats, choices, lodge tier, carry-forward data | 24 |
-| Menu and saves | One save key, no title screen | Title screen, three slots, throttled autosave | 39, 40 |
+| Radio | Beat card, local moments, school visit and SummitLink choice | Feed UI, full story log, lodge tier-up lines | 23 |
+| Winter review | Settlement, optional commitments, lodge tier and saved winter record | Career effects on later mountains | 24 |
 | Personas | First-Timer and Regular | Family Pack, Race Kid | 9 |
 
-**Next up:** the frame around the game (title screen and saves, cold open, day length and copy), then rows 21 to 24, the coach (26) and balance (27).
+The next evidence for the coach and balance rows comes from an uncoached opening on Safari and three outside winter playthroughs. The cold open, day-length pass, remaining talents and founder effects retain their roadmap rows.
 
 ---
 
@@ -55,7 +56,7 @@ M2 code is complete. M3 has shipped save recovery, the lodge-only opening, weath
 
 **Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **SummitLink**, tries to buy up the same coast.
 
-**One sentence:** reopen a lost New England mountain, build it with your thumb, grow your lodge, watch tiny skiers have their day, make two or three choices each night, and keep the hill independent.
+**One sentence:** reopen a lost New England mountain, build it with your thumb, grow your lodge, watch tiny skiers have their day, make two or three choices each night, and keep the hill running.
 
 ### Core loop
 
@@ -76,7 +77,9 @@ A winter is **28 days** and ends in a **winter review**. The loop is about **dia
 4. **The lodge is your HQ.** It is always there, and growing it is how the game opens: new things to build and new ways to earn (§3).
 5. **Crew handles the boring stuff.** You build and set fare plus snow & service; the overnight crew runs operations and learns talents in a fixed order. Hiring belongs to Capitalist Mode (§4).
 6. **Pause anytime.** Planning is half the game.
-7. **Honest simulation.** Every number shown to the player comes from something that happened on the hill.
+7. **Honest simulation.** Show what happened on the hill with measured results. Label a forecast as a forecast and describe its expected direction only where the rules support it.
+8. **Every operating choice has a tradeoff.** Show the benefit and cost where the player decides, then report the measured result once it can be observed. Choosing a cheaper fare, paying for service or taking outside money each changes how the hill can operate.
+9. **Surprise comes from the hill.** A local event starts with a recorded condition or result. Give the player an operating response when one is available and show its outcome through the same rules as an ordinary day.
 
 ### Player success metrics
 
@@ -106,7 +109,7 @@ Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Sa
 
 | Act | Hills | Story question | What changes in play |
 |---|---|---|---|
-| I | Dutch Hill, VT | Can this hill run one winter? | A Tier 1 lodge, one limping surface lift, natural snow only until the lodge reaches Tier 2. Learn the loop. First SummitLink visit at the end |
+| I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian can make one offer in the last third of winter |
 | II | Tenney Mountain, NH · Maple Valley, VT | Can you win a hill SummitLink also wants? | Colder, steeper, more capital. SummitLink competes for the same guests; its offers get bigger |
 | III | Mount Whittier, NH · Hogback, VT | Can an independent run big lifts and hard terrain? | Lift reliability, wind holds, glades |
 | IV | Brodie, MA · Crotched West, NH | Can the independents hold together? | Night skiing, racing, split-area politics. Caretaker income from earlier hills funds the push |
@@ -121,12 +124,13 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 | Story element | Gameplay effect |
 |---|---|
 | **Founder pick** (six founders) | One permanent modifier for the career: happier families, softer cash stress, a limping lift that fixes itself overnight, better weather reads, glade reputation, après buzz. Each has a cost. Numbers in SIMULATION_SPEC |
-| **Goal card per winter** | The win condition for that hill. Each heritage card names what locals miss (school bus program, night skiing, races); the goal is to restore it, and that always includes a lodge tier. Dutch Hill: reach Tier 2 and run the school bus program, then end the winter solvent. Later hills ask for Tier 3 plus the venue on their card |
-| **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 opens the ski school, which the school bus beat needs |
-| **Route 100 Radio beats** | Six beats per act, gated on sim metrics (first sellout, low cash, a school day), never on timers. They arrive at night, never mid-day. Some carry a choice with consequences: a school bus contract brings weekday guests at a lower fare; a dry week asks you to wait for cold or close trails |
-| **SummitLink offers** | Mid-winter and end-of-winter offers: join the pass (guest boost, fare cap, local reputation drop), sell a hill (cash for the next one), or refuse. Choices carry into later acts |
+| **Goal card per winter** | Dutch Hill’s common goal is to finish the 28-day winter with nonnegative liquid net worth after debt and unpaid construction. Show days remaining and use the same formula as the winter review. The Readsboro visit is an optional local goal. Later hills set their own goals |
+| **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
+| **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
+| **Readsboro school visit** | Once Tier 2 and a ski school are available, accept or decline one weekday visit for six pupils at a discounted fare. Track booked, delivered and missed lessons separately. The optional goal is credited only for lessons actually delivered |
+| **SummitLink offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect |
 | **Named crew** (Frank, Dana, Elena) | Their biases explain the fixed talent order, so a talent arriving reads as a person learning, not a menu |
-| **Winter review** | Scores the winter, records beats, choices and lodge tier, opens the next hill on the career map |
+| **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Vivian results when present, and the operator's choices and measured results. Records a career result for later use by the map |
 | **Caretaker** | Hills you leave keep running off-screen and pay a small income that funds the next hill |
 
 ---
@@ -268,7 +272,7 @@ ICR's lessons from its patches and player reviews still apply: keep the day unin
 
 **What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that SummitLink also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
 
-**The goal is always on screen.** A goal strip under the date shows the winter goal and its progress. On Dutch Hill: reach lodge Tier 2, run the school bus, stay solvent.
+**The goal is always on screen.** A strip under the date shows the remaining days and progress toward finishing solvent. Show Readsboro as an optional goal once the offer is relevant.
 
 ---
 
@@ -438,14 +442,27 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density pines and birch on the lease, a sparse far forest in one draw call beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
 | L-D | ◐ | Title screen and save slots (rows 39 and 40, from M6) | Continue, New winter, Load (three slots, export and import), Settings, Credits. Autosave on phase changes and builds instead of every frame |
-| L-E | ☐ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions, a goal strip on the HUD, and a "Guests want" line in the night recap |
+| L-E | ◐ | Cold open and goal card | Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible. See the first-winter sequence below |
 | L-F | ☐ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ◐ | Crew talents with real effects | 12 → 20 talents in crew order, each with a test |
 | 22 | ◐ | Founders complete | All six modifiers live |
-| 23 | ◐ | Route 100 Radio + Act I beats | Radio feed; six beats on metric gates, delivered at night; lodge tier-up lines; the school bus beat needs the Tier 2 ski school; story log; the first SummitLink offer as a choice |
-| 24 | ◐ | Winter review | Season score, beats, choices, lodge tier, talents; carry-forward data |
-| 26 | ☐ | Coached first winter | The founder walks a new player from first lift and first painted trail through the first lodge upgrade to the first night choice; skippable |
-| 27 | ☐ | MVP balance + external playtest | Three outside players finish winter 1 without help; Dutch Hill goal (Tier 2 and the school bus) is reachable in 28 days and not trivial |
+| 23 | ◐ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log |
+| 24 | ◐ | Winter review | Common goal outcome, season score, recorded choices and consequences, and carry-forward data |
+| 26 | ☐ | Coached first winter | Skippable help from placing the first lift and painting the first trail through the first night choice |
+| 27 | ☐ | MVP balance + external playtest | Verify the solvency goal and the optional Readsboro path. Three outside players finish winter 1 without help. |
+
+#### Dutch Hill first-winter sequence
+
+The PR numbers below name the six increments in this sequence. The roadmap row numbers still identify the related milestone work.
+
+| PR | Increment | Roadmap rows | Acceptance |
+|---|---|---|---|
+| 1 | Design decisions | L-E, 22, 23, 24, 26, 27 | Align the plan, handoff and review brief on the goal, choices and measured outcomes. |
+| 2 | First operating decision | L-E, 26 | After the opening teaches lift and trail placement, use the first night recap to explain a fare or snow tradeoff based on what the hill measured. Compare the next day with the prior day's actual result when both are available. |
+| 3 | Local surprises | 23 | Report local moments in the night recap and retain their dates and observed results for the winter review. |
+| 4 | Readsboro visit | 23, L-E | Offer one optional weekday of six discounted pupils. Show the cost and the visit result, with goal credit based on lessons served. |
+| 5 | Vivian's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
+| 6 | Winter memory | 24, 27 | End with the measured settlement, the same common goal for all paths and a truthful record of choices and outcomes. Check the balance and playtest the whole arc. |
 
 ### M4: Look and feel
 

@@ -924,7 +924,7 @@ Water supply, compressor power, gun types, groomer machines as units.
 About 380 lines. Cut: grooming capacity can ship before placed guns.
 
 ### Open decisions
-1. Gun cost and cap. Recommended: $400, 10.
+1. Gun cost and cap. The first-winter calibration sets installation at $250 and daily upkeep at $60, with a cap of 10.
 2. Partial grooming from the bottom up or top down. Recommended: bottom up, where thaw hits first.
 
 ---
@@ -1487,7 +1487,7 @@ export type FounderDef = {
 |---|---|---|---|---|
 | Elena | arrivalMood +0.08 | live | cannot demolish warming hut | `lockedBuildings`; no demolish action exists, so the rule is a data flag with a test on a `canDemolish(state, id)` helper that PR 16 or M5 calls |
 | Tom | loan rate −1% | `LOAN.rate + loanRateDelta` (8% → 7%) | warm-week satisfaction −3 | on a thaw day when the trailing 7 days (today included) hold 3 or more thaw days, arrival mood −0.075 for every guest (40 × 0.075 = 3 points, shown on the "Welcome" line) |
-| Riley | overnight repair 15% | lift ops cost ×0.85 ($180 → $153) (proposed reading; see decisions) | no SummitLink equity | `noSummitLinkEquity`, enforced by PR 23's reply |
+| Riley | overnight repair 15% | lift ops cost ×0.85 ($180 → $153) (proposed reading; see decisions) | cannot accept Vivian's Dutch Hill offer | Founder restriction enforced by PR 23's reply and explained on the offer |
 | Amira | +1 day forecast | `forecastDays: 2`, skill 0.7 / 0.4 | snow expectation +5% | live (0.05) |
 | Juniper | glade reputation + | reputation +0.5 per night before rounding (proposed), cap 100 | clearing cost +15% | lift price ×1.15 (a lift line is a cleared corridor); trail clearing ×1.15 if PR 13 priced clearing |
 | Marco | après revenue +10% | venue revenue (PR 16 café, shop, lodge) ×1.10; ticket revenue unchanged | fixed cost +$80/day | live |
@@ -1550,242 +1550,61 @@ Open decisions:
 
 ---
 
-## PR 23: Route 100 Radio and Act I beats
+## PR 23: Route 100 Radio and Act I choices
 
-**Goal:** move the six Act I beats to data with metric gates, a one-per-night delivery queue and a story log, delivered only on the night sheet, with a radio feed that can be turned off.
+Implement this row in Dutch Hill first-winter PRs 3–5. PR 3 delivers the local surprises. PR 4 adds the optional Readsboro visit with L-E. PR 5 adds Vivian's offer with row 22. The first operating decision (first-winter PR 2) comes before these events. Row 24 uses the event and decision records in the winter review.
 
-**Depends on:** PR 19 (day kinds), PR 20 (cash metric), PR 21 (School Day), PR 22 (Riley's equity flag).
+### Local surprises (first-winter PR 3)
 
-**Player-visible result:** every night has a Route 100 Radio card. Most nights it is a one-line Maris Shaw note tied to the day ("Snow likely tomorrow; the plows are out on 100"). When a beat fires, the card holds the beat (one or two lines from a named voice), and the SummitLink beat asks one reply. A Story log lists every beat heard, by day. A Radio switch turns the card off; beats then land silently in the log.
+Deliver these after the first operating day. Use the seeded winter and genuine day records. Each day can generate one local moment, which the night recap can report alongside a contract. Keep each occurrence linked to its original day and facts. Hearing a local report requires no acknowledgement. Contract decisions require an explicit reply.
 
-### Design
+| Event | What happens | What the recap can say |
+|---|---|---|
+| Pie at the lodge | A quiet local moment at the lodge after operations begin. | Report the pie on the lodge counter. Its baker can remain a mystery. This event has no hidden changes to cash, arrivals, mood or reputation. |
+| Former regulars | On some weekdays former regulars arrive together. Use the simulated group and arrival time for the account. | Report the group that actually arrived and use measured wait or demand when it shows up in the recap. |
+| Frosty road | Road frost delays some planned arrivals. The same total remains scheduled that day. | Report the delay when it occurs. A quiet opening from delayed arrivals is different from weak demand over the whole day. |
 
-Delivery today: `openNight` calls `readyStoryBeat`, which returns the first unmet beat in list order; Sleep is blocked until "Got it". Gates in code differ from the spec table (Saturday ≥22 vs ≥25, school bus also fires on a lodge, dry week depth < 0.35 vs < 0.2). Beats already arrive only at night; this PR keeps that and makes it a tested invariant.
+Record the event facts in the save so the recap, winter review and a future story-log screen can draw on the same occurrence. Test the seeded arrival changes through normal day simulation, reload during an event day, a single local report per day, and the pie's lack of mechanical effects. Preserve readable controls on a 390×844 viewport.
 
-Data shape:
+### Readsboro school visit (first-winter PR 4)
 
-```ts
-// game/story.ts (new)
-export type BeatMetrics = {
-  dayIndex: number; dayKind: DayKind; weekday: number; // 0 = Mon
-  liftsOpen: number; completedRuns: number; arrivals: number;
-  daysWithoutSnow: number; snowDepth: number; reputation: number;
-  cash: number; schoolDay: boolean; seasonLength: number;
-};
-export type Condition =
-  | { metric: keyof BeatMetrics; op: ">=" | "<=" | "<" | ">"; value: number }
-  | { metric: "dayKind"; op: "==" | "!="; value: DayKind }
-  | { metric: "weekday"; op: "=="; value: number }
-  | { metric: "schoolDay"; op: "=="; value: boolean };
-export type ReplyOption = {
-  id: string; label: string;              // ≤ 40 chars
-  effects: { cash?: number; reputation?: number; flag?: "summitlink_equity" };
-  blockedFor?: FounderId[]; blockedReason?: string;
-};
-export type BeatDef = {
-  id: StoryBeatId; act: 1; title: string;
-  speaker: "maris" | "al_waters" | "vivian_cho" | "frank" | "dana";
-  lines: [string] | [string, string];       // each ≤ 140 chars
-  gate: Condition[];                        // all must hold
-  priority: number;                         // lower delivers first
-  reputation: number;                       // added when delivered (today: 2)
-  reply?: { prompt: string; options: ReplyOption[] };
-};
-export function beatMetrics(state: GameState): BeatMetrics;            // pure
-export function gateHolds(gate: Condition[], m: BeatMetrics): boolean; // pure
-export function enqueueBeats(state: GameState): StoryBeatId[];          // new queue
-```
+Once a pupil completes a lesson at the Tier 2 ski school and at least one school weekday outside weekends, holidays and school vacations remains, offer one visit from Readsboro. Show the upcoming weekday, six pupils, the discounted ticket fare and the school capacity needed; allow the operator to accept or decline. The offer is optional and does not change the posted fare for the rest of the guests. Acceptance schedules six pupils for one weekday; it does not credit the optional goal. Record the booked count, actual visits, discounted ticket receipts, lessons delivered and lessons missed. Report the actual visit after close and credit the optional goal from delivered lessons. A visit with no lessons delivered is incomplete. Show any partial result as a count out of six.
 
-Act I beats (gates proposed where they differ from the spec; the spec column is SIMULATION_SPEC's table):
+Verify accepting, declining, reloading after booking and submitting a repeated reply without rescheduling the visit. Verify an accepted visit that cannot deliver all the lessons through the same guest and school rules used on other days. Keep the common solvency goal visible for either path.
 
-| Id | Speaker | Spec gate | Gate in this PR | Priority | Reply |
-|---|---|---|---|---|---|
-| first_load | Maris | lifts open ≥ 1 and runs ≥ 5 | `liftsOpen >= 1`, `completedRuns >= 5` | 1 | none |
-| saturday | Maris | Saturday and arrivals ≥ 25 | `weekday == 5`, `arrivals >= 25` | 2 | none |
-| school_bus | Al Waters | lessons booked ≥ 1 or weekday arrivals ≥ 40 | `schoolDay == true`, `dayKind == "weekday"`; or `arrivals >= 30` on a weekday | 3 | none |
-| dry_week | Frank | days without snow ≥ 3 and depth < 0.2 | `daysWithoutSnow >= 3`, `snowDepth < 0.3` | 2 | none |
-| summit_link | Vivian Cho | reputation ≥ 50 | `reputation >= 55`, `dayIndex >= 18` | 4 | yes |
-| winter_review | Maris | day == season length | delivered by the review sheet (PR 24), never queued | none | none |
+### Vivian's offer (first-winter PR 5)
 
-Gate notes. Saturday at 25 is reachable: Saturday rosters are 31 to 40 at Balanced (SIMULATION_SPEC lift table). Weekday 40 is above the clamp-limited weekday range, so the school bus uses School Day (talent 6, learned by night 6) or 30 weekday guests. Dry week depth 0.2 almost never happens with the new weather (mean depth rarely falls that far in three days), so 0.3 is proposed; check its fire rate in the harness. SummitLink waits for day 18 so it lands in the session shape's last third and gates on a reputation the adaptive strategy reaches by mid-season.
+On or after day 18, Vivian may make the first SummitLink offer if reputation is at least 55 and an operating day remains. Show both terms together: $6,000 cash once and a ceiling of Balanced on ticket fares for the rest of this winter. "Stay independent" leaves cash and fare controls as they were. If accepted, apply the cap to the next operating day and every remaining day. Reduce a selected Expensive fare to Balanced and enforce the cap in both the simulation and fare controls. Cheap remains available. Riley can decline and sees the reason he cannot accept before replying. Keep any earlier winter's decision in its record; clear the offer's active cap when a new winter starts.
 
-SummitLink reply (proposed copy and numbers): prompt "Vivian wants Dutch Hill on the SummitLink map." Options "Stay independent" (no effect) and "Take SummitLink equity: +$6,000, reputation −6" with `flag: "summitlink_equity"`, `blockedFor: ["riley"]`, `blockedReason: "Riley won't sell a share of the hill."`. The flag is carried into the career record (PR 24) for the M5 arc.
+Record the offer day, actual answer, receipt and the fare cap. Apply the money exactly once and surface it separately from operating revenue. Test accept, decline, Riley, a fare already set to Expensive, repeated replies and reload. A pending, missed or unavailable offer must not appear as an accepted or declined agreement in the review.
 
-Queue and delivery:
+### Save and verification
 
-1. `openNight` computes `beatMetrics` from the closed day and appends to `beatQueue` every beat whose gate holds and that is neither delivered nor queued, sorted by priority then list order.
-2. The head of the queue becomes `pendingBeat`; one beat per night. A queued beat stays queued even if its gate stops holding (fail-forward: the event happened; it is told the next night).
-3. "Got it" (or a reply) moves it to `beatLog` with the day and reply, adds its reputation, applies reply effects.
-4. Sleep stays blocked while `pendingBeat` is unacknowledged, as today.
-5. The reputation bonus moves from `openNight` (today it is added when the beat is chosen, so previews open with final numbers) to the moment the beat becomes pending; same effect, now per beat definition.
+Use the current save versioning and preserve previously recorded events and known facts. Leave unknown dates, counts or decisions unknown. A historical school-bus radio card gives no credit for a visit and an old SummitLink tease gives no credit for a deal. Validate at the rule layer as well as the UI. Report local event incidence, school visits booked and delivered, and actual SummitLink responses in the balance run. Verify night recap and story log at phone sizes with real event facts and both offers.
 
-Radio filler: when no beat is pending, the radio card shows one line from `RADIO_FILLER` (game data, about 24 lines keyed by tomorrow's most likely weather, today's problem term and day kind). The pick is `streamFor(seasonSeed, STREAM.RADIO)` advanced once per night, stored as `radioLine: string | null` on the night recap so a reload shows the same line. Filler needs no acknowledgement and never blocks Sleep.
-
-Radio off: a `radioOn` preference in a UI store (`ui/prefsStore.ts`, key `last-chair-prefs`). With radio off the night sheet calls `acknowledgeBeat` on open, shows a one-line "Story log: First uphill load" chip, and hides filler. The game layer is unchanged by the preference, so a radio-off season plays the same numbers as radio-on, apart from SummitLink, which defaults to "Stay independent" when acknowledged without a reply.
-
-Never mid-day: no rule called during the day phase may set `pendingBeat`. Test it.
-
-Persistence:
-
-```ts
-// PersistedState additions; `completedBeats` stays as the derived list of logged ids
-beatQueue: StoryBeatId[];
-beatLog: { id: StoryBeatId; day: number; reply?: string }[];
-summitLinkEquity: boolean;
-// NightRecap gains: radioLine: string | null
-```
-
-### Files
-
-- `web/src/game/story.ts` (new): metrics, conditions, queue, filler pick.
-- `web/src/game/content.ts` (exists): `STORY_BEATS` in the new shape; `RADIO_FILLER`.
-- `web/src/game/sim.ts` (exists): delete `readyStoryBeat` and `beatGateMet`.
-- `web/src/game/rules.ts`, `state.ts`, `types.ts`, `balance.ts` (`beats` count from `beatLog`) (exist).
-- `web/src/ui/kit/RadioCard.tsx` (exists): speaker line, reply buttons, blocked reason.
-- `web/src/ui/RadioFeed.tsx` (new): the nightly card wrapper (filler or beat).
-- `web/src/ui/StoryLog.tsx` (new): sheet listing `beatLog`, with the Radio on/off switch.
-- `web/src/ui/prefsStore.ts` (new): `radioOn`, persisted under its own key.
-- `web/src/ui/NightRecapSheet.tsx` (exists): RadioFeed and a "Story log (n)" button.
-
-### Tests
-
-- `story.test.ts` (new): `gateHolds` truth table per condition type; `beatMetrics` on a closed Saturday returns `weekday: 5`.
-- Each beat: one state where its gate holds and one where it fails by the smallest step (Saturday with 24 arrivals fails, 25 passes; dry week at depth 0.30 fails, 0.29 passes; SummitLink at day 17 fails with reputation 70).
-- Queue: a night where first_load and saturday both qualify delivers first_load, queues saturday, and delivers saturday the next night even if that day had 12 arrivals.
-- One beat per night: across 40 seeds × adaptive, no night has two beats delivered.
-- Never mid-day: drive a full season with `tick` and assert `pendingBeat` is null whenever `phase === "day"`.
-- Replies: Riley's state rejects `replyBeat(state, "summit_link", "equity")` (state unchanged); Elena's applies +$6,000 and −6 reputation and sets `summitLinkEquity`.
-- Radio filler: the same seed gives the same line per night; a reload (serialize, hydrate) shows the same line.
-- Harness: report the fire rate per beat over 40 seeds × all strategies. Property (proposed): first_load fires on 100% of runs; saturday, school_bus and dry_week each on at least 60% of adaptive runs; summit_link on at least 50% of adaptive runs and under 20% of stingy runs.
-- Snapshot: re-baseline. Allowed keys: `beats`, `pendingBeat`, `reputation`, and everything downstream of reputation from the first night a beat's timing differs (`arrivals`, `satisfaction`, `cashDelta`, `cash`). State the first changed night and the beat that moved. `final` gains `beatQueue`, `beatLog`, `summitLinkEquity`.
-
-### Verification
-
-Radio card at the four viewports with a two-line beat and with the reply; reply buttons full width, at least 56 px, blocked option shown disabled with its reason as text. Story log sheet scrolls at 375x667; Radio switch is a labelled toggle with `role="switch"`. Reduced motion: no card pop animation.
-
-### Acceptance criteria
-
-- Beats are data; adding a seventh beat needs a table row and copy, no code.
-- One beat per night at most; none during the day.
-- Radio off leaves the season's numbers unchanged (test: same seed, radio on and off, equal results with SummitLink declined in both).
-- Story log lists every delivered beat with its day after a reload.
-
-### Risks and edge cases
-
-- Saves: migrate `completedBeats` into `beatLog` with `day: 0`, `beatQueue: []`, a pending unacknowledged beat stays pending, `summitLinkEquity: false`.
-- Copy length: lines over 140 characters break the 375x667 layout; a test enforces the limit.
-- Respect (WORLD.md "Ship / respect"): the first_load line mentions DHASH hikers; keep the fire at Dutch Hill out of every beat; credits stay a separate task.
-
-### Scope, docs, size, decisions
-
-Out of scope: audio radio sting (M4 PR 32), Act II beats, branching beyond the one SummitLink reply, call-ins naming regular guests (M7).
-
-Docs: SIMULATION_SPEC "Story beat gates" table replaced by this PR's gates with implemented markers; WORLD.md Act I beats (speakers, SummitLink reply); MASTER_PLAN row 23.
-
-Size: about 360 lines. Cut the filler pool and the story log sheet into PR 23b if over 400; the queue and the six beats are the row.
-
-Open decisions:
-1. Gate thresholds above. Default: as proposed, checked by the harness fire rates.
-2. SummitLink equity numbers (+$6,000, −6 reputation). Default: yes; PR 27 may tune.
-3. Radio preference per device or per save. Default: per device.
+Out of scope: audio production, Act II, and career consequences beyond the saved Act I record.
 
 ---
 
 ## PR 24: Winter review
 
-**Goal:** end every winter (finished or bankrupt) with a season score, the story and crew record, and a saved season record the career map in M5 can read.
+First-winter PR 6 implements this row with the row 27 playthrough and balance checks. End every winter, including bankruptcy, with a review and a record M5 can read.
 
-**Depends on:** PR 20 (net worth, bankruptcy), PR 21, PR 23 (beat log).
+### Common goal and settlement
 
-**Player-visible result:** after day 28's Sleep the review sheet shows a grade and score, four part-scores with their real numbers, the beats heard and missed, the talents learned, and either the Tenney Mountain pin or "Try Dutch Hill again". Maris reads the winter_review line.
+The same rule applies to every founder and every combination of answers: complete the 28-day winter with liquid net worth at or above zero. Use end cash after the last operating result and due charges, less the outstanding loan balance and unpaid construction installments. Property resale estimates stay outside this settlement. Three consecutive negative mornings end the winter in bankruptcy as before. An early bankruptcy or negative final liquid net worth leaves the common goal unmet. Show the math and the outcome in terms that agree with the goal card. The current review can record eligibility for the next hill; the career map itself belongs to M5.
 
-### Design
+### Season record and presentation
 
-Season log (needed for the mean satisfaction; written at Sleep):
-
-```ts
-// PersistedState additions
-seasonLog: { day: number; arrivals: number; satisfaction: number; cashDelta: number; weather: WeatherKind }[];
-career: CareerState;  // survives startNewSeason
-export type SeasonRecord = {
-  mountainId: "dutch_hill"; season: number; founderId: FounderId;
-  outcome: "finished" | "bankrupt"; daysPlayed: number;
-  score: number; grade: Grade; parts: ScoreParts;
-  endCash: number; loanBalance: number; netWorth: number; reputation: number;
-  meanSatisfaction: number; totalArrivals: number;
-  beats: StoryBeatId[]; talents: string[]; summitLinkEquity: boolean;
-};
-export type CareerState = { records: SeasonRecord[]; pins: ("dutch_hill" | "tenney")[] };
-```
-
-Score (proposed):
-
-```text
-assets     = 0.5 × (sum of lift `paid` + building prices paid)
-netWorth   = cash − loanBalance − unpaid payables + assets
-moneyPts   = clamp(50 + 50 × (netWorth − 12000) / 12000, 0, 100)
-moodPts    = mean of seasonLog.satisfaction
-repPts     = end reputation
-storyPts   = 100 × (Act I beats delivered, review excluded) / 5
-score      = round(0.35 × moneyPts + 0.30 × moodPts + 0.20 × repPts + 0.15 × storyPts)
-bankrupt   → score = min(score, 40)
-```
-
-| Grade | Score | Pin |
-|---|---|---|
-| A winter they'll talk about | ≥ 80 | Tenney pin |
-| Solid winter | 65 to 79 | Tenney pin |
-| Held on | 50 to 64 | Tenney pin |
-| Rough winter | < 50 | none; "Try Dutch Hill again" |
-| The bank called | bankrupt | none |
-
-Worked check against the PR 10b 14-day table (Elena, before M3 changes): Balanced / Mid ends $14,236, satisfaction 57.7, reputation 53.8, about 3 beats: 0.35 × 59.3 + 0.30 × 57.7 + 0.20 × 53.8 + 0.15 × 60 = 57.9, "Held on". Adaptive ($15,223, 80.4, 79.3, 4 beats) scores 74.2, "Solid winter". Stingy ($11,836, 37.3, 34.0, 2 beats) scores 41.3, "Rough winter". The spread is the intended one; PR 27 checks it at 28 days.
-
-`rules.ts`: `sleep` past the last day and the bankruptcy path both call `closeSeason(state)`, which computes the record, appends it to `career.records`, adds `"tenney"` to `pins` when earned, and sets `phase: "winter_review"`. `finishWinterReview` keeps going to `mountain2`. `startNewSeason` keeps `career` and `founderId` and resets everything else, as today. The season number is `career.records.length + 1`.
-
-### Files
-
-- `web/src/game/review.ts` (new): `seasonScore`, `gradeFor`, `closeSeason`.
-- `web/src/game/rules.ts`, `state.ts`, `types.ts`, `balance.ts` (score in `SeasonResult`) (exist).
-- `web/src/ui/WinterReviewSheet.tsx` (exists): grade, score, part-scores with numbers, beats heard and missed, talents, pin or retry; the `mountain2` stub keeps its copy.
-
-### Tests
-
-- `review.test.ts` (new): `seasonScore` with the three worked rows above returns 58, 74 and 41 (rounded); bankrupt with otherwise 70 returns 40.
-- `gradeFor` boundaries 49/50, 64/65, 79/80.
-- `closeSeason` appends exactly one record; `startNewSeason` keeps `career.records` and `pins`; a second winter appends a second record with `season: 2`.
-- Bankrupt path: the record has `outcome: "bankrupt"`, `daysPlayed < 28`, no Tenney pin added.
-- Snapshot: `nights` unchanged. `final` gains `seasonLog: []` (reset by `startNewSeason`) and `career` with one record. That record is new data in the snapshot; review its numbers by hand against the formula once.
-- Harness: `SeasonResult.score` and grade; the report prints mean score per strategy. Property (proposed, checked again in PR 27): adaptive mean grade is at least "Solid winter"; stingy is below "Held on".
+- Record day, founder, finished or bankrupt outcome, cash, debt, unpaid construction, liquid net worth, completed days and common-goal result. Write the last day before closing the season.
+- Use measured satisfaction and reputation if showing a grade. Keep the grade separate from the common goal and the eligibility decision. Optional story participation earns no points toward solvency or career eligibility. Show the source for every part-score that remains.
+- Show a short account of choices and observed results. Use recorded fare or snow tier changes with the corresponding measured comparison where there is one. Include local events only when they occurred. State whether Readsboro was declined, accepted with its actual delivered lesson count, or never scheduled. State whether Vivian was accepted or declined if a decision was recorded, and show the actual $6,000 receipt and fare cap for acceptance. An offer that never arrived needs no reply in the review.
+- For an older save, show known facts and let missing history stay unknown. Never infer a successful school visit from a radio message, fill in a season average from reputation, or count an available option as a decision.
+- Store the record once on close and keep it through reload and replay. Carry-forward effects belong to M5.
 
 ### Verification
 
-Review sheet at the four viewports: grade readable without scrolling at 390x844; part-scores as label, number and a bar with the value in text (never bar alone); beats missed listed by title in muted text with an icon; the primary button at least 56 px.
-
-### Acceptance criteria
-
-- Every winter, including a bankrupt one, ends in the review with a stored record.
-- Each part-score shows the number it came from.
-- The career record survives "Replay Dutch Hill winter" and a reload.
-
-### Risks and edge cases
-
-- Saves: an old save in `winter_review` has no `seasonLog`; compute the record with `moodPts` from the end reputation (proposed fallback) and mark `parts.mood` as estimated.
-- `seasonLog` must be written before the review phase on the last Sleep; the last day's recap is part of the score.
-- Assets at half price keep a builder from being punished for investing; check the builder row.
-
-### Scope, docs, size, decisions
-
-Out of scope: the career map (M5 PR 35), carrying cash or talents into Tenney, a shareable season card (M7).
-
-Docs: SIMULATION_SPEC new "Winter review" section with the formula; MASTER_PLAN row 24; TESTING P1 step 7 wording.
-
-Size: about 250 lines.
-
-Open decisions:
-1. Weights 35/30/20/15. Default: yes; PR 27 may move one weight with evidence.
-2. Pin threshold 50. Default: yes; a "Rough winter" retries Dutch Hill.
-3. What carries into Tenney. Default: nothing in M3; the record holds net worth, reputation and the equity flag for M5 to decide.
+Test solvent completion at and above zero, a finished season below zero, and early bankruptcy. Check that all paths use the same settlement, including seasons with a loan, unpaid installments or SummitLink funding. Run review fixtures for an optional school visit declined, an incomplete visit, a delivered visit, Vivian accepted and declined, Riley, and older saves with absent history. Check a 390×844 phone layout and reload before and after the review. Season grading and balance targets should be evaluated with the measured record and remain independent of which offers were accepted.
 
 ---
 
@@ -1885,19 +1704,21 @@ Open decisions:
 
 ## PR 26: Coached first winter
 
-**Goal:** the chosen founder walks a new player from the first ride on the surface lift to the first Sleep in ten short, skippable tips anchored to real controls, without pausing the day.
+**Goal:** the chosen founder walks a new player from placing the first lift and trail to the first Sleep in ten short, skippable tips anchored to real controls, without pausing the day.
 
-**Depends on:** PR 23 (radio card on the night sheet), PR 22 (founder data). Uses camera part 3's speed control if present.
+**First-winter PR 2** delivers the operator’s first operating decision under L-E and row 26. The later radio and choice PRs build on it. Use the existing founder and speed controls.
 
 **Player-visible result:** after picking a founder, a small speech card with the founder's initials points at one control at a time. Each tip is one sentence, advances when the player does the thing (or after a short timeout), and has "Skip tips". The coach ends at the first Sleep. 2x speed appears after the coach ends.
 
 ### Design
 
-The pre-built surface lift is "one limping surface lift" (`createInitialState` headline); the coach starts there. Tips never pause the clock and never cover the night tiles.
+Dutch Hill starts with the lodge. Guide the player through placing a lift and painting a connected trail before prompting Play. Tips never pause the clock or cover the night tiles.
+
+At the first recap, use the recorded problem and its evidence to point to a choice the operator can make. Fare shows the trade between ticket price and expected attendance. Snow & service shows cost and its weather-dependent effect. Use the direction supported by the sim, and keep forecasts and expected effects labelled. Show today's count, wait, snow or cash as measured. The next recap can compare the relevant outcome with the prior day's actual value; both numbers need to exist, and intervening changes such as weather and day type remain visible. A quiet or incomplete day still gets an honest recap. Surface the common goal of finishing the winter solvent and leave the optional Readsboro goal to first-winter PR 4.
 
 | # | Step id | Shows when | Anchor (`data-coach`) | Text (Elena's voice; ≤ 90 chars) | Done when |
 |---|---|---|---|---|---|
-| 1 | `open_tow` | day 1, paused at 07:30 | `play` | "This old tow still runs. Tap play and let's open the hill." | clock moves |
+| 1 | `open_tow` | day 1 opening | opening control | "Place a lift and paint a trail that skis back to the base." | lift and trail are ready and clock moves |
 | 2 | `first_rider` | first guest dispatched | `ops-queue` | "First rider up. This number is the wait at the busiest lift." | 20 game minutes pass |
 | 3 | `mood` | `completedRuns >= 5` or 10:00 | `ops-mood` | "Guests judge lines, snow and price. Their mood shows here." | 20 game minutes |
 | 4 | `follow` | after 3 | `guests` | "Tap Guests and follow someone. You'll see their day." | `followId` set, or 45 s real time |
@@ -1905,8 +1726,8 @@ The pre-built surface lift is "one limping surface lift" (`createInitialState` h
 | 6 | `close` | clock ≥ 14:00 | `close` | "Seen enough? Close the hill and we'll talk tonight." | night opens |
 | 7 | `problem` | night 1 open | `recap-problem` | "Tonight's biggest problem. Tap Why? to see what moved mood." | Why opened, or 20 s |
 | 8 | `fare` | after 7 | `fare` | "Cheaper brings more skiers, each paying less. Pick tomorrow's fare." | any fare tile tapped |
-| 9 | `snow` | after 8 | `snow` | "Snow & service is the crew's night. It shows on the hill tomorrow." | any snow tile tapped |
-| 10 | `sleep` | after 9, beat acknowledged | `sleep` | "Sleep runs the night. The crew learns something by morning." | `sleep` |
+| 9 | `snow` | after 8 | `snow` | "More service costs cash. See what tonight’s weather lets the crew do." | any snow tile tapped |
+| 10 | `sleep` | after 9 | `sleep` | "Sleep runs the night. The crew learns something by morning." | `sleep` |
 
 Founder voice: step 1's text has a variant per founder in `COACH_INTROS` (six lines); steps 2 to 10 are shared and signed with the founder's name. Timeouts use wall-clock seconds only while the tab is visible and the day is running (the PR 31 morning-note lesson).
 
@@ -1939,7 +1760,7 @@ UI: `CoachCard` positions itself next to the element with the matching `data-coa
 
 - `coach.test.ts` (new): a scripted day-1 state sequence (unpause, first dispatch, five runs, follow, 14:00, close, fare tap, snow tap, Sleep) walks steps 1 to 10 in order; `nextCoachStep` returns null after `sleep`.
 - Skipping at step 4 returns null for every later state.
-- No step's `shows` is true during `phase: "setup"`; steps 7 to 10 only at night; step 10 not before the beat is acknowledged.
+- No step's `shows` is true during `phase: "setup"`; steps 7 to 10 only at night.
 - Every step text is ≤ 90 characters; six intros exist, one per founder id.
 - The game state after a coached day equals the state after the same inputs without the coach (the coach never writes `GameState`).
 - Snapshot: no change. Balance: no change.
@@ -1957,7 +1778,7 @@ Run the coach end to end at 390x844 and 844x390, and steps 7 to 10 at 820x1180 a
 ### Risks and edge cases
 
 - A player who closes the hill before 14:00 skips step 6; steps chain on `shows` so the coach moves to step 7.
-- A beat on night 1 (first_load fires on day 1 in the characterization season) sits between steps 7 and 10; step 10 waits for "Got it".
+- First-night help and any existing radio card leave the decision controls and Sleep reachable.
 - No save change; the coach store is separate, so wiping it replays the coach without touching the winter.
 
 ### Scope, docs, size, decisions
@@ -1988,7 +1809,7 @@ Open decisions:
 
 - `runSeason(seed, strategy, founder, { seasonLength, takeLoan, radio })` already exists from PR 19 to 23; add `allFounders` runs and a founder axis to the report.
 - Strategies: the 12 existing, `CARELESS` (PR 20), and `COACHED` (proposed): plays like a first-timer who follows the coach and the problem line: Balanced and Mid for the first week, then the adaptive rules, chair only after the first Saturday queue problem.
-- Metrics per strategy: end cash, min cash, net worth, score and grade (PR 24), share of seeds bankrupt and below $0, beats fired, mean satisfaction, Saturday and holiday-week waits with and without a chair.
+- Metrics per strategy: end cash, min cash, net worth, score and grade (PR 24), share of seeds bankrupt, below $0 and solvent at close, local events and actual choice outcomes, mean satisfaction, Saturday and holiday-week waits with and without a chair.
 
 Properties for the MVP (`balance.test.ts`, 6 seeds; report on 40):
 
@@ -2002,7 +1823,7 @@ Properties for the MVP (`balance.test.ts`, 6 seeds; report on 40):
 | 6 | Adaptive and coached mean grade ≥ "Solid winter"; stingy < "Held on" | PR 24 |
 | 7 | Each founder's adaptive mean score within ±15% of the median founder | PR 22 |
 | 8 | Holiday-week Saturdays without a chair average over 12 minutes in line; with a chair 1 to 5 | PR 19 |
-| 9 | Beat fire rates as in PR 23 | PR 23 |
+| 9 | The common solvency goal is achievable with no accepted offer. The Readsboro and Vivian paths resolve through the regular simulation. Report local event incidence and offer, reply, and delivery counts separately | PR 23, PR 24 |
 | 10 | The game is not solved: the best strategy's score is under 90 on 40 seeds | MASTER_PLAN, ICR "easy once solved" lesson |
 
 Tuning rule (as PR 10): move one constant per symptom, record before and after in SIMULATION_SPEC's Balance section with the 40-seed tables, and say why. Candidate levers in order of preference: building upkeep, holiday-week multiplier, storm arrival penalty, careless spend list, `DAILY_FIXED_COST`.
@@ -2019,10 +1840,10 @@ The script in TESTING.md predates M3. Replace its table with this one (proposed)
 | 2 | Follow the coach to the first Sleep (or skip it) | Each tip points at a real control; no stuck tip |
 | 3 | Guests → Follow | Camera tracks the guest |
 | 4 | Build a chair; buy a lodge or café | Deposit taken, schedule shown; change visible on the mountain |
-| 5 | Read the forecast; set fare and snow | Odds shown; tiles readable without zoom |
-| 6 | Read a radio beat; answer SummitLink if it comes | Beat blocks Sleep until read; reply applies |
+| 5 | Use the first recap to pick an operating change; read the next recap | Player can name the tradeoff and distinguish the forecast from what happened |
+| 6 | Read a local event; answer Readsboro or Vivian if offered | Story matches measured events; replies and any effects match the terms |
 | 7 | Sleep through a thaw run and a storm | Snow change visible next morning; crew talent line each morning |
-| 8 | Reach day 28 (skip to close allowed) | Winter review with grade, part-scores, beats, talents; Tenney pin or retry |
+| 8 | Reach day 28 (skip to close allowed) | Winter review gives the actual solvency result and accounts for choices and outcomes |
 | 9 | Reload mid-night once during the winter | Night sheet restores exactly |
 | 10 | Continue → mountain 2 stub → Replay | New winter starts on day 1; career record kept |
 
@@ -2099,7 +1920,7 @@ Run in this order. Each line is pass or fail; the gate passes when every line pa
 | 5 | Saves | M3 save fixtures v1 to current, in every slot | all load, validate and play one day |
 | 6 | Talents | `talents.test.ts` | 20 with-and-without tests pass |
 | 7 | Founders | `founders.test.ts` | twelve modifier tests pass |
-| 8 | Beats | `story.test.ts` and harness fire rates | one per night, none in the day, rates within PR 23 bounds |
+| 8 | Story | Rule tests and balance report | One item per night, no interruptions during the day, and recorded events and outcomes agree with the sim |
 | 9 | Review | `review.test.ts`; a bankrupt run in the harness | every season ends in a review with a record |
 | 10 | Agent P1 | `playtest-p1.mjs` at 390x844, 844x390, 820x1180, 375x667 in Chromium and WebKit | completes; no console errors; no element under 44 px; no overlap in screenshots |
 | 11 | Accessibility | same run with reduced motion and radio off; manual VoiceOver pass on one device | no animation; winter completes; coach and radio announced once |

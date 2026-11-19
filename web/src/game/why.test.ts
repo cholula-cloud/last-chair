@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_TERMS } from "./satisfaction";
-import type { RecapFacts } from "./sim";
-import { delta, formatPoints, whyLines } from "./why";
+import type { NightRecap, RecapFacts } from "./sim";
+import { delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "./why";
 
 const facts: RecapFacts = {
   avgWaitMin: 6.4,
@@ -53,5 +53,32 @@ describe("formatPoints and delta", () => {
     expect(delta(30, 24, (d) => `${d}`)).toEqual({ direction: "up", text: "6" });
     expect(delta(20, 24, (d) => `${d}`)).toEqual({ direction: "down", text: "4" });
     expect(delta(24.2, 24, (d) => `${d}`).direction).toBe("same");
+  });
+});
+
+describe("closing observations", () => {
+  const recap: NightRecap = {
+    arrivals: 20, satisfaction: 60, cashDelta: 50, costs: null, revenue: null,
+    loanReceived: 0, loanRepaid: 0, problem: "Lift lines", facts: { ...facts, dispatched: 20 },
+    breakdown: { ...ZERO_TERMS, queue: -12, value: -5 },
+  };
+
+  it("revisits the same measure when tomorrow's biggest problem changes", () => {
+    const first = observeGuests(recap)!;
+    const next = {
+      ...recap,
+      facts: { ...recap.facts, avgWaitMin: 1.8 },
+      breakdown: { ...ZERO_TERMS, queue: -1, value: -10 },
+    };
+    expect(first).toEqual({ measure: "queue", value: 6.4 });
+    expect(observeGuests(next)?.measure).toBe("value");
+    expect(formatGuestObservation(observeGuests(next, first.measure)!)).toBe("1.8 min");
+  });
+
+  it("requires actual guests and a queue sample for a wait reading", () => {
+    const noRides = { ...recap, facts: { ...recap.facts, dispatched: 0, runsPerGuest: 0 } };
+    expect(observeGuests(noRides)).toEqual({ measure: "runs", value: 0 });
+    expect(observeGuests(noRides, "queue")).toBeNull();
+    expect(observeGuests({ ...recap, arrivals: 0 })).toBeNull();
   });
 });

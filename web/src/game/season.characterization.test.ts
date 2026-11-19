@@ -51,6 +51,8 @@ type Driver = {
   setPendingFare(f: "cheap" | "balanced" | "expensive"): void;
   setPendingSnow(s: "minimal" | "mid" | "high"): void;
   acknowledgeBeat(): void;
+  declineSchoolContract(): void;
+  declineSummitLink(): void;
   sleep(): void;
   finishWinterReview(): void;
   startNewSeason(): void;
@@ -100,7 +102,10 @@ function playSeason(d: Driver) {
     d.setPendingFare(FARES[day % 3]);
     d.setPendingSnow(SNOWS[day % 3]);
     nights.push(summarize(d.view()));
-    if (d.view().pendingBeat) d.acknowledgeBeat();
+    const pendingBeat = d.view().pendingBeat;
+    if (pendingBeat === "school_bus") d.declineSchoolContract();
+    else if (pendingBeat === "summit_link") d.declineSummitLink();
+    else if (pendingBeat) d.acknowledgeBeat();
     d.sleep();
   }
   d.finishWinterReview();
@@ -146,6 +151,8 @@ function storeDriver(
     setPendingFare: (f) => s().setPendingFare(f),
     setPendingSnow: (x) => s().setPendingSnow(x),
     acknowledgeBeat: () => s().acknowledgeBeat(),
+    declineSchoolContract: () => s().decideSchoolContract("declined"),
+    declineSummitLink: () => s().replyToSummitLink("declined"),
     sleep: () => s().sleep(),
     finishWinterReview: () => s().finishWinterReview(),
     startNewSeason: () => s().startNewSeason(),
@@ -168,6 +175,8 @@ function pureDriver(seed: number): Driver {
     setPendingFare: (f) => apply((s) => rules.setPendingFare(s, f)),
     setPendingSnow: (x) => apply((s) => rules.setPendingSnow(s, x)),
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),
+    declineSchoolContract: () => apply((s) => rules.decideSchoolContract(s, "declined")),
+    declineSummitLink: () => apply((s) => rules.replyToSummitLink(s, "declined")),
     sleep: () => apply(rules.sleep),
     finishWinterReview: () => apply(rules.finishWinterReview),
     startNewSeason: () => apply(rules.startNewSeason),

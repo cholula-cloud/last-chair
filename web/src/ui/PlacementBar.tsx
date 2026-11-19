@@ -280,6 +280,7 @@ function SiteBar() {
         title={`Review ${item.label}`}
         facts={[
           ...buildPaymentFacts(check?.ok ? check.cost : item.cost),
+          { label: "Daily upkeep", value: formatMoney(item.upkeep) },
           { label: "Lodge tier", value: String(item.opensAtTier) },
           ...(check?.ok ? [{ label: "Area", value: acres(check.acres) }] : []),
           ...(check?.ok && check.attached ? [{ label: "Lodge pad", value: "+5% attached" }] : []),

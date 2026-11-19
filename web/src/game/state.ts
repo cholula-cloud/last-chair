@@ -1,9 +1,11 @@
+import type { WinterRecord } from "./winterMemory";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { MOUNTAIN_CALENDARS, type MountainId } from "./calendar";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { Loan, Payable } from "./economy";
 import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
+import type { SchoolContract } from "./schoolContract";
 import { mix32 } from "./rng";
 import { generateSeasonWeather } from "./weather";
 import type { LiftAnchor } from "./descent";
@@ -11,6 +13,9 @@ import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY } from "./snow";
 import type { TrailRun } from "./trails";
 import { DAY_START_MIN, emptyDayStats, type NightRecap } from "./sim";
+import type { SummitLinkDecision } from "./summitLink";
+import type { GuestObservation } from "./why";
+import type { SurpriseEntry, SurprisePlan } from "./surprises";
 import type {
   BuildingId,
   DayStats,
@@ -55,6 +60,7 @@ export type LastDay = {
   satisfaction: number;
   cashDelta: number;
   avgWaitMin: number;
+  observation?: GuestObservation;
   /** The fare the day ran at. */
   fare: FarePreset;
   /** The snow & service preset the crew worked the night before. */
@@ -100,8 +106,11 @@ export type PersistedState = {
   selectedLiftType: LiftType;
   talentsOwned: string[];
   completedBeats: StoryBeatId[];
+  summitLinkDecision: SummitLinkDecision | null;
   pendingBeat: StoryBeatId | null;
   beatAcknowledged: boolean;
+  schoolContract: SchoolContract | null;
+  schoolProgramProven: boolean;
   weather: WeatherKind;
   seasonSeed: number;
   /** One actual weather outcome per day in the current winter. */
@@ -116,8 +125,13 @@ export type PersistedState = {
   rngState: number;
   /** The open night sheet, so a reload during the night restores it. */
   nightRecap: NightRecap | null;
+  /** The day's surprise is set with its roster and cleared at closing. */
+  surprise: SurprisePlan | null;
+  /** Resolved surprises, in the order they were reported on Route 100 Radio. */
+  surpriseLog: SurpriseEntry[];
   /** Set at Sleep; shown as deltas on the next night's recap. */
   lastDay: LastDay | null;
+  lastWinter?: WinterRecord;
   dayStats: DayStats;
 };
 
@@ -156,6 +170,8 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     guests: [],
     followId: null,
     nightRecap: null,
+    surprise: null,
+    surpriseLog: [],
     lastDay: null,
     dayStats: emptyDayStats(),
     pendingFare: "balanced",
@@ -173,8 +189,11 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     selectedLiftType: "surface",
     talentsOwned: [],
     completedBeats: [],
+    summitLinkDecision: null,
     pendingBeat: null,
     beatAcknowledged: true,
+    schoolContract: null,
+    schoolProgramProven: false,
     weather: weatherDays[0].kind,
     seasonSeed,
     weatherDays,
@@ -225,8 +244,11 @@ export function toPersisted(state: PersistedState): PersistedState {
     selectedLiftType: state.selectedLiftType,
     talentsOwned: state.talentsOwned,
     completedBeats: state.completedBeats,
+    summitLinkDecision: state.summitLinkDecision,
     pendingBeat: state.pendingBeat,
     beatAcknowledged: state.beatAcknowledged,
+    schoolContract: state.schoolContract,
+    schoolProgramProven: state.schoolProgramProven,
     weather: state.weather,
     seasonSeed: state.seasonSeed,
     weatherDays: state.weatherDays,
@@ -238,7 +260,10 @@ export function toPersisted(state: PersistedState): PersistedState {
     seasonLength: state.seasonLength,
     rngState: state.rngState,
     nightRecap: state.nightRecap,
+    surprise: state.surprise ?? null,
+    surpriseLog: state.surpriseLog ?? [],
     lastDay: state.lastDay,
+    ...(state.lastWinter ? { lastWinter: state.lastWinter } : {}),
     dayStats: state.dayStats,
   };
 }
@@ -254,4 +279,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;

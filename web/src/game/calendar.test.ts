@@ -75,12 +75,12 @@ describe("Dutch Hill calendar", () => {
     expect(share(23)).toBeCloseTo(0.6, 1);
   });
 
-  it("keeps Saturday and school-bus attendance gates on their calendar days", () => {
+  it("keeps the Saturday gate on its calendar day", () => {
     const day = { liftsOpen: 0, completedRuns: 0, arrivals: 28, snowDepth: 1,
-      daysWithoutSnow: 0, reputation: 40, lessonsBooked: false, completedBeats: [] };
+      daysWithoutSnow: 0, reputation: 40, schoolOfferReady: false, completedBeats: [] };
     expect(readyStoryBeat({ ...day, dayIndex: 6 })).toBe("saturday");
     expect(readyStoryBeat({ ...day, dayIndex: 7 })).toBeNull();
     expect(readyStoryBeat({ ...day, dayIndex: 22 })).toBeNull();
-    expect(readyStoryBeat({ ...day, dayIndex: 23 })).toBe("school_bus");
+    expect(readyStoryBeat({ ...day, dayIndex: 23 })).toBeNull();
   });
 });
