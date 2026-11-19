@@ -924,7 +924,7 @@ Water supply, compressor power, gun types, groomer machines as units.
 About 380 lines. Cut: grooming capacity can ship before placed guns.
 
 ### Open decisions
-1. Gun cost and cap. Recommended: $400, 10.
+1. Gun cost and cap. The first-winter calibration sets installation at $250 and daily upkeep at $60, with a cap of 10.
 2. Partial grooming from the bottom up or top down. Recommended: bottom up, where thaw hits first.
 
 ---

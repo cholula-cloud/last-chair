@@ -57,7 +57,7 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
   },
   snow_guns: {
     label: "Snow gun", category: "infrastructure", footprint: { width: 0.25, depth: 0.25 },
-    cost: 400, upkeep: 40, effect: {},
+    cost: 250, upkeep: 60, effect: {},
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
   },
 };
