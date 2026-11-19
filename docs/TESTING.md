@@ -99,6 +99,7 @@ The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.
 | 2026-11-19 | Dutch Hill first-winter choices | Scripted portrait Chromium, including prepared school and Day 18 offer saves | School booking and decline, six pupil arrivals, $150 ticket receipt, both Vivian replies, accepted cap, 5/6 lesson memory, solvent review and Tenney transition passed. P0 reached bankruptcy review with zero page errors. Save recovery passed. |
 | 2026-11-19 | M2 scripted touch opening | Portrait Chromium, isolated run | Opened in 75.9 seconds. Tier 2 rentals earned $180, the wind hold and forecasts passed, and the script observed zero page errors. |
 | 2026-11-19 | Phone renderer | 390×844 headless Chromium, SwiftShader and 4× CPU throttle | Gestures, placement and speed controls passed. 25 draw calls and 182,221 triangles met scene budgets. Measured 2.8 FPS against the 30 FPS target. Device Safari and uncoached human sign-off remain open. |
+| 2026-11-19 | First-winter merge, PR #77 | Hosted CI and Playwright WebKit, 390×844 | CI passed lint, typecheck, tests, the 40-seed M2 gate and production build. WebKit passed viewport interactions, save recovery, and the opening and lodge scenarios. The scripted opening took 16.3 seconds. This run collected no FPS measurement. [CI](https://github.com/cholula-cloud/last-chair/actions/runs/44589727395) · [WebKit](https://github.com/cholula-cloud/last-chair/actions/runs/44589726764) |
 
 Log friction as a GitHub issue with device and OS version.
 
