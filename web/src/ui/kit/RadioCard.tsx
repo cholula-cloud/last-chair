@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { radioArrived } from "@/ui/feel";
 
 /** Yellow warning diamond holding a broadcast-waves glyph. */
 function RadioDiamond() {
@@ -40,11 +41,14 @@ export function RadioCard({
   title,
   children,
   action,
+  announce = true,
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
+  announce?: boolean;
 }) {
+  useEffect(() => { if (announce) radioArrived(); }, [announce]);
   return (
     <section
       aria-label={`Route 100 Radio: ${title}`}

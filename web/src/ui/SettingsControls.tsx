@@ -23,24 +23,39 @@ function Toggle({ label, on, onChange }: { label: string; on: boolean; onChange:
   );
 }
 
+function VolumeSlider({ label, value, onChange }: { label: string; value: number; onChange: (next: number) => void }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={id} className="flex items-center justify-between font-extrabold">
+        <span>{label}</span>
+        <span aria-hidden="true">{value}%</span>
+      </label>
+      <input
+        id={id}
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={value}
+        aria-valuetext={`${value} percent`}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-11 w-full accent-[var(--sign-green)]"
+      />
+    </div>
+  );
+}
+
 /** The settings list, shared by the title screen and the Office. */
 export function SettingsControls() {
   const settings = useSettings();
   const { captions, reduceMotion, defaultSpeed, set } = settings;
-  const volumeId = useId();
   const speedId = useId();
   return (
     <div className="flex flex-col gap-4">
       <Toggle label="Sound" on={!settings.muted} onChange={on => set({ muted: !on })} />
       {([["masterVolume", "Master volume"], ["musicVolume", "Music volume"], ["effectsVolume", "Effects volume"], ["voiceVolume", "Voice volume"]] as const).map(([key, label]) => (
-        <div key={key} className="flex flex-col gap-2">
-          <label htmlFor={volumeId + key} className="flex justify-between font-extrabold">
-            {label}<span aria-hidden="true">{settings[key]}%</span>
-          </label>
-          <input id={volumeId + key} type="range" min={0} max={100} step={5} value={settings[key]}
-            aria-valuetext={settings[key] + " percent"} onChange={e => set({ [key]: Number(e.target.value) })}
-            className="h-11 w-full accent-[var(--sign-green)]" />
-        </div>
+        <VolumeSlider key={key} label={label} value={settings[key]} onChange={value => set({ [key]: value })} />
       ))}
       <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
       <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />

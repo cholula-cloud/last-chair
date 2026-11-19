@@ -47,10 +47,10 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 /** Keeps stored values in range so a hand-edited key cannot break the UI. */
-export function cleanSettings(raw: Partial<Record<keyof Settings, unknown>> | null | undefined): Settings {
+export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "ambienceVolume", unknown>> | null | undefined): Settings {
   const r = raw ?? {};
   function volume(key: "masterVolume" | "musicVolume" | "effectsVolume" | "voiceVolume") {
-    const value = r[key];
+    const value = key === "musicVolume" ? r.musicVolume ?? r.ambienceVolume : r[key];
     return typeof value === "number" && Number.isFinite(value)
       ? Math.min(100, Math.max(0, Math.round(value)))
       : DEFAULT_SETTINGS[key];
@@ -64,7 +64,7 @@ export function cleanSettings(raw: Partial<Record<keyof Settings, unknown>> | nu
     voiceVolume: volume("voiceVolume"),
     voiceOn: typeof r.voiceOn === "boolean" ? r.voiceOn : DEFAULT_SETTINGS.voiceOn,
     tips: typeof r.tips === "boolean" ? r.tips : DEFAULT_SETTINGS.tips,
-    muted: typeof r.muted === "boolean" ? r.muted : DEFAULT_SETTINGS.muted,
+    muted: typeof r.muted === "boolean" ? r.muted : typeof r.soundOn === "boolean" ? !r.soundOn : DEFAULT_SETTINGS.muted,
     textSize: r.textSize === "large" ? "large" : "standard",
     graphicsQuality: r.graphicsQuality === "low" ? "low" : "standard",
     patternAids: typeof r.patternAids === "boolean" ? r.patternAids : DEFAULT_SETTINGS.patternAids,

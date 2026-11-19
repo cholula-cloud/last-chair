@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { audio as sound } from "@/audio/engine";
+import { sliderGain } from "@/audio/mix";
 import { useSettings } from "@/ui/settingsStore";
 import { COLD_OPEN_AUDIO, COLD_OPEN_CARDS, cardAtTime, cueOf, silentHoldSeconds } from "@/ui/coldOpenCards";
 
@@ -13,13 +15,15 @@ const STALL_MS = 2000;
  * or Voice is off in Settings, the cards run on timers.
  */
 export function ColdOpen({ onDone }: { onDone: () => void }) {
-  const voiceOn = useSettings((s) => s.voiceOn && !s.muted);
+  // The voice is heard when Sound, Voice and both volumes are up. It runs through the voice bus.
   const captions = useSettings(s => s.captions);
-  const voiceVolume = useSettings((s) => s.voiceVolume * s.masterVolume / 100);
+  const voiceLevel = useSettings(s => s.voiceOn && !s.muted ? sliderGain(s.masterVolume) * sliderGain(s.voiceVolume) : 0);
   const [index, setIndex] = useState(0);
   // True while the recording is actually playing; the cards then follow its clock.
   const [voiceLive, setVoiceLive] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // True when the voice element feeds the voice bus, so the bus sets its level and the element stays at full.
+  const routedRef = useRef(false);
   const indexRef = useRef(0);
   const doneRef = useRef(onDone);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -43,38 +47,37 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
   // Start the voice-over. A rejected play() (autoplay blocked) leaves the cards on timers.
   useEffect(() => {
     nextRef.current?.focus();
-    const { voiceOn: on, muted, voiceVolume: voice, masterVolume } = useSettings.getState();
-    const volume = muted ? 0 : voice * masterVolume / 100;
-    if (!on || volume <= 0) return;
-    const audio = new Audio((process.env.NEXT_PUBLIC_BASE_PATH ?? "") + COLD_OPEN_AUDIO);
-    audio.volume = Math.min(1, Math.max(0, volume / 100));
-    audioRef.current = audio;
+    if (!sound.voiceAudible()) return;
+    const voice = new Audio((process.env.NEXT_PUBLIC_BASE_PATH ?? "") + COLD_OPEN_AUDIO);
+    routedRef.current = sound.routeVoice(voice);
+    voice.volume = routedRef.current ? 1 : sound.voiceFallbackVolume();
+    audioRef.current = voice;
     let cancelled = false;
-    audio.play().then(
+    voice.play().then(
       () => {
         if (!cancelled) setVoiceLive(true);
       },
       () => {
-        if (audioRef.current === audio) audioRef.current = null;
+        if (audioRef.current === voice) audioRef.current = null;
       },
     );
     const onEnded = () => {
-      if (audioRef.current === audio) setVoiceLive(false);
+      if (audioRef.current === voice) setVoiceLive(false);
     };
-    audio.addEventListener("ended", onEnded);
+    voice.addEventListener("ended", onEnded);
     return () => {
       cancelled = true;
-      audio.removeEventListener("ended", onEnded);
-      audio.pause();
-      if (audioRef.current === audio) audioRef.current = null;
+      voice.removeEventListener("ended", onEnded);
+      voice.pause();
+      if (audioRef.current === voice) audioRef.current = null;
     };
   }, []);
 
-  // Settings changes made while it plays: mute stops the voice.
+  // Settings changes made while it plays: muting stops the voice. A routed voice follows its bus on its own.
   useEffect(() => {
-    if (!voiceOn || voiceVolume <= 0) stopVoice();
-    else if (audioRef.current) audioRef.current.volume = voiceVolume / 100;
-  }, [voiceOn, voiceVolume, stopVoice]);
+    if (!voiceLevel) stopVoice();
+    else if (audioRef.current && !routedRef.current) audioRef.current.volume = voiceLevel;
+  }, [voiceLevel, stopVoice]);
 
   // With the voice playing, follow its clock. Only a card change sets state.
   useEffect(() => {

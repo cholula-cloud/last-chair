@@ -2346,6 +2346,32 @@ About 220 lines.
 
 ---
 
+## Row Q3: Feel floor
+
+### Goal
+Make a muted run and an unmuted run feel different before the M3 gate, with sound, a day tint and a short confirm pop. Rows 31 to 33 finish each of these later.
+
+### Scope
+- Sound: `web/src/audio/` holds a Web Audio engine with effects, ambience and voice buses feeding one master gain. Oscillators and filtered noise generate the sound effects and wind bed. The cold open uses recorded narration. Sounds: a UI tap on every enabled button press, a low thunk on build confirm, a three-note radio sting when a Route 100 Radio card appears, a two-note chime when a lodge tier completes, and a looped wind bed that is quieter at night.
+- Gesture rule: nothing is created until `pointerup`, `touchend`, `click` or `keydown` runs. The tab hiding suspends the context. The iOS session type is set to `ambient` where `navigator.audioSession` exists.
+- Settings (in `last-chair-settings`, no save migration): Sound on or off, master, effects and ambience volume, beside the existing Voice switch and volume. Sound can also be switched in the in-game Menu panel. The cold-open voice-over runs through the voice bus when the context is running.
+- Day tint: `render/dayTint.ts` gives a light multiplier from the clock, cool at 7:30, neutral from 11:30 to 1 PM, warm at 4 PM, at most 12 percent on a channel. `Atmosphere` multiplies it into the sun, hemisphere light and horizon colour, fading out as night comes in. Reduced motion keeps it.
+- Juice: a pop that scales and fades in over 240 ms on build confirm (trail, lift, building, lodge upgrade start) and on lodge tier completion. Transform and opacity only. Reduced motion presents a static confirmation.
+
+### Files
+`web/src/audio/{mix,synth,engine}.ts`, `web/src/ui/{feel.ts,ConfirmPop.tsx}`, `web/src/render/dayTint.ts`, plus small edits to `settingsStore.ts`, `TitleScreen.tsx`, `Hud.tsx`, `ColdOpen.tsx`, `PlacementBar.tsx`, `BuildSheet.tsx`, `kit/RadioCard.tsx`, `PlayGate.tsx`, `PlayExperience.tsx`, `Atmosphere.tsx`, `globals.css`.
+
+### Tests
+Mix maths and mute rules, engine bus routing and gesture rules against a fake `AudioContext`, tint curve (cool, neutral, warm, continuous, bounded), settings clamping and defaults for older stored settings.
+
+### Done when
+A muted and an unmuted run feel different; sound starts only after the first gesture; mute and reduced motion are respected. Not yet checked: how it sounds on a real iPhone, silent switch behaviour, and phone-call recovery.
+
+### What rows 31 to 33 still finish
+Recorded or licensed beds and effects, a day and night bed pair with the lift hum, a moving sun, a per-event sound set, haptics, and the full settings spec in Q8.
+
+---
+
 ## PR 32: Audio
 
 ### Goal

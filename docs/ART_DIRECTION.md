@@ -201,6 +201,8 @@ Towers stretch vertically so their sheaves meet the span-cleared cable height; t
 - **Story:** Route 100 Radio VO/text first; music bed second.
 - **Sandbox:** same ambience, no story stingers.
 - Reference vibe: acoustic + light electronic, not epic orchestra.
+- **Implemented (row Q3):** procedural Web Audio with effects, ambience and voice buses under one master; a wind bed, a UI tap, a build thunk, a three-note radio sting and a tier-up chime. No files ship. Sound starts on the first gesture and stops when the tab hides.
+- **Day tint (row Q3):** light is cool at opening, neutral at midday and warm by closing, at most 12 percent per channel.
 
 ---
 

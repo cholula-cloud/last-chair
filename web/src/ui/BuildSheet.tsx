@@ -16,6 +16,7 @@ import { startAssetPlacement, startGunPlacement, startPlacement } from "@/ui/pla
 import { Sheet } from "@/ui/kit/Sheet";
 import { PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 import { TrailsPanel } from "@/ui/TrailsPanel";
+import { buildConfirmed } from "@/ui/feel";
 
 function LodgeCard() {
   const tier = useGameStore((s) => s.lodgeTier);
@@ -63,7 +64,14 @@ function LodgeCard() {
               problem={cash < payment.deposit ? "You need more cash for the deposit. Check your balance after closing." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
-              onConfirm={() => { upgrade(); if (useGameStore.getState().lodgeUpgrade) useCoach.getState().sawLodge(); setReview(false); }}
+              onConfirm={() => {
+                upgrade();
+                if (useGameStore.getState().lodgeUpgrade) {
+                  useCoach.getState().sawLodge();
+                  buildConfirmed("Lodge upgrade started.");
+                }
+                setReview(false);
+              }}
             />
           ) : (
             <PrimaryButton data-coach="lodge-upgrade" className={`mt-2 min-h-11 ${showCoach ? "coach-target" : ""}`} onClick={() => setReview(true)}>

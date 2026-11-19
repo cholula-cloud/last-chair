@@ -7,6 +7,7 @@ import { useGameStore } from "@/game/store";
 import { SHADOW_LAYER } from "./kit";
 import { useReducedMotion } from "./useReducedMotion";
 import { smoothstep } from "./math";
+import { dayTintAt, type Tint } from "./dayTint";
 import { fbm } from "@/game/terrain";
 import { sceneCameraTarget } from "./sceneCamera";
 import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
@@ -54,6 +55,9 @@ const NIGHT = {
   hemiGround: new THREE.Color(PALETTE.hemiGroundNight),
 };
 const WHITE = new THREE.Color(PALETTE.white);
+/** Scratch values for the day tint, reused every frame. */
+const tintNow: Tint = { r: 1, g: 1, b: 1 };
+const tintColor = new THREE.Color();
 
 /** Layered hazy ridges behind the hill so it sits in a valley. */
 function ridgeGeometry(radius: number, base: number, amp: number, seed: number, color: string) {
@@ -150,9 +154,15 @@ export function Atmosphere() {
 
     const top = sky.uniforms.topColor.value as THREE.Color;
     const hor = sky.uniforms.horizonColor.value as THREE.Color;
+    // Morning cool, midday neutral, late afternoon warm. The shift fades out as night comes in.
+    dayTintAt(clockMin, tintNow);
+    const tintAmount = 1 - n;
+    tintColor.setRGB(1 + (tintNow.r - 1) * tintAmount, 1 + (tintNow.g - 1) * tintAmount, 1 + (tintNow.b - 1) * tintAmount);
+
     top.copy(DAY.top).lerp(DAY.overcastTop, overcast * 0.6).lerp(NIGHT.top, n);
     hor.copy(DAY.horizon).lerp(DAY.dawn, dawn * 0.4).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
     if (weather === "storm") hor.lerp(DAY.overcastTop, (1 - n) * 0.55);
+    hor.multiply(tintColor);
     if (fog.current) fog.current.color.copy(hor);
 
     if (sun.current) {
@@ -161,9 +171,11 @@ export function Atmosphere() {
         (2.5 - dusk * 0.6 - overcast * 0.9 + (weather === "thaw" ? 0.2 : 0)) *
           (1 - n) +
         0.35 * n;
+      sun.current.color.multiply(tintColor);
     }
     if (hemi.current) {
       hemi.current.color.copy(DAY.hemiSky).lerp(NIGHT.hemiSky, n);
+      hemi.current.color.multiply(tintColor);
       hemi.current.groundColor.copy(DAY.hemiGround).lerp(NIGHT.hemiGround, n);
       hemi.current.intensity = (1.25 + overcast * 0.25) * (1 - n) + 0.75 * n;
     }
