@@ -1,5 +1,7 @@
 /** Pure camera-control helpers: the play area, a soft target clamp and a tap/drag classifier. */
 
+import { leaseBounds } from "@/game/lease";
+import { TERRAIN, type Terrain } from "@/game/terrain";
 import { marchToTerrain as marchTerrainCore } from "./terrainPick";
 
 export type XZ = { x: number; z: number };
@@ -11,20 +13,16 @@ export type Rect = { xMin: number; xMax: number; zMin: number; zMax: number };
  */
 export const WORLD_SCALE = 6;
 
-/** Design play rectangle before horizontal scale (village + hill at 1x). */
-const BASE_PLAY_AREA: Rect = { xMin: -7, xMax: 8, zMin: -7, zMax: 4.5 };
+/** How far past the lease bounding box the camera target may roam, in world units. */
+export const LEASE_CAMERA_MARGIN = 8;
 
-/** Scaled ground rectangle the camera target may roam, in world units. */
-export function playArea(scale = WORLD_SCALE): Rect {
-  return {
-    xMin: BASE_PLAY_AREA.xMin * scale,
-    xMax: BASE_PLAY_AREA.xMax * scale,
-    zMin: BASE_PLAY_AREA.zMin * scale,
-    zMax: BASE_PLAY_AREA.zMax * scale,
-  };
+/** Scaled ground rectangle the camera target may roam: the lease bounding box plus a margin. */
+export function playArea(terrain: Terrain = TERRAIN, margin = LEASE_CAMERA_MARGIN): Rect {
+  const b = leaseBounds(terrain);
+  return { xMin: b.xMin - margin, xMax: b.xMax + margin, zMin: b.zMin - margin, zMax: b.zMax + margin };
 }
 
-/** Play area at the current {@link WORLD_SCALE}. */
+/** Play area for the current mountain. */
 export const PLAY_AREA: Rect = playArea();
 
 /** Overshoot zone (world units) where panning meets resistance. */

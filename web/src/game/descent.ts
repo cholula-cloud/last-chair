@@ -1,6 +1,7 @@
 /** Lift viability: a lift line (bottom to top) must climb enough, stay short, and stand on loadable ground. */
 
 import { formatMoney } from "./format";
+import { OFF_LEASE_MESSAGE, onLease, segmentOnLease } from "./lease";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import type { LiftType } from "./types";
 
@@ -63,6 +64,7 @@ export type PlacementReason =
   | "lodge_tier"
   | "max_lifts"
   | "off_map"
+  | "off_lease"
   | "bottom_far"
   | "base_occupied"
   | "too_steep"
@@ -96,7 +98,7 @@ function onMap(p: XZ, terrain: Terrain): boolean {
   );
 }
 
-/** Terrain-only checks, in reason order: off_map, bottom_far, too_steep, too_low, too_long. */
+/** Terrain-only checks, in reason order: off_map, off_lease, bottom_far, too_steep, too_low, too_long. */
 export function checkLiftLine(
   line: LiftLine,
   terrain: Terrain = TERRAIN,
@@ -105,6 +107,9 @@ export function checkLiftLine(
   const { bottom, top } = line;
   const r = rulesFor(terrain, type);
   if (!onMap(bottom, terrain) || !onMap(top, terrain)) return { ok: false, reason: "off_map" };
+  if (!onLease(bottom, terrain) || !onLease(top, terrain) || !segmentOnLease(bottom, top, terrain)) {
+    return { ok: false, reason: "off_lease" };
+  }
   if (Math.hypot(bottom.x - terrain.base.x, bottom.z - terrain.base.z) > r.baseAreaRadius) {
     return { ok: false, reason: "bottom_far" };
   }
@@ -185,6 +190,8 @@ export function placementReason(
       return `Dutch Hill has room for ${MAX_LIFTS} lifts.`;
     case "off_map":
       return "That spot is off the map.";
+    case "off_lease":
+      return OFF_LEASE_MESSAGE;
     case "bottom_far":
       return "Start the lift near the base lodge.";
     case "base_occupied":

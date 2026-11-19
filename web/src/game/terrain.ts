@@ -55,6 +55,11 @@ export type TerrainDef = {
   /** Real feet per DESIGN horizontal unit; the world value divides by `scale.horizontal`. */
   horizontalFeetPerUnit?: number;
   bounds: { xMin: number; xMax: number; zMin: number; zMax: number };
+  /**
+   * The leased land: a simple polygon in design units (world divided by H).
+   * Every placement rule refuses points outside it. Omit it and the whole map is buildable.
+   */
+  lease?: readonly XZ[];
   /** Lift loading point; its height is the reference for "vertical". */
   base: XZ;
   /** Vertical extent in feet between base and summit; sets `feetPerUnit`. */
@@ -114,6 +119,8 @@ export interface Terrain {
   readonly scale: MountainScale;
   /** World bounds (design bounds times H). */
   readonly bounds: TerrainDef["bounds"];
+  /** World lease polygon (design polygon times H); undefined when the whole map is buildable. */
+  readonly lease?: readonly Readonly<XZ>[];
   /** World base (design base times H). */
   readonly base: Readonly<XZ>;
   /** Feet of real vertical per world unit of height: feet = units * feetPerUnit. */
@@ -319,6 +326,7 @@ export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale 
     def,
     scale,
     bounds: { xMin: db.xMin * H, xMax: db.xMax * H, zMin: db.zMin * H, zMax: db.zMax * H },
+    lease: def.lease?.map(toWorld),
     base: toWorld(def.base),
     feetPerUnit: def.verticalFeet / (summitH - baseH),
     horizontalFeetPerUnit: (def.horizontalFeetPerUnit ?? 1) / H,

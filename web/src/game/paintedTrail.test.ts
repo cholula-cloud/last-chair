@@ -13,6 +13,8 @@ function lift(anchor: XZ, bottom?: XZ): LiftSlot {
 
 const slope: Terrain = {
   ...TERRAIN,
+  // A synthetic slope off the Dutch Hill map: every point is buildable.
+  lease: undefined,
   base: p(0, 20),
   bounds: { xMin: -25, xMax: 25, zMin: 0, zMax: 25 },
   height: (_, z) => 20 - z * 0.3,

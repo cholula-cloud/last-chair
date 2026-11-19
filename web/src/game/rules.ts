@@ -17,7 +17,8 @@ import {
   type AssetId,
 } from "./base";
 import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
-import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST } from "./guns";
+import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
+import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { CREW_TALENTS, FOUNDERS, founderById } from "./content";
 import {
@@ -773,12 +774,24 @@ export function beginLodgeUpgrade(state: GameState): GameState {
   return { ...state, ...purchaseConstruction(state, cost, "lodge"), lodgeUpgrade: { toTier: tier, nightsRemaining: 2 } };
 }
 
+const GUN_REASON_COPY: Record<GunPlacementReason, string> = {
+  off_map: "That spot is off the map.",
+  off_lease: OFF_LEASE_MESSAGE,
+  out_of_pipe_reach: "Place guns near the base or another gun.",
+  max_guns: `Dutch Hill has room for ${MAX_GUNS} snow guns.`,
+  gun_here: "A snow gun is already here.",
+};
+
+function gunReasonCopy(reason: GunPlacementReason | null): string | null {
+  return reason ? GUN_REASON_COPY[reason] : null;
+}
+
 export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
   const point = roundXZ(at);
   const reason = state.phase !== "day" ? "Build during the day."
     : openingStep(state) ? "Build a lift and trail first."
     : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
-    : gunPlacementReason(point, state.guns) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash." : null);
+    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,

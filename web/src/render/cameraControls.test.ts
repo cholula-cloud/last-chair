@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { leaseBounds } from "@/game/lease";
+import { TERRAIN } from "@/game/terrain";
 import { homeView } from "./cameraFraming";
 import {
   DOUBLE_TAP_MAX_DIST_PX,
@@ -7,7 +9,9 @@ import {
   HARD_MARGIN_FRACTION,
   MAX_DISTANCE,
   MIN_DISTANCE,
+  LEASE_CAMERA_MARGIN,
   PLAY_AREA as A,
+  playArea,
   SOFT_MARGIN,
   TAP_MAX_MOVE_PX,
   TAP_MAX_MS,
@@ -27,6 +31,25 @@ const cx = (A.xMin + A.xMax) / 2;
 const cz = (A.zMin + A.zMax) / 2;
 const hardX = (A.xMax - A.xMin) * HARD_MARGIN_FRACTION;
 const hardZ = (A.zMax - A.zMin) * HARD_MARGIN_FRACTION;
+
+describe("play area", () => {
+  it("is the lease bounding box plus the camera margin", () => {
+    const b = leaseBounds();
+    expect(LEASE_CAMERA_MARGIN).toBe(8);
+    expect(A).toEqual({ xMin: b.xMin - 8, xMax: b.xMax + 8, zMin: b.zMin - 8, zMax: b.zMax + 8 });
+    expect(playArea(TERRAIN, 0)).toEqual(b);
+  });
+
+  it("keeps the camera over the lease and well inside the map", () => {
+    for (const p of TERRAIN.lease!) {
+      expect(p.x).toBeGreaterThanOrEqual(A.xMin);
+      expect(p.x).toBeLessThanOrEqual(A.xMax);
+      expect(p.z).toBeGreaterThanOrEqual(A.zMin);
+      expect(p.z).toBeLessThanOrEqual(A.zMax);
+    }
+    expect(A.xMax - A.xMin).toBeLessThan(TERRAIN.bounds.xMax - TERRAIN.bounds.xMin);
+  });
+});
 
 describe("clampTarget", () => {
   it("leaves points inside the area unchanged", () => {

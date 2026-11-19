@@ -1,14 +1,46 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { BufferGeometry, Color, Float32BufferAttribute } from "three";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
+import { leaseBounds, onLease } from "@/game/lease";
 import { checkAssetPlacement, checkGunPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
 
-/** A sampled guide: the placement preview remains the final authority. */
+const VALID = new THREE.Color("#36a975");
+const NEUTRAL = new THREE.Color("#d7e5dd");
+const DOT_RADIUS = 0.15;
+const DOT_LIFT = 0.08;
+
+type Dot = { x: number; z: number; valid: boolean | null };
+
+/** Centres of the build cells that lie on the lease, with whether a placement there is allowed. */
+export function gridDots(
+  check: ((at: { x: number; z: number }) => boolean) | null,
+  terrain = TERRAIN,
+): Dot[] {
+  const size = terrain.scale.horizontal / 2;
+  const { xMin, xMax, zMin, zMax } = leaseBounds(terrain);
+  const dots: Dot[] = [];
+  for (let x = Math.floor(xMin / size) * size; x + size <= xMax + size; x += size) {
+    for (let z = Math.floor(zMin / size) * size; z + size <= zMax + size; z += size) {
+      const at = { x: x + size / 2, z: z + size / 2 };
+      if (!onLease(at, terrain)) continue;
+      const valid = check ? check(at) : null;
+      // A cell that cannot take the placement draws nothing: the guide shows only where you can build.
+      if (valid === false) continue;
+      dots.push({ x: at.x, z: at.z, valid });
+    }
+  }
+  return dots;
+}
+
+/**
+ * A sampled guide: faint dots at the centres of cells where the chosen item fits. The
+ * placement preview remains the final authority. Lift and trail tools draw none.
+ */
 export function BuildGrid() {
   const { mode, asset } = usePlacementDraft(useShallow((draft) => {
     // Lift mode shows anchor dots and the ghost instead of a grid. Trail mode keeps the map quiet.
@@ -27,39 +59,35 @@ export function BuildGrid() {
     dayIndex: state.dayIndex,
     lodgeTier: state.lodgeTier,
   } : null));
-  const geometry = useMemo(() => {
-    if (!mode) return null;
-    const positions: number[] = [];
-    const colors: number[] = [];
-    const green = new Color("#36a975");
-    const red = new Color("#d46c64");
-    const neutral = new Color("#d7e5dd");
-    const size = TERRAIN.scale.horizontal / 2;
-    const { xMin, xMax, zMin, zMax } = TERRAIN.bounds;
-    const segment = (ax: number, az: number, bx: number, bz: number, color: Color) => {
-      positions.push(ax, TERRAIN.height(ax, az) + 0.07, az, bx, TERRAIN.height(bx, bz) + 0.07, bz);
-      colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
-    };
-    for (let x = xMin; x + size <= xMax; x += size) {
-      for (let z = zMin; z + size <= zMax; z += size) {
-        const at = { x: x + size / 2, z: z + size / 2 };
-        let valid: boolean | null = null;
-        if (state && mode === "asset" && asset) valid = checkAssetPlacement(state, asset, at).ok;
-        else if (state && mode === "gun") valid = checkGunPlacement(state, at).ok;
-        const color = valid === null ? neutral : valid ? green : red;
-        segment(x, z, x + size, z, color);
-        segment(x, z, x, z + size, color);
-      }
-    }
-    const result = new BufferGeometry();
-    result.setAttribute("position", new Float32BufferAttribute(positions, 3));
-    result.setAttribute("color", new Float32BufferAttribute(colors, 3));
-    return result;
+  const dots = useMemo(() => {
+    if (!mode) return [];
+    if (state && mode === "asset" && asset) return gridDots((at) => checkAssetPlacement(state, asset, at).ok);
+    if (state && mode === "gun") return gridDots((at) => checkGunPlacement(state, at).ok);
+    return gridDots(null);
   }, [mode, asset, state]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
-  return geometry ? (
-    <lineSegments geometry={geometry} renderOrder={1}>
-      <lineBasicMaterial vertexColors transparent opacity={0.55} depthWrite={false} toneMapped={false} />
-    </lineSegments>
-  ) : null;
+
+  const geometry = useMemo(() => new THREE.CircleGeometry(DOT_RADIUS, 8).rotateX(-Math.PI / 2), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = mesh.current;
+    if (!m) return;
+    const matrix = new THREE.Matrix4();
+    dots.forEach((dot, i) => {
+      matrix.makeTranslation(dot.x, TERRAIN.height(dot.x, dot.z) + DOT_LIFT, dot.z);
+      m.setMatrixAt(i, matrix);
+      m.setColorAt(i, dot.valid ? VALID : NEUTRAL);
+    });
+    m.count = dots.length;
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.computeBoundingSphere();
+  }, [dots]);
+
+  if (!dots.length) return null;
+  return (
+    <instancedMesh ref={mesh} args={[geometry, undefined, dots.length]} renderOrder={1}>
+      <meshBasicMaterial transparent opacity={0.6} depthWrite={false} toneMapped={false} polygonOffset polygonOffsetFactor={-2} />
+    </instancedMesh>
+  );
 }

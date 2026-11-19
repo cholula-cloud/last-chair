@@ -1,7 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
 import { ROAD_Z, SITE } from "./layout";
 import { smoothstep } from "./math";
@@ -10,7 +9,8 @@ import type { Trail } from "@/game/snow";
 import type { LiftLine } from "@/game/descent";
 import { TERRAIN, fbm } from "@/game/terrain";
 import { forestMask } from "./forest";
-import { sceneCameraTarget } from "./sceneCamera";
+import { distanceOutsideLease } from "@/game/lease";
+import { outsideWeight, patchLeaseDim } from "./leaseDim";
 import { buildGeometry } from "./terrainMesh";
 import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
 import type { XZ } from "@/game/terrain";
@@ -29,6 +29,8 @@ function shapeKey(points: readonly unknown[] | undefined): number {
 }
 
 const CANOPY = new THREE.Color(PALETTE.pineDeep);
+/** Distance outside the lease over which the canopy tint reaches full strength. */
+const CANOPY_BAND = 12;
 
 const C = {
   snow: new THREE.Color(PALETTE.snow),
@@ -113,9 +115,9 @@ function paint(
     const bare = Math.max(bareDepth, bareCover);
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
-    const distCam = Math.hypot(x - sceneCameraTarget.x, z - sceneCameraTarget.z);
-    if (distCam > 45 && canGrow(x, z)) {
-      c.lerp(CANOPY, 0.5);
+    // Beyond the lease the forest floor reads as canopy, easing in across the far-forest band.
+    if (canGrow(x, z)) {
+      c.lerp(CANOPY, 0.5 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
     }
 
     col.setXYZ(i, c.r, c.g, c.b);
@@ -141,7 +143,15 @@ export function Terrain({
   pathWidths?: readonly (readonly number[] | undefined)[];
   forestPaths?: readonly (readonly XZ[])[];
 }) {
-  const geometry = useMemo(() => buildGeometry(), []);
+  const geometry = useMemo(() => {
+    const g = buildGeometry();
+    // Weight for the build-mode dimming of land outside the lease.
+    const pos = g.attributes.position;
+    const outside = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) outside[i] = outsideWeight({ x: pos.getX(i), z: pos.getZ(i) });
+    g.setAttribute("aOut", new THREE.BufferAttribute(outside, 1));
+    return g;
+  }, []);
   const q = Math.round(snowQuality * 20) / 20;
   const d = Math.round(snowDepth * 20) / 20;
   const lineKey = lines
@@ -176,28 +186,18 @@ export function Terrain({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, lineKey, pathKey, trails.length]);
 
-  const camBand = useRef("");
-
-  // Repaints when snow changes and when the camera pans enough to move the canopy band.
+  // Repaints when snow or the clearings change. The camera plays no part.
   useLayoutEffect(() => {
     paint(geometry, q, d, trails, influence, canGrow);
   }, [geometry, q, d, trails, influence, canGrow]);
 
-  useFrame(() => {
-    const band = `${Math.round(sceneCameraTarget.x / 6)},${Math.round(sceneCameraTarget.z / 6)}`;
-    if (band === camBand.current) return;
-    camBand.current = band;
-    paint(geometry, q, d, trails, influence, canGrow);
-  });
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const material = useMemo(() => patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true })), []);
+  useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
 
   // Receives only: the hill barely self-shadows at this sun angle, and casting
   // cost ~37k triangles per frame.
   return (
-    <mesh geometry={geometry} receiveShadow>
-      <meshLambertMaterial vertexColors />
-    </mesh>
+    <mesh geometry={geometry} material={material} receiveShadow />
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { BuildGrid } from "./BuildGrid";
+import { LeaseBoundary } from "./LeaseBoundary";
 
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
@@ -548,6 +549,7 @@ export function MountainScene() {
         lines={clearingLines}
       />
       <Road />
+      <LeaseBoundary />
       <BuildGrid />
       {/* Kit (GLB) content; models are preloaded, so this resolves on first load. */}
       <Suspense fallback={null}>

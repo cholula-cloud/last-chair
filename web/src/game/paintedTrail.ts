@@ -1,4 +1,5 @@
 import { rulesFor } from "./descent";
+import { OFF_LEASE_MESSAGE, onLease } from "./lease";
 import type { GameState } from "./state";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
@@ -398,6 +399,7 @@ export function previewPaintedTrail(
     climbFloor = Math.min(climbFloor, height);
     let problem: string | null = null;
     if (!boundsContains(a, terrain) || !boundsContains(b, terrain)) problem = "Keep the trail inside the mountain.";
+    else if (!onLease(a, terrain) || !onLease(b, terrain)) problem = OFF_LEASE_MESSAGE;
     else if ((height - climbFloor) * terrain.feetPerUnit > 16.4) problem = "The trail climbs too far uphill.";
     else if (state.lifts.some((lift) => lift.confirmed
       && crossesLift(a, b, full.path[i + 1], lift.anchor, lift.bottom ?? terrain.base, terrain, baseRadius))) {

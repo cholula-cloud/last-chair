@@ -174,12 +174,13 @@ A lift placement is **valid** iff:
 
 Invalid preview: red ghost; cannot confirm.
 
-**Implemented (PR 12a):** rule 1 is a terrain test; rules 2 and 3 are not yet. A lift is a line `{bottom, top}`; `bottom` is absent on a lift stored without one and means `TERRAIN.base`. `checkLiftLine(line)` in `game/descent.ts` returns `{ok: true, length, vertical}` or `{ok: false, reason}`. Vertical and length are measured from the bottom. Reasons in check order:
+**Implemented (PR 12a):** rule 1 is a terrain test; rules 2 and 3 are not yet. A lift is a line `{bottom, top}`; `bottom` is absent on a lift stored without one and means `TERRAIN.base`. `checkLiftLine(line)` in `game/descent.ts` returns `{ok: true, length, vertical}` or `{ok: false, reason}`. Vertical and length are measured from the bottom. Reasons in check order (`off_lease` is the PR L-C lease rule; painted trails, base assets and snow guns refuse every point outside the lease with the same copy, "Outside the Dutch Hill lease."):
 
 | Code | Fails when |
 |------|-----------|
 | `max_lifts` | `MAX_LIFTS` (3, default lift included) are already open |
 | `off_map` | a terminal is non-finite or outside the map bounds |
+| `off_lease` | a terminal, or any sampled point of the line, is outside the mountain's lease polygon (`game/lease.ts`, `onLease`) |
 | `bottom_far` | the bottom is more than `BASE_AREA_RADIUS` (0.6) from `TERRAIN.base` |
 | `too_steep` | grade at either terminal exceeds `MAX_LOAD_GRADE` (1.25) |
 | `too_low` | vertical is under `MIN_LIFT_VERTICAL` (0.85) |

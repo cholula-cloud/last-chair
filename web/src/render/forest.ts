@@ -1,21 +1,34 @@
-/** Chunked forest placement: candidates per map chunk, tiered by camera distance. */
+/**
+ * Forest placement in world space. Candidates come from a fixed jittered grid, so the
+ * same hill always grows the same trees. Inside the lease every candidate that clears
+ * the clearings stands as a full tree. From the lease edge outward a sparse far tier
+ * keeps the same candidates at a lower density. Nothing here depends on the camera.
+ */
 
 import type { LiftLine } from "@/game/descent";
+import { depthInsideLease, distanceOutsideLease, leaseBounds, onLease } from "@/game/lease";
 import { TERRAIN } from "@/game/terrain";
 import { LODGE, LIFT_BASE, ROAD_Z, SITE, WARMING_HUT_POS } from "./layout";
+import { smoothstep } from "./math";
 import { distSqToLiftLine, distSqToPolyline, pathPolyline, trailPolyline } from "./trail";
 
 export type XZ = { x: number; z: number };
 
 export const CHUNK_SIZE = 32;
-export const NEAR_RADIUS = 12;
-export const MID_RADIUS = 45;
-export const CACHE_DROP_RADIUS = 77;
-export const REBUILD_MOVE = 6;
-
-export const NEAR_DENSITY = 1.5;
-export const MID_KEEP_MAX = 0.36;
 export const GRID_SPACING = 0.82;
+
+/** Width of the band at the lease edge where tree density eases from full to far density. */
+export const FADE_BAND = 6;
+/** Share of candidates the far tier keeps, outside the lease and at its edge. */
+export const FAR_KEEP = 0.09;
+/** Far trees grow to this multiple of a lease tree, so a sparse stand still reads as forest. */
+export const FAR_SCALE = 1.7;
+/** Side of one lease cell, in world units. Each cell is drawn as its own instanced mesh so it can be culled. */
+export const LEASE_CELL = 44;
+/** Far trees thin out to nothing this far beyond the lease; past it the canopy tint on the ground carries the forest. */
+export const FAR_REACH = 85;
+/** Far trees stand only on the part of the terrain mesh that is drawn. */
+export const FAR_AREA = { xMin: -136, xMax: 140, zMin: -104, zMax: 100 };
 
 export const LIFT_CLEAR = 0.9;
 export const TRAIL_CLEAR = 3.84;
@@ -93,31 +106,6 @@ function chunkCandidates(cx: number, cz: number): Candidate[] {
   return out;
 }
 
-const chunkCache = new Map<string, Candidate[]>();
-
-export function chunkKey(cx: number, cz: number) {
-  return `${cx},${cz}`;
-}
-
-export function getChunk(cx: number, cz: number): Candidate[] {
-  const key = chunkKey(cx, cz);
-  let list = chunkCache.get(key);
-  if (!list) {
-    list = chunkCandidates(cx, cz);
-    chunkCache.set(key, list);
-  }
-  return list;
-}
-
-export function pruneChunks(target: XZ) {
-  for (const key of [...chunkCache.keys()]) {
-    const [cx, cz] = key.split(",").map(Number);
-    const mx = (cx + 0.5) * CHUNK_SIZE;
-    const mz = (cz + 0.5) * CHUNK_SIZE;
-    if (Math.hypot(mx - target.x, mz - target.z) > CACHE_DROP_RADIUS) chunkCache.delete(key);
-  }
-}
-
 function inLot(x: number, z: number) {
   const { center, size } = SITE.arrival;
   return (
@@ -170,7 +158,7 @@ export function forestMask(clearings: ForestClearings) {
   const trailSq = TRAIL_CLEAR ** 2;
   return (x: number, z: number) => {
     if (inLot(x, z) || onSpur(x, z) || inApron(x, z) || inMeadow(x, z)) return false;
-    if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH) return false;
+    if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH && x >= SITE.road.xFrom - 1 && x <= SITE.road.xTo + 1) return false;
     if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
     for (const trail of trails) if (distSqToPolyline(x, z, trail) < trailSq) return false;
     for (const line of clearings.lines) if (distSqToLiftLine(x, z, line) < liftSq) return false;
@@ -183,13 +171,11 @@ export function forested(x: number, z: number, clearings: ForestClearings): bool
   return forestMask(clearings)(x, z);
 }
 
-function spotFrom(c: Candidate, dist: number): TreeSpot {
-  const grow = 1 + Math.max(0, dist - 5) * 0.035;
-  const s = (0.78 + hash01(c.x, c.z) * 0.42) * grow;
+function spotFrom(c: Candidate, scale: number): TreeSpot {
   return {
     x: c.x,
     z: c.z,
-    s,
+    s: (0.78 + hash01(c.x, c.z) * 0.42) * scale,
     rot: hash01(c.x, c.z, 2) * Math.PI * 2,
     tint: 0.86 + hash01(c.x, c.z, 3) * 0.2,
     birch: c.birch,
@@ -197,51 +183,88 @@ function spotFrom(c: Candidate, dist: number): TreeSpot {
   };
 }
 
-export function shouldRebuildForest(target: XZ, last: XZ | null): boolean {
-  if (!last) return true;
-  return Math.hypot(target.x - last.x, target.z - last.z) > REBUILD_MOVE;
-}
-
-export type ForestTiers = {
-  near: TreeSpot[][];
-  birch: TreeSpot[];
-  mid: TreeSpot[];
-};
-
-export function forestForTarget(target: XZ, clearings: ForestClearings): ForestTiers {
-  pruneChunks(target);
-  const near: TreeSpot[][] = [[], [], []];
-  const birch: TreeSpot[] = [];
-  const mid: TreeSpot[] = [];
-  const minCx = Math.floor((target.x - MID_RADIUS) / CHUNK_SIZE);
-  const maxCx = Math.floor((target.x + MID_RADIUS) / CHUNK_SIZE);
-  const minCz = Math.floor((target.z - MID_RADIUS) / CHUNK_SIZE);
-  const maxCz = Math.floor((target.z + MID_RADIUS) / CHUNK_SIZE);
-  const canGrow = forestMask(clearings);
+/** Candidates of every chunk that touches a rectangle. */
+function candidatesIn(area: { xMin: number; xMax: number; zMin: number; zMax: number }): Candidate[] {
+  const out: Candidate[] = [];
+  const minCx = Math.floor(area.xMin / CHUNK_SIZE);
+  const maxCx = Math.floor(area.xMax / CHUNK_SIZE);
+  const minCz = Math.floor(area.zMin / CHUNK_SIZE);
+  const maxCz = Math.floor(area.zMax / CHUNK_SIZE);
   for (let cz = minCz; cz <= maxCz; cz++) {
     for (let cx = minCx; cx <= maxCx; cx++) {
-      for (const c of getChunk(cx, cz)) {
-        const dist = Math.hypot(c.x - target.x, c.z - target.z);
-        if (dist > MID_RADIUS || (dist > NEAR_RADIUS && c.keep >= MID_KEEP_MAX)) continue;
-        if (!canGrow(c.x, c.z)) continue;
-        if (dist <= NEAR_RADIUS && c.keep < 1) {
-          const p = spotFrom(c, dist);
-          if (p.birch) birch.push(p);
-          else near[(p.variant % 3) as 0 | 1 | 2].push(p);
-        } else if (c.keep < MID_KEEP_MAX) {
-          mid.push(spotFrom(c, dist));
-        }
+      for (const c of chunkCandidates(cx, cz)) {
+        if (c.x >= area.xMin && c.x <= area.xMax && c.z >= area.zMin && c.z <= area.zMax) out.push(c);
       }
     }
   }
-  return { near, birch, mid };
+  return out;
 }
 
-/** For tests: expose cache without distance filter. */
+/**
+ * The share of candidates that keep a tree at (x, z). It is 1 deep inside the lease,
+ * eases down to {@link FAR_KEEP} across {@link FADE_BAND} units at the lease edge, and
+ * stays at {@link FAR_KEEP} beyond it, so the two tiers meet at the same density.
+ */
+export function keepShare(p: XZ): number {
+  if (!onLease(p)) return FAR_KEEP;
+  return FAR_KEEP + (1 - FAR_KEEP) * smoothstep(0, FADE_BAND, depthInsideLease(p));
+}
+
+let leaseCandidates: Candidate[] | null = null;
+
+/** One cell of the lease forest, drawn as its own instanced meshes. */
+export type LeaseCell = {
+  key: string;
+  pines: TreeSpot[];
+  birch: TreeSpot[];
+};
+
+/**
+ * Every tree standing on the lease, grouped into fixed cells. Recompute only when
+ * lifts, trails or cleared cells change.
+ */
+export function leaseForest(clearings: ForestClearings): LeaseCell[] {
+  const bounds = leaseBounds();
+  leaseCandidates ??= candidatesIn(bounds).filter((c) => onLease(c));
+  const canGrow = forestMask(clearings);
+  const cells = new Map<string, LeaseCell>();
+  for (const c of leaseCandidates) {
+    if (c.keep >= keepShare(c) || !canGrow(c.x, c.z)) continue;
+    const cx = Math.floor((c.x - bounds.xMin) / LEASE_CELL);
+    const cz = Math.floor((c.z - bounds.zMin) / LEASE_CELL);
+    const key = `${cx},${cz}`;
+    let cell = cells.get(key);
+    if (!cell) cells.set(key, (cell = { key, pines: [], birch: [] }));
+    (c.birch ? cell.birch : cell.pines).push(spotFrom(c, 1));
+  }
+  return [...cells.values()].sort((a, b) => (a.key < b.key ? -1 : 1));
+}
+
+let farTrees: TreeSpot[] | null = null;
+
+/** Sparse trees from the lease edge to the edge of the drawn terrain. Built once; the lease never moves. */
+export function farForest(): TreeSpot[] {
+  if (farTrees) return farTrees;
+  const canGrow = forestMask({ lines: [] });
+  const out: TreeSpot[] = [];
+  for (const c of candidatesIn(FAR_AREA)) {
+    if (c.keep >= FAR_KEEP || onLease(c)) continue;
+    const away = distanceOutsideLease(c);
+    if (c.keep >= FAR_KEEP * (1 - smoothstep(FAR_REACH * 0.55, FAR_REACH, away)) || !canGrow(c.x, c.z)) continue;
+    // Grow from lease size at the edge to full far size, so the tiers meet at the same height.
+    const grow = 1 + (FAR_SCALE - 1) * smoothstep(0, FADE_BAND * 2, away);
+    out.push(spotFrom(c, grow));
+  }
+  farTrees = out;
+  return out;
+}
+
+/** For tests: the candidates of one chunk. */
 export function _chunkSpots(cx: number, cz: number) {
-  return getChunk(cx, cz);
+  return chunkCandidates(cx, cz);
 }
 
-export function _clearChunkCache() {
-  chunkCache.clear();
+export function _clearForestCache() {
+  leaseCandidates = null;
+  farTrees = null;
 }
