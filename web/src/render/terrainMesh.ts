@@ -13,13 +13,13 @@ export function gridZ(s: number) {
 }
 
 /** Vertex positions (x, y, z per vertex, row by row); every y is `TERRAIN.height(x, z)`. */
-export function buildPositions(): Float32Array {
-  const positions = new Float32Array((NX + 1) * (NZ + 1) * 3);
+export function buildPositions(cols = NX, rows = NZ): Float32Array {
+  const positions = new Float32Array((cols + 1) * (rows + 1) * 3);
   let p = 0;
-  for (let j = 0; j <= NZ; j++) {
-    const z = gridZ((j / NZ) * 2 - 1);
-    for (let i = 0; i <= NX; i++) {
-      const x = gridX((i / NX) * 2 - 1);
+  for (let j = 0; j <= rows; j++) {
+    const z = gridZ((j / rows) * 2 - 1);
+    for (let i = 0; i <= cols; i++) {
+      const x = gridX((i / cols) * 2 - 1);
       positions[p++] = x;
       positions[p++] = TERRAIN.height(x, z);
       positions[p++] = z;
@@ -28,14 +28,16 @@ export function buildPositions(): Float32Array {
   return positions;
 }
 
-export function buildGeometry() {
-  const positions = buildPositions();
+export function buildGeometry(lowDetail = false) {
+  const cols = lowDetail ? NX / 2 : NX;
+  const rows = lowDetail ? NZ / 2 : NZ;
+  const positions = buildPositions(cols, rows);
   const indices: number[] = [];
-  for (let j = 0; j < NZ; j++) {
-    for (let i = 0; i < NX; i++) {
-      const a = j * (NX + 1) + i;
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const a = j * (cols + 1) + i;
       const b = a + 1;
-      const c = a + (NX + 1);
+      const c = a + (cols + 1);
       const d = c + 1;
       indices.push(a, c, b, b, c, d);
     }

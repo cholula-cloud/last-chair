@@ -9,7 +9,7 @@ import { openingStep } from "@/game/rules";
 import { operatingGoalText } from "@/game/winterArc";
 import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
-import { daysLeftLine, goalChips } from "@/game/goals";
+import { daysLeftLine, goalChips, goalInputs } from "@/game/goals";
 import { useGameStore } from "@/game/store";
 import type { WeatherKind } from "@/game/types";
 import { outlookFor } from "@/game/weather";
@@ -80,7 +80,7 @@ export function DeskTab() {
   }, [state]);
   const radioEnabled = useSettings(s => s.radioEnabled);
   const radio = latestRadio(state);
-  const chips = goalChips(state);
+  const chips = goalChips(goalInputs(state));
   const weather = WEATHER[state.weather];
   const hasTomorrow = outlookFor(state, 1) !== null;
 
@@ -95,7 +95,7 @@ export function DeskTab() {
         <p className="mt-2 text-[1.05rem] font-bold leading-snug">{tidy(state.morningHeadline)}</p>
       </section>
 
-      <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength)}>Winter goal</SectionHeading>
+      <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength, state.outcome !== "playing")}>Winter goal</SectionHeading>
       <p className="panel mb-2 px-4 py-3 font-bold">{formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(MOUNTAIN_CALENDARS[state.mountainId], state.dayHistory)}</p>
       <ul aria-label="Winter goal" className="panel divide-y-2 divide-snow-2 px-4">
         {chips.map((chip) => (
@@ -103,17 +103,17 @@ export function DeskTab() {
             <span
               aria-hidden="true"
               className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 border-ink ${
-                chip.done ? "bg-sign-green text-white" : "bg-white"
+                chip.status === "Done" ? "bg-sign-green text-white" : "bg-white"
               }`}
             >
-              {chip.done && <CheckIcon size={14} />}
+              {chip.status === "Done" && <CheckIcon size={14} />}
             </span>
             <div className="min-w-0">
               <p className="text-[1rem] font-extrabold leading-tight">
                 {chip.label}
-                <span className="sr-only">{chip.done ? ", done" : ", not done"}</span>
+                <span className="sr-only">{`, ${chip.status}`}</span>
                 <span aria-hidden="true" className="ml-2 text-[0.82rem] font-bold text-ink-soft">
-                  {chip.done ? "Done" : "To do"}
+                  {chip.status}
                 </span>
               </p>
               <p className="mt-0.5 text-[0.95rem] font-bold leading-snug text-ink-soft">{chip.explainer}</p>

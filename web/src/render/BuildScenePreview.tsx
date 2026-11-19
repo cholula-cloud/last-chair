@@ -15,7 +15,8 @@ import { PALETTE } from "./palette";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
 
-function TerrainRing({ at, radius, color, guide = false }: {
+function TerrainRing({ at, radius, color, guide = false, name }: {
+  name?: string;
   at: XZ;
   radius: number;
   color: string;
@@ -46,7 +47,7 @@ function TerrainRing({ at, radius, color, guide = false }: {
   }, [at, guide, radius]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   if (guide) return (
-    <mesh geometry={geometry} renderOrder={3}>
+    <mesh name={name} geometry={geometry} renderOrder={3}>
       <meshBasicMaterial color={color} />
     </mesh>
   );
@@ -132,7 +133,7 @@ function TrailPreview() {
           problemSegments={painted.problemSegments} live={!!activeStroke} />
       )}
       {continuation && !review && !activeStroke && !erasing && !moveCamera && (
-        <TerrainRing guide at={continuation} radius={0.4} color={PALETTE.marker} />
+        <TerrainRing name="trail-continuation" guide at={continuation} radius={0.4} color={PALETTE.marker} />
       )}
       <BrushCursor />
     </>

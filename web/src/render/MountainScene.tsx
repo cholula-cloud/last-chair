@@ -42,7 +42,7 @@ const AZIMUTH_RANGE = 1.4;
 
 const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 
-export function MountainScene({ coaching = false }: { coaching?: boolean }) {
+export function MountainScene({ coaching = false, lowDetail = false }: { coaching?: boolean; lowDetail?: boolean }) {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
@@ -103,6 +103,7 @@ export function MountainScene({ coaching = false }: { coaching?: boolean }) {
       <RenderStats />
       <Atmosphere />
       <Terrain
+        lowDetail={lowDetail}
         snowQuality={terrainSnow}
         snowDepth={snowDepth}
         trails={trailSnow}
@@ -119,7 +120,7 @@ export function MountainScene({ coaching = false }: { coaching?: boolean }) {
         <Village />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
         <SnowGuns />
-        <Trees lines={clearingLines} paths={forestPaths} />
+        <Trees lowDetail={lowDetail} lines={clearingLines} paths={forestPaths} />
 
         {trailRuns.map((run, ti) => {
           if (!run.open || !lifts[run.liftIndex]?.confirmed) return null;

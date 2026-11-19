@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { nextTip, type CoachContext } from "@/game/coach";
 import { useGameStore } from "@/game/store";
 import { useSettings } from "@/ui/settingsStore";
+import { LiveMessage } from "./kit/LiveMessage";
 import { CloseIcon } from "@/ui/kit/icons";
 
 /**
@@ -28,11 +29,10 @@ export function CoachTip({ context }: { context: Omit<CoachContext, "enabled"> }
   if (!tip) return null;
   return (
     <aside
-      role="status"
       aria-label="Tip"
       className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-center gap-2 py-1 pl-3 pr-1.5 [--lift:3px]"
     >
-      <p className="min-w-0 flex-1 text-[0.9rem] font-extrabold leading-snug">{tip.text}</p>
+      <p className="min-w-0 flex-1 text-[0.9rem] font-extrabold leading-snug"><LiveMessage>{tip.text}</LiveMessage></p>
       <button
         type="button"
         onClick={() => markTipSeen(tip.id)}

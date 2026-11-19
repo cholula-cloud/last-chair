@@ -128,6 +128,7 @@ function paint(
 }
 
 export function Terrain({
+  lowDetail,
   snowQuality,
   snowDepth,
   trails,
@@ -136,6 +137,7 @@ export function Terrain({
   pathWidths,
   forestPaths,
 }: {
+  lowDetail: boolean;
   snowQuality: number;
   snowDepth: number;
   /** Trail snow, one entry per run (see `snowKey`). */
@@ -146,7 +148,7 @@ export function Terrain({
   forestPaths?: readonly (readonly XZ[])[];
 }) {
   const geometry = useMemo(() => {
-    const g = buildGeometry();
+    const g = buildGeometry(lowDetail);
     // Weight for the build-mode dimming of land outside the lease.
     const pos = g.attributes.position;
     const outside = new Float32Array(pos.count);
@@ -158,7 +160,7 @@ export function Terrain({
     for (let i = 0; i < pos.count; i++) pitch[i] = TERRAIN.grade(pos.getX(i), pos.getZ(i)) * factor;
     g.setAttribute("aPitch", new THREE.BufferAttribute(pitch, 1));
     return g;
-  }, []);
+  }, [lowDetail]);
   const q = Math.round(snowQuality * 20) / 20;
   const d = Math.round(snowDepth * 20) / 20;
   const lineKey = lines
@@ -199,7 +201,8 @@ export function Terrain({
   }, [geometry, q, d, trails, influence, canGrow]);
 
   const material = useMemo(() => patchOverlay(patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true }))), []);
-  useEffect(() => () => { geometry.dispose(); material.dispose(); }, [geometry, material]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => material.dispose(), [material]);
 
   // Receives only: the hill barely self-shadows at this sun angle, and casting
   // cost ~37k triangles per frame.

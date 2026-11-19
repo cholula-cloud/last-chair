@@ -48,6 +48,9 @@ jobs:
           trap 'kill "$!"' EXIT
           curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
           npm run playtest:p1
+          if [[ "$PLAYTEST_VIEWPORTS" == "375x667" ]]; then
+            PLAYTEST_ENGINE="$PLAYTEST_ENGINES" npm run playtest:accessibility
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:

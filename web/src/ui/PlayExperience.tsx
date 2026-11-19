@@ -88,7 +88,18 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     target?.focus({ preventScroll: true });
   }, [officeOpen]);
 
-  const lowGraphics = useSettings(s => s.graphicsQuality === "low");
+  const [softwareRenderer, setSoftwareRenderer] = useState(false);
+  const [softwareDpr, setSoftwareDpr] = useState(0.75);
+  useEffect(() => {
+    if (!softwareRenderer) return;
+    // Bound software rasterization cost as the canvas grows. HUD text stays at native resolution.
+    const resize = () => setSoftwareDpr(Math.min(0.75, Math.sqrt(220_000 / (window.innerWidth * window.innerHeight))));
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [softwareRenderer]);
+  const preferLowGraphics = useSettings(s => s.graphicsQuality === "low");
+  const lowGraphics = preferLowGraphics || softwareRenderer;
   const tipsEnabled = useSettings(s => s.tips);
   const coachPending = useCoach(s => s.index < TIPS.length);
   const coaching = tipsEnabled && coachPending;
@@ -227,15 +238,22 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
         shadows={lowGraphics ? false : "percentage"}
-        dpr={lowGraphics ? 1 : [1, 2]}
+        dpr={softwareRenderer ? softwareDpr : lowGraphics ? 1 : [1, 2]}
+        onCreated={({ gl }) => {
+          const context = gl.getContext();
+          const info = context.getExtension("WEBGL_debug_renderer_info");
+          if (info) setSoftwareRenderer(/swiftshader|llvmpipe|softpipe|software rasterizer/i.test(
+            context.getParameter(info.UNMASKED_RENDERER_WEBGL),
+          ));
+        }}
         camera={{ position: [48, 78, 132], fov: 45, near: 0.1, far: 1000 }}
         gl={{
-          antialias: true,
+          antialias: window.devicePixelRatio < 2,
           powerPreference: "high-performance",
           toneMapping: NeutralToneMapping,
         }}
       >
-        <MountainScene coaching={coaching && dayIndex === 1} />
+        <MountainScene lowDetail={lowGraphics} coaching={coaching && dayIndex === 1} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}

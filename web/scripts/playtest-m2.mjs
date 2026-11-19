@@ -88,21 +88,32 @@ export async function project(page, locations) {
     // Read R3F's live camera from its Canvas rootState ref. No debug state is
     // exposed in the game. Points are projected only; pointer input is real.
     const handle = Object.keys(canvas).find((name) => name.startsWith("__reactFiber$"));
-    let camera;
-    for (let fiber = handle && canvas[handle]; fiber && !camera; fiber = fiber.return) {
+    let root;
+    for (let fiber = handle && canvas[handle]; fiber && !root; fiber = fiber.return) {
       if (fiber.stateNode instanceof Element) continue;
       for (let hook = fiber.memoizedState; hook; hook = hook.next) {
         const state = hook.memoizedState?.current;
         if (state?.gl?.domElement === canvas) {
-          camera = state.camera;
+          root = state;
           break;
         }
       }
     }
-    if (!camera) throw new Error("Could not read the live mountain camera");
+    if (!root) throw new Error("Could not read the live mountain camera");
+    const { camera, scene } = root;
     const box = canvas.getBoundingClientRect();
-    return points.map(([x, y, z]) => {
-      const point = camera.position.clone().set(x, y, z).project(camera);
+    return points.map(location => {
+      const point = camera.position.clone();
+      if (location === "trail-continuation") {
+        const ring = scene.getObjectByName(location);
+        if (!ring) throw new Error("The trail continuation ring is not visible");
+        ring.geometry.computeBoundingBox();
+        ring.geometry.boundingBox.getCenter(point);
+        ring.localToWorld(point);
+      } else {
+        point.set(...location);
+      }
+      point.project(camera);
       return {
         x: box.left + (1 + point.x) * box.width / 2,
         y: box.top + (1 - point.y) * box.height / 2,
@@ -205,7 +216,9 @@ async function paintTrail(page, cdp, top, resume = false) {
     assert(await page.locator('[data-overlay-legend="slope"]').isVisible(), "The slope legend shows while painting");
     await drag(page, cdp, locations.slice(0, 3));
     await moveDraftMap(page, cdp, locations[2], "Paint");
-    await drag(page, cdp, locations.slice(2));
+    // Edge pan can move the terrain under a held finger before release. Resume
+    // at the rendered endpoint a player sees after panning, not the planned one.
+    await drag(page, cdp, ["trail-continuation", ...locations.slice(3)]);
     await click(page, "Undo");
     await click(page, "Redo");
   } else {

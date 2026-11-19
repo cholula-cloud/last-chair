@@ -58,7 +58,7 @@ function build(pos: number[], col: number[], normals?: number[]): THREE.BufferGe
 }
 
 /** Three stacked four-sided cones, 1 unit tall and 1 wide: 12 triangles. */
-function leasePine(): THREE.BufferGeometry {
+function leasePine(lowDetail: boolean): THREE.BufferGeometry {
   const pos: number[] = [];
   const col: number[] = [];
   const tiers: Tier[] = [
@@ -66,7 +66,11 @@ function leasePine(): THREE.BufferGeometry {
     { y0: 0.3, y1: 0.7, r: 0.36, base: PALETTE.pine },
     { y0: 0.56, y1: 1, r: 0.22, base: PALETTE.pineCool },
   ];
-  tiers.forEach((t, i) => pushCone(pos, col, t, 4, i * (Math.PI / 4)));
+  if (lowDetail) {
+    pushCone(pos, col, { ...tiers[0], y1: 1 }, 4, 0);
+  } else {
+    tiers.forEach((t, i) => pushCone(pos, col, t, 4, i * (Math.PI / 4)));
+  }
   return build(pos, col);
 }
 
@@ -239,18 +243,18 @@ function FarTrees({ geo, spots }: { geo: THREE.BufferGeometry; spots: readonly T
  * that are culled separately; a sparse far tier of crossed planes fills the rest of the
  * map in one draw call. Only a change to lifts, trails or cleared cells rebuilds the lease.
  */
-export const Trees = memo(function Trees({ lines, paths }: ForestClearings) {
+export const Trees = memo(function Trees({ lines, paths, lowDetail }: ForestClearings & { lowDetail: boolean }) {
   const shared = useMemo<Shared>(
-    () => ({ pine: leasePine(), birch: leaseBirch(), proxy: shadowProxy() }),
-    [],
+    () => ({ pine: leasePine(lowDetail), birch: leaseBirch(), proxy: shadowProxy() }),
+    [lowDetail],
   );
   const far = useMemo(() => farTree(), []);
   useEffect(() => () => {
     shared.pine.dispose();
     shared.birch.dispose();
     shared.proxy.dispose();
-    far.dispose();
-  }, [shared, far]);
+  }, [shared]);
+  useEffect(() => () => far.dispose(), [far]);
 
   const clearedCells = useGameStore((s) => s.clearedCells);
   const cells = useMemo(() => leaseForest({ lines, paths }), [lines, paths]);
@@ -275,4 +279,4 @@ export const Trees = memo(function Trees({ lines, paths }: ForestClearings) {
       <FarTrees geo={far} spots={farSpots} />
     </group>
   );
-}, sameForestClearings);
+}, (prev, next) => prev.lowDetail === next.lowDetail && sameForestClearings(prev, next));

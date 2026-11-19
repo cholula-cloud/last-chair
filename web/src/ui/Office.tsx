@@ -5,12 +5,13 @@ import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/ga
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
 import { CREW_TALENTS, founderById } from "@/game/content";
-import { dailyCosts, liquidNetWorth, morningCash, payoffAmount } from "@/game/economy";
+import { dailyCosts, morningCash, payoffAmount } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import type { GameState } from "@/game/state";
 import { FARE_LABELS, FARE_PRICES } from "@/game/types";
+import { goalChips, goalInputs } from "@/game/goals";
 import { schoolMemory } from "@/game/winterMemory";
 import { StoryEntries } from "./StoryLog";
 
@@ -81,9 +82,9 @@ export function Crew({ s }: { s: GameState }) {
     <Section title="Lodge"><p>Tier {s.lodgeTier} · {tier.label} · {tier.stalls} parking spaces</p>
       {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads. {lodgeTierUnlocks(nextTier).join(", ")}</p>}
       {s.lodgeUpgrade && <p>Upgrade underway · {s.lodgeUpgrade.nightsRemaining} nights remaining.</p>}</Section>
-    <Section title="Goal checklist"><p>Finish day {s.seasonLength} solvent · {formatMoney(liquidNetWorth(s))} after bills today.</p>
+    <Section title="Goal checklist">
+      {goalChips(goalInputs(s)).map(goal => <p key={goal.id}><strong>{goal.label} · {goal.status}.</strong> {goal.explainer}</p>)}
       <p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p>
-      {s.schoolContract && <p>Readsboro goal · {s.schoolContract.decision === "accepted" && s.schoolContract.pupilsTaught === null && s.outcome === "playing" ? `Booked for day ${s.schoolContract.day}.` : schoolMemory(s.schoolContract)}</p>}
       <p>{s.outcome !== "playing" && s.lastWinter?.score ? `Winter score ${s.lastWinter.score.total}/100` : "The final winter score is calculated at review."}</p></Section>
     {founder && <Section title={founder.name}><p>{founder.bonus}</p><p>{founder.constraint}</p></Section>}
     <Section title="Crew talents">{next && <p><strong>Next · {next.name}</strong> ({next.crew}). {next.effect}</p>}

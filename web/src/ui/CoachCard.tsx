@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { LiveMessage } from "./kit/LiveMessage";
 import { activeTip, COACH_INTROS, TIPS } from "@/game/coach";
 import { openingStep } from "@/game/rules";
 import { founderById } from "@/game/content";
@@ -73,7 +74,7 @@ export function CoachCard({ slot }: { slot: "day" | "recap-problem" | "fare" | "
   const name = founderById(founder)?.name ?? founder;
   return (
     <div ref={card} className="coach-card panel pointer-events-auto my-1 max-w-md px-3 py-1 text-base leading-tight">
-      <p role="status" aria-live="polite"><strong>{name}</strong> · {step === 0 ? COACH_INTROS[founder] : TIPS[step][1]}</p>
+      <p><LiveMessage><strong>{name}</strong> · {step === 0 ? COACH_INTROS[founder] : TIPS[step][1]}</LiveMessage></p>
       <div className="flex gap-4">
         <button type="button" className="min-h-11 min-w-11 px-1 font-bold underline" onClick={() => useCoach.getState().next(step)}>Next</button>
         <button type="button" className="min-h-11 min-w-11 px-1 underline" onClick={() => useCoach.getState().skip()}>Skip tips</button>
