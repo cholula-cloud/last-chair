@@ -94,18 +94,26 @@ try {
     await slider.press("ArrowRight");
     assert.equal(await slider.inputValue(), "5");
   }
-  for (const name of ["Sound", "Voice", "Coach tips", "Captions", "Reduce motion", "Large text", "Low graphics", "Pattern aids"]) {
+  for (const name of ["Sound", "Voice", "Coach tips", "Captions", "Large text", "Low graphics", "Pattern aids"]) {
     await touchTarget(button(name));
     await press(name);
   }
+  for (const mode of ["system", "on", "off"]) {
+    const motion = button(`Reduce motion ${mode}`);
+    await touchTarget(motion);
+    await motion.press("Space");
+  }
+  await press("Reduce motion system");
   await fits();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("last-chair-settings")).state);
   assert.equal(saved.masterVolume, 5);
   assert.equal(saved.muted, true);
   assert.equal(saved.patternAids, false);
   assert.equal(saved.graphicsQuality, "low");
+  assert.equal(saved.reduceMotion, "on");
   await page.reload({ waitUntil: "domcontentloaded" });
   await press("Settings");
+  await button("Reduce motion on").waitFor();
   assert.equal(await button("Large text").getAttribute("aria-pressed"), "true");
   assert.equal(await page.evaluate(() => parseInt(getComputedStyle(document.documentElement).fontSize)), 19);
   await press("Back");
@@ -122,7 +130,7 @@ try {
   await checkQuietRecap(false);
   await checkQuietRecap(true);
   assert.deepEqual(errors, []);
-  console.log(engine + ": 4 named sliders, 8 toggles, 44px targets, saved large text, silent captions, named dialogs and keyboard story progression, motion-free recaps, and single coach/radio announcements passed at 375×667.");
+  console.log(engine + ": 4 named sliders, 7 toggles, 3 reduce-motion modes, 44px targets, saved motion and large-text preferences, silent captions, named dialogs and keyboard story progression, motion-free recaps, and single coach/radio announcements passed at 375×667.");
 } finally {
   await browser.close();
 }
