@@ -389,7 +389,7 @@ async function gustyDay(page, engine) {
     key: SAVE_KEY, value: JSON.stringify({ state: toPersisted(state), version: SAVE_VERSION }),
   });
   await openPlay(page);
-  await page.getByRole("status").filter({ hasText: "Chair on wind hold until 1 PM" }).waitFor();
+  await page.getByRole("status").filter({ hasText: "Wind’s holding the chair until 1 PM" }).waitFor();
   await screenshot(page, engine, "wind-hold");
   await closeHill(page);
   await page.getByRole("group", { name: "Two-day forecast" }).scrollIntoViewIfNeeded();

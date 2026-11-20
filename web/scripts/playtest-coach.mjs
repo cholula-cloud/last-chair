@@ -42,18 +42,18 @@ try {
     await enterGame(page);
     const press = label => page.getByRole("button", { name: label, exact: true }).tap();
     const tip = page.getByRole("complementary", { name: "Tip", exact: true });
-    await tip.getByText("Tap the speed button to make the day go faster.").waitFor();
+    await tip.getByText("Tap the speed button to hurry the day along.").waitFor();
     assert.equal(await tip.count(), 1);
     await page.getByRole("button", { name: /Game speed/ }).waitFor();
     await press("Dismiss tip");
     await tip.waitFor({ state: "hidden" });
 
     await press("Build");
-    await tip.getByText("The lease line shows the land you may build on.").waitFor();
+    await tip.getByText("The dashed lease line marks where you can build. Past it, it’s somebody else’s woods.").waitFor();
     await press("Dismiss tip");
     await press("Review Tier 2 upgrade");
     await press("Start lodge upgrade");
-    await page.getByText(/Tier 2 under construction/).waitFor();
+    await page.getByText(/Tier 2 is going up/).waitFor();
     await press("Close build sheet");
     await page.reload({ waitUntil: "domcontentloaded" });
     await enterGame(page);

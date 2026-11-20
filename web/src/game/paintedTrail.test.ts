@@ -187,7 +187,7 @@ describe("trail paint geometry", () => {
     const split = previewPaintedTrail(state, [stroke(meander.slice(1, 3), 100, true)], slope);
     expect(split.reason).toMatch(/reconnect/i);
     const only = previewPaintedTrail(state, [erase], slope);
-    expect(only.reason).toMatch(/needs an open trail/i);
+    expect(only.reason).toMatch(/at least one open trail/i);
     const second = existing([p(0, 0), p(6, 8), p(6, 15), slope.base]);
     const removable = previewPaintedTrail({ ...state, trails: [existing(), second] }, [erase], slope);
     expect(removable.reason).toBeNull();

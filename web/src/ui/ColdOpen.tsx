@@ -182,7 +182,7 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
           {card.caption}
         </p>}
         <p className="text-[0.85rem] font-extrabold text-white/80">
-          {index + 1} of {COLD_OPEN_CARDS.length}.{index < last ? " Tap or press Space for the next card." : ""}
+          Card {index + 1} of {COLD_OPEN_CARDS.length}.{index < last ? " Tap or press Space for the next one." : ""}
         </p>
         {index >= last && (
           <button

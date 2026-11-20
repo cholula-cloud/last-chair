@@ -123,7 +123,7 @@ export function LayerPanel({ layer }: { layer: SnowLayer }) {
                   Forecast chances:{" "}
                   {Object.entries(model.forecast)
                     .map(([kind, odds]) => `${kind} ${Math.round(odds * 100)}%`)
-                    .join(" · ")}
+                    .join(", ")}
                   .
                 </p>
               )}
@@ -138,15 +138,15 @@ export function LayerPanel({ layer }: { layer: SnowLayer }) {
       />
       <p className="text-xs font-bold">
         {layer === "depth"
-            ? "Dashed lines mark the 0.15 depth boundary."
+            ? "Dashed lines mark where depth hits 0.15."
             : layer === "guns"
               ? "Pipe lines connect guns to the base. Rings show their reach."
               : time === "Close"
-                ? "Close projects the rest of today’s skiing."
+                ? "Close looks ahead to the end of today’s skiing."
                 : time === "Tomorrow"
-                  ? "Tomorrow combines overnight service with the weather forecast."
+                  ? "Tomorrow adds your overnight service to the forecast."
                   : ""}{" "}
-        Tap or hold the hill to inspect a point.
+        Tap or hold the hill to check a spot.
       </p>
       {read && (
         <div role="status" className="border-t border-ink pt-1 text-xs">

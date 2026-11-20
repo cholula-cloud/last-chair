@@ -34,7 +34,7 @@ export function GoalStrip() {
               <span aria-hidden="true" className="grid size-4 shrink-0 place-items-center rounded-full border-2 border-current text-[0.65rem] leading-none">
                 {chip.status === "Done" ? "✓" : ""}
               </span>
-              {chip.label}{chip.id === "solvent" && ` · ${chip.status}`}
+              {chip.label}{chip.id === "solvent" && `, ${chip.status.toLowerCase()}`}
             </button>
           </li>
         ))}

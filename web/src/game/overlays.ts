@@ -91,10 +91,10 @@ export const SLOPE_LEGEND: readonly LegendEntry[] = [
 ];
 
 const BAND_SENTENCE: Record<SlopeBand, string> = {
-  green: "This ground is green. It is gentle enough for beginners.",
-  blue: "This ground is blue. It suits intermediate skiers.",
-  black: "This ground is black. It is steep.",
-  "double-black": "This ground is double black. It is too steep for a painted trail.",
+  green: "Green ground. Gentle enough for first-timers.",
+  blue: "Blue ground. Good for intermediate skiers.",
+  black: "Black ground. Steep. Bring your nerve.",
+  "double-black": "Double black ground. Too steep for a painted trail.",
 };
 
 /** Feet above the base, rounded to ten. */
@@ -105,7 +105,7 @@ export function feetAboveBase(at: XZ, terrain: Terrain = TERRAIN): number {
 
 export function slopeReadout(at: XZ, ctx: ReadoutContext): Readout {
   if (!onLease(at, ctx.terrain)) {
-    return { headline: "This ground is outside the Dutch Hill lease.", chips: [] };
+    return { headline: "That’s outside the Dutch Hill lease. Build inside the dashed line.", chips: [] };
   }
   const pitch = pitchAt(at, ctx.terrain);
   const band = slopeBand(pitch);

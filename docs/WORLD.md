@@ -194,6 +194,7 @@ In **Sandbox** (optional **ICR Complex** later), player may pick talents manuall
 - New England **specific, not parody**—no excessive “wicked” tone.
 - Humor from **operations** (corduroy, lift tickets, chowder), not from mocking guests.
 - Abominable Snowglomerate speaks corporate-plain; locals speak concrete (*“the T-bar sounded like a coffee grinder”*).
+- Player-facing copy follows the Voice section of [ART_DIRECTION.md](ART_DIRECTION.md#voice) (wry Vermont local); that section is the authority if this file disagrees.
 
 ---
 

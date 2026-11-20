@@ -71,7 +71,7 @@ type GameStore = GameState & GameActions & { saveNotice: string | null };
 type SavedRead = PersistedState & { saveNotice?: string };
 
 const M2_SAVE_KEYS = ["last-chair-v1", "last-chair-v1-backup"];
-const SAVE_NOTICE = "Your last winter couldn’t be loaded on this version. Starting fresh.";
+const SAVE_NOTICE = "This version couldn’t read your last winter, so you’re starting fresh.";
 
 /** Minimum wall time between writes during the day. Other triggers write immediately. */
 export const DAY_WRITE_INTERVAL_MS = 10_000;

@@ -17,7 +17,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 }, hasTouch: true });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  const notice = page.getByRole("status").filter({ hasText: "Your last winter couldn’t be loaded on this version. Starting fresh." });
+  const notice = page.getByRole("status").filter({ hasText: "This version couldn’t read your last winter, so you’re starting fresh." });
   const dismiss = page.getByRole("button", { name: "Dismiss save notice" });
 
   await page.goto(`${base}/play/`, { waitUntil: "domcontentloaded" });
@@ -41,7 +41,7 @@ try {
   assert.ok(before, "Picking a founder starts an M3 save");
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /^Continue/ }).tap();
-  await page.getByText("Build your first lift", { exact: true }).waitFor({ timeout: 20000 });
+  await page.getByText("First job: string up a lift", { exact: true }).waitFor({ timeout: 20000 });
   // Continue refreshes the "last played" time (savedAt); the winter itself must be unchanged.
   const withoutSavedAt = (raw) => {
     const parsed = JSON.parse(raw);

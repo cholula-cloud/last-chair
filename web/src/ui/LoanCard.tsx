@@ -21,7 +21,7 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
   const amount = formatMoney(LOAN_TERMS.principal);
 
   if (repaid > 0) {
-    return <p role="status" className="chip mt-3 px-3.5 py-3 font-bold">Winter loan repaid. {formatMoney(repaid)} paid to the bank.</p>;
+    return <p role="status" className="chip mt-3 px-3.5 py-3 font-bold">Winter loan repaid. The bank has its {formatMoney(repaid)} and you have your sleep back.</p>;
   }
 
   if (loan) {
@@ -34,7 +34,7 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
             Repay the loan
           </button>
         ) : (
-          <p className="mt-1 text-sm font-bold text-ink-soft">Repayment opens when the remaining morning cash would be at least {RESERVE}.</p>
+          <p className="mt-1 text-sm font-bold text-ink-soft">You can repay once the payment still leaves at least {RESERVE} for the morning.</p>
         )}
       </section>
     );
@@ -54,10 +54,10 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
     <section className="panel mt-3 px-3.5 py-3" aria-label="Bank loan offer">
       <p className="flex items-center gap-2 text-base font-extrabold">
         <WarningDiamondIcon size={20} className="shrink-0" />
-        The bank offers a winter loan
+        The bank has a winter loan for you
       </p>
       <p className="mt-1 text-sm font-bold leading-snug text-ink-soft">
-        Borrow {amount} at {Math.round(winterLoanRate(night) * 100)}% simple interest for the winter and repay it in full on any night the payment leaves at least {RESERVE} for morning.
+        Borrow {amount} at {Math.round(winterLoanRate(night) * 100)}% simple interest for the winter. Pay it back in full on any night the payment still leaves {RESERVE} for the morning.
       </p>
       <div className="mt-3 grid gap-2">
         <button type="button" className={`${ACTION} key-solid [--key-fill:var(--sign-yellow)]`} onClick={onTake}>

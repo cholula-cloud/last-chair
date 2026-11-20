@@ -20,7 +20,7 @@ export const MAX_RIBBON_SEGMENTS = 768;
 export const LIVE_RIBBON_SEGMENTS = 120;
 /** The most points one stroke holds. */
 export const MAX_STROKE_POINTS = 512;
-export const STROKE_FULL_REASON = "This trail is as long as it can be.";
+export const STROKE_FULL_REASON = "That’s as long as a trail gets. Lift your finger to finish.";
 type Pair = { x: number; z: number };
 
 /** Radius, in world units, of a brush `widthFt` feet wide: the width the trail is actually cut. */

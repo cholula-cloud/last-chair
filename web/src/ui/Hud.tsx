@@ -135,7 +135,7 @@ export function WindHoldCallout({ shortHold }: { shortHold: boolean }) {
   return (
     <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
       <WindIcon size={18} />
-      Chair on wind hold until {shortHold ? "12:15 PM" : "1 PM"}
+      Wind’s holding the chair until {shortHold ? "12:15 PM" : "1 PM"}
     </p>
   );
 }
@@ -201,8 +201,8 @@ export function MorningNote({
 
 /** Small navy callout under the play key on the very first morning. */
 export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
-  const instruction = step === "lift" ? "Build your first lift"
-    : step === "trail" ? "Paint a trail from the lift to the base"
+  const instruction = step === "lift" ? "First job: string up a lift"
+    : step === "trail" ? "Now paint a trail from the lift down to the base"
       : "Tap the play key to open the hill";
   return (
     <p role="status" className="callout-in pointer-events-none relative ml-2 mt-2.5 w-fit max-w-[calc(100%-0.5rem)] rounded-xl border-[3px] border-ink bg-ink px-3 py-1.5 text-[0.88rem] font-extrabold text-white">
@@ -378,7 +378,7 @@ export function ResumeFollowChip({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="chip press pointer-events-auto flex h-11 items-center px-4 text-[0.85rem] font-extrabold"
     >
-      Resume follow
+      Follow the guests again
     </button>
   );
 }
@@ -460,7 +460,7 @@ export function ActionBar({
           <button type="button" className="key press min-h-11" onClick={() => { setMenu(false); onStoryLog?.(); }}>
             Story log
           </button>
-          <p className="text-[0.88rem] font-bold leading-snug">Leave the hill and go to the menu?</p>
+          <p className="text-[0.88rem] font-bold leading-snug">Head back to the menu? Your winter saves first.</p>
           <div className="flex gap-2">
             <button
               type="button"

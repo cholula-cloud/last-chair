@@ -27,22 +27,22 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "lodge",
     label: "Lodge Tier 2",
     status: lodge ? "Done" : settled ? "Missed" : "To do",
-    explainer: lodge ? `The lodge reached Tier ${state.lodgeTier}.` : settled ? "The winter ended at Tier 1." : "Upgrade the lodge to Tier 2 from the Build sheet.",
+    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is up and running.` : settled ? "The winter ended with the lodge still at Tier 1." : "Upgrade the lodge to Tier 2 from the Build sheet. Bigger lodge, bigger crowds.",
   }];
   const contract = state.schoolContract;
   if (contract || state.schoolEligible) {
     let status: GoalChip["status"] = "To do";
-    let explainer = "Reach the school bus beat on the radio.";
+    let explainer = "Listen for the school bus call on the radio.";
     if (contract?.decision === "declined") {
       status = "Declined";
-      explainer = "You declined the Readsboro school visit.";
+      explainer = "You turned down the Readsboro school visit.";
     } else if (contract?.decision === "accepted") {
       if (contract.pupilsTaught !== null) {
         status = contract.pupilsTaught > 0 ? "Done" : "Missed";
-        explainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} visiting pupils finished a lesson.`;
+        explainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} Readsboro pupils finished a lesson.`;
       } else {
         status = settled ? "Missed" : "Booked";
-        explainer = settled ? "The winter ended before the booked visit." : `The school bus comes on day ${contract.day}.`;
+        explainer = settled ? "The winter ended before the bus showed up." : `The Readsboro bus pulls in on day ${contract.day}.`;
       }
     }
     chips.push({ id: "bus", label: "Optional school visit", status, explainer });
@@ -53,8 +53,8 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "solvent", label: "Finish solvent",
     status: settled ? (met ? "Done" : "Missed") : (solvent ? "On track" : "At risk"),
     explainer: settled
-      ? (met ? "You finished with enough cash to cover your loan and unpaid construction." : state.outcome === "bankrupt" ? "The bank called before the winter could finish solvent." : "Your loan and unpaid construction exceeded your closing cash.")
-      : (solvent ? "Your cash covers your loan and unpaid construction today." : "Your loan and unpaid construction exceed your cash today."),
+      ? (met ? "You finished in the black. Cash covers the loan and any unpaid construction." : state.outcome === "bankrupt" ? "The bank came calling before the winter was over." : "The loan and unpaid construction came to more than your closing cash.")
+      : (solvent ? "Cash covers your loan and unpaid construction today. Keep it that way." : "Your loan and unpaid construction add up to more than your cash right now. Get some guests in."),
   });
   return chips;
 }

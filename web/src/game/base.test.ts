@@ -43,7 +43,7 @@ describe("venue placement", () => {
 
   it("gates services by lodge tier and keeps snow guns out of the base placement system", () => {
     const at = { x: 11.5, z: 15.5 };
-    expect(previewAssetPlacement("rentals", at, 1, assets)).toEqual({ ok: false, reason: "Opens at Lodge Tier 2." });
+    expect(previewAssetPlacement("rentals", at, 1, assets)).toEqual({ ok: false, reason: "Needs Lodge Tier 2 first." });
     expect(previewAssetPlacement("rentals", at, 2, assets)).toMatchObject({ ok: true, attached: false });
     expect(previewAssetPlacement("snow_guns", at, 2, assets).ok).toBe(false);
   });
@@ -57,7 +57,7 @@ describe("venue placement", () => {
     expect(assetEffect(preview.placement, "hillValue")).toBeCloseTo(3.15, 8);
     expect(previewAssetPlacement("shop", pad, 1, [...assets, preview.placement])).toEqual({
       ok: false,
-      reason: "That lodge pad is occupied.",
+      reason: "Another venue already has that lodge pad. Try a different pad.",
     });
   });
 
@@ -85,7 +85,7 @@ describe("venue placement", () => {
     const full: PlacedAsset[] = Array.from({ length: MAX_BASE_ASSETS }, () => assets[0]);
     expect(previewAssetPlacement("cafe", { x: 11.5, z: 15.5 }, 1, full)).toEqual({
       ok: false,
-      reason: "The base area is full.",
+      reason: "The base area’s full. Move or remove something first.",
     });
   });
 });
@@ -113,7 +113,7 @@ describe("lift and venue clearance", () => {
     const withLift = placeLift(state, { type: "chair", ...line });
     expect(withLift).not.toBe(state);
     expect(checkAssetPlacement(withLift, "cafe", at)).toEqual({
-      ok: false, reason: "Leave room around the lift terminal.",
+      ok: false, reason: "Too close to the lift terminal. Give it some room.",
     });
     expect(placeAsset(withLift, "cafe", at)).toBe(withLift);
     expect(checkAssetPlacement(closeLift(withLift, 1), "cafe", at).ok).toBe(true);

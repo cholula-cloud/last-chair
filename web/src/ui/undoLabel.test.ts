@@ -3,9 +3,9 @@ import { undoChipLabel } from "./undoLabel";
 
 describe("undoChipLabel", () => {
   it("names what was placed and the refund", () => {
-    expect(undoChipLabel("lift", 460)).toBe("Lift placed. Undo for $460.");
-    expect(undoChipLabel("trail", 1200)).toBe("Trail placed. Undo for $1,200.");
-    expect(undoChipLabel("asset", 0)).toBe("Asset placed. Undo for $0.");
+    expect(undoChipLabel("lift", 460)).toBe("Lift’s in. Undo for $460.");
+    expect(undoChipLabel("trail", 1200)).toBe("Trail’s cut. Undo for $1,200.");
+    expect(undoChipLabel("asset", 0)).toBe("Venue’s in. Undo for $0.");
   });
 
   it("uses no middle dot or dash", () => {

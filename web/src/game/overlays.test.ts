@@ -52,12 +52,12 @@ describe("slope readout", () => {
     const pct = Math.round(pitchAt(at) * 100);
     expect(r.chips[0]).toBe(`${pct}% pitch`);
     expect(r.entry).toBe(slopeBand(pitchAt(at)));
-    expect(r.headline).toMatch(/^This ground is /);
+    expect(r.headline).toMatch(/ground\./);
     expect(r.headline).not.toMatch(/—|·/);
   });
   it("says so outside the lease", () => {
     const r = slopeReadout({ x: 500, z: 500 }, ctx);
-    expect(r.headline).toBe("This ground is outside the Dutch Hill lease.");
+    expect(r.headline).toBe("That’s outside the Dutch Hill lease. Build inside the dashed line.");
     expect(r.chips).toEqual([]);
   });
   it("reports height above the base in tens of feet", () => {

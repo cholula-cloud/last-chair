@@ -37,52 +37,52 @@ const idle = (ctx: CoachContext) => ctx.phase === "day" && !ctx.placementActive 
 export const COACH_TIPS: readonly CoachTip[] = [
   {
     id: "lift",
-    text: "Drag uphill from the base to place a lift.",
+    text: "Drag uphill from the base to string up a lift.",
     when: (c) => idle(c) && c.opening === "lift",
   },
   {
     id: "pan",
-    text: "Use two fingers to move the map.",
+    text: "Use two fingers to move the map. Go ahead, look around.",
     when: (c) => idle(c) && c.opening === "lift" && c.dayIndex === 1,
   },
   {
     id: "review",
-    text: "Tap Review to see the cost, then tap Place.",
+    text: "Tap Review to see what it costs, then tap Place when you’re happy.",
     when: (c) => c.phase === "day" && c.placementActive,
   },
   {
     id: "trail",
-    text: "Paint a trail from the top of the lift down to the base.",
+    text: "Paint a trail from the top of the lift down to the base. Skiers like a way home.",
     when: (c) => idle(c) && c.opening === "trail",
   },
   {
     id: "speed",
-    text: "Tap the speed button to make the day go faster.",
+    text: "Tap the speed button to hurry the day along.",
     when: (c) => idle(c) && c.running && c.opening === null && c.dayIndex === 1,
   },
   {
     id: "lease",
-    text: "The lease line shows the land you may build on.",
+    text: "The dashed lease line marks where you can build. Past it, it’s somebody else’s woods.",
     when: (c) => c.phase === "day" && c.buildOpen,
   },
   {
     id: "recap",
-    text: "The night recap shows how the day went and sets tomorrow’s fare.",
+    text: "The night recap tells you how the day went and sets tomorrow’s fare.",
     when: (c) => c.phase === "night",
   },
   {
     id: "guestsWant",
-    text: "The Guests want line names the one thing guests asked for most.",
+    text: "The Guests want line is the one thing guests grumbled about most. Fix that first.",
     when: (c) => c.phase === "night" && c.hasGuestsWant,
   },
   {
     id: "goal",
-    text: "The goal strip under the date shows what to finish this winter.",
+    text: "The goal strip under the date shows what you need to finish this winter.",
     when: (c) => idle(c) && c.running && c.dayIndex >= 2,
   },
   {
     id: "guns",
-    text: "Snow guns make snow overnight. Build them from the Build sheet.",
+    text: "Snow guns make snow overnight while you sleep. Build them from the Build sheet.",
     when: (c) => idle(c) && c.running && c.dayIndex >= 3,
   },
 ];
@@ -116,23 +116,23 @@ export function problemGuide(
   const issue = demand ?? biggestProblem(recap.breakdown);
   switch (recap.arrivals ? issue : null) {
     case "seats":
-      return { layer: "slope", tab: "Crew", text: "Find flat ground near the base on Slope, then check Crew for lodge space and venue unlocks." };
+      return { layer: "slope", tab: "Crew", text: "Look for flat ground near the base on Slope, then check Crew for lodge space and venue unlocks." };
     case "green":
-      return { layer: "slope", tab: "Crew", text: "Use Slope to trace another gentle descent and check Crew for trail skills." };
+      return { layer: "slope", tab: "Crew", text: "Trace another gentle descent on Slope, then check Crew for trail skills." };
     case "lines":
     case "queue":
-      return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for the deposit you can afford." };
+      return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for a deposit you can afford." };
     case "snow":
-      return { layer: "conditions", tab: "Desk", text: "Inspect the cover on Conditions, then check tomorrow’s forecast at the Desk." };
+      return { layer: "conditions", tab: "Desk", text: "Look at the cover on Conditions, then check tomorrow’s forecast at the Desk." };
     case "runs":
-      return { layer: "slope", tab: "Crew", text: "Look for a gentler route on Slope, then check Crew for your next lift or trail unlock." };
+      return { layer: "slope", tab: "Crew", text: "Hunt for a gentler route on Slope, then check Crew for your next lift or trail unlock." };
     case "value":
       return { layer: "conditions", tab: "Money", text: "See what the snow offered on Conditions, then compare ticket value and turnout in Money." };
     case "arrivalMood":
-      return { layer: "slope", tab: "Crew", text: "Find a gentle first run on Slope and check Crew for the skills your hill has learned." };
+      return { layer: "slope", tab: "Crew", text: "Find a gentle first run on Slope, then check Crew for what your hill has learned." };
     default:
       return recap.cashDelta < 0
-        ? { layer: "conditions", tab: "Money", text: "Check Conditions before buying snow service, then look at today’s costs in Money." }
+        ? { layer: "conditions", tab: "Money", text: "Check Conditions before you buy snow service, then see where today’s money went in Money." }
         : null;
   }
 }

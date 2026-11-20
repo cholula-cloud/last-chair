@@ -170,9 +170,9 @@ export function previewAssetPlacement(
 ): AssetPreview {
   const { site = DUTCH_HILL_SITE, terrain = TERRAIN, terminals = [terrain.base] } = options;
   const asset = ASSET_CATALOG[id];
-  if (!asset || asset.placementZone !== "base") return { ok: false, reason: "This item is placed on the hill." };
-  if (tier < asset.opensAtTier) return { ok: false, reason: `Opens at Lodge Tier ${asset.opensAtTier}.` };
-  if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area is full." };
+  if (!asset || asset.placementZone !== "base") return { ok: false, reason: "That one goes up on the hill, not at the base." };
+  if (tier < asset.opensAtTier) return { ok: false, reason: `Needs Lodge Tier ${asset.opensAtTier} first.` };
+  if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area’s full. Move or remove something first." };
   if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) return { ok: false, reason: "Pick a spot in the base area." };
 
   const padLocations = lodgeAttachPads(tier, site).map((point, index) => ({
@@ -185,28 +185,28 @@ export function previewAssetPlacement(
   const size = asset.footprint;
   if (!footprintOnLease(position, size.width, size.depth, terrain)) return { ok: false, reason: OFF_LEASE_MESSAGE };
   if (snap && assets.some((placed) => placed.attachPad === snap.index)) {
-    return { ok: false, reason: "That lodge pad is occupied." };
+    return { ok: false, reason: "Another venue already has that lodge pad. Try a different pad." };
   }
   if (!inBaseZone(position, size, site, terrain)) {
-    return { ok: false, reason: "Pick flat ground in the base area." };
+    return { ok: false, reason: "Venues need flat ground. Try a flatter spot near the lodge." };
   }
   if ((!snap && overlaps(position, size, site.buildings.lodge, site.buildings.lodge.footprint, 0.1))
     || assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.08))) {
-    return { ok: false, reason: "Leave room around other buildings." };
+    return { ok: false, reason: "Too close to another building. Leave some elbow room." };
   }
   if (lodgeParkingLots(3, site).some((lot) =>
     overlaps(position, size, lot.center, { width: lot.size.w, depth: lot.size.d }, 0.3))
       || overlaps(position, size, site.buildings.snowcat, { width: 0.6, depth: 0.45 }, 0.1)) {
-    return { ok: false, reason: "Leave the parking lot and snowcat clear." };
+    return { ok: false, reason: "That’s the parking lot and snowcat’s turf. Pick another spot." };
   }
   if (terminals.some((terminal) => overlapsTerminal(position, size, terminal))) {
-    return { ok: false, reason: "Leave room around the lift terminal." };
+    return { ok: false, reason: "Too close to the lift terminal. Give it some room." };
   }
   const walkingClearance = Math.max(size.width, size.depth) / 2 + 0.12;
   const paths = [...site.paths.map((path) => path.points), site.road.spur];
   if (paths.some((points) => points.slice(1).some((point, i) =>
     segmentDistance(position, points[i], point) < walkingClearance))) {
-    return { ok: false, reason: "Leave room on the path." };
+    return { ok: false, reason: "That blocks the path. Pick a spot beside it." };
   }
 
   const acres = size.width * size.depth * terrain.horizontalFeetPerUnit ** 2 / 43560;

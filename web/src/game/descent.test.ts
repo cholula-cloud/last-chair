@@ -156,8 +156,8 @@ describe("placementReason", () => {
     ];
     for (const c of codes) expect(placementReason(c).length).toBeGreaterThan(5);
     expect(MAX_LIFTS).toBe(3);
-    expect(placementReason("max_lifts")).toBe("Dutch Hill has room for 3 lifts.");
-    expect(placementReason("too_close", { type: "chair" })).toBe("Too close to the chair lift.");
-    expect(placementReason("cash", { need: 1250 })).toBe("Need $1,250 more.");
+    expect(placementReason("max_lifts")).toBe("Dutch Hill only has room for 3 lifts.");
+    expect(placementReason("too_close", { type: "chair" })).toBe("Too close to the chair lift. Spread them out.");
+    expect(placementReason("cash", { need: 1250 })).toBe("Wallet’s $1,250 short for the deposit.");
   });
 });
