@@ -32,13 +32,13 @@ describe("needsAttention", () => {
     const items = needsAttention({ ...day(), cash: -400 });
     expect(items[0]).toEqual({
       id: "cash-negative",
-      text: "Cash is −$400. 3 mornings in a row below zero and the bank closes the book on your winter.",
+      text: "Cash is −$400. 3 straight mornings below zero ends the winter.",
     });
   });
 
   it("flags low cash, but not at the threshold", () => {
     const low = needsAttention({ ...day(), cash: 900 });
-    expect(low).toEqual([{ id: "cash-low", text: "Cash is down to $900. Hold off on building until the ticket window catches up." }]);
+    expect(low).toEqual([{ id: "cash-low", text: "Cash is down to $900. Hold off on big builds until ticket sales catch up." }]);
     expect(needsAttention({ ...day(), cash: 1500 })).toEqual([]);
   });
 
@@ -48,7 +48,7 @@ describe("needsAttention", () => {
     const items = needsAttention({ ...base, lifts: [...base.lifts, second] });
     expect(items).toEqual([{
       id: "lift-no-trail-1",
-      text: "Surface lift 2 has no open trail yet. Paint one from the top so guests have somewhere to go.",
+      text: "Surface lift 2 has no open trail. Paint one from the top so skiers can ride.",
       focus: [TERRAIN.base, second.anchor],
     }]);
   });
@@ -64,13 +64,13 @@ describe("needsAttention", () => {
     const gusty = base.weatherDays.map((w, i) => (i === base.dayIndex - 1 ? { ...w, wind: "gusty" as const } : w));
     const windy = { ...base, lifts: [chair], weatherDays: gusty };
     expect(needsAttention({ ...windy, clockMin: 11 * 60 }).map((i) => i.text))
-      .toEqual(["Double chair 1 is on wind hold until 1:00 PM. Dana is holding the chair."]);
+      .toEqual(["Double chair 1 is on wind hold until 1:00 PM."]);
     expect(needsAttention({ ...windy, clockMin: 14 * 60 })).toEqual([]);
   });
 
   it("turns the recap's Guests want logic into an item once enough guests have arrived", () => {
     expect(needsAttention(withLongLines(day()))).toEqual([
-      { id: "guests-want", text: "The lift line got long enough to need its own zip code. It ran over 10 minutes, so guests want a second lift." },
+      { id: "guests-want", text: "Lift lines topped 10 minutes today. Skiers want a second lift." },
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("needsAttention", () => {
     const base = day();
     const items = needsAttention({ ...base, trails: bareTrails(base) });
     expect(items.map((i) => i.id)).toEqual(["snow"]);
-    expect(items[0].text).toMatch(/^.+\. Pick more snow and service tonight at closing\.$/);
+    expect(items[0].text).toMatch(/^.+\. Bump up overnight snow prep at closing\.$/);
   });
 
   it("does not list bad snow twice when Guests want already asks for better snow", () => {
@@ -93,7 +93,7 @@ describe("needsAttention", () => {
     const items = needsAttention({ ...base, trails: bareTrails(base), guests, snowQuality: 0.2 });
     const ids = items.map((i) => i.id);
     expect(ids.filter((id) => id === "snow" || id === "guests-want")).toEqual(["guests-want"]);
-    expect(items.find((i) => i.id === "guests-want")?.text).toBe("Cover was bare patches and guests noticed. They want better snow.");
+    expect(items.find((i) => i.id === "guests-want")?.text).toBe("Snow cover was bare patches today. Skiers want better grooming or snowmaking.");
   });
 
   it("writes every item as a sentence with no em dash or middle dot", () => {
