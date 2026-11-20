@@ -4,19 +4,20 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useGameStore } from "@/game/store";
+import { fbm, TERRAIN } from "@/game/terrain";
 import { SHADOW_LAYER } from "./kit";
 import { useReducedMotion } from "./useReducedMotion";
 import { smoothstep } from "./math";
 import { dayTintAt, type Tint } from "./dayTint";
-import { fbm } from "@/game/terrain";
 import { sceneCameraTarget } from "./sceneCamera";
-import { HILL_CENTER, PALETTE, SUN_DIR } from "./palette";
+import { HILL_CENTER, PALETTE } from "./palette";
+import { lightRig, sunDistance, type Rig } from "./lighting";
 
 /**
  * Shared lighting mood, written once per frame by <Atmosphere> and read by
  * windows, lamps and plumes. 0 = bright day, 1 = full night.
  */
-export const sceneMood = { night: 0, dusk: 0 };
+export const sceneMood = { night: 0, dusk: 0, exposure: 1, glow: 0.62 };
 
 const SKY_VERT = /* glsl */ `
   varying vec3 vDir;
@@ -36,28 +37,25 @@ const SKY_FRAG = /* glsl */ `
   }
 `;
 
-const DAY = {
-  top: new THREE.Color(PALETTE.skyTop),
-  horizon: new THREE.Color(PALETTE.skyHorizon),
-  sun: new THREE.Color(PALETTE.sunDay),
-  dawn: new THREE.Color("#ffd7ab"),
-  dusk: new THREE.Color(PALETTE.sunDusk),
-  hemiSky: new THREE.Color(PALETTE.hemiSkyDay),
-  hemiGround: new THREE.Color(PALETTE.hemiGroundDay),
-  overcastTop: new THREE.Color(PALETTE.overcastTop),
-  duskHorizon: new THREE.Color(PALETTE.duskHorizon),
-};
-const NIGHT = {
-  top: new THREE.Color(PALETTE.nightSkyTop),
-  horizon: new THREE.Color(PALETTE.nightHorizon),
-  sun: new THREE.Color(PALETTE.sunNight),
-  hemiSky: new THREE.Color(PALETTE.hemiSkyNight),
-  hemiGround: new THREE.Color(PALETTE.hemiGroundNight),
-};
 const WHITE = new THREE.Color(PALETTE.white);
 /** Scratch values for the day tint, reused every frame. */
 const tintNow: Tint = { r: 1, g: 1, b: 1 };
 const tintColor = new THREE.Color();
+const rigScratch: Rig = {
+  sunDir: [0, 1, 0],
+  sunColor: PALETTE.sunDay,
+  sunIntensity: 2.5,
+  hemiSky: PALETTE.hemiSkyDay,
+  hemiGround: PALETTE.hemiGroundDay,
+  hemiIntensity: 1.25,
+  skyTop: PALETTE.skyTop,
+  skyHorizon: PALETTE.skyHorizon,
+  fogNear: 140,
+  fogFar: 420,
+  exposure: 1,
+  glow: 0.62,
+  shadowStrength: 1,
+};
 
 /** Layered hazy ridges behind the hill so it sits in a valley. */
 function ridgeGeometry(radius: number, base: number, amp: number, seed: number, color: string) {
@@ -111,13 +109,19 @@ export function Atmosphere() {
   const hemi = useRef<THREE.HemisphereLight>(null);
   const mood = useRef(useGameStore.getState().phase === "night" ? 1 : 0);
   const ridgeMats = useRef<(THREE.MeshBasicMaterial | null)[]>([]);
+  const sunColor = useMemo(() => new THREE.Color(), []);
+  const hemiSkyColor = useMemo(() => new THREE.Color(), []);
+  const hemiGroundColor = useMemo(() => new THREE.Color(), []);
+  const skyTopColor = useMemo(() => new THREE.Color(), []);
+  const skyHorizonColor = useMemo(() => new THREE.Color(), []);
+  const nightHorizon = useMemo(() => new THREE.Color(PALETTE.nightHorizon), []);
 
   const sky = useMemo(
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          topColor: { value: DAY.top.clone() },
-          horizonColor: { value: DAY.horizon.clone() },
+          topColor: { value: skyTopColor.clone() },
+          horizonColor: { value: skyHorizonColor.clone() },
         },
         vertexShader: SKY_VERT,
         fragmentShader: SKY_FRAG,
@@ -125,13 +129,14 @@ export function Atmosphere() {
         depthWrite: false,
         fog: false,
       }),
-    [],
+    [skyHorizonColor, skyTopColor],
   );
   const ridgeGeos = useMemo(
     () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color)),
     [],
   );
   const target = useMemo(() => new THREE.Object3D(), []);
+  const sunDist = sunDistance(TERRAIN.scale);
 
   useEffect(
     () => () => {
@@ -147,48 +152,52 @@ export function Atmosphere() {
     mood.current += (goal - mood.current) * (reduced.current ? 1 : Math.min(1, delta * 1.8));
     const n = mood.current;
     const dusk = smoothstep(14 * 60, 16 * 60, clockMin) * (1 - n);
-    const dawn = (1 - smoothstep(7.5 * 60, 10 * 60, clockMin)) * (1 - n);
     sceneMood.night = n;
     sceneMood.dusk = dusk;
-    const overcast = weather === "storm" ? 1.55 : weather === "snow" ? 1 : 0;
 
-    const top = sky.uniforms.topColor.value as THREE.Color;
-    const hor = sky.uniforms.horizonColor.value as THREE.Color;
-    // Morning cool, midday neutral, late afternoon warm. The shift fades out as night comes in.
+    const rig = lightRig({ clockMin, night: n, weather }, TERRAIN.scale, rigScratch);
+    sceneMood.exposure = rig.exposure;
+    sceneMood.glow = rig.glow;
+
     dayTintAt(clockMin, tintNow);
     const tintAmount = 1 - n;
     tintColor.setRGB(1 + (tintNow.r - 1) * tintAmount, 1 + (tintNow.g - 1) * tintAmount, 1 + (tintNow.b - 1) * tintAmount);
 
-    top.copy(DAY.top).lerp(DAY.overcastTop, overcast * 0.6).lerp(NIGHT.top, n);
-    hor.copy(DAY.horizon).lerp(DAY.dawn, dawn * 0.4).lerp(DAY.duskHorizon, dusk * 0.7).lerp(NIGHT.horizon, n);
-    if (weather === "storm") hor.lerp(DAY.overcastTop, (1 - n) * 0.55);
-    hor.multiply(tintColor);
-    if (fog.current) fog.current.color.copy(hor);
+    const top = sky.uniforms.topColor.value as THREE.Color;
+    const hor = sky.uniforms.horizonColor.value as THREE.Color;
+    skyTopColor.set(rig.skyTop);
+    skyHorizonColor.set(rig.skyHorizon);
+    top.copy(skyTopColor);
+    hor.copy(skyHorizonColor).multiply(tintColor);
+    if (fog.current) {
+      fog.current.color.copy(hor);
+      fog.current.near = rig.fogNear;
+      fog.current.far = rig.fogFar;
+    }
 
     if (sun.current) {
-      sun.current.color.copy(DAY.sun).lerp(DAY.dawn, dawn * 0.55).lerp(DAY.dusk, dusk).lerp(NIGHT.sun, n);
-      sun.current.intensity =
-        (2.5 - dusk * 0.6 - overcast * 0.9 + (weather === "thaw" ? 0.2 : 0)) *
-          (1 - n) +
-        0.35 * n;
-      sun.current.color.multiply(tintColor);
+      sunColor.set(rig.sunColor).multiply(tintColor);
+      sun.current.color.copy(sunColor);
+      sun.current.intensity = rig.sunIntensity;
     }
     if (hemi.current) {
-      hemi.current.color.copy(DAY.hemiSky).lerp(NIGHT.hemiSky, n);
-      hemi.current.color.multiply(tintColor);
-      hemi.current.groundColor.copy(DAY.hemiGround).lerp(NIGHT.hemiGround, n);
-      hemi.current.intensity = (1.25 + overcast * 0.25) * (1 - n) + 0.75 * n;
+      hemiSkyColor.set(rig.hemiSky).multiply(tintColor);
+      hemiGroundColor.set(rig.hemiGround);
+      hemi.current.color.copy(hemiSkyColor);
+      hemi.current.groundColor.copy(hemiGroundColor);
+      hemi.current.intensity = rig.hemiIntensity;
     }
     ridgeMats.current.forEach((m) => {
       if (!m) return;
-      m.color.copy(WHITE).lerp(NIGHT.horizon, n * 0.85);
+      m.color.copy(WHITE).lerp(nightHorizon, n * 0.85);
     });
 
     const tx = Math.round(sceneCameraTarget.x / SHADOW_TEXEL) * SHADOW_TEXEL;
     const tz = Math.round(sceneCameraTarget.z / SHADOW_TEXEL) * SHADOW_TEXEL;
     target.position.set(tx, 0, tz);
     if (sun.current) {
-      sun.current.position.set(tx + SUN_DIR[0] * 30, SUN_DIR[1] * 30, tz + SUN_DIR[2] * 30);
+      const [dx, dy, dz] = rig.sunDir;
+      sun.current.position.set(tx + dx * sunDist, dy * sunDist, tz + dz * sunDist);
     }
   });
 
@@ -209,12 +218,11 @@ export function Atmosphere() {
           />
         </mesh>
       ))}
-      <hemisphereLight ref={hemi} args={[DAY.hemiSky, DAY.hemiGround, 1.25]} />
+      <hemisphereLight ref={hemi} intensity={1.25} />
       <primitive object={target} />
       <directionalLight
         ref={sun}
         target={target}
-        position={[HILL_CENTER.x + SUN_DIR[0] * 30, SUN_DIR[1] * 30, HILL_CENTER.z + SUN_DIR[2] * 30]}
         intensity={2.5}
         castShadow
         shadow-mapSize={[1024, 1024]}

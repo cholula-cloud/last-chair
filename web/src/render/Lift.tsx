@@ -12,8 +12,6 @@ import { sceneMood } from "./Atmosphere";
 import { cyl, merge, type Part } from "./geo";
 import {
   bakeKit,
-  GLOW_DAY,
-  GLOW_NIGHT,
   KIT_GRIP_Y,
   KIT_ROPE_Y,
   KIT_TBAR_BAR_Y,
@@ -160,6 +158,28 @@ export function Lift({
   const carriers = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
+  const lampMat = useRef<THREE.MeshBasicMaterial>(null);
+  const lamps = useMemo(() => {
+    const towers = liftTowers(line);
+    const verts: number[] = [];
+    const size = 0.35;
+    towers.forEach((t, i) => {
+      if (i === 0 || i === towers.length - 1 || i % 3 !== 0) return;
+      const y = t.ground + 0.08;
+      verts.push(
+        t.x - size, y, t.z,
+        t.x + size, y, t.z,
+        t.x + size, y, t.z + size * 1.6,
+        t.x - size, y, t.z + size * 1.6,
+      );
+    });
+    if (!verts.length) return null;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+    geo.setIndex([0, 1, 2, 0, 2, 3]);
+    return geo;
+  }, [line]);
+  useEffect(() => () => lamps?.dispose(), [lamps]);
   const rideMin = rideMinutes(type, line);
 
   useFrame(() => {
@@ -184,9 +204,10 @@ export function Lift({
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
-    if (glowMat.current) {
-      const k = Math.max(sceneMood.night, sceneMood.dusk * 0.6);
-      glowMat.current.color.setScalar(GLOW_DAY + (GLOW_NIGHT - GLOW_DAY) * k);
+    if (glowMat.current) glowMat.current.color.setScalar(sceneMood.glow);
+    if (lampMat.current) {
+      const k = Math.max(sceneMood.night, sceneMood.dusk * 0.5);
+      lampMat.current.opacity = k * 0.85;
     }
   });
 
@@ -206,6 +227,19 @@ export function Lift({
           ) : (
             <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
           )}
+        </mesh>
+      )}
+      {!preview && lamps && (
+        <mesh geometry={lamps} renderOrder={5}>
+          <meshBasicMaterial
+            ref={lampMat}
+            color={PALETTE.window}
+            transparent
+            opacity={0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
         </mesh>
       )}
       <mesh geometry={structure.body} castShadow={!preview} receiveShadow={!preview}>
