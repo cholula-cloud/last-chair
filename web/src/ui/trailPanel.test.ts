@@ -20,4 +20,17 @@ describe("trailPanelMode", () => {
   it("stays full while the map is being moved", () => {
     expect(trailPanelMode({ activeStroke: stroke, review: false, moveCamera: true })).toBe("full");
   });
+
+  it("shows the minimized bar when the player collapsed the panel", () => {
+    expect(trailPanelMode({ activeStroke: null, review: false, moveCamera: false, minimized: true })).toBe("minimized");
+  });
+
+  it("keeps compact while painting even when minimized", () => {
+    expect(trailPanelMode({ activeStroke: stroke, review: false, moveCamera: false, minimized: true })).toBe("compact");
+  });
+
+  it("keeps review in review even when minimized", () => {
+    expect(trailPanelMode({ activeStroke: stroke, review: true, moveCamera: false, minimized: true })).toBe("review");
+    expect(trailPanelMode({ activeStroke: null, review: true, moveCamera: false, minimized: true })).toBe("review");
+  });
 });
