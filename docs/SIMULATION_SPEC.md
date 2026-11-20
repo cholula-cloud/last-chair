@@ -11,7 +11,7 @@
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
 | Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; new winters use a 49-day civil calendar with 21 playable Fri–Sun days; saved 14- and 28-day seasons keep every day playable; day is about 4 minutes at 1×, row L-F targets about 2 | 19, CAL-1, L-F |
-| Operating calendar | ✅ | Fri–Sun guest days; Mon–Thu `advanceClosedDays` (costs, overnight, loan, talents, construction); weekday digest on the next open morning; bankruptcy counts closed mornings | CAL-1 |
+| Operating calendar | ✅ | Fri–Sun guest days; Mon–Thu `advanceClosedDays` (overnight, talents; operating and snow costs covered by Readsboro Olympic weekday lease; player still pays loan interest and construction due); weekday digest on the next open morning | CAL-1 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
 | Personas | ✅ | Four guest types with calendar-specific shares, measured preferences, venue visits and satisfaction weights | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
