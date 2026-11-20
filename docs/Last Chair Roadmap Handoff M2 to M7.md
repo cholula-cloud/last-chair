@@ -1957,7 +1957,7 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
 
-**M4 vs M4b (MASTER_PLAN v2.5).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), Office economics (**F3** on top of merged **F2** `dayHistory`), then handoff sections for rows **30 to 33**, **O4**, and **O5**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; stub briefs exist for **B6**, **B7**, **P4**, **F3**, **O5**, and **T1** — expand before coding if scope shifts.
+**M4 vs M4b (MASTER_PLAN v2.9).** **M4 code is complete on `main` (2026-11-20):** build UX (**B6**, **B7**), **P4**, Office economics (**F3a**, **F3b**), feel (**30–33**), map layers **O4** and **O5**, plus HUD follow-up PR **#106**. No Blender in M4. **Next queue:** optional merge of **#105** (trail network and asset inspectors), then **M4b** (rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**). Handoff briefs below for rows 28 and 29 belong to M4b; expand **T1** before signage work.
 
 ### Row B6 — Build grid and lift placement guide (M4, built)
 
@@ -1971,9 +1971,9 @@ Built: `BuildScenePreview` draws every open, confirmed trail as a context ribbon
 
 Owner report: other trails disappear while painting; new runs snap to the base too often. **Goal:** render confirmed trail ribbons whenever `placementDraft.kind === "trail"` (dim existing, full opacity on draft). In `web/src/game/paintedTrail.ts`, tighten when `atBase` pushes `terrain.base`, and when prefix/suffix merge reuses another trail — prefer the painted polyline unless required for connectivity or guest pathing. **Files (likely):** `TrailRibbon.tsx`, `paintedTrail.ts`, `PlacementController.tsx`. **Tests:** characterization on preview paths; visual screenshots with two trails visible during a third draft. **Acceptance:** player can plan a run beside an existing trail; ending above the village does not auto-yank to base unless they finish in the base area on purpose.
 
-### Row P4 — M4 polish pass (M4, stub)
+### Row P4 — M4 polish pass (M4, built)
 
-One coordinated pass after B6/B7 or in parallel with early feel rows: design (coach, night flow, copy vs ART_DIRECTION), engineering (`npm run check`, layering, bundle, known TODOs), UI (44px targets, sheet scroll, Office/HUD). **Office economics (priority):** Money tab hierarchy (cash → commitments → ledger → fare), Stats chart density and axis labels at 375 px, Reports vs Stats duplication (archive stays prose; trends live in Stats), season calendar tap targets, table fallbacks when `data-reduce-motion` is on. Deliverable: punch list with every item ☑ or an explicit follow-up row before M4 gate.
+Shipped in PR **#100** and follow-ups: `moodLabels.ts`, guest walk polylines, remote trail-end threshold fix, `screenshots:p4.mjs`, CI `PHONE_CHECK_SKIP_FPS` for headless VMs. **Still open (MASTER_PLAN P4 row):** B6 lift-top guide ~7 ms per settled bottom on desktop; occasional WebKit install flakes in CI (rerun). Owner device FPS sign-off remains Q1.
 
 ### Row F3 — Stats and Reports, Office economics (M4, stub)
 
@@ -2007,9 +2007,13 @@ One coordinated pass after B6/B7 or in parallel with early feel rows: design (co
 
 **Done when.** After several settled days, opening **Stats** shows multiple readable charts from real saves; **Reports** calendar matches night recaps; gate language in §12 satisfied; `npm run check` green.
 
-### Row O5 — Trails map layer (M4, brief TBD)
+### Row O4 — Crowds, revenue, and demand (M4, built)
 
-Owner direction: lift tops should not be cluttered with one canvas billboard per trail (`TrailSign.tsx` today). **Goal:** add a **Trails** entry to the layer strip (§12). Paint each open trail centerline with difficulty colour; show trail names as screen-stable labels along the line (same overlay framework as O1–O3). At a lift unload, show a compact **trail map** readout (layer legend card or list of runs on that lift) instead of requiring in-world boxes for every name. **Files (likely):** `web/src/game/mapLayers.ts`, `web/src/render/OverlayScene.tsx` or trail overlay module, `MapLayers.tsx`, `terrainOverlay.ts`. **Depends on:** O1 framework. **Acceptance:** with Trails layer on, a player can read every trail name without zooming to lift-top billboards; with layer off, T1 signs remain readable at toy scale.
+**Built:** `web/src/game/opsOverlay.ts`, `web/src/ui/OpsMapOverlay.tsx` — **Crowds** (density and queue length), **Revenue** (venue takings), **Guests want** (night-recap demand pins). Screenshots: `npm run screenshots:o4` → `390x844-o4-{crowds,revenue,guests-want}.png` under `/opt/cursor/artifacts/` (or `O4_OUT`). `playtest:layers` uses force-tap where the HUD overlaps the layer strip; run against a fresh static `out/` serve when the dev server is stale.
+
+### Row O5 — Trails map layer (M4, built)
+
+**Built:** `web/src/game/trailsOverlay.ts`, `web/src/ui/TrailsMapOverlay.tsx` — named centerlines, difficulty colour, screen-stable labels, lift-top trail map card. Screenshots: `npm run screenshots:o5` → `390x844-o5-trails.png`. Pairs with **T1** (Blender signage) so lift tops stay uncluttered while names remain readable on the layer.
 
 ### Row T1 — Trail signage kit (M4b, brief TBD)
 

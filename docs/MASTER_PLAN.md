@@ -1,14 +1,14 @@
 # Last Chair game plan and design
 
-**Version:** 2.8 · **Updated:** 2026-11-20
+**Version:** 2.9 · **Updated:** 2026-11-20
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode.
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode. v2.9 closes the **M4 code gate**: F3a/F3b Office economics ([#97](https://github.com/cholula-cloud/last-chair/pull/97)–[#99](https://github.com/cholula-cloud/last-chair/pull/99)), feel rows 30–33, map layers **O4** and **O5**, follow-up HUD polish ([#106](https://github.com/cholula-cloud/last-chair/pull/106)); records P4 punch-list leftovers and points the active queue at **M4b** then **#105** (trail network).
 
 | Doc | Job |
 |---|---|
 | **MASTER_PLAN.md** (this) | Game plan and design: vision, story, the lodge, modes, build experience, roadmap, how we work |
-| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: O5, T1, S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C; write briefs for O5 and T1 before building them. Rows **P4** and **F3** have stub briefs in Part C. Write one before building each |
+| [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: T1 (expand brief before M4b), S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C. M4 code rows **O4**, **O5**, **P4**, and **F3** are built; sections below record what shipped |
 | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Numbers and formulas, marked spec vs implemented |
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
@@ -41,7 +41,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. PR #80 adds the Office and map layers, new guest types, the twenty crew talents, founder effects, replay exports and the winter score. Career effects on later mountains belong to M5.
 
 
-The M3 roadmap below includes the November 19 expansion. Device sessions are deferred at the owner’s request.
+The M3 roadmap below includes the November 19 expansion. **M4 (code)** is complete on `main` as of 2026-11-20; the **M4 gate** for outside players now depends on optional owner device sign-off (Q1) and M4b art. Device sessions remain at the owner’s request.
 
 ---
 
@@ -493,7 +493,7 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |
 | F3b | ☑ | Stats ops charts and Reports | Fare elasticity, arrivals, satisfaction and its five terms, wait, snow service spend, satisfaction vs revenue scatter (`officeOpsCharts.tsx`). Reports gains the 28-day **season calendar** (weather and result; tap opens that day's recap) and a ski-area snow-report style trail report (`officeReports.tsx`). Gate: opening Stats after day 7 feels like a CFO dashboard, not a log list (§12). |
 
-Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4**. Rows 31 to 33 finish what Q3 (§11) started so outside players judge a game that sounds and looks alive.
+Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; rows 32–33 and O4–O5 landed via direct merge when CI was green; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk. **Before M4b:** merge or rebase [#105](https://github.com/cholula-cloud/last-chair/pull/105) (asset inspectors, connected trail network) if the owner wants that sim/build change on the same trunk.
 
 ### M4b: Blender assets
 
@@ -649,7 +649,9 @@ Extras on the same layer:
 |---|---|---|
 | **Trails** | O5 | Every open trail’s centerline with difficulty colour and name labels; optional lift-top summary card listing runs served by that lift. Used for planning and for players who want a trail map on screen without crowding the 3D scene |
 
-Later layers (row O4): Crowds (guest density and queue length), Revenue (venue takings from the per-venue receipts), and "Guests want" pins from the night recap.
+| **Crowds** | O4 | Guest density and queue length on trails and at lifts |
+| **Revenue** | O4 | Venue takings from per-venue receipts |
+| **Guests want** | O4 | Demand pins from the night recap (“what guests asked for”) |
 
 ### The Office
 
