@@ -36,18 +36,17 @@ export function toggleStrip() {
 /** Opens the layer strip beside the map rail and turns on Slope when nothing is active yet. */
 export function toggleLayersRail() {
   const { stripOpen } = useLayers.getState();
-  const shown = currentLayer();
-  if (stripOpen && shown) {
-    useLayers.setState({ stripOpen: false });
+  if (stripOpen) {
+    useLayers.setState({ stripOpen: false, layer: null, autoOff: true, point: null });
     return;
   }
   showBottomChrome();
   useLayers.setState({ stripOpen: true });
-  if (!shown) pickLayer("slope", true);
+  if (!currentLayer()) pickLayer("slope", true);
 }
 
 export function closeLayerDock() {
-  useLayers.setState({ stripOpen: false });
+  useLayers.setState({ stripOpen: false, layer: null, autoOff: true, point: null });
 }
 
 export function setProbe(at: XZ | null) {
