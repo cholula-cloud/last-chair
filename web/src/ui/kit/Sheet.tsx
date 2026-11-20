@@ -210,11 +210,11 @@ export function Sheet({
         aria-modal={modal || undefined}
         aria-labelledby={titleId}
         data-mood={mood}
-        className={`sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full ${compact ? "max-w-sm" : "max-w-xl"} flex-col border-x-[3px] border-b-0 border-ink sm:mb-3 sm:rounded-b-sheet sm:border-b-[3px] short:mb-0 short:max-h-[calc(100dvh-2.5rem)] short:rounded-b-none short:border-b-0 ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))]" : ""} ${aside ? "short:grid short:h-[calc(100dvh-2.5rem)] short:grid-cols-2 short:grid-rows-[auto_minmax(0,1fr)_auto]" : ""}`}
+        className={`sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full ${compact ? "max-w-sm" : "max-w-xl"} ${!compact && !wide ? "md:max-w-2xl" : ""} flex-col border-x-[3px] border-b-0 border-ink sm:mb-3 sm:rounded-b-sheet sm:border-b-[3px] short:mb-0 short:max-h-[calc(100dvh-2.5rem)] short:rounded-b-none short:border-b-0 ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))] md:max-w-[min(54rem,calc(100vw-2rem))]" : ""} ${aside ? "short:grid short:h-[calc(100dvh-2.5rem)] short:grid-cols-2 short:grid-rows-[auto_minmax(0,1fr)_auto] md:grid md:h-[min(86dvh,820px)] md:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] md:grid-rows-[auto_minmax(0,1fr)_auto]" : ""}`}
       >
         <Ridge />
         <div
-          className={`select-none ${aside ? "short:col-span-2" : ""} ${onClose ? "cursor-grab touch-none" : ""}`}
+          className={`select-none ${aside ? "short:col-span-2 md:col-span-2" : ""} ${onClose ? "cursor-grab touch-none" : ""}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -229,7 +229,7 @@ export function Sheet({
             </div>
           )}
           {(!titleHidden || onClose) && (
-            <header className="flex items-start gap-3 px-5 pb-2 pt-2 short:pb-1 short:pt-0.5">
+            <header className="flex items-start gap-3 px-4 pb-2 pt-2 sm:px-5 short:pb-1 short:pt-0.5">
               <div className="min-w-0 flex-1">
                 {!titleHidden && (
                   <>
@@ -262,14 +262,14 @@ export function Sheet({
           )}
         </div>
         <div
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 ${titleHidden && !onClose ? "pt-4 short:pt-0" : ""} ${aside ? "short:contents" : ""}`}
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 ${titleHidden && !onClose ? "pt-4 short:pt-0" : ""} ${aside ? "short:contents md:contents" : ""}`}
         >
           {aside ? (
             <>
-              <div className={`short:col-start-1 short:row-span-2 short:row-start-2 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-4 ${titleHidden && !onClose ? "short:pt-6" : ""}`}>
+              <div className={`short:col-start-1 short:row-span-2 short:row-start-2 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-4 md:col-start-1 md:row-span-2 md:row-start-2 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:px-5 md:pb-4 ${titleHidden && !onClose ? "short:pt-6" : ""}`}>
                 {children}
               </div>
-              <div className={`mt-3 short:col-start-2 short:row-start-2 short:mt-0 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-2 ${titleHidden && !onClose ? "short:pt-6" : ""}`}>
+              <div className={`mt-3 short:col-start-2 short:row-start-2 short:mt-0 short:min-h-0 short:overflow-y-auto short:overscroll-contain short:px-5 short:pb-2 md:col-start-2 md:row-start-2 md:mt-0 md:min-h-0 md:overflow-y-auto md:overscroll-contain md:border-l-2 md:border-ink/15 md:px-5 md:pb-2 ${titleHidden && !onClose ? "short:pt-6" : ""}`}>
                 {aside}
               </div>
             </>
@@ -278,7 +278,7 @@ export function Sheet({
           )}
         </div>
         {footer && (
-          <footer className={`px-5 ${aside ? "short:col-start-2 short:row-start-3" : ""} pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 short:pb-[max(0.6rem,env(safe-area-inset-bottom))] short:pt-2`}>
+          <footer className={`px-5 ${aside ? "short:col-start-2 short:row-start-3 md:col-start-2 md:row-start-3 md:border-l-2 md:border-ink/15" : ""} pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 short:pb-[max(0.6rem,env(safe-area-inset-bottom))] short:pt-2`}>
             {footer}
           </footer>
         )}

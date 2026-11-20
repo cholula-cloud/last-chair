@@ -126,7 +126,7 @@ export function LayerPanel({ layer, compact = false }: { layer: SnowLayer; compa
                 <div className="flex flex-wrap gap-1" aria-label="Forecast chances">
                   {Object.entries(model.forecast).map(([kind, odds]) => (
                     <span key={kind} className="chip px-1.5 py-0.5 text-[0.65rem] font-extrabold">
-                      {kind} {Math.round(odds * 100)}%
+                      {kind.charAt(0).toUpperCase() + kind.slice(1)} {Math.round(odds * 100)}%
                     </span>
                   ))}
                 </div>
@@ -146,7 +146,7 @@ export function LayerPanel({ layer, compact = false }: { layer: SnowLayer; compa
       {read && (
         <div role="status" className="border-t border-ink pt-1 text-xs">
           <strong>{read.title}</strong>
-          {read.detail.length < 120 && <p>{read.detail}</p>}
+          {read.detail && <p>{read.detail}</p>}
           {read.personas.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-0.5">
               {read.personas.slice(0, 4).map((p) => (

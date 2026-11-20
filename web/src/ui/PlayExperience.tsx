@@ -1,5 +1,6 @@
 "use client";
 
+import { nextTip } from "@/game/coach";
 import { TALENT } from "@/game/talents";
 
 import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
@@ -148,6 +149,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const paidForSnow = useGameStore((s) => s.lastDay?.snowNightCost ?? SNOW_NIGHT_COST[s.snow]);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
+  const tipsSeen = useGameStore((s) => s.tipsSeen);
+  const tipsEnabled = useSettings((s) => s.tips);
   const saveNotice = useGameStore((s) => s.saveNotice);
   const dismissSaveNotice = useGameStore((s) => s.dismissSaveNotice);
   const togglePause = useGameStore((s) => s.togglePause);
@@ -243,6 +246,26 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+  const activeCoachTip =
+    hydrated &&
+    phase === "day" &&
+    !buildOpen &&
+    !guestsOpen &&
+    !officeOpen &&
+    !placementActive &&
+    !hudSuppressed &&
+    !inspectedAsset
+      ? nextTip(tipsSeen, {
+          phase,
+          dayIndex,
+          opening,
+          running: !notStarted,
+          placementActive,
+          buildOpen: false,
+          hasGuestsWant: false,
+          enabled: tipsEnabled,
+        })
+      : null;
   const layerDock =
     phase === "day" &&
     !placementActive &&
@@ -334,6 +357,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             />
           )}
           {showNote && !placementActive && !hudSuppressed && (
+            <div className={activeCoachTip ? "hidden w-full sm:block" : "w-full"}>
             <MorningNote
               weather={weather}
               headline={tidy(morningHeadline)}
@@ -347,6 +371,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               onExpand={() => setNoteExpandedDay(dayIndex)}
               onDismiss={() => setNoteDismissedDay(dayIndex)}
             />
+            </div>
           )}
         </div>
 

@@ -137,6 +137,25 @@ const WEATHER: Record<WeatherKind, { label: string; icon: ReactNode }> = {
   thaw: { label: "Thaw", icon: <ThawIcon size={20} /> },
 };
 
+function parseCrewLine(crewLine: string | null) {
+  if (!crewLine) return { main: null as string | null, need: null as string | null, waiting: null as string | null };
+  let waiting: string | null = null;
+  let rest = crewLine;
+  const waitAt = crewLine.indexOf(" Waits for ");
+  if (waitAt >= 0) {
+    rest = crewLine.slice(0, waitAt);
+    waiting = crewLine.slice(waitAt + " Waits for ".length);
+  }
+  let need: string | null = null;
+  let main = rest;
+  const needAt = rest.indexOf(" Needs ");
+  if (needAt >= 0) {
+    main = rest.slice(0, needAt).trimEnd();
+    need = rest.slice(needAt + 1).trim();
+  }
+  return { main: main || null, need, waiting };
+}
+
 export function WindHoldCallout({ shortHold }: { shortHold: boolean }) {
   return (
     <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
@@ -166,7 +185,7 @@ export function MorningNote({
   onExpand?: () => void;
 }) {
   const w = WEATHER[weather];
-  const [skill, waiting] = crewLine?.split(" Waits for ") ?? [];
+  const { main: skill, need, waiting } = parseCrewLine(crewLine);
   return (
     <aside
       aria-label="Morning note"
@@ -189,7 +208,17 @@ export function MorningNote({
         )}
         {skill && (
           <p className={`mt-0.5 text-[0.8rem] font-extrabold leading-snug text-sign-green ${expanded ? "" : "line-clamp-2"}`}>
-            {skill}{waiting && <span className="text-ink-soft"> ◇ Waits for {waiting}</span>}
+            {skill}
+            {waiting && (
+              <span className="font-bold text-ink-soft"> Waits for {waiting}</span>
+            )}
+          </p>
+        )}
+        {need && (
+          <p className="mt-0.5">
+            <span className="chip inline-flex max-w-full truncate px-1.5 py-0.5 text-[0.72rem] font-extrabold text-ink-soft">
+              {need}
+            </span>
           </p>
         )}
       </div>
@@ -499,7 +528,7 @@ export function ResumeFollowChip({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="chip press pointer-events-auto flex h-11 items-center px-4 text-[0.85rem] font-extrabold"
     >
-      Follow the guests again
+      Follow the skiers again
     </button>
   );
 }

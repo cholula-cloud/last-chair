@@ -44,11 +44,11 @@ export const LAYER_SHORT: Record<MapLayer, string> = {
   slope: "Slope",
   depth: "Depth",
   guns: "Guns",
-  conditions: "Cond.",
-  crowds: "Crowd",
-  revenue: "Rev.",
-  demand: "Want",
-  trails: "Runs",
+  conditions: "Snow",
+  crowds: "Crowds",
+  revenue: "Cash",
+  demand: "Demand",
+  trails: "Trails",
 };
 export type MapLayer = keyof typeof LAYERS;
 export type SnowLayer = "depth" | "guns" | "conditions";
@@ -295,7 +295,7 @@ export function readPoint(
     return {
       ...result,
       title: "Outside the lease",
-      detail: "Tap inside the lease line to check a spot.",
+      detail: "Tap inside the lease line to inspect a spot.",
     };
   const hit = segmentAt(state.trails, point);
   if (!hit) {
@@ -309,8 +309,7 @@ export function readPoint(
         return {
           ...result,
           title: `Gun ${gun + 1}`,
-          detail:
-            "A gun can reach this spot, but snow is only tracked on trails.",
+          detail: "This gun reaches here, but snow is tracked on trails only.",
         };
     }
     return result;
@@ -319,18 +318,18 @@ export function readPoint(
     cell = model.trails[hit.index][hit.segment];
   result.title = `${trail.name}, segment ${hit.segment + 1} of ${trail.snow.length}`;
   if (layer === "depth")
-    result.detail = `Snow depth is ${cell.snow.depth.toFixed(2)}. Cover breaks up below ${COVER_MIN}.`;
+    result.detail = `Depth ${cell.snow.depth.toFixed(2)}. Cover breaks up below ${COVER_MIN}.`;
   if (layer === "guns") {
     const reach = cell.guns
       .map(
         (g) =>
-          `Gun ${g.number} reaches ${g.count} of ${trail.snow.length} segments.`,
+          `Gun ${g.number} reaches ${g.count}/${trail.snow.length} segments.`,
       )
       .join(" ");
     if (gunView === "Last night") {
       result.detail = cell.reached
-        ? "A gun reached this segment last night."
-        : "No gun reached this segment last night.";
+        ? "A gun reached this segment overnight."
+        : "No gun reached this segment overnight.";
     } else {
       const service = gunView === "High" ? "high" : "mid";
       const groomed = service === "high" ? cell.highGroom : cell.midGroom;
@@ -338,28 +337,26 @@ export function readPoint(
         (cell.reach ? GUN_DEPTH[service] : 0) +
         (groomed ? GROOM_PUSH[service] : 0);
       result.detail =
-        `${reach} ${gunView} service adds ${added.toFixed(2)} depth before weather and the depth limit.`.trim();
+        `${reach} ${gunView} service adds ${added.toFixed(2)} depth before weather and depth limits.`.trim();
     }
   }
   if (layer === "conditions") {
     const cause: Partial<Record<MarkId, string>> = {
-      fresh:
-        "The crew groomed this segment and the snow quality is still high. Pure corduroy.",
-      powder:
-        "The cover is continuous and the quality is good enough for packed powder.",
-      worn: "Skier traffic has worn down the surface.",
-      slush: "The afternoon thaw has gone to work on this lower segment.",
-      ice: `Snow quality is down to ${Math.round(cell.snow.quality * 100)}%.`,
-      thin: `Only ${Math.round(cell.snow.coverage * 100)}% of this segment has cover.`,
-      bare: "Less than a tenth of this segment has cover. That’s mostly dirt.",
+      fresh: "Groomed corduroy with high snow quality.",
+      powder: "Continuous cover with good packed powder.",
+      worn: "Skier traffic has worn the surface.",
+      slush: "Afternoon thaw on this lower segment.",
+      ice: `Snow quality at ${Math.round(cell.snow.quality * 100)}%.`,
+      thin: `${Math.round(cell.snow.coverage * 100)}% of this segment has cover.`,
+      bare: "Under 10% cover; mostly dirt.",
     };
     result.detail = wear
       ? cell.yesterday === undefined
-        ? "No run count for yesterday."
+        ? "No yesterday run count."
         : trail.previousSegmentRuns
-          ? `Skier traffic cost up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality here yesterday.`
-        : `${cell.yesterday} runs wore this segment yesterday, costing up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality.`
-      : `${MARKS[cell.condition].name}. ${cause[cell.condition]}${cell.hold ? " Its chair is on wind hold." : ""}`;
+          ? `Traffic cost up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality here yesterday.`
+        : `${cell.yesterday} runs cost up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality yesterday.`
+      : `${MARKS[cell.condition].name}. ${cause[cell.condition]}${cell.hold ? " Chair on wind hold." : ""}`;
     result.personas = Object.values(PERSONAS).map((p) => {
       const suitable =
         trail.open &&

@@ -80,7 +80,7 @@ describe("contextual problem guidance", () => {
   it("uses the same measured demand as the Guests want line", () => {
     const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30 };
     expect(problemGuide(recap, "seats")).toMatchObject({ layer: "slope", tab: "Crew", text: expect.stringMatching(/lodge/) });
-    expect(problemGuide(recap, "green")?.text).toMatch(/gentle descent/);
+    expect(problemGuide(recap, "green")?.text).toMatch(/green trail/);
     expect(problemGuide(recap, "snow")).toMatchObject({ layer: "conditions", tab: "Desk" });
   });
   it("offers a real cash shortfall and stays silent on a quiet profitable day", () => {

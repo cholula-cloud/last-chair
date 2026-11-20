@@ -98,19 +98,19 @@ export function surpriseRadio(entry: SurpriseEntry): { title: string; radio: str
   switch (entry.kind) {
     case "pie": return {
       title: "Pie on the counter",
-      radio: "Somebody dropped a maple pie at the Dutch Hill lodge and drove off without leaving a name. The crew split the last slice after closing. I’d like to meet whoever that was.",
+      radio: "Someone left a fresh maple pie on the lodge counter and drove off without a name. The crew split it after last chair.",
     };
     case "former_regulars": return {
-      title: "Old tracks, new turns",
+      title: "Old regulars return",
       radio: count === 1
-        ? "One skier who hadn’t been up Dutch Hill in years found the way back today. Nobody had to point out the lift."
-        : `${count} skiers who hadn’t been up Dutch Hill in years found the way back today. Nobody had to point out the lift.`,
+        ? "One skier who grew up on Dutch Hill found the way back today. Did not even need a trail map."
+        : `${count} skiers who grew up on Dutch Hill found the way back today. None of them needed a trail map.`,
     };
     case "road_delay": return {
-      title: "Slow going on Route 100",
+      title: "Icy morning on Route 100",
       radio: count === 1
-        ? "A skin of ice had Route 100 crawling behind the plow this morning. One skier rolled in once the road cleared."
-        : `A skin of ice had Route 100 crawling behind the plow this morning. ${count} skiers rolled in once the road cleared.`,
+        ? "Black ice had Route 100 crawling behind the state plow this morning. One skier rolled in late once the road cleared."
+        : `Black ice had Route 100 crawling behind the state plow this morning. ${count} skiers rolled in once the road cleared.`,
     };
   }
 }

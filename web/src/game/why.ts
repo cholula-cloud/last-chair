@@ -24,26 +24,26 @@ const LABEL: Record<keyof SatTerms, string> = {
 function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]): string {
   switch (key) {
     case "queue":
-      if (f.dispatched === 0) return "No lift rides finished, so there are no waits to average.";
-      return `Guests waited ${f.avgWaitMin.toFixed(1)} min a ride${f.busiestLift ? `, worst at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}.`;
+      if (f.dispatched === 0) return "No lift rides finished today, so there are no wait times yet.";
+      return `Skiers waited ${f.avgWaitMin.toFixed(1)} min per ride${f.busiestLift ? `, longest at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}.`;
     case "snow":
-      return `Today’s average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%.`;
+      return `Snow averaged ${f.snowLabel.toLowerCase()} at ${Math.round(f.snowQuality * 100)}% quality.`;
     case "value": {
-      const worth = `about ${formatMoney(f.hillValue)}`;
+      const worth = formatMoney(f.hillValue);
       const price = formatMoney(f.farePrice);
       if (f.schoolBus?.arrived) {
-        return `Public tickets were ${price}, with ${formatMoney(SCHOOL_BUS_FARE)} school tickets. On average, guests felt today was worth ${worth}.`;
+        return `Public tickets were ${price}, plus ${formatMoney(SCHOOL_BUS_FARE)} school tickets. Skiers valued the day around ${worth}.`;
       }
-      if (points <= -1) return `${price} felt steep. Guests figured the day was worth ${worth}.`;
-      if (points >= 1) return `${price} felt like a fair deal. Guests figured the day was worth ${worth}.`;
-      return `${price} was about right. Guests figured the day was worth ${worth}.`;
+      if (points <= -1) return `${price} felt steep. Skiers valued the day around ${worth}.`;
+      if (points >= 1) return `${price} felt like a fair deal. Skiers valued the day around ${worth}.`;
+      return `${price} felt about right. Skiers valued the day around ${worth}.`;
     }
     case "runs":
       return f.turnedAway > 0
-        ? `${f.turnedAway} guests turned away at close, ${f.runsPerGuest.toFixed(1)} runs each.`
-        : `${f.runsPerGuest.toFixed(1)} runs each.`;
+        ? `${f.turnedAway} skiers missed last chair, averaging ${f.runsPerGuest.toFixed(1)} runs each.`
+        : `Skiers averaged ${f.runsPerGuest.toFixed(1)} runs each.`;
     case "arrivalMood":
-      return `Guests showed up at ${Math.round(f.arrivalMood * 100)} out of 100 on mood.`;
+      return `Skiers arrived at ${Math.round(f.arrivalMood * 100)}% mood.`;
   }
 }
 
@@ -91,11 +91,11 @@ export function observeGuests(recap: NightRecap, measure?: GuestMeasure): GuestO
 }
 
 export const GUEST_MEASURE_LABELS: Record<GuestMeasure, string> = {
-  queue: "Average wait per ride",
-  snow: "Average snow quality at closing",
-  value: "Estimated value minus ticket price",
-  runs: "Average runs per skier",
-  arrivalMood: "Average mood on arrival",
+  queue: "Average lift wait",
+  snow: "Closing snow quality",
+  value: "Ticket value vs price",
+  runs: "Runs per skier",
+  arrivalMood: "Arrival mood",
 };
 
 export function formatGuestObservation({ measure, value }: GuestObservation): string {

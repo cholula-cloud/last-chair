@@ -80,7 +80,7 @@ function BuildCommitmentsCard({ state }: { state: GameState }) {
 
   return (
     <ChartCard
-      title="Build bills & free cash"
+      title="Build bills and free cash"
       hero={build.totalScheduled > 0 ? `${formatMoney(build.totalScheduled)} due` : "$0 due"}
       heroTone={heroTone}
       caption="How much of your cash is already spoken for by 40/30/30 build installments."
@@ -158,14 +158,14 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
   const loan = loanSeries(state);
 
   return (
-    <div className="space-y-3" data-office-stats="money">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start" data-office-stats="money">
       <ChartCard
         title="Revenue vs. operating costs"
         hero={rc.length ? formatMoney(rcNet, { signed: true }) : undefined}
         heroTone={rcNet >= 0 ? "good" : "bad"}
         caption="Total day revenue (tickets, venues, and school bus) against fixed, lift, and upkeep bills."
         comparisons={rc.length && rcBest ? [`Yesterday: ${formatMoney(rc.at(-1)!.net, { signed: true })}`, `Best day: Day ${rcBest.day} (${formatMoney(rcBest.value, { signed: true })})`] : undefined}
-        empty={rc.length === 0 ? "First ledger numbers land when the hill closes tonight." : undefined}
+        empty={rc.length === 0 ? "Ledger data appears after your first 4 PM closing." : undefined}
         columns={[{ key: "day", label: "Day" }, { key: "rev", label: "Revenue", align: "right" }, { key: "cost", label: "Costs", align: "right" }, { key: "net", label: "Net", align: "right" }]}
         rows={rc.map((d) => ({ day: `Day ${d.day}`, rev: formatMoney(d.revenue), cost: formatMoney(d.costs), net: formatMoney(d.net, { signed: true }) }))}
         legend={[{ label: "Revenue", color: "var(--sign-green)" }, { label: "Operating costs", color: "var(--barn)", pattern: "stripe" }]}

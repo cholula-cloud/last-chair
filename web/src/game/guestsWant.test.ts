@@ -27,17 +27,17 @@ describe("guestsWantLine", () => {
 
   it("asks for a second lift when one lift has long lines", () => {
     const recap = { ...withBreakdown({ queue: -9 }), facts: { ...calm.facts, avgWaitMin: 7, busiestLift: { label: "Surface lift 1", min: 10.4 } } };
-    expect(guestsWantLine(recap, ctx)).toBe("The lift line got long enough to need its own zip code. It ran over 10 minutes, so guests want a second lift.");
+    expect(guestsWantLine(recap, ctx)).toBe("Lift lines topped 10 minutes today. Skiers want a second lift.");
   });
 
   it("names the busiest lift when there are already two", () => {
     const recap = { ...withBreakdown({ queue: -6 }), facts: { ...calm.facts, busiestLift: { label: "Chair 2", min: 6.2 } } };
-    expect(guestsWantLine(recap, { ...ctx, liftCount: 2 })).toBe("Guests were checking their watches at Chair 2, which ran over 6 minutes. They want shorter lift lines.");
+    expect(guestsWantLine(recap, { ...ctx, liftCount: 2 })).toBe("Chair 2 backed up past 6 minutes. Skiers want shorter lift lines.");
   });
 
   it("asks for another green trail when beginner terrain is crowded", () => {
     const line = guestsWantLine(withBreakdown({ runs: -3 }), { ...ctx, greenTrailCount: 1, greenRuns: 40 });
-    expect(line).toBe("The green trail is wall to wall with beginners. Guests want another green trail.");
+    expect(line).toBe("The green trail was packed with beginners. Skiers want another easy run.");
   });
 
   it("does not call a quiet green trail crowded", () => {
@@ -45,17 +45,17 @@ describe("guestsWantLine", () => {
   });
 
   it("asks for more lodge seats when the lodge was full for long", () => {
-    expect(guestsWantLine(calm, { ...ctx, seatsFullMin: 90 })).toBe("The lodge ran out of seats and lunch went standing up. Guests want more seats.");
+    expect(guestsWantLine(calm, { ...ctx, seatsFullMin: 90 })).toBe("The lodge ran out of seats at lunch. Skiers want more indoor space.");
   });
 
   it("asks for better snow when the snow term hurts", () => {
     const recap = { ...withBreakdown({ snow: -8 }), facts: { ...calm.facts, snowLabel: "Icy bottom" } };
-    expect(guestsWantLine(recap, ctx)).toBe("Cover was icy bottom and guests noticed. They want better snow.");
+    expect(guestsWantLine(recap, ctx)).toBe("Snow cover was icy bottom today. Skiers want better grooming or snowmaking.");
   });
 
   it("picks the largest pain when several apply", () => {
     const recap = { ...withBreakdown({ queue: -4, snow: -10 }), facts: { ...calm.facts, busiestLift: { label: "Surface lift 1", min: 5 } } };
-    expect(guestsWantLine(recap, { ...ctx, seatsFullMin: 60 })).toMatch(/better snow/);
+    expect(guestsWantLine(recap, { ...ctx, seatsFullMin: 60 })).toMatch(/grooming or snowmaking/);
   });
 
   it("writes plain sentences with no dashes or middle dots", () => {

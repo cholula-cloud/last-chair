@@ -36,7 +36,6 @@ import { PROBLEM_GUIDE_ID, problemGuide } from "@/game/coach";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
 import { founderById } from "@/game/content";
 import type { OfficeTabId } from "./officeStore";
-import { CoachTip } from "./CoachTip";
 import { LiveMessage } from "./kit/LiveMessage";
 import { CocoaIcon, PeaksGlyph, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { Sheet, SheetTitle } from "@/ui/kit/Sheet";
@@ -108,6 +107,7 @@ const BAR_FULL_PTS = 20;
 function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
   const [open, setOpen] = useState(false);
   const lines = whyLines(recap);
+  const today = observeGuests(recap);
   return (
     <div className="mt-3">
       <DisclosureButton open={open} controls="why-list" onToggle={() => setOpen((o) => !o)}>
@@ -115,6 +115,12 @@ function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
       </DisclosureButton>
       {open && (
         <div id="why-list" className="panel mt-2.5 px-3.5 py-1.5">
+          {today && (
+            <p className="border-b-2 border-snow-2 py-2.5 text-sm font-extrabold">
+              {GUEST_MEASURE_LABELS[today.measure]} today:{" "}
+              <span className="tabular-nums">{formatGuestObservation(today)}</span>
+            </p>
+          )}
           <ul>
             {lines.map((line) => {
               const width = Math.min(1, Math.abs(line.points) / BAR_FULL_PTS) * 50;
@@ -131,7 +137,7 @@ function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
                       {formatPoints(line.points)}
                     </span>
                   </div>
-                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " Dana’s first aid hut took the edge off." : ""}</p>
+                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " Dana's patrol aid softened the rough snow." : ""}</p>
                   <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-snow-2" aria-hidden="true">
                     <span
                       className={`absolute inset-y-0 ${
@@ -176,27 +182,47 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
   );
 }
 
-function GuestExperience({ recap, last, finalNight }: { recap: NightRecap; last: LastDay | null; finalNight: boolean }) {
-  const today = observeGuests(recap);
-  const yesterday = last?.observation;
-  const comparison = yesterday ? observeGuests(recap, yesterday.measure) : null;
-  if (!today && !yesterday) return null;
+function TopTakeaway({
+  headline,
+  guestLine,
+  guide,
+  founderName,
+  onMap,
+  onOffice,
+  onDismissGuide,
+}: {
+  headline: string;
+  guestLine: string | null;
+  guide: ReturnType<typeof problemGuide>;
+  founderName: string | undefined;
+  onMap: (layer: MapLayer) => void;
+  onOffice: (tab: OfficeTabId) => void;
+  onDismissGuide: () => void;
+}) {
   return (
-    <section aria-label="Guest experience" className="chip mt-2 px-3.5 py-2.5 text-sm font-bold">
-      {today && (
-        <p className="flex flex-wrap justify-between gap-x-2">
-          <span>{GUEST_MEASURE_LABELS[today.measure]}</span>
-          <strong className="tabular-nums">{formatGuestObservation(today)}</strong>
+    <section className="panel mt-4 px-3.5 py-3" aria-label="Top takeaway">
+      <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink-soft">Top takeaway</h3>
+      <p className="mt-1.5 text-[1.05rem] font-extrabold leading-snug">{headline}</p>
+      {guestLine && <p className="mt-2 text-sm font-bold leading-snug">{guestLine}</p>}
+      {guide && (
+        <p className="mt-2 text-sm font-bold leading-snug">
+          <LiveMessage>
+            <strong>{founderName}:</strong> {guide.text}
+          </LiveMessage>
         </p>
       )}
-      {yesterday && (
-        <p className="mt-1 text-ink-soft">
-          Yesterday’s {GUEST_MEASURE_LABELS[yesterday.measure].toLowerCase()} was {formatGuestObservation(yesterday)}.
-          {comparison ? ` Today it was ${formatGuestObservation(comparison)}.` : " No reading today."}
-        </p>
-      )}
-      {today && !finalNight && (
-        <p className="mt-1 text-xs text-ink-soft">Check this measure again at tomorrow’s close.</p>
+      {guide && (
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          <button type="button" className="key min-h-11 px-2 text-sm font-bold" onClick={() => onMap(guide.layer)}>
+            Map: {LAYERS[guide.layer]}
+          </button>
+          <button type="button" className="key min-h-11 px-2 text-sm font-bold" onClick={() => onOffice(guide.tab)}>
+            Office: {guide.tab}
+          </button>
+          <button type="button" className="min-h-11 px-1 text-sm font-bold underline" onClick={onDismissGuide}>
+            Dismiss advice
+          </button>
+        </div>
       )}
     </section>
   );
@@ -226,7 +252,7 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
     { label: "Construction payments tonight", amount: -costs.draws },
     { label: "Loan received tonight", amount: recap.loanReceived },
     { label: "Loan repaid tonight", amount: -recap.loanRepaid },
-    { label: "Abominable Snowglomerate payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
+    { label: "Summit Pass Corp payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
   ];
 
   return (
@@ -237,16 +263,12 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
       </p>
       {breakdown && breakdown.total > 0 && (
         <p className="px-1 pb-1 text-xs font-bold text-ink-soft">
-          Revenue today {formatMoney(breakdown.total)}
-          {" · "}
-          {formatMoney(breakdown.tickets)} lift
-          {" · "}
-          {formatMoney(breakdown.venues)} venues
-          {breakdown.schoolBus > 0 ? ` · ${formatMoney(breakdown.schoolBus)} school bus` : ""}
+          Revenue today {formatMoney(breakdown.total)}: {formatMoney(breakdown.tickets)} lift, {formatMoney(breakdown.venues)} venues
+          {breakdown.schoolBus > 0 ? `, ${formatMoney(breakdown.schoolBus)} school bus` : ""}
         </p>
       )}
       <DisclosureButton open={open} controls="night-money-lines" onToggle={() => setOpen((value) => !value)}>
-        Why? <span className="sr-only">Cash today and tonight</span>
+        Money breakdown <span className="sr-only">Cash today and tonight</span>
       </DisclosureButton>
       <div hidden={!open} id="night-money-lines" className="panel mt-2 px-3.5 py-2.5">
         {breakdown && breakdown.total > 0 && (
@@ -330,7 +352,7 @@ function Choices({
       glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
       label: FARE_LABELS[v],
       detail: formatMoney(FARE_PRICES[v]),
-      note: locked ? "Abominable Snowglomerate fare cap" : `~${skiers(v)} skiers`,
+      note: locked ? "Summit Pass Corp fare cap" : `~${skiers(v)} skiers`,
       disabled: locked,
     };
   });
@@ -388,11 +410,14 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
   const rushCrewPoint = useGameStore((s) => s.rushCrewPoint);
+  const [mobileStep, setMobileStep] = useState<"results" | "plan">("results");
 
   const recap = night?.nightRecap;
   if (!night || !recap) return null;
 
   const { dayIndex, pendingBeat, beatAcknowledged, lastDay } = night;
+  const finalNight = dayIndex === night.seasonLength;
+  const planNight = !finalNight;
   const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], dayIndex);
   const nextTalent = nextTalentName(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat);
@@ -403,7 +428,43 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
   const guide = tipsOn && !guideSeen ? problemGuide(recap, demand?.key) : null;
-  const guestsWant = demand?.line;
+  const guestsWant = demand?.line ?? null;
+  const founderName = night.founderId ? founderById(night.founderId)?.name : undefined;
+  const problemHeadline = hasGuests ? tidy(recap.problem) : NO_SKIERS_PROBLEM;
+  const showRush =
+    night.crewRushDay !== dayIndex &&
+    night.cash >= CREW_RUSH_COST &&
+    pickableTalents({ ...night, crewPoints: night.crewPoints + 1 }).length > 0;
+
+  const planAside = planNight ? (
+    <>
+      <Choices night={night} setPendingFare={setPendingFare} setPendingSnow={setPendingSnow} />
+      <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
+        {night.crewPoints > 0 ? (
+          <p>
+            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Pick a skill in Office Crew, or sleep to auto-unlock.
+          </p>
+        ) : nextTalent ? (
+          <p>
+            Sleep to earn 1 crew point. Next skill: {talentDescription(nextTalent, night)}
+          </p>
+        ) : null}
+        {pickableTalents(night).length > 0 && (
+          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => onOffice("Crew")}>
+            Choose crew skill
+          </button>
+        )}
+        {showRush && (
+          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => rushCrewPoint()}>
+            Rush +1 point ({formatMoney(CREW_RUSH_COST)})
+          </button>
+        )}
+      </div>
+    </>
+  ) : null;
+
+  const hideResultsOnMobile = planNight && mobileStep === "plan";
+  const hidePlanOnMobile = planNight && mobileStep === "results";
 
   return (
     <Sheet
@@ -414,43 +475,11 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
       z="z-50"
       title="Closing recap"
       aside={
-        <>
-          {dayIndex < night.seasonLength && <Choices
-            night={night}
-            setPendingFare={setPendingFare}
-            setPendingSnow={setPendingSnow}
-          />}
-
-          {dayIndex < night.seasonLength && (
-            <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
-              {night.crewPoints > 0 ? (
-                <p>
-                  <span className="font-extrabold text-sign-green">{night.crewPoints}</span> crew{" "}
-                  {night.crewPoints === 1 ? "point" : "points"} saved. Pick in Office before sleep, or turn in to auto-hire
-                  in roster order.
-                </p>
-              ) : nextTalent ? (
-                <p>Earn one crew point when you sleep. Next on the board: {talentDescription(nextTalent, night)}.</p>
-              ) : null}
-              {pickableTalents(night).length > 0 && (
-                <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => onOffice("Crew")}>
-                  Pick crew talent
-                </button>
-              )}
-              {night.crewRushDay !== dayIndex &&
-                night.cash >= CREW_RUSH_COST &&
-                pickableTalents({ ...night, crewPoints: night.crewPoints + 1 }).length > 0 && (
-                  <button
-                    type="button"
-                    className="key press min-h-11 w-full px-3 text-xs font-extrabold"
-                    onClick={() => rushCrewPoint()}
-                  >
-                    Rush hire (+1 point, {formatMoney(CREW_RUSH_COST)})
-                  </button>
-                )}
-            </div>
-          )}
-        </>
+        planAside ? (
+          <div className={hidePlanOnMobile ? "hidden md:block short:block" : undefined}>
+            {planAside}
+          </div>
+        ) : undefined
       }
       footer={
         <div>
@@ -465,23 +494,58 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
                 : "Read the radio message, then tap Got it.")}
             </p>
           )}
-          <PrimaryButton
-            tone="brown"
-            disabled={!canSleep}
-            aria-describedby={canSleep ? undefined : "sleep-hint"}
-            onClick={() => {
-              if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
-              if (guide) markTipSeen(PROBLEM_GUIDE_ID);
-              sleep();
-            }}
-          >
-            <CocoaIcon size={24} />
-            {dayIndex < night.seasonLength ? "Sleep until morning" : "Finish the winter"}
-          </PrimaryButton>
+          <div className={planNight ? "grid grid-cols-2 gap-2 md:block short:block" : undefined}>
+            {planNight && (
+              <button
+                type="button"
+                className="key press min-h-12 px-3 text-sm font-extrabold md:hidden short:hidden"
+                onClick={() => setMobileStep(mobileStep === "results" ? "plan" : "results")}
+              >
+                {mobileStep === "results" ? "Plan tomorrow" : "Today's results"}
+              </button>
+            )}
+            <PrimaryButton
+              tone="brown"
+              disabled={!canSleep}
+              aria-describedby={canSleep ? undefined : "sleep-hint"}
+              className={planNight ? "col-span-1 md:col-span-none" : undefined}
+              onClick={() => {
+                if (!radio && pendingBeat && !beatAcknowledged) acknowledgeBeat();
+                if (guide) markTipSeen(PROBLEM_GUIDE_ID);
+                sleep();
+              }}
+            >
+              <CocoaIcon size={24} />
+              {planNight ? "Sleep until morning" : "Finish the winter"}
+            </PrimaryButton>
+          </div>
         </div>
       }
     >
-      <div>
+      <div className={hideResultsOnMobile ? "hidden md:block short:block" : undefined}>
+        {planNight && (
+          <div className="mb-3 grid grid-cols-2 gap-2 md:hidden short:hidden" role="tablist" aria-label="Recap steps">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileStep === "results"}
+              className={`key press min-h-11 px-2 text-sm font-extrabold ${mobileStep === "results" ? "key-solid [--key-fill:var(--sign-yellow)]" : ""}`}
+              onClick={() => setMobileStep("results")}
+            >
+              Today&apos;s results
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mobileStep === "plan"}
+              className={`key press min-h-11 px-2 text-sm font-extrabold ${mobileStep === "plan" ? "key-solid [--key-fill:var(--sign-yellow)]" : ""}`}
+              onClick={() => setMobileStep("plan")}
+            >
+              Plan tomorrow
+            </button>
+          </div>
+        )}
+
         <Sign
           innerClassName="pb-4 pt-3"
           tab={`Dutch Hill, ${WEEKDAY_FULL[weekday]} ${date} night`}
@@ -510,41 +574,30 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             />
           </div>
         </Sign>
-        <SummitLinkCard night={night} />
-        <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
+
         {lastDay && <Deltas recap={recap} last={lastDay} dayIndex={dayIndex} />}
 
-        <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
-          <span className="sr-only">Problem: </span>
-          {hasGuests ? tidy(recap.problem) : NO_SKIERS_PROBLEM}
-        </p>
-        {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
-          <p className="text-base"><LiveMessage><strong>{night.founderId && founderById(night.founderId)?.name}:</strong> {guide.text}</LiveMessage></p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map: {LAYERS[guide.layer]}</button>
-            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office: {guide.tab}</button>
-            <button type="button" className="min-h-11 px-1 underline" onClick={() => markTipSeen(PROBLEM_GUIDE_ID)}>Dismiss advice</button>
-          </div>
-        </aside>}
-        {!guide && <CoachTip context={{
-          phase: "night",
-          dayIndex,
-          opening: null,
-          running: false,
-          placementActive: false,
-          buildOpen: false,
-          hasGuestsWant: !!guestsWant,
-        }} />}
-        <GuestExperience recap={recap} last={lastDay} finalNight={dayIndex === night.seasonLength} />
-        {guestsWant && (
-          <p className="chip mt-2 px-3.5 py-2 text-[0.95rem] font-extrabold leading-snug">
-            {guestsWant}
+        <TopTakeaway
+          headline={problemHeadline}
+          guestLine={guestsWant}
+          guide={guide}
+          founderName={founderName}
+          onMap={onMap}
+          onOffice={onOffice}
+          onDismissGuide={() => markTipSeen(PROBLEM_GUIDE_ID)}
+        />
+
+        {!!recap.facts.balked && (
+          <p className="mt-2 text-sm font-bold">
+            Guests balked at the lift line {recap.facts.balked} {recap.facts.balked === 1 ? "time" : "times"} today.
           </p>
         )}
 
-        {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">Guests balked at the lift line {recap.facts.balked} {recap.facts.balked === 1 ? "time" : "times"} today.</p>}
         {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 
+        <NightMoney key={`${night.seasonSeed}-${dayIndex}`} recap={recap} night={night} />
+
+        <SummitLinkCard night={night} />
         <SchoolContractCard night={night} />
         {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
@@ -563,10 +616,13 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
           </RadioCard>
         )}
         {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
-        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={() => onOffice("Desk")}>Office</button>
+
+        <button type="button" className="key my-2 min-h-11 px-4 font-bold" onClick={() => onOffice("Desk")}>
+          Office
+        </button>
         <details className="panel mt-4 p-3">
           <summary className="min-h-11 cursor-pointer font-bold">Story log</summary>
-          <StoryEntries />
+          <StoryEntries compact />
         </details>
       </div>
     </Sheet>

@@ -16,8 +16,8 @@ export function SummitLinkCard({ night }: { night: GameState }) {
     return (
       <p className="chip mt-3 px-3 py-2 text-sm font-bold" role="status">
         {decision === "accepted"
-          ? `Abominable Snowglomerate paid ${payment}. Tickets are capped at ${maxFare} this winter.`
-          : "You turned down Abominable Snowglomerate. Dutch Hill sets its own fares."}
+          ? `Summit Pass deal active. Tickets stay capped at Balanced (${maxFare}).`
+          : "You turned down Summit Pass Corp. Dutch Hill sets its own ticket prices."}
       </p>
     );
   }
@@ -27,11 +27,15 @@ export function SummitLinkCard({ night }: { night: GameState }) {
   const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
   return (
     <RadioCard
-      title="Vivian Cho’s Abominable Snowglomerate offer"
-      from="Vivian Cho, Abominable Snowglomerate"
+      title="Summit Pass Corp offer"
+      from="Vivian Cho, Summit Pass Corp"
       action={
         <>
-          {blocked && <p id="summitlink-founder-lock" className="mb-2 text-sm font-bold">Riley won’t sign it. Says he’d rather rebuild the T-bar twice.</p>}
+          {blocked && (
+            <p id="summitlink-founder-lock" className="mb-2 text-sm font-bold">
+              Riley will not sign a corporate pass deal. He wants Dutch Hill to stay independent.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -40,7 +44,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
               aria-describedby={blocked ? "summitlink-founder-lock" : undefined}
               onClick={() => useGameStore.getState().replyToSummitLink("accepted")}
             >
-              Accept {payment}
+              Take {payment} (cap tickets)
             </button>
             <button
               type="button"
@@ -53,7 +57,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
         </>
       }
     >
-      We love what you’re building up here. One day every chair in New England will run on a single pass, and we’d love yours on the map. We’ll put {payment} into Dutch Hill tonight if tickets stay at Balanced ({maxFare}) or below for the rest of the winter.
+      We can wire {payment} to Dutch Hill tonight. In exchange, your lift tickets stay capped at Balanced ({maxFare}) for the rest of the winter.
     </RadioCard>
   );
 }

@@ -149,13 +149,13 @@ function SlotCard({
         <h3 className="display text-[1.25rem]">Slot {slot}</h3>
         {summary.kind === "ok" && (
           <>
-            <p className="text-[0.95rem] font-bold">{dayLine(summary)} You’ve got {formatMoney(summary.cash)}.</p>
+            <p className="text-[0.95rem] font-bold">{dayLine(summary)} Cash {formatMoney(summary.cash)}.</p>
             <p className="text-[0.85rem] font-bold text-ink-soft">{playedLine(summary.savedAt)}</p>
           </>
         )}
         {summary.kind === "empty" && <p className="text-[0.95rem] font-bold text-ink-soft">Nothing here yet.</p>}
         {summary.kind === "unreadable" && (
-          <p className="text-[0.95rem] font-bold">This save won’t open. Playing it starts a new winter and keeps a copy of the old one.</p>
+          <p className="text-[0.95rem] font-bold">Save unreadable. Play to start fresh and keep a backup copy.</p>
         )}
       </div>
       {summary.kind !== "empty" && (
@@ -281,7 +281,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
       return (
         <ConfirmDialog
           title="Start a new winter?"
-          body={`Slot ${confirm.slot} already has a winter in it. A new one replaces it.`}
+          body={`Slot ${confirm.slot} has a winter in progress. Starting new replaces it.`}
           confirmLabel="Replace it"
           onCancel={close}
           onConfirm={() => {
@@ -295,7 +295,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
       return (
         <ConfirmDialog
           title={`Delete slot ${confirm.slot}?`}
-          body={`This deletes the winter in slot ${confirm.slot} for good. There’s no undo.`}
+          body={`Deletes slot ${confirm.slot} permanently. No undo.`}
           confirmLabel="Delete"
           onCancel={close}
           onConfirm={() => {
@@ -310,7 +310,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
     return (
       <ConfirmDialog
         title="Replace this winter?"
-        body={`Slot ${confirm.slot} already has a winter in it. Importing the file replaces it.`}
+        body={`Slot ${confirm.slot} is in use. Import replaces that winter.`}
         confirmLabel="Replace it"
         onCancel={close}
         onConfirm={() => {
@@ -362,7 +362,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
                 <span className="sign-inner flex min-h-[64px] flex-col items-center justify-center px-3 py-1">
                   <span className="display text-[1.6rem]">Continue</span>
                   <span className="text-[0.9rem] font-bold">
-                    {dayLine(activeSummary)} You’ve got {formatMoney(activeSummary.cash)}.
+                    {dayLine(activeSummary)} Cash {formatMoney(activeSummary.cash)}.
                   </span>
                 </span>
               </button>

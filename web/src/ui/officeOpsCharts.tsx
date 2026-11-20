@@ -40,11 +40,11 @@ function ArrivalsWaitChart({ state }: { state: GameState }) {
 
   return (
     <ChartCard
-      title="Arrivals & lift wait"
+      title="Arrivals and lift wait"
       hero={last ? `${last.arrivals} guests` : undefined}
       caption="Daily turnout bars paired with average lift wait minutes (amber line)."
       comparisons={last && best ? [`Yesterday wait: ${last.avgWaitMin.toFixed(1)} min`, `Busiest: Day ${best.day} (${best.value} guests)`] : undefined}
-      empty={data.length === 0 ? "Turnout and lift wait lines appear after Day 1 closes." : undefined}
+      empty={data.length === 0 ? "Turnout and wait data appear after the first closing." : undefined}
       columns={[
         { key: "day", label: "Day" },
         { key: "arr", label: "Guests", align: "right" },
@@ -100,7 +100,7 @@ function SatisfactionChart({ state }: { state: GameState }) {
 
   return (
     <ChartCard
-      title="Satisfaction & drivers"
+      title="Satisfaction and drivers"
       hero={last ? `${last.satisfaction}/100` : undefined}
       heroTone={!last ? "neutral" : last.satisfaction >= 70 ? "good" : last.satisfaction < 50 ? "bad" : "neutral"}
       caption="Daily guest mood and the five terms that moved yesterday's score."
@@ -164,7 +164,7 @@ function SatRevenueScatter({ state }: { state: GameState }) {
 
   return (
     <ChartCard
-      title="Satisfaction vs. revenue"
+      title="Satisfaction vs revenue"
       caption="Each dot is a closed day: happier hills earn more repeat turnout and spend."
       empty={data.length === 0 ? "Closed days plot here once the winter gets rolling." : undefined}
       columns={[
@@ -201,7 +201,7 @@ export function OpsStatsCharts({ state }: { state: GameState }) {
   const snowTotal = ops.reduce((sum, d) => sum + d.snowCost, 0);
 
   return (
-    <div className="space-y-3" data-office-stats="ops">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start" data-office-stats="ops">
       <ChartCard
         title="Fare vs. turnout"
         hero={fares.length ? `${fares.length} ${fares.length === 1 ? "tier" : "tiers"}` : undefined}
@@ -235,7 +235,7 @@ export function OpsStatsCharts({ state }: { state: GameState }) {
       <SatisfactionChart state={state} />
 
       <ChartCard
-        title="Snow & service spend"
+        title="Snow and service spend"
         hero={ops.length ? formatMoney(snowTotal) : undefined}
         caption="Overnight snowmaking and grooming bills beside daytime operating costs."
         comparisons={ops.length ? [`Last night: ${formatMoney(ops.at(-1)!.snowCost)}`] : undefined}

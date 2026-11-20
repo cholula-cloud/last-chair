@@ -9,6 +9,9 @@ describe("talentProgress", () => {
     expect(next.crewPoints).toBe(0);
     expect(next.talentsOwned).toContain("rope_tow");
     expect(canUnlockTalent(next, "rope_tow")).toBe(false);
+    expect(next.talentToast).toBe(
+      "Surface Lift Tune (Frank) unlocked. Saves $40 a day on every working surface lift.",
+    );
   });
 
   it("spends every saved point in order", () => {
