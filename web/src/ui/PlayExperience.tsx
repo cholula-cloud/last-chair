@@ -393,6 +393,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       {phase === "day" && !hudSuppressed && (
         <div inert={officeOpen || !!inspectedAsset} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
+            {placementActive && <OverlayLegend allowOff={false} />}
             {!placementActive && !layerDock && <ReadoutCard />}
             {!placementActive && !layerDock && (undoIndex >= 0 || canResume) && (
               <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
@@ -431,10 +432,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             </div>
           )}
           {placementActive ? (
-            <div className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]">
-              <OverlayLegend allowOff={false} docked />
-              <PlacementBar />
-            </div>
+            <PlacementBar />
           ) : layerDock ? null : bottomChromeMinimized ? (
             <div className="pointer-events-auto flex w-full justify-center sm:w-auto">
               <BottomChromeRestoreButton onClick={toggleBottomChromeMinimized} />
