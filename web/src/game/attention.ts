@@ -29,7 +29,7 @@ type AttentionState = Pick<
   GameState,
   | "phase" | "cash" | "lifts" | "trails" | "talentsOwned" | "guests" | "dayStats"
   | "fare" | "buildings" | "assets" | "founderId" | "weather" | "weatherDays" | "dayIndex" | "clockMin"
-  | "snowQuality" | "mountainId"
+  | "snowQuality" | "mountainId" | "seasonLength"
 >;
 
 const liftLabel = (state: Pick<GameState, "lifts">, i: number) => liftName(state.lifts[i], i);

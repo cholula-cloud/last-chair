@@ -632,6 +632,7 @@ export function fareDemandMultiplier(
 
 export type ArrivalInputs = {
   calendar?: CalendarDef;
+  seasonLength?: number;
   dayIndex: number;
   fare: FarePreset;
   snowQuality: number;

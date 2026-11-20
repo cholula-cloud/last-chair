@@ -14,7 +14,7 @@ import {
 import { meanArrivals, readyStoryBeat } from "./sim";
 import { migrate } from "./migrations";
 import { acknowledgeBeat, openNight, pickFounder, sleep, startNewSeason } from "./rules";
-import { createInitialState, hydrate, toPersisted, SAVE_VERSION } from "./state";
+import { createInitialState, hydrate, toPersisted } from "./state";
 import { advanceClosedDays, simulateClosedDay } from "./closedDays";
 
 describe("Dutch Hill calendar", () => {
@@ -47,6 +47,7 @@ describe("Dutch Hill calendar", () => {
   it("finishes an in-progress 14-day save and starts a 49-day winter", () => {
     const state = pickFounder(createBuiltHill(), "elena");
     const night = acknowledgeBeat(openNight({ ...state, dayIndex: 14, weather: state.weatherDays[13].kind }));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip mountainId for v3 migration fixture
     const { mountainId, ...fields } = toPersisted(night);
     const old = {
       ...fields,

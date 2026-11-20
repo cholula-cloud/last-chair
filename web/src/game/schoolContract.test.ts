@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG } from "./base";
-import { DUTCH_HILL_CALENDAR, DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
+import { DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
 import { migrate } from "./migrations";
 import { acknowledgeBeat, decideSchoolContract, expectedArrivals, openNight, pickFounder, sleep, skipToClose, tick } from "./rules";
 import { nextSchoolBusDay, SCHOOL_BUS_FARE, SCHOOL_BUS_PUPILS } from "./schoolContract";

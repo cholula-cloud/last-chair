@@ -19,7 +19,6 @@ import {
   type StrategySummary,
 } from "./balance";
 import { checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
-import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
 // Fast balance properties over a small seed set (see SIMULATION_SPEC, Balance

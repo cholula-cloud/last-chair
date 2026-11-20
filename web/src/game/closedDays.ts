@@ -51,7 +51,7 @@ export function simulateClosedDay(state: GameState, calendarDay: number): GameSt
   const interest = state.loan ? state.loan.principal * state.loan.ratePerDay : 0;
   const cash =
     state.cash - (ops.fixed + ops.founder + ops.liftOps + ops.upkeep + snowNight + draws + interest);
-  let next: GameState = {
+  const next: GameState = {
     ...state,
     dayIndex: calendarDay,
     weather: state.weatherDays[calendarDay - 1]?.kind ?? state.weather,

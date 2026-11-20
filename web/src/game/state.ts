@@ -246,7 +246,6 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     gunsVisible: false,
     groomVisible: false,
     seasonLength,
-    operatingDayIndex: 1,
     talentToast: null,
     rngState: seed >>> 0,
   };

@@ -1,5 +1,5 @@
 import { liquidNetWorth } from "./economy";
-import { operatingDaysLeft, seasonCalendar, type CalendarDef } from "./calendar";
+import { operatingDaysLeft, seasonCalendar } from "./calendar";
 import { schoolContractOfferDay } from "./rules";
 import { SCHOOL_BUS_PUPILS } from "./schoolContract";
 import type { GameState } from "./state";
