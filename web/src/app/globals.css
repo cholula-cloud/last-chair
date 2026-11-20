@@ -193,6 +193,44 @@ body {
     color: var(--key-ink, var(--ink));
   }
 
+  /* Recessed segmented track: groups related choices under one border so
+     the panel stays calm and only the active choice pops. */
+  .seg {
+    background: var(--snow-2);
+    border: 2px solid var(--ink);
+    border-radius: var(--r-key);
+    padding: 3px;
+  }
+  .seg-btn {
+    border-radius: calc(var(--r-key) - 4px);
+    color: var(--ink);
+    transition:
+      transform 110ms var(--ease-out),
+      background-color 140ms var(--ease-out),
+      color 140ms var(--ease-out);
+  }
+  .seg-btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .seg-btn[aria-pressed="true"] {
+    background: var(--sign-green);
+    color: #fff;
+    box-shadow: 0 2px 0 var(--ink);
+  }
+  .seg-btn[aria-pressed="true"][data-tone="bad"] {
+    background: var(--barn-deep);
+  }
+  .seg-btn:disabled {
+    color: var(--ink-soft);
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .seg-btn:not(:disabled):not([aria-pressed="true"]):hover {
+      background: var(--snow);
+    }
+  }
+
   /* Pressable feedback: the key physically goes down 3px on pointer-down and
      springs back on release. Exact properties, never "all". */
   .press {
