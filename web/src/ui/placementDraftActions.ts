@@ -27,6 +27,7 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
     tapPoint: undefined,
     focus: null,
     glade: false,
+    connectCrossings: false,
     brushWidth: STANDARD_BRUSH_WIDTH,
     erasing: false,
     strokes: [],

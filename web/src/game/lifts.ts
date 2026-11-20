@@ -2,8 +2,9 @@ import { TALENT } from "./talents";
 import { liftLength, type LiftLine } from "./descent";
 import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain } from "./terrain";
-import { isOverSkill, pickTrailIndex, type TrailRun } from "./trails";
-import { LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
+import { type TrailRun } from "./trails";
+import { liftHasDescent, pickSkiRoute } from "./trailNetwork";
+import { LIFT_CLOSE_MIN, LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
 import { isWindHeld, windHoldWindow } from "./weather";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
@@ -32,6 +33,10 @@ export function liftCapacityPerHour(type: LiftType, talentsOwned: string[]): num
 /** Minutes a guest at the back of this lift's queue would wait right now. */
 export function liftWaitMin(lift: LiftSlot, talentsOwned: string[]): number {
   return lift.queue.length / (liftCapacityPerHour(lift.type, talentsOwned) / 60);
+}
+
+export function liftLoadingClosesAt(talentsOwned: readonly string[]): number {
+  return LIFT_CLOSE_MIN + (TALENT.nightLights.learned(talentsOwned) ? TALENT.nightLights.minutes : 0);
 }
 
 /** Expected wait at the busiest confirmed lift (the HUD queue reading); 0 with empty queues. */
@@ -70,7 +75,7 @@ function preferredParity(guest: LiftGuest): number {
 
 /** A constructed lift can carry guests once it serves an open descent. */
 export function isLiftOperational(lift: LiftSlot, index: number, trails: readonly TrailRun[]): boolean {
-  return lift.confirmed && trails.some((trail) => trail.liftIndex === index && trail.open && trail.path.length >= 2 && trail.lengthFt > 0);
+  return lift.confirmed && liftHasDescent(trails, index);
 }
 
 /** Choose by expected queue and ride time, adjusted for the guest's skiable trails. */
@@ -88,9 +93,7 @@ export function chooseLift(
   const parity = guest ? preferredParity(guest) : 0;
   lifts.forEach((l, i) => {
     if (!isLiftOperational(l, i, trails) || isWindHeld(l.type, wind, now, talentsOwned)) return;
-    const hasSuitableTrail = guest && trails.some((trail) =>
-      trail.open && trail.liftIndex === i && !isOverSkill(guest.persona, trail.difficulty),
-    );
+    const hasSuitableTrail = guest && liftHasDescent(trails, i, guest.persona);
     const skillPenalty = guest && !hasSuitableTrail ? SKILL_AVOID_MIN : 0;
     const surfacePenalty = guest?.persona === "first_timer" && l.type === "surface"
       ? SURFACE_BEGINNER_MIN : 0;
@@ -221,7 +224,9 @@ export function stepLifts(
       const rest = { ...g };
       delete rest.rideStartMin;
       const li = g.liftIndex ?? 0;
-      const trailIndex = pickTrailIndex(g.persona, trails, li, g.id, g.runs);
+      const legs = pickSkiRoute(g.persona, trails, li, g.id, g.runs);
+      const trailIndex = legs[0]?.trailIndex;
+      if (legs.length > 1) rest.skiRoute = { legs, current: 0, snowFt: 0, distanceFt: 0 };
       out[i] = { ...rest, state: "ski", trailIndex, progress: 0, stateSinceMin: now };
     } else {
       out[i] = { ...g, rideStartMin: start, progress: elapsed / rideMin };

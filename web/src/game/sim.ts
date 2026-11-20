@@ -6,10 +6,11 @@ import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
-import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
+import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
-import { pickTrailIndex, runEnergyCost, runSkiMinutes } from "./trails";
+import { runEnergyCost, runSkiMinutes } from "./trails";
+import { pickSkiRoute } from "./trailNetwork";
 import {
   remoteTrailEndThreshold,
   walkDurationMin,
@@ -20,6 +21,7 @@ import type { LiftSlot } from "./state";
 import type { TrailRun } from "./trails";
 import {
   deriveSnow,
+  experiencedSnow,
   gunReach,
   overnightTrail,
   type Trail,
@@ -40,7 +42,6 @@ import {
   ARRIVAL_PEAK_MIN,
   ARRIVE_WALK_MIN,
   DEPART_WALK_MIN,
-  LIFT_CLOSE_MIN,
   DAY_END_MIN,
   DAY_START_MIN,
   FARE_PRICES,
@@ -52,6 +53,7 @@ import {
   type FarePreset,
   type FounderId,
   type Guest,
+  type SkiLeg,
   type SnowPreset,
   type StoryBeatId,
   type WeatherKind,
@@ -186,7 +188,23 @@ export type GuestClock = {
   /** Expected wait plus ride at the best open lift (fallback lap time). */
   lapOverheadMin: number;
   assets?: readonly PlacedAsset[];
+  onTrailUse?: (leg: SkiLeg, firstUseThisRun: boolean) => void;
 };
+
+function skiLegConditions(clock: GuestClock, leg: SkiLeg) {
+  const trail = clock.trails[leg.trailIndex];
+  if (!trail) return { lengthFt: 0, quality: clock.snowQuality };
+  const whole = leg.from === 0 && leg.to === 1;
+  const quality = whole ? clock.snowByTrail?.[leg.trailIndex] ?? clock.snowQuality : experiencedSnow(
+    trail.snow.slice(Math.floor(leg.from * trail.snow.length), Math.ceil(leg.to * trail.snow.length)),
+  );
+  return { lengthFt: trail.lengthFt * (leg.to - leg.from), difficulty: trail.difficulty, quality };
+}
+
+function skiLegMinutes(clock: GuestClock, persona: Guest["persona"], leg: SkiLeg) {
+  const { lengthFt, difficulty, quality } = skiLegConditions(clock, leg);
+  return difficulty ? runSkiMinutes(persona, { lengthFt, difficulty }, quality) : skiMinutes(persona, quality);
+}
 
 /**
  * Advance guests that move on their own clock: pending guests arrive on their
@@ -199,7 +217,7 @@ export type GuestClock = {
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
-  const closeMin = LIFT_CLOSE_MIN + (TALENT.nightLights.learned(clock.talentsOwned) ? TALENT.nightLights.minutes : 0);
+  const closeMin = liftLoadingClosesAt(clock.talentsOwned);
   const hold = windHoldWindow(clock.talentsOwned);
   const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
     // Sent home from a line: the wait so far counts as a completed wait.
@@ -311,17 +329,44 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         return { ...joinLine(g), trailIndex: g.trailIndex, joinedQueueAtMin: g.joinedQueueAtMin };
       }
       case "ski": {
-        const ti = g.trailIndex ?? g.liftIndex ?? 0;
-        const trail = clock.trails[ti];
-        const q = clock.snowByTrail?.[ti] ?? clock.snowQuality;
-        const duration = trail
-          ? runSkiMinutes(g.persona, trail, q)
-          : skiMinutes(g.persona, q);
-        const progress = (now - g.stateSinceMin) / duration;
-        if (progress < 1) return { ...g, progress };
+        const route = g.skiRoute;
+        let current = route?.current ?? 0;
+        let leg = route?.legs[current] ?? { trailIndex: g.trailIndex ?? g.liftIndex ?? 0, from: 0, to: 1 };
+        let startedAt = g.stateSinceMin;
+        let snowFt = route?.snowFt ?? 0;
+        let distanceFt = route?.distanceFt ?? 0;
+        let duration: number;
+        let quality: number;
+        for (;;) {
+          const conditions = skiLegConditions(clock, leg);
+          quality = conditions.quality;
+          duration = conditions.difficulty
+            ? runSkiMinutes(g.persona, conditions, quality)
+            : skiMinutes(g.persona, quality);
+          const progress = duration > 0 ? (now - startedAt) / duration : 1;
+          if (progress < 1) {
+            if (!route || current === route.current) return { ...g, progress };
+            return {
+              ...g, trailIndex: leg.trailIndex, stateSinceMin: startedAt, progress,
+              skiRoute: { legs: route.legs, current, snowFt, distanceFt },
+            };
+          }
+          const firstUse = !route?.legs.slice(0, current).some((earlier) => earlier.trailIndex === leg.trailIndex);
+          clock.onTrailUse?.(leg, firstUse);
+          snowFt += quality * conditions.lengthFt;
+          distanceFt += conditions.lengthFt;
+          const next = route?.legs[current + 1];
+          if (!next) break;
+          current++;
+          startedAt += duration;
+          leg = next;
+        }
+        const trail = clock.trails[leg.trailIndex];
+        const skier = route ? { ...g, trailIndex: leg.trailIndex } : g;
+        if (route) delete skier.skiRoute;
         const runs = g.runs + 1;
-        const energy = g.energy - runEnergyCost(g.persona, trail);
-        const done = { runs, energy, snowSum: g.snowSum + q };
+        const energy = g.energy - runEnergyCost(g.persona, route ? { lengthFt: distanceFt } : trail);
+        const done = { runs, energy, snowSum: g.snowSum + (route && distanceFt > 0 ? snowFt / distanceFt : quality) };
         const returning = { ...g, runs };
         const openLift = chooseLift(clock.lifts, clock.talentsOwned, clock.trails, returning, clock.wind, now);
         const allHeld = openLift < 0 && clock.wind === "gusty" && now >= hold.fromMin && now < hold.toMin;
@@ -332,10 +377,8 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
           clock.lifts[li]?.confirmed
             ? lapOverheadForLift(clock.lifts, clock.talentsOwned, li)
             : clock.lapOverheadMin;
-        const nextTrailIndex = li < 0 ? undefined : pickTrailIndex(g.persona, clock.trails, li, g.id, runs);
-        const nextTrail = nextTrailIndex == null ? undefined : clock.trails[nextTrailIndex];
-        const nextQuality = nextTrailIndex == null ? clock.snowQuality : clock.snowByTrail?.[nextTrailIndex] ?? clock.snowQuality;
-        const nextRun = nextTrail ? runSkiMinutes(g.persona, nextTrail, nextQuality) : duration;
+        const nextRoute = li < 0 ? [] : pickSkiRoute(g.persona, clock.trails, li, g.id, runs);
+        const nextRun = nextRoute.length ? nextRoute.reduce((sum, part) => sum + skiLegMinutes(clock, g.persona, part), 0) : duration;
         const lapEnds = now + lapOverhead + nextRun;
         const end = trail?.path.at(-1);
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
@@ -345,18 +388,18 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
           ? walkDurationMin(walkToLiftPath(trail?.path, destination), TERRAIN)
           : 0;
         if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
-          const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
+          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
         const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > closeMin || li < 0) {
           const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > remoteThreshold;
-          return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
+          return away ? { ...skier, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(skier, done);
         }
         if (remote || allHeld) {
-          return { ...g, ...done, state: "walk_lift", liftIndex: li, progress: 0, stateSinceMin: now, joinedQueueAtMin: undefined };
+          return { ...skier, ...done, state: "walk_lift", liftIndex: li, progress: 0, stateSinceMin: now, joinedQueueAtMin: undefined };
         }
-        return chooseQueue({ ...g, ...done });
+        return chooseQueue({ ...skier, ...done });
       }
       case "depart": {
         const progress = (now - g.stateSinceMin) / DEPART_WALK_MIN;

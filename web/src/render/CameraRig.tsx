@@ -4,10 +4,13 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
+import type { AssetTarget } from "@/game/assetNames";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import { useCameraUi } from "@/ui/cameraUi";
 import { usePlacementDraft } from "@/ui/placementDraft";
+import { currentLayer } from "@/ui/overlayUi";
+import { pickSceneAsset } from "./assetPick";
 import {
   cameraPosition,
   frameView,
@@ -48,9 +51,11 @@ const RAY = new THREE.Raycaster();
 export function CameraRig({
   followId,
   followedRef,
+  onInspectAsset,
 }: {
   followId: string | null;
   followedRef: FollowedRef;
+  onInspectAsset?: (target: AssetTarget) => void;
 }) {
   const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
   const get = useThree((s) => s.get);
@@ -157,14 +162,27 @@ export function CameraRig({
       panEnded = false;
       const { active: building, moveCamera } = usePlacementDraft.getState();
       if (building && !moveCamera) return;
-      if (kind !== "DOUBLE_TAP") return;
+      if (kind === "DRAG" || e.button !== 0) return;
+      const state = useGameStore.getState();
+      const inspect = onInspectAsset && !building && state.phase === "day";
+      if (!inspect && kind !== "DOUBLE_TAP") return;
       const rect = dom.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const { camera, scene } = get();
       RAY.setFromCamera(
         new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1),
-        get().camera,
+        camera,
       );
       const hit = marchToTerrain(RAY.ray.origin, RAY.ray.direction, TERRAIN.height);
-      if (!hit) return;
+      if (inspect) {
+        const target = pickSceneAsset(scene, RAY, hit, state, !currentLayer());
+        if (target) {
+          prevTap = null;
+          onInspectAsset(target);
+          return;
+        }
+      }
+      if (!hit || kind !== "DOUBLE_TAP") return;
       endFollow();
       userMoved.current = true;
       const snapped = insideLease(hit);
@@ -172,7 +190,7 @@ export function CameraRig({
     };
     const onDown = (e: PointerEvent) => {
       const { active: building, moveCamera } = usePlacementDraft.getState();
-      if (building && !moveCamera) return;
+      if (e.button !== 0 || (building && !moveCamera)) return;
       if (active.size === 0) {
         events = [];
         panEnded = false;
@@ -212,7 +230,7 @@ export function CameraRig({
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
     };
-  }, [controls, dom, get, endFollow, glideTo]);
+  }, [controls, dom, get, endFollow, glideTo, onInspectAsset]);
 
   const recenterNonce = useCameraUi((s) => s.recenterNonce);
   const seenNonce = useRef(recenterNonce);

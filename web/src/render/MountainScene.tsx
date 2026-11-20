@@ -8,6 +8,7 @@ import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
+import type { AssetTarget } from "@/game/assetNames";
 import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
 import { liftLineOf } from "@/game/rules";
 import { decodeSnowKey, snowKey } from "@/game/snow";
@@ -42,7 +43,10 @@ const AZIMUTH_RANGE = 1.4;
 
 const FALLBACK_ANCHOR: LiftAnchor = REFERENCE_TOPS[0] ?? { x: -1.2, z: 0.2 };
 
-export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
+export function MountainScene({ lowDetail = false, onInspectAsset }: {
+  lowDetail?: boolean;
+  onInspectAsset?: (target: AssetTarget) => void;
+}) {
   const speed = useSpeed((s) => s.speed);
   const followId = useGameStore((s) => s.followId);
   const guests = useGameStore((s) => s.guests);
@@ -61,11 +65,11 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
 
   const followedRef = useRef<GuestPlacement | null>(null);
 
-  const confirmedLifts = useMemo(() => lifts.filter((l) => l.confirmed), [lifts]);
+  const confirmedLifts = useMemo(() => lifts.flatMap((lift, index) => lift.confirmed ? [{ lift, index }] : []), [lifts]);
   const primaryLine = useMemo(
     (): LiftLine =>
       confirmedLifts[0]
-        ? liftLineOf(confirmedLifts[0])
+        ? liftLineOf(confirmedLifts[0].lift)
         : { bottom: TERRAIN.base, top: FALLBACK_ANCHOR },
     [confirmedLifts],
   );
@@ -85,7 +89,7 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
     [lifts, primaryLine, trailRuns],
   );
   const clearingLines = useMemo(
-    () => confirmedLifts.map(liftLineOf),
+    () => confirmedLifts.map(({ lift }) => liftLineOf(lift)),
     [confirmedLifts],
   );
   const forestPaths = useMemo(
@@ -131,12 +135,12 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
           if (!run.open || !lifts[run.liftIndex]?.confirmed) return null;
           const lane = trailRuns.slice(0, ti).filter((trail) => trail.open && trail.liftIndex === run.liftIndex).length;
           return (
-            <TrailSign key={`trail-${ti}-${run.name}`} run={run} lane={lane} />
+            <TrailSign key={ti} index={ti} run={run} lane={lane} />
           );
         })}
 
-        {confirmedLifts.map((lift, i) => (
-          <group key={`lift-${i}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`}>
+        {confirmedLifts.map(({ lift, index }) => (
+          <group key={`lift-${index}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`} userData={{ asset: { kind: "lift", index } }}>
             <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} closing={lift.closing} />
           </group>
         ))}
@@ -145,7 +149,7 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
         <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
       </Suspense>
       <PlacementController />
-      <CameraRig followId={followId} followedRef={followedRef} />
+      <CameraRig followId={followId} followedRef={followedRef} onInspectAsset={onInspectAsset} />
       <OrbitControls
         makeDefault
         domElement={canvas}

@@ -66,7 +66,8 @@ describe("Dutch Hill opening", () => {
     const first = { ...reference, points: reference.points.slice(0, seam + 1) };
     const second = { ...reference, widthFt: 100, points: reference.points.slice(seam) };
 
-    expect(rules.checkPaint(lift, [first]).reason).toBeNull();
+    expect(rules.checkPaint(lift, [first]).reason).toMatch(/end at the base/i);
+    expect(rules.commitPaint(lift, [first])).toBe(lift);
     const quote = rules.checkPaint(lift, [first, second]);
     expect(quote.reason).toBeNull();
     const cut = rules.commitPaint(lift, [first, second]);
@@ -116,13 +117,14 @@ describe("Dutch Hill opening", () => {
     const points = [pointAt(0.3), bend(0.45), bend(0.6), pointAt(0.8)];
     const built = rules.commitPaint(marked, [{ points, widthFt: 60 }]);
     const branch = built.trails[1];
-    expect(branch.path[0]).toEqual(glade.path[0]);
-    expect(branch.path.at(-1)).toEqual(glade.path.at(-1));
+    expect(branch.path[0]).toEqual(points[0]);
+    expect(branch.path.at(-1)).toEqual(points.at(-1));
     expect(isClearedAt(points[1], new Set(built.clearedCells))).toBe(true);
     expect(isClearedAt(pointAt(0.1), new Set(built.clearedCells))).toBe(false);
     expect(isClearedAt(pointAt(0.95), new Set(built.clearedCells))).toBe(false);
 
     const widened = rules.commitPaint(built, [{ points: points.slice(1, 3), widthFt: 100 }]);
+    expect(widened.trails[1].links).toEqual(branch.links);
     expect(widened.clearedCells.length).toBeGreaterThan(built.clearedCells.length);
     expect(isClearedAt(pointAt(0.1), new Set(widened.clearedCells))).toBe(false);
     expect(isClearedAt(pointAt(0.95), new Set(widened.clearedCells))).toBe(false);

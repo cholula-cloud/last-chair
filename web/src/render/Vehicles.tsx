@@ -56,7 +56,7 @@ function GravelLot({ tier }: { tier: LodgeTier }) {
   const geometry = useMemo(() => buildParkingSurface(SITE, tier), [tier]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <mesh geometry={geometry} receiveShadow>
+    <mesh geometry={geometry} receiveShadow userData={{ asset: { kind: "parking" } }}>
       <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
     </mesh>
   );

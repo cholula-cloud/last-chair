@@ -13,7 +13,7 @@ export const MAX_TRAILS_PER_LIFT = 3;
 export const MAX_TRAILS_TOTAL = 8;
 export const STANDARD_TRAIL_WIDTH_FT = 60;
 
-const DIFF_RANK: Record<Difficulty, number> = { green: 0, blue: 1, black: 2 };
+export const DIFF_RANK: Record<Difficulty, number> = { green: 0, blue: 1, black: 2 };
 
 export function roundTrailCost(raw: number): number {
   return Math.round(raw / 50) * 50;
@@ -95,7 +95,7 @@ export function trailsOnLift(trails: readonly TrailRun[], liftIndex: number): { 
   return out;
 }
 
-function hashPick(id: string, runs: number, n: number): number {
+export function hashPick(id: string, runs: number, n: number): number {
   let h = 0;
   const s = `${id}:${runs}`;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -154,14 +154,17 @@ export function runEnergyCost(persona: PersonaId, trail?: Pick<TrailRun, "length
 }
 
 export type TrailRun = {
+  /** Explicit transfers to existing trail slots. Older runs without links are independent. */
+  links?: TrailLinks;
   /** Glades retain existing trees; absence means a cleared trail. */
   glade?: boolean;
   widths?: number[];
   paidClearing?: ClearingCell[];
   groomed?: boolean[];
   gunCovered?: boolean[];
-  /** Finished runs yesterday, each of which wore every segment. Absent in older saves. */
+  /** Descents that used this trail yesterday. Absent in older saves. */
   previousRuns?: number;
+  previousSegmentRuns?: number[];
   liftIndex: number;
   name: string;
   path: XZ[];
@@ -175,6 +178,20 @@ export type TrailRun = {
   builtDay?: number;
   builtAtMin?: number;
   paid?: number;
+};
+
+export type TrailConnection = {
+  trailIndex: number;
+  /** Arc-length fractions along this trail and the other trail. */
+  from: number;
+  to: number;
+  at: XZ;
+};
+
+export type TrailLinks = {
+  start?: TrailConnection;
+  end?: TrailConnection;
+  crossings?: TrailConnection[];
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;

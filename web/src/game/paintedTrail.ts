@@ -2,17 +2,22 @@ import { rulesFor } from "./descent";
 import { OFF_LEASE_MESSAGE, onLease } from "./lease";
 import type { GameState } from "./state";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
+import { hasBaseContinuation, hasTrailDependents, JUNCTION_EPSILON } from "./trailNetwork";
 import {
   classifyPitch,
   MAX_TRAILS_PER_LIFT,
   MAX_TRAILS_TOTAL,
   pathLengthFt,
+  pathLengthWorld,
   realGradeFactor,
   roundTrailCost,
   trailsOnLift,
   type Difficulty,
+  type TrailConnection,
+  type TrailLinks,
   type TrailRun,
 } from "./trails";
+import { remoteTrailEndThreshold, walkDurationMin, walkToLiftPath } from "./walkPaths";
 
 export const BRUSH_WIDTHS = [30, 60, 100, 150] as const;
 export const STANDARD_BRUSH_WIDTH = BRUSH_WIDTHS[1];
@@ -29,8 +34,7 @@ const MAX_DRAFT_POINTS = 2_048;
 const MAX_TRAIL_SAMPLES = 768;
 const DRAFT_TOO_LONG = "That draft’s too long. Undo a stroke or paint a shorter run.";
 /**
- * A stroke connects to the village only when it ends this share of the base area (in world units,
- * `baseAreaRadius`) from `terrain.base`. Ending anywhere else leaves the line where the player put it.
+ * A stroke can snap to the village or an open lift's lower terminal within this share of the base area.
  */
 export const BASE_CONNECT_FRACTION = 0.4;
 /** A stroke end joins another trail only inside this share of the horizontal scale H. */
@@ -40,7 +44,7 @@ const JOIN_FINGER_MARGIN = 0.15;
 /** The base connect circle always clears the brush by this much (world units). */
 const BASE_BRUSH_MARGIN = 0.5;
 
-/** World-unit radius within which a stroke of this brush width ends "at the base" and connects to it. */
+/** World-unit radius for snapping a stroke endpoint to a bottom runout. */
 export function baseConnectRadius(terrain: Terrain, widthFt: number): number {
   return Math.max(
     rulesFor(terrain).baseAreaRadius * BASE_CONNECT_FRACTION,
@@ -60,7 +64,7 @@ export type PaintedTrailPreview = {
   /** End of the authored centerline before it snaps or follows a connector. */
   draftEnd: XZ | null;
   widths: number[];
-  /** Brush footprint, excluding any inherited links of a new run. */
+  /** Brush footprint on the authored trail. */
   clearing: { path: XZ[]; widths: number[]; previousWidths?: number[] };
   lengthFt: number;
   verticalFt: number;
@@ -73,6 +77,7 @@ export type PaintedTrailPreview = {
   deleteTrail: boolean;
   reason: string | null;
   problemSegments: number[];
+  links?: TrailLinks;
   /** Set when the run ends away from where guests are collected; the sim walks them back. */
   walkBack: { ft: number; minutes: number } | null;
 };
@@ -82,6 +87,8 @@ type PaintState = Pick<GameState, "lifts" | "trails">;
 const distance = (a: XZ, b: XZ) => Math.hypot(a.x - b.x, a.z - b.z);
 
 function along(a: XZ, b: XZ, t: number): XZ {
+  if (t === 0) return a;
+  if (t === 1) return b;
   return { x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t };
 }
 
@@ -91,7 +98,17 @@ function project(p: XZ, a: XZ, b: XZ) {
   const len2 = dx * dx + dz * dz;
   const t = len2 > 0 ? Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.z - a.z) * dz) / len2)) : 0;
   const at = along(a, b, t);
-  return { at, distance: distance(p, at) };
+  return { at, distance: distance(p, at), t };
+}
+
+function arcLengths(path: readonly XZ[]): number[] {
+  const lengths = [0];
+  for (let i = 1; i < path.length; i++) lengths.push(lengths[i - 1] + distance(path[i - 1], path[i]));
+  return lengths;
+}
+
+function fractionAt(lengths: number[], segment: number, t: number) {
+  return (lengths[segment] + (lengths[segment + 1] - lengths[segment]) * t) / (lengths.at(-1) || 1);
 }
 
 export function simplifyStroke(points: readonly XZ[], tolerance: number): XZ[] {
@@ -153,21 +170,76 @@ function onExistingTrail(p: XZ, state: PaintState): boolean {
 }
 
 /** `byWidth` widens the radius to the trail's own half-width at the segment, plus a finger margin. */
-function trailHit(p: XZ, state: PaintState, radius: number, terrain?: Terrain, byWidth = false) {
-  let best: { index: number; segment: number; at: XZ; distance: number } | null = null;
+function trailHit(p: XZ, state: PaintState, radius: number, terrain: Terrain, finish = false) {
+  let best: { index: number; fraction: number; at: XZ; distance: number } | null = null;
   for (const [index, trail] of state.trails.entries()) {
-    if (!trail.open || !state.lifts[trail.liftIndex]?.confirmed) continue;
+    if (!trail.open || !state.lifts[trail.liftIndex]?.confirmed || (finish && state.lifts[trail.liftIndex].closing)) continue;
+    const lengths = arcLengths(trail.path);
     for (let i = 1; i < trail.path.length; i++) {
       const hit = project(p, trail.path[i - 1], trail.path[i]);
-      const reach = byWidth && terrain
+      const reach = finish
         ? Math.max(radius, Math.max(trailWidth(trail, i - 1), trailWidth(trail, i)) / (2 * terrain.horizontalFeetPerUnit) + JOIN_FINGER_MARGIN)
         : radius;
-      if (hit.distance <= reach && (!best || hit.distance < best.distance)) {
-        best = { index, segment: i - 1, at: hit.at, distance: hit.distance };
-      }
+      if (hit.distance > reach || (best && hit.distance >= best.distance)) continue;
+      const fraction = fractionAt(lengths, i - 1, hit.t);
+      if (finish && !hasBaseContinuation(state.trails, index, fraction, terrain)) continue;
+      best = { index, fraction, at: hit.at, distance: hit.distance };
     }
   }
   return best;
+}
+
+const crossXZ = (a: XZ, b: XZ) => a.x * b.z - a.z * b.x;
+const subtract = (a: XZ, b: XZ) => ({ x: a.x - b.x, z: a.z - b.z });
+
+function crossingArms(path: readonly XZ[], segment: number, t: number, at: XZ) {
+  const before = path[segment - (t <= JUNCTION_EPSILON ? 1 : 0)];
+  const after = path[segment + (t >= 1 - JUNCTION_EPSILON ? 2 : 1)];
+  if (!before || !after) return [];
+  return [before, after].map((p) => Math.atan2(p.z - at.z, p.x - at.x));
+}
+
+function findCrossings(path: readonly XZ[], state: PaintState, terrain: Terrain): TrailConnection[] {
+  const lengths = arcLengths(path);
+  const height = (p: XZ) => terrain.height(p.x, p.z);
+  const hits: TrailConnection[] = [];
+  for (const [trailIndex, trail] of state.trails.entries()) {
+    const other = trail.path;
+    if (!state.lifts[trail.liftIndex]?.confirmed || state.lifts[trail.liftIndex].closing ||
+      !hasBaseContinuation(state.trails, trailIndex, 0, terrain)) continue;
+    const otherLengths = arcLengths(other);
+    for (let i = 0; i < path.length - 1; i++) {
+      const r = subtract(path[i + 1], path[i]);
+      for (let j = 0; j < other.length - 1; j++) {
+        const s = subtract(other[j + 1], other[j]);
+        const denominator = crossXZ(r, s);
+        if (Math.abs(denominator) < 1e-9) continue;
+        const gap = subtract(other[j], path[i]);
+        const t = crossXZ(gap, s) / denominator;
+        const u = crossXZ(gap, r) / denominator;
+        if (Math.min(t, u) < -JUNCTION_EPSILON || Math.max(t, u) > 1 + JUNCTION_EPSILON) continue;
+        const from = fractionAt(lengths, i, t);
+        const to = fractionAt(otherLengths, j, u);
+        if (Math.min(from, to) <= JUNCTION_EPSILON || Math.max(from, to) >= 1 - JUNCTION_EPSILON) continue;
+        if (hits.some((hit) => hit.trailIndex === trailIndex && Math.abs(hit.from - from) < JUNCTION_EPSILON &&
+          Math.abs(hit.to - to) < JUNCTION_EPSILON)) continue;
+        const at = along(path[i], path[i + 1], t);
+        const h = height(at);
+        if (h >= Math.min(height(path[0]), height(other[0])) - JUNCTION_EPSILON ||
+          h <= Math.max(height(path[path.length - 1]), height(other[other.length - 1])) + JUNCTION_EPSILON) continue;
+        const arms = [crossingArms(path, i, t, at), crossingArms(other, j, u, at)]
+          .flatMap((angles, owner) => angles.map((angle) => ({ angle, owner })))
+          .sort((a, b) => a.angle - b.angle);
+        // At a polyline bend the four arms must alternate. A touch does not make a junction.
+        if (arms.length === 4 && arms.every((arm, k) => {
+          const next = arms[(k + 1) % 4];
+          const angleGap = (next.angle - arm.angle + 2 * Math.PI) % (2 * Math.PI);
+          return arm.owner !== next.owner && angleGap > JUNCTION_EPSILON;
+        })) hits.push({ trailIndex, from, to, at });
+      }
+    }
+  }
+  return hits.sort((a, b) => a.from - b.from);
 }
 
 function withinPath(p: XZ, points: readonly XZ[], radius: number): boolean {
@@ -273,13 +345,11 @@ function summarize(path: XZ[], widths: number[], terrain: Terrain) {
   };
 }
 
-/** Mirrors the sim: a run ending over half a unit from the lift bottom (or base) is walked back at 250 ft per minute. */
-function walkBackFor(end: XZ | undefined, bottom: XZ | undefined, terrain: Terrain) {
-  if (!end) return null;
-  const gap = distance(end, bottom ?? terrain.base);
-  if (gap <= 0.5) return null;
-  const ft = gap * terrain.horizontalFeetPerUnit;
-  return { ft, minutes: ft / 250 };
+function walkBackFor(path: readonly XZ[], bottom: XZ, terrain: Terrain) {
+  const end = path.at(-1);
+  if (!end || distance(end, bottom) <= remoteTrailEndThreshold(terrain)) return null;
+  const walk = walkToLiftPath(path, bottom);
+  return { ft: pathLengthWorld(walk) * terrain.horizontalFeetPerUnit, minutes: walkDurationMin(walk, terrain) };
 }
 
 function rejectedPreview(reason: string): PaintedTrailPreview {
@@ -323,6 +393,8 @@ function editTrail(state: PaintState, trailIndex: number, strokes: readonly Pain
   let reason: string | null = null;
   if (disconnected >= 0) {
     reason = "Keep each edit stroke over the same trail.";
+  } else if (deleteTrail && hasTrailDependents(state.trails, new Set([trailIndex]))) {
+    reason = "Close the trails that connect here first.";
   } else if (deleteTrail && trailsOnLift(state.trails, trail.liftIndex).length === 1) {
     reason = "This lift needs at least one open trail.";
   } else if (!deleteTrail && widths.includes(0)) {
@@ -350,6 +422,7 @@ export function previewPaintedTrail(
   state: PaintState,
   strokes: readonly PaintStroke[],
   terrain: Terrain = TERRAIN,
+  connectCrossings = false,
 ): PaintedTrailPreview {
   const nonempty: PaintStroke[] = [];
   let authoredPoints = 0;
@@ -374,7 +447,7 @@ export function previewPaintedTrail(
   const spacing = Math.min(H / 12, MIN_WIDTH / terrain.horizontalFeetPerUnit);
   const { path, widths: draftWidths, overlays, disconnected } = assembleDraft(active, terrain, spacing);
   const firstPoint = path[0];
-  const start = firstPoint && trailHit(firstPoint, state, H / 6);
+  const start = firstPoint && trailHit(firstPoint, state, H / 6, terrain);
   if (start) {
     const samples = subdivide(path, draftWidths, spacing);
     if (!samples) return rejectedPreview(DRAFT_TOO_LONG);
@@ -398,15 +471,28 @@ export function previewPaintedTrail(
     });
   }
 
-  const enterByTrail = start && (nearestLift < 0 || start.distance < nearestDistance);
+  const enterByTrail = start && start.fraction > JUNCTION_EPSILON && start.fraction < 1 - JUNCTION_EPSILON &&
+    !state.lifts[state.trails[start.index].liftIndex].closing &&
+    (nearestLift < 0 || start.distance < nearestDistance);
   const liftIndex = enterByTrail ? state.trails[start.index].liftIndex : nearestLift;
   const end = path.at(-1);
-  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseConnectRadius(terrain, active.at(-1)?.widthFt ?? STANDARD_BRUSH_WIDTH);
-  const finish = !disconnected && !atBase && end && trailHit(end, state, H * TRAIL_JOIN_FRACTION, terrain, true);
+  let bottom: XZ | undefined;
+  if (end && !disconnected) {
+    let reach = baseConnectRadius(terrain, active.at(-1)?.widthFt ?? STANDARD_BRUSH_WIDTH);
+    const runouts = [terrain.base, ...state.lifts.flatMap((lift) => lift.confirmed && lift.bottom ? [lift.bottom] : [])];
+    for (const at of runouts) {
+      const gap = distance(end, at);
+      if (gap <= reach) {
+        bottom = at;
+        reach = gap;
+      }
+    }
+  }
+  const finish = !disconnected && !bottom && end && trailHit(end, state, H * TRAIL_JOIN_FRACTION, terrain, true);
   if (path.length && liftIndex >= 0) path[0] = enterByTrail ? start.at : state.lifts[liftIndex].anchor;
   if (path.length > 1 && finish) path[path.length - 1] = finish.at;
-  if (path.length > 1 && atBase && end && distance(end, terrain.base) > 1e-8) {
-    path.push(terrain.base);
+  if (path.length > 1 && bottom && end && distance(end, bottom) > 1e-8) {
+    path.push(bottom);
     draftWidths.push(draftWidths.at(-1)!);
   }
 
@@ -419,16 +505,7 @@ export function previewPaintedTrail(
   else if (state.trails.filter((trail) => trail.open).length >= MAX_TRAILS_TOTAL) reason = "Dutch Hill has room for eight trails, no more.";
   else if (state.trails.length >= MAX_SAVED_TRAILS) reason = "This winter has hit its trail-cutting limit.";
 
-  // Keep only the connectors needed to give the new run a complete skiing path.
-  const prefix = enterByTrail ? state.trails[start.index].path.slice(0, start.segment + 1) : [];
-  const suffix = finish ? state.trails[finish.index].path.slice(finish.segment + 1) : [];
-  const prefixWidths = enterByTrail ? prefix.map((_, i) => trailWidth(state.trails[start.index], i)) : [];
-  const suffixWidths = finish ? suffix.map((_, i) => trailWidth(state.trails[finish.index], finish.segment + 1 + i)) : [];
-  const full = subdivide([...prefix, ...path, ...suffix], [
-    ...prefixWidths,
-    ...draftWidths,
-    ...suffixWidths,
-  ], spacing);
+  const full = subdivide(path, draftWidths, spacing);
   if (!full) return rejectedPreview(DRAFT_TOO_LONG);
   const before = full.widths;
   const widths = overlays.reduce((last, stroke) => changeWidths(full.path, last, stroke, terrain), before);
@@ -467,20 +544,25 @@ export function previewPaintedTrail(
     }
   }
   if (summary.verticalFt < 16.4) reason ??= "A trail has to drop at least 16.4 ft.";
-  const painted = subdivide(path, draftWidths, spacing);
-  if (!painted) return rejectedPreview(DRAFT_TOO_LONG);
-  const paintedWidths = overlays.reduce((last, stroke) => changeWidths(painted.path, last, stroke, terrain), painted.widths);
-  const acres = acresFor(painted.path, paintedWidths, terrain);
+  if (!bottom && !finish) reason ??= "End at the base or join a trail that leads there.";
+  const links: TrailLinks = {};
+  if (enterByTrail) links.start = { trailIndex: start.index, from: 0, to: start.fraction, at: start.at };
+  if (finish) links.end = { trailIndex: finish.index, from: 1, to: finish.fraction, at: finish.at };
+  if (connectCrossings && !reason) {
+    const crossings = findCrossings(path, state, terrain);
+    if (crossings.length) links.crossings = crossings;
+  }
   return {
     ...summary,
     draftEnd: end ?? null,
-    clearing: { path: painted.path, widths: paintedWidths },
-    cost: painted.path.length >= 2 ? roundTrailCost(150 + acres * CLEARING_PER_ACRE) : 0,
+    clearing: { path: full.path, widths },
+    cost: full.path.length >= 2 ? roundTrailCost(150 + summary.acres * CLEARING_PER_ACRE) : 0,
     liftIndex,
     trailIndex: null,
     deleteTrail: false,
     reason,
     problemSegments,
-    walkBack: walkBackFor(full.path.at(-1), liftIndex >= 0 ? state.lifts[liftIndex]?.bottom : undefined, terrain),
+    ...(links.start || links.end || links.crossings ? { links } : {}),
+    walkBack: bottom ? walkBackFor(full.path, state.lifts[liftIndex]?.bottom ?? terrain.base, terrain) : null,
   };
 }

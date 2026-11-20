@@ -109,6 +109,7 @@ function TrailPreview() {
   const phase = useGameStore((s) => s.phase);
   const clearedCells = useGameStore((s) => s.clearedCells);
   const glade = usePlacementDraft((s) => s.glade);
+  const connectCrossings = usePlacementDraft((s) => s.connectCrossings);
   const brushWidth = usePlacementDraft((s) => s.brushWidth);
   const all = useMemo(
     () => activeStroke ? [...strokes, activeStroke] : strokes,
@@ -116,9 +117,9 @@ function TrailPreview() {
   );
   // The same check the panel and the commit use, so the colour agrees with what Cut trail will do.
   const painted = useMemo(
-    () => all.length ? checkPaint(useGameStore.getState(), all, glade) : null,
+    () => all.length ? checkPaint(useGameStore.getState(), all, glade, connectCrossings) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the slices below are what the check reads
-    [lifts, trails, cash, phase, clearedCells, all, glade],
+    [lifts, trails, cash, phase, clearedCells, all, glade, connectCrossings],
   );
   const confirmed = useMemo(
     () => trails.flatMap((trail, index) => trail.open && lifts[trail.liftIndex]?.confirmed && trail.path.length > 1
@@ -138,6 +139,10 @@ function TrailPreview() {
       {!review && !erasing && (
         <TerrainRing guide at={TERRAIN.base} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
       )}
+      {!review && !erasing && lifts.map(({ confirmed, bottom }, i) => (
+        confirmed && bottom && Math.hypot(bottom.x - TERRAIN.base.x, bottom.z - TERRAIN.base.z) > 0.1 &&
+        <TerrainRing key={i} guide at={bottom} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
+      ))}
       {!review && !activeStroke && !all.length && lifts
         .filter((lift) => lift.confirmed)
         .map(({ anchor }) => (
@@ -151,6 +156,9 @@ function TrailPreview() {
         <TrailRibbon path={painted.path} widths={painted.widths} color={color}
           problemSegments={painted.problemSegments} live={!!activeStroke} outline />
       )}
+      {painted?.links?.crossings?.map(({ at, from, trailIndex }) => (
+        <TerrainRing key={`${trailIndex}/${from}`} guide at={at} radius={0.34} color={PALETTE.marker} />
+      ))}
       {continuation && !review && !activeStroke && !erasing && !moveCamera && (
         <TerrainRing name="trail-continuation" guide at={continuation} radius={0.4} color={PALETTE.marker} />
       )}

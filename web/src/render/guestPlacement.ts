@@ -1,4 +1,4 @@
-import type { Guest, GuestState, LiftType } from "@/game/types";
+import type { Guest, GuestState, LiftType, SkiLeg } from "@/game/types";
 import type { LiftLine } from "@/game/descent";
 import { ASSET_CATALOG, type PlacedAsset } from "@/game/base";
 import { cableHeightAt, liftFrame, liftTowers, type LiftPoint } from "./liftLine";
@@ -31,6 +31,7 @@ type PlaceOpts = {
   venue?: PlacedAsset;
   walkFrom?: XZ;
   walkTo?: XZ;
+  skiLeg?: SkiLeg;
 };
 
 const CHAIR_DROP = 0.44;
@@ -81,7 +82,8 @@ function ride(t: number, line: LiftLine, type: LiftType | undefined, towers?: Li
   return { x, y, z, yaw, pose: "ride" as const, lean: 0.12, roll: 0 };
 }
 
-function ski(index: number, t: number, line: LiftLine, path?: readonly XZ[]): GuestPlacement {
+function ski(index: number, progress: number, line: LiftLine, path?: readonly XZ[], leg?: SkiLeg): GuestPlacement {
+  const t = leg ? lerp(leg.from, leg.to, progress) : progress;
   const p = path?.length ? trailPathPoint(path, t) : trailPoint(t, line);
   const n = path?.length
     ? trailPathPoint(path, Math.min(1, t + 0.02))
@@ -91,7 +93,8 @@ function ski(index: number, t: number, line: LiftLine, path?: readonly XZ[]): Gu
     : trailPoint(Math.max(0, t - 0.02), line);
   const yaw = Math.atan2(n.x - b.x, n.z - b.z);
   const phase = t * Math.PI * 9 + index * 1.7;
-  const w = Math.sin(phase) * 0.16;
+  const junctionFade = leg ? Math.min(1, (t - leg.from) / 0.05, (leg.to - t) / 0.05) : 1;
+  const w = Math.sin(phase) * 0.16 * junctionFade;
   const x = p.x + Math.cos(yaw) * w;
   const z = p.z - Math.sin(yaw) * w;
   return {
@@ -151,7 +154,7 @@ export function guestWorldPosition(
     case "ride":
       return ride(t, line, opts.liftType, opts.towers);
     case "ski":
-      return ski(index, t, line, opts.path);
+      return ski(index, t, line, opts.path, opts.skiLeg);
     case "walk_lift":
     case "walk_out": {
       const walkTo = opts.walkTo ?? line.bottom;
@@ -203,6 +206,7 @@ export function placeGuests(
       stall,
       towers: lift.towers ?? liftTowers(lift.line),
       path: walkPath ?? skiPath ?? lift.path,
+      skiLeg: g.skiRoute?.legs[g.skiRoute.current],
       venue: g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined,
       walkTo: g.state === "walk_lift" ? lift.line.bottom : TERRAIN.base,
     });

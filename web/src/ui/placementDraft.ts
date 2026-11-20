@@ -34,6 +34,7 @@ export const usePlacementDraft = create<{
   tapPoint?: XZ;
   focus: PlacementFocus | null;
   glade: boolean;
+  connectCrossings: boolean;
   brushWidth: number;
   erasing: boolean;
   strokes: PaintStroke[];
@@ -54,6 +55,7 @@ export const usePlacementDraft = create<{
   snapped: false,
   focus: null,
   glade: false,
+  connectCrossings: false,
   brushWidth: STANDARD_BRUSH_WIDTH,
   erasing: false,
   strokes: [],

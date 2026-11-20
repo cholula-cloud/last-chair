@@ -82,6 +82,10 @@ function PlacedGuns({ guns, fired, day }: { guns: readonly SnowGun[]; fired: boo
       <mesh geometry={geo} castShadow>
         <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
       </mesh>
+      {models.map(({ at, height, yaw }, index) => (
+        <mesh key={`${at.x}-${at.z}`} position={[at.x, height - 0.02, at.z]} rotation-y={yaw} scale={SCALE}
+          geometry={gunBody} visible={false} dispose={null} userData={{ asset: { kind: "gun", index } }} />
+      ))}
       {firing.length > 0 && <Plumes firing={firing} />}
     </group>
   );

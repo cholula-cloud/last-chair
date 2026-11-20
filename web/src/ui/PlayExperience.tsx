@@ -6,7 +6,8 @@ import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
 import { Canvas } from "@react-three/fiber";
 import { NeutralToneMapping } from "three";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { assetIsPresent, type AssetTarget } from "@/game/assetNames";
 import { formatMoney } from "@/game/format";
 import { isLiftOperational } from "@/game/lifts";
 import { liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
@@ -19,6 +20,7 @@ import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { ToneMappingSync } from "@/render/ToneMappingSync";
 import { useSettings } from "./settingsStore";
+import { AssetInspector } from "./AssetInspector";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
@@ -41,7 +43,7 @@ import {
 import { toggleConditionsExpanded, toggleHudHidden, useHudUi } from "@/ui/hudUi";
 import { PlacementBar } from "@/ui/PlacementBar";
 import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
-import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
+import { finishPlacement, requestLodge, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon, GridIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
@@ -68,6 +70,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [inspectedLayer]);
   useEffect(() => closeNightLayer, []);
   const [guestsOpen, setGuestsOpen] = useState(false);
+  const [selectedAsset, setInspectedAsset] = useState<AssetTarget | null>(null);
+  const inspectedAsset = useGameStore((state) => selectedAsset && assetIsPresent(state, selectedAsset) ? selectedAsset : null);
+  const closeAsset = useCallback(() => setInspectedAsset(null), []);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const hudHidden = useHudUi((s) => s.hudHidden);
   const conditionsExpanded = useHudUi((s) => s.conditionsExpanded);
@@ -155,11 +160,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
 
   useEffect(() => useGameStore.subscribe((next, prev) => {
     if (prev.phase === "day" && next.phase !== "day") {
+      closeAsset();
       if (usePlacementDraft.getState().active) finishPlacement();
       setBuildOpen(false);
       buildTrigger.current = null;
     }
-  }), []);
+  }), [closeAsset]);
 
   useEffect(() => {
     const persist = useGameStore.persist;
@@ -190,6 +196,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
   const noteExpanded = noteExpandedDay === dayIndex;
   const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
+  const canInspect = phase === "day" && hydrated && !placementActive && !buildOpen && !guestsOpen && !officeOpen && !menuConfirmOpen && !inspectedAsset;
   const [sceneReady, setSceneReady] = useState(false);
   const actionBarWrapRef = useRef<HTMLDivElement>(null);
 
@@ -266,11 +273,11 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         }}
       >
         <ToneMappingSync />
-        <MountainScene lowDetail={lowGraphics} />
+        <MountainScene lowDetail={lowGraphics} onInspectAsset={canInspect ? setInspectedAsset : undefined} />
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
-      <header inert={officeOpen} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:justify-between sm:gap-3`}>
+      <header inert={officeOpen || !!inspectedAsset} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:justify-between sm:gap-3`}>
         <div className="pointer-events-none flex w-full flex-col items-start gap-2 sm:w-auto">
           <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
             <TopBar
@@ -291,7 +298,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             {phase === "day" && !showStartHint && !placementActive && !hudSuppressed && <GoalStrip />}
             {chairHeld && !hudSuppressed && <WindHoldCallout shortHold={shortHold} />}
           </div>
-          {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && (
+          {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && !inspectedAsset && (
             <CoachTip
               context={{
                 phase,
@@ -335,7 +342,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       {/* Portrait phone right-edge vertical map rail: keeps the bottom uncluttered. */}
       {phase === "day" && !placementActive && !hudSuppressed && (
         <div
-          inert={officeOpen}
+          inert={officeOpen || !!inspectedAsset}
           data-map-rail="vertical"
           className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex flex-col items-end gap-1.5 sm:hidden"
         >
@@ -346,7 +353,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       {/* Restore pill when the player hides the HUD to inspect the mountain. */}
       {hudSuppressed && (
         <div
-          inert={officeOpen}
+          inert={officeOpen || !!inspectedAsset}
           data-hud-hidden="true"
           className="arrive pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-20"
         >
@@ -355,7 +362,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       )}
 
       {phase === "day" && !hudSuppressed && (
-        <div inert={officeOpen} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
+        <div inert={officeOpen || !!inspectedAsset} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
             {!placementActive && <ReadoutCard />}
             <OverlayLegend />
@@ -419,6 +426,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       )}
 
       <OverlayStateSync />
+      {inspectedAsset && <AssetInspector target={inspectedAsset} onClose={closeAsset} onManageLodge={() => {
+        closeAsset();
+        requestLodge();
+      }} />}
       {officeOpen && <OfficeSheet onLeave={() => onLeave("load")} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet

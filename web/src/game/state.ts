@@ -37,6 +37,7 @@ import type {
  */
 export type LiftSlot = {
   type: LiftType;
+  name?: string;
   /** The top terminal. */
   anchor: LiftAnchor;
   /** The bottom terminal; absent means `TERRAIN.base`. */
@@ -118,6 +119,7 @@ export type PersistedState = {
   founderId: FounderId | null;
   buildings: BuildingId[];
   lodgeTier: LodgeTier;
+  lodgeName?: string;
   lodgeUpgrade: LodgeUpgrade | null;
   assets: PlacedAsset[];
   guns: SnowGun[];
@@ -271,6 +273,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     founderId: state.founderId,
     buildings: state.buildings,
     lodgeTier: state.lodgeTier,
+    ...(state.lodgeName ? { lodgeName: state.lodgeName } : {}),
     lodgeUpgrade: state.lodgeUpgrade,
     assets: state.assets,
     guns: state.guns,
@@ -308,7 +311,9 @@ export function toPersisted(state: PersistedState): PersistedState {
 /** Merge a validated saved slice into the current session. */
 export function hydrate<T extends GameState>(p: PersistedState | undefined, current: T): T {
   if (!p) return current;
-  return { ...current, ...p, lastWinter: p.lastWinter, phase: p.founderId ? p.phase : "setup" };
+  const next: T = { ...current, ...p, lastWinter: p.lastWinter, phase: p.founderId ? p.phase : "setup" };
+  if (p.lodgeName === undefined) delete next.lodgeName;
+  return next;
 }
 
 /** M3 starts with a clean hill and a separate save slot. */
