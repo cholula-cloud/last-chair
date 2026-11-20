@@ -17,6 +17,7 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
+import { ToneMappingSync } from "@/render/ToneMappingSync";
 import { useSettings } from "./settingsStore";
 import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
@@ -240,6 +241,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           toneMapping: NeutralToneMapping,
         }}
       >
+        <ToneMappingSync />
         <MountainScene lowDetail={lowGraphics} />
       </Canvas>
 

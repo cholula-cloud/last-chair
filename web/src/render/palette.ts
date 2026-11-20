@@ -62,11 +62,14 @@ export const PALETTE = {
 
   overcastTop: "#aebfd4",
   duskHorizon: "#ffc9a0",
+  sunMorning: "#ffe2c0",
   sunDay: "#fff0da",
   sunDusk: "#ffbd85",
   sunNight: "#9db4ff",
   hemiSkyDay: "#b4c6f2",
+  hemiSkyDusk: "#c9b8d8",
   hemiGroundDay: "#e2d3bf",
+  hemiGroundDusk: "#e8cdb0",
   hemiSkyNight: "#3b5188",
   hemiGroundNight: "#1a2236",
 } as const;

@@ -14,8 +14,6 @@ import { sceneMood } from "./Atmosphere";
 import { box, merge, placeParts, type Part } from "./geo";
 import {
   bakeKit,
-  GLOW_DAY,
-  GLOW_NIGHT,
   type KitAsset,
   LIFT_TOY_SCALE,
   METERS_TO_WORLD,
@@ -257,7 +255,7 @@ export function Village() {
       }
     }
     const k = Math.max(sceneMood.night, sceneMood.dusk * 0.6);
-    if (glowMat.current) glowMat.current.color.setScalar(GLOW_DAY + (GLOW_NIGHT - GLOW_DAY) * k);
+    if (glowMat.current) glowMat.current.color.setScalar(sceneMood.glow);
     if (poolMat.current) poolMat.current.opacity = 0.05 + k * 0.75;
   });
 

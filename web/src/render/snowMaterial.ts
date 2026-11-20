@@ -81,7 +81,7 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
   float amp = uGroomStrength * groomed * quality * (1.0 - wear) * (1.0 - edgeFade);
   float stripeMix = stripe * amp * vWeight;
   col = mix(col, mix(uSnowColor0, uSnowColor1, 0.25), stripeMix);
-  col *= 1.0 - 0.2 * uNight;
+  col *= 1.0 - 0.05 * uNight;
   diffuseColor.rgb = mix(diffuseColor.rgb, col, vWeight);
 }
 `;
