@@ -277,8 +277,9 @@ export async function buildOpening(page, cdp) {
   await click(page, "Place lift");
   await page.locator('[data-placement-kind="lift"]').waitFor();
   const ridge = world(REFERENCE_TOPS[0].x, REFERENCE_TOPS[0].z);
+  const baseLoad = world(TERRAIN.base.x, TERRAIN.base.z);
+  await drag(page, cdp, [baseLoad]);
   await drag(page, cdp, [ridge]);
-  await moveDraftMap(page, cdp, ridge, "Place lift");
   await confirmDraft(page, "lift", /^Place for /);
   const withLift = (await save(page)).state;
   assert.equal(withLift.lifts.length, initial.lifts.length + 1, "The lift needs to be saved");

@@ -1,5 +1,7 @@
 import type { LodgeTier } from "./base";
 import { CREW_TALENTS, type TalentId, TALENT } from "./talents";
+
+export type { TalentId } from "./talents";
 import type { GameState } from "./state";
 
 export const CREW_POINT_COST = 1;

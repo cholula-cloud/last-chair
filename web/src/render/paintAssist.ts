@@ -104,7 +104,7 @@ export const DIFFICULTY_COLOR: Record<TrailDifficulty, string> = {
 export const EDGE_DARKEN = 0.62;
 
 /** Paint preview uses the run’s difficulty colour; invalid segments are marked on the ribbon, not by tinting the whole stroke. */
-export function ribbonColor(difficulty: TrailDifficulty, _validated?: boolean): string {
+export function ribbonColor(difficulty: TrailDifficulty): string {
   return DIFFICULTY_COLOR[difficulty];
 }
 

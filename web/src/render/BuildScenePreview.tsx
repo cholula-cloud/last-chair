@@ -134,7 +134,7 @@ function TrailPreview() {
     [trails, lifts],
   );
   const continuation = painted?.draftEnd;
-  const color = painted ? ribbonColor(painted.difficulty, !painted.reason) : DIFFICULTY_COLOR.green;
+  const color = painted ? ribbonColor(painted.difficulty) : DIFFICULTY_COLOR.green;
   return (
     <>
       {!review && !erasing && (

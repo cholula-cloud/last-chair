@@ -100,10 +100,9 @@ describe("brush and ribbon style", () => {
   });
 
   it("colours a validated stroke by difficulty and an unvalidated one warm grey", () => {
-    expect(ribbonColor("green", true)).toBe(DIFFICULTY_COLOR.green);
-    expect(ribbonColor("blue", true)).toBe("#195dc4");
-    expect(ribbonColor("black", true)).toBe("#28263e");
-    expect(ribbonColor("blue", false)).toBe("#195dc4");
+    expect(ribbonColor("green")).toBe(DIFFICULTY_COLOR.green);
+    expect(ribbonColor("blue")).toBe("#195dc4");
+    expect(ribbonColor("black")).toBe("#28263e");
   });
 
   it("darkens an edge band", () => {
