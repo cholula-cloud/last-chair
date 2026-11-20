@@ -93,8 +93,8 @@ export const SLOPE_LEGEND: readonly LegendEntry[] = [
 const BAND_SENTENCE: Record<SlopeBand, string> = {
   green: "Green ground. Gentle enough for first-timers.",
   blue: "Blue ground. Good for intermediate skiers.",
-  black: "Black ground. Steep. Bring your nerve.",
-  "double-black": "Double black ground. Too steep for a painted trail.",
+  black: "Black ground. It’s steep, so bring your nerve.",
+  "double-black": "Double black ground. Too steep to paint a trail on.",
 };
 
 /** Feet above the base, rounded to ten. */

@@ -40,7 +40,7 @@ export type MapTime = "Now" | "Close" | "Tomorrow";
 export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };
 export const MARKS = {
-  neutral: { name: "Not simulated", color: "#aeb3b2", glyph: "–" },
+  neutral: { name: "Not tracked", color: "#aeb3b2", glyph: "–" },
   bare: { name: "Bare, closed", color: "#b18b66", glyph: "×" },
   shallow: { name: "Shallow", color: "#bbbdab", glyph: "·" },
   covered: { name: "Covered", color: "#9bd1df", glyph: "≈" },
@@ -269,7 +269,7 @@ export function readPoint(
   gunView: GunView = "Last night",
 ) {
   const result = {
-    title: "Not simulated",
+    title: "Not tracked",
     detail: "Snow is only tracked on trails.",
     personas: [] as string[],
   };

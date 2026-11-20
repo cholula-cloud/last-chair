@@ -37,12 +37,12 @@ const idle = (ctx: CoachContext) => ctx.phase === "day" && !ctx.placementActive 
 export const COACH_TIPS: readonly CoachTip[] = [
   {
     id: "lift",
-    text: "Drag uphill from the base to string up a lift.",
+    text: "Drag uphill from the base to place a lift. Gravity will do the rest.",
     when: (c) => idle(c) && c.opening === "lift",
   },
   {
     id: "pan",
-    text: "Use two fingers to move the map. Go ahead, look around.",
+    text: "Use two fingers to move the map.",
     when: (c) => idle(c) && c.opening === "lift" && c.dayIndex === 1,
   },
   {
@@ -52,7 +52,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "trail",
-    text: "Paint a trail from the top of the lift down to the base. Skiers like a way home.",
+    text: "Paint a trail from the top of the lift down to the base.",
     when: (c) => idle(c) && c.opening === "trail",
   },
   {

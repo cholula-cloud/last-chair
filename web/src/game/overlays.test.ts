@@ -52,7 +52,7 @@ describe("slope readout", () => {
     const pct = Math.round(pitchAt(at) * 100);
     expect(r.chips[0]).toBe(`${pct}% pitch`);
     expect(r.entry).toBe(slopeBand(pitchAt(at)));
-    expect(r.headline).toMatch(/ground\./);
+    expect(r.headline).toMatch(/^(Green|Blue|Black|Double black) ground\./);
     expect(r.headline).not.toMatch(/—|·/);
   });
   it("says so outside the lease", () => {

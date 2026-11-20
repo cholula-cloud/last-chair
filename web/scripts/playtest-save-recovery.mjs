@@ -41,7 +41,7 @@ try {
   assert.ok(before, "Picking a founder starts an M3 save");
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /^Continue/ }).tap();
-  await page.getByText("First job: string up a lift", { exact: true }).waitFor({ timeout: 20000 });
+  await page.getByText("First job: place a lift", { exact: true }).waitFor({ timeout: 20000 });
   // Continue refreshes the "last played" time (savedAt); the winter itself must be unchanged.
   const withoutSavedAt = (raw) => {
     const parsed = JSON.parse(raw);

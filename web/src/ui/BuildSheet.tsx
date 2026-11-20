@@ -141,7 +141,7 @@ export function BuildSheet({
       }} />
       {opening && <p className="mb-3 text-sm font-bold">
         {opening === "lift" ? "Place a surface lift on one of the marked sites."
-          : "Paint a trail from the lift’s top station down to the base. Gravity handles the rest."}
+          : "Paint a trail from the lift’s top station down to the base."}
       </p>}
       <div className="grid gap-3 short:grid-cols-2 short:items-start">
         {!opening && <LodgeCard />}

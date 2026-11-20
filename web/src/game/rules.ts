@@ -640,7 +640,7 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
   const reason = preview.reason ?? (state.phase !== "day" ? "Building happens during the day. Wait for morning."
-    : state.cash < cost ? "Wallet says no. Close out the day, then check your balance." : null);
+    : state.cash < cost ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
@@ -788,7 +788,7 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     return [bottom, top];
   });
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
-  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Wallet says no. Close out the day, then check your balance." };
+  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash for the deposit. Close out the day, then check your balance." };
   return preview;
 }
 
@@ -803,7 +803,7 @@ export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
 /** Venue indices remain stable while guests are on the hill. */
 function venueChangeProblem(state: GameState, index: number, undo = false): string | null {
   const asset = state.assets[index];
-  if (!asset || state.phase !== "day") return "Venue changes happen during the day.";
+  if (!asset || state.phase !== "day") return "Venue changes wait for daylight.";
   if (!undo && (state.clockMin !== DAY_START_MIN || state.guests.some(isOnHill))) return "Change this venue before the lifts open.";
   if (state.guests.some(g => g.state === "refuel" && g.venueIndex === index)) return "Guests are still in there. Wait for them to finish their visit.";
   return null;
@@ -815,13 +815,13 @@ export function assetRemovalQuote(state: GameState, index: number) {
   const undo = purchase?.day === state.dayIndex && purchase?.minute === state.clockMin;
   let reason = venueChangeProblem(state, index, undo);
   if (!reason && asset.id === "warming_hut" && state.assets.findIndex(a => a.id === asset.id) === index &&
-      !canDemolish(state, asset.id) && !undo) reason = "Elena’s keeping the original warming hut. Nobody argues with Elena.";
+      !canDemolish(state, asset.id) && !undo) reason = "Elena’s keeping the original warming hut.";
   if (!reason && asset.id === "ski_school" && state.schoolContract?.decision === "accepted" &&
       state.schoolContract.day >= state.dayIndex && state.assets.filter(a => a.id === asset.id).length === 1) {
     reason = "The Readsboro kids are coming. Keep the school open until they’ve visited.";
   }
   if (!reason && !undo && (purchase ? state.dayIndex < purchase.day + 2 : state.payables.some(p => p.what === asset.id))) {
-    reason = "Pay off the construction installments first.";
+    reason = "Pay off the construction installments before you tear this down.";
   }
   const refund = purchase ? (undo ? constructionDraw(purchase.price).deposit : Math.floor(purchase.price / 2)) : 0;
   return { undo, refund, reason };
@@ -902,7 +902,7 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
   const reason = state.phase !== "day" ? "Building happens during the day. Wait for morning."
     : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
     : state.lodgeTier < 2 ? "Snow guns need Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Wallet says no. Close out the day, then check your balance." : null);
+    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,

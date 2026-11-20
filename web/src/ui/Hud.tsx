@@ -201,7 +201,7 @@ export function MorningNote({
 
 /** Small navy callout under the play key on the very first morning. */
 export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
-  const instruction = step === "lift" ? "First job: string up a lift"
+  const instruction = step === "lift" ? "First job: place a lift"
     : step === "trail" ? "Now paint a trail from the lift down to the base"
       : "Tap the play key to open the hill";
   return (

@@ -29,7 +29,7 @@ type OkSummary = Extract<SlotSummary, { kind: "ok" }>;
 const dayLine = (s: OkSummary) => `${s.hill}, day ${s.dayIndex} of ${s.seasonLength}.`;
 
 function playedLine(savedAt: number | null): string {
-  if (savedAt === null) return "Last played some time ago.";
+  if (savedAt === null) return "Last played a while back.";
   const when = new Date(savedAt).toLocaleString("en-US", {
     month: "short",
     day: "numeric",

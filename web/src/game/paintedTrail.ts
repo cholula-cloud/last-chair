@@ -430,7 +430,7 @@ export function previewPaintedTrail(
         && !problemSegments.includes(i - 1)) problemSegments.push(i - 1);
     }
   }
-  if (summary.verticalFt < 16.4) reason ??= "A trail needs more downhill than that.";
+  if (summary.verticalFt < 16.4) reason ??= "A trail has to drop at least 16.4 ft.";
   const painted = subdivide(path, draftWidths, spacing);
   if (!painted) return rejectedPreview(DRAFT_TOO_LONG);
   const paintedWidths = overlays.reduce((last, stroke) => changeWidths(painted.path, last, stroke, terrain), painted.widths);
