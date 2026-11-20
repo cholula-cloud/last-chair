@@ -51,12 +51,11 @@ import {
 import { PlacementBar } from "@/ui/PlacementBar";
 import {
   LayerBottomDock,
+  NightMapDock,
   LayersButton,
-  LayerStrip,
   OverlayLegend,
   OverlayStateSync,
   ReadoutCard,
-  SnowLayerControls,
 } from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
@@ -477,14 +476,15 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       <div hidden={!!inspectedLayer} inert={!!inspectedLayer || !!officeOpen}>
         <NightRecapSheet onOffice={openOffice} onMap={openNightMap} />
       </div>
-      {phase === "night" && inspectedLayer && <section aria-label="Inspect nightly map" className="pointer-events-none fixed inset-x-3 bottom-3 z-[61] flex flex-col items-end gap-2">
-        <ReadoutCard />
-        <OverlayLegend allowOff={false} />
-        <SnowLayerControls />
-        <LayerStrip allowOff={false} />
-        <button type="button" autoFocus className="key pointer-events-auto min-h-11 px-3 font-bold" onClick={closeNightMap}>Back to recap</button>
-        <span className="sr-only" role="status">{LAYERS[inspectedLayer]} map at closing</span>
-      </section>}
+      {phase === "night" && inspectedLayer && (
+        <section
+          aria-label="Inspect nightly map"
+          className="pointer-events-none fixed inset-x-3 bottom-[max(0.65rem,env(safe-area-inset-bottom))] z-[61] flex justify-center"
+        >
+          <NightMapDock onBack={closeNightMap} />
+          <span className="sr-only" role="status">{LAYERS[inspectedLayer]} map at closing</span>
+        </section>
+      )}
       <FounderPick />
       <div className="pointer-events-none absolute inset-x-3 top-[max(0.6rem,env(safe-area-inset-top))] z-[70] mx-auto max-w-md">
         <div className={saveNotice ? "key pointer-events-auto flex items-center gap-2 p-1 pl-3" : undefined}>

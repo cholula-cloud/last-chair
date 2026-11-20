@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
-import { ASSET_CATALOG, CHAIR_TIER } from "@/game/base";
+import { ASSET_CATALOG, CHAIR_TIER, lodgeAttachPads } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
@@ -236,13 +236,6 @@ function TrailBar() {
         {problem && <div className="order-last w-full min-w-0 short:order-none short:w-auto short:flex-1">{problem}</div>}
         <MinimizeButton />
       </div>
-      {state.trails.some((trail) => trail.open) && preview?.trailIndex == null && (
-        <label className="flex min-h-11 w-fit items-center gap-2 px-0.5 text-xs font-extrabold text-ink">
-          <input type="checkbox" checked={draft.connectCrossings}
-            onChange={(event) => usePlacementDraft.setState({ connectCrossings: event.currentTarget.checked })} />
-          Connect trail crossings
-        </label>
-      )}
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-stretch gap-1.5">
           <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
@@ -332,7 +325,7 @@ function LiftBar() {
   const draft = usePlacementDraft();
   const state = useGameStore();
   const { type, top, bottom } = draft;
-  const line = top ? { bottom: bottom ?? TERRAIN.base, top } : null;
+  const line = top && bottom ? { bottom, top } : null;
   const readout = line ? liftReadout(state, type, line) : null;
   const cost = readout?.cost ?? 0;
   // With no top yet, a lodge tier or lift count block still needs saying: the guide is empty then.
@@ -382,7 +375,11 @@ function LiftBar() {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft" aria-live="polite">
-            {top ? "Drag ends to adjust · 2 fingers move map" : "Drag uphill from the base · 2 fingers move map"}
+            {draft.liftPhase === "bottom"
+              ? "Tap the bottom loading area · 2 fingers move map"
+              : draft.liftPhase === "top"
+                ? "Tap the top terminal · 2 fingers move map"
+                : "Drag ends to adjust · 2 fingers move map"}
           </p>
           {readout && (
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-[var(--r-chip)] bg-snow-2 px-2 py-1 text-xs font-extrabold tabular-nums">
@@ -443,7 +440,10 @@ function SiteBar() {
           if (!check?.ok) return;
           if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
           else if (gun) state.placeGun(check.placement.at);
-          else if (asset) state.placeAsset(asset, check.placement.at);
+          else if (asset && draft.lodgePad !== undefined) {
+            const pads = lodgeAttachPads(state.lodgeTier);
+            if (pads[draft.lodgePad]) state.placeAsset(asset, pads[draft.lodgePad]);
+          } else if (asset) state.placeAsset(asset, check.placement.at);
           if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
             buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
             finishPlacement();
@@ -463,8 +463,13 @@ function SiteBar() {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft">
-            {gun ? "Tap within pipe reach of base or a gun · 2 fingers move map"
-              : `Tap a spot for ${item.label} near the lodge · 2 fingers move map`}
+            {gun
+              ? "Tap within pipe reach of base or a gun · 2 fingers move map"
+              : draft.lodgePad !== undefined
+                ? `Confirm ${item.label} on lodge pad ${draft.lodgePad + 1} (+5% annex) · 2 fingers move map`
+                : asset && ASSET_CATALOG[asset].attachable
+                  ? `Tap the lodge, pick a pad, or place in the base area without the bonus · 2 fingers move map`
+                  : `Tap a spot for ${item.label} · 2 fingers move map`}
           </p>
           {check?.ok && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs font-extrabold tabular-nums">

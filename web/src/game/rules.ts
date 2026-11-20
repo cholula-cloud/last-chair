@@ -12,6 +12,7 @@ import {
   assetRevenue,
   assetEffect,
   advanceLodgeUpgrade,
+  lodgeAttachPads,
   LODGE_TIERS,
   nextLodgeTier,
   placedAssetsFromLegacy,
@@ -26,6 +27,7 @@ import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./p
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
+import { CREW_RUSH_COST, pickTalent as applyTalentPick, spendAllCrewPoints, type TalentId } from "./talentProgress";
 import {
   checkLiftLine,
   checkSpacing,
@@ -863,6 +865,30 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
   return preview;
 }
 
+export function pickCrewTalent(state: GameState, id: TalentId): GameState {
+  return applyTalentPick(state, id);
+}
+
+/** Optional second crew point before sleep (one rush per closing). */
+export function rushCrewPoint(state: GameState): GameState {
+  if (state.phase !== "night" || !state.nightRecap) return state;
+  if (state.crewRushDay === state.dayIndex) return state;
+  if (state.cash < CREW_RUSH_COST) return state;
+  return {
+    ...state,
+    cash: state.cash - CREW_RUSH_COST,
+    crewPoints: state.crewPoints + 1,
+    crewRushDay: state.dayIndex,
+  };
+}
+
+export function placeAssetAtPad(state: GameState, id: AssetId, padIndex: number): GameState {
+  const pads = lodgeAttachPads(state.lodgeTier);
+  const at = pads[padIndex];
+  if (!at) return state;
+  return placeAsset(state, id, at);
+}
+
 export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
   const preview = checkAssetPlacement(state, id, at);
   if (!preview.ok) return state;
@@ -1096,9 +1122,8 @@ function nightFor(
     talentsOwned: state.talentsOwned,
     daysWithoutSnow: state.daysWithoutSnow,
   });
-  const learned = CREW_TALENTS.find((x) => x.name === overnight.talentLearned);
-  const talentsOwned = learned ? [...state.talentsOwned, learned.id] : state.talentsOwned;
-  return { overnight, talentsOwned };
+  const crewPoints = state.crewPoints + overnight.crewPointsEarned;
+  return { overnight, talentsOwned: state.talentsOwned, crewPoints };
 }
 
 function forecastResults(state: GameState, snow: SnowPreset) {
@@ -1266,11 +1291,13 @@ export function sleep(state: GameState): GameState {
     return { ...review, lastWinter: record, career: [...review.career, record] };
   }
 
-  const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
+  const { overnight, talentsOwned, crewPoints } = nightFor(state, state.pendingSnow);
+  const spentNight = spendAllCrewPoints({ ...state, talentsOwned, crewPoints });
+  const afterPick = spentNight.state;
   const carried: GameState = {
     ...state,
     lodgeUpgrade: upgrade,
-    lodgeTier: completedTier ?? state.lodgeTier,
+    lodgeTier: completedTier ?? afterPick.lodgeTier,
     lastDay,
     paused: true,
     constructionSpent: 0,
@@ -1298,7 +1325,8 @@ export function sleep(state: GameState): GameState {
       ? `Route 100 Radio: Lodge Tier ${completedTier} is open. ${overnight.morningHeadline}`
       : overnight.morningHeadline,
     daysWithoutSnow: overnight.daysWithoutSnow,
-    talentsOwned,
+    talentsOwned: afterPick.talentsOwned,
+    crewPoints: afterPick.crewPoints,
     nightRecap: null,
     pendingBeat: null,
   };
@@ -1314,7 +1342,7 @@ export function sleep(state: GameState): GameState {
     snowQuality: overnight.snowQuality,
     weather: overnight.weather,
     buildings: state.buildings,
-    talentsOwned,
+    talentsOwned: afterPick.talentsOwned,
     founderId: state.founderId,
     reputation: state.reputation,
     rand,
@@ -1331,11 +1359,15 @@ export function sleep(state: GameState): GameState {
     ...carried,
     phase: "day",
     gunsVisible: overnight.gunsFired,
-    talentToast: overnight.talentLearned
-      ? `New on the crew: ${talentDescription(overnight.talentLearned, carried)}`
-      : overnight.nextTalentHint
-        ? `Next up for the crew: ${overnight.nextTalentHint}.`
-        : null,
+    talentToast: spentNight.picked.length > 0
+      ? spentNight.picked.length === 1
+        ? `New on the crew: ${talentDescription(CREW_TALENTS.find((t) => t.id === spentNight.picked[0])!.name, carried)}`
+        : `Crew picked up ${spentNight.picked.length} talents overnight.`
+      : crewPoints > state.crewPoints
+        ? `Crew point earned. Open Office → Crew to choose before tonight's rush, or sleep to auto-hire in roster order.`
+        : overnight.nextTalentHint
+          ? `Crew board: ${overnight.nextTalentHint} is next when you earn a point.`
+          : null,
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,

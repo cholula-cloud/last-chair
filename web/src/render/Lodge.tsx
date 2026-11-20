@@ -68,7 +68,14 @@ function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Pla
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
   const list: Placement[] = [
-    { name: "base-lodge", x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B * [1, 1.17, 1.31][tier - 1], asset: { kind: "lodge" } },
+    {
+      name: (["base-lodge", "lodge-tier-2", "lodge-tier-3"] as const)[tier - 1],
+      x: LODGE.x,
+      z: LODGE.z + 0.05,
+      yaw: 0,
+      scale: B,
+      asset: { kind: "lodge" },
+    },
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   ];

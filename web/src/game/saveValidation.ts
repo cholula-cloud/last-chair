@@ -166,6 +166,8 @@ const fields: Record<keyof PersistedState, Check> = {
     Array.isArray(value.snow) && value.snow.length > 0),
   selectedLiftType: liftType,
   talentsOwned: array(string),
+  crewPoints: index,
+  crewRushDay: index,
   completedBeats: array(beat),
   summitLinkDecision: nullable(summitLinkDecision),
   tipsSeen: array(string),

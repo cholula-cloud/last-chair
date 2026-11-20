@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
+import { ASSET_CATALOG, lodgeAttachPads } from "@/game/base";
 import { checkAssetMove, checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -10,7 +11,7 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import { liftReadout } from "@/ui/liftGesture";
 import { BrushCursor } from "./BrushCursor";
 import { LiftGhost } from "./LiftGhost";
-import { baseConnectRadius, STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
+import { baseConnectRadius, finishZoneRadius, STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
 import { contextColor, DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
 import { PALETTE } from "./palette";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
@@ -137,7 +138,10 @@ function TrailPreview() {
   return (
     <>
       {!review && !erasing && (
-        <TerrainRing guide at={TERRAIN.base} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
+        <>
+          <TerrainRing guide at={TERRAIN.base} radius={finishZoneRadius(TERRAIN)} color={PALETTE.snowShade} />
+          <TerrainRing guide at={TERRAIN.base} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
+        </>
       )}
       {!review && !erasing && lifts.map(({ confirmed, bottom }, i) => (
         confirmed && bottom && Math.hypot(bottom.x - TERRAIN.base.x, bottom.z - TERRAIN.base.z) > 0.1 &&
@@ -167,17 +171,45 @@ function TrailPreview() {
   );
 }
 
+function LodgePadGuides() {
+  const { active, kind, asset, lodgePad, review } = usePlacementDraft(useShallow((d) => ({
+    active: d.active, kind: d.kind, asset: d.asset, lodgePad: d.lodgePad, review: d.review,
+  })));
+  const tier = useGameStore((s) => s.lodgeTier);
+  const assets = useGameStore((s) => s.assets);
+  if (!active || kind !== "asset" || !asset || !ASSET_CATALOG[asset].attachable || review) return null;
+  const occupied = new Set(assets.map((a) => a.attachPad).filter((p): p is number => p !== undefined));
+  return (
+    <>
+      {lodgeAttachPads(tier).map((at, i) => (
+        <TerrainRing
+          key={i}
+          guide
+          at={at}
+          radius={occupied.has(i) ? 0.28 : 0.42}
+          color={lodgePad === i ? PALETTE.valid : occupied.has(i) ? PALETTE.snowOld : PALETTE.marker}
+        />
+      ))}
+    </>
+  );
+}
+
 function SitePreview() {
   const draft = usePlacementDraft();
   const state = useGameStore();
-  if (!draft.tapPoint) return null;
+  if (!draft.tapPoint) {
+    return <LodgePadGuides />;
+  }
   const check = draft.movingAssetIndex !== undefined ? checkAssetMove(state, draft.movingAssetIndex, draft.tapPoint) : draft.kind === "gun"
     ? checkGunPlacement(state, draft.tapPoint)
     : draft.asset ? checkAssetPlacement(state, draft.asset, draft.tapPoint) : null;
   return (
-    <TerrainRing at={check?.ok ? check.placement.at : draft.tapPoint}
-      radius={draft.kind === "gun" ? 0.36 : 0.6}
-      color={check?.ok ? PALETTE.valid : PALETTE.invalid}
-    />
+    <>
+      <LodgePadGuides />
+      <TerrainRing at={check?.ok ? check.placement.at : draft.tapPoint}
+        radius={draft.kind === "gun" ? 0.36 : 0.6}
+        color={check?.ok ? PALETTE.valid : PALETTE.invalid}
+      />
+    </>
   );
 }

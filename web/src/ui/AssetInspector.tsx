@@ -12,6 +12,7 @@ import { useGameStore } from "@/game/store";
 import { DAY_START_MIN, LIFT_LABELS, SNOW_LABELS } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { LodgeUpgradeControl } from "./LodgeUpgradeControl";
+import { LodgeAnnexPanel } from "./LodgeAnnexPanel";
 import { Sheet } from "./kit/Sheet";
 
 function assetDetails(state: GameState, target: AssetTarget): {
@@ -163,7 +164,10 @@ export function AssetInspector({ target, onClose }: {
           <span role="status" className="sr-only">{saved ? "Name saved." : ""}</span>
         </form>
       )}
-      {target.kind === "lodge" && <LodgeUpgradeControl variant="inspector" />}
+      {target.kind === "lodge" && <>
+        <LodgeAnnexPanel onCloseInspector={onClose} />
+        <LodgeUpgradeControl variant="inspector" />
+      </>}
     </Sheet>
   );
 }

@@ -14,7 +14,7 @@ const base: CoachContext = {
 
 describe("coach tips", () => {
   it("has ten tips with unique ids and short, plain text", () => {
-    expect(COACH_TIPS).toHaveLength(10);
+    expect(COACH_TIPS).toHaveLength(12);
     expect(new Set(COACH_TIP_IDS).size).toBe(COACH_TIP_IDS.length);
     for (const tip of COACH_TIPS) {
       expect(tip.text).toMatch(/[.]$/);

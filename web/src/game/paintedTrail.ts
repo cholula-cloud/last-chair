@@ -56,6 +56,21 @@ const JOIN_FINGER_MARGIN = 0.15;
 const BASE_BRUSH_MARGIN = 0.5;
 
 /** World-unit radius for snapping a stroke endpoint to a bottom runout. */
+/** True when the painted end sits in the lower half of the fall line from the start (guests can walk back). */
+export function trailEndsInLowerBand(start: XZ, end: XZ, terrain: Terrain): boolean {
+  const yStart = terrain.height(start.x, start.z);
+  const yBase = terrain.height(terrain.base.x, terrain.base.z);
+  const yEnd = terrain.height(end.x, end.z);
+  const drop = yStart - yBase;
+  if (drop < 0.35) return false;
+  return yEnd <= yBase + drop * 0.48 + 0.05;
+}
+
+/** Visual guide while painting: anywhere in the lower band can finish a run. */
+export function finishZoneRadius(terrain: Terrain): number {
+  return rulesFor(terrain).baseAreaRadius * 1.05;
+}
+
 export function baseConnectRadius(terrain: Terrain, widthFt: number): number {
   return Math.max(
     rulesFor(terrain).baseAreaRadius * BASE_CONNECT_FRACTION,
@@ -143,7 +158,6 @@ function trailHit(p: XZ, state: PaintState, radius: number, terrain: Terrain, fi
         : radius;
       if (hit.distance > reach || (best && hit.distance >= best.distance)) continue;
       const fraction = fractionAt(lengths, i - 1, hit.t);
-      if (finish && !hasBaseContinuation(state.trails, index, fraction, terrain)) continue;
       best = { index, fraction, at: hit.at, distance: hit.distance };
     }
   }
@@ -273,7 +287,11 @@ function crossesLift(a: XZ, b: XZ, next: XZ | undefined, top: XZ, bottom: XZ, te
     const exitSide = next ? cross({ x: next.x - top.x, z: next.z - top.z }, s) : 0;
     if (cross(q, s) * exitSide <= 0) return false;
   }
-  return distance(along(a, b, t), terrain.base) > baseRadius;
+  const hit = along(a, b, t);
+  if (distance(hit, terrain.base) <= baseRadius) return false;
+  const terminalPad = Math.max(0.9, baseRadius * 0.35);
+  if (distance(hit, top) <= terminalPad || distance(hit, bottom) <= terminalPad) return true;
+  return false;
 }
 
 function summarize(path: XZ[], widths: number[], terrain: Terrain) {
@@ -473,7 +491,7 @@ export function previewPaintedTrail(
     else if ((height - climbFloor) * terrain.feetPerUnit > 16.4) problem = "That trail climbs too far uphill. Skiers prefer going down.";
     else if (state.lifts.some((lift) => lift.confirmed
       && crossesLift(a, b, full.path[i + 1], lift.anchor, lift.bottom ?? terrain.base, terrain, baseRadius))) {
-      problem = "That trail crosses a lift line. Reroute around it.";
+      problem = "That trail cuts through a lift terminal. Reroute around the pads.";
     } else if (!widths[i - 1] || !widths[i]) problem = "Reconnect the trail before cutting.";
     if (problem) {
       problemSegments.push(i - 1);
@@ -493,11 +511,16 @@ export function previewPaintedTrail(
     }
   }
   if (summary.verticalFt < 16.4) reason ??= "A trail has to drop at least 16.4 ft.";
-  if (!bottom && !finish) reason ??= "End at the base or join a trail that leads there.";
+  const startPt = full.path[0];
+  const endPt = full.path.at(-1);
+  const lowerFinish = !disconnected && !bottom && !finish && !!startPt && !!endPt
+    && trailEndsInLowerBand(startPt, endPt, terrain)
+    && onLease(endPt, terrain);
+  if (!bottom && !finish && !lowerFinish) reason ??= "End at the base, join another trail, or finish in the lower mountain.";
   const links: TrailLinks = {};
   if (enterByTrail) links.start = { trailIndex: start.index, from: 0, to: start.fraction, at: start.at };
   if (finish) links.end = { trailIndex: finish.index, from: 1, to: finish.fraction, at: finish.at };
-  if (connectCrossings && !reason) {
+  if (!reason) {
     const crossings = findCrossings(path, state, terrain);
     if (crossings.length) links.crossings = crossings;
   }
@@ -512,6 +535,8 @@ export function previewPaintedTrail(
     reason,
     problemSegments,
     ...(links.start || links.end || links.crossings ? { links } : {}),
-    walkBack: bottom ? walkBackFor(full.path, state.lifts[liftIndex]?.bottom ?? terrain.base, terrain) : null,
+    walkBack: (bottom || lowerFinish) && liftIndex >= 0
+      ? walkBackFor(full.path, state.lifts[liftIndex]?.bottom ?? terrain.base, terrain)
+      : null,
   };
 }

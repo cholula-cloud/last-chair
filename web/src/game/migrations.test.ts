@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(8);
+    expect(SAVE_VERSION).toBe(10);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {

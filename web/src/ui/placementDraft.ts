@@ -11,8 +11,8 @@ export type PlacementFocus = {
   nonce: number;
 };
 
-/** Kept for saved drafts and callers that read it. A lift is now placed in one drag, so it is always "top". */
 export type PlacementStep = "top" | "bottom";
+export type LiftPhase = "bottom" | "top" | "adjust";
 type PlacementKind = "lift" | "trail" | "asset" | "gun";
 
 /** Session-only build drafts. The game state changes only on confirmation. */
@@ -28,6 +28,7 @@ export const usePlacementDraft = create<{
   review: boolean;
   type: LiftType;
   step: PlacementStep;
+  liftPhase: LiftPhase;
   top?: XZ;
   bottom?: XZ;
   snapped: boolean;
@@ -35,6 +36,8 @@ export const usePlacementDraft = create<{
   focus: PlacementFocus | null;
   glade: boolean;
   connectCrossings: boolean;
+  /** When set, the venue must attach at this lodge pad (+5% bonus). */
+  lodgePad?: number;
   brushWidth: number;
   erasing: boolean;
   strokes: PaintStroke[];
@@ -51,10 +54,11 @@ export const usePlacementDraft = create<{
   review: false,
   type: "surface",
   step: "top",
+  liftPhase: "bottom",
   snapped: false,
   focus: null,
   glade: false,
-  connectCrossings: false,
+  connectCrossings: true,
   brushWidth: STANDARD_BRUSH_WIDTH,
   erasing: false,
   strokes: [],

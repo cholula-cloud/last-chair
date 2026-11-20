@@ -17,6 +17,7 @@ import {
   takeLoan,
   trailOptions,
 } from "./rules";
+import { spendAllCrewPoints } from "./talentProgress";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
 import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
@@ -31,6 +32,11 @@ import { liftCost, type BuildingId, type FarePreset, type FounderId, type SnowPr
 import { HEALTHY_GUEST_SCORE, VACATION_WAIT_GOAL } from "./winterArc";
 import { winterRecord } from "./winterMemory";
 import { outlookFor } from "./weather";
+
+/** Headless seasons auto-spend crew points in roster order, like the old overnight auto-learn. */
+function spendCrewPoints(state: GameState): GameState {
+  return spendAllCrewPoints(state).state;
+}
 
 /**
  * Headless balance harness (see SIMULATION_SPEC, Balance (PR 10)). `runSeason`
@@ -287,7 +293,7 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
  * A single failed operating day disproves that this hill could coast to close.
  */
 function firstFrozenPressureDay(halfway: GameState): number | null {
-  let state = sleep(setPendingSnow(setPendingFare(halfway, halfway.fare), halfway.snow));
+  let state = spendCrewPoints(sleep(setPendingSnow(setPendingFare(halfway, halfway.fare), halfway.snow)));
   while (state.phase === "day") {
     let night = skipToClose(state);
     if (night.pendingBeat === "school_bus") night = decideSchoolContract(night, "declined");
@@ -298,7 +304,7 @@ function firstFrozenPressureDay(halfway: GameState): number | null {
     if (morningCash(night) < 0 || recap.cashDelta < dailyCosts(night).snowNight ||
         recap.satisfaction < HEALTHY_GUEST_SCORE || !recap.facts.dispatched ||
         recap.facts.avgWaitMin > VACATION_WAIT_GOAL) return night.dayIndex;
-    state = sleep(night);
+    state = spendCrewPoints(sleep(night));
   }
   return winterRecord(state).goalMet ? null : state.dayIndex;
 }
@@ -381,7 +387,7 @@ export function runSeason(
     if (minCash >= 0 && projected < 0) firstShortfallOfferedLoan = offered;
     minCash = Math.min(minCash, projected);
     if (offered && options.takeLoan !== false) state = takeLoan(state);
-    state = sleep(state);
+    state = spendCrewPoints(sleep(state));
     minCash = Math.min(minCash, state.cash);
   }
 

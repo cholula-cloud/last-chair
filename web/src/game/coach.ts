@@ -37,7 +37,7 @@ const idle = (ctx: CoachContext) => ctx.phase === "day" && !ctx.placementActive 
 export const COACH_TIPS: readonly CoachTip[] = [
   {
     id: "lift",
-    text: "Drag uphill from the base to place a lift. Gravity will do the rest.",
+    text: "Tap the loading area, then tap the top terminal, to place a lift.",
     when: (c) => idle(c) && c.opening === "lift",
   },
   {
@@ -52,7 +52,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "trail",
-    text: "Paint a trail from the top of the lift down to the base.",
+    text: "Paint a trail from the lift top to the base, another trail, or the lower mountain.",
     when: (c) => idle(c) && c.opening === "trail",
   },
   {
@@ -84,6 +84,16 @@ export const COACH_TIPS: readonly CoachTip[] = [
     id: "guns",
     text: "Snow guns make snow overnight while you sleep. Build them from the Build sheet.",
     when: (c) => idle(c) && c.running && c.dayIndex >= 3,
+  },
+  {
+    id: "crew",
+    text: "Earn a crew point each night. Open Office Crew to pick, or sleep to auto-hire in roster order.",
+    when: (c) => c.phase === "night" && c.dayIndex >= 2,
+  },
+  {
+    id: "layers",
+    text: "Tap Layers for snow depth, crowds, and revenue. Readouts stay in the bottom dock.",
+    when: (c) => idle(c) && c.running && c.dayIndex >= 4,
   },
 ];
 

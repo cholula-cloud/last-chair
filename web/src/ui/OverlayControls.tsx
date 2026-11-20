@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { LAYER_SHORT } from "@/game/mapLayers";
 import {
   getOverlayLayer,
   overlayLayers,
@@ -118,9 +119,15 @@ export function LayerStrip({ allowOff = true, className = "" }: { allowOff?: boo
   return (
     <div className={`pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1 ${className}`} role="group" aria-label="Map layers" data-layer-strip>
       {overlayLayers().map((layer) => (
-        <button key={layer.id} type="button" aria-pressed={shown === layer.id} onClick={() => pickLayer(layer.id, allowOff)}
-          className="key press min-h-11 shrink-0 px-4 text-sm font-extrabold">
-          {layer.label}
+        <button
+          key={layer.id}
+          type="button"
+          aria-pressed={shown === layer.id}
+          title={layer.label}
+          onClick={() => pickLayer(layer.id, allowOff)}
+          className="key press flex min-h-11 shrink-0 flex-col items-center justify-center px-2.5 py-1 text-[0.72rem] font-extrabold leading-tight sm:min-w-[3.25rem]"
+        >
+          <span className="text-[0.65rem] font-extrabold uppercase tracking-wide text-ink-soft">{LAYER_SHORT[layer.id]}</span>
         </button>
       ))}
       {allowOff && <button type="button" aria-pressed={shown === null} onClick={turnLayerOff}
@@ -190,7 +197,8 @@ export function ReadoutCard() {
   );
 }
 
-export function SnowLayerControls({ docked = false }: { docked?: boolean }) {
+export function SnowLayerControls({ docked = false, compact = false }: { docked?: boolean; compact?: boolean }) {
+  const [adjustOpen, setAdjustOpen] = useState(!compact);
   const layer = useActiveLayer();
   if (
     !layer ||
@@ -202,10 +210,27 @@ export function SnowLayerControls({ docked = false }: { docked?: boolean }) {
   ) {
     return null;
   }
-  if (docked) {
+  if (docked || compact) {
     return (
-      <div className="pointer-events-auto w-full max-h-[40dvh] overflow-y-auto">
-        <LayerPanel layer={layer} />
+      <div className="pointer-events-auto w-full">
+        {!adjustOpen ? (
+          <button
+            type="button"
+            className="key press min-h-11 w-full px-3 text-sm font-extrabold"
+            onClick={() => setAdjustOpen(true)}
+          >
+            Adjust layer
+          </button>
+        ) : (
+          <div className="max-h-[36dvh] w-full overflow-y-auto">
+            <div className="mb-1 flex justify-end">
+              <button type="button" className="text-xs font-bold underline" onClick={() => setAdjustOpen(false)}>
+                Hide
+              </button>
+            </div>
+            <LayerPanel layer={layer} compact />
+          </div>
+        )}
       </div>
     );
   }
@@ -221,10 +246,28 @@ export function LayerBottomDock() {
       className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]"
       data-layer-dock="true"
     >
+      <LayerStrip allowOff className="w-full snap-x snap-mandatory justify-start sm:justify-center" />
       <ReadoutCard />
-      <LayerStrip allowOff className="w-full justify-center" />
       <OverlayLegend allowOff docked />
-      <SnowLayerControls docked />
+      <SnowLayerControls docked compact />
+    </div>
+  );
+}
+
+/** Compact night-map layer UI (matches the daytime bottom dock). */
+export function NightMapDock({ onBack }: { onBack: () => void }) {
+  return (
+    <div
+      className="pointer-events-auto flex w-full max-w-[26rem] flex-col items-stretch gap-1.5"
+      data-layer-dock="night"
+    >
+      <LayerStrip allowOff={false} className="w-full snap-x snap-mandatory justify-start" />
+      <ReadoutCard />
+      <OverlayLegend allowOff={false} docked />
+      <SnowLayerControls docked compact />
+      <button type="button" autoFocus className="key press min-h-11 w-full px-3 font-bold" onClick={onBack}>
+        Back to recap
+      </button>
     </div>
   );
 }

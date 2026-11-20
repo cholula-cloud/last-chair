@@ -536,6 +536,7 @@ export type OvernightResult = {
   morningHeadline: string;
   talentLearned: string | null;
   nextTalentHint: string | null;
+  crewPointsEarned: number;
   daysWithoutSnow: number;
 };
 
@@ -570,8 +571,7 @@ export function applyOvernight(opts: {
   const gunsFired = gunCoverage ? gunCoverage.some((row) => row.some(Boolean)) : reach > 0;
   const daysWithoutSnow = weather === "snow" || weather === "storm" ? 0 : opts.daysWithoutSnow + 1;
 
-  const talent = learnNextTalent(opts.talentsOwned);
-  const nextHint = nextTalentName([...opts.talentsOwned, ...(talent ? [talent.id] : [])]);
+  const nextHint = nextTalentName(opts.talentsOwned);
 
   return {
     trails,
@@ -584,8 +584,9 @@ export function applyOvernight(opts: {
     gunReach: reach,
     weather,
     morningHeadline: morningWeatherHeadline(weather),
-    talentLearned: talent?.name ?? null,
+    talentLearned: null,
     nextTalentHint: nextHint,
+    crewPointsEarned: 1,
     daysWithoutSnow,
   };
 }

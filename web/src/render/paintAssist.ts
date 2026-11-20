@@ -100,14 +100,12 @@ export const DIFFICULTY_COLOR: Record<TrailDifficulty, string> = {
   black: "#28263e",
 };
 
-/** Warm grey for a stroke that cannot be cut yet. */
-export const UNVALIDATED_COLOR = "#8a8175";
 /** How much darker the ribbon edge band is than its fill. */
 export const EDGE_DARKEN = 0.62;
 
-/** The ribbon fill: the difficulty colour once the stroke can be cut, warm grey until then. */
-export function ribbonColor(difficulty: TrailDifficulty, validated: boolean): string {
-  return validated ? DIFFICULTY_COLOR[difficulty] : UNVALIDATED_COLOR;
+/** Paint preview uses the run’s difficulty colour; invalid segments are marked on the ribbon, not by tinting the whole stroke. */
+export function ribbonColor(difficulty: TrailDifficulty, _validated?: boolean): string {
+  return DIFFICULTY_COLOR[difficulty];
 }
 
 /** A confirmed trail seen behind a draft: lightened toward white so the draft keeps the stronger colour. */

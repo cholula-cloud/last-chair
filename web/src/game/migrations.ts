@@ -85,6 +85,20 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  {
+    to: 9,
+    note: "Crew points replace automatic talent unlock at sleep.",
+    up(raw) {
+      return { ...raw, crewPoints: typeof raw.crewPoints === "number" ? raw.crewPoints : 0 };
+    },
+  },
+  {
+    to: 10,
+    note: "Track optional cash rush for a second crew point per night.",
+    up(raw) {
+      return { ...raw, crewRushDay: typeof raw.crewRushDay === "number" ? raw.crewRushDay : 0 };
+    },
+  },
 ];
 
 type MigrationResult =
