@@ -28,6 +28,7 @@ import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
   ConditionsBoard,
+  HudToggleButton,
   LiftUndoChip,
   MorningNote,
   RecenterButton,
@@ -36,11 +37,12 @@ import {
   TopBar,
   WindHoldCallout,
 } from "@/ui/Hud";
+import { toggleConditionsExpanded, toggleHudHidden, useHudUi } from "@/ui/hudUi";
 import { PlacementBar } from "@/ui/PlacementBar";
 import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
-import { CloseIcon } from "@/ui/kit/icons";
+import { CloseIcon, GridIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
 import { openOffice as enterOffice, useOffice, type OfficeTabId } from "@/ui/officeStore";
 import { OfficeSheet } from "@/ui/OfficeSheet";
@@ -66,6 +68,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   useEffect(() => closeNightLayer, []);
   const [guestsOpen, setGuestsOpen] = useState(false);
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
+  const hudHidden = useHudUi((s) => s.hudHidden);
+  const conditionsExpanded = useHudUi((s) => s.conditionsExpanded);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
@@ -216,6 +220,26 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+
+  const mapToolButtons = (
+    <>
+      <LayersButton compact />
+      <button
+        type="button"
+        aria-pressed={showBuildGrid}
+        aria-label={showBuildGrid ? "Grid on" : "Grid off"}
+        onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
+        className="key press pointer-events-auto flex size-11 shrink-0 items-center justify-center gap-1.5 !rounded-full [--lift:3px] md:w-auto md:!rounded-[var(--r-key)] md:px-3 md:text-xs md:font-extrabold"
+      >
+        <GridIcon size={19} />
+        <span className="hidden md:inline">Grid {showBuildGrid ? "on" : "off"}</span>
+      </button>
+      <RecenterButton compact onClick={requestRecenter} />
+      <HudToggleButton hidden={hudHidden} onClick={toggleHudHidden} />
+    </>
+  );
+
   return (
     <div
       className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink"
@@ -244,65 +268,99 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       </Canvas>
 
       {/* At night the bar rides above the recap scrim (portrait), so the sheet reads as the next screen under it. */}
-      <header inert={officeOpen} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:gap-3`}>
-        <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
-          <TopBar
-            mountainId={mountainId}
-            dayIndex={dayIndex}
-            seasonLength={seasonLength}
-            clockMin={clockMin}
-            cash={cash}
-            paused={paused}
-            notStarted={notStarted}
-            openingBlocked={opening !== null}
-            onTogglePause={() => {
-              setNoteDismissedDay(dayIndex);
-              togglePause();
-            }}
-          />
-          {showStartHint && !placementActive && <StartCallout step={opening} />}
-          {phase === "day" && !showStartHint && !placementActive && <GoalStrip />}
-          {chairHeld && <WindHoldCallout shortHold={shortHold} />}
+      <header inert={officeOpen} data-mood={phase === "night" ? "night" : undefined} className={`pointer-events-none absolute inset-x-0 top-0 ${phase === "night" ? "z-[60] short:z-30" : "z-30"} flex flex-col items-start gap-2 px-3 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-start sm:justify-between sm:gap-3`}>
+        <div className="pointer-events-none flex w-full flex-col items-start gap-2 sm:w-auto">
+          <div className="pointer-events-auto w-full sm:w-auto" inert={phase === "night"}>
+            <TopBar
+              mountainId={mountainId}
+              dayIndex={dayIndex}
+              seasonLength={seasonLength}
+              clockMin={clockMin}
+              cash={cash}
+              paused={paused}
+              notStarted={notStarted}
+              openingBlocked={opening !== null}
+              onTogglePause={() => {
+                setNoteDismissedDay(dayIndex);
+                togglePause();
+              }}
+            />
+            {showStartHint && !placementActive && !hudSuppressed && <StartCallout step={opening} />}
+            {phase === "day" && !showStartHint && !placementActive && !hudSuppressed && <GoalStrip />}
+            {chairHeld && !hudSuppressed && <WindHoldCallout shortHold={shortHold} />}
+          </div>
+          {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && (
+            <CoachTip
+              context={{
+                phase,
+                dayIndex,
+                opening,
+                running: !notStarted,
+                placementActive,
+                buildOpen: false,
+                hasGuestsWant: false,
+              }}
+            />
+          )}
+          {showNote && !placementActive && !hudSuppressed && (
+            <MorningNote
+              weather={weather}
+              headline={tidy(morningHeadline)}
+              crewLine={talentToast ? tidy(talentToast) : null}
+              overnightLine={
+                dayIndex > 1 && paidForSnow > 0
+                  ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
+                  : null
+              }
+              expanded={noteExpanded}
+              onExpand={() => setNoteExpandedDay(dayIndex)}
+              onDismiss={() => setNoteDismissedDay(dayIndex)}
+            />
+          )}
         </div>
-        {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && (
-          <CoachTip
-            context={{
-              phase,
-              dayIndex,
-              opening,
-              running: !notStarted,
-              placementActive,
-              buildOpen: false,
-              hasGuestsWant: false,
-            }}
-          />
-        )}
-        {showNote && !placementActive && (
-          <MorningNote
-            weather={weather}
-            headline={tidy(morningHeadline)}
-            crewLine={talentToast ? tidy(talentToast) : null}
-            overnightLine={
-              dayIndex > 1 && paidForSnow > 0
-                ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
-                : null
-            }
-            expanded={noteExpanded}
-            onExpand={() => setNoteExpandedDay(dayIndex)}
-            onDismiss={() => setNoteDismissedDay(dayIndex)}
-          />
+
+        {/* Tablet/landscape horizontal map tools in the top-right corner. */}
+        {phase === "day" && !placementActive && !hudSuppressed && (
+          <div
+            data-map-rail="horizontal"
+            className="pointer-events-none hidden shrink-0 items-center gap-1.5 sm:flex"
+          >
+            {mapToolButtons}
+          </div>
         )}
       </header>
 
-      {phase === "day" && (
-        <div inert={officeOpen} className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:flex-row sm:items-end sm:justify-between">
-          <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-2 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-2">
+      {/* Portrait phone right-edge vertical map rail: keeps the bottom uncluttered. */}
+      {phase === "day" && !placementActive && !hudSuppressed && (
+        <div
+          inert={officeOpen}
+          data-map-rail="vertical"
+          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex flex-col items-end gap-1.5 sm:hidden"
+        >
+          {mapToolButtons}
+        </div>
+      )}
+
+      {/* Restore pill when the player hides the HUD to inspect the mountain. */}
+      {hudSuppressed && (
+        <div
+          inert={officeOpen}
+          data-hud-hidden="true"
+          className="arrive pointer-events-none absolute bottom-[max(0.75rem,env(safe-area-inset-bottom))] right-[max(0.75rem,env(safe-area-inset-right))] z-20"
+        >
+          <HudToggleButton hidden showLabel onClick={toggleHudHidden} />
+        </div>
+      )}
+
+      {phase === "day" && !hudSuppressed && (
+        <div inert={officeOpen} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
+          <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
             {!placementActive && <ReadoutCard />}
             <OverlayLegend />
             {!placementActive && <SnowLayerControls />}
             {!placementActive && <LayerStrip />}
-            {!placementActive && (
-              <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
+            {!placementActive && (undoIndex >= 0 || canResume) && (
+              <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
                 {undoIndex >= 0 && (
                   <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
                 )}
@@ -314,48 +372,46 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                     }}
                   />
                 )}
-                <LayersButton />
-                <button type="button" aria-pressed={showBuildGrid} onClick={() => usePlacementDraft.setState({ showBuildGrid: !showBuildGrid })}
-                  className="key press min-h-11 px-3 text-sm font-extrabold">Grid {showBuildGrid ? "on" : "off"}</button>
-                <RecenterButton onClick={requestRecenter} />
               </div>
             )}
           </div>
           {!placementActive && (
-          <div className="w-full sm:max-w-[400px]">
-            <ConditionsBoard
-              avgQueue={avgQueue}
-              snowQuality={snowQuality}
-              snowDepth={snowDepth}
-              snowRead={snowRead}
-              mood={mood}
-              anyOnHill={anyOnHill}
-            />
-          </div>
+            <div className="w-full sm:w-auto sm:min-w-[290px] sm:max-w-[380px]">
+              <ConditionsBoard
+                avgQueue={avgQueue}
+                snowQuality={snowQuality}
+                snowDepth={snowDepth}
+                snowRead={snowRead}
+                mood={mood}
+                anyOnHill={anyOnHill}
+                expanded={conditionsExpanded}
+                onToggleExpand={toggleConditionsExpanded}
+              />
+            </div>
           )}
           {placementActive ? (
             <PlacementBar />
           ) : (
-          <div ref={actionBarWrapRef} className="relative w-full sm:max-w-[400px]">
-            <ActionBar
-              buildActive={buildMode}
-              onBuild={() => {
-                buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-                setBuildOpen(true);
-              }}
-              onStoryLog={() => openOffice("Reports")}
-              onGuests={() => setGuestsOpen(true)}
-              onOffice={() => {
-                setMenuConfirmOpen(false);
-                openOffice();
-              }}
-              onCloseHill={skipToClose}
-              openingBlocked={opening !== null}
-              confirmMenu={menuConfirmOpen}
-              onConfirmMenuChange={setMenuConfirmOpen}
-              onLeave={() => onLeave()}
-            />
-          </div>
+            <div ref={actionBarWrapRef} className="relative w-full sm:w-auto sm:min-w-[330px] sm:max-w-[420px]">
+              <ActionBar
+                buildActive={buildMode}
+                onBuild={() => {
+                  buildTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                  setBuildOpen(true);
+                }}
+                onStoryLog={() => openOffice("Reports")}
+                onGuests={() => setGuestsOpen(true)}
+                onOffice={() => {
+                  setMenuConfirmOpen(false);
+                  openOffice();
+                }}
+                onCloseHill={skipToClose}
+                openingBlocked={opening !== null}
+                confirmMenu={menuConfirmOpen}
+                onConfirmMenuChange={setMenuConfirmOpen}
+                onLeave={() => onLeave()}
+              />
+            </div>
           )}
         </div>
       )}

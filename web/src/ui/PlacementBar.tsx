@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { ASSET_CATALOG, CHAIR_TIER } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -22,18 +22,24 @@ import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { buildConfirmed } from "@/ui/feel";
 import { liftReadout } from "@/ui/liftGesture";
 import { placementReason } from "@/game/descent";
-import { DifficultyIcon, EraseIcon, MoveMapIcon, RedoIcon, UndoIcon } from "@/ui/kit/icons";
-import { PrimaryButton } from "@/ui/kit/parts";
+import {
+  ChevronDownIcon,
+  DifficultyIcon,
+  EraseIcon,
+  RedoIcon,
+  SlidersIcon,
+  UndoIcon,
+} from "@/ui/kit/icons";
 import {
   cancelPlacement, finishPlacement, redoStroke, undoStroke, usePlacementDraft,
 } from "@/ui/placementDraft";
 
 const DIFFICULTY_WORDS: Record<TrailDifficulty, string> = { green: "Green", blue: "Blue", black: "Black" };
-const actionClass = "key press min-h-11 px-2 text-sm font-extrabold";
+const cancelBtnClass = "key key-sm press flex h-9 min-h-9 items-center justify-center px-3 text-xs font-extrabold [--lift:2px]";
+const reviewBtnClass = "key key-sm key-solid press flex h-9 min-h-9 items-center justify-center px-3.5 text-xs font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:2px]";
 const acres = (area: number) => `${area.toFixed(2)} acres`;
-const segBtnClass = "seg-btn flex min-h-11 items-center justify-center whitespace-nowrap px-2 text-xs font-extrabold tabular-nums";
-const toolBtnClass = "seg-btn flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 text-[0.7rem] font-extrabold leading-none";
-const chipClass = "chip px-2 py-0.5 text-xs font-extrabold tabular-nums";
+const segBtnClass = "seg-btn flex min-h-9 items-center justify-center whitespace-nowrap px-2 text-xs font-extrabold tabular-nums";
+const toolBtnClass = "seg-btn flex min-h-9 items-center justify-center gap-1 px-2 text-[0.72rem] font-extrabold leading-none";
 const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
 
 /** Estimate the wait the current queues would offer an approaching guest of each skill. */
@@ -48,30 +54,68 @@ function queueImpact(before: GameState, after: GameState): string {
   return `${Math.abs(delta).toFixed(1)} min ${delta < 0 ? "shorter" : "longer"} wait at current queues`;
 }
 
-function DraftActions({ canReview, emphasizePrimary = false }: { canReview: boolean; emphasizePrimary?: boolean }) {
+function DraftActions({ canReview }: { canReview: boolean }) {
   return (
-    <div className={`grid gap-2 ${emphasizePrimary ? "grid-cols-[1fr_1.7fr]" : "grid-cols-2"}`}>
-      <button type="button" className={actionClass} onClick={cancelPlacement}>Cancel</button>
-      <PrimaryButton className="min-h-11" disabled={!canReview} onClick={() => usePlacementDraft.setState({ review: true })}>
+    <div className="flex shrink-0 items-center gap-1.5">
+      <button type="button" className={cancelBtnClass} onClick={cancelPlacement}>Cancel</button>
+      <button
+        type="button"
+        className={reviewBtnClass}
+        disabled={!canReview}
+        onClick={() => usePlacementDraft.setState({ review: true })}
+      >
         Review
-      </PrimaryButton>
+      </button>
+    </div>
+  );
+}
+
+function MinimizeButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => usePlacementDraft.setState({ minimized: true })}
+      aria-label="Minimize build controls"
+      title="Minimize controls"
+      className="key key-sm press flex size-8 shrink-0 items-center justify-center text-ink [--lift:2px]"
+    >
+      <ChevronDownIcon size={16} />
+    </button>
+  );
+}
+
+function MinimizedBar({
+  summary,
+  canReview,
+  dataTrailPanel,
+}: {
+  summary: ReactNode;
+  canReview: boolean;
+  dataTrailPanel?: "minimized";
+}) {
+  return (
+    <div
+      key="minimized"
+      data-placement-minimized="true"
+      data-trail-panel={dataTrailPanel}
+      className="panel trail-bar-in flex items-center justify-between gap-2 px-2 py-1.5 [--lift:3px]"
+    >
+      <button
+        type="button"
+        onClick={() => usePlacementDraft.setState({ minimized: false })}
+        aria-label="Expand build controls"
+        className="key key-sm press flex h-9 min-h-9 min-w-0 items-center gap-1.5 px-2.5 text-xs font-extrabold [--lift:2px]"
+      >
+        <SlidersIcon size={15} className="shrink-0" />
+        <span className="truncate tabular-nums">{summary}</span>
+      </button>
+      <DraftActions canReview={canReview} />
     </div>
   );
 }
 
 function backToDraft() {
   usePlacementDraft.setState({ review: false });
-}
-
-function MoveMapButton({ resumeLabel, className = actionClass }: { resumeLabel: string; className?: string }) {
-  const moving = usePlacementDraft((s) => s.moveCamera);
-  const painting = usePlacementDraft((s) => s.activeStroke !== null);
-  return (
-    <button type="button" className={className} disabled={painting}
-      onClick={() => usePlacementDraft.setState({ moveCamera: !moving })}>
-      {moving ? resumeLabel : "Move map"}
-    </button>
-  );
 }
 
 /** Non-blocking: a run that ends away from the lift is legal; guests just walk home from it. */
@@ -94,7 +138,10 @@ function TrailBar() {
   const guests = preview ? Object.values(PERSONAS)
     .filter(({ id }) => !isOverSkill(id, preview.difficulty))
     .map(({ label }) => label).join(", ") : "";
-  if (draft.review && preview) {
+  const canReview = draft.strokes.length > 0 && !draft.activeStroke;
+  const mode = trailPanelMode(draft);
+
+  if (mode === "review" && preview) {
     return (
       <BuildImpactCard
         title={preview.trailIndex !== null ? "Review trail changes" : preview.glade ? "Review glade" : "Review painted trail"}
@@ -124,9 +171,10 @@ function TrailBar() {
       />
     );
   }
+
   const stats = preview && (
     <div
-      className="flex items-center justify-between gap-2 rounded-[var(--r-chip)] bg-snow-2 px-2.5 py-1.5 text-xs font-extrabold tabular-nums"
+      className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-[var(--r-chip)] bg-snow-2 px-2 py-1 text-xs font-extrabold tabular-nums"
       aria-live={draft.activeStroke ? "off" : "polite"}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -136,116 +184,123 @@ function TrailBar() {
         </span>
         <span className="text-ink-soft">{feet(preview.lengthFt)}</span>
         <span className="text-ink-soft">{feet(preview.verticalFt)} vert</span>
-        <span className="text-ink-soft">{acres(preview.acres)}</span>
+        <span className="hidden text-ink-soft sm:inline">{acres(preview.acres)}</span>
       </div>
-      <span className="chip shrink-0 bg-gold px-2 py-0.5 text-xs font-extrabold tabular-nums [--lift:2px]">
+      <span className="chip shrink-0 bg-gold px-1.5 py-0.5 text-xs font-extrabold tabular-nums [--lift:2px]">
         {formatMoney(preview.cost)}
       </span>
     </div>
   );
+
   const reason = draft.strokeFull ? STROKE_FULL_REASON : preview?.reason;
   const problem = reason && (
     <p className="rounded-[var(--r-chip)] border-2 border-barn-deep bg-snow px-2.5 py-1 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">
       {reason}
     </p>
   );
-  const prompt = draft.moveCamera
-    ? "Drag or pinch to move the map, then tap Paint."
-    : draft.erasing
-      ? "Drag over the paint to erase it."
-      : draft.strokes.length
-        ? null
-        : "Drag down from a lift top to paint. Two fingers move the map.";
-  if (trailPanelMode(draft) === "compact") {
+
+  if (mode === "compact") {
     return (
-      <div key="compact" className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
-        <p className="text-xs font-extrabold text-ink-soft">Lift your finger to finish the stroke.</p>
-        {stats}
+      <div key="compact" className="panel trail-bar-in space-y-1 px-2.5 py-1.5 [--lift:3px]" data-trail-panel="compact">
+        <div className="flex items-center gap-2">
+          {stats ?? <p className="text-xs font-extrabold text-ink-soft">Lift your finger to finish the stroke.</p>}
+        </div>
         {problem}
       </div>
     );
   }
+
+  if (mode === "minimized") {
+    const label = preview
+      ? `${draft.brushWidth} ft · ${formatMoney(preview.cost)}`
+      : `${draft.glade ? "Glade" : "Trail"} · ${draft.brushWidth} ft`;
+    return <MinimizedBar summary={label} canReview={canReview} dataTrailPanel="minimized" />;
+  }
+
+  const prompt = draft.erasing
+    ? "Drag over paint to erase · 2 fingers move map"
+    : draft.strokes.length
+      ? null
+      : "Drag from lift top to paint · 2 fingers move map";
+
   return (
-    <div key="full" className="panel trail-bar-in space-y-2 px-2.5 pb-2.5 pt-2" data-trail-panel="full">
-      {prompt && <p className="px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
-      {stats}
+    <div key="full" className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]" data-trail-panel="full">
+      <div className="flex items-center justify-between gap-2">
+        {stats ?? <p className="min-w-0 flex-1 truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
+        <MinimizeButton />
+      </div>
       {problem}
-      <div className="flex items-stretch gap-1.5">
-        <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
-          <button
-            type="button"
-            className={segBtnClass}
-            aria-pressed={!draft.glade}
-            onClick={() => usePlacementDraft.setState({ glade: false })}
-          >
-            Cleared
-          </button>
-          <button
-            type="button"
-            className={segBtnClass}
-            aria-pressed={draft.glade}
-            title="Glade keeps trees"
-            onClick={() => usePlacementDraft.setState({ glade: true })}
-          >
-            Glade
-          </button>
-        </div>
-        <div className="seg grid min-w-0 flex-1 grid-cols-4 gap-0.5" role="group" aria-label="Brush width">
-          {BRUSH_WIDTHS.map((width) => (
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-stretch gap-1.5">
+          <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
             <button
-              key={width}
               type="button"
-              aria-pressed={draft.brushWidth === width}
-              aria-label={`${width} ft wide`}
-              className={`${segBtnClass} px-1 text-[0.68rem]`}
-              onClick={() => usePlacementDraft.setState({ brushWidth: width })}
+              className={segBtnClass}
+              aria-pressed={!draft.glade}
+              onClick={() => usePlacementDraft.setState({ glade: false })}
             >
-              {width} ft
+              Cleared
             </button>
-          ))}
+            <button
+              type="button"
+              className={segBtnClass}
+              aria-pressed={draft.glade}
+              title="Glade keeps trees"
+              onClick={() => usePlacementDraft.setState({ glade: true })}
+            >
+              Glade
+            </button>
+          </div>
+          <div className="seg grid min-w-0 flex-1 grid-cols-4 gap-0.5 sm:flex-none" role="group" aria-label="Brush width">
+            {BRUSH_WIDTHS.map((width) => (
+              <button
+                key={width}
+                type="button"
+                aria-pressed={draft.brushWidth === width}
+                aria-label={`${width} ft wide`}
+                className={`${segBtnClass} px-1.5 text-[0.68rem]`}
+                onClick={() => usePlacementDraft.setState({ brushWidth: width })}
+              >
+                {width}ft
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="seg grid grid-cols-3 gap-0.5" role="group" aria-label="Paint tools">
+            <button
+              type="button"
+              className={toolBtnClass}
+              aria-pressed={draft.erasing}
+              data-tone="bad"
+              onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}
+            >
+              <EraseIcon size={14} />
+              <span>Erase</span>
+            </button>
+            <button
+              type="button"
+              className={toolBtnClass}
+              disabled={!draft.strokes.length}
+              onClick={undoStroke}
+            >
+              <UndoIcon size={14} />
+              <span className="sr-only sm:not-sr-only">Undo</span>
+            </button>
+            <button
+              type="button"
+              className={toolBtnClass}
+              disabled={!draft.redo.length}
+              onClick={redoStroke}
+            >
+              <RedoIcon size={14} />
+              <span className="sr-only sm:not-sr-only">Redo</span>
+            </button>
+          </div>
+          <DraftActions canReview={canReview} />
         </div>
       </div>
-      <div className="seg grid grid-cols-4 gap-0.5" role="group" aria-label="Paint tools">
-        <button
-          type="button"
-          className={toolBtnClass}
-          aria-pressed={draft.moveCamera}
-          disabled={draft.activeStroke !== null}
-          onClick={() => usePlacementDraft.setState({ moveCamera: !draft.moveCamera })}
-        >
-          <MoveMapIcon size={15} />
-          <span>{draft.moveCamera ? "Paint" : "Move map"}</span>
-        </button>
-        <button
-          type="button"
-          className={toolBtnClass}
-          aria-pressed={draft.erasing}
-          data-tone="bad"
-          onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}
-        >
-          <EraseIcon size={15} />
-          <span>Erase</span>
-        </button>
-        <button
-          type="button"
-          className={toolBtnClass}
-          disabled={!draft.strokes.length}
-          onClick={undoStroke}
-        >
-          <UndoIcon size={15} />
-          <span>Undo</span>
-        </button>
-        <button
-          type="button"
-          className={toolBtnClass}
-          disabled={!draft.redo.length}
-          onClick={redoStroke}
-        >
-          <RedoIcon size={15} />
-          <span>Redo</span>
-        </button>
-      </div>
-      <DraftActions canReview={draft.strokes.length > 0 && !draft.activeStroke} emphasizePrimary />
     </div>
   );
 }
@@ -276,6 +331,7 @@ function LiftBar() {
   const vertical = readout ? feet(readout.verticalFt) : null;
   const capacity = readout?.skiersPerHour ?? liftCapacityPerHour(type, state.talentsOwned);
   const ride = readout?.rideMin ?? null;
+
   if (draft.review && line && readout) {
     return (
       <BuildImpactCard
@@ -302,26 +358,44 @@ function LiftBar() {
       />
     );
   }
-  const chip = "chip px-2 py-0.5 text-xs font-extrabold tabular-nums";
+
+  if (draft.minimized) {
+    const label = readout ? `${formatMoney(cost)} · ${length}` : LIFT_LABELS[type];
+    return <MinimizedBar summary={label} canReview={!!readout?.ok} />;
+  }
+
   return (
-    <div className="panel space-y-2 px-3 pb-3 pt-2">
-      <p className="text-sm font-extrabold" aria-live="polite">
-        {draft.moveCamera ? "Move the map, then tap Place lift to keep going."
-          : top ? "Drag either end to adjust it. Two fingers move the map."
-          : "Drag uphill from the base to string up a lift."}
-      </p>
-      {readout && (
-        <div className="flex flex-wrap gap-1">
-          <span className={chip}>{formatMoney(cost)}</span>
-          <span className={chip}>{length} long</span>
-          <span className={chip}>{vertical} vertical</span>
-          <span className={chip}>{capacity} skiers per hour</span>
-          <span className={chip}>{ride?.toFixed(1)} min ride</span>
+    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-xs font-extrabold text-ink-soft" aria-live="polite">
+            {top ? "Drag ends to adjust · 2 fingers move map" : "Drag uphill from the base · 2 fingers move map"}
+          </p>
+          {readout && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-[var(--r-chip)] bg-snow-2 px-2 py-1 text-xs font-extrabold tabular-nums">
+              <span className="chip bg-gold px-1.5 py-0.5 text-xs [--lift:2px]">{formatMoney(cost)}</span>
+              <span>{length}</span>
+              <span className="text-ink-soft">{vertical} vert</span>
+              <span className="text-ink-soft">{capacity}/hr</span>
+              <span className="text-ink-soft">{ride?.toFixed(1)}m ride</span>
+            </div>
+          )}
         </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div className="hidden sm:block">
+            <DraftActions canReview={!!readout?.ok} />
+          </div>
+          <MinimizeButton />
+        </div>
+      </div>
+      {problem && (
+        <p className="rounded-[var(--r-chip)] border-2 border-barn-deep bg-snow px-2.5 py-1 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">
+          {problem}
+        </p>
       )}
-      {problem && <p className="chip block max-w-full px-2 py-0.5 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">{problem}</p>}
-      <MoveMapButton resumeLabel="Place lift" />
-      <DraftActions canReview={!!readout?.ok} />
+      <div className="flex justify-end sm:hidden">
+        <DraftActions canReview={!!readout?.ok} />
+      </div>
     </div>
   );
 }
@@ -366,22 +440,37 @@ function SiteBar() {
     );
   }
 
+  if (draft.minimized) {
+    const label = check?.ok ? `${item.label} · ${formatMoney(check.cost)}` : item.label;
+    return <MinimizedBar summary={label} canReview={!!tapPoint} />;
+  }
+
   return (
-    <div className="panel space-y-2 px-3 pb-3 pt-2">
-      <p className="text-sm font-extrabold">
-        {draft.moveCamera ? "Move the map, then tap Place to keep going."
-          : gun ? "Put the gun within pipe reach of the base or another gun."
-          : `Choose a spot for ${item.label} near the lodge.`}
-      </p>
-      {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
-      {check?.ok && (
-        <div className="flex flex-wrap gap-1">
-          <span className={chipClass}>{formatMoney(check.cost)}</span>
-          {check.attached && <span className={chipClass}>5% attached</span>}
+    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-xs font-extrabold text-ink-soft">
+            {gun ? "Tap within pipe reach of base or a gun · 2 fingers move map"
+              : `Tap a spot for ${item.label} near the lodge · 2 fingers move map`}
+          </p>
+          {check?.ok && (
+            <div className="flex flex-wrap items-center gap-1.5 text-xs font-extrabold tabular-nums">
+              <span className="chip bg-gold px-1.5 py-0.5 text-xs [--lift:2px]">{formatMoney(check.cost)}</span>
+              {check.attached && <span className="chip px-1.5 py-0.5 text-xs [--lift:2px]">+5% attached</span>}
+            </div>
+          )}
         </div>
-      )}
-      <MoveMapButton resumeLabel="Place" />
-      <DraftActions canReview={!!tapPoint} />
+        <div className="flex shrink-0 items-center gap-1.5">
+          <div className="hidden sm:block">
+            <DraftActions canReview={!!tapPoint} />
+          </div>
+          <MinimizeButton />
+        </div>
+      </div>
+      {problem && <p className="text-xs font-extrabold text-barn-deep">{problem}</p>}
+      <div className="flex justify-end sm:hidden">
+        <DraftActions canReview={!!tapPoint} />
+      </div>
     </div>
   );
 }
@@ -389,11 +478,18 @@ function SiteBar() {
 export function PlacementBar() {
   const active = usePlacementDraft((s) => s.active);
   const kind = usePlacementDraft((s) => s.kind);
-  const showPlacementColors = usePlacementDraft((s) => s.kind !== "trail" && s.kind !== "lift");
+  const minimized = usePlacementDraft((s) => s.minimized);
+  const review = usePlacementDraft((s) => s.review);
+  const showPlacementColors = usePlacementDraft((s) => s.kind !== "trail" && s.kind !== "lift" && !s.minimized && !s.review);
   if (!active) return null;
+  const widthClass = review
+    ? "max-w-[440px]"
+    : minimized
+      ? "max-w-[340px]"
+      : "max-w-[420px] sm:max-w-[740px]";
   return (
-    <div className="pointer-events-auto max-h-[65dvh] w-full max-w-[440px] overflow-y-auto px-1 short:max-w-[270px]" data-placement-kind={kind}>
-      {showPlacementColors && <p className="key mb-1 px-2 py-1 text-xs font-bold">Green means go. Red means find another spot.</p>}
+    <div className={`pointer-events-auto max-h-[65dvh] w-full overflow-y-auto px-1 short:max-w-[520px] ${widthClass}`} data-placement-kind={kind}>
+      {showPlacementColors && <p className="key mb-1 px-2 py-0.5 text-[0.72rem] font-extrabold [--lift:2px]">Green means go. Red means find another spot.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
   );

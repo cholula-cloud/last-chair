@@ -20,6 +20,8 @@ export const usePlacementDraft = create<{
   active: boolean;
   showBuildGrid: boolean;
   moveCamera: boolean;
+  /** Collapses the placement panel down to a slim bar with Expand, Cancel, and Review. */
+  minimized: boolean;
   kind: PlacementKind;
   asset?: AssetId;
   movingAssetIndex?: number;
@@ -44,6 +46,7 @@ export const usePlacementDraft = create<{
   active: false,
   showBuildGrid: false,
   moveCamera: false,
+  minimized: false,
   kind: "lift",
   review: false,
   type: "surface",
