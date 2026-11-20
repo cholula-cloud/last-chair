@@ -32,7 +32,7 @@ describe("crew order and operations", () => {
     while (state.phase === "day") state = sleep(acknowledgeBeat(openNight(state)));
     expect(state.phase).toBe("winter_review");
     expect(state.talentsOwned).toEqual(CREW_TALENTS.map(talent => talent.id));
-    expect(talentDescription("Wind Hold", state)).toContain("Waits for a chair");
+    expect(talentDescription("Fast Wind Checks", state)).toContain("Needs a chairlift");
   });
   it("resumes the fixed learning order after loading an earlier sequence", () => {
     const owned = ["rope_tow", "trail_guns", "house_band", "groom_pass"];

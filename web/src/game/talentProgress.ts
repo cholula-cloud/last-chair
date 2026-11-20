@@ -54,7 +54,7 @@ export function pickTalent(state: GameState, id: TalentId): GameState {
     ...state,
     crewPoints: state.crewPoints - CREW_POINT_COST,
     talentsOwned: [...state.talentsOwned, id],
-    talentToast: `${talent.name} is on the crew roster.`,
+    talentToast: `${talent.name} (${talent.crew}) unlocked. ${talent.effect}`,
   };
 }
 

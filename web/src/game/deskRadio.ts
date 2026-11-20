@@ -7,8 +7,8 @@ export type DeskRadio = { title: string; radio: string };
 /** Maris on a finished lodge addition. Tier 1 never completes, so it falls through to the Tier 3 line. */
 export function lodgeOpeningRadio(tier: number): string {
   return tier === 2
-    ? "The lodge addition is done and Tier 2 is open. Room for more skiers, and the ski school finally has a place to sit."
-    : "Tier 3 is open at the Dutch Hill lodge. That’s the last addition, and the parking lot is going to need a bigger plow.";
+    ? "The lodge addition is open at Tier 2. More parking, more tables, and room to run a real ski school."
+    : "Tier 3 is open at the Dutch Hill lodge. Plenty of room inside now, though Frank says the lot needs a bigger plow.";
 }
 
 /**
