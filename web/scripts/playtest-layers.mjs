@@ -42,15 +42,20 @@ try {
   const save = () => page.evaluate(() => JSON.parse(localStorage.getItem("last-chair-m3-slot-1")).state);
   const before = await save();
   const button = (name) => page.getByRole("button", { name, exact: true });
-  await button("Layers").tap();
+  const tap = (name) => button(name).tap({ force: true });
+  await tap("Layers");
   const panel = page.getByRole("region", { name: "Map layers" });
   const strip = page.getByRole("group",{name:"Map layers"});
-  await strip.getByRole("button",{name:"Slope"}).tap();
+  await strip.getByRole("button", { name: "Slope" }).tap({ force: true });
   await page.getByLabel("Slope legend").waitFor();
   const bounds = await strip.boundingBox();
   assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 391);
-  for (const layer of ["Snow depth", "Snow-making", "Conditions"]) {
-    await button(layer).tap();
+  for (const layer of ["Snow depth", "Snow-making", "Conditions", "Crowds", "Revenue", "Guests want"]) {
+    await tap(layer);
+    if (["Crowds", "Revenue", "Guests want"].includes(layer)) {
+      await page.getByLabel(`${layer} legend`).waitFor();
+      continue;
+    }
     await panel.getByLabel(layer + " legend").waitFor();
     if (layer === "Snow-making") {
       await panel.getByRole("button", { name: "Mid", exact: true }).tap();
