@@ -49,6 +49,8 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
   const dayIndex = useGameStore((s) => s.dayIndex);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
+  const snowPreset = useGameStore((s) => s.snow);
+  const runsByTrail = useGameStore((s) => s.dayStats.runsByTrail);
   const lifts = useGameStore((s) => s.lifts);
   const trailRuns = useGameStore((s) => s.trails);
   const usingBuildTool = usePlacementDraft((s) => s.active && !s.moveCamera);
@@ -107,6 +109,9 @@ export function MountainScene({ lowDetail = false }: { lowDetail?: boolean }) {
         snowQuality={terrainSnow}
         snowDepth={snowDepth}
         trails={trailSnow}
+        groomed={trailRuns.map((t) => t.groomed)}
+        snowPreset={snowPreset}
+        runsByTrail={runsByTrail}
         paths={trailRuns.map((t) => t.open ? t.path : [])}
         pathWidths={trailRuns.map((t) => t.widths)}
         forestPaths={forestPaths}
