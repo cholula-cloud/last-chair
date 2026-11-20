@@ -689,7 +689,7 @@ export function closeLift(state: GameState, index: number): GameState {
   return { ...state, lifts: state.lifts.map((item, i) => i === index ? { ...item, closing: true } : item) };
 }
 
-export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = false) {
+export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = true) {
   const preview = previewPaintedTrail(state, strokes, TERRAIN, connectCrossings);
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
   const isGlade = original ? !!original.glade : glade;
@@ -714,7 +714,7 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
-export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = false): GameState {
+export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = true): GameState {
   const preview = checkPaint(state, strokes, glade, connectCrossings);
   if (preview.reason || preview.liftIndex == null || preview.liftIndex < 0) return state;
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
