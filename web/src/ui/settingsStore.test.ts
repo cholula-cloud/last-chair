@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
-    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: true, defaultSpeed: 4 as const };
+    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: "on" as const, defaultSpeed: 4 as const };
     expect(cleanSettings(s)).toEqual({ ...DEFAULT_SETTINGS, ...s });
   });
 
@@ -18,7 +18,7 @@ describe("cleanSettings", () => {
   });
 
   it("fills the sound settings for a save written before they existed", () => {
-    const old = { voiceVolume: 60, voiceOn: false, tips: true, captions: true, reduceMotion: false, defaultSpeed: 2 };
+    const old = { voiceVolume: 60, voiceOn: false, tips: true, captions: true, reduceMotion: "off" as const, defaultSpeed: 2 };
     const s = cleanSettings(old);
     expect(s.voiceVolume).toBe(60);
     expect(s.voiceOn).toBe(false);

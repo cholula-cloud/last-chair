@@ -444,8 +444,24 @@ body {
     border: 3px solid var(--sign-yellow);
     border-radius: 20px;
     pointer-events: none;
-    animation: pulse-ring 1.8s var(--ease-out) infinite;
+    animation: pulse-ring 1.8s var(--ease-out) 3;
   }
+}
+
+@keyframes mood-chip-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+.mood-pulse-active {
+  animation: mood-chip-pulse 280ms var(--ease-out);
+}
+:root[data-reduce-motion="true"] .mood-pulse-active {
+  animation: none;
 }
 
 @keyframes pulse-ring {

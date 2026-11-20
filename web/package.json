@@ -25,6 +25,9 @@
     "screenshots:b7": "node scripts/screenshots-b7.mjs",
     "screenshots:p4": "node scripts/screenshots-p4.mjs",
     "screenshots:snow30": "node scripts/screenshots-snow30.mjs",
+    "screenshots:juice33": "node scripts/screenshots-juice33.mjs",
+    "screenshots:o4": "node scripts/screenshots-o4.mjs",
+    "screenshots:o5": "node scripts/screenshots-o5.mjs",
     "playtest:p1": "node scripts/playtest-p1.mjs",
     "replay": "node scripts/replay.mjs",
     "check:bundle": "node scripts/check-bundle.mjs"

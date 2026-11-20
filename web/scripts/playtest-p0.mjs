@@ -34,7 +34,7 @@ try {
   });
   if (reduced) await context.addInitScript(() => {
     localStorage.setItem("last-chair-settings", JSON.stringify({
-      version: 1, state: { reduceMotion: true, radioEnabled: false, voiceVolume: 0 },
+      version: 1, state: { reduceMotion: "on", radioEnabled: false, voiceVolume: 0 },
     }));
   });
   const page = await context.newPage();

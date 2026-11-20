@@ -33,6 +33,7 @@ import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 import { undoChipLabel, type UndoKind } from "@/ui/undoLabel";
 import { useSpeed } from "@/ui/speed";
+import { useReducedMotion } from "@/ui/motion";
 import { useSettings } from "@/ui/settingsStore";
 
 /** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
@@ -59,6 +60,7 @@ export function TopBar({
 }) {
   const speed = useSpeed((s) => s.speed);
   const cycleSpeed = useSpeed((s) => s.cycle);
+  const reducedMotion = useReducedMotion();
   const { weekday, date, note } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
   const lowCash = cash >= 0 && cash < LOW_CASH;
   return (
@@ -69,7 +71,7 @@ export function TopBar({
         disabled={openingBlocked}
         aria-label={paused ? "Resume day" : "Pause day"}
         className={`sign sign-btn press flex size-11 shrink-0 items-center justify-center [--lift:3px] sm:size-12 sm:[--lift:4px] ${
-          notStarted && !openingBlocked ? "pulse-ring" : ""
+          notStarted && !openingBlocked && !reducedMotion ? "pulse-ring" : ""
         }`}
       >
         {paused ? <PlayIcon size={20} /> : <PauseIcon size={20} />}
@@ -254,6 +256,8 @@ export function ConditionsBoard({
   snowDepth,
   snowRead,
   mood,
+  moodDelta = null,
+  moodPulseTick = 0,
   anyOnHill = true,
   expanded = false,
   onToggleExpand,
@@ -267,6 +271,8 @@ export function ConditionsBoard({
   /** "tone|label" of the worst trail segment (see snow.ts `readSnow`). */
   snowRead: string;
   mood: number;
+  moodDelta?: number | null;
+  moodPulseTick?: number;
   expanded?: boolean;
   onToggleExpand?: () => void;
   onMinimizeBottom?: () => void;
@@ -280,6 +286,7 @@ export function ConditionsBoard({
     band(snowDepth, 0.6, 0.35),
   );
   const moodToneBand = moodTone(mood);
+  const reducedMotion = useReducedMotion();
   const items: Condition[] = [
     {
       key: "queue",
@@ -336,8 +343,10 @@ export function ConditionsBoard({
         >
           {items.map((c) => (
             <div
-              key={c.key}
-              className={`flex min-w-0 items-center gap-1.5 px-2 ${expanded ? "items-start" : "justify-center sm:justify-start"}`}
+              key={c.key === "mood" ? `${c.key}-${moodPulseTick}` : c.key}
+              className={`flex min-w-0 items-center gap-1.5 px-2 ${expanded ? "items-start" : "justify-center sm:justify-start"} ${
+                c.key === "mood" && moodPulseTick > 0 && !reducedMotion ? "mood-pulse-active" : ""
+              }`}
               aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
               role="group"
             >
@@ -347,6 +356,15 @@ export function ConditionsBoard({
                   <span className="display text-[1.02rem] tabular-nums sm:text-[1.08rem]">
                     {c.value}
                   </span>
+                  {c.key === "mood" && moodDelta != null && (
+                    <span
+                      className={`text-[0.7rem] font-extrabold tabular-nums ${
+                        moodDelta > 0 ? "text-sign-green" : "text-barn-deep"
+                      } ${reducedMotion ? "note-in" : "callout-in"}`}
+                    >
+                      {moodDelta > 0 ? `+${Math.round(moodDelta)}` : Math.round(moodDelta)}
+                    </span>
+                  )}
                   {!expanded && (
                     <span
                       aria-hidden="true"
