@@ -72,7 +72,7 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
     >
       <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, winter one">
         <p className="display text-[1.35rem] leading-tight text-white">
-          {bankrupt ? "The bank called, and it wasn’t to say hello." : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
+          {bankrupt ? "The bank called. The winter’s over." : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
         </p>
         {bankrupt && <p className="mt-1 text-sm font-bold text-sign-green-ink">Cash stayed below zero for three mornings in a row.</p>}
         <div className="sign-rule my-3" aria-hidden="true" />
@@ -88,8 +88,10 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
         </div>
       </Sign>
       <p className="chip mt-4 px-3.5 py-3 font-bold">
-          Cash {formatMoney(cash)} less loan {formatMoney(loan)} and unpaid construction {formatMoney(construction)} leaves <strong>{formatMoney(netWorth)}</strong>.
-        <br />Winter solvency goal {solvent ? "met" : "unmet"}.
+          {netWorth >= 0
+            ? <>Cash of {formatMoney(cash)} covers the {formatMoney(loan)} loan and {formatMoney(construction)} in unpaid construction, with <strong>{formatMoney(netWorth)}</strong> to spare.</>
+            : <>Cash of {formatMoney(cash)} doesn’t cover the {formatMoney(loan)} loan and {formatMoney(construction)} in unpaid construction. You’re <strong>{formatMoney(-netWorth)}</strong> short.</>}
+        <br />Winter solvency goal {solvent ? "met" : "missed"}.
       </p>
       <section className="panel mt-4 space-y-2 px-4 py-3" aria-label="What the town remembers">
         <h3 className="font-extrabold">What the town remembers</h3>
@@ -106,15 +108,15 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
           : <p>No winter score yet. It needs at least one day with guests, plus a satisfaction and reputation reading from every day they showed up.</p>}
         <details>
           <summary className="min-h-11 cursor-pointer font-bold">Operating decisions</summary>
-          {!days.some((d, i) => i > 0 && (d.fare !== days[i-1].fare || d.snow !== days[i-1].snow)) && <p>No fare or service changes appear in the daily record.</p>}
+          {!days.some((d, i) => i > 0 && (d.fare !== days[i-1].fare || d.snow !== days[i-1].snow)) && <p>Fare and service stayed put all winter.</p>}
           {days.map((d, i) => {
             const prev = days[i - 1];
             if (!prev || prev.day + 1 !== d.day || (prev.fare === d.fare && prev.snow === d.snow)) return null;
             return <p className="mb-2" key={d.day}><strong>Day {d.day}.</strong>{" "}
-              {prev.fare !== d.fare && `Fare changed from ${FARE_LABELS[prev.fare]} to ${FARE_LABELS[d.fare]}. `}
-              {prev.snow !== d.snow && `Service changed from ${SNOW_LABELS[prev.snow]} to ${SNOW_LABELS[d.snow]}. `}
-              Arrivals went from {prev.arrivals} to {d.arrivals}.
-              {prev.arrivals > 0 && d.arrivals > 0 && ` Satisfaction went from ${Math.round(prev.satisfaction)} to ${Math.round(d.satisfaction)}.`}
+              {prev.fare !== d.fare && `Fare moved from ${FARE_LABELS[prev.fare]} to ${FARE_LABELS[d.fare]}. `}
+              {prev.snow !== d.snow && `Service moved from ${SNOW_LABELS[prev.snow]} to ${SNOW_LABELS[d.snow]}. `}
+              Skiers went from {prev.arrivals} to {d.arrivals}.
+              {prev.arrivals > 0 && d.arrivals > 0 && ` Happiness went from ${Math.round(prev.satisfaction)} to ${Math.round(d.satisfaction)}.`}
             </p>;
           })}
         </details>
@@ -129,8 +131,8 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
           <PinIcon size={20} />
         </span>
         <p className="text-[1rem] font-bold">
-          Career pin unlocked:{" "}
-          <strong className="font-extrabold">Tenney Mountain, NH</strong>
+          You earned a career pin for{" "}
+          <strong className="font-extrabold">Tenney Mountain, NH</strong>.
         </p>
       </div>}
     </Sheet>

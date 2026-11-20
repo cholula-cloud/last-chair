@@ -65,7 +65,7 @@ try {
       assert.equal(bus.ticketRevenue, 150);
       assert.ok(bus.taught > 0 && bus.taught <= 6);
       await receipt.waitFor();
-      assert.ok((await receipt.innerText()).includes(`${bus.taught} of 6 pupils got a lesson. Bus tickets brought in $150.`));
+      assert.ok((await receipt.innerText()).includes(`${bus.taught} of 6 Readsboro kids got a lesson. Bus tickets brought in $150.`));
       await button("Sleep until morning").tap();
       await button("Resume day").tap();
       await button("Office").tap();

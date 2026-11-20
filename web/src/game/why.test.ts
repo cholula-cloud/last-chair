@@ -25,7 +25,7 @@ describe("whyLines", () => {
     expect(lines[1].detail).toContain("$62 felt steep");
     expect(lines[1].detail).toContain("$51");
     expect(lines[3].detail).toBe("Today’s average: good cover, quality 62%.");
-    expect(lines[4].detail).toBe("Guests arrived in a mood of 74 out of 100.");
+    expect(lines[4].detail).toBe("Guests showed up at 74 out of 100 on mood.");
   });
 
   it("names a good deal as one", () => {

@@ -102,6 +102,6 @@ export function morningWeatherHeadline(kind: WeatherKind): string {
     case "snow": return "A squall came through overnight and left fresh snow on the hill.";
     case "storm": return "A storm buried the hill overnight. Roads are slow, so some skiers may stay home.";
     case "thaw": return "Thaw today. The lower trails go soft by noon, then freeze hard.";
-    case "clear": return "Clear and cold. Groomed snow should hold, and the sky is showing off.";
+    case "clear": return "Clear and cold. Groomed snow should hold.";
   }
 }

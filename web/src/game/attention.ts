@@ -63,7 +63,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
       if (!isLiftOperational(lift, i, state.trails) || !isWindHeld(lift.type, wind, state.clockMin)) return;
       items.push({
         id: `lift-wind-${i}`,
-        text: `${liftLabel(state, i)} is on wind hold until ${formatClock(WIND_HOLD.toMin)}. Dana says nobody is happy and everybody is safe.`,
+        text: `${liftLabel(state, i)} is on wind hold until ${formatClock(WIND_HOLD.toMin)}. Dana is holding the chair.`,
         focus: [lift.bottom ?? TERRAIN.base, lift.anchor],
       });
     });

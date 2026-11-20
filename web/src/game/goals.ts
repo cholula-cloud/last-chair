@@ -42,7 +42,7 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
         explainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} Readsboro pupils finished a lesson.`;
       } else {
         status = settled ? "Missed" : "Booked";
-        explainer = settled ? "The winter ended before the bus showed up." : `The Readsboro bus pulls in on day ${contract.day}. Keep the bunny slope soft.`;
+        explainer = settled ? "The winter ended before the bus showed up." : `The Readsboro bus pulls in on day ${contract.day}.`;
       }
     }
     chips.push({ id: "bus", label: "Optional school visit", status, explainer });

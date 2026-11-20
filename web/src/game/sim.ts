@@ -20,6 +20,7 @@ import {
 } from "./snow";
 import {
   expectedHillValue,
+  NO_SKIERS_PROBLEM,
   problemLine,
   type DaySatisfaction,
   type SatTerms,
@@ -434,7 +435,7 @@ export function buildNightRecap(opts: {
     revenue,
     loanReceived: 0,
     loanRepaid: 0,
-    problem: stats.arrivals === 0 ? "Nobody came today. The lifts turned for the crows." : problemLine(day.breakdown, {
+    problem: stats.arrivals === 0 ? NO_SKIERS_PROBLEM : problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
       dispatched: stats.dispatched,
       snowQuality: opts.snowQuality,

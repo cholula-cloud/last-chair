@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import * as rules from "./rules";
 import { makeGuest, meanArrivals, planArrivals } from "./sim";
 import { createRng } from "./rng";
+import { NO_SKIERS_PROBLEM } from "./satisfaction";
 import { migrate } from "./migrations";
 import {
   hydrate,
@@ -419,7 +420,7 @@ describe("lastDay", () => {
     expect(day.dayStats.arrivals).toBeGreaterThan(0);
     const night = rules.openNight(day);
     const recap = night.nightRecap!;
-    expect(recap).toMatchObject({ arrivals: 0, revenue: 0, problem: "Nobody came today. The lifts turned for the crows." });
+    expect(recap).toMatchObject({ arrivals: 0, revenue: 0, problem: NO_SKIERS_PROBLEM });
     expect(night.reputation).toBe(day.reputation);
     expect(observeGuests(recap)).toBeNull();
     expect(rules.sleep(night).lastDay?.observation).toBeUndefined();

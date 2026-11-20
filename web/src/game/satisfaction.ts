@@ -267,6 +267,9 @@ export type ProblemFacts = {
   cashDelta?: number;
 };
 
+/** The recap line for a day nobody skied. */
+export const NO_SKIERS_PROBLEM = "Nobody came today. The lifts turned for the crows.";
+
 export const NO_PROBLEM = "Good day on the hill. Nobody has a complaint.";
 
 /** The term with the largest negative average contribution, or null if none is below `SAT.PROBLEM_MIN`. */

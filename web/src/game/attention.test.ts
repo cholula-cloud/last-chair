@@ -64,7 +64,7 @@ describe("needsAttention", () => {
     const gusty = base.weatherDays.map((w, i) => (i === base.dayIndex - 1 ? { ...w, wind: "gusty" as const } : w));
     const windy = { ...base, lifts: [chair], weatherDays: gusty };
     expect(needsAttention({ ...windy, clockMin: 11 * 60 }).map((i) => i.text))
-      .toEqual(["Double chair 1 is on wind hold until 1:00 PM. Dana says nobody is happy and everybody is safe."]);
+      .toEqual(["Double chair 1 is on wind hold until 1:00 PM. Dana is holding the chair."]);
     expect(needsAttention({ ...windy, clockMin: 14 * 60 })).toEqual([]);
   });
 
@@ -92,7 +92,8 @@ describe("needsAttention", () => {
       makeGuest({ id: `s${i}`, state: "ski", runs: 3, snowSum: 0.6 }));
     const items = needsAttention({ ...base, trails: bareTrails(base), guests, snowQuality: 0.2 });
     const ids = items.map((i) => i.id);
-    expect(ids.filter((id) => id === "snow" || id === "guests-want")).toHaveLength(1);
+    expect(ids.filter((id) => id === "snow" || id === "guests-want")).toEqual(["guests-want"]);
+    expect(items.find((i) => i.id === "guests-want")?.text).toBe("Cover was bare patches and guests noticed. They want better snow.");
   });
 
   it("writes every item as a sentence with no em dash or middle dot", () => {

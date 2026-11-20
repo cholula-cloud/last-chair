@@ -37,13 +37,15 @@ function RadioDiamond() {
   );
 }
 
+const DEFAULT_SPEAKER = "Maris on Route 100 Radio";
+
 /** Story beat from Route 100 Radio: a yellow diamond beside a speech bubble. */
 export function RadioCard({
   title,
   children,
   action,
   announce = true,
-  from = "Maris on Route 100 Radio",
+  from = DEFAULT_SPEAKER,
 }: {
   title: string;
   children: ReactNode;
@@ -67,7 +69,7 @@ export function RadioCard({
         </p>
         <p className="display mt-1.5 text-[1.2rem] text-ink">{title}</p>
         <p className="mt-1 text-[1rem] font-bold leading-[1.4] text-ink">
-          <LiveMessage enabled={announce}><span className="sr-only">{title}. </span>{children}</LiveMessage>
+          <LiveMessage enabled={announce}><span className="sr-only">{from === DEFAULT_SPEAKER ? `${title}. ` : `${title}. ${from} says: `}</span>{children}</LiveMessage>
         </p>
         {action && <div className="mt-3">{action}</div>}
       </div>

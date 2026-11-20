@@ -53,7 +53,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
         </>
       }
     >
-      We love what you’re building up here. Truly. One day every chair in New England will answer to a single pass, and we’d love yours on the map at a predictable price point. We’ll put {payment} into Dutch Hill tonight. All we ask is that tickets stay at Balanced ({maxFare}) or below for the rest of the winter.
+      We love what you’re building up here. One day every chair in New England will run on a single pass, and we’d love yours on the map. We’ll put {payment} into Dutch Hill tonight if tickets stay at Balanced ({maxFare}) or below for the rest of the winter.
     </RadioCard>
   );
 }

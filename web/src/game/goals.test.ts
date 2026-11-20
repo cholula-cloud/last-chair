@@ -18,7 +18,7 @@ describe("goalChips", () => {
 
   it("shows booked, declined, delivered and missed visits after offer eligibility ends", () => {
     const school = { decision: "accepted", day: 9, pupilsTaught: null } as const;
-    expect(chip({ schoolContract: school }, "bus")).toMatchObject({ status: "Booked", explainer: "The Readsboro bus pulls in on day 9. Keep the bunny slope soft." });
+    expect(chip({ schoolContract: school }, "bus")).toMatchObject({ status: "Booked", explainer: "The Readsboro bus pulls in on day 9." });
     expect(chip({ schoolContract: school, outcome: "bankrupt" }, "bus")?.status).toBe("Missed");
     expect(chip({ schoolContract: { ...school, pupilsTaught: 6 } }, "bus")?.status).toBe("Done");
     expect(chip({ schoolContract: { ...school, pupilsTaught: 0 } }, "bus")?.status).toBe("Missed");

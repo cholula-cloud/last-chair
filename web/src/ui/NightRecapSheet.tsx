@@ -9,6 +9,7 @@ import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
+import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
@@ -166,7 +167,7 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
       <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
       {recap.arrivals > 0 && last.arrivals > 0
         ? <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
-        : <span className="text-xs font-bold text-ink-soft">No happiness reading</span>}
+        : <span className="text-xs font-bold text-ink-soft">Nothing to compare yet</span>}
       <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
       <p className="col-span-3 text-[0.78rem] font-bold leading-snug text-ink-soft">
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
@@ -298,7 +299,7 @@ function Choices({
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
-        Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
+        Weather moves the real number. Locals figure a day here is worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
@@ -309,11 +310,11 @@ function Choices({
         onPick={setPendingSnow}
       />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
-        Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
-        In the most likely weather, expect {chosen.label.toLowerCase()}.
+        This service should leave the snow at about {Math.round(chosen.meanQuality * 100)}% quality by morning.
+        In the most likely weather, that looks like {chosen.label.toLowerCase()}.
       </p>
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
-        {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Tonight’s service is free."}
+        {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Service is free tonight."}
       </p>
       <div className="mt-3 border-t border-snow-2 pt-1">
         <Forecast state={night} ahead={1} />
@@ -422,8 +423,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             <StatTile
               onSign
               label="Happiness"
-              value={hasGuests ? `${Math.round(recap.satisfaction)}%` : "None"}
-              note={hasGuests ? moodWord(recap.satisfaction).word : "No skiers"}
+              value={hasGuests ? `${Math.round(recap.satisfaction)}%` : "No skiers"}
+              note={hasGuests ? moodWord(recap.satisfaction).word : undefined}
             />
             <StatTile
               onSign
@@ -438,7 +439,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
 
         <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
-          {hasGuests ? tidy(recap.problem) : "Nobody came today. The lifts turned for the crows."}
+          {hasGuests ? tidy(recap.problem) : NO_SKIERS_PROBLEM}
         </p>
         {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
           <p className="text-base"><LiveMessage><strong>{night.founderId && founderById(night.founderId)?.name}:</strong> {guide.text}</LiveMessage></p>

@@ -6,6 +6,8 @@ import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { dailyCosts, liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { openingStep } from "@/game/rules";
+import { SCHOOL_BUS_ARRIVAL_MIN } from "@/game/schoolContract";
+import { formatClock } from "@/game/sim";
 import { operatingGoalText } from "@/game/winterArc";
 import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
@@ -74,7 +76,7 @@ export function DeskTab() {
     const due = dailyCosts(state).draws;
     if (due > 0) items.push({ id: "construction", text: `${formatMoney(due)} in construction payments is due at closing.` });
     if (state.schoolContract?.decision === "accepted" && state.schoolContract.day === state.dayIndex) {
-      items.push({ id: "school", text: "The Readsboro bus pulls in at 9 AM today. Elena says keep the bunny slope soft." });
+      items.push({ id: "school", text: `The Readsboro bus pulls in at ${formatClock(SCHOOL_BUS_ARRIVAL_MIN)} today. Elena says keep the bunny slope soft.` });
     }
     return items;
   }, [state]);

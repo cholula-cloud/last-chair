@@ -11,8 +11,8 @@ export function SchoolContractCard({ night }: { night: GameState }) {
   const bus = night.nightRecap?.facts.schoolBus;
   if (bus) {
     return (
-      <RadioCard title="The Readsboro school bus">
-        Elena counted heads at the bus: {bus.taught} of {bus.invited} pupils got a lesson. Bus tickets brought in {formatMoney(bus.ticketRevenue)}.
+      <RadioCard title="The Readsboro school bus" from="Elena Vargas">
+        {bus.taught} of {bus.invited} Readsboro kids got a lesson. Bus tickets brought in {formatMoney(bus.ticketRevenue)}.
       </RadioCard>
     );
   }

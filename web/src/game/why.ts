@@ -43,7 +43,7 @@ function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]):
         ? `${f.turnedAway} guests turned away at close, ${f.runsPerGuest.toFixed(1)} runs each.`
         : `${f.runsPerGuest.toFixed(1)} runs each.`;
     case "arrivalMood":
-      return `Guests arrived in a mood of ${Math.round(f.arrivalMood * 100)} out of 100.`;
+      return `Guests showed up at ${Math.round(f.arrivalMood * 100)} out of 100 on mood.`;
   }
 }
 

@@ -15,6 +15,7 @@ import { goalChips, goalInputs } from "@/game/goals";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { schoolMemory } from "@/game/winterMemory";
 import { StoryEntries } from "./StoryLog";
+import { tidy } from "@/ui/kit/parts";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="panel space-y-2 p-4"><h3 className="display text-xl">{title}</h3>{children}</section>;
@@ -60,7 +61,7 @@ export function Reports({ s }: { s: GameState }) {
   return <>
     <Section title="Recap archive">{s.dayHistory.length === 0 && <p>Closed days show up here as the winter goes on.</p>}
       {s.dayHistory.slice().reverse().map(d => <details key={d.day}><summary className="min-h-11 cursor-pointer py-2 font-bold">Day {d.day}, {d.weather}, {formatMoney(d.recap.cashDelta, {signed:true})}</summary>
-        <p>{d.recap.problem}</p><p>{d.recap.arrivals} guests. Satisfaction {Math.round(d.recap.satisfaction)}/100. Average wait {d.recap.facts.avgWaitMin.toFixed(1)} minutes.</p>
+        <p>{tidy(d.recap.problem)}</p><p>{d.recap.arrivals} guests. Satisfaction {Math.round(d.recap.satisfaction)}/100. Average wait {d.recap.facts.avgWaitMin.toFixed(1)} minutes.</p>
         {d.recap.facts.schoolBus && <p>School tickets {formatMoney(d.recap.facts.schoolBus.ticketRevenue)}. {d.recap.facts.schoolBus.taught} of {d.recap.facts.schoolBus.invited} pupils taught.</p>}
         <p>Service {formatMoney(d.snowCost)}. Construction installments {formatMoney(d.constructionDue)}. Settled cash {formatMoney(d.closingCash)}.</p>
       </details>)}</Section>
@@ -81,7 +82,7 @@ export function Crew({ s }: { s: GameState }) {
   const tier = LODGE_TIERS[s.lodgeTier];
   return <>
     <Section title="Lodge"><p>Tier {s.lodgeTier}, {tier.label}, {tier.stalls} parking spaces</p>
-      {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads. {lodgeTierUnlocks(nextTier).join(", ")}</p>}
+      {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads, and opens up {lodgeTierUnlocks(nextTier).join(", ")}.</p>}
       {s.lodgeUpgrade && <p>Upgrade underway, {s.lodgeUpgrade.nightsRemaining} {s.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} to go.</p>}</Section>
     <Section title="Goal checklist">
       {goalChips(goalInputs(s)).map(goal => <p key={goal.id}><strong>{goal.label}, {goal.status}.</strong> {goal.explainer}</p>)}

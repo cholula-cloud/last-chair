@@ -90,7 +90,7 @@ try {
     await press("Dismiss advice");
     await tip.getByText(/The night recap tells you/).waitFor();
     await press("Dismiss tip");
-    await tip.getByText(/The Guests want line/).waitFor();
+    await tip.getByText(/line under the problem/).waitFor();
     await press("Skip tips");
     await tip.waitFor({ state: "hidden" });
     await resolveRadio(page);

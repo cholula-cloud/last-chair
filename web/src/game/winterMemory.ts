@@ -9,7 +9,7 @@ export function schoolMemory(contract: SchoolContract | null): string {
   const taught = contract.pupilsTaught;
   if (taught === null) return "Al had a bus on the calendar, and the winter ended before it could pull in.";
   if (taught === SCHOOL_BUS_PUPILS) return `All ${taught} Readsboro pupils went home with a ski lesson behind them. Al is telling people.`;
-  if (taught === 0) return "The Readsboro bus came, but no pupil finished a lesson. Al noticed.";
+  if (taught === 0) return "The Readsboro bus came, but no pupil finished a lesson.";
   return `The Readsboro bus came. Of the ${SCHOOL_BUS_PUPILS} pupils on board, ${taught} finished a lesson.`;
 }
 
