@@ -34,6 +34,13 @@ describe("build grid style", () => {
     expect(dotStyle("lift", "valid", true).opacity).toBeLessThan(dotStyle("lift", "valid").opacity);
   });
 
+  it("keeps the reach ring thinner than the dots and the anchors the strongest mark", () => {
+    expect(GRID_STYLE.reach.opacity).toBeGreaterThan(GRID_STYLE.reachSnapped.opacity);
+    expect(GRID_STYLE.reachSnapped.opacity).toBeGreaterThan(GRID_STYLE.liftSnapped.opacity * 0.9);
+    expect(dotRadius("lift")).toBeLessThanOrEqual(0.16);
+    expect(dotStyle("lift", "valid").opacity).toBeLessThanOrEqual(0.45);
+  });
+
   it("keeps valid and neutral dots readable on snow, and blocked dots a faint trace", () => {
     const snow = PALETTE.snow;
     const read = (kind: "valid" | "neutral" | "blocked") => {

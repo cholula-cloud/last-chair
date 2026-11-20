@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useShallow } from "zustand/react/shallow";
 import { leaseBounds, onLease } from "@/game/lease";
 import { ASSET_CATALOG } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { GUN_COST } from "@/game/guns";
+import { liftLength, rulesFor } from "@/game/descent";
 import { checkAssetPlacement, checkGunPlacement, checkPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -23,8 +24,9 @@ export const LIFT_BOTTOM_STEP = 0.5;
 export function gridDots(
   check: ((at: { x: number; z: number }) => boolean) | null,
   terrain = TERRAIN,
+  step = terrain.scale.horizontal / 2,
 ): Dot[] {
-  const size = terrain.scale.horizontal / 2;
+  const size = step;
   const { xMin, xMax, zMin, zMax } = leaseBounds(terrain);
   const dots: Dot[] = [];
   for (let x = Math.floor(xMin / size) * size; x + size <= xMax + size; x += size) {
@@ -37,6 +39,14 @@ export function gridDots(
   return dots;
 }
 
+/** The lift guide samples at half the field's cell step so the legal area reads as an area, not specks. */
+export const LIFT_GUIDE_STEP = TERRAIN.scale.horizontal / 4;
+/** Debounce of the rounded bottom, so a bottom drag does not recompute mid-gesture. */
+export const LIFT_BOTTOM_DEBOUNCE_MS = 100;
+/** Constant instance capacities: every lease cell at the sampling each mode uses, so a mesh is never rebuilt. */
+const FIELD_CAPACITY = gridDots(null).length;
+const LIFT_CAPACITY = gridDots(null, TERRAIN, LIFT_GUIDE_STEP).length;
+
 export const snapBottom = (bottom: XZ): XZ => ({
   x: Math.round(bottom.x / LIFT_BOTTOM_STEP) * LIFT_BOTTOM_STEP,
   z: Math.round(bottom.z / LIFT_BOTTOM_STEP) * LIFT_BOTTOM_STEP,
@@ -47,14 +57,42 @@ type LiftRules = Parameters<typeof checkPlacement>[0];
 /**
  * Lease cells where the top terminal can legally go for this bottom: the same `checkPlacement`
  * the preview uses, with cash set high so the guide shows terrain, spacing and building rules.
- * One pass over the lease cells; callers memoize on (rules, type, bottom).
+ * Cells beyond `maxLiftLength` are skipped before the check using the same constant and length
+ * function `checkLiftLine` uses (the 0.02 slack covers the 0.01 rounding `checkPlacement` applies),
+ * so the output is unchanged. Callers memoize on (rules, type, bottom).
+ * talentsOwned and founderId are intentionally omitted: they change cost, not legality.
  */
-export function liftTopCells(rules: Omit<LiftRules, "cash">, type: LiftType, bottom: XZ, terrain = TERRAIN): XZ[] {
+export function liftTopCells(
+  rules: Omit<LiftRules, "cash"> & { cash?: number },
+  type: LiftType,
+  bottom: XZ,
+  terrain = TERRAIN,
+  options: { prefilter?: boolean } = {},
+): XZ[] {
   const state = { ...rules, cash: Number.MAX_SAFE_INTEGER };
   const from = snapBottom(bottom);
-  return gridDots((top) => checkPlacement(state, type, { bottom: from, top }).ok, terrain)
+  const reach = reachOf(type, terrain) + 0.02;
+  const near = options.prefilter === false
+    ? () => true
+    : (at: XZ) => liftLength({ bottom: from, top: at }) <= reach;
+  return gridDots((top) => near(top) && checkPlacement(state, type, { bottom: from, top }).ok, terrain, LIFT_GUIDE_STEP)
     .filter((dot) => dot.valid)
     .map(({ x, z }) => ({ x, z }));
+}
+
+/** The longest lift of this type, in world units: the rule `checkLiftLine` enforces. */
+export const reachOf = (type: LiftType, terrain = TERRAIN) => rulesFor(terrain, type).maxLiftLength;
+
+/**
+ * Points of the circle of radius `reach` round the bottom that lie on the lease. The ring is
+ * drawn as segments between consecutive kept points.
+ */
+export function reachArc(bottom: XZ, reach: number, terrain = TERRAIN, steps = 128): (XZ | null)[] {
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const angle = (i / steps) * Math.PI * 2;
+    const at = { x: bottom.x + Math.cos(angle) * reach, z: bottom.z + Math.sin(angle) * reach };
+    return onLease(at, terrain) ? at : null;
+  });
 }
 
 /** Cells farther than `clear` from the cable segment (which includes both pads); with no top, from the bottom only. */
@@ -75,9 +113,9 @@ function withCash<T extends { canAfford: boolean }>(state: T) {
 }
 
 /** One instanced layer of flat dots in a single style. Capacity is fixed so a changing count never rebuilds the mesh. */
-function DotLayer({ cells, capacity = cells.length, mode, kind, snapped = false }: {
+function DotLayer({ cells, capacity, mode, kind, snapped = false }: {
   cells: readonly XZ[];
-  capacity?: number;
+  capacity: number;
   mode: GridMode;
   kind: DotKind;
   snapped?: boolean;
@@ -99,7 +137,6 @@ function DotLayer({ cells, capacity = cells.length, mode, kind, snapped = false 
     m.instanceMatrix.needsUpdate = true;
     m.computeBoundingSphere();
   }, [cells]);
-  if (!capacity) return null;
   return (
     <instancedMesh ref={mesh} args={[geometry, undefined, capacity]} renderOrder={1} frustumCulled={false}>
       <meshBasicMaterial color={color} transparent opacity={style.opacity} depthWrite={false} toneMapped={false}
@@ -111,7 +148,45 @@ function DotLayer({ cells, capacity = cells.length, mode, kind, snapped = false 
 const cellsOf = (dots: readonly Dot[], valid: boolean | null): XZ[] =>
   dots.filter((dot) => dot.valid === valid).map(({ x, z }) => ({ x, z }));
 
-/** The lift guide: faint dots where the top can go, clear of the cable ghost, fainter once snapped. */
+/** The reach ring: a thin line on the ground at the longest legal lift, clipped to the lease and hidden near the cable. */
+function ReachRing({ bottom, top, type, snapped }: { bottom: XZ; top?: XZ; type: LiftType; snapped: boolean }) {
+  const ARC_STEPS = 128;
+  const attribute = useMemo(() => new THREE.BufferAttribute(new Float32Array(ARC_STEPS * 2 * 3), 3), []);
+  const geometry = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", attribute);
+    return g;
+  }, [attribute]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  const segments = useMemo(() => {
+    const clear = GRID_STYLE.cableClearCells * (TERRAIN.scale.horizontal / 2);
+    const arc = reachArc(bottom, reachOf(type), TERRAIN, ARC_STEPS);
+    const kept = new Set(clearOfCable(arc.filter((p): p is XZ => !!p), bottom, top, clear));
+    return arc.flatMap((p, i) => {
+      const q = arc[i + 1];
+      return p && q && kept.has(p) && kept.has(q) ? [[p, q] as const] : [];
+    });
+  }, [bottom, top, type]);
+  useLayoutEffect(() => {
+    let n = 0;
+    for (const [p, q] of segments) {
+      for (const at of [p, q]) {
+        attribute.setXYZ(n++, at.x, TERRAIN.height(at.x, at.z) + GRID_STYLE.height, at.z);
+      }
+    }
+    attribute.needsUpdate = true;
+    geometry.setDrawRange(0, n);
+    geometry.computeBoundingSphere();
+  }, [segments, attribute, geometry]);
+  const style = snapped ? GRID_STYLE.reachSnapped : GRID_STYLE.reach;
+  return (
+    <lineSegments geometry={geometry} renderOrder={1} frustumCulled={false}>
+      <lineBasicMaterial color={style.color} transparent opacity={style.opacity} depthWrite={false} toneMapped={false} />
+    </lineSegments>
+  );
+}
+
+/** The lift guide: a reach ring plus faint dots where the top can go, clear of the cable ghost, fainter once snapped. */
 function LiftGrid() {
   const { type, bottom: draftBottom, top, snapped, review } = usePlacementDraft(useShallow((draft) => ({
     type: draft.type, bottom: draft.bottom, top: draft.top, snapped: draft.snapped, review: draft.review,
@@ -119,15 +194,29 @@ function LiftGrid() {
   const rules = useGameStore(useShallow((state) => ({ lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier })));
   const bottom = draftBottom ?? TERRAIN.base;
   const stepped = snapBottom(bottom);
+  // Trailing debounce of the rounded bottom: a drag settles before the cells are recomputed.
+  const [settled, setSettled] = useState(stepped);
+  useEffect(() => {
+    if (settled.x === stepped.x && settled.z === stepped.z) return;
+    const timer = setTimeout(() => setSettled(stepped), LIFT_BOTTOM_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [stepped, settled]);
   const cells = useMemo(
-    () => review ? [] : liftTopCells(rules, type, { x: stepped.x, z: stepped.z }),
-    [review, rules, type, stepped.x, stepped.z],
+    () => review ? [] : liftTopCells(rules, type, settled),
+    [review, rules, type, settled],
   );
   const shown = useMemo(
     () => clearOfCable(cells, bottom, top, GRID_STYLE.cableClearCells * (TERRAIN.scale.horizontal / 2)),
     [cells, bottom, top],
   );
-  return <DotLayer cells={shown} capacity={cells.length} mode="lift" kind="valid" snapped={snapped && !!top} />;
+  if (review) return null;
+  const fade = snapped && !!top;
+  return (
+    <>
+      {cells.length > 0 && <ReachRing bottom={bottom} top={top} type={type} snapped={fade} />}
+      <DotLayer cells={shown} capacity={LIFT_CAPACITY} mode="lift" kind="valid" snapped={fade} />
+    </>
+  );
 }
 
 /**
@@ -185,9 +274,9 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
   if (!mode) return null;
   return (
     <>
-      <DotLayer cells={blocked} mode={mode} kind="blocked" />
-      <DotLayer cells={valid} mode={mode} kind="valid" />
-      <DotLayer cells={neutral} mode={mode} kind="neutral" />
+      <DotLayer cells={blocked} capacity={FIELD_CAPACITY} mode={mode} kind="blocked" />
+      <DotLayer cells={valid} capacity={FIELD_CAPACITY} mode={mode} kind="valid" />
+      <DotLayer cells={neutral} capacity={FIELD_CAPACITY} mode={mode} kind="neutral" />
     </>
   );
 }

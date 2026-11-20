@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { onLease } from "@/game/lease";
 import { createInitialState } from "@/game/state";
 import { TERRAIN } from "@/game/terrain";
-import { clearOfCable, gridDots, liftTopCells, snapBottom, LIFT_BOTTOM_STEP } from "./BuildGrid";
+import { liftLength, rulesFor } from "@/game/descent";
+import { clearOfCable, gridDots, liftTopCells, reachArc, reachOf, snapBottom, LIFT_BOTTOM_STEP, LIFT_GUIDE_STEP } from "./BuildGrid";
 
 const state = createInitialState();
 const rules = { lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier };
@@ -36,11 +37,29 @@ describe("build grid dots", () => {
 describe("lift top guide cells", () => {
   const cells = liftTopCells(rules, "surface", TERRAIN.base);
 
-  it("includes a known legal top and leaves out a known illegal one on Dutch Hill", () => {
-    expect(has(cells, { x: -7.5, z: 1.5 })).toBe(true);
-    expect(has(cells, { x: -40.5, z: -7.5 })).toBe(false);
+  it("includes known legal tops and leaves out a known illegal one on Dutch Hill", () => {
+    expect(has(cells, { x: -8.25, z: 2.25 })).toBe(true);
+    expect(has(cells, { x: -6.75, z: 0.75 })).toBe(true);
+    expect(has(cells, { x: -39.75, z: -8.25 })).toBe(false);
     expect(cells.length).toBeGreaterThan(0);
-    expect(cells.length).toBeLessThan(gridDots(null).length / 2);
+    expect(cells.length).toBeLessThan(gridDots(null, TERRAIN, LIFT_GUIDE_STEP).length / 2);
+  });
+
+  it("samples at half the field step", () => {
+    expect(LIFT_GUIDE_STEP).toBe(TERRAIN.scale.horizontal / 4);
+    expect(gridDots(null, TERRAIN, LIFT_GUIDE_STEP).length).toBeGreaterThan(gridDots(null).length * 3);
+  });
+
+  it("gives the same cells with and without the reach pre-filter, and the filter only drops out-of-reach cells", () => {
+    for (const type of ["surface", "chair"] as const) {
+      const bottom = type === "surface" ? TERRAIN.base : { x: TERRAIN.base.x - 1, z: TERRAIN.base.z + 0.4 };
+      const on = liftTopCells({ ...rules, lodgeTier: 2 }, type, bottom);
+      const off = liftTopCells({ ...rules, lodgeTier: 2 }, type, bottom, TERRAIN, { prefilter: false });
+      expect(on).toEqual(off);
+      expect(on.length).toBeGreaterThan(0);
+      const reach = rulesFor(TERRAIN, type).maxLiftLength;
+      expect(on.every((c) => liftLength({ bottom: snapBottom(bottom), top: c }) <= reach)).toBe(true);
+    }
   });
 
   it("stays on the lease", () => {
@@ -56,7 +75,24 @@ describe("lift top guide cells", () => {
   });
 
   it("ignores cash: an empty purse does not blank the guide", () => {
-    expect(liftTopCells({ ...rules }, "surface", TERRAIN.base).length).toBe(cells.length);
+    expect(liftTopCells({ ...rules, cash: 0 }, "surface", TERRAIN.base)).toEqual(cells);
+  });
+
+  it("is empty when a rule blocks every lift, such as a chair at Lodge Tier 1", () => {
+    expect(state.lodgeTier).toBe(1);
+    expect(liftTopCells(rules, "chair", TERRAIN.base)).toEqual([]);
+  });
+});
+
+describe("reach ring", () => {
+  it("sits at the longest legal lift and keeps only lease points", () => {
+    const reach = reachOf("surface");
+    expect(reach).toBe(rulesFor(TERRAIN, "surface").maxLiftLength);
+    const arc = reachArc(TERRAIN.base, reach);
+    const kept = arc.filter((p) => p);
+    expect(kept.length).toBeGreaterThan(0);
+    expect(kept.length).toBeLessThan(arc.length);
+    expect(kept.every((p) => p && onLease(p) && Math.abs(Math.hypot(p.x - TERRAIN.base.x, p.z - TERRAIN.base.z) - reach) < 1e-9)).toBe(true);
   });
 });
 

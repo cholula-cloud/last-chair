@@ -12,7 +12,7 @@ export const GRID_STYLE = {
   /** Dot radius of the shared field (overview, asset, gun). */
   radius: 0.2,
   /** Lift guide dots: smaller than the anchor dots (0.22) and the shared field. */
-  liftRadius: 0.12,
+  liftRadius: 0.16,
   /** Height above the snow so a dot does not z-fight. */
   height: 0.08,
   /** Reads at about 1.8:1 against snow (#f4f7fb) at 390 wide; the HUD sits above it. */
@@ -20,10 +20,13 @@ export const GRID_STYLE = {
   /** Lease cells that cannot take the item: a faint dot so the lease keeps its shape. */
   blocked: { color: "#566a7c", opacity: 0.32 },
   neutral: { color: "#6f8a80", opacity: 0.55 },
-  /** Lift-top cells; half the shared green. */
-  liftTop: { color: "#36a975", opacity: 0.3 },
+  /** Lift-top cells; below the shared green, above the ring. */
+  liftTop: { color: "#36a975", opacity: 0.45 },
   /** Lift-top cells once the top sits on an anchor. */
-  liftSnapped: { color: "#36a975", opacity: 0.12 },
+  liftSnapped: { color: "#36a975", opacity: 0.16 },
+  /** The reach ring: the longest legal lift from the bottom, a thin line. */
+  reach: { color: "#36a975", opacity: 0.5 },
+  reachSnapped: { color: "#36a975", opacity: 0.2 },
   /** Grid dots closer than this many cells to the cable or a pad are hidden. */
   cableClearCells: 1,
 } as const;
