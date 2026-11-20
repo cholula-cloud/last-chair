@@ -70,12 +70,12 @@ async function checkQuietRecap(radioEnabled) {
     assert.deepEqual(motion, [], "Coach, radio and sheet have no CSS animation or transition");
     // An unrelated recap update must leave the first broadcast alone.
     await guide.getByRole("button", { name: "Dismiss advice" }).click();
-    await coach.filter({ hasText: /The night recap shows/ }).waitFor();
+    await coach.filter({ hasText: /The night recap tells you/ }).waitFor();
     const updates = await recap.evaluate(() => window.liveUpdates);
     const tips = updates.filter(update => update.source === "coach");
     assert.equal(tips.length, 2);
     assert.match(tips[0].text, /check|inspect|find/i);
-    assert.match(tips[1].text, /The night recap shows/);
+    assert.match(tips[1].text, /The night recap tells you/);
     const broadcasts = updates.filter(update => update.source === "radio" && update.text.includes("First uphill load"));
     assert.equal(broadcasts.length, radioEnabled ? 1 : 0);
     if (!radioEnabled) assert.equal(updates.filter(update => update.source === "radio").length, 0);

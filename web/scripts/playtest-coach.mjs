@@ -88,7 +88,7 @@ try {
     assert.deepEqual(await readWinter(), beforeInspection, "Map and Office inspections preserve the closed day");
 
     await press("Dismiss advice");
-    await tip.getByText(/The night recap shows/).waitFor();
+    await tip.getByText(/The night recap tells you/).waitFor();
     await press("Dismiss tip");
     await tip.getByText(/The Guests want line/).waitFor();
     await press("Skip tips");
