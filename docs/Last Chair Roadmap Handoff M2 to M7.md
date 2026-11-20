@@ -1959,7 +1959,9 @@ This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTE
 
 **M4 vs M4b (MASTER_PLAN v2.5).** **M4** is code-only: build UX (rows **B6**, **B7**), product polish (**P4**), Office economics (**F3** on top of merged **F2** `dayHistory`), then handoff sections for rows **30 to 33**, **O4**, and **O5**. No Blender in M4. **M4b** is Blender-only: rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**. Handoff briefs below for rows 28 and 29 belong to M4b; stub briefs exist for **B6**, **B7**, **P4**, **F3**, **O5**, and **T1** — expand before coding if scope shifts.
 
-### Row B6 — Build grid and lift placement guide (M4, brief TBD)
+### Row B6 — Build grid and lift placement guide (M4, built)
+
+Built: `buildGridStyle.ts` holds the shared radius, opacities and colours. Lift mode draws one dim dot per lease cell where `checkPlacement` allows the top (cash ignored), memoized on rules, lift type and the bottom rounded to 0.5 units, with dots within one cell of the cable and pads hidden and a fainter field once snapped. A static ring marks the snapped anchor. Asset and gun modes show blocked lease cells as faint neutral dots. Screenshots: `node scripts/screenshots-b6.mjs`.
 
 Owner report: the placement dot grid does not appear during lift placement and the grid elsewhere feels wrong. Today `BuildGrid.tsx` turns the dot field off for `lift` and `trail` modes; L-A relied on anchor dots only. **Goal:** one coherent guide in lift mode (anchors plus optional faint lease grid or ring) and a tuned dot field for assets and guns (cell step tied to `terrain.scale.horizontal`, contrast, valid-only vs valid+invalid cells). **Files (likely):** `web/src/render/BuildGrid.tsx`, `LiftGhost.tsx`, `placementTap.ts`, `MapOverlay.tsx` or build overlay layer. **Acceptance:** lift placement on phone shows snap targets without fighting the cable ghost; venue placement grid matches valid cells in playtests.
 

@@ -9,6 +9,7 @@ import { formatMoney } from "@/game/format";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import type { LiftType } from "@/game/types";
 import type { LiftReadout } from "@/ui/liftGesture";
+import { ANCHOR_STYLE } from "./buildGridStyle";
 import { Lift } from "./Lift";
 import { LIFT_TERMINAL_H } from "./layout";
 import { PALETTE } from "./palette";
@@ -19,7 +20,7 @@ export const FOLLOW_TAU = 0.09;
 const PULSE_MS = 180;
 const PULSE_PEAK = 0.18;
 const PAD_RADIUS = 0.35;
-const DOT_RADIUS = 0.22;
+const DOT_RADIUS = ANCHOR_STYLE.dotRadius;
 
 const lerpXZ = (from: XZ, to: XZ, k: number): XZ => ({
   x: from.x + (to.x - from.x) * k,
@@ -33,6 +34,16 @@ function PadRing({ color }: { color: string }) {
     <mesh rotation-x={-Math.PI / 2} renderOrder={3}>
       <ringGeometry args={[PAD_RADIUS * 0.78, PAD_RADIUS, 32]} />
       <meshBasicMaterial color={color} transparent opacity={0.9} depthTest={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
+/** A static ring around the anchor the top is snapped to. It appears and fades with no motion. */
+function AnchorRing({ at, color }: { at: XZ; color: string }) {
+  return (
+    <mesh position={[at.x, TERRAIN.height(at.x, at.z) + 0.15, at.z]} rotation-x={-Math.PI / 2} renderOrder={3}>
+      <ringGeometry args={[ANCHOR_STYLE.ringRadius * 0.82, ANCHOR_STYLE.ringRadius, 32]} />
+      <meshBasicMaterial color={color} transparent opacity={ANCHOR_STYLE.ringOpacity} depthTest={false} depthWrite={false} />
     </mesh>
   );
 }
@@ -110,10 +121,12 @@ export function LiftGhost({ line, bottom, type, readout, snapped, anchors }: {
   });
 
   const color = readout && !readout.ok ? PALETTE.invalid : PALETTE.valid;
+  const snappedAnchor = snapped && line ? anchors.find((a) => gap(a, line.top) <= DOT_RADIUS * 2) : undefined;
   const dotAnchors = anchors.filter((a) => !line || gap(a, line.top) > DOT_RADIUS * 2);
 
   return (
     <>
+      {snappedAnchor && <AnchorRing at={snappedAnchor} color={color} />}
       {dotAnchors.map((at) => <AnchorDot key={`${at.x}/${at.z}`} at={at} />)}
       {line && <Lift line={line} type={type} preview previewInvalid={!!readout && !readout.ok} />}
       <group ref={bottomGroup} visible={false}>
