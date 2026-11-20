@@ -424,7 +424,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             </div>
           )}
           {placementActive ? (
-            <PlacementBar />
+            <div className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]">
+              <OverlayLegend allowOff={false} docked />
+              <PlacementBar />
+            </div>
           ) : layerDock ? null : bottomChromeMinimized ? (
             <div className="pointer-events-auto flex w-full justify-center sm:w-auto">
               <BottomChromeRestoreButton onClick={toggleBottomChromeMinimized} />
