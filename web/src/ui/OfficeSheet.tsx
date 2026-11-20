@@ -5,7 +5,7 @@ import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { readActiveSlot } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { closeOffice, OFFICE_TABS, setOfficeTab, useOffice, type OfficeTabId } from "@/ui/officeStore";
-import { Money, Reports, Crew } from "./Office";
+import { Money, Stats, Reports, Crew } from "./Office";
 import { ReplayNotes } from "./ReplayNotes";
 import { DeskTab } from "@/ui/OfficeDesk";
 import { SettingsControls } from "@/ui/SettingsControls";
@@ -22,6 +22,8 @@ function TabPanel({ tab }: { tab: OfficeTabId }) {
       return <><DeskTab /><ReplayNotes /></>;
     case "Money":
       return <Money s={state} />;
+    case "Stats":
+      return <Stats s={state} />;
     case "Reports":
       return <Reports s={state} />;
     case "Crew":
