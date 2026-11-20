@@ -7,6 +7,7 @@ import { satisfactionContext } from "@/game/rules";
 import { guestSatisfaction } from "@/game/satisfaction";
 import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
+import { satisfactionMoodWord } from "@/game/moodLabels";
 import { Sheet } from "@/ui/kit/Sheet";
 
 const STATE_WORD: Record<GuestState, string> = {
@@ -28,12 +29,6 @@ const VENUE_ACTIVITY: Partial<Record<AssetId, string>> = {
   rentals: "Picking up rentals",
   ski_school: "Taking a lesson",
 };
-
-function moodWord(score: number): string {
-  if (score >= 70) return "Happy";
-  if (score >= 50) return "Fine";
-  return "Grumpy";
-}
 
 export function GuestsSheet({
   open,
@@ -83,7 +78,7 @@ export function GuestsSheet({
                     {g.label}
                   </p>
                   <p className="text-[0.85rem] font-bold text-ink-soft">
-                    {activity}, {moodWord(guestSatisfaction(g, ctx)).toLowerCase()}
+                    {activity}, {satisfactionMoodWord(guestSatisfaction(g, ctx)).toLowerCase()}
                   </p>
                 </div>
                 <button

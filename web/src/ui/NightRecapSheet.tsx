@@ -13,6 +13,7 @@ import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
+import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
@@ -96,10 +97,7 @@ export function Forecast({ state, ahead }: { state: Parameters<typeof outlookFor
 }
 
 function moodWord(score: number): { word: string; tone: Tone } {
-  if (score >= 75) return { word: "Happy", tone: "good" };
-  if (score >= 55) return { word: "Content", tone: "good" };
-  if (score >= 40) return { word: "Mixed", tone: "watch" };
-  return { word: "Grumpy", tone: "bad" };
+  return { word: satisfactionMoodWord(score), tone: moodTone(score) as Tone };
 }
 
 /** Largest effect on the bars; anything bigger fills the half-track. */

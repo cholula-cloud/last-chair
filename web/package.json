@@ -23,6 +23,7 @@
     "phone-check": "node scripts/phone-check.mjs",
     "screenshots:b6": "node scripts/screenshots-b6.mjs",
     "screenshots:b7": "node scripts/screenshots-b7.mjs",
+    "screenshots:p4": "node scripts/screenshots-p4.mjs",
     "playtest:p1": "node scripts/playtest-p1.mjs",
     "replay": "node scripts/replay.mjs",
     "check:bundle": "node scripts/check-bundle.mjs"

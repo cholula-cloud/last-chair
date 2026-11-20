@@ -26,6 +26,7 @@ import {
   WarningDiamondIcon,
   WindIcon,
 } from "@/ui/kit/icons";
+import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 import { undoChipLabel, type UndoKind } from "@/ui/undoLabel";
 import { useSpeed } from "@/ui/speed";
@@ -262,7 +263,7 @@ export function ConditionsBoard({
     worse(readTone as Tone, band(snowQuality, 0.7, 0.45)),
     band(snowDepth, 0.6, 0.35),
   );
-  const moodTone = band(mood, 70, 50);
+  const moodToneBand = moodTone(mood);
   const items: Condition[] = [
     {
       key: "queue",
@@ -290,10 +291,8 @@ export function ConditionsBoard({
       icon: <MoodIcon mood={mood} />,
       label: "Mood",
       value: `${mood}%`,
-      state: { good: "Happy", watch: "Mixed", bad: "Grumpy", plain: "" }[
-        moodTone
-      ],
-      tone: moodTone,
+      state: satisfactionMoodWord(mood),
+      tone: moodToneBand,
     },
   ];
   return (
