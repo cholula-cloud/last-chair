@@ -135,6 +135,22 @@ async function waitForFraming(page, points) {
   throw new Error("Mountain camera did not settle over the build area");
 }
 
+async function uncoverCanvas(page, point) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, point);
+    if (hit === "CANVAS") return;
+    const minimizeBuild = page.getByRole("button", { name: "Minimize build controls" });
+    if (await minimizeBuild.count() && await minimizeBuild.first().isVisible()) {
+      await minimizeBuild.first().tap();
+      await page.evaluate(() => new Promise(requestAnimationFrame));
+      continue;
+    }
+    break;
+  }
+  const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, point);
+  assert.equal(hit, "CANVAS", "The build point is obscured by the HUD");
+}
+
 async function drag(page, cdp, locations) {
   const points = await withDeadline(waitForFraming(page, locations), "Terrain projection", 15000);
   const bounds = page.viewportSize();
@@ -142,8 +158,7 @@ async function drag(page, cdp, locations) {
     assert(p.x >= 0 && p.x < bounds.width && p.y >= 0 && p.y < bounds.height,
       "Planned build point is outside the viewport: " + JSON.stringify(p));
   }
-  const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, points[0]);
-  assert.equal(hit, "CANVAS", "The build point is obscured by the HUD");
+  await uncoverCanvas(page, points[0]);
   const samples = [points[0]];
   for (let i = 1; i < points.length; i++) {
     for (let step = 1; step <= 4; step++) {
