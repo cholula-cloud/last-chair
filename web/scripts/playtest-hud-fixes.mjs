@@ -83,6 +83,23 @@ try {
   await shot(page, "02-layers-slope-strip");
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(300);
+  if (await dock.isVisible()) fail("Layer dock still visible after second Layers click");
+  if (!(await page.getByRole("navigation", { name: "Hill actions" }).isVisible())) {
+    fail("Action bar missing after closing layer dock");
+  }
+
+  await page.getByRole("button", { name: "Layers" }).click();
+  await page.waitForTimeout(300);
+  if (!(await dock.isVisible())) fail("Layer dock did not reopen");
+  await strip.getByRole("button", { name: "Slope" }).click();
+  await page.waitForTimeout(200);
+  if (await legend.isVisible()) fail("Slope legend still visible after toggling Slope off");
+  await page.getByRole("button", { name: "Layers" }).click();
+  await page.waitForTimeout(300);
+  if (await dock.isVisible()) fail("Layer dock stuck open after toggling layer off");
+  if (!(await page.getByRole("navigation", { name: "Hill actions" }).isVisible())) {
+    fail("Action bar missing after closing dock with layer off");
+  }
 
   await page.getByRole("button", { name: "Build" }).click();
   await page.getByRole("button", { name: /Paint a trail/i }).click();
