@@ -67,7 +67,6 @@ try {
     await pressRail("Layers");
     const dock = page.locator("[data-layer-dock]");
     await dock.waitFor({ state: "visible" });
-    const daytimeLayers = dock.locator("[data-layer-strip]");
     await page.locator('[data-layer-strip] button', { hasText: "Snow depth" }).evaluate((el) => {
       el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
