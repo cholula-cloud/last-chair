@@ -35,6 +35,7 @@ jobs:
           PLAY_URL: http://127.0.0.1:3191
           PHONE_CHECK_ENGINES: webkit
           PHONE_CHECK_VIEWPORTS: 390x844
+          PHONE_CHECK_SKIP_FPS: "1"
         run: |
           python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
           trap 'kill "$!"' EXIT

@@ -9,6 +9,7 @@ import { clamp01, lerp } from "./math";
 import { TERRAIN } from "@/game/terrain";
 import { pathPoint as trailPathPoint, trailPoint } from "./trail";
 import type { XZ } from "@/game/terrain";
+import { walkToBasePath, walkToLiftPath } from "@/game/walkPaths";
 
 type GuestPose = "stand" | "walk" | "ride" | "ski";
 
@@ -153,7 +154,11 @@ export function guestWorldPosition(
       return ski(index, t, line, opts.path);
     case "walk_lift":
     case "walk_out": {
-      const p = sitePathPoint([opts.walkFrom ?? line.bottom, opts.walkTo ?? line.bottom], t);
+      const walkTo = opts.walkTo ?? line.bottom;
+      const walkPath = state === "walk_lift"
+        ? walkToLiftPath(opts.path, walkTo)
+        : walkToBasePath(opts.path, walkTo);
+      const p = sitePathPoint(walkPath, t);
       return onGround(p.x, p.z, p.yaw, state === "walk_lift" && t === 1 ? "stand" : "walk");
     }
     case "refuel":
@@ -189,18 +194,16 @@ export function placeGuests(
         if (o.progress > g.progress || (o.progress === g.progress && j < i)) queueRank++;
       }
     }
-    const skiPath =
-      g.state === "ski" && g.trailIndex != null
-        ? trailPaths?.[g.trailIndex]
-        : lift.path;
+    const trailPath = g.trailIndex != null ? trailPaths?.[g.trailIndex] : undefined;
+    const skiPath = g.state === "ski" ? trailPath : lift.path;
+    const walkPath = g.state === "walk_lift" || g.state === "walk_out" ? trailPath : undefined;
     return guestWorldPosition(i, g.state, g.progress, lift.line, {
       queueRank,
       liftType: lift.type,
       stall,
       towers: lift.towers ?? liftTowers(lift.line),
-      path: skiPath ?? lift.path,
+      path: walkPath ?? skiPath ?? lift.path,
       venue: g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined,
-      walkFrom: g.trailIndex == null ? undefined : trailPaths?.[g.trailIndex]?.at(-1),
       walkTo: g.state === "walk_lift" ? lift.line.bottom : TERRAIN.base,
     });
   });

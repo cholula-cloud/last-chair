@@ -10,6 +10,12 @@ import { chooseLift, lapOverheadForLift, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
 import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
 import { pickTrailIndex, runEnergyCost, runSkiMinutes } from "./trails";
+import {
+  remoteTrailEndThreshold,
+  walkDurationMin,
+  walkToBasePath,
+  walkToLiftPath,
+} from "./walkPaths";
 import type { LiftSlot } from "./state";
 import type { TrailRun } from "./trails";
 import {
@@ -289,10 +295,13 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       }
       case "walk_lift":
       case "walk_out": {
-        const from = clock.trails[g.trailIndex ?? -1]?.path.at(-1) ?? TERRAIN.base;
+        const trailPath = clock.trails[g.trailIndex ?? -1]?.path;
         const lift = g.state === "walk_lift" ? clock.lifts[g.liftIndex ?? -1] : undefined;
         const to = lift?.bottom ?? TERRAIN.base;
-        const duration = Math.max(0.1, Math.hypot(from.x - to.x, from.z - to.z) * TERRAIN.horizontalFeetPerUnit / 250);
+        const path = g.state === "walk_lift"
+          ? walkToLiftPath(trailPath, to)
+          : walkToBasePath(trailPath, to);
+        const duration = walkDurationMin(path, TERRAIN);
         const progress = (now - g.stateSinceMin) / duration;
         if (progress < 1) return { ...g, progress };
         if (g.state === "walk_out" || now >= closeMin) return goHome(g);
@@ -330,15 +339,18 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const lapEnds = now + lapOverhead + nextRun;
         const end = trail?.path.at(-1);
         const destination = clock.lifts[li]?.bottom ?? TERRAIN.base;
-        const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > 0.5;
-        const walkingMin = end ? Math.hypot(end.x - destination.x, end.z - destination.z) * TERRAIN.horizontalFeetPerUnit / 250 : 0;
+        const remoteThreshold = remoteTrailEndThreshold(TERRAIN);
+        const remote = !!end && Math.hypot(end.x - destination.x, end.z - destination.z) > remoteThreshold;
+        const walkingMin = end
+          ? walkDurationMin(walkToLiftPath(trail?.path, destination), TERRAIN)
+          : 0;
         if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
           const stop = visit({ ...g, ...done }, ["cafe", "warming_hut"]);
           if (stop) return stop;
         }
         const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
         if (energy <= 1e-9 || runs >= g.targetRuns || lapEnds + walkingMin + waitForHold > closeMin || li < 0) {
-          const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > 0.5;
+          const away = end && Math.hypot(end.x - TERRAIN.base.x, end.z - TERRAIN.base.z) > remoteThreshold;
           return away ? { ...g, ...done, state: "walk_out", progress: 0, stateSinceMin: now } : goHome(g, done);
         }
         if (remote || allHeld) {

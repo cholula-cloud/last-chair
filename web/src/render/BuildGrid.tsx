@@ -42,7 +42,7 @@ export function gridDots(
 /** The lift guide samples at half the field's cell step so the legal area reads as an area, not specks. */
 export const LIFT_GUIDE_STEP = TERRAIN.scale.horizontal / 4;
 /** Debounce of the rounded bottom, so a bottom drag does not recompute mid-gesture. */
-export const LIFT_BOTTOM_DEBOUNCE_MS = 100;
+export const LIFT_BOTTOM_DEBOUNCE_MS = 160;
 /** Constant instance capacities: every lease cell at the sampling each mode uses, so a mesh is never rebuilt. */
 const FIELD_CAPACITY = gridDots(null).length;
 const LIFT_CAPACITY = gridDots(null, TERRAIN, LIFT_GUIDE_STEP).length;
