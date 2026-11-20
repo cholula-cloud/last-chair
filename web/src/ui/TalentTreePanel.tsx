@@ -7,7 +7,6 @@ import {
   CREW_POINT_COST,
   talentRequiresTier,
   TALENT_TREE_COL,
-  type TalentId,
 } from "@/game/talentProgress";
 
 const CREW_LABEL = ["Frank", "Dana", "Elena"] as const;

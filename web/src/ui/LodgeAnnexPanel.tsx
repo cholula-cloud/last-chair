@@ -1,6 +1,6 @@
 "use client";
 
-import { ASSET_CATALOG, ATTACH_BONUS, lodgeAttachPads, type AssetId, type LodgeTier } from "@/game/base";
+import { ASSET_CATALOG, ATTACH_BONUS, lodgeAttachPads, type AssetId } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
@@ -8,7 +8,7 @@ import { venueName } from "@/game/assetNames";
 import { startLodgePadPlacement } from "@/ui/placementDraft";
 const BASE_ATTACH: AssetId[] = ["warming_hut", "cafe", "shop", "rentals", "ski_school"];
 
-function padLabel(index: number, tier: LodgeTier): string {
+function padLabel(index: number): string {
   const side = index % 2 === 0 ? "west" : "east";
   const row = index < 2 ? "front" : index < 4 ? "side" : "upper";
   return `Pad ${index + 1} (${side} ${row})`;
@@ -37,7 +37,7 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
           const venue = occupant !== undefined ? state.assets[occupant] : null;
           return (
             <li key={padIndex} className="rounded-key border-2 border-ink/15 bg-snow-2 px-2 py-1.5">
-              <p className="text-xs font-extrabold">{padLabel(padIndex, state.lodgeTier)}</p>
+              <p className="text-xs font-extrabold">{padLabel(padIndex)}</p>
               {venue ? (
                 <p className="text-sm font-bold">{venueName(venue)} · annex</p>
               ) : (
