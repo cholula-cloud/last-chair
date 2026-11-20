@@ -15,6 +15,7 @@ import { goalChips, goalInputs } from "@/game/goals";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { schoolMemory } from "@/game/winterMemory";
 import { StoryEntries } from "./StoryLog";
+import { MoneyStatsCharts } from "./officeCharts";
 import { tidy } from "@/ui/kit/parts";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -55,6 +56,10 @@ export function Money({ s }: { s: GameState }) {
         <p key={fare}>{FARE_LABELS[fare]} ({formatMoney(FARE_PRICES[fare])}): {fare === "expensive" && s.summitLinkDecision === "accepted" ? "off the table under Vivian’s pass agreement" : `about ${Math.round(expectedArrivals(s,fare))} guests`}</p>)}</>}
     </Section>
   </>;
+}
+
+export function Stats({ s }: { s: GameState }) {
+  return <MoneyStatsCharts state={s} />;
 }
 
 export function Reports({ s }: { s: GameState }) {
