@@ -1255,9 +1255,9 @@ export function sleep(state: GameState): GameState {
     phase: "day",
     gunsVisible: overnight.gunsFired,
     talentToast: overnight.talentLearned
-      ? talentDescription(overnight.talentLearned, carried)
+      ? `New on the crew: ${talentDescription(overnight.talentLearned, carried)}`
       : overnight.nextTalentHint
-        ? `Tomorrow the crew learns: ${overnight.nextTalentHint}`
+        ? `Next up for the crew: ${overnight.nextTalentHint}.`
         : null,
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,

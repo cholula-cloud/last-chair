@@ -85,7 +85,7 @@ describe("Route 100 surprises", () => {
     expect(after.guests.filter((guest) => morning.surprise?.guestIds.includes(guest.id)).every((guest) => guest.state === "arrive")).toBe(true);
     const closed = reload(skipToClose(after));
     expect(closed.surpriseLog).toEqual([{ dayIndex: 2, kind: "road_delay", affectedGuests: group.length }]);
-    expect(surpriseRadio(closed.surpriseLog[0]).radio).toContain(`${group.length} skiers got here`);
+    expect(surpriseRadio(closed.surpriseLog[0]).radio).toContain(`${group.length} skiers rolled in`);
   });
 
   it("keeps former regulars to ordinary midweek and the road delay to cold weather", () => {

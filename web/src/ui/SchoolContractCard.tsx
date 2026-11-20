@@ -11,8 +11,8 @@ export function SchoolContractCard({ night }: { night: GameState }) {
   const bus = night.nightRecap?.facts.schoolBus;
   if (bus) {
     return (
-      <RadioCard title="The Readsboro school bus">
-        {bus.taught} of {bus.invited} pupils got a lesson. Bus tickets brought in {formatMoney(bus.ticketRevenue)}.
+      <RadioCard title="The Readsboro school bus" from="Elena Vargas">
+        {bus.taught} of {bus.invited} Readsboro kids got a lesson. Bus tickets brought in {formatMoney(bus.ticketRevenue)}.
       </RadioCard>
     );
   }
@@ -25,7 +25,7 @@ export function SchoolContractCard({ night }: { night: GameState }) {
   if (busDay === null) return null;
   const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], busDay);
   if (day === null) {
-    return <p className="chip mt-3 px-3 py-2 text-sm font-bold">School bus booked for {weekday} {date} at 9 AM.</p>;
+    return <p className="chip mt-3 px-3 py-2 text-sm font-bold">School bus booked for {weekday} {date} at 9 AM. {SCHOOL_BUS_PUPILS} pupils, and Elena is already making name tags.</p>;
   }
 
   const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
@@ -39,8 +39,8 @@ export function SchoolContractCard({ night }: { night: GameState }) {
         </div>
       }
     >
-      {storyBeatCopy("school_bus")?.radio} {SCHOOL_BUS_PUPILS} pupils arrive {weekday} {date} at 9 AM and pay {formatMoney(SCHOOL_BUS_FARE)} each for
-      a lift ticket. They share the lifts with everyone else. Your optional goal is to give each pupil a lesson.
+      {storyBeatCopy("school_bus")?.radio} {SCHOOL_BUS_PUPILS} pupils would arrive {weekday} {date} at 9 AM and pay {formatMoney(SCHOOL_BUS_FARE)} each for
+      a lift ticket. They share the lifts with everyone else, so watch the line. Optional goal: get every pupil through a lesson.
     </RadioCard>
   );
 }

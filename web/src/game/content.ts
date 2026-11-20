@@ -5,7 +5,7 @@ import type {
   StoryBeatDef,
 } from "./types";
 
-export const WINTER_GOAL = "Make it to day 28 with enough cash to pay off your loan and any unpaid construction bills.";
+export const WINTER_GOAL = "Get to day 28 with enough cash to cover your loan and whatever you still owe on construction.";
 
 /** What a hill with no founder modifier does. */
 export const NO_FOUNDER_MODS = {
@@ -99,7 +99,7 @@ export function talentDescription(name: string, state: Pick<import("./state").Ga
     }
   } else if (talent.needs === "cafe" && !state.buildings.includes("cafe")) waiting = "Waits for a café.";
   else if (talent.needs === "gun" && !state.guns.length) waiting = "Waits for a snow gun.";
-  return [talent.name + " (" + talent.crew + ")", talent.effect, waiting].filter(Boolean).join(" ");
+  return [`${talent.name} (${talent.crew}).`, talent.effect, waiting].filter(Boolean).join(" ");
 }
 
 export const STORY_BEATS: StoryBeatDef[] = [
@@ -107,37 +107,37 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "first_load",
     title: "First uphill load",
     radio:
-      "First tickets since 1985, and Superintendent Al Waters is listening. He wants the Readsboro bus back up here. Get the lodge to Tier 2, run a ski lesson, and give him a hill that can stay open.",
+      "Morning, Route 100. First paid ride up Dutch Hill since 1985, and Superintendent Al Waters has the radio on. He wants the Readsboro bus back up there, so get the lodge to Tier 2, run a ski lesson and keep the hill open.",
   },
   {
     id: "saturday",
     title: "Saturday corridor",
     radio:
-      "Plates from Bennington, Williamstown, Brattleboro. Route 100 is a parade. Keep the queue moving.",
+      "Saturday on Route 100, and I’m counting plates from Bennington, Williamstown, Brattleboro and one brave soul from Wor-chester. That’s a parade, folks. Keep the line moving and they’ll know the way back.",
   },
   {
     id: "school_bus",
     title: "School bus",
     radio:
-      "Al Waters: Readsboro wants to bring a school bus to Dutch Hill. Can you make room?",
+      "Message for Dutch Hill from Al Waters at the Readsboro school district: he has a bus and a handful of kids who’d love a day on the snow. Can you make room?",
   },
   {
     id: "dry_week",
     title: "Dry week",
     radio:
-      "No guns at the start — wait for cold or close the lower third. Frank says the diesel can wait; the snow can’t be invented.",
+      "Dry week on the hill, folks, and the guns can’t do much without cold. Wait for a cold snap or close the lower third. Frank says the diesel can wait, but nobody can invent snow.",
   },
   {
     id: "summit_link",
     title: "Abominable Snowglomerate stop",
     radio:
-      "Vivian Cho pulls off Route 100: add us to the map, keep the name if you like. The pass wants the dot.",
+      "Heads up, Route 100. Vivian Cho from Abominable Snowglomerate pulled off at Dutch Hill in a very clean rental car. She wants you on the pass map, and says you can keep the name.",
   },
   {
     id: "winter_review",
     title: "Winter review",
     radio:
-      "Last chair for the winter. Maris has the winter’s news from Dutch Hill.",
+      "That’s last chair on Dutch Hill, and that’s the winter. Maris Shaw here with how it all shook out.",
   },
 ];
 

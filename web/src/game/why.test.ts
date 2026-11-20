@@ -21,11 +21,11 @@ describe("whyLines", () => {
       facts,
     });
     expect(lines.map((l) => l.key)).toEqual(["queue", "value", "runs", "snow", "arrivalMood"]);
-    expect(lines[0].detail).toBe("waited 6.4 min a ride");
+    expect(lines[0].detail).toBe("Guests waited 6.4 min a ride.");
     expect(lines[1].detail).toContain("$62 felt steep");
     expect(lines[1].detail).toContain("$51");
-    expect(lines[3].detail).toBe("Today's average: good cover, quality 62%");
-    expect(lines[4].detail).toBe("mood 74 on arrival");
+    expect(lines[3].detail).toBe("Today’s average: good cover, quality 62%.");
+    expect(lines[4].detail).toBe("Guests showed up at 74 out of 100 on mood.");
   });
 
   it("names a good deal as one", () => {
@@ -38,7 +38,7 @@ describe("whyLines", () => {
       breakdown: { ...ZERO_TERMS, runs: -4 },
       facts: { ...facts, turnedAway: 3 },
     });
-    expect(lines[0].detail).toContain("3 turned away");
+    expect(lines[0].detail).toContain("3 guests turned away");
   });
 });
 

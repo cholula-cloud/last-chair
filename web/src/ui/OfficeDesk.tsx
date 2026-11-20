@@ -6,6 +6,8 @@ import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { dailyCosts, liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { openingStep } from "@/game/rules";
+import { SCHOOL_BUS_ARRIVAL_MIN } from "@/game/schoolContract";
+import { formatClock } from "@/game/sim";
 import { operatingGoalText } from "@/game/winterArc";
 import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
@@ -37,7 +39,7 @@ function showOnHill(item: AttentionItem) {
 
 function AttentionList({ items, showFocus }: { items: AttentionItem[]; showFocus: boolean }) {
   if (items.length === 0) {
-    return <p className="panel px-4 py-3 text-[1rem] font-bold">Nothing needs you right now.</p>;
+    return <p className="panel px-4 py-3 text-[1rem] font-bold">Nothing needs you right now. Enjoy it.</p>;
   }
   return (
     <ul className="flex flex-col gap-2">
@@ -72,9 +74,9 @@ export function DeskTab() {
       items.push({ id: "opening", text: "Paint a trail from your lift to the base." });
     }
     const due = dailyCosts(state).draws;
-    if (due > 0) items.push({ id: "construction", text: `${formatMoney(due)} in construction payments comes due at closing.` });
+    if (due > 0) items.push({ id: "construction", text: `${formatMoney(due)} in construction payments is due at closing.` });
     if (state.schoolContract?.decision === "accepted" && state.schoolContract.day === state.dayIndex) {
-      items.push({ id: "school", text: "The Readsboro bus is scheduled for today." });
+      items.push({ id: "school", text: `The Readsboro bus pulls in at ${formatClock(SCHOOL_BUS_ARRIVAL_MIN)} today. Elena says keep the bunny slope soft.` });
     }
     return items;
   }, [state]);
@@ -130,7 +132,7 @@ export function DeskTab() {
             <Forecast state={state} ahead={2} />
           </>
         ) : (
-          <p className="text-[1rem] font-bold">Today is the last day of the winter.</p>
+          <p className="text-[1rem] font-bold">Today is the last day of the winter. Last chair is yours to call.</p>
         )}
       </section>
 
@@ -138,11 +140,11 @@ export function DeskTab() {
       <AttentionList items={attention} showFocus={state.phase === "day"} />
 
       <SectionHeading>Route 100 Radio</SectionHeading>
-      {!radioEnabled ? <p className="panel px-4 py-3 font-bold">Radio is off.</p> : radio ? (
+      {!radioEnabled ? <p className="panel px-4 py-3 font-bold">Radio is off. Switch it back on from the Story log under Reports.</p> : radio ? (
         <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
       ) : (
         <p className="panel px-4 py-3 text-[1rem] font-bold">
-          Maris has not been on the air yet. She will be after the first closing.
+          Maris hasn’t been on the air yet. She’ll have something to say after the first closing.
         </p>
       )}
     </div>

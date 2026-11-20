@@ -12,27 +12,27 @@ import { Sheet } from "@/ui/kit/Sheet";
 const STATE_WORD: Record<GuestState, string> = {
   pending: "Not here yet",
   gone: "Gone home",
-  arrive: "Arriving",
-  queue: "In the lift line",
+  arrive: "Pulling in",
+  queue: "Waiting for the lift",
   ride: "Riding up",
-  walk_lift: "Walking to lift",
-  walk_out: "Walking to base",
+  walk_lift: "Trudging to the lift",
+  walk_out: "Trudging back to the base",
   ski: "Skiing down",
   refuel: "Taking a break",
   depart: "Heading home",
 };
 
 const VENUE_ACTIVITY: Partial<Record<AssetId, string>> = {
-  warming_hut: "Warming up",
-  cafe: "At the café",
+  warming_hut: "Thawing out in the warming hut",
+  cafe: "Grabbing a bite at the café",
   rentals: "Picking up rentals",
   ski_school: "Taking a lesson",
 };
 
 function moodWord(score: number): string {
   if (score >= 70) return "Happy";
-  if (score >= 50) return "Okay";
-  return "Unhappy";
+  if (score >= 50) return "Fine";
+  return "Grumpy";
 }
 
 export function GuestsSheet({
@@ -65,7 +65,7 @@ export function GuestsSheet({
       <div className="panel px-3.5 py-1">
         {guests.length === 0 && (
           <p className="py-6 text-center text-[0.92rem] font-bold text-ink-soft">
-            Nobody on the hill right now. Guests arrive from 8 AM and head home by 4.
+            Nobody on the hill right now. Guests start pulling in around 8 AM and head home by 4.
           </p>
         )}
         <ul>

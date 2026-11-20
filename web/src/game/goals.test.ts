@@ -13,7 +13,7 @@ describe("goalChips", () => {
       { ...ready, schoolProgramProven: false }, { ...ready, dayIndex: ready.seasonLength }]) {
       expect(chip(state, "bus")).toBeUndefined();
     }
-    expect(chip(ready, "bus")).toMatchObject({ status: "To do", explainer: "Listen for the school bus call on the radio." });
+    expect(chip(ready, "bus")).toMatchObject({ status: "To do", explainer: "Keep an ear on the radio. Al Waters may call about a school bus." });
   });
 
   it("shows booked, declined, delivered and missed visits after offer eligibility ends", () => {

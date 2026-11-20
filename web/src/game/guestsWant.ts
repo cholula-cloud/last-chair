@@ -23,8 +23,9 @@ export type Demand = { key: "lines" | "seats" | "green" | "snow"; points: number
 function lineText(recap: Pick<NightRecap, "facts">, liftCount: number): string {
   const busiest = recap.facts.busiestLift;
   const minutes = Math.max(1, Math.floor(busiest ? busiest.min : recap.facts.avgWaitMin));
-  if (liftCount <= 1) return `Guests want a second lift. Lines ran over ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
-  return `Guests want shorter lift lines. ${busiest?.label ?? "One lift"} ran over ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`;
+  const unit = minutes === 1 ? "minute" : "minutes";
+  if (liftCount <= 1) return `The lift line got long enough to need its own zip code. It ran over ${minutes} ${unit}, so guests want a second lift.`;
+  return `Guests were checking their watches at ${busiest?.label ?? "one lift"}, which ran over ${minutes} ${unit}. They want shorter lift lines.`;
 }
 
 /**
@@ -40,17 +41,17 @@ export function topGuestDemand(
   demands.push({
     key: "seats",
     points: ctx.seatsFullMin / SEATS_FULL_PER_POINT,
-    line: "Guests want more seats at the lodge.",
+    line: "The lodge ran out of seats and lunch went standing up. Guests want more seats.",
   });
   const greenCrowded =
     ctx.greenTrailCount > 0 && ctx.greenRuns / ctx.greenTrailCount >= GREEN_CROWDED_RUNS;
   if (greenCrowded) {
-    demands.push({ key: "green", points: Math.max(-recap.breakdown.runs, DEMAND_MIN_POINTS), line: "Guests want another green trail." });
+    demands.push({ key: "green", points: Math.max(-recap.breakdown.runs, DEMAND_MIN_POINTS), line: "The green trail is wall to wall with beginners. Guests want another green trail." });
   }
   demands.push({
     key: "snow",
     points: -recap.breakdown.snow,
-    line: `Guests want better snow. Cover was ${recap.facts.snowLabel.toLowerCase()}.`,
+    line: `Cover was ${recap.facts.snowLabel.toLowerCase()} and guests noticed. They want better snow.`,
   });
   const top = demands
     .filter((d) => d.points >= DEMAND_MIN_POINTS)

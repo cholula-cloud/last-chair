@@ -28,9 +28,10 @@ export function SummitLinkCard({ night }: { night: GameState }) {
   return (
     <RadioCard
       title="Vivian Cho’s Abominable Snowglomerate offer"
+      from="Vivian Cho, Abominable Snowglomerate"
       action={
         <>
-          {blocked && <p id="summitlink-founder-lock" className="mb-2 text-sm font-bold">Riley won’t sign an Abominable Snowglomerate deal.</p>}
+          {blocked && <p id="summitlink-founder-lock" className="mb-2 text-sm font-bold">Riley won’t sign it. Says he’d rather rebuild the T-bar twice.</p>}
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -52,8 +53,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
         </>
       }
     >
-      Vivian unrolls a map that takes up the whole lodge counter. “One day, every chair in New England will answer to a single pass.” She moves the sugar bowl. “Yours goes here.” She’ll pay {payment} tonight if you cap tickets at
-      Balanced ({maxFare}) for the rest of the winter.
+      We love what you’re building up here. One day every chair in New England will run on a single pass, and we’d love yours on the map. We’ll put {payment} into Dutch Hill tonight if tickets stay at Balanced ({maxFare}) or below for the rest of the winter.
     </RadioCard>
   );
 }

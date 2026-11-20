@@ -72,7 +72,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "guestsWant",
-    text: "The Guests want line is the one thing guests grumbled about most. Fix that first.",
+    text: "The line under the problem is the thing guests grumbled about most. Fix that first.",
     when: (c) => c.phase === "night" && c.hasGuestsWant,
   },
   {

@@ -267,7 +267,10 @@ export type ProblemFacts = {
   cashDelta?: number;
 };
 
-export const NO_PROBLEM = "Good day on the hill.";
+/** The recap line for a day nobody skied. */
+export const NO_SKIERS_PROBLEM = "Nobody came today. The lifts turned for the crows.";
+
+export const NO_PROBLEM = "Good day on the hill. Nobody has a complaint.";
 
 /** The term with the largest negative average contribution, or null if none is below `SAT.PROBLEM_MIN`. */
 export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
@@ -287,23 +290,23 @@ export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
   switch (biggestProblem(breakdown)) {
     case "queue":
       return facts.dispatched === 0
-        ? "Guests spent time in line but no one boarded a lift. Check which lifts and trails are open."
-        : `Long lift lines — guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More lift capacity or a higher fare can ease the crowd.`;
+        ? "Guests stood in line and nobody ever boarded a lift. Check that your lifts and trails are open."
+        : `Lift lines ran long. Guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More lift capacity or a higher fare will thin the crowd.`;
     case "snow":
       return facts.snowTrouble
-        ? `${facts.snowTrouble} (mean quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`
-        : `Thin, scraped snow (quality ${Math.round(facts.snowQuality * 100)}%) — bump Snow & service tonight.`;
+        ? `${facts.snowTrouble}, and guests felt every inch of it (quality ${Math.round(facts.snowQuality * 100)}%). Bump up Snow & service tonight.`
+        : `Thin, scraped snow (quality ${Math.round(facts.snowQuality * 100)}%). Bump up Snow & service tonight.`;
     case "value":
-      return `Guests felt the ${formatMoney(FARE_PRICES[facts.fare])} ticket was steep for what they got.`;
+      return `Guests thought the ${formatMoney(FARE_PRICES[facts.fare])} ticket was steep for what they got.`;
     case "runs":
       return facts.turnedAway > 0
-        ? `Many guests barely skied — ${facts.turnedAway} turned away at close.`
-        : `Many guests barely skied — ${facts.runsPerGuest.toFixed(1)} runs each. Faster lifts would let them ski more.`;
+        ? `Lots of guests barely got a run in. ${facts.turnedAway} were turned away at close.`
+        : `Lots of guests barely got a run in, ${facts.runsPerGuest.toFixed(1)} runs each. Faster lifts would let them ski more.`;
     case "arrivalMood":
-      return `A cold welcome (mood ${Math.round(facts.arrivalMood * 100)} on arrival).`;
+      return `Guests showed up in a sour mood, ${Math.round(facts.arrivalMood * 100)} out of 100. Good snow and a fair fare make a warmer welcome.`;
     default:
       return facts.cashDelta !== undefined && facts.cashDelta < 0
-        ? `Lost ${formatMoney(-facts.cashDelta)} today — running costs beat ticket sales on a quiet day.`
+        ? `Lost ${formatMoney(-facts.cashDelta)} today. Running costs beat ticket sales on a quiet day.`
         : NO_PROBLEM;
   }
 }

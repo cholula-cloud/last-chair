@@ -27,15 +27,15 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "lodge",
     label: "Lodge Tier 2",
     status: lodge ? "Done" : settled ? "Missed" : "To do",
-    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is up and running.` : settled ? "The winter ended with the lodge still at Tier 1." : "Upgrade the lodge to Tier 2 from the Build sheet. Bigger lodge, bigger crowds.",
+    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is built and open.` : settled ? "The winter ended with the lodge still at Tier 1." : "Upgrade the lodge to Tier 2 from the Build sheet. Bigger lodge, bigger crowds.",
   }];
   const contract = state.schoolContract;
   if (contract || state.schoolEligible) {
     let status: GoalChip["status"] = "To do";
-    let explainer = "Listen for the school bus call on the radio.";
+    let explainer = "Keep an ear on the radio. Al Waters may call about a school bus.";
     if (contract?.decision === "declined") {
       status = "Declined";
-      explainer = "You turned down the Readsboro school visit.";
+      explainer = "You turned down the Readsboro school visit. Al will understand.";
     } else if (contract?.decision === "accepted") {
       if (contract.pupilsTaught !== null) {
         status = contract.pupilsTaught > 0 ? "Done" : "Missed";
@@ -53,8 +53,8 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "solvent", label: "Finish solvent",
     status: settled ? (met ? "Done" : "Missed") : (solvent ? "On track" : "At risk"),
     explainer: settled
-      ? (met ? "You finished in the black. Cash covers the loan and any unpaid construction." : state.outcome === "bankrupt" ? "The bank came calling before the winter was over." : "The loan and unpaid construction came to more than your closing cash.")
-      : (solvent ? "Cash covers your loan and unpaid construction today. Keep it that way." : "Your loan and unpaid construction add up to more than your cash right now. Get some guests in."),
+      ? (met ? "You finished in the black. Cash covers the loan and anything unpaid on construction." : state.outcome === "bankrupt" ? "The bank came calling before the winter was over." : "The loan and unpaid construction came to more than your closing cash.")
+      : (solvent ? "Cash covers your loan and unpaid construction today. Keep it that way." : "Your loan and unpaid construction add up to more than your cash right now. Time to get some guests up the hill."),
   });
   return chips;
 }

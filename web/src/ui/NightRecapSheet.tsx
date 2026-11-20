@@ -9,6 +9,7 @@ import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
+import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
@@ -130,7 +131,7 @@ function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
                       {formatPoints(line.points)}
                     </span>
                   </div>
-                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " · Patrol on hand" : ""}</p>
+                  <p className="text-[0.85rem] font-bold leading-snug text-ink-soft">{line.detail}{patrol && line.key === "snow" && line.points < 0 ? " Dana’s first aid hut took the edge off." : ""}</p>
                   <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-snow-2" aria-hidden="true">
                     <span
                       className={`absolute inset-y-0 ${
@@ -145,7 +146,7 @@ function WhyList({ recap, patrol }: { recap: NightRecap; patrol: boolean }) {
             })}
           </ul>
           <p className="pb-1 pt-1.5 text-[0.82rem] font-bold text-ink-soft">
-            Average guest: {WHY_BASE} to start, plus the above, is about{" "}
+            The average guest starts at {WHY_BASE}, adds up the above and lands around{" "}
             {Math.round(recap.satisfaction)}.
           </p>
         </div>
@@ -166,7 +167,7 @@ function Deltas({ recap, last, dayIndex }: { recap: NightRecap; last: LastDay; d
       <DeltaChip direction={skiers.direction} what="Skiers">{skiers.text}</DeltaChip>
       {recap.arrivals > 0 && last.arrivals > 0
         ? <DeltaChip direction={happy.direction} what="Happiness">{happy.text}</DeltaChip>
-        : <span className="text-xs font-bold text-ink-soft">Happiness unavailable</span>}
+        : <span className="text-xs font-bold text-ink-soft">Nothing to compare yet</span>}
       <DeltaChip direction={cash.direction} what="Cash today">{cash.text}</DeltaChip>
       <p className="col-span-3 text-[0.78rem] font-bold leading-snug text-ink-soft">
         vs yesterday ({FARE_LABELS[last.fare]} {formatMoney(FARE_PRICES[last.fare])}, {SNOW_LABELS[last.snow]} snow)
@@ -251,7 +252,7 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
         </dl>
       </div>
       {!finalNight && projected < 0 && night.debtMornings + 1 >= BANKRUPTCY_MORNINGS && (
-        <p className="mt-2 text-sm font-extrabold text-barn-deep" role="status">Another morning below zero will end the winter.</p>
+        <p className="mt-2 text-sm font-extrabold text-barn-deep" role="status">One more morning below zero and the winter is over.</p>
       )}
       <LoanCard night={night} onTake={takeLoan} onRepay={repayLoan} repaid={recap.loanRepaid} />
     </section>
@@ -298,7 +299,7 @@ function Choices({
       <ChoiceTiles label="Fare" options={fareOptions} value={pendingFare} onPick={setPendingFare} />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         At {formatMoney(FARE_PRICES[pendingFare])}, expect about {skiers(pendingFare)} skiers with {SNOW_LABELS[pendingSnow].toLowerCase()} service.
-        Actual turnout varies with weather. Locals expect a day here to be worth about {formatMoney(worth)}.
+        Weather moves the real number. Locals figure a day here is worth about {formatMoney(worth)}.
       </p>
 
       <SectionHeading aside="Crew overnight">Snow &amp; service</SectionHeading>
@@ -309,11 +310,11 @@ function Choices({
         onPick={setPendingSnow}
       />
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
-        Estimated average quality tomorrow morning is {Math.round(chosen.meanQuality * 100)}%.
-        In the most likely weather, expect {chosen.label.toLowerCase()}.
+        This service should leave the snow at about {Math.round(chosen.meanQuality * 100)}% quality by morning.
+        In the most likely weather, that looks like {chosen.label.toLowerCase()}.
       </p>
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
-        {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Tonight’s service is free."}
+        {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Service is free tonight."}
       </p>
       <div className="mt-3 border-t border-snow-2 pt-1">
         <Forecast state={night} ahead={1} />
@@ -368,7 +369,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
 
           {dayIndex < night.seasonLength && nextTalent && (
             <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
-              Tomorrow the crew learns{" "}
+              Overnight, the crew picks up{" "}
               <span className="font-extrabold text-sign-green">{talentDescription(nextTalent, night)}</span>
             </p>
           )}
@@ -381,9 +382,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               id="sleep-hint"
               className="mb-2 text-center text-[0.88rem] font-bold text-ink short:mb-1.5"
             >
-              {summitLinkOffer && "Reply to Vivian before sleeping."}
+              {summitLinkOffer && "Answer Vivian before you turn in."}
               {!summitLinkOffer && (pendingBeat === "school_bus"
-                ? "Reply to the school bus offer before sleeping."
+                ? "Give Al an answer on the school bus before you turn in."
                 : "Read the radio message, then tap Got it.")}
             </p>
           )}
@@ -422,8 +423,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             <StatTile
               onSign
               label="Happiness"
-              value={hasGuests ? `${Math.round(recap.satisfaction)}%` : "—"}
-              note={hasGuests ? moodWord(recap.satisfaction).word : "No skiers"}
+              value={hasGuests ? `${Math.round(recap.satisfaction)}%` : "No skiers"}
+              note={hasGuests ? moodWord(recap.satisfaction).word : undefined}
             />
             <StatTile
               onSign
@@ -438,13 +439,13 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
 
         <p className="mt-4 border-l-[5px] border-barn pl-3 text-[1.05rem] font-extrabold leading-snug">
           <span className="sr-only">Problem: </span>
-          {hasGuests ? tidy(recap.problem) : "No skiers arrived today."}
+          {hasGuests ? tidy(recap.problem) : NO_SKIERS_PROBLEM}
         </p>
         {guide && <aside aria-label="First problem guide" className="panel my-2 p-3">
-          <p className="text-base"><LiveMessage><strong>{night.founderId && founderById(night.founderId)?.name}</strong> · {guide.text}</LiveMessage></p>
+          <p className="text-base"><LiveMessage><strong>{night.founderId && founderById(night.founderId)?.name}:</strong> {guide.text}</LiveMessage></p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map · {LAYERS[guide.layer]}</button>
-            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office · {guide.tab}</button>
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onMap(guide.layer)}>Map: {LAYERS[guide.layer]}</button>
+            <button type="button" className="key min-h-11 px-2 font-bold" onClick={() => onOffice(guide.tab)}>Office: {guide.tab}</button>
             <button type="button" className="min-h-11 px-1 underline" onClick={() => markTipSeen(PROBLEM_GUIDE_ID)}>Dismiss advice</button>
           </div>
         </aside>}
@@ -471,7 +472,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             ))}
           </ul>
         )}
-        {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">{recap.facts.balked} stops to sit out a line</p>}
+        {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">Guests balked at the lift line {recap.facts.balked} {recap.facts.balked === 1 ? "time" : "times"} today.</p>}
         {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 
         <SchoolContractCard night={night} />

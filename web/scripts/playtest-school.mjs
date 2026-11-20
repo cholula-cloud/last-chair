@@ -44,6 +44,8 @@ try {
     const read = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)).state, slotKey);
     const card = page.getByRole("region", { name: /School bus offer/ });
     await card.waitFor();
+    // The live region fills in after two animation frames, so wait for the body before reading it.
+    await card.getByText(/6 pupils/).waitFor();
     assert.match(await card.innerText(), /6 pupils.*\$25/s);
     assert.equal(await button("Sleep until morning").isDisabled(), true);
     const reply = card.getByRole("button", { name: accept ? "Book the bus" : "Decline", exact: true });
@@ -65,7 +67,7 @@ try {
       assert.equal(bus.ticketRevenue, 150);
       assert.ok(bus.taught > 0 && bus.taught <= 6);
       await receipt.waitFor();
-      assert.ok((await receipt.innerText()).includes(`${bus.taught} of 6 pupils got a lesson. Bus tickets brought in $150.`));
+      assert.ok((await receipt.innerText()).includes(`${bus.taught} of 6 Readsboro kids got a lesson. Bus tickets brought in $150.`));
       await button("Sleep until morning").tap();
       await button("Resume day").tap();
       await button("Office").tap();
@@ -89,8 +91,8 @@ try {
       await office.getByRole("tab", { name: "Crew", exact: true }).tap();
       await office.getByRole("heading", { name: "Crew talents" }).waitFor();
       await office.getByRole("tab", { name: "Reports", exact: true }).tap();
-      await office.locator("summary").filter({ hasText: /^Day 3 ·/ }).tap();
-      await office.getByText(`School tickets $150 · ${bus.taught} of 6 pupils taught`).waitFor();
+      await office.locator("summary").filter({ hasText: /^Day 3,/ }).tap();
+      await office.getByText(`School tickets $150. ${bus.taught} of 6 pupils taught.`).waitFor();
       await office.getByRole("button", { name: "Close Office" }).tap();
       await button("Pause day").waitFor();
       assert.equal((await read()).paused, false);
