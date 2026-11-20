@@ -7,7 +7,7 @@ import { satisfactionContext } from "@/game/rules";
 import { guestSatisfaction } from "@/game/satisfaction";
 import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
-import { satisfactionMoodWord } from "@/game/moodLabels";
+import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { Sheet } from "@/ui/kit/Sheet";
 
 const STATE_WORD: Record<GuestState, string> = {
@@ -28,6 +28,12 @@ const VENUE_ACTIVITY: Partial<Record<AssetId, string>> = {
   cafe: "Grabbing a bite at the café",
   rentals: "Picking up rentals",
   ski_school: "Taking a lesson",
+};
+
+const MOOD_CHIP: Record<ReturnType<typeof moodTone>, string> = {
+  good: "bg-sign-green text-white",
+  watch: "bg-gold text-ink",
+  bad: "bg-barn-deep text-white",
 };
 
 export function GuestsSheet({
@@ -52,6 +58,7 @@ export function GuestsSheet({
 
   return (
     <Sheet
+      wide
       title="Guests"
       subtitle={`${guests.length} on the hill. Follow one and the camera goes with them.`}
       onClose={onClose}
@@ -60,25 +67,33 @@ export function GuestsSheet({
       <div className="panel px-3.5 py-1">
         {guests.length === 0 && (
           <p className="py-6 text-center text-[0.92rem] font-bold text-ink-soft">
-            Nobody on the hill right now. Guests start pulling in around 8 AM and head home by 4.
+            No skiers on the hill right now. Lifts run from 8 AM to 4 PM.
           </p>
         )}
-        <ul>
+        <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
           {guests.map((g) => {
             const following = followId === g.id;
             const venue = g.state === "refuel" ? assets[g.venueIndex ?? -1] : undefined;
             const activity = (venue && VENUE_ACTIVITY[venue.id]) ?? STATE_WORD[g.state];
+            const score = guestSatisfaction(g, ctx);
+            const mood = satisfactionMoodWord(score);
+            const tone = moodTone(score);
             return (
               <li
                 key={g.id}
-                className="flex items-center gap-3 border-b-2 border-snow-2 py-2.5 last:border-b-0"
+                className="flex items-center gap-3 border-b-2 border-snow-2 py-2.5 last:border-b-0 md:border-b-0 md:py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[1rem] font-extrabold">
-                    {g.label}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="truncate text-[1rem] font-extrabold">
+                      {g.label}
+                    </p>
+                    <span className={`chip shrink-0 px-2 py-0.5 text-[0.72rem] font-extrabold [--lift:2px] ${MOOD_CHIP[tone]}`}>
+                      {mood}
+                    </span>
+                  </div>
                   <p className="text-[0.85rem] font-bold text-ink-soft">
-                    {activity}, {satisfactionMoodWord(guestSatisfaction(g, ctx)).toLowerCase()}
+                    {activity}
                   </p>
                 </div>
                 <button

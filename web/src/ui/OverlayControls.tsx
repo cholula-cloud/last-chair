@@ -127,7 +127,7 @@ export function LayerStrip({ allowOff = true, className = "" }: { allowOff?: boo
           onClick={() => pickLayer(layer.id, allowOff)}
           className="key press flex min-h-11 shrink-0 flex-col items-center justify-center px-2.5 py-1 text-[0.72rem] font-extrabold leading-tight sm:min-w-[3.25rem]"
         >
-          <span className="text-[0.65rem] font-extrabold uppercase tracking-wide text-ink-soft">{LAYER_SHORT[layer.id]}</span>
+          <span className="text-[0.75rem] font-extrabold text-ink">{LAYER_SHORT[layer.id]}</span>
         </button>
       ))}
       {allowOff && <button type="button" aria-pressed={shown === null} onClick={turnLayerOff}
@@ -224,7 +224,11 @@ export function SnowLayerControls({ docked = false, compact = false }: { docked?
         ) : (
           <div className="max-h-[36dvh] w-full overflow-y-auto">
             <div className="mb-1 flex justify-end">
-              <button type="button" className="text-xs font-bold underline" onClick={() => setAdjustOpen(false)}>
+              <button
+                type="button"
+                className="key key-sm press grid min-h-11 min-w-11 place-items-center px-2 text-xs font-extrabold"
+                onClick={() => setAdjustOpen(false)}
+              >
                 Hide
               </button>
             </div>
@@ -243,7 +247,7 @@ export function LayerBottomDock() {
   if (!open) return null;
   return (
     <div
-      className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]"
+      className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem] md:max-w-[34rem]"
       data-layer-dock="true"
     >
       <LayerStrip allowOff className="w-full snap-x snap-mandatory justify-start sm:justify-center" />
@@ -258,7 +262,7 @@ export function LayerBottomDock() {
 export function NightMapDock({ onBack }: { onBack: () => void }) {
   return (
     <div
-      className="pointer-events-auto flex w-full max-w-[26rem] flex-col items-stretch gap-1.5"
+      className="pointer-events-auto flex w-full max-w-[26rem] flex-col items-stretch gap-1.5 md:max-w-[34rem]"
       data-layer-dock="night"
     >
       <LayerStrip allowOff={false} className="w-full snap-x snap-mandatory justify-start" />

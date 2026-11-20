@@ -204,7 +204,7 @@ function TrailBar() {
 
   if (mode === "compact") {
     return (
-      <div key="compact" className="panel trail-bar-in space-y-1 px-2.5 py-1.5 [--lift:3px]" data-trail-panel="compact">
+      <div key="compact" className="panel trail-bar-in space-y-1 px-2 py-1 sm:px-2.5 sm:py-1.5 [--lift:3px]" data-trail-panel="compact">
         <div className="flex items-center gap-2">
           {stats ?? <p className="text-xs font-extrabold text-ink-soft">Lift your finger to finish the stroke.</p>}
         </div>
@@ -227,7 +227,7 @@ function TrailBar() {
       : "Drag from lift top to paint · 2 fingers move map";
 
   return (
-    <div key="full" className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]" data-trail-panel="full">
+    <div key="full" className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]" data-trail-panel="full">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <div className={`min-w-0 flex-1 ${problem ? "short:hidden" : ""}`}>
           {stats ?? <p className="truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
@@ -371,7 +371,7 @@ function LiftBar() {
   }
 
   return (
-    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
+    <div className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft" aria-live="polite">
@@ -459,7 +459,7 @@ function SiteBar() {
   }
 
   return (
-    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
+    <div className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft">
@@ -501,12 +501,12 @@ export function PlacementBar() {
   const showPlacementColors = usePlacementDraft((s) => s.kind !== "trail" && s.kind !== "lift" && !s.minimized && !s.review);
   if (!active) return null;
   const widthClass = review
-    ? "max-w-[440px]"
+    ? "max-w-[440px] sm:max-w-[28rem] md:max-w-[34rem]"
     : minimized
-      ? "max-w-[340px]"
-      : "max-w-[420px] sm:max-w-[740px]";
+      ? "max-w-[340px] sm:max-w-[28rem] md:max-w-[34rem]"
+      : "max-w-[420px] sm:max-w-[28rem] md:max-w-[34rem] short:max-w-[520px]";
   return (
-    <div className={`pointer-events-auto max-h-[65dvh] w-full overflow-y-auto px-1 short:max-w-[520px] ${widthClass}`} data-placement-kind={kind}>
+    <div className={`pointer-events-auto max-h-[65dvh] w-full overflow-y-auto px-0.5 sm:px-1 ${widthClass}`} data-placement-kind={kind}>
       {showPlacementColors && <p className="key mb-1 px-2 py-0.5 text-[0.72rem] font-extrabold [--lift:2px]">Green means go. Red means find another spot.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
