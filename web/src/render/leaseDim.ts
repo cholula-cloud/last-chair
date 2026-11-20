@@ -22,7 +22,9 @@ export function outsideWeight(p: { x: number; z: number }): number {
  * float attribute `aOut` (a plain attribute for a mesh, an instanced one for instances).
  */
 export function patchLeaseDim<T extends THREE.Material>(material: T): T {
-  material.onBeforeCompile = (shader) => {
+  const previous = material.onBeforeCompile;
+  material.onBeforeCompile = (shader, renderer) => {
+    previous?.call(material, shader, renderer);
     shader.uniforms.uLeaseDim = leaseDim;
     shader.uniforms.uLeaseDimAmount = { value: DIM_AMOUNT };
     shader.uniforms.uLeaseDimGrey = { value: DIM_DESATURATE };

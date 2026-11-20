@@ -13,7 +13,7 @@ What we are matching emotionally—not copying literally:
 |---------|-------------------|------------|
 | Scale | **Toy mountain** in a bowl; readable lift line | Same legibility; slightly wider camera FOV on mobile |
 | Forest | Dense New England conifers, white trunks | Original tree kit; instanced |
-| Snow | Clean shader, groom stripes optional | Same; night subtle blue fill |
+| Snow | GPU patches + corduroy stripes from preset | Minimal reads scraped/grey; Mid/High mornings show groom stripes; night subtle fill |
 | Buildings | Chunky lodges, warm windows | Modular Blender kit; **our** silhouettes |
 | Guests | Tiny colorful figures, readable on lift | Low-poly pool, 4 silhouettes |
 | Mood | Cozy, serious-not-grim | Warmer UI accent (see below) |

@@ -155,22 +155,29 @@ function trailInfluencePolyline(
   const count = positions.length / 3;
   const w = new Float32Array(count);
   const t = new Float32Array(count);
+  const u = new Float32Array(count);
   for (let v = 0; v < count; v++) {
     const px = positions[v * 3];
     const pz = positions[v * 3 + 2];
     let best = Infinity;
     let bestT = 0;
+    let bestU = 0;
     for (let i = 0; i < n; i++) {
       const ax = pts[i].x;
       const az = pts[i].z;
       const dx = pts[i + 1].x - ax;
       const dz = pts[i + 1].z - az;
       const lenSq = dx * dx + dz * dz || 1e-6;
-      const u = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
-      const d = (px - (ax + u * dx)) ** 2 + (pz - (az + u * dz)) ** 2;
+      const along = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
+      const qx = ax + along * dx;
+      const qz = az + along * dz;
+      const d = (px - qx) ** 2 + (pz - qz) ** 2;
       if (d < best) {
         best = d;
-        bestT = (i + u) / n;
+        bestT = (i + along) / n;
+        const len = Math.sqrt(lenSq);
+        const cross = ((px - qx) * dz - (pz - qz) * dx) / len;
+        bestU = cross;
       }
     }
     const d = Math.sqrt(best);
@@ -180,8 +187,9 @@ function trailInfluencePolyline(
     const k = Math.max(0, Math.min(1, (d - inner) / (outer - inner)));
     w[v] = 1 - k * k * (3 - 2 * k);
     t[v] = bestT;
+    u[v] = bestU;
   }
-  return { w, t };
+  return { w, t, u };
 }
 
 /** Legacy S-curve from the lift top (t = 0) to the run-out at the base area (t = 1). */
@@ -245,6 +253,8 @@ export function distSqToLiftLine(px: number, pz: number, line: LiftLine): number
 export type TrailInfluence = {
   w: Float32Array;
   t: Float32Array;
+  /** Signed distance across the corridor in world units (positive = right of downhill). */
+  u: Float32Array;
 };
 
 /** For each vertex: trail weight and position along `line`'s run-out. */

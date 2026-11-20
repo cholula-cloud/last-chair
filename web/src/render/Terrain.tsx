@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { ROAD_Z, SITE } from "./layout";
 import { smoothstep } from "./math";
 import { PALETTE, SUN_DIR } from "./palette";
 import type { Trail } from "@/game/snow";
 import type { LiftLine } from "@/game/descent";
+import type { SnowPreset } from "@/game/types";
 import { TERRAIN, fbm } from "@/game/terrain";
 import { forestMask } from "./forest";
 import { distanceOutsideLease } from "@/game/lease";
@@ -14,8 +16,17 @@ import { outsideWeight, patchLeaseDim } from "./leaseDim";
 import { patchOverlay } from "./terrainOverlay";
 import { realGradeFactor } from "@/game/trails";
 import { buildGeometry } from "./terrainMesh";
-import { pathInfluence, sampleSegments, trailInfluence, type TrailInfluence } from "./trail";
+import { pathInfluence, trailInfluence, type TrailInfluence } from "./trail";
 import type { XZ } from "@/game/terrain";
+import {
+  SNOW_TEX_SEGMENTS,
+  SNOW_TEX_TRAILS,
+  bakeSnowAttributes,
+  groomStyle,
+  snowTextureBytes,
+  snowWearByTrail,
+} from "./snowTexture";
+import { patchSnowMaterial, snowUniforms, syncSnowNightUniform } from "./snowMaterial";
 
 // Paths and widths are immutable. Key by array identity so an edit with the
 // same endpoints still updates the terrain without serializing every point.
@@ -39,23 +50,18 @@ const C = {
   shade: new THREE.Color(PALETTE.snowShade),
   warm: new THREE.Color(PALETTE.snowWarm),
   old: new THREE.Color(PALETTE.snowOld),
-  ice: new THREE.Color(PALETTE.snowIce),
-  white: new THREE.Color(PALETTE.white),
   rock: new THREE.Color(PALETTE.rock),
   earth: new THREE.Color(PALETTE.earth),
 };
 
 /**
- * Vertex colours: white snow, blue in hollows, warm on sun-facing slopes,
- * rock on steep faces, and bare earth patches that grow from the bottom of
- * the hill as `snowDepth` drops.
+ * Off-trail vertex colours: hollows, sun-facing warmth, rock, hill-wide bare
+ * patches, and canopy. Per-segment snow on corridors is drawn in the snow shader.
  */
 function paint(
   g: THREE.BufferGeometry,
   snowQuality: number,
   snowDepth: number,
-  trails: readonly Trail[],
-  influence: readonly TrailInfluence[],
   canGrow: ReturnType<typeof forestMask>,
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
@@ -63,21 +69,8 @@ function paint(
   const col = g.attributes.color as THREE.BufferAttribute;
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
-    // Near a trail the segment values replace the hill-wide means (strongest trail wins).
-    let w = 0;
-    let q = snowQuality;
-    let depth = snowDepth;
-    let cover = 1;
-    for (let k = 0; k < influence.length && k < trails.length; k++) {
-      if (influence[k].w[i] > w) {
-        w = influence[k].w[i];
-        const t = influence[k].t[i];
-        q = snowQuality + (sampleSegments(trails[k], t, "quality") - snowQuality) * w;
-        depth = snowDepth + (sampleSegments(trails[k], t, "depth") - snowDepth) * w;
-        cover = 1 + (sampleSegments(trails[k], t, "coverage") - 1) * w;
-      }
-    }
-    const thin = 1 - Math.max(0, Math.min(1, depth));
+    const q = snowQuality;
+    const thin = 1 - Math.max(0, Math.min(1, snowDepth));
     const x = pos.getX(i);
     const y = pos.getY(i);
     const z = pos.getZ(i);
@@ -86,7 +79,6 @@ function paint(
       nor.getX(i) * SUN_DIR[0] + ny * SUN_DIR[1] + nor.getZ(i) * SUN_DIR[2];
 
     c.copy(C.snow);
-    // Hollows go blue-lavender.
     const e = 0.45;
     const avg =
       (TERRAIN.height(x + e, z) +
@@ -96,28 +88,16 @@ function paint(
       4;
     const curv = avg - y;
     c.lerp(C.shade, Math.max(0, Math.min(0.55, curv * 4 + 0.05)));
-    // Sun-facing slopes go a touch warm.
     c.lerp(C.warm, Math.max(0, Math.min(0.6, (sun - 0.72) * 2.4)));
-    // Tired snow greys out.
     c.lerp(C.old, Math.max(0, 0.75 - q) * 0.7);
-    // Worn trail segments go grey-blue ice; a fresh groom reads a clean bright white.
-    if (w > 0) {
-      c.lerp(C.ice, w * Math.max(0, Math.min(1, (0.55 - q) / 0.3)) * 0.85);
-      c.lerp(C.white, w * smoothstep(0.62, 0.88, q) * 0.7);
-    }
 
-    // Rock on steep faces.
     const steep = 1 - ny + fbm(x * 1.7, z * 1.7) * 0.12;
     c.lerp(C.rock, smoothstep(0.38, 0.55, steep) * 0.7);
 
-    // Bare earth: thin cover shows first low on the hill and on the valley floor.
     const n = fbm(x * 0.9 + 3.1, z * 0.9 - 7.7);
     const bareDepth = (thin - 0.45) * 1.6 - 0.42 - y * 0.1 + n * 0.7;
-    const bareCover = (1 - cover) * 1.6 - 0.35 + (n - 0.5) * 0.6;
-    const bare = Math.max(bareDepth, bareCover);
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
-    c.lerp(C.earth, smoothstep(0, 0.18, bare - road) * 0.9);
-    // Beyond the lease the forest floor reads as canopy, easing in across the far-forest band.
+    c.lerp(C.earth, smoothstep(0, 0.18, bareDepth - road) * 0.9);
     if (canGrow(x, z)) {
       c.lerp(CANOPY, 0.5 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
     }
@@ -132,6 +112,9 @@ export function Terrain({
   snowQuality,
   snowDepth,
   trails,
+  groomed,
+  snowPreset,
+  runsByTrail,
   lines,
   paths,
   pathWidths,
@@ -140,8 +123,10 @@ export function Terrain({
   lowDetail: boolean;
   snowQuality: number;
   snowDepth: number;
-  /** Trail snow, one entry per run (see `snowKey`). */
   trails: readonly Trail[];
+  groomed?: readonly (boolean[] | undefined)[];
+  snowPreset: SnowPreset;
+  runsByTrail?: readonly number[];
   lines: readonly LiftLine[];
   paths?: readonly (readonly XZ[])[];
   pathWidths?: readonly (readonly number[] | undefined)[];
@@ -149,12 +134,10 @@ export function Terrain({
 }) {
   const geometry = useMemo(() => {
     const g = buildGeometry(lowDetail);
-    // Weight for the build-mode dimming of land outside the lease.
     const pos = g.attributes.position;
     const outside = new Float32Array(pos.count);
     for (let i = 0; i < pos.count; i++) outside[i] = outsideWeight({ x: pos.getX(i), z: pos.getZ(i) });
     g.setAttribute("aOut", new THREE.BufferAttribute(outside, 1));
-    // Real pitch at each vertex, for the slope layer. Computed once, so a layer switch rebuilds nothing.
     const pitch = new Float32Array(pos.count);
     const factor = realGradeFactor();
     for (let i = 0; i < pos.count; i++) pitch[i] = TERRAIN.grade(pos.getX(i), pos.getZ(i)) * factor;
@@ -169,7 +152,6 @@ export function Terrain({
   const pathKey = paths?.map((p, i) => `${shapeKey(p)}:${shapeKey(pathWidths?.[i])}`).join("|") ?? "";
   const forestKey = forestPaths?.map(shapeKey).join("|") ?? "";
   const canGrow = useMemo(() => forestMask({ lines, paths: forestPaths }),
-    // Keys reflect the world-space lift and forest path geometry.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [lineKey, forestKey],
   );
@@ -183,7 +165,7 @@ export function Terrain({
         out.push(pathInfluence(path, positions, undefined, undefined, undefined, pathWidths?.[i]));
       } else if (path) {
         const count = positions.length / 3;
-        out.push({ w: new Float32Array(count), t: new Float32Array(count) });
+        out.push({ w: new Float32Array(count), t: new Float32Array(count), u: new Float32Array(count) });
       } else if (lines[i]) {
         out.push(trailInfluence(lines[i], positions));
       } else if (lines[0]) {
@@ -191,21 +173,57 @@ export function Terrain({
       }
     }
     return out;
-    // paths/lines from closure; pathKey and lineKey capture geometry changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geometry, lineKey, pathKey, trails.length]);
 
-  // Repaints when snow or the clearings change. The camera plays no part.
   useLayoutEffect(() => {
-    paint(geometry, q, d, trails, influence, canGrow);
-  }, [geometry, q, d, trails, influence, canGrow]);
+    paint(geometry, q, d, canGrow);
+  }, [geometry, q, d, canGrow]);
 
-  const material = useMemo(() => patchOverlay(patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true }))), []);
+  useLayoutEffect(() => {
+    const count = geometry.attributes.position.count;
+    const { aTrail, aT, aU, aW } = bakeSnowAttributes(influence, count);
+    geometry.setAttribute("aTrail", new THREE.BufferAttribute(aTrail, 1));
+    geometry.setAttribute("aT", new THREE.BufferAttribute(aT, 1));
+    geometry.setAttribute("aU", new THREE.BufferAttribute(aU, 1));
+    geometry.setAttribute("aW", new THREE.BufferAttribute(aW, 1));
+  }, [geometry, influence]);
+
+  const snowTex = useMemo(() => {
+    const data = snowTextureBytes(trails, groomed ?? [], snowPreset);
+    const tex = new THREE.DataTexture(
+      data,
+      SNOW_TEX_SEGMENTS,
+      SNOW_TEX_TRAILS,
+      THREE.RGBAFormat,
+      THREE.UnsignedByteType,
+    );
+    tex.magFilter = THREE.LinearFilter;
+    tex.minFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }, [trails, groomed, snowPreset]);
+
+  useLayoutEffect(() => {
+    snowUniforms.uSnow.value = snowTex;
+    snowUniforms.uTrailCount.value = Math.min(trails.length, SNOW_TEX_TRAILS);
+    const style = groomStyle(snowPreset);
+    snowUniforms.uGroomStrength.value = style.strength;
+    snowUniforms.uStripePitch.value = style.pitch;
+    snowUniforms.uWear.value.set(snowWearByTrail(runsByTrail ?? []));
+  }, [snowTex, trails.length, snowPreset, runsByTrail]);
+
+  const material = useMemo(
+    () => patchOverlay(patchLeaseDim(patchSnowMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })))),
+    [],
+  );
+
+  useFrame(() => syncSnowNightUniform());
+
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
+  useEffect(() => () => snowTex.dispose(), [snowTex]);
 
-  // Receives only: the hill barely self-shadows at this sun angle, and casting
-  // cost ~37k triangles per frame.
   return (
     <mesh geometry={geometry} material={material} receiveShadow />
   );
