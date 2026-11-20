@@ -4,6 +4,7 @@ import type { BedMood, SoundId } from "./synth";
 export type ManifestEntry = {
   id: string;
   file?: string;
+  /** Encoded file size. Zero reserves a filename for a clip that has yet to be shipped. */
   bytes: number;
   loop?: boolean;
   loopStart?: number;

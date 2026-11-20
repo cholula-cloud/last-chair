@@ -74,7 +74,7 @@ export function createSampleLibrary(basePath: string) {
     await Promise.all(
       ids.map(async (id) => {
         const entry = manifestEntry(id);
-        if (!entry?.file || buffers.has(id)) return;
+        if (!entry?.file || entry.bytes <= 0 || buffers.has(id)) return;
         const buffer = await fetchDecode(ctx, audioUrl(basePath, entry.file));
         if (buffer) buffers.set(id, buffer);
       }),

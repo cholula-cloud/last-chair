@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AUDIO_MANIFEST, BED_MANIFEST_ID, EFFECT_MANIFEST_ID, MAX_AUDIO_BYTES, validateManifest, type ManifestEntry } from "./manifest";
@@ -21,17 +21,12 @@ describe("audio manifest", () => {
     expect(total).toBeLessThanOrEqual(MAX_AUDIO_BYTES);
   });
 
-  it("records on-disk size when a clip is present", () => {
+  it("records the on-disk size of each clip and uses zero for missing files", () => {
     for (const entry of AUDIO_MANIFEST.sounds as ManifestEntry[]) {
       if (!entry.file) continue;
       const path = join(PUBLIC_AUDIO, entry.file);
-      try {
-        const bytes = statSync(path).size;
-        if (entry.bytes > 0) expect(bytes).toBe(entry.bytes);
-        expect(bytes).toBeLessThanOrEqual(MAX_AUDIO_BYTES);
-      } catch {
-        expect(entry.bytes).toBe(0);
-      }
+      const bytes = existsSync(path) ? statSync(path).size : 0;
+      expect(bytes).toBe(entry.bytes);
     }
   });
 
