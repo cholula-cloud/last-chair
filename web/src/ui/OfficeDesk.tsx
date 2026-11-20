@@ -18,7 +18,8 @@ import { outlookFor } from "@/game/weather";
 import { Forecast } from "@/ui/NightRecapSheet";
 import { closeOffice } from "@/ui/officeStore";
 import { requestFocus } from "@/ui/placementDraft";
-import { CheckIcon, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
+import { CheckIcon, MountainMoonIcon, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
+import { useOffice } from "@/ui/officeStore";
 import { SectionHeading, tidy } from "@/ui/kit/parts";
 import { RadioCard } from "@/ui/kit/RadioCard";
 
@@ -123,6 +124,25 @@ export function DeskTab() {
           </li>
         ))}
       </ul>
+
+      <SectionHeading>End of day</SectionHeading>
+      <section aria-label="End of day" className="panel flex flex-col gap-2 px-4 py-3">
+        <p className="text-[0.95rem] font-bold leading-snug">
+          Close the hill to run the rest of today through 4 PM — queues, runs, and guest mood play out the same as if you let the clock run.
+        </p>
+        <button
+          type="button"
+          disabled={openingStep(state) !== null}
+          onClick={() => {
+            useOffice.setState({ open: false, resumeOnClose: false });
+            useGameStore.getState().skipToClose();
+          }}
+          className="key key-solid press flex min-h-12 items-center justify-center gap-2 text-[1rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
+        >
+          <MountainMoonIcon size={22} />
+          Close hill
+        </button>
+      </section>
 
       <SectionHeading>Tomorrow</SectionHeading>
       <section aria-label="Forecast" className="panel px-4 py-3">

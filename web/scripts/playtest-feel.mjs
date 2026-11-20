@@ -76,6 +76,7 @@ try {
       await tap("Start lodge upgrade");
       await tap("Close build sheet");
     }
+    await tap("Office");
     await tap("Close hill");
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
     const night = await renderedHill(page);

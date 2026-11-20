@@ -62,6 +62,7 @@ try {
     await press("Layers");
     const daytimeLayers = page.getByRole("group", { name: "Map layers" });
     await daytimeLayers.getByRole("button", { name: "Snow depth", exact: true }).tap();
+    await press("Office");
     await press("Close hill");
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
     await page.locator('section[data-state="open"]').waitFor();

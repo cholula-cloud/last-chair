@@ -7,6 +7,7 @@
 
 import { LAYERS as LABELS, type MapLayer, type OpsLayer, type SnowLayer } from "./mapLayers";
 import { opsReadout } from "./opsOverlay";
+import { trailReadout } from "./trailsOverlay";
 import type { GameState } from "./state";
 import { onLease } from "./lease";
 import { MAX_PAINTED_PITCH } from "./paintedTrail";
@@ -52,6 +53,10 @@ type OverlayLayer = {
   readout(at: XZ, ctx: ReadoutContext): Readout;
 } | { id: SnowLayer } | {
   id: OpsLayer;
+  legend: readonly LegendEntry[];
+  readout(at: XZ, state: GameState): Readout;
+} | {
+  id: "trails";
   legend: readonly LegendEntry[];
   readout(at: XZ, state: GameState): Readout;
 });
@@ -179,6 +184,20 @@ const LAYERS: readonly OverlayLayer[] = [
   opsLayer("crowds", 5),
   opsLayer("revenue", 6),
   opsLayer("demand", 7),
+  {
+    id: "trails",
+    label: LABELS.trails,
+    mode: 8,
+    legend: [
+      { id: "green", label: "Green", detail: "Novice runs.", color: "#2e9a5f", pattern: "dots" },
+      { id: "blue", label: "Blue", detail: "Intermediate runs.", color: "#2f78d6", pattern: "stripes" },
+      { id: "black", label: "Black", detail: "Expert runs.", color: "#3a3956", pattern: "hatch" },
+    ],
+    readout(at, state) {
+      const r = trailReadout(state, at);
+      return { headline: r.headline, chips: r.chips };
+    },
+  },
 ];
 
 export function overlayLayers(): readonly OverlayLayer[] {

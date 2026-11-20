@@ -272,6 +272,7 @@ async function opening(page, cdp, engine) {
 }
 
 async function closeHill(page) {
+  await click(page, "Office");
   await click(page, "Close hill");
   await page.getByRole("heading", { name: "Closing recap" }).waitFor({ timeout: 15000 });
   const state = (await save(page)).state;

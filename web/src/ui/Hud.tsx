@@ -17,7 +17,6 @@ import {
   GuestsIcon,
   HomeIcon,
   MoodIcon,
-  MountainMoonIcon,
   OfficeIcon,
   PauseIcon,
   PlayIcon,
@@ -262,6 +261,7 @@ export function ConditionsBoard({
   anyOnHill = true,
   expanded = false,
   onToggleExpand,
+  onMinimizeBottom,
 }: {
   avgQueue: number;
   /** False until a guest is on the hill: the queue then reads "No line yet" instead of 0.0m. */
@@ -275,6 +275,7 @@ export function ConditionsBoard({
   moodPulseTick?: number;
   expanded?: boolean;
   onToggleExpand?: () => void;
+  onMinimizeBottom?: () => void;
 }) {
   const queueTone: Tone =
     avgQueue < 3 ? "good" : avgQueue < 5 ? "watch" : "bad";
@@ -324,7 +325,22 @@ export function ConditionsBoard({
       className="panel hud-surface pointer-events-auto w-full [--lift:3px]"
     >
       <div className="flex items-center">
-        <div className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5">
+        <div
+          className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5"
+          role={!expanded && onToggleExpand ? "button" : undefined}
+          tabIndex={!expanded && onToggleExpand ? 0 : undefined}
+          onClick={!expanded && onToggleExpand ? onToggleExpand : undefined}
+          onKeyDown={
+            !expanded && onToggleExpand
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggleExpand();
+                  }
+                }
+              : undefined
+          }
+        >
           {items.map((c) => (
             <div
               key={c.key === "mood" ? `${c.key}-${moodPulseTick}` : c.key}
@@ -370,15 +386,15 @@ export function ConditionsBoard({
             </div>
           ))}
         </div>
-        {onToggleExpand && (
+        {(onToggleExpand || onMinimizeBottom) && (
           <button
             type="button"
-            onClick={onToggleExpand}
+            onClick={expanded ? onToggleExpand : onMinimizeBottom}
             aria-expanded={expanded}
-            aria-label={expanded ? "Collapse conditions" : "Expand conditions"}
+            aria-label={expanded ? "Collapse conditions" : "Minimize hill controls"}
             className="flex size-10 shrink-0 items-center justify-center border-l-2 border-snow-2 text-ink-soft transition-colors hover:text-ink"
           >
-            {expanded ? <ChevronDownIcon size={16} /> : <ChevronUpIcon size={16} />}
+            <ChevronDownIcon size={16} />
           </button>
         )}
       </div>
@@ -426,6 +442,21 @@ export function RecenterButton({ onClick, compact = false }: { onClick: () => vo
       }`}
     >
       <RecenterIcon size={compact ? 20 : 22} />
+    </button>
+  );
+}
+
+/** Restores the conditions readout and action bar after minimizing bottom chrome. */
+export function BottomChromeRestoreButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Show hill controls"
+      className="key press pointer-events-auto flex min-h-11 items-center justify-center gap-1.5 px-3 text-xs font-extrabold [--lift:3px]"
+    >
+      <ChevronUpIcon size={16} />
+      Show controls
     </button>
   );
 }
@@ -494,14 +525,12 @@ export function LiftUndoChip({
   );
 }
 
-/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, Office, and the barn-red Close hill. */
+/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and Office. */
 export function ActionBar({
   buildActive,
   onBuild,
   onGuests,
   onOffice,
-  onCloseHill,
-  openingBlocked = false,
   confirmMenu = false,
   onConfirmMenuChange,
   onLeave,
@@ -511,8 +540,6 @@ export function ActionBar({
   onBuild: () => void;
   onGuests: () => void;
   onOffice: () => void;
-  onCloseHill: () => void;
-  openingBlocked?: boolean;
   confirmMenu?: boolean;
   onConfirmMenuChange?: (open: boolean) => void;
   /** Saves and returns to the title screen. */
@@ -600,15 +627,6 @@ export function ActionBar({
       />
       <BarButton icon={<GuestsIcon size={18} />} label="Guests" onClick={onGuests} />
       <BarButton icon={<OfficeIcon size={18} />} label="Office" onClick={onOffice} barId="office" />
-      <button
-        type="button"
-        onClick={onCloseHill}
-        disabled={openingBlocked}
-        className="key key-solid press flex h-12 flex-[1.3] flex-col items-center justify-center gap-0.5 px-2 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px] sm:h-[52px] sm:px-3 sm:[--lift:4px]"
-      >
-        <MountainMoonIcon size={19} />
-        <span className="display whitespace-nowrap text-[0.95rem] min-[400px]:text-[1.08rem] sm:text-[1.15rem]">Close hill</span>
-      </button>
     </nav>
   );
 }

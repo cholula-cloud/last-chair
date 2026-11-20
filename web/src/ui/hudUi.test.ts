@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   setHudHidden,
+  toggleBottomChromeMinimized,
   toggleConditionsExpanded,
   toggleHudHidden,
   useHudUi,
@@ -8,11 +9,15 @@ import {
 
 describe("useHudUi", () => {
   beforeEach(() => {
-    useHudUi.setState({ hudHidden: false, conditionsExpanded: false });
+    useHudUi.setState({ hudHidden: false, conditionsExpanded: false, bottomChromeMinimized: false });
   });
 
   it("defaults to visible HUD and collapsed conditions", () => {
-    expect(useHudUi.getState()).toEqual({ hudHidden: false, conditionsExpanded: false });
+    expect(useHudUi.getState()).toEqual({
+      hudHidden: false,
+      conditionsExpanded: false,
+      bottomChromeMinimized: false,
+    });
   });
 
   describe("toggleHudHidden", () => {
@@ -21,6 +26,14 @@ describe("useHudUi", () => {
       expect(useHudUi.getState().hudHidden).toBe(true);
       toggleHudHidden();
       expect(useHudUi.getState().hudHidden).toBe(false);
+    });
+
+    it("clears bottomChromeMinimized when showing HUD again", () => {
+      useHudUi.setState({ bottomChromeMinimized: true });
+      toggleHudHidden();
+      expect(useHudUi.getState().hudHidden).toBe(true);
+      toggleHudHidden();
+      expect(useHudUi.getState()).toMatchObject({ hudHidden: false, bottomChromeMinimized: false });
     });
   });
 
@@ -41,4 +54,14 @@ describe("useHudUi", () => {
       expect(useHudUi.getState().conditionsExpanded).toBe(false);
     });
   });
+
+  describe("toggleBottomChromeMinimized", () => {
+    it("toggles bottomChromeMinimized", () => {
+      toggleBottomChromeMinimized();
+      expect(useHudUi.getState().bottomChromeMinimized).toBe(true);
+      toggleBottomChromeMinimized();
+      expect(useHudUi.getState().bottomChromeMinimized).toBe(false);
+    });
+  });
+
 });

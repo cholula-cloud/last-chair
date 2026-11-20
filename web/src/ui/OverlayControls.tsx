@@ -17,7 +17,7 @@ import {
   isPainting,
   pickLayer,
   setProbe,
-  toggleStrip,
+  toggleLayersRail,
   turnLayerOff,
   useActiveLayer,
 } from "@/ui/overlayUi";
@@ -56,47 +56,67 @@ function LegendChip({ entry, compact }: { entry: LegendEntry; compact?: boolean 
 }
 
 /** Legend chips for the layer on the map, with a 44 px Off key. */
-export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
+export function OverlayLegend({
+  allowOff = true,
+  className = "",
+  docked = false,
+}: {
+  allowOff?: boolean;
+  className?: string;
+  /** Bottom dock: full width, centered, no float over the mountain. */
+  docked?: boolean;
+}) {
   const layer = getOverlayLayer(useActiveLayer());
   const placing = usePlacementDraft((s) => s.active);
   const wear = useLayers((s) => s.wear);
   const gunView = useLayers((s) => s.gunView);
   const ops = layer?.id === "crowds" || layer?.id === "revenue" || layer?.id === "demand";
-  if (!layer || (layer.id !== "slope" && !placing && !ops)) return null;
+  const trails = layer?.id === "trails";
+  if (!layer || (layer.id !== "slope" && !placing && !ops && !trails)) return null;
+  if (docked && layer.id !== "slope" && !ops && !trails) return null;
+  const rootClass = docked
+    ? "pointer-events-auto panel hud-surface flex w-full flex-wrap items-center justify-center gap-2 px-3 py-2"
+    : `pointer-events-none flex max-w-full items-center justify-end gap-1.5 ${className}`;
   return (
-    <div className="pointer-events-none flex max-w-full items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
+    <div className={rootClass} data-overlay-legend={layer.id}>
       {layer.id === "slope" ? (
         <ul
-          className="chip pointer-events-auto flex min-h-9 flex-nowrap items-center gap-2 px-2.5 py-1"
+          className={
+            docked
+              ? "flex flex-wrap items-center justify-center gap-2"
+              : "chip pointer-events-auto flex min-h-9 flex-nowrap items-center gap-2 px-2.5 py-1"
+          }
           aria-label={`${layer.label} legend`}
         >
-          {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} compact />)}
+          {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} compact={!docked} />)}
         </ul>
-      ) : layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" ? (
+      ) : layer.id === "trails" || layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" ? (
         <ul className="chip pointer-events-auto flex min-h-9 flex-wrap items-center gap-2 px-2.5 py-1"
           aria-label={`${layer.label} legend`}>
           {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
         </ul>
       ) : (
-        <div className="panel min-w-0 flex-1 p-1.5">
+        <div className={docked ? "min-w-0 flex-1" : "panel min-w-0 flex-1 p-1.5"}>
           <LayerLegend layer={layer.id} wear={layer.id === "conditions" && wear} gunView={gunView} />
         </div>
       )}
-      {allowOff && <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
-        className="key key-sm press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
-        <CloseIcon size={18} />
-      </button>}
+      {allowOff && !docked && (
+        <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
+          className="key key-sm press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
+          <CloseIcon size={18} />
+        </button>
+      )}
     </div>
   );
 }
 
 /** The layer strip: one button per implemented layer and Off. */
-export function LayerStrip({ allowOff = true }: { allowOff?: boolean }) {
+export function LayerStrip({ allowOff = true, className = "" }: { allowOff?: boolean; className?: string }) {
   const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   if (!open) return null;
   return (
-    <div className="pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Map layers" data-layer-strip>
+    <div className={`pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1 ${className}`} role="group" aria-label="Map layers" data-layer-strip>
       {overlayLayers().map((layer) => (
         <button key={layer.id} type="button" aria-pressed={shown === layer.id} onClick={() => pickLayer(layer.id, allowOff)}
           className="key press min-h-11 shrink-0 px-4 text-sm font-extrabold">
@@ -119,7 +139,7 @@ export function LayersButton({ compact = false }: { compact?: boolean }) {
       type="button"
       aria-pressed={open || shown !== null}
       aria-label="Layers"
-      onClick={toggleStrip}
+      onClick={toggleLayersRail}
       className={
         compact
           ? "key press pointer-events-auto flex size-11 shrink-0 items-center justify-center gap-1.5 !rounded-full [--lift:3px] md:w-auto md:!rounded-[var(--r-key)] md:px-3 md:text-xs md:font-extrabold"
@@ -146,7 +166,7 @@ export function ReadoutCard() {
   const readout = useMemo(() => {
     if (!probe || !layer) return null;
     if (layer.id === "slope") return layer.readout(probe, { terrain: TERRAIN });
-    if (layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand") {
+    if (layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" || layer.id === "trails") {
       return layer.readout(probe, game);
     }
     return null;
@@ -170,12 +190,42 @@ export function ReadoutCard() {
   );
 }
 
-export function SnowLayerControls() {
+export function SnowLayerControls({ docked = false }: { docked?: boolean }) {
   const layer = useActiveLayer();
-  if (!layer || layer === "slope" || layer === "crowds" || layer === "revenue" || layer === "demand") {
+  if (
+    !layer ||
+    layer === "slope" ||
+    layer === "crowds" ||
+    layer === "revenue" ||
+    layer === "demand" ||
+    layer === "trails"
+  ) {
     return null;
   }
+  if (docked) {
+    return (
+      <div className="pointer-events-auto w-full max-h-[40dvh] overflow-y-auto">
+        <LayerPanel layer={layer} />
+      </div>
+    );
+  }
   return <LayerPanel layer={layer} />;
+}
+
+/** Layer strip, color key, and snow controls in the bottom thumb zone instead of over the map. */
+export function LayerBottomDock() {
+  const open = useLayers((s) => s.stripOpen);
+  if (!open) return null;
+  return (
+    <div
+      className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]"
+      data-layer-dock="true"
+    >
+      <LayerStrip allowOff className="w-full justify-center" />
+      <OverlayLegend allowOff docked />
+      <SnowLayerControls docked />
+    </div>
+  );
 }
 
 /** Keeps overlay state honest: the automatic slope layer resets when painting ends, a vanished layer drops its readout. */

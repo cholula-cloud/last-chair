@@ -12,6 +12,7 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import type { OpsLayer } from "@/game/mapLayers";
 import { setProbe, useActiveLayer } from "@/ui/overlayUi";
 import { OpsMapOverlay } from "./OpsMapOverlay";
+import { TrailsMapOverlay } from "./TrailsMapOverlay";
 import { exceedsTapSlop } from "./cameraControls";
 import { buildLeaseMask } from "./overlayMask";
 import { PALETTE } from "./palette";
@@ -137,9 +138,11 @@ export function OverlayScene() {
   useOverlayUniforms(mode);
   useProbe(mode !== 0 && !building);
   const ops = layerId === "crowds" || layerId === "revenue" || layerId === "demand";
+  const trails = layerId === "trails";
   return <>
-    {layerId && layerId !== "slope" && !ops && <SnowLayerTexture layer={layerId}/>}
+    {layerId && layerId !== "slope" && !ops && !trails && <SnowLayerTexture layer={layerId}/>}
     {layerId && ops && <OpsMapOverlay layer={layerId as OpsLayer} />}
+    {trails && <TrailsMapOverlay />}
     {mode !== 0 && !building && <ProbeMarker />}
   </>;
 }
