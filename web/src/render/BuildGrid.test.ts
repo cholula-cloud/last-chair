@@ -3,7 +3,7 @@ import { onLease } from "@/game/lease";
 import { createInitialState } from "@/game/state";
 import { TERRAIN } from "@/game/terrain";
 import { liftLength, rulesFor } from "@/game/descent";
-import { clearOfCable, gridDots, liftTopCells, reachArc, reachOf, snapBottom, LIFT_BOTTOM_STEP, LIFT_GUIDE_STEP } from "./BuildGrid";
+import { clearOfCable, gridDots, liftTopCells, reachArc, reachOf, snapBottom, LIFT_BOTTOM_STEP, LIFT_GUIDE_STEP } from "./buildGridModel";
 
 const state = createInitialState();
 const rules = { lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier };

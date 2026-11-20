@@ -15,7 +15,7 @@ import {
   PLOT_W,
   pickXLabels,
   shortMoney,
-} from "./officeCharts";
+} from "./officeChartKit";
 
 const TERM_LABELS: Record<(typeof SAT_TERM_KEYS)[number], string> = {
   queue: "Lift lines",

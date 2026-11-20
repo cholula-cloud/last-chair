@@ -19,7 +19,7 @@ export function SnowLayerTexture({ layer }: { layer: SnowLayer }) {
   const wear = useLayers((s) => s.wear),
     strong = useSettings((s) => s.patternAids);
   const gunView = useLayers((s) => s.gunView);
-  const reduced=useReducedMotion();
+  const reduced = useReducedMotion();
   const texture = useMemo(() => {
     const out = new THREE.CanvasTexture(
       drawLayer(state, model, layer, wear, strong, gunView),
