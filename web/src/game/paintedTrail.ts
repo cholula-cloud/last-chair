@@ -389,7 +389,7 @@ export function previewPaintedTrail(
   state: PaintState,
   strokes: readonly PaintStroke[],
   terrain: Terrain = TERRAIN,
-  connectCrossings = true,
+  connectCrossings = false,
 ): PaintedTrailPreview {
   const nonempty: PaintStroke[] = [];
   let authoredPoints = 0;
@@ -520,7 +520,7 @@ export function previewPaintedTrail(
   const links: TrailLinks = {};
   if (enterByTrail) links.start = { trailIndex: start.index, from: 0, to: start.fraction, at: start.at };
   if (finish) links.end = { trailIndex: finish.index, from: 1, to: finish.fraction, at: finish.at };
-  if (!reason && connectCrossings) {
+  if (!reason) {
     const crossings = findCrossings(path, state, terrain);
     if (crossings.length) links.crossings = crossings;
   }

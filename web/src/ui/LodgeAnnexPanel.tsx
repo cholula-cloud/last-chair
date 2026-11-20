@@ -5,7 +5,7 @@ import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { venueName } from "@/game/assetNames";
-import { startLodgePadPlacement } from "@/ui/placementDraft";
+import { startLodgePadPlacement } from "@/ui/placementDraftActions";
 const BASE_ATTACH: AssetId[] = ["warming_hut", "cafe", "shop", "rentals", "ski_school"];
 
 function padLabel(index: number): string {
