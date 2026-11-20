@@ -191,7 +191,9 @@ function CreditsView({ onBack }: { onBack: () => void }) {
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
       <p className="font-bold leading-snug">Built with Next.js, React Three Fiber, three.js and zustand.</p>
       <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
-      <p className="font-bold leading-snug">The wind, sound effects and radio sting are all synthesized in your browser.</p>
+      <p className="font-bold leading-snug">
+        Wind and effects are synthesized in your browser when recorded clips are not installed; optional clips may be generated with ElevenLabs on free credits.
+      </p>
     </SubView>
   );
 }

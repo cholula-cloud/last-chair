@@ -224,12 +224,13 @@ Towers stretch vertically so their sheaves meet the span-cleared cable height; t
 
 ---
 
-## Audio direction (stub)
+## Audio direction
 
 - **Story:** Route 100 Radio VO/text first; music bed second.
 - **Sandbox:** same ambience, no story stingers.
 - Reference vibe: acoustic + light electronic, not epic orchestra.
-- **Implemented (row Q3):** procedural Web Audio with effects, ambience and voice buses under one master; a wind bed, a UI tap, a build thunk, a three-note radio sting and a tier-up chime. No files ship. Sound starts on the first gesture and stops when the tab hides.
+- **Runtime (row Q3 + 32):** Web Audio with effects, ambience and voice buses under one master. Optional AAC clips in `web/public/audio/` (manifest in `audio-manifest.json`) play when present; otherwise procedural synth covers wind, UI tap, build thunk, radio sting and tier-up chime. Clips are generated on ElevenLabs free-tier credits only (`tools/audio/elevenlabs.mjs --estimate` first, one take each). Licence and source for every file live in the manifest; non-CC0 authors belong on the credits screen.
+- **Gesture rules:** sound starts on the first `pointerup`, `touchend`, `click` or `keydown`; iOS uses `navigator.audioSession.type = "ambient"` when available; the tab hidden suspends the context. UI effects load after unlock; ambient beds load after `data-scene-ready`.
 - **Day tint (row Q3):** light is cool at opening, neutral at midday and warm by closing, at most 12 percent per channel.
 
 ---
