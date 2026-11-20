@@ -5,7 +5,7 @@ import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import type { TrailRun } from "./trails";
 import type { SnowPreset } from "./types";
 
-export type SnowGun = { at: XZ; builtDay: number; paid: number };
+export type SnowGun = { at: XZ; builtDay: number; paid: number; name?: string };
 export type GunPlacementReason = "off_map" | "off_lease" | "out_of_pipe_reach" | "max_guns" | "gun_here";
 
 export const GUN_COST = ASSET_CATALOG.snow_guns.cost;

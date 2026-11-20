@@ -118,10 +118,10 @@ function backToDraft() {
   usePlacementDraft.setState({ review: false });
 }
 
-/** Non-blocking: a run that ends away from the lift is legal; guests just walk home from it. */
+/** A lift loading area can be a short walk from the village runout. */
 export function walkBackNote({ ft, minutes }: { ft: number; minutes: number }) {
   const min = Math.max(1, Math.round(minutes));
-  return `Ends ${Math.round(ft).toLocaleString("en-US")} ft from the base. Guests will hoof it back, about ${min} min.`;
+  return `The lift is a ${Math.round(ft).toLocaleString("en-US")} ft walk from the runout, about ${min} min.`;
 }
 
 function TrailBar() {
@@ -132,8 +132,8 @@ function TrailBar() {
     [draft.activeStroke, draft.strokes],
   );
   const preview = useMemo(
-    () => strokes.length > 0 ? checkPaint(state, strokes, draft.glade) : null,
-    [state, strokes, draft.glade],
+    () => strokes.length > 0 ? checkPaint(state, strokes, draft.glade, draft.connectCrossings) : null,
+    [state, strokes, draft.glade, draft.connectCrossings],
   );
   const guests = preview ? Object.values(PERSONAS)
     .filter(({ id }) => !isOverSkill(id, preview.difficulty))
@@ -153,16 +153,19 @@ function TrailBar() {
           { label: "Length", value: feet(preview.lengthFt) },
           { label: "Vertical", value: feet(preview.verticalFt) },
           { label: "Area", value: acres(preview.acres) },
+          ...(preview.links?.start ? [{ label: "Starts on", value: state.trails[preview.links.start.trailIndex].name }] : []),
+          ...(preview.links?.end ? [{ label: "Joins", value: state.trails[preview.links.end.trailIndex].name }] : []),
+          ...(preview.links?.crossings?.length ? [{ label: "Trail junctions", value: String(preview.links.crossings.length) }] : []),
           ...(preview.walkBack ? [{ label: "Walk back", value: walkBackNote(preview.walkBack) }] : []),
           { label: "Who can ski", value: guests || "Nobody yet" },
           { label: "Lodge tier", value: "1" },
-          ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade)) }] : []),
+          ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade, draft.connectCrossings)) }] : []),
         ]}
         confirmLabel={preview.deleteTrail ? "Close trail" : preview.trailIndex !== null ? "Apply changes" : preview.glade ? "Mark glade" : "Cut trail"}
         problem={preview.reason}
         onCancel={backToDraft}
         onConfirm={() => {
-          state.commitPaint(strokes, draft.glade);
+          state.commitPaint(strokes, draft.glade, draft.connectCrossings);
           if (useGameStore.getState().trails !== state.trails) {
             buildConfirmed(preview.deleteTrail ? "Trail closed." : preview.trailIndex !== null ? "Trail reworked." : preview.glade ? "Glade marked. The trees stay." : "That’s a trail. Somebody’s going to love it.");
             finishPlacement();
@@ -225,11 +228,21 @@ function TrailBar() {
 
   return (
     <div key="full" className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]" data-trail-panel="full">
-      <div className="flex items-center justify-between gap-2">
-        {stats ?? <p className="min-w-0 flex-1 truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+        <div className={`min-w-0 flex-1 ${problem ? "short:hidden" : ""}`}>
+          {stats ?? <p className="truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
+        </div>
+        {/* On short screens, keep the continuation ring exposed by sharing the stats row. */}
+        {problem && <div className="order-last w-full min-w-0 short:order-none short:w-auto short:flex-1">{problem}</div>}
         <MinimizeButton />
       </div>
-      {problem}
+      {state.trails.some((trail) => trail.open) && preview?.trailIndex == null && (
+        <label className="flex min-h-11 w-fit items-center gap-2 px-0.5 text-xs font-extrabold text-ink">
+          <input type="checkbox" checked={draft.connectCrossings}
+            onChange={(event) => usePlacementDraft.setState({ connectCrossings: event.currentTarget.checked })} />
+          Connect trail crossings
+        </label>
+      )}
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-stretch gap-1.5">
           <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
@@ -286,7 +299,7 @@ function TrailBar() {
               onClick={undoStroke}
             >
               <UndoIcon size={14} />
-              <span className="sr-only sm:not-sr-only">Undo</span>
+              <span className="sr-only">Undo</span>
             </button>
             <button
               type="button"
@@ -295,7 +308,7 @@ function TrailBar() {
               onClick={redoStroke}
             >
               <RedoIcon size={14} />
-              <span className="sr-only sm:not-sr-only">Redo</span>
+              <span className="sr-only">Redo</span>
             </button>
           </div>
           <DraftActions canReview={canReview} />

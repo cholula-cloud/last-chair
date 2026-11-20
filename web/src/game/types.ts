@@ -48,6 +48,8 @@ export type StoryBeatId =
   | "summit_link"
   | "winter_review";
 
+export type SkiLeg = { trailIndex: number; from: number; to: number };
+
 export type Guest = {
   id: string;
   label: string;
@@ -67,6 +69,8 @@ export type Guest = {
   liftIndex?: number;
   /** Index into `GameState.trails` for the run in progress (set when unloading). */
   trailIndex?: number;
+  /** Multi-trail descent selected at unloading. The guest's progress is local to its current leg. */
+  skiRoute?: { legs: SkiLeg[]; current: number; snowFt: number; distanceFt: number };
   /** Game clock minute at which the guest joined the lift queue. */
   joinedQueueAtMin?: number;
   /** Game clock minute at which the guest was dispatched onto the lift. */
@@ -114,7 +118,10 @@ export type DayStats = {
   /** Longest measured wait of any dispatched guest today, in game minutes. */
   peakWaitMin: number;
   byLift: { rides: number; waitSumMin: number }[];
+  /** Descents that used each trail. A single descent may use several trails. */
   runsByTrail: number[];
+  /** Full-pass equivalents by snow segment for trails that were skied in portions. */
+  segmentRunsByTrail?: (number[] | null)[];
   venueRevenue: Partial<Record<import("./base").AssetId, number>>;
   refuels: number;
   balked: number;

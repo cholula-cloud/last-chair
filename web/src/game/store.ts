@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
 import { migrate } from "./migrations";
 import type { AssetId } from "./base";
+import type { AssetTarget } from "./assetNames";
 import type { PaintStroke } from "./paintedTrail";
 import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
@@ -47,8 +48,9 @@ type GameActions = {
   placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
   undoLift: () => void;
   closeLift: (index: number) => void;
-  commitPaint: (strokes: readonly PaintStroke[], glade?: boolean) => void;
+  commitPaint: (strokes: readonly PaintStroke[], glade?: boolean, connectCrossings?: boolean) => void;
   removeAsset: (index: number) => void;
+  renameAsset: (target: AssetTarget, name: string) => void;
   moveAsset: (index: number, at: XZ) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
   placeGun: (at: XZ) => void;
@@ -274,6 +276,7 @@ export const useGameStore = create<GameStore>()(
         closeLift: action("closeLift"),
         commitPaint: action("commitPaint"),
         removeAsset: action("removeAsset"),
+        renameAsset: action("renameAsset"),
         moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
         placeGun: action("placeGun"),

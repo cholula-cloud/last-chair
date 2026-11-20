@@ -50,22 +50,22 @@ function signTexture(name: string, difficulty: TrailRun["difficulty"], glyph: st
   return texture;
 }
 
-export function TrailSign({ run, lane }: { run: TrailRun; lane: number }) {
+export function TrailSign({ run, lane, index }: { run: TrailRun; lane: number; index: number }) {
   const glyph = useGameStore(state => {
     const lift = state.lifts[run.liftIndex];
     if (lift && isWindHeld(lift.type, weatherForDay(state).wind, state.clockMin, state.talentsOwned)) return MARKS.hold.glyph;
     if (!run.snow.length) return "";
     const i = run.snow.reduce((worst, segment, index) =>
       Math.min(segment.quality, segment.coverage) < Math.min(run.snow[worst].quality, run.snow[worst].coverage) ? index : worst, 0);
-    const index = state.trails.indexOf(run);
     return MARKS[segmentCondition(run.snow[i], !!run.groomed?.[i], state.weather, state.clockMin,
       run.elevations[i], state.dayStats.runsByTrail[index] ?? 0)].glyph;
   });
   const texture = useMemo(() => signTexture(run.name, run.difficulty, glyph), [run.name, run.difficulty, glyph]);
   useEffect(() => () => texture?.dispose(), [texture]);
   const start = run.path[0];
+  if (!start || !texture) return null;
   const next = run.path.find((point) => Math.hypot(point.x - start.x, point.z - start.z) > 0.7);
-  if (!start || !next || !texture) return null;
+  if (!next) return null;
   const length = Math.hypot(next.x - start.x, next.z - start.z);
   const dx = (next.x - start.x) / length;
   const dz = (next.z - start.z) / length;
@@ -73,7 +73,7 @@ export function TrailSign({ run, lane }: { run: TrailRun; lane: number }) {
   const x = start.x + dx * (0.8 + 0.5 * lane) + dz * side;
   const z = start.z + dz * (0.8 + 0.5 * lane) - dx * side;
   return (
-    <group position={[x, TERRAIN.height(x, z), z]} name={`${run.name} trail sign`}>
+    <group position={[x, TERRAIN.height(x, z), z]} name={`${run.name} trail sign`} userData={{ asset: { kind: "trail", index } }}>
       <mesh position={[0, 0.52, 0]}>
         <boxGeometry args={[0.11, 1.04, 0.11]} />
         <meshStandardMaterial color="#72523a" {...OVERLAY_DIM} />

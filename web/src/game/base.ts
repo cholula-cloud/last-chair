@@ -8,7 +8,7 @@ import { BUILDING_COSTS, BUILDING_LABELS } from "./types";
 export type { LodgeTier } from "./site";
 export type LodgeUpgrade = { toTier: 2 | 3; nightsRemaining: number };
 export type AssetId = "warming_hut" | "cafe" | "shop" | "snow_guns" | "rentals" | "ski_school";
-export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; attachPad?: number; purchase?: { day: number; minute: number; price: number } };
+export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; name?: string; attachPad?: number; purchase?: { day: number; minute: number; price: number } };
 
 type Footprint = { width: number; depth: number };
 type Asset = {

@@ -80,6 +80,7 @@ export function Sheet({
   children,
   z = "z-40",
   wide = false,
+  compact = false,
   aside,
   titleHidden = false,
   mood,
@@ -98,6 +99,8 @@ export function Sheet({
   z?: string;
   /** Widen on short landscape screens so the body can use two columns. */
   wide?: boolean;
+  /** Reduce the maximum width for a short detail sheet. */
+  compact?: boolean;
   /**
    * Second column on short landscape screens, beside `children`, with the footer pinned under it;
    * each column scrolls on its own. On portrait it simply follows `children` in the one scrolling body.
@@ -207,7 +210,7 @@ export function Sheet({
         aria-modal={modal || undefined}
         aria-labelledby={titleId}
         data-mood={mood}
-        className={`sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full max-w-xl flex-col border-x-[3px] border-b-0 border-ink sm:mb-3 sm:rounded-b-sheet sm:border-b-[3px] short:mb-0 short:max-h-[calc(100dvh-2.5rem)] short:rounded-b-none short:border-b-0 ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))]" : ""} ${aside ? "short:grid short:h-[calc(100dvh-2.5rem)] short:grid-cols-2 short:grid-rows-[auto_minmax(0,1fr)_auto]" : ""}`}
+        className={`sheet pointer-events-auto relative flex max-h-[min(88dvh,820px)] w-full ${compact ? "max-w-sm" : "max-w-xl"} flex-col border-x-[3px] border-b-0 border-ink sm:mb-3 sm:rounded-b-sheet sm:border-b-[3px] short:mb-0 short:max-h-[calc(100dvh-2.5rem)] short:rounded-b-none short:border-b-0 ${wide ? "short:max-w-[min(54rem,calc(100vw-2rem))]" : ""} ${aside ? "short:grid short:h-[calc(100dvh-2.5rem)] short:grid-cols-2 short:grid-rows-[auto_minmax(0,1fr)_auto]" : ""}`}
       >
         <Ridge />
         <div

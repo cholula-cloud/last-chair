@@ -38,7 +38,7 @@ const revenue: Check = (value) => record(value) && Object.entries(value).every((
 
 function lift(value: unknown): boolean {
   if (!record(value) || !point(value.anchor) || !liftType(value.type) || !boolean(value.confirmed) ||
-      !array(string)(value.queue) || !number(value.dispatchCredit) || !optional(boolean)(value.closing) ||
+      !array(string)(value.queue) || !number(value.dispatchCredit) || !optional(boolean)(value.closing) || !optional(string)(value.name) ||
       !["builtDay", "builtAtMin", "paid"].every((key) => optional(number)(value[key]))) return false;
   const bottom = value.bottom === undefined ? TERRAIN.base : value.bottom;
   return point(bottom) && checkLiftLine({ bottom, top: value.anchor }, TERRAIN, value.type === "chair" ? "chair" : "surface",
@@ -47,12 +47,17 @@ function lift(value: unknown): boolean {
 }
 
 const cell: Check = (value) => typeof value === "string" && /^-?\d+:-?\d+$/.test(value);
+const fraction: Check = (value) => number(value) && value >= 0 && value <= 1;
+const leg = shape({ trailIndex: index, from: fraction, to: fraction });
+const connection = shape({ trailIndex: index, from: fraction, to: fraction, at: point });
 const trailShape = shape({
   liftIndex: index, name: string, path: array(point), lengthFt: number, pitch: number,
   difficulty: oneOf("green", "blue", "black"), open: boolean,
   snow: array(shape(numbers("depth", "quality", "coverage"))), elevations: array(number),
   glade: optional(boolean), widths: optional(array(number)), paidClearing: optional(array(cell)),
+  links: optional(shape({ start: optional(connection), end: optional(connection), crossings: optional(array(connection)) })),
   groomed: optional(array(boolean)), gunCovered: optional(array(boolean)), previousRuns: optional(index),
+  previousSegmentRuns: optional(array(number)),
   builtDay: optional(number), builtAtMin: optional(number), paid: optional(number),
 });
 
@@ -61,6 +66,7 @@ const guest = shape({
   persona: oneOf("first_timer", "regular", "family_pack", "race_kid"),
   ...numbers("progress", "mood", "waitMin", "waitCount", "snowSum", "energy", "runs", "targetRuns", "arriveAtMin", "stateSinceMin"),
   liftIndex: optional(index), trailIndex: optional(index), venueIndex: optional(index),
+  skiRoute: optional(shape({ legs: array(leg), current: index, snowFt: number, distanceFt: number })),
   joinedQueueAtMin: optional(number), rideStartMin: optional(number), visitMinutes: optional(number),
   refuelled: optional(boolean), rented: optional(boolean), lesson: optional(boolean), balks: optional(number),
   schoolPupil: optional(boolean), schoolLessonCompleted: optional(boolean),
@@ -103,6 +109,7 @@ const dayStats = shape({
   ...numbers("arrivals", "guestsArrived", "completedRuns", "runsPerGuest", "turnedAway", "peakOnHill", "avgQueueMin",
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
+  segmentRunsByTrail: optional(array(nullable(array(number)))),
 });
 const seasonDay = shape({
   closingReputation: optional(number),
@@ -148,9 +155,10 @@ const fields: Record<keyof PersistedState, Check> = {
   founderId: founder,
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
+  lodgeName: optional(string),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
-  assets: array(shape({ id: assetId, at: point, styleId: string, attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),
-  guns: array(shape({ at: point, builtDay: number, paid: number })),
+  assets: array(shape({ id: assetId, at: point, styleId: string, name: optional(string), attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),
+  guns: array(shape({ at: point, builtDay: number, paid: number, name: optional(string) })),
   clearedCells: array(cell),
   lifts: (value) => Array.isArray(value) && value.length <= MAX_LIFT_SLOTS && value.every(lift) &&
     value.filter((slot) => slot.confirmed).length <= MAX_LIFTS,
@@ -218,6 +226,23 @@ export function validateSave(value: unknown): string[] {
       (integer(item.dueDay) && item.dueDay > maxDueDay) ||
       (item.what === "lift" ? !integer(item.liftIndex) || item.liftIndex >= liftCount : item.liftIndex !== undefined)
     ))) errors.push("payables");
+  }
+  if (!errors.includes("trails")) {
+    const trails = value.trails as PersistedState["trails"];
+    if (trails.some(({ links }, i) => {
+      if (!links) return false;
+      const { start, end, crossings = [] } = links;
+      return Boolean((start && (start.trailIndex >= i || start.from !== 0 || start.to <= 0 || start.to >= 1)) ||
+        (end && (end.trailIndex >= i || end.from !== 1 || end.to >= 1)) ||
+        crossings.some(({ trailIndex, from, to }) => trailIndex >= i || from <= 0 || from >= 1 || to <= 0 || to >= 1));
+    })) errors.push("trails");
+    if (!errors.includes("guests") && (value.guests as PersistedState["guests"]).some(({ skiRoute, trailIndex, state }) => {
+      if (!skiRoute) return false;
+      const { legs, current, distanceFt, snowFt } = skiRoute;
+      return state !== "ski" || legs.length < 2 || current >= legs.length || trailIndex !== legs[current].trailIndex ||
+        distanceFt < 0 || snowFt < 0 ||
+        legs.some((leg) => leg.trailIndex >= trails.length || leg.from >= leg.to);
+    })) errors.push("guests");
   }
   return errors;
 }

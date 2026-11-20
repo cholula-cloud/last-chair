@@ -1,4 +1,5 @@
 import { BANKRUPTCY_MORNINGS, LOW_CASH } from "./economy";
+import { liftName } from "./assetNames";
 import { formatMoney } from "./format";
 import { demandContext, topGuestDemand } from "./guestsWant";
 import { isLiftOperational } from "./lifts";
@@ -9,7 +10,7 @@ import { readSnow } from "./snow";
 import type { GameState } from "./state";
 import { TERRAIN, type XZ } from "./terrain";
 import { snowCarriers } from "./trails";
-import { FARE_PRICES, LIFT_LABELS } from "./types";
+import { FARE_PRICES } from "./types";
 import { isWindHeld, weatherForDay, WIND_HOLD } from "./weather";
 
 /** One thing on the hill that needs the player. */
@@ -31,7 +32,7 @@ type AttentionState = Pick<
   | "snowQuality" | "mountainId"
 >;
 
-const liftLabel = (state: Pick<GameState, "lifts">, i: number) => `${LIFT_LABELS[state.lifts[i].type]} ${i + 1}`;
+const liftLabel = (state: Pick<GameState, "lifts">, i: number) => liftName(state.lifts[i], i);
 
 /**
  * What needs the player right now, most urgent first. Reads live state only and changes nothing.

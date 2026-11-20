@@ -89,6 +89,7 @@ export function useLayerSnapshot(layer: MapLayer) {
       s.phase,
       s.paused,
       s.trails.length,
+      JSON.stringify(s.trails.map((trail) => trail.name)),
       s.lifts.length,
       s.guns.length,
       time === "Now" && layer !== "slope" ? Math.floor(s.clockMin / 5) : 0,

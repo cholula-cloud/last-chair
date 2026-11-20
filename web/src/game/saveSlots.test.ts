@@ -260,6 +260,24 @@ describe("save slots", () => {
   });
 
   describe("slot actions", () => {
+    it("keeps custom lodge names scoped to their saved winter", async () => {
+      data.set(slotKey(1), envelope(dayState()));
+      data.set(slotKey(2), envelope({ ...dayState(), lodgeName: "Timber Lodge" }));
+      await playSlot(2);
+      expect(useGameStore.getState().lodgeName).toBe("Timber Lodge");
+      await playSlot(1);
+      expect(useGameStore.getState().lodgeName).toBeUndefined();
+
+      await playSlot(2);
+      startNewWinter(3);
+      expect(useGameStore.getState().lodgeName).toBeUndefined();
+
+      await playSlot(2);
+      useGameStore.getState().startNewSeason();
+      expect(useGameStore.getState().lodgeName).toBeUndefined();
+      expect(JSON.parse(data.get(slotKey(2))!).state).not.toHaveProperty("lodgeName");
+    });
+
     it("deletes a slot and its backup", () => {
       data.set(slotKey(2), envelope(dayState()));
       data.set(slotBackupKey(2), "backup");

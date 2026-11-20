@@ -3,11 +3,11 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { LODGE_FOOTPRINT, type AssetId, type LodgeTier, type PlacedAsset } from "@/game/base";
+import { type AssetId, type LodgeTier, type PlacedAsset } from "@/game/base";
 import { groomCoverage } from "@/game/guns";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
-import { requestLodge, usePlacementDraft } from "@/ui/placementDraft";
+import type { AssetMarker } from "./assetPick";
 import { useReducedMotion } from "./useReducedMotion";
 import { pathSampler } from "./trail";
 import { sceneMood } from "./Atmosphere";
@@ -62,17 +62,17 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
   return tex;
 }
 
-type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number };
+type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
 function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
   const list: Placement[] = [
-    { name: "base-lodge", x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B * [1, 1.17, 1.31][tier - 1] },
+    { name: "base-lodge", x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B * [1, 1.17, 1.31][tier - 1], asset: { kind: "lodge" } },
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   ];
-  for (const asset of assets) {
+  for (const [index, asset] of assets.entries()) {
     const name = ASSET_MODELS[asset.id];
     if (!name) continue;
     const attached = asset.attachPad !== undefined;
@@ -81,6 +81,7 @@ function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Pla
       ...asset.at,
       yaw: (asset.attachPad ?? -1) >= 4 ? Math.PI : 0,
       scale: B * (attached ? 1.15 : 1.05),
+      asset: { kind: "venue", index },
     });
   }
   return list;
@@ -181,7 +182,7 @@ export function Village() {
   }, [night]);
   const lampKit = useKit("lamp-post");
 
-  const { body, glow } = useMemo(() => {
+  const { body, glow, pickMeshes } = useMemo(() => {
     const scenes: Partial<Record<KitAsset, THREE.Object3D>> = {
       "base-lodge": lodgeKit,
       "clapboard-house": houseKit,
@@ -192,6 +193,7 @@ export function Village() {
     };
     const bodies: THREE.BufferGeometry[] = [];
     const glows: THREE.BufferGeometry[] = [];
+    const pickMeshes: { placement: Placement; geometry: THREE.BufferGeometry; y: number }[] = [];
     for (const p of villagePlacements(assets, tier)) {
       const scene = scenes[p.name];
       if (!scene) continue;
@@ -199,11 +201,12 @@ export function Village() {
       const y = TERRAIN.height(p.x, p.z) - 0.02;
       bodies.push(placeKit(kit.body, p.x, y, p.z, p.yaw, p.scale));
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
+      if (p.asset) pickMeshes.push({ placement: p, geometry: kit.body, y });
     }
     const additions = [...lodgeDetails(tier, construction), ...venueDetails(assets)];
     if (additions.length > 0) bodies.push(merge(additions));
 
-    return { body: mergePlaced(bodies), glow: mergePlaced(glows) };
+    return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
   }, [assets, tier, construction, lodgeKit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
 
   useEffect(
@@ -261,7 +264,7 @@ export function Village() {
 
   return (
     <group>
-      <group name="snowcat" ref={catRef} scale={METERS_TO_WORLD * 1.25} dispose={null}>
+      <group name="snowcat" ref={catRef} scale={METERS_TO_WORLD * 1.25} dispose={null} userData={{ asset: { kind: "snowcat" } }}>
         <mesh geometry={cat.body} castShadow><meshLambertMaterial vertexColors /></mesh>
         {cat.glow && <mesh geometry={cat.glow}><meshBasicMaterial vertexColors toneMapped={false} /></mesh>}
       </group>
@@ -271,17 +274,10 @@ export function Village() {
       <mesh geometry={glow}>
         <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
       </mesh>
-      <mesh
-        position={[LODGE.x, LODGE_GROUND + 0.61, LODGE.z]}
-        onClick={(event) => {
-          if (event.delta > 5 || usePlacementDraft.getState().active) return;
-          event.stopPropagation();
-          requestLodge();
-        }}
-      >
-        <boxGeometry args={[LODGE_FOOTPRINT.width, 1.28, LODGE_FOOTPRINT.depth]} />
-        <meshBasicMaterial colorWrite={false} depthWrite={false} />
-      </mesh>
+      {pickMeshes.map(({ placement: p, geometry, y }) => (
+        <mesh key={`${p.name}-${p.x}-${p.z}`} position={[p.x, y, p.z]} rotation-y={p.yaw} scale={p.scale}
+          geometry={geometry} visible={false} dispose={null} userData={{ asset: p.asset }} />
+      ))}
       <instancedMesh ref={pools} args={[undefined, undefined, LAMPS.length + 1]} renderOrder={3}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial

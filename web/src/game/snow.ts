@@ -249,11 +249,13 @@ export const THAW_START_MIN = 11 * 60;
 /** Quality lost per game minute at the bottom of the trail on a thaw afternoon. */
 export const THAW_PER_MIN = 0.0007;
 
-/** Traffic wear from `runs` finished runs. Returns the same trail when nothing changed. */
-export function wearTrail(trail: Trail, runs: number): Trail {
-  if (runs <= 0) return trail;
-  const loss = WEAR_PER_RUN * runs;
-  return trail.map((s) => ({ ...s, quality: Math.max(QUALITY_FLOOR / 2, s.quality - loss) }));
+/** Traffic wears each segment in proportion to the fraction skied. */
+export function wearTrail(trail: Trail, runs: number, partial?: readonly number[]): Trail {
+  if (runs <= 0 && !partial) return trail;
+  return trail.map((s, i) => {
+    const loss = WEAR_PER_RUN * (runs + (partial?.[i] ?? 0));
+    return loss > 0 ? { ...s, quality: Math.max(QUALITY_FLOOR / 2, s.quality - loss) } : s;
+  });
 }
 
 /** Thaw softening over `minutes` of afternoon: the bottom loses most. Same trail when nothing changed. */

@@ -2,11 +2,12 @@
 
 import { CoachTip } from "./CoachTip";
 import { useState } from "react";
+import { liftName, lodgeName, venueName } from "@/game/assetNames";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
 import { constructionDraw } from "@/game/economy";
-import { assetRemovalQuote, openingStep } from "@/game/rules";
+import { assetRemovalQuote, liftClosureProblem, openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
@@ -18,6 +19,7 @@ import { buildConfirmed } from "@/ui/feel";
 
 function LodgeCard() {
   const tier = useGameStore((s) => s.lodgeTier);
+  const name = useGameStore(lodgeName);
   const construction = useGameStore((s) => s.lodgeUpgrade);
   const cash = useGameStore((s) => s.cash);
   const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
@@ -28,7 +30,7 @@ function LodgeCard() {
 
   return (
     <div className="panel px-3.5 pb-4 pt-3.5" data-lodge-card>
-      <SectionHeading aside={`Tier ${tier}`}>{LODGE_TIERS[tier].label}</SectionHeading>
+      <SectionHeading aside={`Tier ${tier}`}>{name}</SectionHeading>
       <p className="text-sm font-bold">{LODGE_TIERS[tier].pads} attachment pads</p>
       {construction ? (
         <p role="status" className="mt-2 font-bold">
@@ -79,7 +81,7 @@ function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void })
   return <div className="mt-3">
     <SectionHeading>Manage venues</SectionHeading>
     {state.assets.map((asset, i) => <div key={i} className="flex items-center gap-2 text-sm">
-      <span className="flex-1 font-bold">{ASSET_CATALOG[asset.id].label}</span>
+      <span className="min-w-0 flex-1 break-words font-bold">{venueName(asset)}</span>
       <button type="button" className="key min-h-11 px-2" onClick={() => {
         startAssetPlacement(asset.id, i);
         onStartPlacement();
@@ -89,7 +91,7 @@ function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void })
       </button>
     </div>)}
     {review !== null && state.assets[review] && quote && <BuildImpactCard
-      title={`${quote.undo ? "Undo" : "Remove"} ${ASSET_CATALOG[state.assets[review].id].label}?`}
+      title={`${quote.undo ? "Undo" : "Remove"} ${venueName(state.assets[review])}?`}
       facts={[{ label: "Cash returned", value: formatMoney(quote.refund) },
         { label: "Effect", value: quote.undo ? "Cancels the two remaining construction payments." : "Removes this venue and ends its upkeep." }]}
       problem={quote.reason} confirmLabel={quote.undo ? "Undo purchase" : "Confirm removal"}
@@ -117,6 +119,7 @@ export function BuildSheet({
   const tier = useGameStore((s) => s.lodgeTier);
   const [reviewLift, setReviewLift] = useState<number | null>(null);
   const closeLift = useGameStore((s) => s.closeLift);
+  const closeProblem = useGameStore((s) => reviewLift === null ? null : liftClosureProblem(s, reviewLift));
   const opening = useGameStore(openingStep);
   const activeLifts = lifts.filter((lift) => lift.confirmed && !lift.closing).length;
   const selectedLift = selected === "chair" && tier < 2 ? "surface" : selected;
@@ -162,18 +165,18 @@ export function BuildSheet({
             onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
             Place lift
           </PrimaryButton>
-          {reviewLift !== null && <BuildImpactCard title={`Close lift ${reviewLift + 1}?`}
+          {reviewLift !== null && lifts[reviewLift] && <BuildImpactCard title={`Close ${liftName(lifts[reviewLift], reviewLift)}?`}
             facts={[{ label: "Routes", value: "All trails on this lift close with it." },
               { label: "Refund", value: "$0. Any payments still owed stay owed." },
               { label: "Timing", value: "Close it now if the hill hasn’t opened. Otherwise it closes overnight." }]}
-            confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
+            problem={closeProblem} confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
             onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
           {lifts.map((lift, i) => lift.confirmed && (
             <div key={i} className="mt-2 flex items-center justify-between gap-2 text-sm font-bold">
-              <span>{LIFT_LABELS[lift.type]} {i + 1}</span>
+              <span className="min-w-0 break-words">{liftName(lift, i)}</span>
               {lift.closing ? "Closing tonight" : (
                 <button className="key min-h-11 px-2" disabled={activeLifts <= 1} type="button"
-                  aria-label={`Close lift ${i + 1}`} onClick={() => setReviewLift(i)}>Close lift</button>
+                  aria-label={`Close ${liftName(lift, i)}`} onClick={() => setReviewLift(i)}>Close lift</button>
               )}
             </div>
           ))}

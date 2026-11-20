@@ -1,4 +1,5 @@
 import { TALENT } from "./talents";
+import { liftName } from "./assetNames";
 import { winterRecord } from "./winterMemory";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
@@ -22,6 +23,7 @@ import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
+import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
 import {
@@ -86,7 +88,6 @@ import {
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 import {
   MS_PER_GAME_MINUTE,
-  LIFT_LABELS,
   liftCost,
   type BuildingId,
   type DayWeather,
@@ -200,7 +201,7 @@ export function openNight(state: GameState): GameState {
     busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
       const min = record.rides ? record.waitSumMin / record.rides : 0;
       const lift = state.lifts[i];
-      return min > (busiest?.min ?? 0) && lift ? { min, label: `${LIFT_LABELS[lift.type]} ${i + 1}` } : busiest;
+      return min > (busiest?.min ?? 0) && lift ? { min, label: liftName(lift, i) } : busiest;
     }, undefined),
   });
   const rawReputation = recap.arrivals > 0
@@ -284,6 +285,8 @@ export function tick(state: GameState, deltaMs: number): GameState {
   } = state.dayStats;
   const byLift = lifts.map((_, i) => ({ ...(state.dayStats.byLift[i] ?? { rides: 0, waitSumMin: 0 }) }));
   const totalRunsByTrail = trails.map((_, i) => state.dayStats.runsByTrail[i] ?? 0);
+  const previousSegmentRuns = state.dayStats.segmentRunsByTrail;
+  let segmentRunsByTrail = previousSegmentRuns && trails.map((_, i) => previousSegmentRuns[i]?.slice() ?? null);
   const venueRevenue = { ...state.dayStats.venueRevenue };
   const seats = state.assets.reduce((sum, asset) =>
     sum + ((asset.id === "cafe" || asset.id === "warming_hut") ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
@@ -292,6 +295,8 @@ export function tick(state: GameState, deltaMs: number): GameState {
     : [];
   for (let k = 0; k < steps; k++) {
     clockMin += stepMin;
+    const fullTrailRuns = trails.map(() => 0);
+    const partialWear: (number[] | undefined)[] = [];
     const moved = tickGuests(guests, {
       now: clockMin,
       wind,
@@ -302,19 +307,31 @@ export function tick(state: GameState, deltaMs: number): GameState {
       talentsOwned: state.talentsOwned,
       lapOverheadMin: lapOverheadMin(lifts, state.talentsOwned, trails, wind, clockMin),
       assets: state.assets,
+      onTrailUse: ({ trailIndex, from, to }, firstUse) => {
+        const trail = trails[trailIndex];
+        if (!trail) return;
+        if (from === 0 && to === 1) {
+          fullTrailRuns[trailIndex]++;
+          const row = segmentRunsByTrail?.[trailIndex];
+          if (row) for (let i = 0; i < row.length; i++) row[i]++;
+        } else {
+          const n = trail.snow.length;
+          segmentRunsByTrail ??= trails.map(() => null);
+          const row = segmentRunsByTrail[trailIndex] ??= trail.snow.map(() => totalRunsByTrail[trailIndex]);
+          const shares = partialWear[trailIndex] ??= trail.snow.map(() => 0);
+          for (let i = 0; i < n; i++) {
+            const share = Math.max(0, Math.min(i + 1, to * n) - Math.max(i, from * n));
+            shares[i] += share;
+            row[i] += share;
+          }
+        }
+        if (firstUse) totalRunsByTrail[trailIndex]++;
+      },
     });
-    const runsByTrail = trails.map(() => 0);
     let occupiedSeats = 0;
     moved.forEach((g, i) => {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
-      if (g.runs > was.runs) {
-        const ti = was.trailIndex ?? was.liftIndex ?? 0;
-        if (ti < runsByTrail.length) {
-          runsByTrail[ti] += g.runs - was.runs;
-          totalRunsByTrail[ti] += g.runs - was.runs;
-        }
-      }
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
       if (asset?.id === "cafe" || asset?.id === "warming_hut") occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
@@ -336,10 +353,10 @@ export function tick(state: GameState, deltaMs: number): GameState {
     if (seats > 0 && occupiedSeats >= seats) {
       seatsFullMin += stepMin;
     }
-    // Traffic scrapes the trail of the lift each run came down; thaw afternoons soften the low end.
+    // Traffic scrapes the trail segments guests used. Thaw afternoons soften the low end.
     const thawing = state.weather === "thaw" && clockMin >= THAW_START_MIN;
     trails = trails.map((t, ti) => {
-      let snow = wearTrail(t.snow, runsByTrail[ti]);
+      let snow = wearTrail(t.snow, fullTrailRuns[ti], partialWear[ti]);
       if (thawing) snow = softenTrail(snow, stepMin, t.elevations, exposure[ti]);
       return snow === t.snow ? t : { ...t, snow };
     });
@@ -375,6 +392,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
       ...state.dayStats,
       byLift,
       runsByTrail: totalRunsByTrail,
+      ...(segmentRunsByTrail ? { segmentRunsByTrail } : {}),
       venueRevenue,
       refuels,
       balked,
@@ -588,10 +606,45 @@ export function undoableLiftIndex(
 export function undoLift(state: GameState): GameState {
   const i = undoableLiftIndex(state);
   if (i < 0) return state;
+  const indices = new Map<number, number>();
+  const remaining = state.trails.flatMap((trail, index) => {
+    if (trail.liftIndex === i) return [];
+    indices.set(index, indices.size);
+    return [index];
+  });
+  const remap = <T extends { trailIndex: number }>(link: T | undefined): T | undefined => {
+    const trailIndex = link && indices.get(link.trailIndex);
+    return link && trailIndex !== undefined ? { ...link, trailIndex } : undefined;
+  };
+  const changed = remaining.length !== state.trails.length;
   return {
     ...state,
     lifts: state.lifts.slice(0, i),
-    trails: state.trails.filter((t) => t.liftIndex !== i),
+    trails: changed ? remaining.map((index) => {
+      const trail = state.trails[index];
+      if (!trail.links) return trail;
+      const start = remap(trail.links.start);
+      const end = remap(trail.links.end);
+      const crossings = trail.links.crossings?.flatMap((link) => remap(link) ?? []);
+      return {
+        ...trail,
+        links: { ...(start ? { start } : {}), ...(end ? { end } : {}), ...(crossings?.length ? { crossings } : {}) },
+      };
+    }) : state.trails,
+    ...(changed ? {
+      guests: state.guests.map((guest) => {
+        const trailIndex = guest.trailIndex == null ? undefined : indices.get(guest.trailIndex);
+        const legs = guest.skiRoute?.legs.flatMap((leg) => remap(leg) ?? []);
+        return { ...guest, trailIndex, ...(guest.skiRoute && legs ? { skiRoute: { ...guest.skiRoute, legs } } : {}) };
+      }),
+      dayStats: {
+        ...state.dayStats,
+        runsByTrail: remaining.map((index) => state.dayStats.runsByTrail[index] ?? 0),
+        ...(state.dayStats.segmentRunsByTrail ? {
+          segmentRunsByTrail: remaining.map((index) => state.dayStats.segmentRunsByTrail?.[index] ?? null),
+        } : {}),
+      },
+    } : {}),
     cash: state.cash + (state.lifts[i].paid ?? 0),
     constructionSpent: state.constructionSpent - (state.lifts[i].paid ?? 0),
     payables: state.payables.filter(({ liftIndex }) => liftIndex !== i),
@@ -611,11 +664,22 @@ function closeLiftsNow(state: GameState, indices: ReadonlySet<number>): GameStat
   };
 }
 
-export function closeLift(state: GameState, index: number): GameState {
+function liftHasTrailDependents(state: Pick<GameState, "trails">, liftIndex: number): boolean {
+  const removed = new Set(state.trails.flatMap((trail, index) => trail.liftIndex === liftIndex ? [index] : []));
+  return hasTrailDependents(state.trails, removed);
+}
+
+export function liftClosureProblem(state: GameState, index: number): string | null {
   const lift = state.lifts[index];
-  if (state.phase !== "day" || !lift?.confirmed || lift.closing || openingStep(state)) return state;
+  if (state.phase !== "day" || !lift?.confirmed || lift.closing || openingStep(state)) return "This lift can’t close right now.";
+  if (liftHasTrailDependents(state, index)) return "Close the trails that connect to this lift’s trails first.";
   if (isLiftOperational(lift, index, state.trails) && !state.lifts.some((other, i) =>
-    i !== index && !other.closing && isLiftOperational(other, i, state.trails))) return state;
+    i !== index && !other.closing && isLiftOperational(other, i, state.trails))) return "Keep at least one lift with a skiable descent.";
+  return null;
+}
+
+export function closeLift(state: GameState, index: number): GameState {
+  if (liftClosureProblem(state, index)) return state;
   if (state.clockMin === DAY_START_MIN && !state.guests.some(isOnHill)) {
     const next = closeLiftsNow(state, new Set([index]));
     return { ...next, ...deriveSnow(snowCarriers(next.trails)) };
@@ -623,8 +687,8 @@ export function closeLift(state: GameState, index: number): GameState {
   return { ...state, lifts: state.lifts.map((item, i) => i === index ? { ...item, closing: true } : item) };
 }
 
-export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false) {
-  const preview = previewPaintedTrail(state, strokes);
+export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = false) {
+  const preview = previewPaintedTrail(state, strokes, TERRAIN, connectCrossings);
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
   const isGlade = original ? !!original.glade : glade;
   const name = original?.name ?? `${isGlade ? "Glade" : "Painted trail"} ${state.trails.length + 1}`;
@@ -639,20 +703,27 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
-  const reason = preview.reason ?? (state.phase !== "day" ? "Building happens during the day. Wait for morning."
+  const inUse = preview.deleteTrail && preview.trailIndex != null && state.guests.some((guest) =>
+    guest.state === "ski" && (guest.trailIndex === preview.trailIndex ||
+      guest.skiRoute?.legs.some((leg) => leg.trailIndex === preview.trailIndex)));
+  const reason = preview.reason ?? (inUse ? "Wait for skiers to finish using this trail."
+    : state.phase !== "day" ? "Building happens during the day. Wait for morning."
     : state.cash < cost ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
-export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false): GameState {
-  const preview = checkPaint(state, strokes, glade);
+export function commitPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = false): GameState {
+  const preview = checkPaint(state, strokes, glade, connectCrossings);
   if (preview.reason || preview.liftIndex == null || preview.liftIndex < 0) return state;
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
   const snow = original?.snow ?? averageTrail(state.trails.filter((trail) => trail.open).map((trail) => trail.snow));
   const undoable = original?.paid !== undefined &&
     original.builtDay === state.dayIndex && original.builtAtMin === state.clockMin;
+  const links = original?.links ?? preview.links;
   const trail: TrailRun = {
+    ...original,
     liftIndex: preview.liftIndex,
+    ...(links ? { links } : {}),
     ...(preview.glade ? { glade: true } : {}),
     name: preview.name,
     path: preview.deleteTrail && original ? original.path : preview.path,
@@ -866,7 +937,7 @@ export function moveAsset(state: GameState, index: number, at: XZ): GameState {
   const check = checkAssetMove(state, index, at);
   if (!check.ok) return state;
   return { ...state, assets: state.assets.map((asset, i) => i === index
-    ? { ...check.placement, purchase: asset.purchase, styleId: asset.styleId } : asset) };
+    ? { ...check.placement, purchase: asset.purchase, styleId: asset.styleId, ...(asset.name ? { name: asset.name } : {}) } : asset) };
 }
 
 /** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */
@@ -1205,13 +1276,19 @@ export function sleep(state: GameState): GameState {
     constructionSpent: 0,
     fare: state.pendingFare,
     snow: state.pendingSnow,
-    trails: state.trails.map((t, i) => ({
-      ...t,
-      snow: overnight.trails[i] ?? t.snow,
-      previousRuns: state.dayStats.runsByTrail[i] ?? 0,
-      gunCovered: overnight.gunCoverage?.[i],
-      groomed: overnight.groomCoverage?.[i],
-    })),
+    trails: state.trails.map((t, i) => {
+      const trail = {
+        ...t,
+        snow: overnight.trails[i] ?? t.snow,
+        previousRuns: state.dayStats.runsByTrail[i] ?? 0,
+        gunCovered: overnight.gunCoverage?.[i],
+        groomed: overnight.groomCoverage?.[i],
+      };
+      const segmentRuns = state.dayStats.segmentRunsByTrail?.[i];
+      if (segmentRuns) trail.previousSegmentRuns = segmentRuns;
+      else delete trail.previousSegmentRuns;
+      return trail;
+    }),
     snowQuality: overnight.snowQuality,
     snowDepth: overnight.snowDepth,
     gunReach: overnight.gunReach,
@@ -1279,6 +1356,8 @@ export function finishWinterReview(state: GameState): GameState {
 
 export function startNewSeason(state: GameState): GameState {
   const next = pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
+  // The store merges the rule result, so explicitly clear a name from the old hill.
+  if (state.lodgeName !== undefined) next.lodgeName = undefined;
   if (state.lastWinter || state.outcome === "playing") {
     return { ...next, career: state.career, ...(state.lastWinter && { lastWinter: state.lastWinter }) };
   }

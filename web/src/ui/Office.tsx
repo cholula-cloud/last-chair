@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { lodgeName } from "@/game/assetNames";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/game/base";
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
@@ -117,7 +118,7 @@ export function Crew({ s }: { s: GameState }) {
   const nextTier = s.lodgeTier === 1 ? 2 : s.lodgeTier === 2 ? 3 : null;
   const tier = LODGE_TIERS[s.lodgeTier];
   return <>
-    <Section title="Lodge"><p>Tier {s.lodgeTier}, {tier.label}, {tier.stalls} parking spaces</p>
+    <Section title="Lodge"><p>Tier {s.lodgeTier}, {lodgeName(s)}, {tier.stalls} parking spaces</p>
       {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads, and opens up {lodgeTierUnlocks(nextTier).join(", ")}.</p>}
       {s.lodgeUpgrade && <p>Upgrade underway, {s.lodgeUpgrade.nightsRemaining} {s.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} to go.</p>}</Section>
     <Section title="Goal checklist">

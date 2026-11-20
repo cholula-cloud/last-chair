@@ -1,4 +1,5 @@
 import { withTipSeen } from "./coach";
+import { renameAsset } from "./assetNames";
 import * as rules from "./rules";
 import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 
@@ -25,6 +26,7 @@ export const replayRules = {
   undoLift: rules.undoLift,
   closeLift: rules.closeLift,
   commitPaint: rules.commitPaint,
+  renameAsset,
   placeAsset: rules.placeAsset,
   moveAsset: rules.moveAsset,
   removeAsset: rules.removeAsset,

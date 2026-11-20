@@ -132,7 +132,6 @@ export function overlayModel(
   const mid = service("mid"),
     high = service("high");
   const trails = close.trails.map((trail, i) => {
-    const runs = time === "Tomorrow" ? 0 : (close.dayStats.runsByTrail[i] ?? 0);
     const reach = gunCoverage(trail, state.guns, state.talentsOwned);
     const byGun = state.guns.map((gun) =>
       gunCoverage(trail, [gun], state.talentsOwned),
@@ -146,6 +145,8 @@ export function overlayModel(
         close.talentsOwned,
       );
     return trail.snow.map((present, j) => {
+      const runs = time === "Tomorrow" ? 0
+        : close.dayStats.segmentRunsByTrail?.[i]?.[j] ?? close.dayStats.runsByTrail[i] ?? 0;
       let snow = probable?.trails[i]?.[j] ?? present;
       if (forecast?.outlook) {
         const mean = { quality: 0, depth: 0, coverage: 0 };
@@ -175,7 +176,7 @@ export function overlayModel(
         groomed,
         weather,
         elevation: trail.elevations[j],
-        yesterday: trail.previousRuns,
+        yesterday: trail.previousSegmentRuns?.[j] ?? trail.previousRuns,
         reached: !!trail.gunCovered?.[j],
         reach: serviceTrails[i].open && reach[j],
         midGroom: mid[i][j],
@@ -334,7 +335,7 @@ export function readPoint(
         "The crew groomed this segment and the snow quality is still high. Pure corduroy.",
       powder:
         "The cover is continuous and the quality is good enough for packed powder.",
-      worn: `${cell.runs} runs have chewed up the surface.`,
+      worn: "Skier traffic has worn down the surface.",
       slush: "The afternoon thaw has gone to work on this lower segment.",
       ice: `Snow quality is down to ${Math.round(cell.snow.quality * 100)}%.`,
       thin: `Only ${Math.round(cell.snow.coverage * 100)}% of this segment has cover.`,
@@ -343,6 +344,8 @@ export function readPoint(
     result.detail = wear
       ? cell.yesterday === undefined
         ? "No run count for yesterday."
+        : trail.previousSegmentRuns
+          ? `Skier traffic cost up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality here yesterday.`
         : `${cell.yesterday} runs wore this segment yesterday, costing up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality.`
       : `${MARKS[cell.condition].name}. ${cause[cell.condition]}${cell.hold ? " Its chair is on wind hold." : ""}`;
     result.personas = Object.values(PERSONAS).map((p) => {
