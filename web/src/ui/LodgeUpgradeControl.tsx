@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type LodgeTier } from "@/game/base";
+import { LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";

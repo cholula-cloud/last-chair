@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ASSET_CATALOG, ATTACH_BONUS, LODGE_TIERS, lodgeAttachPads, type AssetId, type LodgeTier } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -19,7 +19,7 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
   const state = useGameStore();
   const pads = lodgeAttachPads(state.lodgeTier);
   const used = new Map(state.assets.flatMap((a, i) => a.attachPad !== undefined ? [[a.attachPad, i] as const] : []));
-  const emptyPads = useMemo(() => pads.map((_, i) => i).filter((i) => !used.has(i)), [pads, used]);
+  const emptyPads = pads.map((_, i) => i).filter((i) => !used.has(i));
   const [expanded, setExpanded] = useState<number | null>(() =>
     emptyPads.length === 1 ? emptyPads[0]! : null,
   );
