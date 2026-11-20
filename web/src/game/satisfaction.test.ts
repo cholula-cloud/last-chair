@@ -250,7 +250,7 @@ describe("problem line", () => {
 
   it("names a cash loss when no satisfaction term is a problem, and only then", () => {
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: -105 })).toBe(
-      "Lost $105 today. Running costs beat ticket sales on a quiet day.",
+      "Lost $105 today. Running costs beat revenue on a quiet day.",
     );
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: 40 })).toBe(NO_PROBLEM);
     expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Lift lines ran long");

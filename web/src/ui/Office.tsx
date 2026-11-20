@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { lodgeName } from "@/game/assetNames";
-import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/game/base";
+import { LODGE_TIERS, lodgeTierUnlocks } from "@/game/base";
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
 import { CREW_TALENTS, founderById } from "@/game/content";
@@ -19,7 +19,9 @@ import { StoryEntries } from "./StoryLog";
 import { MoneyStatsCharts } from "./officeCharts";
 import { OpsStatsCharts } from "./officeOpsCharts";
 import { SeasonCalendar, SnowReport } from "./officeReports";
+import { revenueBreakdownFromRecap } from "@/game/officeSeries";
 import { tidy } from "@/ui/kit/parts";
+import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="panel space-y-2 p-4"><h3 className="display text-xl">{title}</h3>{children}</section>;
@@ -29,9 +31,7 @@ export function Money({ s }: { s: GameState }) {
   const report = s.dayHistory.at(-1);
   const recap = s.nightRecap ?? report?.recap;
   const costs = dailyCosts(s);
-  const venues = Object.entries(recap?.facts.venueRevenue ?? {});
-  const venueTotal = venues.reduce((total, [, amount]) => total + amount, 0);
-  const bus = recap?.facts.schoolBus?.ticketRevenue ?? 0;
+  const breakdown = recap ? revenueBreakdownFromRecap(recap) : null;
   const upcoming = s.dayIndex < s.seasonLength && s.outcome === "playing";
   return <>
     <Section title="Cash and commitments">
@@ -43,8 +43,22 @@ export function Money({ s }: { s: GameState }) {
     </Section>
     <Section title={recap ? `Operating ledger, day ${s.nightRecap ? s.dayIndex : report?.day}` : "Operating ledger"}>
       {recap ? <>
-        {recap.revenue !== null && <p>Public tickets {formatMoney(recap.revenue - venueTotal - bus)}. School tickets {formatMoney(bus)}.</p>}
-        {venues.map(([id, amount]) => <p key={id}>{ASSET_CATALOG[id as AssetId].label} {formatMoney(amount)}</p>)}
+        {breakdown && breakdown.total > 0 && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <p>Day revenue <strong>{formatMoney(breakdown.total)}</strong></p>
+              <RevenueMixDonut breakdown={breakdown} size={88} />
+            </div>
+            {breakdown.tickets > 0 && <p>Lift tickets {formatMoney(breakdown.tickets)}</p>}
+            {breakdown.venues > 0 && (
+              <div>
+                <p>Base venues {formatMoney(breakdown.venues)}</p>
+                <VenueRevenueList facts={recap.facts} />
+              </div>
+            )}
+            {breakdown.schoolBus > 0 && <p>School bus {formatMoney(breakdown.schoolBus)}</p>}
+          </div>
+        )}
         {recap.costs && <p>Fixed costs {formatMoney(recap.costs.fixed)}. Founder adjustment {formatMoney(recap.costs.founder)}. Lift operations {formatMoney(recap.costs.liftOps)}. Upkeep {formatMoney(recap.costs.upkeep)}.</p>}
         <p>Operating result <strong>{formatMoney(recap.cashDelta, { signed: true })}</strong></p>
         {recap.loanReceived > 0 && <p>Loan received {formatMoney(recap.loanReceived)}</p>}

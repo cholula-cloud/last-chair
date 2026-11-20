@@ -8,10 +8,12 @@ import {
   constructionSeries,
   loanSeries,
   revCostSeries,
+  revenueSourcesAggregate,
   revenueSourcesSeries,
 } from "@/game/officeSeries";
 import type { GameState } from "@/game/state";
 import { useReducedMotion } from "@/ui/motion";
+import { RevenueMixDonut } from "./revenueBreakdownUi";
 
 export const CHART_W = 320;
 export const CHART_H = 152;
@@ -304,6 +306,76 @@ export function BarChartSvg({
   );
 }
 
+export type PieSlice = {
+  label: string;
+  value: number;
+  color: string;
+  pattern?: "stripe" | "dots";
+};
+
+function donutWedge(cx: number, cy: number, rOut: number, rIn: number, start: number, end: number): string {
+  const large = end - start > Math.PI ? 1 : 0;
+  const x0 = cx + rOut * Math.cos(start);
+  const y0 = cy + rOut * Math.sin(start);
+  const x1 = cx + rOut * Math.cos(end);
+  const y1 = cy + rOut * Math.sin(end);
+  const x2 = cx + rIn * Math.cos(end);
+  const y2 = cy + rIn * Math.sin(end);
+  const x3 = cx + rIn * Math.cos(start);
+  const y3 = cy + rIn * Math.sin(start);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${rOut} ${rOut} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} A ${rIn} ${rIn} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
+
+export function PieChartSvg({
+  slices,
+  size = 112,
+  ariaLabel,
+}: {
+  slices: readonly PieSlice[];
+  size?: number;
+  ariaLabel: string;
+}) {
+  const stripeId = useId();
+  const dotId = useId();
+  const active = slices.filter((s) => s.value > 0);
+  const total = active.reduce((sum, s) => sum + s.value, 0);
+  if (total <= 0) return null;
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const rOut = size * 0.46;
+  const rIn = size * 0.26;
+  let angle = -Math.PI / 2;
+  const pat = (p?: "stripe" | "dots") => (p === "stripe" ? `url(#${stripeId})` : p === "dots" ? `url(#${dotId})` : null);
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="block shrink-0" role="img" aria-label={ariaLabel}>
+      <ChartPatterns stripeId={stripeId} dotId={dotId} />
+      {active.length === 1 ? (
+        <g>
+          <circle cx={cx} cy={cy} r={rOut} fill={active[0].color} stroke="var(--ink)" strokeWidth={2} />
+          {pat(active[0].pattern) && <circle cx={cx} cy={cy} r={rOut} fill={pat(active[0].pattern)!} />}
+          <circle cx={cx} cy={cy} r={rIn} fill="var(--snow)" stroke="var(--ink)" strokeWidth={2} />
+        </g>
+      ) : (
+        active.map((slice) => {
+          const sweep = (slice.value / total) * Math.PI * 2;
+          const end = angle + sweep;
+          const d = donutWedge(cx, cy, rOut, rIn, angle, end);
+          angle = end;
+          const fillPat = pat(slice.pattern);
+          return (
+            <g key={slice.label}>
+              <path d={d} fill={slice.color} stroke="var(--ink)" strokeWidth={1.5} strokeLinejoin="round" />
+              {fillPat && <path d={d} fill={fillPat} />}
+            </g>
+          );
+        })
+      )}
+    </svg>
+  );
+}
+
 function CashTrendChart({ state }: { state: GameState }) {
   const data = cashTrendSeries(state);
   const settled = data.filter((d) => !d.projected);
@@ -430,6 +502,7 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
   const src = revenueSourcesSeries(state.dayHistory);
   const srcTotal = src.reduce((sum, d) => sum + d.total, 0);
   const srcBest = bestDayBy(src, (d) => d.total);
+  const seasonMix = revenueSourcesAggregate(state.dayHistory);
 
   const loan = loanSeries(state);
 
@@ -439,7 +512,7 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
         title="Revenue vs. operating costs"
         hero={rc.length ? formatMoney(rcNet, { signed: true }) : undefined}
         heroTone={rcNet >= 0 ? "good" : "bad"}
-        caption="Daily lift and venue takings stacked against fixed, lift, and upkeep bills."
+        caption="Total day revenue (tickets, venues, and school bus) against fixed, lift, and upkeep bills."
         comparisons={rc.length && rcBest ? [`Yesterday: ${formatMoney(rc.at(-1)!.net, { signed: true })}`, `Best day: Day ${rcBest.day} (${formatMoney(rcBest.value, { signed: true })})`] : undefined}
         empty={rc.length === 0 ? "First ledger numbers land when the hill closes tonight." : undefined}
         columns={[{ key: "day", label: "Day" }, { key: "rev", label: "Revenue", align: "right" }, { key: "cost", label: "Costs", align: "right" }, { key: "net", label: "Net", align: "right" }]}
@@ -460,24 +533,32 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
         heroTone="cash"
         caption="How much of each day came from lift tickets, base venues, and school buses."
         comparisons={src.length && srcBest ? [`Yesterday: ${formatMoney(src.at(-1)!.total)}`, `Best day: Day ${srcBest.day} (${formatMoney(srcBest.value)})`] : undefined}
-        empty={src.length === 0 ? "Ticket and venue receipts start stacking up after Day 1." : undefined}
-        columns={[{ key: "day", label: "Day" }, { key: "tickets", label: "Tickets", align: "right" }, { key: "venues", label: "Venues", align: "right" }, { key: "bus", label: "School", align: "right" }]}
+        empty={src.length === 0 ? "Customer revenue starts stacking up after Day 1." : undefined}
+        columns={[{ key: "day", label: "Day" }, { key: "tickets", label: "Lift tickets", align: "right" }, { key: "venues", label: "Base venues", align: "right" }, { key: "bus", label: "School bus", align: "right" }]}
         rows={src.map((d) => ({ day: `Day ${d.day}`, tickets: formatMoney(d.tickets), venues: formatMoney(d.venues), bus: formatMoney(d.schoolBus) }))}
-        legend={[{ label: "Tickets", color: "var(--sign-green)" }, { label: "Venues", color: "var(--gold)", pattern: "stripe" }, { label: "School bus", color: "var(--sky)", pattern: "dots" }]}
+        legend={[{ label: "Lift tickets", color: "var(--sign-green)" }, { label: "Base venues", color: "var(--gold)", pattern: "stripe" }, { label: "School bus", color: "var(--sky)", pattern: "dots" }]}
       >
-        <BarChartSvg
-          mode="stacked"
-          minMax={400}
-          ariaLabel="Revenue sources by day"
-          groups={src.map((d) => ({
-            label: `D${d.day}`,
-            bars: [
-              { value: d.tickets, color: "var(--sign-green)" },
-              { value: d.venues, color: "var(--gold)", pattern: "stripe" },
-              { value: d.schoolBus, color: "var(--sky)", pattern: "dots" },
-            ],
-          }))}
-        />
+        <div className="flex flex-col items-center gap-3">
+          {seasonMix.total > 0 && (
+            <div className="flex flex-col items-center gap-1">
+              <p className="text-xs font-extrabold text-ink-soft">Season mix</p>
+              <RevenueMixDonut breakdown={seasonMix} size={100} />
+            </div>
+          )}
+          <BarChartSvg
+            mode="stacked"
+            minMax={400}
+            ariaLabel="Revenue sources by day"
+            groups={src.map((d) => ({
+              label: `D${d.day}`,
+              bars: [
+                { value: d.tickets, color: "var(--sign-green)" },
+                { value: d.venues, color: "var(--gold)", pattern: "stripe" },
+                { value: d.schoolBus, color: "var(--sky)", pattern: "dots" },
+              ],
+            }))}
+          />
+        </div>
       </ChartCard>
 
       <CashTrendChart state={state} />

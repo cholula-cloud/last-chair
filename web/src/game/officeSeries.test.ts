@@ -9,6 +9,8 @@ import {
   loanSeries,
   opsSeries,
   revCostSeries,
+  revenueBreakdownFromRecap,
+  revenueSourcesAggregate,
   revenueSourcesSeries,
   seasonCalendarCells,
   trailReportRows,
@@ -57,6 +59,14 @@ describe("officeSeries money selectors", () => {
 
     const best = bestDayBy(rc, (p) => p.net);
     expect(best?.value).toBe(Math.max(...rc.map((p) => p.net)));
+
+    const aggregate = revenueSourcesAggregate(s.dayHistory);
+    expect(aggregate.tickets + aggregate.venues + aggregate.schoolBus).toBe(aggregate.total);
+    for (const report of s.dayHistory) {
+      const b = revenueBreakdownFromRecap(report.recap);
+      expect(b).not.toBeNull();
+      expect(b!.tickets + b!.venues + b!.schoolBus).toBe(b!.total);
+    }
   });
 
   it("combines settled construction installments and upcoming payables", () => {

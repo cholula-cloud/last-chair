@@ -2,8 +2,6 @@
 
 import { TALENT } from "@/game/talents";
 
-import { ASSET_CATALOG, type AssetId } from "@/game/base";
-
 import { useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -14,6 +12,7 @@ import { demandContext, topGuestDemand } from "@/game/guestsWant";
 import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
 import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
+import { revenueBreakdownFromRecap } from "@/game/officeSeries";
 import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
@@ -56,6 +55,7 @@ import { RadioCard } from "@/ui/kit/RadioCard";
 import { LoanCard } from "@/ui/LoanCard";
 import { SummitLinkCard } from "@/ui/SummitLinkCard";
 import { SchoolContractCard } from "@/ui/SchoolContractCard";
+import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
 const WEEKDAY_FULL: Record<string, string> = {
   Mon: "Monday",
@@ -210,15 +210,16 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
   const fromCash = night.dayHistory.at(-1)?.closingCash ?? night.cash - recap.cashDelta;
   const animatedCash = useCashCountUp(fromCash, projected, true);
   const finalNight = night.dayIndex === night.seasonLength;
+  const breakdown = recap.costs && recap.revenue != null ? revenueBreakdownFromRecap(recap) : null;
+  const costLines = recap.costs && recap.revenue != null ? [
+    { label: "Fixed operating costs", amount: -(costs.fixed - (costs.vacationStaffing ?? 0)) },
+    { label: "Vacation-week staffing", amount: -(costs.vacationStaffing ?? 0) },
+    { label: "Founder operating costs", amount: -costs.founder },
+    { label: "Lift operations", amount: -costs.liftOps },
+    { label: "Building upkeep", amount: -costs.upkeep },
+  ] : [];
   const lines = [
-    ...(recap.costs && recap.revenue != null ? [
-      { label: "Tickets and venue sales", amount: recap.revenue },
-      { label: "Fixed operating costs", amount: -(costs.fixed - (costs.vacationStaffing ?? 0)) },
-      { label: "Vacation-week staffing", amount: -(costs.vacationStaffing ?? 0) },
-      { label: "Founder operating costs", amount: -costs.founder },
-      { label: "Lift operations", amount: -costs.liftOps },
-      { label: "Building upkeep", amount: -costs.upkeep },
-    ] : [{ label: "Cash from operations", amount: recap.cashDelta }]),
+    ...(breakdown ? [] : [{ label: "Cash from operations", amount: recap.cashDelta }]),
     { label: "Construction paid today", amount: -costs.constructionSpent },
     { label: "Snow and service tonight", amount: -costs.snowNight },
     { label: "Construction payments tonight", amount: -costs.draws },
@@ -233,11 +234,61 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
         {finalNight ? "Cash after closing" : "Projected morning cash"}
         <strong className={`tabular-nums ${projected < 0 ? "text-barn-deep" : "text-ink"}`}>{formatMoney(Math.round(animatedCash))}</strong>
       </p>
+      {breakdown && breakdown.total > 0 && (
+        <p className="px-1 pb-1 text-xs font-bold text-ink-soft">
+          Revenue today {formatMoney(breakdown.total)}
+          {" · "}
+          {formatMoney(breakdown.tickets)} lift
+          {" · "}
+          {formatMoney(breakdown.venues)} venues
+          {breakdown.schoolBus > 0 ? ` · ${formatMoney(breakdown.schoolBus)} school bus` : ""}
+        </p>
+      )}
       <DisclosureButton open={open} controls="night-money-lines" onToggle={() => setOpen((value) => !value)}>
         Why? <span className="sr-only">Cash today and tonight</span>
       </DisclosureButton>
       <div hidden={!open} id="night-money-lines" className="panel mt-2 px-3.5 py-2.5">
+        {breakdown && breakdown.total > 0 && (
+          <div className="mb-3 flex flex-col items-center gap-2 border-b border-snow-2 pb-3">
+            <RevenueMixDonut breakdown={breakdown} />
+          </div>
+        )}
         <dl className="space-y-1 text-sm font-bold">
+          {breakdown && (
+            <>
+              <div className="flex justify-between gap-3">
+                <dt>Day revenue</dt>
+                <dd className="shrink-0 tabular-nums">{formatMoney(breakdown.total, { signed: true })}</dd>
+              </div>
+              {breakdown.tickets > 0 && (
+                <div className="flex justify-between gap-3 pl-2 text-ink-soft">
+                  <dt>Lift tickets</dt>
+                  <dd className="shrink-0 tabular-nums">{formatMoney(breakdown.tickets, { signed: true })}</dd>
+                </div>
+              )}
+              {breakdown.venues > 0 && (
+                <div className="pl-2">
+                  <div className="flex justify-between gap-3 text-ink-soft">
+                    <dt>Base venues</dt>
+                    <dd className="shrink-0 tabular-nums">{formatMoney(breakdown.venues, { signed: true })}</dd>
+                  </div>
+                  <VenueRevenueList facts={recap.facts} />
+                </div>
+              )}
+              {breakdown.schoolBus > 0 && (
+                <div className="flex justify-between gap-3 pl-2 text-ink-soft">
+                  <dt>School bus</dt>
+                  <dd className="shrink-0 tabular-nums">{formatMoney(breakdown.schoolBus, { signed: true })}</dd>
+                </div>
+              )}
+            </>
+          )}
+          {costLines.filter(({ amount }) => amount !== 0).map(({ label, amount }) => (
+            <div key={label} className="flex justify-between gap-3">
+              <dt>{label}</dt>
+              <dd className="shrink-0 tabular-nums">{formatMoney(amount, { signed: true })}</dd>
+            </div>
+          ))}
           {lines.filter(({ amount }) => amount !== 0).map(({ label, amount }) => (
             <div key={label} className="flex justify-between gap-3">
               <dt>{label}</dt>
@@ -466,13 +517,6 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
           </p>
         )}
 
-        {recap.facts.venueRevenue && (
-          <ul aria-label="Venue takings" className="mt-2 space-y-1 text-sm font-bold">
-            {Object.entries(recap.facts.venueRevenue).map(([id, amount]) => (
-              <li key={id}>{ASSET_CATALOG[id as AssetId].label} took {formatMoney(amount)}</li>
-            ))}
-          </ul>
-        )}
         {!!recap.facts.balked && <p className="mt-2 text-sm font-bold">Guests balked at the lift line {recap.facts.balked} {recap.facts.balked === 1 ? "time" : "times"} today.</p>}
         {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 

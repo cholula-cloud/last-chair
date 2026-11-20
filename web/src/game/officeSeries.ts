@@ -5,6 +5,7 @@ import { isLiftOperational } from "./lifts";
 import type { SatTerms } from "./satisfaction";
 import { readSnow } from "./snow";
 import { snowCarriers } from "./trails";
+import type { NightRecap } from "./sim";
 import type { DayReport, GameState } from "./state";
 import { FARE_LABELS, FARE_PRICES, type FarePreset, type TrailDifficulty, type WeatherKind } from "./types";
 
@@ -15,13 +16,43 @@ export type RevCostPoint = {
   net: number;
 };
 
-export type RevenueSourcePoint = {
-  day: number;
+export type RevenueBreakdown = {
+  total: number;
   tickets: number;
   venues: number;
   schoolBus: number;
-  total: number;
 };
+
+export type RevenueSourcePoint = RevenueBreakdown & { day: number };
+
+const EMPTY_BREAKDOWN: RevenueBreakdown = { total: 0, tickets: 0, venues: 0, schoolBus: 0 };
+
+/** Customer revenue for one closed day: lift tickets, base venues, and school bus fares. */
+export function revenueBreakdownFromRecap(
+  recap: Pick<NightRecap, "revenue" | "facts">,
+): RevenueBreakdown | null {
+  if (recap.revenue == null) return null;
+  const total = Math.round(recap.revenue);
+  const venues = Math.round(
+    Object.values(recap.facts.venueRevenue ?? {}).reduce((sum, n) => sum + n, 0),
+  );
+  const schoolBus = Math.round(recap.facts.schoolBus?.ticketRevenue ?? 0);
+  const tickets = Math.max(0, total - venues - schoolBus);
+  return { total, tickets, venues, schoolBus };
+}
+
+export function revenueSourcesAggregate(history: readonly DayReport[]): RevenueBreakdown {
+  return history.reduce((acc, d) => {
+    const b = revenueBreakdownFromRecap(d.recap);
+    if (!b) return acc;
+    return {
+      total: acc.total + b.total,
+      tickets: acc.tickets + b.tickets,
+      venues: acc.venues + b.venues,
+      schoolBus: acc.schoolBus + b.schoolBus,
+    };
+  }, { ...EMPTY_BREAKDOWN });
+}
 
 export type CashPoint = {
   day: number;
@@ -53,13 +84,8 @@ export function revCostSeries(history: readonly DayReport[]): RevCostPoint[] {
 
 export function revenueSourcesSeries(history: readonly DayReport[]): RevenueSourcePoint[] {
   return history.map((d) => {
-    const total = Math.round(d.recap.revenue ?? 0);
-    const venues = Math.round(
-      Object.values(d.recap.facts.venueRevenue ?? {}).reduce((sum, n) => sum + n, 0),
-    );
-    const schoolBus = Math.round(d.recap.facts.schoolBus?.ticketRevenue ?? 0);
-    const tickets = Math.max(0, total - venues - schoolBus);
-    return { day: d.day, tickets, venues, schoolBus, total };
+    const breakdown = revenueBreakdownFromRecap(d.recap) ?? EMPTY_BREAKDOWN;
+    return { day: d.day, ...breakdown };
   });
 }
 
