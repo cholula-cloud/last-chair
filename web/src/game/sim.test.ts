@@ -216,18 +216,17 @@ describe("applyOvernight", () => {
     expect(run("high").groomVisible).toBe(true);
   });
 
-  it("learns the first unowned talent in CREW_TALENTS order", () => {
-    expect(run("mid").talentLearned).toBe(CREW_TALENTS[0].name);
-    expect(run("mid").nextTalentHint).toBe(CREW_TALENTS[1].name);
-    expect(run("mid", { talentsOwned: ["trail_guns"] }).talentLearned).toBe("Rope Tow");
-    expect(
-      run("mid", { talentsOwned: ["rope_tow", "trail_guns"] }).talentLearned,
-    ).toBe("Groom Pass");
+  it("earns a crew point instead of auto-learning talents", () => {
+    expect(run("mid").talentLearned).toBeNull();
+    expect(run("mid").crewPointsEarned).toBe(1);
+    expect(run("mid").nextTalentHint).toBe(CREW_TALENTS[0].name);
+    expect(run("mid", { talentsOwned: ["rope_tow"] }).nextTalentHint).toBe(CREW_TALENTS[1].name);
   });
 
-  it("returns no talent and no hint once all are owned", () => {
+  it("returns no hint once all talents are owned", () => {
     const r = run("mid", { talentsOwned: CREW_TALENTS.map((t) => t.id) });
     expect(r.talentLearned).toBeNull();
+    expect(r.crewPointsEarned).toBe(1);
     expect(r.nextTalentHint).toBeNull();
   });
 
@@ -797,10 +796,7 @@ describe("headless season", () => {
       snowDepth = overnight.snowDepth;
       daysWithoutSnow = overnight.daysWithoutSnow;
       weather = overnight.weather;
-      if (overnight.talentLearned) {
-        const t = CREW_TALENTS.find((c) => c.name === overnight.talentLearned);
-        talentsOwned.push(t!.id);
-      }
+      // Crew points are spent in Office; overnight no longer auto-learns talents.
 
       expect(Number.isFinite(cash)).toBe(true);
       expect(Number.isFinite(snowQuality)).toBe(true);
@@ -811,8 +807,7 @@ describe("headless season", () => {
 
     expect(nights).toBe(SEASON_LENGTH);
     expect(day).toBe(SEASON_LENGTH + 1);
-    // One talent per night until the list runs out, never a duplicate.
-    expect(talentsOwned).toHaveLength(Math.min(nights, CREW_TALENTS.length));
-    expect(new Set(talentsOwned).size).toBe(talentsOwned.length);
+    // Talents are chosen in Office; this harness does not spend crew points.
+    expect(talentsOwned).toHaveLength(0);
   });
 });

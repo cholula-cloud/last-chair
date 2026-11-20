@@ -136,29 +136,18 @@ export function LayerPanel({ layer }: { layer: SnowLayer }) {
         gunView={gunView}
         wear={layer === "conditions" && wear}
       />
-      <p className="text-xs font-bold">
-        {layer === "depth"
-            ? "Dashed lines mark where depth hits 0.15."
-            : layer === "guns"
-              ? "Pipe lines connect guns to the base. Rings show their reach."
-              : time === "Close"
-                ? "Close looks ahead to the end of today’s skiing."
-                : time === "Tomorrow"
-                  ? "Tomorrow adds your overnight service to the forecast."
-                  : ""}{" "}
-        Tap or hold the hill to check a spot.
-      </p>
+      <p className="text-xs font-bold text-ink-soft">Tap or hold the hill.</p>
       {read && (
         <div role="status" className="border-t border-ink pt-1 text-xs">
           <strong>{read.title}</strong>
-          <p>{read.detail}</p>
-          <div className="flex flex-wrap gap-1">
-            {read.personas.map((p) => (
-              <span key={p} className="chip px-1">
-                {p}
-              </span>
-            ))}
-          </div>
+          {read.detail.length < 120 && <p>{read.detail}</p>}
+          {read.personas.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {read.personas.slice(0, 4).map((p) => (
+                <span key={p} className="chip px-1">{p}</span>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </section>

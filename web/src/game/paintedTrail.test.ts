@@ -59,7 +59,7 @@ describe("trail paint geometry", () => {
 
   it("keeps an unfinished draft visible until the player connects it", () => {
     const draft = previewPaintedTrail(plain, [stroke(meander.slice(0, 3))], slope);
-    expect(draft.reason).toMatch(/end at the base/i);
+    expect(draft.reason).toMatch(/join another trail|lower mountain/i);
     expect(draft.path.at(-1)).toEqual(meander[2]);
     expect(draft.draftEnd).toEqual(meander[2]);
     expect(draft.lengthFt).toBeGreaterThan(0);
@@ -137,10 +137,17 @@ describe("trail paint geometry", () => {
     const uphill = previewPaintedTrail(plain, [stroke([p(0, 0), p(3, 10), p(5, 6), slope.base])], slope);
     expect(uphill.reason).toMatch(/uphill/i);
     expect(uphill.problemSegments.length).toBeGreaterThan(0);
-    const lifts = [mainLift, lift(p(-5, 8), p(10, 8))];
-    const crossing = previewPaintedTrail({ lifts, trails: [] }, [stroke(meander)], slope);
-    expect(crossing.reason).toMatch(/crosses a lift/i);
-    expect(crossing.problemSegments.length).toBeGreaterThan(0);
+    const crossLift = lift(p(-5, 8), p(10, 8));
+    const lifts = [mainLift, crossLift];
+    const throughTerminal = previewPaintedTrail(
+      { lifts, trails: [] },
+      [stroke([mainLift.anchor, p(-4.88, 8.02), slope.base])],
+      slope,
+    );
+    expect(throughTerminal.reason).toMatch(/lift terminal/i);
+    expect(throughTerminal.problemSegments.length).toBeGreaterThan(0);
+    const underLine = previewPaintedTrail({ lifts, trails: [] }, [stroke(meander)], slope);
+    expect(underLine.reason).toBeNull();
   });
 
   it("widens existing sections once, and does not treat narrowing as newly cleared ground", () => {
@@ -241,9 +248,9 @@ describe("trail endpoints", () => {
   const down = (end: XZ) => [mainLift.anchor, p(2, 7), p(3, 10), end];
 
   it("shows the drawn endpoint on a rejected midhill draft", () => {
-    const end = p(3, 13);
-    const draft = previewPaintedTrail(plain, [stroke(down(end))], slope);
-    expect(draft.reason).toMatch(/end at the base/i);
+    const end = p(3, 5);
+    const draft = previewPaintedTrail(plain, [stroke([mainLift.anchor, p(2, 3), end])], slope);
+    expect(draft.reason).toMatch(/join another trail|lower mountain/i);
     expect(draft.path.at(-1)).toEqual(end);
   });
 
@@ -269,20 +276,27 @@ describe("trail endpoints", () => {
     const near = previewPaintedTrail(state, [stroke(branch(p(onTrail.x + join * 0.5, onTrail.z)))], slope);
     expect(near.reason).toBeNull();
     expect(near.links?.end).toMatchObject({ trailIndex: 0, at: near.path.at(-1) });
-    const far = p(onTrail.x + join * 3, onTrail.z);
-    const apart = previewPaintedTrail(state, [stroke(branch(far))], slope);
-    expect(apart.path.at(-1)).toEqual(far);
-    expect(apart.reason).toMatch(/end at the base/i);
+    const invalidEnd = p(4, 4);
+    const apart = previewPaintedTrail(state, [stroke([mainLift.anchor, p(2, 3), invalidEnd])], slope);
+    expect(apart.draftEnd).toEqual(invalidEnd);
+    expect(apart.reason).toMatch(/join another trail|lower mountain/i);
   });
 
-  it("rejects a join whose legacy target ends midhill or is closed", () => {
+  it("rejects joining a closed trail but allows joining an open midhill run", () => {
     const end = p(1.5, 15);
     const branch = [p(0, 0), p(6, 8), end];
-    for (const target of [existing(meander.slice(0, -1).concat(end)), { ...existing(), open: false }]) {
-      const draft = previewPaintedTrail({ ...plain, trails: [target] }, [stroke(branch)], slope);
-      expect(draft.reason).toMatch(/end at the base/i);
-      expect(draft.links?.end).toBeUndefined();
-    }
+    const midhillTarget = existing(meander.slice(0, -1).concat(end));
+    const openJoin = previewPaintedTrail({ ...plain, trails: [midhillTarget] }, [stroke(branch)], slope);
+    expect(openJoin.reason).toBeNull();
+    expect(openJoin.links?.end).toBeDefined();
+    const invalidEnd = p(22, 8);
+    const closed = previewPaintedTrail(
+      { ...plain, trails: [{ ...existing(), open: false }] },
+      [stroke([p(0, 0), p(6, 8), invalidEnd])],
+      slope,
+    );
+    expect(closed.reason).toMatch(/join another trail|lower mountain/i);
+    expect(closed.links?.end).toBeUndefined();
   });
 
   it("joins a wide trail when the end is inside its ribbon but off the centreline", () => {
@@ -298,18 +312,13 @@ describe("trail endpoints", () => {
     expect(narrow.path.at(-1)).toEqual(end);
   });
 
-  it("uses an interior trail crossing only when the player connects it", () => {
+  it("connects interior trail crossings by default", () => {
     const state = { ...plain, trails: [existing()] };
     const strokes = [stroke([mainLift.anchor, p(4, 5), p(1, 13), p(1, 17), slope.base])];
-    const separate = previewPaintedTrail(state, strokes, slope);
-    const connected = previewPaintedTrail(state, strokes, slope, true);
-    expect(separate.reason).toBeNull();
-    expect(connected.reason).toBeNull();
-    expect(separate.links?.crossings).toBeUndefined();
-    expect(connected.links?.crossings?.length).toBeGreaterThan(0);
-    expect(connected.path).toEqual(separate.path);
-    expect(connected.cost).toBe(separate.cost);
-    for (const junction of connected.links?.crossings ?? []) {
+    const preview = previewPaintedTrail(state, strokes, slope);
+    expect(preview.reason).toBeNull();
+    expect(preview.links?.crossings?.length).toBeGreaterThan(0);
+    for (const junction of preview.links?.crossings ?? []) {
       expect(junction).toMatchObject({ trailIndex: 0 });
       expect(junction.from).toBeGreaterThan(0);
       expect(junction.to).toBeGreaterThan(0);
@@ -332,6 +341,24 @@ describe("trail endpoints", () => {
     const end = p(0, slope.base.z - r * 0.9);
     const draft = previewPaintedTrail(plain, [stroke(down(end), 150)], slope);
     expect(draft.path.at(-1)).toEqual(slope.base);
+  });
+
+  it("can finish by joining another trail even when that trail does not reach the village", () => {
+    const stub = {
+      ...existing([mainLift.anchor, p(2, 10), p(3.5, 18.2)]),
+      links: undefined,
+    };
+    const state = { lifts: [mainLift], trails: [stub] };
+    const preview = previewPaintedTrail(state, [stroke([mainLift.anchor, p(4, 8), p(2.05, 10.4)])], slope);
+    expect(preview.reason).toBeNull();
+    expect(preview.links?.end?.trailIndex).toBe(0);
+  });
+
+  it("allows finishing in the lower mountain without snapping to base", () => {
+    const end = p(3.5, 18.2);
+    const preview = previewPaintedTrail(plain, [stroke([mainLift.anchor, p(2, 8), end])], slope);
+    expect(preview.reason).toBeNull();
+    expect(preview.path.at(-1)?.z).toBeCloseTo(end.z, 4);
   });
 
   it("reports a walk from the village runout to a lift with an offset loading point", () => {

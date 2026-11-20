@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { TERRAIN } from "@/game/terrain";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import {
-  DIFFICULTY_COLOR, EDGE_MARGIN, MAX_RIBBON_SEGMENTS, MIN_RIBBON_SEGMENTS, UNVALIDATED_COLOR,
+  DIFFICULTY_COLOR, EDGE_MARGIN, MAX_RIBBON_SEGMENTS, MIN_RIBBON_SEGMENTS,
   LIVE_RIBBON_SEGMENTS, MAX_STROKE_POINTS, PAN_HOLD_MS, PAN_STILL_MS, panDrive, brushRadius, darken, usableHeight, edgePanInput, edgePanVelocity, pixelWorldSize, ribbonColor, ribbonSegmentCount,
 } from "./paintAssist";
 import { ribbonGeometry } from "./TrailRibbon";
@@ -103,7 +103,7 @@ describe("brush and ribbon style", () => {
     expect(ribbonColor("green", true)).toBe(DIFFICULTY_COLOR.green);
     expect(ribbonColor("blue", true)).toBe("#195dc4");
     expect(ribbonColor("black", true)).toBe("#28263e");
-    expect(ribbonColor("blue", false)).toBe(UNVALIDATED_COLOR);
+    expect(ribbonColor("blue", false)).toBe("#195dc4");
   });
 
   it("darkens an edge band", () => {

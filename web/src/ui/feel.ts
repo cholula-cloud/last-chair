@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { audio } from "@/audio/engine";
 import { mixGains } from "@/audio/mix";
+import { lodgeTierUnlocks } from "@/game/base";
 import { useGameStore } from "@/game/store";
 import { useSettings } from "@/ui/settingsStore";
 
@@ -84,7 +85,9 @@ export function useFeel(playing: boolean): void {
       // A lodge upgrade finishes overnight, one day on. A save loading a later day does not count.
       if (s.lodgeTier > prev.lodgeTier && s.seasonSeed === prev.seasonSeed && s.mountainId === prev.mountainId && s.dayIndex === prev.dayIndex + 1) {
         audio.play("chime");
-        usePop.getState().fire(`Lodge Tier ${s.lodgeTier} is open`);
+        const unlocks = lodgeTierUnlocks(s.lodgeTier).slice(0, 3).join(", ");
+        const detail = unlocks ? `${unlocks}${lodgeTierUnlocks(s.lodgeTier).length > 3 ? "…" : ""}` : "More pads out front";
+        usePop.getState().fire(`Lodge tier ${s.lodgeTier} — ${detail}`);
       }
     });
 

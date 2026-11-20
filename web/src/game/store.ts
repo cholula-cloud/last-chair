@@ -53,6 +53,7 @@ type GameActions = {
   renameAsset: (target: AssetTarget, name: string) => void;
   moveAsset: (index: number, at: XZ) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
+  pickCrewTalent: (id: import("./talentProgress").TalentId) => void;
   placeGun: (at: XZ) => void;
   beginLodgeUpgrade: () => void;
   undoTrail: () => void;
@@ -279,6 +280,7 @@ export const useGameStore = create<GameStore>()(
         renameAsset: action("renameAsset"),
         moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
+        pickCrewTalent: action("pickCrewTalent"),
         placeGun: action("placeGun"),
         beginLodgeUpgrade: command("beginLodgeUpgrade"),
         undoTrail: command("undoTrail"),

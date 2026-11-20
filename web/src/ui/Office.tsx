@@ -5,7 +5,8 @@ import { lodgeName } from "@/game/assetNames";
 import { LODGE_TIERS, lodgeTierUnlocks } from "@/game/base";
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
-import { CREW_TALENTS, founderById } from "@/game/content";
+import { founderById } from "@/game/content";
+import { TalentTreePanel } from "@/ui/TalentTreePanel";
 import { dailyCosts, morningCash, payoffAmount } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { expectedArrivals } from "@/game/rules";
@@ -128,7 +129,6 @@ export function Reports({ s }: { s: GameState }) {
 
 export function Crew({ s }: { s: GameState }) {
   const founder = founderById(s.founderId);
-  const next = CREW_TALENTS.find(t => !s.talentsOwned.includes(t.id));
   const nextTier = s.lodgeTier === 1 ? 2 : s.lodgeTier === 2 ? 3 : null;
   const tier = LODGE_TIERS[s.lodgeTier];
   return <>
@@ -140,7 +140,6 @@ export function Crew({ s }: { s: GameState }) {
       <p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p>
       <p>{s.outcome !== "playing" && s.lastWinter?.score ? `Winter score ${s.lastWinter.score.total}/100` : "The winter score gets tallied at the review."}</p></Section>
     {founder && <Section title={founder.name}><p>{founder.bonus}</p><p>{founder.constraint}</p></Section>}
-    <Section title="Crew talents">{next && <p><strong>Next up: {next.name}</strong> ({next.crew}). {next.effect}</p>}
-      {CREW_TALENTS.filter(t => s.talentsOwned.includes(t.id)).map(t => <p key={t.id}><strong>{t.name}</strong> ({t.crew}). {t.effect}</p>)}</Section>
+    <Section title="Crew talents"><TalentTreePanel /></Section>
   </>;
 }

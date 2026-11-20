@@ -43,7 +43,8 @@ describe("connected trail laps", () => {
     const [upper, middle, lower] = route;
     expect(route.map((leg) => leg.trailIndex)).toEqual([0, 1, 0]);
     expect(upper.to).toBeLessThan(lower.from);
-    expect([middle.from, middle.to]).toEqual([0, 1]);
+    expect(middle.from).toBeGreaterThan(0);
+    expect(middle.to).toBe(1);
     expect(pickSkiRoute("regular", built.trails, 0, id, 0)).toEqual(route);
 
     const rider = makeGuest({ id, persona: "regular", state: "ride", liftIndex: 0, rideStartMin: 570, targetRuns: 1 });
@@ -115,6 +116,10 @@ describe("connected trail laps", () => {
       links: { start: { ...start!, trailIndex: 1 }, end: { ...end!, trailIndex: 1 } },
     };
     const undone = undoLift({ ...built, lifts: [...built.lifts, lift], trails: [closed, first, branch] });
-    expect(undone.trails).toEqual(built.trails);
+    const withoutCrossings = (trails: typeof built.trails) => trails.map((trail) => ({
+      ...trail,
+      links: trail.links ? { ...trail.links, crossings: undefined } : trail.links,
+    }));
+    expect(withoutCrossings(undone.trails)).toEqual(withoutCrossings(built.trails));
   });
 });

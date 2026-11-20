@@ -85,6 +85,13 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  {
+    to: 9,
+    note: "Crew points replace automatic talent unlock at sleep.",
+    up(raw) {
+      return { ...raw, crewPoints: typeof raw.crewPoints === "number" ? raw.crewPoints : 0 };
+    },
+  },
 ];
 
 type MigrationResult =

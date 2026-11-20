@@ -46,7 +46,7 @@ export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };
 export const MARKS = {
   neutral: { name: "Not tracked", color: "#aeb3b2", glyph: "–" },
-  bare: { name: "Bare, closed", color: "#b18b66", glyph: "×" },
+  bare: { name: "Bare, closed", color: "#9fc8e3", glyph: "×" },
   shallow: { name: "Shallow", color: "#bbbdab", glyph: "·" },
   covered: { name: "Covered", color: "#9bd1df", glyph: "≈" },
   deep: { name: "Deep", color: "#e1edf7", glyph: "≋" },
@@ -60,12 +60,12 @@ export const MARKS = {
   worn: { name: "Worn", color: "#abaebf", glyph: "∴" },
   slush: { name: "Slush", color: "#7abfb3", glyph: "∿" },
   ice: { name: "Ice", color: "#9fc8e3", glyph: "▧" },
-  thin: { name: "Thin", color: "#c6ae8b", glyph: "▦" },
+  thin: { name: "Thin", color: "#b8c4d4", glyph: "▦" },
   hold: { name: "Wind hold", color: "#d7b5d4", glyph: "↝" },
-  wear: { name: "1–99 runs", color: "#d4bd99", glyph: "·" },
+  wear: { name: "1–99 runs", color: "#c7ced8", glyph: "·" },
   heavyWear: { name: "100+ runs", color: "#ae728a", glyph: "⋮" },
   noWear: { name: "No runs", color: "#d7e0d3", glyph: "○" },
-  breakup: { name: "Broken cover", color: "#b18b66", glyph: "×" },
+  breakup: { name: "Broken cover", color: "#abaebf", glyph: "×" },
 } satisfies Record<string, Mark>;
 export type MarkId = keyof typeof MARKS;
 export const LEGENDS: Record<SnowLayer, MarkId[]> = {

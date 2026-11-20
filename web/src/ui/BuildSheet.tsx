@@ -3,7 +3,7 @@
 import { CoachTip } from "./CoachTip";
 import { useState } from "react";
 import { liftName, venueName } from "@/game/assetNames";
-import { ASSET_CATALOG, type AssetId } from "@/game/base";
+import { ASSET_CATALOG, LODGE_TIERS, type AssetId, type LodgeTier } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
 import { constructionDraw } from "@/game/economy";
@@ -135,7 +135,7 @@ export function BuildSheet({
                 <button key={id} type="button" disabled={locked} onClick={() => buildAsset(id)}
                   className="key press min-h-14 p-2 text-left font-extrabold">
                   {asset.label}
-                  <small className="block">{locked ? `Lodge Tier ${asset.opensAtTier}` : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}</small>
+                  <small className="block">{locked ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}` : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}</small>
                 </button>
               );
             })}

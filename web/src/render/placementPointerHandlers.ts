@@ -3,7 +3,8 @@ import type { GameState } from "@/game/state";
 import type { LiftType } from "@/game/types";
 import { TERRAIN, type XZ } from "@/game/terrain";
 import type { PaintStroke } from "@/game/paintedTrail";
-import { liftDrag, liftPress, type LiftGrab } from "@/ui/liftGesture";
+import { liftBottomAt, liftDrag, liftPress, liftTopAt, type LiftGrab } from "@/ui/liftGesture";
+import type { LiftPhase } from "@/ui/placementDraft";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { brushState } from "./brushState";
 import { MAX_STROKE_POINTS, PAN_MOVE_PX } from "./paintAssist";
@@ -71,6 +72,37 @@ export function pointerTrailMove(
   brushState.visible = true;
 }
 
+export function pointerLiftTap(
+  game: GameState,
+  type: LiftType,
+  phase: LiftPhase,
+  draft: ReturnType<typeof usePlacementDraft.getState>,
+  raw: XZ,
+  camera: PerspectiveCamera,
+  canvasHeight: number,
+): void {
+  const y = TERRAIN.height(raw.x, raw.z);
+  const radius = snapRadiusAtHit(camera, { ...raw, y }, canvasHeight);
+  if (phase === "bottom") {
+    usePlacementDraft.setState({
+      bottom: liftBottomAt(raw),
+      top: undefined,
+      snapped: false,
+      tapPoint: raw,
+    });
+    return;
+  }
+  if (phase === "top" && draft.bottom) {
+    const next = liftTopAt(game, type, draft.bottom, raw, radius, LIFT_BUILD_ANCHORS);
+    usePlacementDraft.setState({
+      top: next.top,
+      snapped: next.snapped,
+      tapPoint: raw,
+      liftPhase: "adjust",
+    });
+  }
+}
+
 export function pointerLiftMove(
   game: GameState,
   draft: ReturnType<typeof usePlacementDraft.getState>,
@@ -82,6 +114,7 @@ export function pointerLiftMove(
   canvasHeight: number,
   pressing: boolean,
 ): { grab: LiftGrab; offset: XZ } {
+  if (draft.liftPhase !== "adjust") return { grab, offset };
   const y = TERRAIN.height(raw.x, raw.z);
   const radius = snapRadiusAtHit(camera, { ...raw, y }, canvasHeight);
   if (pressing) {

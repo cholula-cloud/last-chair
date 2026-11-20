@@ -12,6 +12,7 @@ import {
   assetRevenue,
   assetEffect,
   advanceLodgeUpgrade,
+  lodgeAttachPads,
   LODGE_TIERS,
   nextLodgeTier,
   placedAssetsFromLegacy,
@@ -26,6 +27,7 @@ import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./p
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
+import { pickTalent as applyTalentPick, type TalentId } from "./talentProgress";
 import {
   checkLiftLine,
   checkSpacing,
@@ -863,6 +865,17 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
   return preview;
 }
 
+export function pickCrewTalent(state: GameState, id: TalentId): GameState {
+  return applyTalentPick(state, id);
+}
+
+export function placeAssetAtPad(state: GameState, id: AssetId, padIndex: number): GameState {
+  const pads = lodgeAttachPads(state.lodgeTier);
+  const at = pads[padIndex];
+  if (!at) return state;
+  return placeAsset(state, id, at);
+}
+
 export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
   const preview = checkAssetPlacement(state, id, at);
   if (!preview.ok) return state;
@@ -1096,9 +1109,8 @@ function nightFor(
     talentsOwned: state.talentsOwned,
     daysWithoutSnow: state.daysWithoutSnow,
   });
-  const learned = CREW_TALENTS.find((x) => x.name === overnight.talentLearned);
-  const talentsOwned = learned ? [...state.talentsOwned, learned.id] : state.talentsOwned;
-  return { overnight, talentsOwned };
+  const crewPoints = state.crewPoints + overnight.crewPointsEarned;
+  return { overnight, talentsOwned: state.talentsOwned, crewPoints };
 }
 
 function forecastResults(state: GameState, snow: SnowPreset) {
@@ -1266,7 +1278,7 @@ export function sleep(state: GameState): GameState {
     return { ...review, lastWinter: record, career: [...review.career, record] };
   }
 
-  const { overnight, talentsOwned } = nightFor(state, state.pendingSnow);
+  const { overnight, talentsOwned, crewPoints } = nightFor(state, state.pendingSnow);
   const carried: GameState = {
     ...state,
     lodgeUpgrade: upgrade,
@@ -1299,6 +1311,7 @@ export function sleep(state: GameState): GameState {
       : overnight.morningHeadline,
     daysWithoutSnow: overnight.daysWithoutSnow,
     talentsOwned,
+    crewPoints,
     nightRecap: null,
     pendingBeat: null,
   };
@@ -1333,9 +1346,11 @@ export function sleep(state: GameState): GameState {
     gunsVisible: overnight.gunsFired,
     talentToast: overnight.talentLearned
       ? `New on the crew: ${talentDescription(overnight.talentLearned, carried)}`
-      : overnight.nextTalentHint
-        ? `Next up for the crew: ${overnight.nextTalentHint}.`
-        : null,
+      : crewPoints > state.crewPoints
+        ? `Crew point earned. Open Office to choose a talent (${crewPoints} saved).`
+        : overnight.nextTalentHint
+          ? `Crew board: ${overnight.nextTalentHint} is next when you have a point.`
+          : null,
     clockMin: DAY_START_MIN,
     dayIndex: nextDay,
     beatAcknowledged: true,

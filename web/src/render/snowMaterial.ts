@@ -19,7 +19,8 @@ export const snowUniforms = {
   uSnowColor1: { value: color(PALETTE.snowShade) },
   uSnowColor2: { value: color(PALETTE.snowOld) },
   uSnowColor3: { value: color(PALETTE.snowIce) },
-  uSnowColor4: { value: color(PALETTE.earth) },
+  /** Corridor bare patches use worn snow, not earth brown. */
+  uSnowColor4: { value: color(PALETTE.snowOld) },
   uSnowColor5: { value: color(PALETTE.rock) },
 };
 
@@ -72,16 +73,19 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
   float groomed = seg.a;
   float wear = uWear[int(row)];
   float n = snowHash(vSnowWorld.xz * uPatchScale);
-  float barePatch = smoothstep(coverage - 0.08, coverage + 0.08, n);
-  float bare = barePatch * (1.0 - smoothstep(0.28, 0.34, coverage));
+  float barePatch = smoothstep(coverage - 0.04, coverage + 0.04, n);
+  float awful = smoothstep(0.14, 0.05, coverage) * smoothstep(0.22, 0.08, quality);
+  float bare = barePatch * awful;
   vec3 col = mix(uSnowColor0, uSnowColor3, clamp((0.45 - quality) / 0.35, 0.0, 1.0) * 0.85);
   col = mix(col, uSnowColor2, clamp(0.75 - quality, 0.0, 1.0) * 0.35);
-  col = mix(col, uSnowColor4, bare * vWeight);
+  col = mix(col, mix(uSnowColor3, uSnowColor2, 0.55), bare * vWeight * 0.5);
   float stripe = 0.5 + 0.5 * sin(vCross / max(uStripePitch, 1e-4) * 6.2831853);
   float edgeFade = smoothstep(0.85, 1.0, abs(vCross) / 6.3);
-  float amp = uGroomStrength * groomed * quality * (1.0 - wear) * (1.0 - edgeFade);
+  float depthBoost = 0.65 + 0.35 * depth;
+  float amp = uGroomStrength * groomed * quality * depthBoost * (1.0 - wear) * (1.0 - edgeFade);
   float stripeMix = stripe * amp * vWeight;
-  col = mix(col, mix(uSnowColor0, uSnowColor1, 0.25), stripeMix);
+  col = mix(col, mix(uSnowColor0, uSnowColor1, 0.35), stripeMix);
+  col = mix(col, uSnowColor0, groomed * depth * 0.12 * vWeight);
   col *= 1.0 - 0.05 * uNight;
   diffuseColor.rgb = mix(diffuseColor.rgb, col, vWeight);
 }

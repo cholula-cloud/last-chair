@@ -44,7 +44,7 @@ function routeNetwork(trails: readonly TrailRun[]) {
     const dst = reverse ? index : toTrail;
     const from = reverse ? join.to : join.from;
     const toStart = reverse ? join.from : join.to;
-    if (!hasBaseContinuation(trails, dst, toStart, TERRAIN)) return;
+    if (reverse && !hasBaseContinuation(trails, dst, toStart, TERRAIN)) return;
     transfers[src].push({
       trailIndex: src, from, to: from, toTrail: dst, toStart,
       atHeight: TERRAIN.height(join.at.x, join.at.z),

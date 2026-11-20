@@ -79,6 +79,36 @@ function DotLayer({ cells, capacity, mode, kind, snapped = false }: {
 const cellsOf = (dots: readonly Dot[], valid: boolean | null): XZ[] =>
   dots.filter((dot) => dot.valid === valid).map(({ x, z }) => ({ x, z }));
 
+/** Horizontal and vertical lines on the lease cell step so the field reads as a grid. */
+function GridLines({ variant = "field" }: { variant?: "field" | "trail" }) {
+  const style = variant === "trail" ? GRID_STYLE.trailLine : GRID_STYLE.line;
+  const geometry = useMemo(() => {
+    const step = TERRAIN.scale.horizontal / 2;
+    const { xMin, xMax, zMin, zMax } = leaseBounds(TERRAIN);
+    const points: number[] = [];
+    const yAt = (x: number, z: number) => TERRAIN.height(x, z) + GRID_STYLE.height;
+    const x0 = Math.floor(xMin / step) * step;
+    const x1 = Math.ceil(xMax / step) * step;
+    const z0 = Math.floor(zMin / step) * step;
+    const z1 = Math.ceil(zMax / step) * step;
+    for (let x = x0; x <= x1 + 1e-6; x += step) {
+      points.push(x, yAt(x, z0), z0, x, yAt(x, z1), z1);
+    }
+    for (let z = z0; z <= z1 + 1e-6; z += step) {
+      points.push(x0, yAt(x0, z), z, x1, yAt(x1, z), z);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+    return g;
+  }, []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <lineSegments geometry={geometry} renderOrder={0} frustumCulled={false}>
+      <lineBasicMaterial color={style.color} transparent opacity={style.opacity} depthWrite={false} toneMapped={false} />
+    </lineSegments>
+  );
+}
+
 /** The reach ring: a thin line on the ground at the longest legal lift, clipped to the lease and hidden near the cable. */
 function ReachRing({ bottom, top, type, snapped }: { bottom: XZ; top?: XZ; type: LiftType; snapped: boolean }) {
   const ARC_STEPS = 128;
@@ -126,7 +156,11 @@ function LiftGrid() {
     type: draft.type, bottom: draft.bottom, top: draft.top, snapped: draft.snapped, review: draft.review,
   })));
   const rules = useGameStore(useShallow((state) => ({ lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier })));
-  const bottom = draftBottom ?? TERRAIN.base;
+  if (!draftBottom) {
+    if (review) return null;
+    return <GridLines />;
+  }
+  const bottom = draftBottom;
   const stepped = snapBottom(bottom);
   // Trailing debounce of the rounded bottom: a drag settles before the cells are recomputed.
   const [settled, setSettled] = useState(stepped);
@@ -147,6 +181,7 @@ function LiftGrid() {
   const fade = snapped && !!top;
   return (
     <>
+      <GridLines />
       {cells.length > 0 && <ReachRing bottom={bottom} top={top} type={type} snapped={fade} />}
       <DotLayer cells={shown} capacity={LIFT_CAPACITY} mode="lift" kind="valid" snapped={fade} />
     </>
@@ -161,13 +196,17 @@ function LiftGrid() {
  */
 export function BuildGrid() {
   const { mode, asset, movingAssetIndex } = usePlacementDraft(useShallow((draft) => {
-    // Trail mode keeps the map quiet.
     const mode = draft.active
-      ? draft.kind === "trail" ? null : draft.kind
+      ? draft.kind === "trail" ? "trail" : draft.kind
       : draft.showBuildGrid ? "overview" : null;
-    return { mode, movingAssetIndex: draft.movingAssetIndex, asset: mode === "asset" ? draft.asset : undefined };
+    return {
+      mode,
+      movingAssetIndex: draft.movingAssetIndex,
+      asset: mode === "asset" ? draft.asset : undefined,
+    };
   }));
   if (mode === "lift") return <LiftGrid />;
+  if (mode === "trail") return <GridLines variant="trail" />;
   if (mode !== "asset" && mode !== "gun" && mode !== "overview") return null;
   return <FieldGrid mode={mode} asset={asset} movingAssetIndex={movingAssetIndex} />;
 }
@@ -208,6 +247,7 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
   if (!mode) return null;
   return (
     <>
+      <GridLines />
       <DotLayer cells={blocked} capacity={FIELD_CAPACITY} mode={mode} kind="blocked" />
       <DotLayer cells={valid} capacity={FIELD_CAPACITY} mode={mode} kind="valid" />
       <DotLayer cells={neutral} capacity={FIELD_CAPACITY} mode={mode} kind="neutral" />

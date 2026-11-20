@@ -15,6 +15,7 @@ import { edgePanInput, edgePanVelocity, panDrive, usableHeight } from "./paintAs
 import {
   flushTrailPending,
   pointerLiftMove,
+  pointerLiftTap,
   pointerTrailMove,
   queueTrailPoint,
 } from "./placementPointerHandlers";
@@ -102,9 +103,13 @@ export function PlacementController() {
         const camera = get().camera as PerspectiveCamera;
         const rect = dom.getBoundingClientRect();
         const game = useGameStore.getState();
-        ({ grab, offset } = pointerLiftMove(
-          game, draft, draft.type, grab, offset, raw, camera, rect.height, pressing,
-        ));
+        if (pressing && (draft.liftPhase === "bottom" || draft.liftPhase === "top")) {
+          pointerLiftTap(game, draft.type, draft.liftPhase, draft, raw, camera, rect.height);
+        } else {
+          ({ grab, offset } = pointerLiftMove(
+            game, draft, draft.type, grab, offset, raw, camera, rect.height, pressing,
+          ));
+        }
       } else {
         usePlacementDraft.setState({ tapPoint: raw });
       }
@@ -245,6 +250,8 @@ export function PlacementController() {
             activeStroke: null,
             ...(stroke && stroke.points.length > 1 ? { strokes: [...draft.strokes, stroke], redo: [] } : {}),
           });
+        } else if (draft.kind === "lift" && !moved && draft.liftPhase === "bottom" && draft.bottom) {
+          usePlacementDraft.setState({ liftPhase: "top" });
         }
       }
       endStroke();

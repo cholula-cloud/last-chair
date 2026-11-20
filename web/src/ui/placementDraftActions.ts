@@ -1,5 +1,5 @@
 import type { LiftType } from "@/game/types";
-import type { AssetId } from "@/game/base";
+import { ASSET_CATALOG, lodgeAttachPads, type AssetId } from "@/game/base";
 import { STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
 import { useGameStore } from "@/game/store";
 import { useCameraUi } from "@/ui/cameraUi";
@@ -21,13 +21,15 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
     ...(type ? { type } : {}),
     review: false,
     step: "top",
+    liftPhase: "bottom",
     top: undefined,
     bottom: undefined,
     snapped: false,
     tapPoint: undefined,
     focus: null,
     glade: false,
-    connectCrossings: false,
+    connectCrossings: true,
+    lodgePad: undefined,
     brushWidth: STANDARD_BRUSH_WIDTH,
     erasing: false,
     strokes: [],
@@ -50,6 +52,16 @@ export function startAssetPlacement(asset: AssetId, movingAssetIndex?: number) {
   if (movingAssetIndex !== undefined) usePlacementDraft.setState({ movingAssetIndex });
 }
 
+/** Place an attachable venue on a specific lodge pad (annex +5%). Opens review on confirm. */
+export function startLodgePadPlacement(asset: AssetId, padIndex: number) {
+  const tier = useGameStore.getState().lodgeTier;
+  const at = lodgeAttachPads(tier)[padIndex];
+  if (!at || !ASSET_CATALOG[asset].attachable) return;
+  startDraft("asset", undefined, asset);
+  usePlacementDraft.setState({ lodgePad: padIndex, tapPoint: at, review: true });
+  requestFocus([at]);
+}
+
 export function startGunPlacement() {
   startDraft("gun");
 }
@@ -66,6 +78,7 @@ export function finishPlacement() {
     review: false,
     asset: undefined,
     step: "top",
+    liftPhase: "bottom",
     top: undefined,
     bottom: undefined,
     snapped: false,
@@ -74,6 +87,7 @@ export function finishPlacement() {
     strokes: [],
     redo: [],
     activeStroke: null,
+    lodgePad: undefined,
   });
   useGameStore.getState().setBuildMode(false);
 }

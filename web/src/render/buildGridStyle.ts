@@ -3,7 +3,7 @@
  * guide is a smaller, dimmer variant so anchor dots stay the strongest mark. Radii are world units
  * at the cell step of `terrain.scale.horizontal / 2`.
  */
-export type GridMode = "overview" | "asset" | "gun" | "lift";
+export type GridMode = "overview" | "asset" | "gun" | "lift" | "trail";
 export type DotKind = "valid" | "blocked" | "neutral";
 
 export type DotStyle = { color: string; opacity: number };
@@ -29,6 +29,9 @@ export const GRID_STYLE = {
   /** The reach ring: the longest legal lift from the bottom, a thin line. */
   reach: { color: "#36a975", opacity: 0.5 },
   reachSnapped: { color: "#36a975", opacity: 0.2 },
+  /** Lease grid lines while building. */
+  line: { color: "#5d7a8a", opacity: 0.28 },
+  trailLine: { color: "#6a8a9a", opacity: 0.36 },
   /** Grid dots closer than this many cells to the cable or a pad are hidden. */
   cableClearCells: 1,
 } as const;
@@ -45,5 +48,6 @@ export function dotRadius(mode: GridMode): number {
 export function dotStyle(mode: GridMode, kind: DotKind, snapped = false): DotStyle {
   if (mode === "lift") return snapped ? GRID_STYLE.liftSnapped : GRID_STYLE.liftTop;
   if (mode === "overview" && kind === "neutral") return GRID_STYLE.overviewNeutral;
+  if (mode === "trail" && kind === "neutral") return GRID_STYLE.overviewNeutral;
   return GRID_STYLE[kind];
 }
