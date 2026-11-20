@@ -228,11 +228,14 @@ function TrailBar() {
 
   return (
     <div key="full" className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]" data-trail-panel="full">
-      <div className="flex items-center justify-between gap-2">
-        {stats ?? <p className="min-w-0 flex-1 truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+        <div className={`min-w-0 flex-1 ${problem ? "short:hidden" : ""}`}>
+          {stats ?? <p className="truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
+        </div>
+        {/* On short screens, keep the continuation ring exposed by sharing the stats row. */}
+        {problem && <div className="order-last w-full min-w-0 short:order-none short:w-auto short:flex-1">{problem}</div>}
         <MinimizeButton />
       </div>
-      {problem}
       {state.trails.some((trail) => trail.open) && preview?.trailIndex == null && (
         <label className="flex min-h-11 w-fit items-center gap-2 px-0.5 text-xs font-extrabold text-ink">
           <input type="checkbox" checked={draft.connectCrossings}
