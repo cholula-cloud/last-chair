@@ -1977,6 +1977,8 @@ One coordinated pass after B6/B7 or in parallel with early feel rows: design (co
 
 ### Row F3 — Stats and Reports, Office economics (M4, stub)
 
+**Split (MASTER_PLAN v2.7).** Ship as two PRs under the 400-line rule. **F3a:** Stats tab, series selectors, and the money charts (revenue vs costs, revenue breakdown, morning cash, construction timeline, loan), plus any chart-only `DayReport` snapshots. **F3b:** ops charts (fare elasticity, arrivals, satisfaction terms, wait, snow spend, satisfaction vs revenue) and the Reports season calendar and trail report.
+
 **Goal.** The Office reads like a **ski-area CFO dashboard** (MASTER_PLAN §12). Ship the **Stats** tab and upgrade **Reports** so time series and breakdowns dominate; the recap archive remains narrative, not the only history UI.
 
 **Depends on.** Row **F2** (`DayReport` / `dayHistory`, Money ledger). Before chart work, audit F2 fields; add chart-only snapshots at `sleep()` if missing (e.g. closing loan balance, closing reputation) — schema bump, no sim fork. Cross-check `SIMULATION_SPEC` Office ledger note.
