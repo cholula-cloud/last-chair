@@ -1,0 +1,78 @@
+name: E2E smoke (PR)
+
+on:
+  pull_request:
+    paths:
+      - "web/src/**"
+      - "web/public/**"
+      - "web/app/**"
+      - "web/scripts/**"
+      - ".github/workflows/e2e-pr.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-out
+          path: web/out/
+          retention-days: 1
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            sleep $((attempt * 4))
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-out
+          path: web/out/
+      - name: Chromium smoke at 390×844
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run playtest:smoke
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-smoke-screenshots
+          path: web/playtest-artifacts/smoke/
