@@ -5,7 +5,9 @@
  * Snow depth, snow-making and conditions (rows O2 and O3) join by adding an entry to `LAYERS`.
  */
 
-import { LAYERS as LABELS, type MapLayer, type SnowLayer } from "./mapLayers";
+import { LAYERS as LABELS, type MapLayer, type OpsLayer, type SnowLayer } from "./mapLayers";
+import { opsReadout } from "./opsOverlay";
+import type { GameState } from "./state";
 import { onLease } from "./lease";
 import { MAX_PAINTED_PITCH } from "./paintedTrail";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
@@ -48,7 +50,11 @@ type OverlayLayer = {
   id: "slope";
   legend: readonly LegendEntry[];
   readout(at: XZ, ctx: ReadoutContext): Readout;
-} | { id: SnowLayer });
+} | { id: SnowLayer } | {
+  id: OpsLayer;
+  legend: readonly LegendEntry[];
+  readout(at: XZ, state: GameState): Readout;
+});
 
 // ---- Slope ----------------------------------------------------------------------------------
 
@@ -127,6 +133,35 @@ const LEGEND_LABEL: Record<SlopeBand, string> = Object.fromEntries(
 
 // ---- Registry -------------------------------------------------------------------------------
 
+const OPS_LEGEND: Record<OpsLayer, readonly LegendEntry[]> = {
+  crowds: [
+    { id: "light", label: "Light", detail: "Short line or few skiers at the lift.", color: "#8fd4a0", pattern: "dots" },
+    { id: "busy", label: "Busy", detail: "A steady queue or skiers stacking up.", color: "#f0c15a", pattern: "stripes" },
+    { id: "packed", label: "Packed", detail: "Long wait and a crowded lift zone.", color: "#d45a5a", pattern: "hatch" },
+  ],
+  revenue: [
+    { id: "high", label: "Strong", detail: "Venue earned over $40 today.", color: "#55b07a", pattern: "dots" },
+    { id: "mid", label: "Some", detail: "Venue earned between $1 and $40 today.", color: "#c9b46a", pattern: "stripes" },
+    { id: "none", label: "Quiet", detail: "No venue revenue yet today.", color: "#b8b3a8", pattern: "hatch" },
+  ],
+  demand: [
+    { id: "pin", label: "Guests want", detail: "Top unmet demand from the last closing recap.", color: "#7a6ed4", pattern: "dense-hatch" },
+  ],
+};
+
+function opsLayer(id: OpsLayer, mode: number): OverlayLayer {
+  return {
+    id,
+    label: LABELS[id],
+    mode,
+    legend: OPS_LEGEND[id],
+    readout(at, state) {
+      const r = opsReadout(id, state, at);
+      return { headline: r.headline, chips: r.chips };
+    },
+  };
+}
+
 const SLOPE_LAYER: OverlayLayer = {
   id: "slope",
   label: LABELS.slope,
@@ -141,6 +176,9 @@ const LAYERS: readonly OverlayLayer[] = [
   { id: "depth", label: LABELS.depth, mode: 2 },
   { id: "guns", label: LABELS.guns, mode: 3 },
   { id: "conditions", label: LABELS.conditions, mode: 4 },
+  opsLayer("crowds", 5),
+  opsLayer("revenue", 6),
+  opsLayer("demand", 7),
 ];
 
 export function overlayLayers(): readonly OverlayLayer[] {
