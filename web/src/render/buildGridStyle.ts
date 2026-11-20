@@ -19,7 +19,9 @@ export const GRID_STYLE = {
   valid: { color: "#36a975", opacity: 0.62 },
   /** Lease cells that cannot take the item: a faint dot so the lease keeps its shape. */
   blocked: { color: "#566a7c", opacity: 0.32 },
-  neutral: { color: "#6f8a80", opacity: 0.55 },
+  neutral: { color: "#5d7a8a", opacity: 0.72 },
+  /** Overview grid only: stronger dots so the lease reads on snow at phone DPR. */
+  overviewNeutral: { color: "#4a6f82", opacity: 0.82 },
   /** Lift-top cells; below the shared green, above the ring. */
   liftTop: { color: "#36a975", opacity: 0.45 },
   /** Lift-top cells once the top sits on an anchor. */
@@ -42,5 +44,6 @@ export function dotRadius(mode: GridMode): number {
 /** The colour and opacity of one dot. `snapped` only matters in lift mode. */
 export function dotStyle(mode: GridMode, kind: DotKind, snapped = false): DotStyle {
   if (mode === "lift") return snapped ? GRID_STYLE.liftSnapped : GRID_STYLE.liftTop;
+  if (mode === "overview" && kind === "neutral") return GRID_STYLE.overviewNeutral;
   return GRID_STYLE[kind];
 }

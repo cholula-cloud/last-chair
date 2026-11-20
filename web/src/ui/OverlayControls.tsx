@@ -16,7 +16,7 @@ import {
   isPainting,
   pickLayer,
   setProbe,
-  toggleStrip,
+  toggleLayersRail,
   turnLayerOff,
   useActiveLayer,
 } from "@/ui/overlayUi";
@@ -55,14 +55,14 @@ function LegendChip({ entry, compact }: { entry: LegendEntry; compact?: boolean 
 }
 
 /** Legend chips for the layer on the map, with a 44 px Off key. */
-export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
+export function OverlayLegend({ allowOff = true, className = "" }: { allowOff?: boolean; className?: string }) {
   const layer = getOverlayLayer(useActiveLayer());
   const placing = usePlacementDraft((s) => s.active);
   const wear = useLayers((s) => s.wear);
   const gunView = useLayers((s) => s.gunView);
   if (!layer || (layer.id !== "slope" && !placing)) return null;
   return (
-    <div className="pointer-events-none flex max-w-full items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
+    <div className={`pointer-events-none flex max-w-full items-center justify-end gap-1.5 ${className}`} data-overlay-legend={layer.id}>
       {layer.id === "slope" ? (
         <ul
           className="chip pointer-events-auto flex min-h-9 flex-nowrap items-center gap-2 px-2.5 py-1"
@@ -84,12 +84,12 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
 }
 
 /** The layer strip: one button per implemented layer and Off. */
-export function LayerStrip({ allowOff = true }: { allowOff?: boolean }) {
+export function LayerStrip({ allowOff = true, className = "" }: { allowOff?: boolean; className?: string }) {
   const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   if (!open) return null;
   return (
-    <div className="pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Map layers" data-layer-strip>
+    <div className={`pointer-events-auto flex max-w-full gap-1.5 overflow-x-auto pb-1 ${className}`} role="group" aria-label="Map layers" data-layer-strip>
       {overlayLayers().map((layer) => (
         <button key={layer.id} type="button" aria-pressed={shown === layer.id} onClick={() => pickLayer(layer.id, allowOff)}
           className="key press min-h-11 shrink-0 px-4 text-sm font-extrabold">
@@ -112,7 +112,7 @@ export function LayersButton({ compact = false }: { compact?: boolean }) {
       type="button"
       aria-pressed={open || shown !== null}
       aria-label="Layers"
-      onClick={toggleStrip}
+      onClick={toggleLayersRail}
       className={
         compact
           ? "key press pointer-events-auto flex size-11 shrink-0 items-center justify-center gap-1.5 !rounded-full [--lift:3px] md:w-auto md:!rounded-[var(--r-key)] md:px-3 md:text-xs md:font-extrabold"

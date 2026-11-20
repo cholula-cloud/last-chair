@@ -8,19 +8,33 @@ export const useHudUi = create<{
   hudHidden: boolean;
   /** Expands the compact Conditions pill into the full 3-column readout with status chips. */
   conditionsExpanded: boolean;
+  /** Hides the conditions pill and action bar while map rail and top bar stay up. */
+  bottomChromeMinimized: boolean;
 }>(() => ({
   hudHidden: false,
   conditionsExpanded: false,
+  bottomChromeMinimized: false,
 }));
 
 export function toggleHudHidden() {
-  useHudUi.setState((s) => ({ hudHidden: !s.hudHidden }));
+  useHudUi.setState((s) => ({
+    hudHidden: !s.hudHidden,
+    bottomChromeMinimized: s.hudHidden ? s.bottomChromeMinimized : false,
+  }));
 }
 
 export function setHudHidden(hudHidden: boolean) {
-  useHudUi.setState({ hudHidden });
+  useHudUi.setState({ hudHidden, ...(hudHidden ? {} : { bottomChromeMinimized: false }) });
 }
 
 export function toggleConditionsExpanded() {
   useHudUi.setState((s) => ({ conditionsExpanded: !s.conditionsExpanded }));
+}
+
+export function toggleBottomChromeMinimized() {
+  useHudUi.setState((s) => ({ bottomChromeMinimized: !s.bottomChromeMinimized }));
+}
+
+export function setBottomChromeMinimized(bottomChromeMinimized: boolean) {
+  useHudUi.setState({ bottomChromeMinimized });
 }

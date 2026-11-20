@@ -258,6 +258,7 @@ export function ConditionsBoard({
   anyOnHill = true,
   expanded = false,
   onToggleExpand,
+  onMinimizeBottom,
 }: {
   avgQueue: number;
   /** False until a guest is on the hill: the queue then reads "No line yet" instead of 0.0m. */
@@ -269,6 +270,7 @@ export function ConditionsBoard({
   mood: number;
   expanded?: boolean;
   onToggleExpand?: () => void;
+  onMinimizeBottom?: () => void;
 }) {
   const queueTone: Tone =
     avgQueue < 3 ? "good" : avgQueue < 5 ? "watch" : "bad";
@@ -317,7 +319,22 @@ export function ConditionsBoard({
       className="panel hud-surface pointer-events-auto w-full [--lift:3px]"
     >
       <div className="flex items-center">
-        <div className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5">
+        <div
+          className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5"
+          role={!expanded && onToggleExpand ? "button" : undefined}
+          tabIndex={!expanded && onToggleExpand ? 0 : undefined}
+          onClick={!expanded && onToggleExpand ? onToggleExpand : undefined}
+          onKeyDown={
+            !expanded && onToggleExpand
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggleExpand();
+                  }
+                }
+              : undefined
+          }
+        >
           {items.map((c) => (
             <div
               key={c.key}
@@ -352,15 +369,15 @@ export function ConditionsBoard({
             </div>
           ))}
         </div>
-        {onToggleExpand && (
+        {(onToggleExpand || onMinimizeBottom) && (
           <button
             type="button"
-            onClick={onToggleExpand}
+            onClick={expanded ? onToggleExpand : onMinimizeBottom}
             aria-expanded={expanded}
-            aria-label={expanded ? "Collapse conditions" : "Expand conditions"}
+            aria-label={expanded ? "Collapse conditions" : "Minimize hill controls"}
             className="flex size-10 shrink-0 items-center justify-center border-l-2 border-snow-2 text-ink-soft transition-colors hover:text-ink"
           >
-            {expanded ? <ChevronDownIcon size={16} /> : <ChevronUpIcon size={16} />}
+            <ChevronDownIcon size={16} />
           </button>
         )}
       </div>
@@ -408,6 +425,21 @@ export function RecenterButton({ onClick, compact = false }: { onClick: () => vo
       }`}
     >
       <RecenterIcon size={compact ? 20 : 22} />
+    </button>
+  );
+}
+
+/** Restores the conditions readout and action bar after minimizing bottom chrome. */
+export function BottomChromeRestoreButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Show hill controls"
+      className="key press pointer-events-auto flex min-h-11 items-center justify-center gap-1.5 px-3 text-xs font-extrabold [--lift:3px]"
+    >
+      <ChevronUpIcon size={16} />
+      Show controls
     </button>
   );
 }
