@@ -11,7 +11,7 @@ import { LayerLegend, LayerPanel } from "./MapLayers";
 import { useLayers } from "./mapLayerStore";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
-import { CloseIcon } from "@/ui/kit/icons";
+import { CloseIcon, LayersIcon } from "@/ui/kit/icons";
 import {
   isPainting,
   pickLayer,
@@ -104,13 +104,29 @@ export function LayerStrip({ allowOff = true }: { allowOff?: boolean }) {
   );
 }
 
-export function LayersButton() {
+export function LayersButton({ compact = false }: { compact?: boolean }) {
   const open = useLayers((s) => s.stripOpen);
   const shown = useActiveLayer();
   return (
-    <button type="button" aria-pressed={open || shown !== null} onClick={toggleStrip}
-      className="key press min-h-11 px-3 text-sm font-extrabold">
-      Layers
+    <button
+      type="button"
+      aria-pressed={open || shown !== null}
+      aria-label="Layers"
+      onClick={toggleStrip}
+      className={
+        compact
+          ? "key press pointer-events-auto flex size-11 shrink-0 items-center justify-center gap-1.5 !rounded-full [--lift:3px] md:w-auto md:!rounded-[var(--r-key)] md:px-3 md:text-xs md:font-extrabold"
+          : "key press min-h-11 px-3 text-sm font-extrabold"
+      }
+    >
+      {compact ? (
+        <>
+          <LayersIcon size={19} />
+          <span className="hidden md:inline">Layers</span>
+        </>
+      ) : (
+        "Layers"
+      )}
     </button>
   );
 }

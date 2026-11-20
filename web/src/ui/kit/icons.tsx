@@ -324,3 +324,60 @@ export function PeaksGlyph({ peaks }: { peaks: 1 | 2 | 3 }) {
     </svg>
   );
 }
+
+/** Stacked map layers icon for the compact map rail. */
+export const LayersIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 4 3.5 8.5 12 13l8.5-4.5z" />
+    <path d="M3.5 13 12 17.5 20.5 13" />
+    <path d="M3.5 17 12 21.5 20.5 17" />
+  </Icon>
+);
+
+/** Build grid icon for the compact map rail. */
+export const GridIcon = (p: P) => (
+  <Icon {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <path d="M9.5 4v16M14.5 4v16M4 9.5h16M4 14.5h16" />
+  </Icon>
+);
+
+/** Eye open for Show HUD. */
+export const EyeIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+    <circle cx="12" cy="12" r="2.6" />
+  </Icon>
+);
+
+/** Eye crossed out for Hide HUD. */
+export const EyeOffIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 4l16 16" />
+    <path d="M10.2 6.2A9.8 9.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-3.2 3.8" />
+    <path d="M6.4 8.2A16 16 0 0 0 2.5 12s3.5 6 9.5 6a9.6 9.6 0 0 0 3.7-.7" />
+  </Icon>
+);
+
+export const ChevronDownIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M6 9.5 12 15.5 18 9.5" />
+  </Icon>
+);
+
+export const ChevronUpIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M6 14.5 12 8.5 18 14.5" />
+  </Icon>
+);
+
+/** Sliders icon for expanding minimized build tools. */
+export const SlidersIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 7h16M4 12h16M4 17h16" />
+    <circle cx="9" cy="7" r="2" fill="currentColor" />
+    <circle cx="15" cy="12" r="2" fill="currentColor" />
+    <circle cx="10" cy="17" r="2" fill="currentColor" />
+  </Icon>
+);
+

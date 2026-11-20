@@ -14,6 +14,7 @@ function startDraft(kind: PlacementKind, type?: LiftType, asset?: AssetId) {
   usePlacementDraft.setState({
     active: true,
     moveCamera: false,
+    minimized: false,
     kind,
     asset,
     movingAssetIndex: undefined,
@@ -60,6 +61,7 @@ export function finishPlacement() {
   usePlacementDraft.setState({
     active: false,
     moveCamera: false,
+    minimized: false,
     review: false,
     asset: undefined,
     step: "top",

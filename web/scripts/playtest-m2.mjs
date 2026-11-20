@@ -175,8 +175,7 @@ async function drag(page, cdp, locations) {
   }
 }
 
-async function moveDraftMap(page, cdp, anchor, resumeLabel) {
-  await click(page, "Move map");
+async function moveDraftMap(page, cdp, anchor) {
   const [before] = await waitForFraming(page, [anchor]);
   // Short screens can put the paint tools over the middle of the viewport.
   const center = await page.evaluate(() => {
@@ -188,20 +187,24 @@ async function moveDraftMap(page, cdp, anchor, resumeLabel) {
     }
     return null;
   });
-  assert(center, "Move map needs an exposed canvas area for the drag");
+  assert(center, "Direct map movement needs an exposed canvas area for the drag");
   if (cdp) {
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [center] });
-    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...center, x: center.x + 32 }] });
+    const second = { x: center.x + 28, y: center.y + 12, id: 2 };
+    const first = { x: center.x, y: center.y, id: 1 };
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [first, second] });
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ ...first, x: first.x + 32 }, { ...second, x: second.x + 32 }],
+    });
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   } else {
     await page.mouse.move(center.x, center.y);
-    await page.mouse.down();
+    await page.mouse.down({ button: "right" });
     await page.mouse.move(center.x + 32, center.y, { steps: 4 });
-    await page.mouse.up();
+    await page.mouse.up({ button: "right" });
   }
   const [after] = await waitForFraming(page, [anchor]);
-  assert(Math.hypot(after.x - before.x, after.y - before.y) > 3, "Move map should pan the saved draft");
-  await click(page, resumeLabel);
+  assert(Math.hypot(after.x - before.x, after.y - before.y) > 3, "Direct map drag should move the saved draft");
 }
 
 async function paintTrail(page, cdp, top, resume = false) {

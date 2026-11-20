@@ -8,7 +8,11 @@ import { formatClock } from "@/game/sim";
 import type { WeatherKind } from "@/game/types";
 import {
   BuildIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   CloseIcon,
+  EyeIcon,
+  EyeOffIcon,
   FlagIcon,
   GuestsIcon,
   HomeIcon,
@@ -59,24 +63,24 @@ export function TopBar({
   const { weekday, date, note } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
   const lowCash = cash >= 0 && cash < LOW_CASH;
   return (
-    <div className="flex w-full items-center gap-1.5 sm:w-[min(28rem,100%)] sm:gap-2">
+    <div className="flex w-full items-center gap-1.5 sm:w-[min(27rem,100%)] sm:gap-2">
       <button
         type="button"
         onClick={onTogglePause}
         disabled={openingBlocked}
         aria-label={paused ? "Resume day" : "Pause day"}
-        className={`sign sign-btn press flex size-12 shrink-0 items-center justify-center [--lift:4px] ${
+        className={`sign sign-btn press flex size-11 shrink-0 items-center justify-center [--lift:3px] sm:size-12 sm:[--lift:4px] ${
           notStarted && !openingBlocked ? "pulse-ring" : ""
         }`}
       >
-        {paused ? <PlayIcon size={22} /> : <PauseIcon size={22} />}
+        {paused ? <PlayIcon size={20} /> : <PauseIcon size={20} />}
       </button>
-      <div className="chip flex h-12 min-w-0 flex-1 items-center gap-1 px-2 sm:gap-2 sm:px-3">
+      <div className="chip flex h-11 min-w-0 flex-1 items-center gap-1 px-2 sm:h-12 sm:gap-2 sm:px-3">
         <div className="flex flex-col leading-tight">
-          <span className="whitespace-nowrap text-[0.9rem] font-extrabold tabular-nums">
+          <span className="whitespace-nowrap text-[0.85rem] font-extrabold tabular-nums sm:text-[0.9rem]">
             Day {dayIndex}/{seasonLength}
           </span>
-          <span className="text-[0.75rem] font-bold text-ink-soft">
+          <span className="text-[0.72rem] font-bold text-ink-soft sm:text-[0.75rem]">
             {weekday} <span className="hidden whitespace-nowrap min-[380px]:inline">{date}</span>
             {note && (
               <span className="ml-1 inline-flex items-center gap-0.5 align-middle" title={note}>
@@ -93,12 +97,12 @@ export function TopBar({
         type="button"
         onClick={cycleSpeed}
         aria-label={`Game speed ${speed}x, tap to change`}
-        className="chip flex size-12 shrink-0 items-center justify-center text-[0.95rem] font-extrabold tabular-nums"
+        className="chip press flex size-11 shrink-0 items-center justify-center text-[0.9rem] font-extrabold tabular-nums sm:size-12 sm:text-[0.95rem]"
       >
         {speed}×
       </button>
       <span
-        className={`chip display flex h-12 min-w-[5rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2.5 text-[1.2rem] tabular-nums sm:min-w-[5.6rem] sm:px-3 sm:text-[1.3rem] ${
+        className={`chip display flex h-11 min-w-[4.7rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2 text-[1.12rem] tabular-nums sm:h-12 sm:min-w-[5.5rem] sm:px-3 sm:text-[1.28rem] ${
           cash < 0 ? "bg-barn-deep text-white" : lowCash ? "bg-sign-yellow" : "bg-gold"
         }`}
       >
@@ -237,7 +241,14 @@ function worse(a: Tone, b: Tone): Tone {
   return rank.indexOf(a) > rank.indexOf(b) ? a : b;
 }
 
-/** Conditions board: queue, snow, mood with icon, number and a word chip. */
+const TONE_DOT: Record<Tone, string> = {
+  good: "bg-sign-green",
+  watch: "bg-sign-yellow",
+  bad: "bg-barn-deep",
+  plain: "bg-ink-soft/45",
+};
+
+/** Conditions board: compact 1-line summary pill by default on phone/tablet, expandable for status chips. */
 export function ConditionsBoard({
   avgQueue,
   snowQuality,
@@ -245,6 +256,8 @@ export function ConditionsBoard({
   snowRead,
   mood,
   anyOnHill = true,
+  expanded = false,
+  onToggleExpand,
 }: {
   avgQueue: number;
   /** False until a guest is on the hill: the queue then reads "No line yet" instead of 0.0m. */
@@ -254,6 +267,8 @@ export function ConditionsBoard({
   /** "tone|label" of the worst trail segment (see snow.ts `readSnow`). */
   snowRead: string;
   mood: number;
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }) {
   const queueTone: Tone =
     avgQueue < 3 ? "good" : avgQueue < 5 ? "watch" : "bad";
@@ -267,7 +282,7 @@ export function ConditionsBoard({
   const items: Condition[] = [
     {
       key: "queue",
-      icon: <QueueIcon />,
+      icon: <QueueIcon size={18} />,
       label: "Queue",
       value: anyOnHill ? `${avgQueue.toFixed(1)} min` : "No line",
       state: anyOnHill
@@ -278,7 +293,7 @@ export function ConditionsBoard({
     },
     {
       key: "snow",
-      icon: <SnowIcon />,
+      icon: <SnowIcon size={18} />,
       label: "Snow",
       value: `${Math.round(snowQuality * 100)}%`,
       state: snowLabel,
@@ -288,7 +303,7 @@ export function ConditionsBoard({
     },
     {
       key: "mood",
-      icon: <MoodIcon mood={mood} />,
+      icon: <MoodIcon mood={mood} size={18} />,
       label: "Mood",
       value: `${mood}%`,
       state: satisfactionMoodWord(mood),
@@ -298,31 +313,57 @@ export function ConditionsBoard({
   return (
     <section
       aria-label="Conditions"
-      className="panel pointer-events-auto grid w-full grid-cols-3 divide-x-2 divide-snow-2 py-2"
+      data-conditions-expanded={expanded ? "true" : "false"}
+      className="panel hud-surface pointer-events-auto w-full [--lift:3px]"
     >
-      {items.map((c) => (
-        <div
-          key={c.key}
-          className="flex min-w-0 items-center gap-1.5 px-2"
-          aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
-          role="group"
-        >
-          <span className="shrink-0 text-ink">{c.icon}</span>
-          <div className="flex min-w-0 flex-col items-start gap-0.5 leading-none">
-            <span className="display text-[1.15rem] tabular-nums">
-              {c.value}
-            </span>
-            <span
-              className={`max-w-full whitespace-normal break-words rounded-md px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-tight ${TONE_CHIP[c.tone]}`}
+      <div className="flex items-center">
+        <div className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5">
+          {items.map((c) => (
+            <div
+              key={c.key}
+              className={`flex min-w-0 items-center gap-1.5 px-2 ${expanded ? "items-start" : "justify-center sm:justify-start"}`}
+              aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
+              role="group"
             >
-              {c.state}
-              {c.bare ? null : (
-                <span className="sr-only">{` ${c.label.toLowerCase()}`}</span>
-              )}
-            </span>
-          </div>
+              <span className="shrink-0 text-ink">{c.icon}</span>
+              <div className="flex min-w-0 flex-col items-start gap-0.5 leading-none">
+                <div className="flex items-center gap-1">
+                  <span className="display text-[1.02rem] tabular-nums sm:text-[1.08rem]">
+                    {c.value}
+                  </span>
+                  {!expanded && (
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block size-2 shrink-0 rounded-full border border-ink ${TONE_DOT[c.tone]}`}
+                    />
+                  )}
+                </div>
+                {expanded && (
+                  <span
+                    className={`max-w-full whitespace-normal break-words rounded-md px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-tight ${TONE_CHIP[c.tone]}`}
+                  >
+                    {c.state}
+                    {c.bare ? null : (
+                      <span className="sr-only">{` ${c.label.toLowerCase()}`}</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+        {onToggleExpand && (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            aria-expanded={expanded}
+            aria-label={expanded ? "Collapse conditions" : "Expand conditions"}
+            className="flex size-10 shrink-0 items-center justify-center border-l-2 border-snow-2 text-ink-soft transition-colors hover:text-ink"
+          >
+            {expanded ? <ChevronDownIcon size={16} /> : <ChevronUpIcon size={16} />}
+          </button>
+        )}
+      </div>
     </section>
   );
 }
@@ -347,7 +388,7 @@ function BarButton({
       onClick={onClick}
       aria-pressed={active}
       data-bar={barId}
-      className="key press flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[0.85rem] font-extrabold [--lift:4px]"
+      className="key press flex h-12 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 text-[0.76rem] font-extrabold [--lift:3px] sm:h-[52px] sm:px-3 sm:text-[0.82rem] sm:[--lift:4px]"
     >
       {icon}
       {label}
@@ -356,15 +397,47 @@ function BarButton({
 }
 
 /** Round on-map button that glides the camera back to the home view. */
-export function RecenterButton({ onClick }: { onClick: () => void }) {
+export function RecenterButton({ onClick, compact = false }: { onClick: () => void; compact?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label="Recenter the view"
-      className="key press pointer-events-auto flex size-12 shrink-0 items-center justify-center !rounded-full [--lift:4px]"
+      className={`key press pointer-events-auto flex shrink-0 items-center justify-center !rounded-full [--lift:3px] ${
+        compact ? "size-11" : "size-12 [--lift:4px]"
+      }`}
     >
-      <RecenterIcon size={22} />
+      <RecenterIcon size={compact ? 20 : 22} />
+    </button>
+  );
+}
+
+/** Compact toggle that hides or restores the HUD chrome to maximize the map. */
+export function HudToggleButton({
+  hidden,
+  onClick,
+  showLabel = false,
+}: {
+  hidden: boolean;
+  onClick: () => void;
+  showLabel?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={hidden}
+      aria-label={hidden ? "Show HUD" : "Hide HUD"}
+      className={`key press pointer-events-auto flex min-h-11 shrink-0 items-center justify-center gap-1.5 [--lift:3px] ${
+        showLabel ? "px-3 text-xs font-extrabold" : "size-11 !rounded-full md:w-auto md:!rounded-[var(--r-key)] md:px-3 md:text-xs md:font-extrabold"
+      }`}
+    >
+      {hidden ? <EyeIcon size={19} /> : <EyeOffIcon size={19} />}
+      {showLabel ? (
+        <span>{hidden ? "Show HUD" : "Hide HUD"}</span>
+      ) : (
+        <span className="hidden md:inline">{hidden ? "Show HUD" : "Hide HUD"}</span>
+      )}
     </button>
   );
 }
@@ -496,27 +569,27 @@ export function ActionBar({
         onClick={() => setMenu(!confirmMenu)}
         aria-expanded={confirmMenu}
         aria-haspopup="dialog"
-        className="key press flex h-14 w-12 shrink-0 flex-col min-[400px]:w-14 items-center justify-center gap-0.5 text-[0.8rem] font-extrabold [--lift:4px]"
+        className="key press flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 text-[0.72rem] font-extrabold [--lift:3px] min-[400px]:w-13 sm:h-[52px] sm:w-14 sm:text-[0.8rem] sm:[--lift:4px]"
       >
-        <HomeIcon size={20} />
+        <HomeIcon size={18} />
         Menu
       </button>
       <BarButton
-        icon={<BuildIcon />}
+        icon={<BuildIcon size={18} />}
         label="Build"
         onClick={onBuild}
         active={buildActive}
       />
-      <BarButton icon={<GuestsIcon />} label="Guests" onClick={onGuests} />
-      <BarButton icon={<OfficeIcon />} label="Office" onClick={onOffice} barId="office" />
+      <BarButton icon={<GuestsIcon size={18} />} label="Guests" onClick={onGuests} />
+      <BarButton icon={<OfficeIcon size={18} />} label="Office" onClick={onOffice} barId="office" />
       <button
         type="button"
         onClick={onCloseHill}
         disabled={openingBlocked}
-        className="key key-solid press flex h-14 flex-[1.35] flex-col items-center justify-center gap-0.5 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:4px]"
+        className="key key-solid press flex h-12 flex-[1.3] flex-col items-center justify-center gap-0.5 px-2 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px] sm:h-[52px] sm:px-3 sm:[--lift:4px]"
       >
-        <MountainMoonIcon size={22} />
-        <span className="display whitespace-nowrap text-[1.05rem] min-[400px]:text-[1.2rem]">Close hill</span>
+        <MountainMoonIcon size={19} />
+        <span className="display whitespace-nowrap text-[0.95rem] min-[400px]:text-[1.08rem] sm:text-[1.15rem]">Close hill</span>
       </button>
     </nav>
   );
