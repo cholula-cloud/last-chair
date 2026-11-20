@@ -77,7 +77,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "goal",
-    text: "The goal strip under the date shows what you need to finish this winter.",
+    text: "Open Office and check the Desk tab for your winter goals and progress.",
     when: (c) => idle(c) && c.running && c.dayIndex >= 2,
   },
   {

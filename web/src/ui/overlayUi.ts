@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayers } from "./mapLayerStore";
+import { showBottomChrome } from "./hudUi";
 export { useActiveLayer } from "./mapLayerStore";
 import { nextSelection, resolveActiveLayer, type OverlayId } from "@/game/overlays";
 import type { XZ } from "@/game/terrain";
@@ -30,6 +31,23 @@ export function turnLayerOff() {
 
 export function toggleStrip() {
   useLayers.setState((s) => ({ stripOpen: !s.stripOpen }));
+}
+
+/** Opens the layer strip beside the map rail and turns on Slope when nothing is active yet. */
+export function toggleLayersRail() {
+  const { stripOpen } = useLayers.getState();
+  const shown = currentLayer();
+  if (stripOpen && shown) {
+    useLayers.setState({ stripOpen: false });
+    return;
+  }
+  showBottomChrome();
+  useLayers.setState({ stripOpen: true });
+  if (!shown) pickLayer("slope", true);
+}
+
+export function closeLayerDock() {
+  useLayers.setState({ stripOpen: false });
 }
 
 export function setProbe(at: XZ | null) {

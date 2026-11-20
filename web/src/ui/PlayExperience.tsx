@@ -24,11 +24,11 @@ import { BuildSheet } from "@/ui/BuildSheet";
 import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
 import { ConfirmPop } from "@/ui/ConfirmPop";
-import { GoalStrip } from "@/ui/GoalStrip";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
 import {
   ActionBar,
+  BottomChromeRestoreButton,
   ConditionsBoard,
   HudToggleButton,
   LiftUndoChip,
@@ -40,9 +40,22 @@ import {
   WindHoldCallout,
 } from "@/ui/Hud";
 import { useMoodPulseTracker } from "@/ui/motion";
-import { toggleConditionsExpanded, toggleHudHidden, useHudUi } from "@/ui/hudUi";
+import {
+  toggleBottomChromeMinimized,
+  toggleConditionsExpanded,
+  toggleHudHidden,
+  useHudUi,
+} from "@/ui/hudUi";
 import { PlacementBar } from "@/ui/PlacementBar";
-import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
+import {
+  LayerBottomDock,
+  LayersButton,
+  LayerStrip,
+  OverlayLegend,
+  OverlayStateSync,
+  ReadoutCard,
+  SnowLayerControls,
+} from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon, GridIcon } from "@/ui/kit/icons";
@@ -73,8 +86,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const showBuildGrid = usePlacementDraft((s) => s.showBuildGrid);
   const hudHidden = useHudUi((s) => s.hudHidden);
   const conditionsExpanded = useHudUi((s) => s.conditionsExpanded);
+  const bottomChromeMinimized = useHudUi((s) => s.bottomChromeMinimized);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const layerStripOpen = useLayers((s) => s.stripOpen);
   useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
   const officeOpen = useOffice((s) => s.open);
 
@@ -137,7 +152,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const canResume = useGameStore(
     (s) => !!resumeFollowId && !s.followId && s.guests.some((g) => g.id === resumeFollowId && isOnHill(g)),
   );
-  const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
   const lifts = useGameStore((s) => s.lifts);
@@ -229,6 +243,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+  const layerDock =
+    phase === "day" &&
+    !placementActive &&
+    !hudSuppressed &&
+    layerStripOpen &&
+    !bottomChromeMinimized;
 
   const mapToolButtons = (
     <>
@@ -243,6 +263,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         <GridIcon size={19} />
         <span className="hidden md:inline">Grid {showBuildGrid ? "on" : "off"}</span>
       </button>
+      <span className="sr-only" role="status" aria-live="polite">
+        {showBuildGrid ? "Build grid on" : "Build grid off"}
+      </span>
       <RecenterButton compact onClick={requestRecenter} />
       <HudToggleButton hidden={hudHidden} onClick={toggleHudHidden} />
     </>
@@ -295,7 +318,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               }}
             />
             {showStartHint && !placementActive && !hudSuppressed && <StartCallout step={opening} />}
-            {phase === "day" && !showStartHint && !placementActive && !hudSuppressed && <GoalStrip />}
             {chairHeld && !hudSuppressed && <WindHoldCallout shortHold={shortHold} />}
           </div>
           {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && (
@@ -344,7 +366,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         <div
           inert={officeOpen}
           data-map-rail="vertical"
-          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex flex-col items-end gap-1.5 sm:hidden"
+          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
         </div>
@@ -364,11 +386,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       {phase === "day" && !hudSuppressed && (
         <div inert={officeOpen} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
-            {!placementActive && <ReadoutCard />}
-            <OverlayLegend />
-            {!placementActive && <SnowLayerControls />}
-            {!placementActive && <LayerStrip />}
-            {!placementActive && (undoIndex >= 0 || canResume) && (
+            {!placementActive && !layerDock && <ReadoutCard />}
+            {!placementActive && !layerDock && (undoIndex >= 0 || canResume) && (
               <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
                 {undoIndex >= 0 && (
                   <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
@@ -384,7 +403,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               </div>
             )}
           </div>
-          {!placementActive && (
+          {layerDock && (
+            <LayerBottomDock />
+          )}
+          {!layerDock && !placementActive && !bottomChromeMinimized && (
             <div className="w-full sm:w-auto sm:min-w-[290px] sm:max-w-[380px]">
               <ConditionsBoard
                 avgQueue={avgQueue}
@@ -397,11 +419,16 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                 anyOnHill={anyOnHill}
                 expanded={conditionsExpanded}
                 onToggleExpand={toggleConditionsExpanded}
+                onMinimizeBottom={toggleBottomChromeMinimized}
               />
             </div>
           )}
           {placementActive ? (
             <PlacementBar />
+          ) : layerDock ? null : bottomChromeMinimized ? (
+            <div className="pointer-events-auto flex w-full justify-center sm:w-auto">
+              <BottomChromeRestoreButton onClick={toggleBottomChromeMinimized} />
+            </div>
           ) : (
             <div ref={actionBarWrapRef} className="relative w-full sm:w-auto sm:min-w-[330px] sm:max-w-[420px]">
               <ActionBar
@@ -416,8 +443,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                   setMenuConfirmOpen(false);
                   openOffice();
                 }}
-                onCloseHill={skipToClose}
-                openingBlocked={opening !== null}
                 confirmMenu={menuConfirmOpen}
                 onConfirmMenuChange={setMenuConfirmOpen}
                 onLeave={() => onLeave()}

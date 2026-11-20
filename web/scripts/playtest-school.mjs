@@ -56,6 +56,7 @@ try {
     assert.equal((await read()).schoolContract.decision, accept ? "accepted" : "declined");
     if (accept) await page.getByText(/School bus booked for/).waitFor();
     await button("Sleep until morning").tap();
+    await button("Office").tap();
     await button("Close hill").tap();
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
     const state = await read();
