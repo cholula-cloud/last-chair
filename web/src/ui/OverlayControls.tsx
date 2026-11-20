@@ -221,6 +221,7 @@ export function LayerBottomDock() {
       className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem]"
       data-layer-dock="true"
     >
+      <ReadoutCard />
       <LayerStrip allowOff className="w-full justify-center" />
       <OverlayLegend allowOff docked />
       <SnowLayerControls docked />

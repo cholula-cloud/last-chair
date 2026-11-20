@@ -170,7 +170,7 @@ export function MorningNote({
   return (
     <aside
       aria-label="Morning note"
-      className="panel note-in pointer-events-auto flex w-full max-w-[400px] items-center gap-2 py-1 pl-2 pr-1.5 [--lift:3px]"
+      className="panel note-in pointer-events-auto relative z-30 flex w-full max-w-[min(400px,calc(100%-4.25rem))] items-center gap-2 py-1 pl-2 pr-1.5 [--lift:3px]"
     >
       <button
         type="button"
