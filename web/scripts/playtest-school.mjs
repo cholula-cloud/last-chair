@@ -44,6 +44,8 @@ try {
     const read = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)).state, slotKey);
     const card = page.getByRole("region", { name: /School bus offer/ });
     await card.waitFor();
+    // The live region fills in after two animation frames, so wait for the body before reading it.
+    await card.getByText(/6 pupils/).waitFor();
     assert.match(await card.innerText(), /6 pupils.*\$25/s);
     assert.equal(await button("Sleep until morning").isDisabled(), true);
     const reply = card.getByRole("button", { name: accept ? "Book the bus" : "Decline", exact: true });
