@@ -125,6 +125,34 @@ export const CloseIcon = (p: P) => (
   </Icon>
 );
 
+export const MoveMapIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 3v18M3 12h18" />
+    <path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />
+  </Icon>
+);
+
+export const EraseIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="m7 20 12-12-4-4L3 16l4 4z" />
+    <path d="m11 8 5 5M7 20h13" />
+  </Icon>
+);
+
+export const UndoIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M9 14 4 9l5-5" />
+    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+  </Icon>
+);
+
+export const RedoIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="m15 14 5-5-5-5" />
+    <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />
+  </Icon>
+);
+
 /** People in a line, for lift queue. */
 export const QueueIcon = (p: P) => (
   <Icon {...p}>

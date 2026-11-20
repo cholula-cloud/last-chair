@@ -44,11 +44,12 @@ function PatternSwatch({ color, pattern }: { color: string; pattern: OverlayPatt
   );
 }
 
-function LegendChip({ entry }: { entry: LegendEntry }) {
+function LegendChip({ entry, compact }: { entry: LegendEntry; compact?: boolean }) {
+  const label = compact && entry.label === "Double black" ? "2×" : entry.label;
   return (
-    <li className="chip flex h-8 items-center gap-1 px-1.5 text-[0.7rem] font-extrabold" title={entry.detail} aria-label={entry.detail}>
+    <li className="inline-flex items-center gap-1 text-[0.72rem] font-extrabold leading-none" title={entry.detail} aria-label={entry.detail}>
       <PatternSwatch color={entry.color} pattern={entry.pattern} />
-      {entry.label}
+      <span>{label}</span>
     </li>
   );
 }
@@ -61,16 +62,21 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
   const gunView = useLayers((s) => s.gunView);
   if (!layer || (layer.id !== "slope" && !placing)) return null;
   return (
-    <div className="pointer-events-none flex flex-wrap items-center justify-end gap-1" data-overlay-legend={layer.id}>
-      {layer.id === "slope" ? <ul className="flex flex-wrap items-center justify-end gap-1" aria-label={`${layer.label} legend`}>
-        {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
-      </ul> : (
+    <div className="pointer-events-none flex max-w-full items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
+      {layer.id === "slope" ? (
+        <ul
+          className="chip pointer-events-auto flex min-h-9 flex-nowrap items-center gap-2 px-2.5 py-1"
+          aria-label={`${layer.label} legend`}
+        >
+          {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} compact />)}
+        </ul>
+      ) : (
         <div className="panel min-w-0 flex-1 p-1.5">
           <LayerLegend layer={layer.id} wear={layer.id === "conditions" && wear} gunView={gunView} />
         </div>
       )}
       {allowOff && <button type="button" onClick={turnLayerOff} aria-label={`Turn off the ${layer.label} layer`}
-        className="key press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
+        className="key key-sm press pointer-events-auto grid size-11 shrink-0 place-items-center !rounded-full [--lift:3px]">
         <CloseIcon size={18} />
       </button>}
     </div>
