@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { cycleReduceMotion, reduceMotionLabel } from "@/ui/motion";
 import { SPEEDS, useSettings } from "@/ui/settingsStore";
 import { useSpeed } from "@/ui/speed";
 
@@ -63,7 +64,17 @@ export function SettingsControls() {
       <Toggle label="Voice" on={settings.voiceOn} onChange={on => set({ voiceOn: on })} />
       <Toggle label="Coach tips" on={settings.tips} onChange={on => set({ tips: on })} />
       <Toggle label="Captions" on={captions} onChange={(v) => set({ captions: v })} />
-      <Toggle label="Reduce motion" on={reduceMotion} onChange={(v) => set({ reduceMotion: v })} />
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-extrabold">Reduce motion</span>
+        <button
+          type="button"
+          aria-label={`Reduce motion ${reduceMotionLabel(reduceMotion)}`}
+          onClick={() => set({ reduceMotion: cycleReduceMotion(reduceMotion) })}
+          className={`${BTN_SM} min-w-[5.5rem]`}
+        >
+          {reduceMotionLabel(reduceMotion)}
+        </button>
+      </div>
       <div role="group" aria-labelledby={speedId} className="flex flex-col gap-2">
         <span id={speedId} className="font-extrabold">Default speed</span>
         <div className="flex gap-2">

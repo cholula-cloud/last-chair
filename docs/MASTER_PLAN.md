@@ -483,7 +483,7 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | 30 | ☑ | Snow shader | GPU coverage patches and groom stripes tied to overnight preset and wear (`snowMaterial.ts`, `snowTexture.ts`) |
 | 31 | ☑ | Day/night lighting | Moving sun rig and night recap readability (handoff PR 31) |
 | 32 | ☑ | Audio | Ambient bed, UI sounds and radio sting on top of the Q3 synth floor. Owner decision (2026-11-19): recorded effects come from ElevenLabs on the free monthly credits only (estimate first, one take each); the Web Audio synth stays the fallback (handoff PR 32) |
-| 33 | ☐ | Mobile juice | Sheet motion, build-place and lodge-upgrade feedback; reduced motion respected (handoff PR 33) |
+| 33 | ☑ | Mobile juice | Sheet motion, build-place and lodge-upgrade feedback; reduced motion respected (handoff PR 33) |
 | O4 | ☐ | Crowd and revenue layers, demand pins | Guest density and queue length, venue takings, and "Guests want" pins on the map (§12) |
 | O5 | ☐ | Trails map layer | Named trail centerlines with difficulty colour on the hill; labels readable on phone; lift-top **trail map** readout (UI card or single board) instead of one billboard per run. Pairs with T1: detailed names live on the layer when signs stay compact |
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |

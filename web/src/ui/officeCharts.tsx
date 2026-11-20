@@ -11,7 +11,7 @@ import {
   revenueSourcesSeries,
 } from "@/game/officeSeries";
 import type { GameState } from "@/game/state";
-import { useSettings } from "@/ui/settingsStore";
+import { useReducedMotion } from "@/ui/motion";
 
 export const CHART_W = 320;
 export const CHART_H = 152;
@@ -142,7 +142,7 @@ export function ChartCard({
   legend?: LegendItem[];
   children: ReactNode;
 }) {
-  const reducedMotion = useSettings((s) => s.reduceMotion);
+  const reducedMotion = useReducedMotion();
   const [override, setOverride] = useState<"chart" | "table" | null>(null);
   const showTable = override ? override === "table" : reducedMotion;
   const heroBg = {

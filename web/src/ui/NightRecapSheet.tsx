@@ -18,6 +18,7 @@ import { nextTalentName, type NightRecap } from "@/game/sim";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { useCashCountUp } from "@/ui/motion";
 import { useSettings } from "@/ui/settingsStore";
 import { StoryEntries } from "@/ui/StoryLog";
 import { surpriseRadio } from "@/game/surprises";
@@ -206,6 +207,8 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
   const repayLoan = useGameStore((state) => state.repayLoan);
   const costs = dailyCosts(night);
   const projected = morningCash(night);
+  const fromCash = night.dayHistory.at(-1)?.closingCash ?? night.cash - recap.cashDelta;
+  const animatedCash = useCashCountUp(fromCash, projected, true);
   const finalNight = night.dayIndex === night.seasonLength;
   const lines = [
     ...(recap.costs && recap.revenue != null ? [
@@ -228,7 +231,7 @@ function NightMoney({ night, recap }: { night: GameState; recap: NightRecap }) {
     <section className="mt-3" aria-label="Cash today and tonight">
       <p className="flex flex-wrap justify-between gap-x-2 px-1 pb-2 text-sm font-bold" aria-live="polite">
         {finalNight ? "Cash after closing" : "Projected morning cash"}
-        <strong className={`tabular-nums ${projected < 0 ? "text-barn-deep" : "text-ink"}`}>{formatMoney(projected)}</strong>
+        <strong className={`tabular-nums ${projected < 0 ? "text-barn-deep" : "text-ink"}`}>{formatMoney(Math.round(animatedCash))}</strong>
       </p>
       <DisclosureButton open={open} controls="night-money-lines" onToggle={() => setOpen((value) => !value)}>
         Why? <span className="sr-only">Cash today and tonight</span>

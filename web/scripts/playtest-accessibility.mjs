@@ -34,7 +34,7 @@ async function checkQuietRecap(radioEnabled) {
     await recap.addInitScript(({ save, radioEnabled }) => {
       localStorage.setItem("last-chair-m3-slot-1", JSON.stringify(save));
       localStorage.setItem("last-chair-settings", JSON.stringify({ version: 1, state: {
-        muted: true, radioEnabled, reduceMotion: radioEnabled, tips: true,
+        muted: true, radioEnabled, reduceMotion: radioEnabled ? "on" : "system", tips: true,
       } }));
       window.liveUpdates = [];
       new MutationObserver(records => {
