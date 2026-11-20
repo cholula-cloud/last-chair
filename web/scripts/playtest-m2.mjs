@@ -135,6 +135,12 @@ async function waitForFraming(page, points) {
   throw new Error("Mountain camera did not settle over the build area");
 }
 
+async function expandPlacementBar(page) {
+  if (await page.locator('[data-placement-minimized="true"]').count()) {
+    await page.getByRole("button", { name: "Expand build controls" }).tap();
+  }
+}
+
 async function uncoverCanvas(page, point) {
   for (let attempt = 0; attempt < 4; attempt++) {
     const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName, point);
@@ -188,6 +194,7 @@ async function drag(page, cdp, locations) {
       await page.mouse.up();
     })(), "Mouse drag", 15000);
   }
+  await expandPlacementBar(page);
 }
 
 async function moveDraftMap(page, cdp, anchor) {
