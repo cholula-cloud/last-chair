@@ -2,7 +2,7 @@
 
 import { useMemo, type ReactNode } from "react";
 import { needsAttention, type AttentionItem } from "@/game/attention";
-import { MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { seasonCalendar } from "@/game/calendar";
 import { dailyCosts, liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { openingStep } from "@/game/rules";
@@ -11,7 +11,7 @@ import { formatClock } from "@/game/sim";
 import { operatingGoalText } from "@/game/winterArc";
 import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
-import { daysLeftLine, goalChips, goalInputs } from "@/game/goals";
+import { goalChips, goalInputs, operatingDaysLeftLine } from "@/game/goals";
 import { useGameStore } from "@/game/store";
 import type { WeatherKind } from "@/game/types";
 import { outlookFor } from "@/game/weather";
@@ -102,9 +102,9 @@ export function DeskTab() {
           <p className="mt-2 text-[1.05rem] font-bold leading-snug">{tidy(state.morningHeadline)}</p>
         </section>
 
-        <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength, state.outcome !== "playing")}>Winter goal</SectionHeading>
+        <SectionHeading aside={operatingDaysLeftLine(state, state.outcome !== "playing")}>Winter goal</SectionHeading>
         <p className="panel mb-2 px-4 py-3 text-sm font-bold leading-snug">
-          {formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(MOUNTAIN_CALENDARS[state.mountainId], state.dayHistory)}
+          {formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(seasonCalendar(state), state.dayHistory)}
         </p>
         <ul aria-label="Winter goal" className="panel divide-y-2 divide-snow-2 px-4">
           {chips.map((chip) => (

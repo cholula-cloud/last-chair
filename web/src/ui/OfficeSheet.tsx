@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
+import { dayLabel, seasonCalendar } from "@/game/calendar";
 import { readActiveSlot } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { closeOffice, OFFICE_TABS, setOfficeTab, useOffice, type OfficeTabId } from "@/ui/officeStore";
@@ -77,7 +77,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
   const phase = useGameStore((s) => s.phase);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
-  const mountainId = useGameStore((s) => s.mountainId);
+  const cal = useGameStore((s) => seasonCalendar(s));
   const [panel, setPanel] = useState<Panel>("tabs");
   const titleId = useId();
   const stripRef = useRef<HTMLDivElement>(null);
@@ -94,7 +94,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
     if (panel === "tabs") centreTab(stripRef.current, prefersReducedMotion());
   }, [panel, tab]);
 
-  const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
+  const { weekday, date } = dayLabel(cal, dayIndex);
   const back = (body: ReactNode, label: string) => (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">

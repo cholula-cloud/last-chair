@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { formatMoney } from "@/game/format";
+import { operatingSeasonLength, seasonCalendar } from "@/game/calendar";
 import { seasonCalendarCells, trailReportRows } from "@/game/officeSeries";
 import type { GameState } from "@/game/state";
 import type { WeatherKind } from "@/game/types";
@@ -18,14 +19,19 @@ const WEATHER_ICON: Record<WeatherKind, ReactNode> = {
 };
 
 export function SeasonCalendar({ state }: { state: GameState }) {
+  const cal = seasonCalendar(state);
   const cells = seasonCalendarCells(state);
+  const openDays = operatingSeasonLength(cal);
   const [selectedDay, setSelectedDay] = useState<number | null>(() => state.dayHistory.at(-1)?.day ?? null);
   const active = cells.find((c) => c.day === selectedDay && c.report) ?? null;
+  const calendarTitle = cal.openWeekdays?.length
+    ? `Winter calendar (${openDays} open days)`
+    : `${state.seasonLength}-day winter calendar`;
 
   return (
-    <section className="panel space-y-2.5 p-3.5" aria-label="28-day winter calendar">
+    <section className="panel space-y-2.5 p-3.5" aria-label={calendarTitle}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="display text-xl text-ink">28-day winter calendar</h3>
+        <h3 className="display text-xl text-ink">{calendarTitle}</h3>
         <span className="text-xs font-extrabold tabular-nums text-ink-soft">
           Day {state.dayIndex} of {state.seasonLength}
         </span>
@@ -42,13 +48,15 @@ export function SeasonCalendar({ state }: { state: GameState }) {
               const net = cell.report?.recap.cashDelta ?? null;
               const isSelected = active?.day === cell.day;
               const tone =
-                cell.status === "today"
-                  ? "bg-gold text-ink"
-                  : cell.status === "upcoming"
-                    ? "bg-snow-2 text-ink-soft"
-                    : net !== null && net >= 0
-                      ? "bg-sign-green text-white"
-                      : "bg-barn-deep text-white";
+                cell.status === "closed"
+                  ? "bg-snow-2 text-ink-soft opacity-60"
+                  : cell.status === "today"
+                    ? "bg-gold text-ink"
+                    : cell.status === "upcoming"
+                      ? "bg-snow-2 text-ink-soft"
+                      : net !== null && net >= 0
+                        ? "bg-sign-green text-white"
+                        : "bg-barn-deep text-white";
               return (
                 <button
                   key={cell.day}

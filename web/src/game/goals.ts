@@ -1,4 +1,5 @@
 import { liquidNetWorth } from "./economy";
+import { operatingDaysLeft, seasonCalendar } from "./calendar";
 import { schoolContractOfferDay } from "./rules";
 import { SCHOOL_BUS_PUPILS } from "./schoolContract";
 import type { GameState } from "./state";
@@ -59,8 +60,17 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
   return chips;
 }
 
-/** The current day counts until the winter settles. */
+/** Legacy: consecutive civil days. Prefer operatingDaysLeftLine for the operating calendar. */
 export function daysLeftLine(dayIndex: number, seasonLength: number, settled = false): string {
   const left = settled ? 0 : Math.max(0, seasonLength - dayIndex + 1);
   return left === 1 ? "1 day left." : `${left} days left.`;
+}
+
+export function operatingDaysLeftLine(
+  state: Pick<import("./state").GameState, "mountainId" | "seasonLength" | "dayIndex" | "outcome">,
+  settled = false,
+): string {
+  const cal = seasonCalendar(state);
+  const left = settled || state.outcome !== "playing" ? 0 : operatingDaysLeft(cal, state.dayIndex);
+  return left === 1 ? "1 open day left." : `${left} open days left.`;
 }

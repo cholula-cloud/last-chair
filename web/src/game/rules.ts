@@ -6,7 +6,16 @@ import {
   canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
   liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
-import { MOUNTAIN_CALENDARS, weekdayForDay, isFestiveDay, guestMixForDay } from "./calendar";
+import {
+  calendarForSeason,
+  isOperatingDay,
+  operatingDayIndex,
+  seasonCalendar,
+  weekdayForDay,
+  isFestiveDay,
+  guestMixForDay,
+} from "./calendar";
+import { advanceClosedDays, formatWeekdayDigest } from "./closedDays";
 import { morningWeatherHeadline, outlookFor, WEATHER_KINDS, weatherForDay } from "./weather";
 import {
   assetRevenue,
@@ -145,12 +154,12 @@ export function satisfactionContext(
   state: Pick<
     GameState,
     "fare" | "buildings" | "founderId" | "weather" | "clockMin"
-    | "assets" | "talentsOwned" | "mountainId" | "dayIndex" | "weatherDays"
+    | "assets" | "talentsOwned" | "mountainId" | "dayIndex" | "weatherDays" | "seasonLength"
   >,
 ): SatisfactionContext {
   const founder = founderById(state.founderId);
   const owned = state.talentsOwned;
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = calendarForSeason(state.mountainId, state.seasonLength);
   const day = state.dayIndex;
   const band = TALENT.houseBand.learned(owned) && isFestiveDay(calendar, day);
   return {
@@ -177,7 +186,7 @@ const BEAT_REPUTATION_BONUS = 2;
 
 export function openNight(state: GameState): GameState {
   if (state.phase !== "day" || openingStep(state)) return state;
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = seasonCalendar(state);
   const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails)).length;
   const avgQueueMin = measuredWaitMin(state);
   const ctx = satisfactionContext(state);
@@ -1018,7 +1027,7 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
   if (!FOUNDERS.some((f) => f.id === id)) return state;
   const rng = createRng(state.rngState);
   const rand = () => rng.next();
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = seasonCalendar(state);
   const arrivals = planArrivals({
     calendar,
     dayIndex: state.dayIndex,
@@ -1067,7 +1076,7 @@ function completeBeat(state: GameState): GameState {
 export function schoolContractOfferDay(state: GameState): number | null {
   if (state.schoolContract !== null || state.lodgeTier < 2 || !state.schoolProgramProven ||
       !state.assets.some((asset) => asset.id === "ski_school")) return null;
-  return nextSchoolBusDay(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex, state.seasonLength);
+  return nextSchoolBusDay(seasonCalendar(state), state.dayIndex, state.seasonLength);
 }
 
 export function decideSchoolContract(state: GameState, decision: SchoolContractDecision): GameState {
@@ -1180,7 +1189,7 @@ export function expectedArrivals(
   const outlook = outlookFor(state, 1);
   const results = forecastResults(state, snow);
   const arrivals = (weather: WeatherKind) => meanArrivals({
-    calendar: MOUNTAIN_CALENDARS[state.mountainId],
+    calendar: seasonCalendar(state),
     dayIndex: state.dayIndex + 1,
     fare,
     snowQuality: results[weather].overnight.snowQuality,
@@ -1230,6 +1239,7 @@ export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
   if (summitLinkOfferOpen(state) || (state.pendingBeat && !state.beatAcknowledged)) return state;
 
+  const cal = seasonCalendar(state);
   const recap = state.nightRecap;
   const costs = dailyCosts(state);
   const cash = morningCash(state);
@@ -1241,7 +1251,7 @@ export function sleep(state: GameState): GameState {
     cash,
     debtMornings,
     dayHistory: [...state.dayHistory, {
-      day: state.dayIndex, fare: state.fare, snow: state.snow, weather: state.weather, recap,
+      day: operatingDayIndex(cal, state.dayIndex), fare: state.fare, snow: state.snow, weather: state.weather, recap,
       snowCost: costs.snowNight, constructionDue: costs.draws, closingCash: cash,
     }],
     seasonDays: [...state.seasonDays, { day: state.dayIndex, fare: state.fare, snow: state.snow,
@@ -1269,9 +1279,37 @@ export function sleep(state: GameState): GameState {
     snow: state.snow,
   };
   const bankrupt = debtMornings >= BANKRUPTCY_MORNINGS;
-  if (bankrupt || nextDay > state.seasonLength) {
+  let carry = state;
+  let weekdayDigest: string | null = null;
+  if (!bankrupt && nextDay <= state.seasonLength && !isOperatingDay(cal, nextDay)) {
+    const advanced = advanceClosedDays(carry, cal, carry.dayIndex);
+    carry = advanced.state;
+    if (advanced.summary) weekdayDigest = formatWeekdayDigest(cal, advanced.summary);
+    if (carry.debtMornings >= BANKRUPTCY_MORNINGS) {
+      const review: GameState = {
+        ...carry,
+        phase: "winter_review",
+        outcome: "bankrupt",
+        loan: carry.loan && { ...carry.loan, balance: payoffAmount(carry.loan) },
+        paused: true,
+        lodgeUpgrade: upgrade,
+        lodgeTier: completedTier ?? carry.lodgeTier,
+        lastDay,
+        nightRecap: null,
+        pendingBeat: null,
+        talentToast: null,
+        beatLog: carry.beatLog,
+        completedBeats: carry.completedBeats,
+      };
+      const record = winterRecord(review);
+      return { ...review, lastWinter: record, career: [...review.career, record] };
+    }
+  }
+  const openDay = carry.dayIndex + 1;
+  const seasonOver = bankrupt || openDay > state.seasonLength;
+  if (seasonOver) {
     const review: GameState = {
-      ...state,
+      ...carry,
       phase: "winter_review",
       outcome: bankrupt ? "bankrupt" : "finished",
       loan: state.loan && { ...state.loan, balance: payoffAmount(state.loan) },
@@ -1291,11 +1329,11 @@ export function sleep(state: GameState): GameState {
     return { ...review, lastWinter: record, career: [...review.career, record] };
   }
 
-  const { overnight, talentsOwned, crewPoints } = nightFor(state, state.pendingSnow);
-  const spentNight = spendAllCrewPoints({ ...state, talentsOwned, crewPoints });
+  const { overnight, talentsOwned, crewPoints } = nightFor(carry, carry.pendingSnow);
+  const spentNight = spendAllCrewPoints({ ...carry, talentsOwned, crewPoints });
   const afterPick = spentNight.state;
   const carried: GameState = {
-    ...state,
+    ...carry,
     lodgeUpgrade: upgrade,
     lodgeTier: completedTier ?? afterPick.lodgeTier,
     lastDay,
@@ -1323,7 +1361,9 @@ export function sleep(state: GameState): GameState {
     weather: overnight.weather,
     morningHeadline: completedTier
       ? `Route 100 Radio: Lodge Tier ${completedTier} is open. ${overnight.morningHeadline}`
-      : overnight.morningHeadline,
+      : weekdayDigest
+        ? `${weekdayDigest} ${overnight.morningHeadline}`
+        : overnight.morningHeadline,
     daysWithoutSnow: overnight.daysWithoutSnow,
     talentsOwned: afterPick.talentsOwned,
     crewPoints: afterPick.crewPoints,
@@ -1334,10 +1374,10 @@ export function sleep(state: GameState): GameState {
   // Roll next-day arrivals at sleep (fare and weather apply).
   const rng = createRng(state.rngState);
   const rand = () => rng.next();
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = seasonCalendar(state);
   const arrivals = planArrivals({
     calendar,
-    dayIndex: nextDay,
+    dayIndex: openDay,
     fare: state.pendingFare,
     snowQuality: overnight.snowQuality,
     weather: overnight.weather,
@@ -1347,10 +1387,10 @@ export function sleep(state: GameState): GameState {
     reputation: state.reputation,
     rand,
   });
-  const pupils = schoolBusPupils(state.schoolContract, nextDay);
+  const pupils = schoolBusPupils(carry.schoolContract, openDay);
   const { guests, surprise } = arrangeSurprise({
     calendar,
-    dayIndex: nextDay,
+    dayIndex: openDay,
     seasonSeed: state.seasonSeed,
     weather: overnight.weather,
     surpriseLog: state.surpriseLog,
@@ -1369,10 +1409,11 @@ export function sleep(state: GameState): GameState {
           ? `Crew board: ${overnight.nextTalentHint} is next when you earn a point.`
           : null,
     clockMin: DAY_START_MIN,
-    dayIndex: nextDay,
+    dayIndex: openDay,
+    operatingDayIndex: operatingDayIndex(calendar, openDay),
     beatAcknowledged: true,
     guests: pupils
-      ? [...guests, ...schoolBusGuests(nextDay, pupils)].sort((a, b) => a.arriveAtMin - b.arriveAtMin)
+      ? [...guests, ...schoolBusGuests(openDay, pupils)].sort((a, b) => a.arriveAtMin - b.arriveAtMin)
       : guests,
     surprise,
     dayStats: { ...emptyDayStats(), arrivals: guests.length + pupils },

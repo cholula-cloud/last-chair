@@ -71,7 +71,7 @@ try {
   await screenshot("founder-pick.png");
   await tap(/Elena Vargas/i);
 
-  const dayOne = page.getByText(/^Day 1\/28$/);
+  const dayOne = page.getByText(/^Open 1\/\d+$/);
   await dayOne.waitFor();
   await screenshot("day1-hud.png");
   await buildOpening(page, cdp);
@@ -119,13 +119,13 @@ try {
   await tap(/^Cheap\b/);
   await tap(/^High\b/);
   await finishNight();
-  await page.getByText(/^Day 2\/28$/).waitFor();
+  await page.getByText(/^Open 2\/\d+$/).waitFor();
   await screenshot("day2-morning.png");
 
-  for (let day = 2; day <= 28 && !(await end.isVisible()); day++) {
+  for (let openDay = 2; openDay <= 21 && !(await end.isVisible()); openDay++) {
     await closeHill();
     await finishNight();
-    await page.getByText(new RegExp("^Day " + (day + 1) + "/28$")).or(end).waitFor();
+    await page.getByText(new RegExp("^Open " + (openDay + 1) + "/\\d+$")).or(end).waitFor();
   }
 
   await end.waitFor();

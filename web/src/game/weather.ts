@@ -18,7 +18,15 @@ type CalendarDef = {
   earlyThrough: number;
   lateFrom: number;
 };
-export const DUTCH_HILL_CALENDAR: CalendarDef = { earlyThrough: 9, lateFrom: 20 };
+export const DUTCH_HILL_WEATHER_ARC_LEGACY: CalendarDef = { earlyThrough: 9, lateFrom: 20 };
+export const DUTCH_HILL_WEATHER_ARC: CalendarDef = { earlyThrough: 15, lateFrom: 38 };
+
+export function weatherArcForLength(length: number): CalendarDef {
+  return length <= 28 ? DUTCH_HILL_WEATHER_ARC_LEGACY : DUTCH_HILL_WEATHER_ARC;
+}
+
+/** @deprecated use weatherArcForLength */
+export const DUTCH_HILL_CALENDAR = DUTCH_HILL_WEATHER_ARC_LEGACY;
 
 export function chainRow(prev: WeatherKind, day: number, calendar = DUTCH_HILL_CALENDAR): Outlook {
   const [clear, snow, storm, thaw] = TRANSITIONS[prev];
@@ -50,7 +58,7 @@ function buildSchedule(seasonSeed: number, length: number, calendar: CalendarDef
   });
 }
 
-export function generateSeasonWeather(seasonSeed: number, length: number, calendar = DUTCH_HILL_CALENDAR): DayWeather[] {
+export function generateSeasonWeather(seasonSeed: number, length: number, calendar = weatherArcForLength(length)): DayWeather[] {
   return buildSchedule(seasonSeed, length, calendar, []);
 }
 
@@ -60,7 +68,7 @@ export function resumeSeasonWeather(seasonSeed: number, length: number, day: num
     kind: index === day - 1 ? today : "clear",
     wind: "calm",
   }));
-  return buildSchedule(seasonSeed, length, DUTCH_HILL_CALENDAR, past);
+  return buildSchedule(seasonSeed, length, weatherArcForLength(length), past);
 }
 
 export function weatherForDay(state: Pick<GameState, "weatherDays" | "dayIndex">): DayWeather {

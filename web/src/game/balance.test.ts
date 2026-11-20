@@ -19,7 +19,6 @@ import {
   type StrategySummary,
 } from "./balance";
 import { checkFrozenWinters, checkFounderScores, checkStrategyScores, checkWinterChoices } from "./m3BalanceChecks";
-import { SEASON_LENGTH } from "./sim";
 import { createInitialState } from "./state";
 
 // Fast balance properties over a small seed set (see SIMULATION_SPEC, Balance
@@ -45,7 +44,7 @@ beforeAll(() => {
 describe("runSeason", () => {
   it("plays a whole season and is deterministic per seed", () => {
     const a = runSeason(3, strategyById("balanced/mid"));
-    expect(a.days).toHaveLength(SEASON_LENGTH);
+    expect(a.days).toHaveLength(28);
     expect(runSeason(3, strategyById("balanced/mid"), "elena", { seasonLength: 14 }).days).toHaveLength(14);
     expect(a.totalArrivals).toBeGreaterThan(0);
     expect(a.minCash).toBeLessThanOrEqual(a.endCash);

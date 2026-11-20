@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
-import { DUTCH_HILL_CALENDAR } from "./calendar";
+import { DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
 import { migrate } from "./migrations";
 import { acknowledgeBeat, pickFounder, skipToClose, sleep, tick } from "./rules";
 import { createRng, mix32 } from "./rng";
@@ -9,7 +9,7 @@ import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 import { arrangeSurprise, surpriseRadio, type SurpriseKind } from "./surprises";
 import { MS_PER_GAME_MINUTE, type WeatherKind } from "./types";
 
-const calendar = DUTCH_HILL_CALENDAR;
+const calendar = DUTCH_HILL_CALENDAR_LEGACY;
 const guests = createInitialGuests(24, createRng(42).next);
 
 function seedFor(kind: SurpriseKind): number {

@@ -18,7 +18,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Mountain layers | Playwright, `npm run playtest:layers` | Switch all four layers, tap a real trail segment, compare gun service and scrub conditions through tomorrow without changing the save. | Set `PLAY_URL` to a running game. Use `PLAYTEST_ENGINE=webkit` for WebKit. | Automated |
 | First-winter coach | Playwright, `npm run playtest:coach` | Walk the ten tips, review and start the lodge upgrade, use the first measured problem to open its map layer and Office tab, then Sleep and reload. Uses the same four viewports as the phone check. | Set `PLAY_URL` to the running game. Chromium by default, or `PLAYTEST_ENGINE=webkit`. | Automated |
 | E2E smoke | Playwright Chromium, `npm run playtest:smoke` | Scene ready, opening build, night recap, mid-night reload at 390×844 | PR workflow when player-visible paths change; local before merge | Automated |
-| Full P1 winter | `npm run playtest:p1` → `playtest-p0.mjs` (28 days, quiet + standard) | Settlement, replay, school visit script | Nightly / manual | Automated |
+| Full P1 winter | `npm run playtest:p1` → `playtest-p0.mjs` (21 open days on the operating calendar, quiet + standard) | Settlement, replay, school visit script, weekday digest after closed blocks | Nightly / manual | Automated |
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
@@ -72,7 +72,11 @@ Also: `screenshots:snow30`, `screenshots:p4`, `screenshots:b6`, `screenshots:b7`
 
 ---
 
-## Optional first-winter device playtest
+## Optional first-winter device playtest (operating calendar)
+
+After **CAL-1**, a full Dutch Hill winter is **seven Fri–Sun sittings** (21 playable days) with Mon–Thu advancing in the background. Expect a **weekday digest** on each return to an open morning. Legacy 28-day saves still play day-by-day until the player starts a new winter.
+
+## Optional first-winter device playtest (legacy)
 
 M3 uses automated simulation and browser checks for acceptance. An external session can provide feedback on readability, touch and player understanding. No external sessions have been recorded as of November 19, 2026.
 

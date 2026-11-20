@@ -1,7 +1,7 @@
 import { liftOpsAfterRepair, loanRateFor } from "./founders";
 import { TALENT } from "./talents";
 import { ASSET_CATALOG, type AssetId } from "./base";
-import { inHolidayWeek, MOUNTAIN_CALENDARS } from "./calendar";
+import { inHolidayWeek, seasonCalendar } from "./calendar";
 import { founderById } from "./content";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
@@ -54,7 +54,7 @@ export function operatingCosts(state: GameState): OperatingCosts {
   const liftCost = openLifts.reduce((sum, lift) => sum + LIFT_OPS_COST
     + (lift.type === "chair" ? CHAIR_DAILY_SURCHARGE : 0)
     - (lift.type === "surface" && TALENT.ropeTow.learned(state.talentsOwned) ? TALENT.ropeTow.savings : 0), 0);
-  const staffing = inHolidayWeek(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) ? VACATION_STAFFING_COST : 0;
+  const staffing = inHolidayWeek(seasonCalendar(state), state.dayIndex) ? VACATION_STAFFING_COST : 0;
   return {
     ...(staffing ? { vacationStaffing: staffing } : {}),
     fixed: DAILY_FIXED_COST + staffing - (TALENT.volunteerPatrol.learned(state.talentsOwned) ? TALENT.volunteerPatrol.savings : 0),
