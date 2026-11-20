@@ -8,7 +8,7 @@ import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
 import { PERSONAS } from "@/game/personas";
 import {
-  checkAssetMove, checkAssetPlacement, checkGunPlacement, checkPaint,
+  checkAssetMove, checkAssetPlacement, checkGunPlacement, checkPaint, checkPlacement,
   commitPaint,
 } from "@/game/rules";
 import type { GameState } from "@/game/state";
@@ -21,6 +21,7 @@ import { trailPanelMode } from "@/ui/trailPanel";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { buildConfirmed } from "@/ui/feel";
 import { liftReadout } from "@/ui/liftGesture";
+import { placementReason } from "@/game/descent";
 import { DifficultyIcon } from "@/ui/kit/icons";
 import { PrimaryButton } from "@/ui/kit/parts";
 import {
@@ -199,7 +200,11 @@ function LiftBar() {
   const line = top ? { bottom: bottom ?? TERRAIN.base, top } : null;
   const readout = line ? liftReadout(state, type, line) : null;
   const cost = readout?.cost ?? 0;
-  const problem = readout?.problem ?? null;
+  // With no top yet, a lodge tier or lift count block still needs saying: the guide is empty then.
+  const early = line ? null : checkPlacement(state, type, { bottom: bottom ?? TERRAIN.base, top: bottom ?? TERRAIN.base });
+  const earlyProblem = early && !early.ok && (early.reason === "lodge_tier" || early.reason === "max_lifts")
+    ? placementReason(early.reason, { ...early, liftType: type }) : null;
+  const problem = readout?.problem ?? earlyProblem;
   const length = readout ? feet(readout.lengthFt) : null;
   const vertical = readout ? feet(readout.verticalFt) : null;
   const capacity = readout?.skiersPerHour ?? liftCapacityPerHour(type, state.talentsOwned);

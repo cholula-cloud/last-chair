@@ -21,6 +21,7 @@
     "playtest:m2": "node scripts/playtest-m2.mjs",
     "playwright:install": "playwright install chromium",
     "phone-check": "node scripts/phone-check.mjs",
+    "screenshots:b6": "node scripts/screenshots-b6.mjs",
     "playtest:p1": "node scripts/playtest-p1.mjs",
     "replay": "node scripts/replay.mjs",
     "check:bundle": "node scripts/check-bundle.mjs"
