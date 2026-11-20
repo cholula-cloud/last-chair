@@ -80,7 +80,7 @@ try {
     .getByRole("status")
     .getByText(/segment \d of 6/)
     .waitFor();
-  await panel.getByText(/First-timer ·/).waitFor();
+  await panel.getByText(/First-timer:/).waitFor();
   await button("Close").tap();
   await button("Tomorrow").tap();
   await button("High").tap();
