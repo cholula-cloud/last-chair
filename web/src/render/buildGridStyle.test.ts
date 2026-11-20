@@ -25,7 +25,7 @@ describe("build grid style", () => {
   it("uses one valid style in asset and gun mode, and neutral in overview", () => {
     expect(dotStyle("asset", "valid")).toEqual(dotStyle("gun", "valid"));
     expect(dotStyle("asset", "blocked")).toEqual(dotStyle("gun", "blocked"));
-    expect(dotStyle("overview", "neutral")).toEqual(GRID_STYLE.neutral);
+    expect(dotStyle("overview", "neutral")).toEqual(GRID_STYLE.overviewNeutral);
   });
 
   it("draws blocked cells fainter than valid ones, and the lift guide dimmer than the field", () => {
