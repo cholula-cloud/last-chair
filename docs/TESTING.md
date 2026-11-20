@@ -37,7 +37,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | 3 | Read the ops strip | Queue, snow %, mood hint visible in the compact strip; tap to expand full status chips if needed |
 | 4 | **Guests** → **Follow** one guest | List works; camera follows |
 | 5 | **Build** → **Place on the hill** → tap a blocked spot then a valid top → **Place** (use **Lift’s in. Undo for $N.** before resuming) | Placement bar shows reason text; length and vertical in **ft** after a top tap; place only when valid and affordable; undo refunds until the clock moves. Two fingers pan the map at all times (no **Move map** toggle). **Minimize** on the placement bar should leave a slim Tools summary with **Cancel** and **Review** |
-| 6 | **Close hill** (or wait until 4 PM) | Night sheet opens |
+| 6 | **Office → Close hill** on Desk (or wait until 4 PM) | Night sheet opens |
 | 7 | Change **Fare** and **Snow & service** | Full-width tiles, no pinch to read |
 | 8 | **Sleep** | Morning; snow look changes with tier |
 | 9 | Reload the tab | Progress restores, including mid-night state |

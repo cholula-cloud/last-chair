@@ -105,6 +105,7 @@ try {
 
   const end = heading(/Winter review|Tenney Mountain/);
   async function closeHill() {
+    await tap("Office");
     await tap("Close hill");
     await heading("Closing recap").waitFor();
   }

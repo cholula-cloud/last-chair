@@ -143,7 +143,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const canResume = useGameStore(
     (s) => !!resumeFollowId && !s.followId && s.guests.some((g) => g.id === resumeFollowId && isOnHill(g)),
   );
-  const skipToClose = useGameStore((s) => s.skipToClose);
   const buildMode = useGameStore((s) => s.buildMode);
   const setBuildMode = useGameStore((s) => s.setBuildMode);
   const lifts = useGameStore((s) => s.lifts);
@@ -432,8 +431,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                   setMenuConfirmOpen(false);
                   openOffice();
                 }}
-                onCloseHill={skipToClose}
-                openingBlocked={opening !== null}
                 confirmMenu={menuConfirmOpen}
                 onConfirmMenuChange={setMenuConfirmOpen}
                 onLeave={() => onLeave()}

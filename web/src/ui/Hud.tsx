@@ -17,7 +17,6 @@ import {
   GuestsIcon,
   HomeIcon,
   MoodIcon,
-  MountainMoonIcon,
   OfficeIcon,
   PauseIcon,
   PlayIcon,
@@ -508,14 +507,12 @@ export function LiftUndoChip({
   );
 }
 
-/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, Office, and the barn-red Close hill. */
+/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and Office. */
 export function ActionBar({
   buildActive,
   onBuild,
   onGuests,
   onOffice,
-  onCloseHill,
-  openingBlocked = false,
   confirmMenu = false,
   onConfirmMenuChange,
   onLeave,
@@ -525,8 +522,6 @@ export function ActionBar({
   onBuild: () => void;
   onGuests: () => void;
   onOffice: () => void;
-  onCloseHill: () => void;
-  openingBlocked?: boolean;
   confirmMenu?: boolean;
   onConfirmMenuChange?: (open: boolean) => void;
   /** Saves and returns to the title screen. */
@@ -614,15 +609,6 @@ export function ActionBar({
       />
       <BarButton icon={<GuestsIcon size={18} />} label="Guests" onClick={onGuests} />
       <BarButton icon={<OfficeIcon size={18} />} label="Office" onClick={onOffice} barId="office" />
-      <button
-        type="button"
-        onClick={onCloseHill}
-        disabled={openingBlocked}
-        className="key key-solid press flex h-12 flex-[1.3] flex-col items-center justify-center gap-0.5 px-2 [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px] sm:h-[52px] sm:px-3 sm:[--lift:4px]"
-      >
-        <MountainMoonIcon size={19} />
-        <span className="display whitespace-nowrap text-[0.95rem] min-[400px]:text-[1.08rem] sm:text-[1.15rem]">Close hill</span>
-      </button>
     </nav>
   );
 }

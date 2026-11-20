@@ -120,6 +120,9 @@ try {
   const officeGoals = page.getByRole("list", { name: "Winter goal" });
   if (!(await officeGoals.isVisible())) fail("Office winter goals list missing");
   await shot(page, "08-office-goals");
+  await page.getByRole("button", { name: "Close hill" }).click();
+  await page.getByRole("heading", { name: "Closing recap" }).waitFor({ timeout: 15_000 });
+  await shot(page, "09-night-after-office-close");
 } finally {
   await browser.close();
 }
