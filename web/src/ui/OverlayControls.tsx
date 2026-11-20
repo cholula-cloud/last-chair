@@ -62,7 +62,8 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
   const wear = useLayers((s) => s.wear);
   const gunView = useLayers((s) => s.gunView);
   const ops = layer?.id === "crowds" || layer?.id === "revenue" || layer?.id === "demand";
-  if (!layer || (layer.id !== "slope" && !placing && !ops)) return null;
+  const trails = layer?.id === "trails";
+  if (!layer || (layer.id !== "slope" && !placing && !ops && !trails)) return null;
   return (
     <div className="pointer-events-none flex max-w-full items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
       {layer.id === "slope" ? (
@@ -72,7 +73,7 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
         >
           {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} compact />)}
         </ul>
-      ) : layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" ? (
+      ) : layer.id === "trails" || layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" ? (
         <ul className="chip pointer-events-auto flex min-h-9 flex-wrap items-center gap-2 px-2.5 py-1"
           aria-label={`${layer.label} legend`}>
           {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
@@ -146,7 +147,7 @@ export function ReadoutCard() {
   const readout = useMemo(() => {
     if (!probe || !layer) return null;
     if (layer.id === "slope") return layer.readout(probe, { terrain: TERRAIN });
-    if (layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand") {
+    if (layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" || layer.id === "trails") {
       return layer.readout(probe, game);
     }
     return null;
@@ -172,7 +173,7 @@ export function ReadoutCard() {
 
 export function SnowLayerControls() {
   const layer = useActiveLayer();
-  if (!layer || layer === "slope" || layer === "crowds" || layer === "revenue" || layer === "demand") {
+  if (!layer || layer === "slope" || layer === "crowds" || layer === "revenue" || layer === "demand" || layer === "trails") {
     return null;
   }
   return <LayerPanel layer={layer} />;

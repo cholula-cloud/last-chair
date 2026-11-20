@@ -36,6 +36,7 @@ export const LAYERS = {
   crowds: "Crowds",
   revenue: "Revenue",
   demand: "Guests want",
+  trails: "Trails",
 } as const;
 export type MapLayer = keyof typeof LAYERS;
 export type SnowLayer = "depth" | "guns" | "conditions";

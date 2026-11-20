@@ -50,9 +50,9 @@ try {
   await page.getByLabel("Slope legend").waitFor();
   const bounds = await strip.boundingBox();
   assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 391);
-  for (const layer of ["Snow depth", "Snow-making", "Conditions", "Crowds", "Revenue", "Guests want"]) {
+  for (const layer of ["Snow depth", "Snow-making", "Conditions", "Crowds", "Revenue", "Guests want", "Trails"]) {
     await tap(layer);
-    if (["Crowds", "Revenue", "Guests want"].includes(layer)) {
+    if (["Crowds", "Revenue", "Guests want", "Trails"].includes(layer)) {
       await page.getByLabel(`${layer} legend`).waitFor();
       continue;
     }
