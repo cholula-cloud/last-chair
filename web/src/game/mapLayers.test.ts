@@ -50,7 +50,7 @@ describe("map layers", () => {
     const point = TERRAIN.lease![0];
     expect(
       readPoint(s, overlayModel(s, "Now", "mid"), "depth", point, false).title,
-    ).toBe("Not simulated");
+    ).toBe("Not tracked");
   });
   it("reuses physical gun reach, persisted last-night coverage and previous traffic", () => {
     const s = pickFounder(createBuiltHill(42), "elena");

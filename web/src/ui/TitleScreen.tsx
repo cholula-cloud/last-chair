@@ -29,7 +29,7 @@ type OkSummary = Extract<SlotSummary, { kind: "ok" }>;
 const dayLine = (s: OkSummary) => `${s.hill}, day ${s.dayIndex} of ${s.seasonLength}.`;
 
 function playedLine(savedAt: number | null): string {
-  if (savedAt === null) return "Last played some time ago.";
+  if (savedAt === null) return "Last played a while back.";
   const when = new Date(savedAt).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -149,13 +149,13 @@ function SlotCard({
         <h3 className="display text-[1.25rem]">Slot {slot}</h3>
         {summary.kind === "ok" && (
           <>
-            <p className="text-[0.95rem] font-bold">{dayLine(summary)} You have {formatMoney(summary.cash)}.</p>
+            <p className="text-[0.95rem] font-bold">{dayLine(summary)} You’ve got {formatMoney(summary.cash)}.</p>
             <p className="text-[0.85rem] font-bold text-ink-soft">{playedLine(summary.savedAt)}</p>
           </>
         )}
-        {summary.kind === "empty" && <p className="text-[0.95rem] font-bold text-ink-soft">This slot is empty.</p>}
+        {summary.kind === "empty" && <p className="text-[0.95rem] font-bold text-ink-soft">Nothing here yet.</p>}
         {summary.kind === "unreadable" && (
-          <p className="text-[0.95rem] font-bold">This save can’t be read. Playing it starts a new winter and keeps a copy of the old save.</p>
+          <p className="text-[0.95rem] font-bold">This save won’t open. Playing it starts a new winter and keeps a copy of the old one.</p>
         )}
       </div>
       {summary.kind !== "empty" && (
@@ -189,9 +189,9 @@ function CreditsView({ onBack }: { onBack: () => void }) {
   return (
     <SubView title="Credits" onBack={onBack}>
       <p className="font-bold leading-snug">Last Chair was made by Griffin O’Driscoll.</p>
-      <p className="font-bold leading-snug">It is built with Next.js, React Three Fiber, three.js and zustand.</p>
+      <p className="font-bold leading-snug">Built with Next.js, React Three Fiber, three.js and zustand.</p>
       <p className="font-bold leading-snug">Voice by ElevenLabs.</p>
-      <p className="font-bold leading-snug">The game synthesizes its wind, sound effects and radio sting.</p>
+      <p className="font-bold leading-snug">The wind, sound effects and radio sting are all synthesized in your browser.</p>
     </SubView>
   );
 }
@@ -240,16 +240,16 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
   const exportOne = (slot: SlotNumber) => {
     const file = exportSlot(slot);
     if (!file) {
-      setMessage("Choose a slot with a saved winter to export it.");
+      setMessage("Pick a slot that has a saved winter in it to export.");
       return;
     }
     download(exportFilename(file), JSON.stringify(file, null, 2));
-    setMessage(`Slot ${slot} was saved to a file.`);
+    setMessage(`Slot ${slot} is saved to a file.`);
   };
 
   const finishImport = (slot: SlotNumber, text: string) => {
     const outcome = importIntoSlot(slot, text);
-    setMessage(outcome.ok ? `The file was imported into slot ${slot}.` : outcome.message);
+    setMessage(outcome.ok ? `Imported into slot ${slot}.` : outcome.message);
     refresh();
   };
 
@@ -260,7 +260,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
     try {
       text = await file.text();
     } catch {
-      setMessage("Choose the saved winter file again.");
+      setMessage("Couldn’t read that file. Pick it again.");
       return;
     }
     const check = parseExport(text);
@@ -279,7 +279,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
       return (
         <ConfirmDialog
           title="Start a new winter?"
-          body={`Slot ${confirm.slot} already has a winter. Starting a new one replaces it.`}
+          body={`Slot ${confirm.slot} already has a winter in it. A new one replaces it.`}
           confirmLabel="Replace it"
           onCancel={close}
           onConfirm={() => {
@@ -293,7 +293,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
       return (
         <ConfirmDialog
           title={`Delete slot ${confirm.slot}?`}
-          body={`This removes the winter in slot ${confirm.slot}. You cannot undo it.`}
+          body={`This deletes the winter in slot ${confirm.slot} for good. There’s no undo.`}
           confirmLabel="Delete"
           onCancel={close}
           onConfirm={() => {
@@ -308,7 +308,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
     return (
       <ConfirmDialog
         title="Replace this winter?"
-        body={`Slot ${confirm.slot} already has a winter. Importing the file replaces it.`}
+        body={`Slot ${confirm.slot} already has a winter in it. Importing the file replaces it.`}
         confirmLabel="Replace it"
         onCancel={close}
         onConfirm={() => {
@@ -360,7 +360,7 @@ export function TitleScreen({ onStart, initialView = "main" }: { onStart: (opts?
                 <span className="sign-inner flex min-h-[64px] flex-col items-center justify-center px-3 py-1">
                   <span className="display text-[1.6rem]">Continue</span>
                   <span className="text-[0.9rem] font-bold">
-                    {dayLine(activeSummary)} You have {formatMoney(activeSummary.cash)}.
+                    {dayLine(activeSummary)} You’ve got {formatMoney(activeSummary.cash)}.
                   </span>
                 </span>
               </button>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const FEATURES = [
-  "Start with a lodge at Dutch Hill. Build your first lift and trail for a 28-day Vermont winter.",
+  "Start with a lodge at Dutch Hill. Place your first lift and cut a trail for a 28-day Vermont winter.",
   "Run or pause the day. Follow any skier from car park to lift line to the bottom.",
   "Grow the lodge, build lifts, paint trails and add places for guests to warm up.",
   "Each night, set tomorrow’s fare and how hard the crew works the snow, then sleep.",

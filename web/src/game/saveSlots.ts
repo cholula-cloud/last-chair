@@ -173,7 +173,7 @@ export type ImportResult =
   | { ok: true; state: PersistedState }
   | { ok: false; message: string };
 
-const BAD_FILE = "Choose a save file exported from Last Chair.";
+const BAD_FILE = "That doesn’t look like a Last Chair save. Pick a file exported from the game.";
 
 /** Parses an export file and runs its state through the same migration and validation as a slot load. */
 export function parseExport(text: string): ImportResult {
@@ -191,7 +191,7 @@ export function parseExport(text: string): ImportResult {
   if (typeof version !== "number" || !Number.isInteger(version) || version < 1) return { ok: false, message: BAD_FILE };
   if (version > SAVE_VERSION) return { ok: false, message: "Update Last Chair to open this newer save." };
   const result = migrate(file.state, version);
-  if (result.reset) return { ok: false, message: "This save is damaged. Choose another copy to import." };
+  if (result.reset) return { ok: false, message: "This save is damaged. Try another copy." };
   return { ok: true, state: result.state };
 }
 

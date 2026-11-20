@@ -27,7 +27,7 @@ const MAX_SAVED_TRAILS = 24;
 // simplification and the derived points before sustained pitch scans pairs.
 const MAX_DRAFT_POINTS = 2_048;
 const MAX_TRAIL_SAMPLES = 768;
-const DRAFT_TOO_LONG = "This draft is too long. Undo a stroke or paint a shorter run.";
+const DRAFT_TOO_LONG = "That draft’s too long. Undo a stroke or paint a shorter run.";
 const DISCONNECTED_STROKE = "Start your next stroke at the end of the draft.";
 
 export type PaintStroke = {
@@ -289,7 +289,7 @@ function editTrail(state: PaintState, trailIndex: number, strokes: readonly Pain
   if (disconnected >= 0) {
     reason = "Keep each edit stroke over the same trail.";
   } else if (deleteTrail && trailsOnLift(state.trails, trail.liftIndex).length === 1) {
-    reason = "This lift needs an open trail.";
+    reason = "This lift needs at least one open trail.";
   } else if (!deleteTrail && widths.includes(0)) {
     reason = "Reconnect the trail before cutting.";
   } else if (widths.every((width, i) => width === before[i])) {
@@ -376,12 +376,12 @@ export function previewPaintedTrail(
 
   let reason: string | null = null;
   if (!first || path.length < 2) reason = "Paint a trail down the hill.";
-  else if (first.erase) reason = "Start over an existing trail to erase it.";
+  else if (first.erase) reason = "Start on an existing trail to erase it.";
   else if (liftIndex < 0) reason = "Start at a lift top or an open trail.";
   else if (disconnected) reason = DISCONNECTED_STROKE;
-  else if (trailsOnLift(state.trails, liftIndex).length >= MAX_TRAILS_PER_LIFT) reason = "This lift has room for three trails.";
-  else if (state.trails.filter((trail) => trail.open).length >= MAX_TRAILS_TOTAL) reason = "The hill has room for eight trails.";
-  else if (state.trails.length >= MAX_SAVED_TRAILS) reason = "This winter has reached its trail construction limit.";
+  else if (trailsOnLift(state.trails, liftIndex).length >= MAX_TRAILS_PER_LIFT) reason = "Three trails per lift is the limit.";
+  else if (state.trails.filter((trail) => trail.open).length >= MAX_TRAILS_TOTAL) reason = "Dutch Hill has room for eight trails, no more.";
+  else if (state.trails.length >= MAX_SAVED_TRAILS) reason = "This winter has hit its trail-cutting limit.";
 
   // Keep only the connectors needed to give the new run a complete skiing path.
   const prefix = enterByTrail ? state.trails[start.index].path.slice(0, start.segment + 1) : [];
@@ -408,10 +408,10 @@ export function previewPaintedTrail(
     else if ((!onLease(a, terrain) && !onExistingTrail(a, state)) || (!onLease(b, terrain) && !onExistingTrail(b, state))) {
       problem = OFF_LEASE_MESSAGE;
     }
-    else if ((height - climbFloor) * terrain.feetPerUnit > 16.4) problem = "The trail climbs too far uphill.";
+    else if ((height - climbFloor) * terrain.feetPerUnit > 16.4) problem = "That trail climbs too far uphill. Skiers prefer going down.";
     else if (state.lifts.some((lift) => lift.confirmed
       && crossesLift(a, b, full.path[i + 1], lift.anchor, lift.bottom ?? terrain.base, terrain, baseRadius))) {
-      problem = "The trail crosses a lift line.";
+      problem = "That trail crosses a lift line. Reroute around it.";
     } else if (!widths[i - 1] || !widths[i]) problem = "Reconnect the trail before cutting.";
     if (problem) {
       problemSegments.push(i - 1);
@@ -421,7 +421,7 @@ export function previewPaintedTrail(
 
   const summary = summarize(full.path, widths, terrain);
   if (summary.pitch > MAX_PAINTED_PITCH) {
-    reason ??= "That pitch is too steep for the guests.";
+    reason ??= "Too steep for the guests. Find a gentler line.";
     for (let i = 1; i < full.path.length; i++) {
       const a = full.path[i - 1];
       const b = full.path[i];
@@ -430,7 +430,7 @@ export function previewPaintedTrail(
         && !problemSegments.includes(i - 1)) problemSegments.push(i - 1);
     }
   }
-  if (summary.verticalFt < 16.4) reason ??= "The trail needs more downhill.";
+  if (summary.verticalFt < 16.4) reason ??= "A trail has to drop at least 16.4 ft.";
   const painted = subdivide(path, draftWidths, spacing);
   if (!painted) return rejectedPreview(DRAFT_TOO_LONG);
   const paintedWidths = overlays.reduce((last, stroke) => changeWidths(painted.path, last, stroke, terrain), painted.widths);

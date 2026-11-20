@@ -142,15 +142,41 @@ Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 - **Office Stats charts (row F3):** axis labels in Nunito; headline metric in Lilita when a chart has one hero number. SVG strokes use `ink` at 3 px; positive cash/margin may use `sign-green`, shortfalls `barn`. Pair colour with pattern or label (§10). Table fallback uses the same formatted numbers as the SVG, not a second rounding.
 - Sentence case. No all-caps labels, middle-dot meta strings, em dashes or emoji in UI copy.
 
-### Copy
+### Voice
 
-- Write complete short sentences with a subject and a verb. "Your lift breaks down more often." Not "Lift limps overnight."
-- Plain words. No developer words (stub, flag, preset), no unexplained acronyms, no puns in instructions.
-- One idea per line. Instructions name the gesture and the result: "Drag uphill from the base to place a lift."
-- Spell units: "4 min wait", "1,240 ft". Money always has a dollar sign and thousands separators.
+Last Chair sounds like the person who runs the lift shack at a small Vermont hill: warm, dry, a little salty, and knows every bolt on the T-bar. They talk to you like a neighbor, not like a dashboard. The humor comes from operations, weather and small-town life (corduroy, chowder, the plow, the county road), never from mocking guests.
+
+**How to write it**
+
+- Write it the way a local would say it out loud. Use contractions. Vary sentence length. A fragment is fine when a person would say it that way.
+- Instructions come first and stay clear. A gesture, a button or an error says what to do in plain words; a wink can follow. "Drag uphill from the base to string up a lift."
+- Everything else gets personality: recap headlines, radio, coach tips, empty states, the winter review, the title screen, confirmations and toasts.
+- One joke per screen, tops. Puns are fine in flavor text, never inside an instruction. No "wicked" parody, no emoji, no all-caps shouting.
+- Numbers stay exact. Money has a dollar sign and thousands separators; units are spelled out ("4 min wait", "1,240 ft"). Live numbers sit in their own chips.
 - Name things the same way every time: Dutch Hill, winter (never season), lodge Tier 2, guests.
-- Errors say what to do next: "Not enough cash. Close a day or take the loan."
-- Live numbers sit in separate chips rather than one joined string.
+- Errors say what went wrong and what to do next, in the house voice: "Wallet says no. Close out the day or go see the bank about that loan."
+- No developer words (stub, flag, preset, state, toggle). Accessibility labels (`aria-label`, screen-reader text) stay plain and literal; personality lives in visible text.
+
+**Before and after**
+
+| Old | New |
+|---|---|
+| Lift limps overnight. | Riley's babying the T-bar tonight. Expect a few extra stops tomorrow. |
+| Not enough cash. Close a day or take the loan. | Wallet says no. Close out the day or go see the bank about that loan. |
+| Guests want: shorter lines. | The lift line's getting long enough to need its own zip code. |
+| Trail confirmed. | That's a trail. Somebody's going to love it. |
+
+**Cast voices**
+
+| Who | Voice | Sample |
+|---|---|---|
+| House voice and coach | Friendly old-timer showing you around. Second person, encouraging, never a cheerleader. | "Start small. One lift, one trail, and see who shows up." |
+| Maris Shaw, Route 100 Radio | Concord NH morning-show veteran. Gabby, warm, weather proverbs, real town names, says Worcester wrong on purpose. One to three sentences. | "Morning, Route 100. Plows are out on the county road, which means the lot fills by ten. You heard it here." |
+| Riley Otis, rigger | Few words, dry, mechanical metaphors, secretly proud. | "T-bar sounds like a coffee grinder. It'll run." |
+| Frank Oka, garage | Gruff, diesel-stained, fond of the groomer. | "Groomer's fed and grumpy. Corduroy by six." |
+| Chief Dana Holt, patrol | Calm, deadpan, safety first. | "Wind's up top. We're holding the chair. Nobody's happy, everybody's safe." |
+| Elena Vargas | Kind, teacherly, knows every bus driver. | "The Readsboro kids are coming Tuesday. Keep the bunny slope soft." |
+| Vivian Cho, Abominable Snowglomerate | Polished, friendly, a touch too smooth. Corporate-plain, never a cartoon villain. | "We love what you're building up there. We'd love it even more at a predictable price point." |
 
 ### Motion
 

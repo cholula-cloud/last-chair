@@ -5,7 +5,7 @@ import type {
   StoryBeatDef,
 } from "./types";
 
-export const WINTER_GOAL = "Finish day 28 with enough cash to pay off your loan and any unpaid construction bills.";
+export const WINTER_GOAL = "Make it to day 28 with enough cash to pay off your loan and any unpaid construction bills.";
 
 /** What a hill with no founder modifier does. */
 export const NO_FOUNDER_MODS = {
@@ -31,8 +31,8 @@ export const FOUNDERS: FounderDef[] = [
     id: "elena",
     name: "Elena Vargas",
     title: "The Caretaker",
-    bonus: "Happier families bring two extra guests.",
-    constraint: "Keep the warming hut.",
+    bonus: "Happy families bring two extra guests.",
+    constraint: "Keep the warming hut. Elena insists.",
     arrivalMoodBonus: 0.08,
     lockedBuildings: ["warming_hut"],
   },
@@ -42,7 +42,7 @@ export const FOUNDERS: FounderDef[] = [
     name: "Tom Keene",
     title: "The Refi",
     bonus: "Borrow at 7% for the winter.",
-    constraint: "Repeated thaw days cost 3 welcome points.",
+    constraint: "Back-to-back thaw days cost 3 welcome points.",
     loanRateDelta: -0.01,
     warmWeekMoodPenalty: 0.075,
   },
@@ -52,7 +52,7 @@ export const FOUNDERS: FounderDef[] = [
     name: "Riley Otis",
     title: "The Rigger",
     bonus: "Spend 15% less on lift operations.",
-    constraint: "Must decline Vivian’s offer.",
+    constraint: "You have to turn down Vivian’s offer.",
     liftOpsDiscount: 0.15,
     noSummitLinkEquity: true,
   },
@@ -73,7 +73,7 @@ export const FOUNDERS: FounderDef[] = [
     name: "Juniper Hale",
     title: "The Preservationist",
     bonus: "Gain extra reputation each night.",
-    constraint: "Lift lines and tree clearing cost 15% more.",
+    constraint: "Lifts and tree clearing cost 15% more.",
     reputationDrift: 0.5,
     clearingCostMult: 1.15,
   },

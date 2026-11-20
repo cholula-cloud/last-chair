@@ -130,7 +130,7 @@ describe("placement rules refuse land outside the lease", () => {
     expect(checkLiftLine({ bottom: TERRAIN.base, top: inMap }).ok).toBe(false);
     expect(checkLiftLine({ bottom: TERRAIN.base, top: inMap })).toMatchObject({ reason: "off_lease" });
     expect(placementReason("off_lease")).toBe(OFF_LEASE_MESSAGE);
-    expect(OFF_LEASE_MESSAGE).toBe("Outside the Dutch Hill lease. Build inside the dashed line.");
+    expect(OFF_LEASE_MESSAGE).toBe("That’s outside the Dutch Hill lease. Build inside the dashed line.");
   });
 
   it("still accepts the reference lifts", () => {
@@ -153,7 +153,7 @@ describe("placement rules refuse land outside the lease", () => {
   it("refuses snow guns outside the lease", () => {
     expect(gunPlacementReason(FAR_OUT, [])).toBe("off_lease");
     expect(checkGunPlacement(state, FAR_OUT)).toEqual({ ok: false, reason: OFF_LEASE_MESSAGE });
-    expect(checkGunPlacement(state, { x: NaN, z: 0 })).toEqual({ ok: false, reason: "That spot is off the map." });
+    expect(checkGunPlacement(state, { x: NaN, z: 0 })).toEqual({ ok: false, reason: "That spot is off the map. Drag back onto the hill." });
   });
 
   it("refuses a painted trail that leaves the lease, naming the lease", () => {

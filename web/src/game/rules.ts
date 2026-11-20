@@ -639,8 +639,8 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
   // The prepared trail costs money even when no new trees need to come out.
   const preparation = preview.trailIndex == null && preview.path.length >= 2 ? 150 : 0;
   const cost = preview.deleteTrail ? 0 : preparation + cleared.cost;
-  const reason = preview.reason ?? (state.phase !== "day" ? "Build during the day."
-    : state.cash < cost ? "You need more cash. Close a day and check your balance." : null);
+  const reason = preview.reason ?? (state.phase !== "day" ? "Building happens during the day. Wait for morning."
+    : state.cash < cost ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
@@ -779,8 +779,8 @@ function purchaseConstruction(state: GameState, total: number, what: Payable["wh
 type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "cash">;
 
 export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, "assets">, id: AssetId, at: XZ) {
-  if (state.phase !== "day") return { ok: false as const, reason: "Build during the day." };
-  if (openingStep(state)) return { ok: false as const, reason: "Build a lift and trail first." };
+  if (state.phase !== "day") return { ok: false as const, reason: "Building happens during the day. Wait for morning." };
+  if (openingStep(state)) return { ok: false as const, reason: "Build a lift and a trail first. The rest of the hill opens up after that." };
   if (id === "snow_guns") return { ok: false as const, reason: "Place snow guns from the Snow section." };
   const terminals = state.lifts.flatMap((lift) => {
     if (!lift.confirmed) return [];
@@ -788,7 +788,7 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     return [bottom, top];
   });
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
-  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "You need more cash. Close a day and check your balance." };
+  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash for the deposit. Close out the day, then check your balance." };
   return preview;
 }
 
@@ -803,9 +803,9 @@ export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {
 /** Venue indices remain stable while guests are on the hill. */
 function venueChangeProblem(state: GameState, index: number, undo = false): string | null {
   const asset = state.assets[index];
-  if (!asset || state.phase !== "day") return "Manage venues during the day.";
-  if (!undo && (state.clockMin !== DAY_START_MIN || state.guests.some(isOnHill))) return "Manage this venue before the lifts open.";
-  if (state.guests.some(g => g.state === "refuel" && g.venueIndex === index)) return "Wait for the guests to finish their visit.";
+  if (!asset || state.phase !== "day") return "Venue changes wait for daylight.";
+  if (!undo && (state.clockMin !== DAY_START_MIN || state.guests.some(isOnHill))) return "Change this venue before the lifts open.";
+  if (state.guests.some(g => g.state === "refuel" && g.venueIndex === index)) return "Guests are still in there. Wait for them to finish their visit.";
   return null;
 }
 
@@ -815,13 +815,13 @@ export function assetRemovalQuote(state: GameState, index: number) {
   const undo = purchase?.day === state.dayIndex && purchase?.minute === state.clockMin;
   let reason = venueChangeProblem(state, index, undo);
   if (!reason && asset.id === "warming_hut" && state.assets.findIndex(a => a.id === asset.id) === index &&
-      !canDemolish(state, asset.id) && !undo) reason = "Elena keeps the original warming hut.";
+      !canDemolish(state, asset.id) && !undo) reason = "Elena’s keeping the original warming hut.";
   if (!reason && asset.id === "ski_school" && state.schoolContract?.decision === "accepted" &&
       state.schoolContract.day >= state.dayIndex && state.assets.filter(a => a.id === asset.id).length === 1) {
-    reason = "Keep the school open for the booked Readsboro visit.";
+    reason = "The Readsboro kids are coming. Keep the school open until they’ve visited.";
   }
   if (!reason && !undo && (purchase ? state.dayIndex < purchase.day + 2 : state.payables.some(p => p.what === asset.id))) {
-    reason = "Finish paying the construction installments first.";
+    reason = "Pay off the construction installments before you tear this down.";
   }
   const refund = purchase ? (undo ? constructionDraw(purchase.price).deposit : Math.floor(purchase.price / 2)) : 0;
   return { undo, refund, reason };
@@ -886,11 +886,11 @@ export function beginLodgeUpgrade(state: GameState): GameState {
 }
 
 const GUN_REASON_COPY: Record<GunPlacementReason, string> = {
-  off_map: "That spot is off the map.",
+  off_map: "That spot is off the map. Drag back onto the hill.",
   off_lease: OFF_LEASE_MESSAGE,
-  out_of_pipe_reach: "Place guns near the base or another gun.",
-  max_guns: `Dutch Hill has room for ${MAX_GUNS} snow guns.`,
-  gun_here: "A snow gun is already here.",
+  out_of_pipe_reach: "Too far from the pipe. Place guns near the base or another gun.",
+  max_guns: `Dutch Hill only has room for ${MAX_GUNS} snow guns.`,
+  gun_here: "There’s already a snow gun here.",
 };
 
 function gunReasonCopy(reason: GunPlacementReason | null): string | null {
@@ -899,10 +899,10 @@ function gunReasonCopy(reason: GunPlacementReason | null): string | null {
 
 export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
   const point = roundXZ(at);
-  const reason = state.phase !== "day" ? "Build during the day."
-    : openingStep(state) ? "Build a lift and trail first."
-    : state.lodgeTier < 2 ? "Requires Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "You need more cash. Close a day and check your balance." : null);
+  const reason = state.phase !== "day" ? "Building happens during the day. Wait for morning."
+    : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
+    : state.lodgeTier < 2 ? "Snow guns need Lodge Tier 2."
+    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,

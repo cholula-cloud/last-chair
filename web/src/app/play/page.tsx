@@ -6,7 +6,7 @@ const PlayGate = dynamic(() => import("@/ui/PlayGate"), {
   ssr: false,
   loading: () => (
     <div className="display flex h-[100dvh] items-center justify-center bg-sky text-xl text-ink">
-      Loading mountain…
+      Warming up the lifts…
     </div>
   ),
 });

@@ -3,7 +3,7 @@
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
 
 /** Player-facing copy when a placement leaves the lease. */
-export const OFF_LEASE_MESSAGE = "Outside the Dutch Hill lease. Build inside the dashed line.";
+export const OFF_LEASE_MESSAGE = "That’s outside the Dutch Hill lease. Build inside the dashed line.";
 
 /** Even-odd point-in-polygon test; points on an edge count as inside. */
 export function pointInPolygon(p: XZ, polygon: readonly XZ[]): boolean {

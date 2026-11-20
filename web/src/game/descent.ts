@@ -187,31 +187,31 @@ export function placementReason(
   ctx: { type?: LiftType; need?: number; liftType?: LiftType } = {},
 ): string {
   switch (code) {
-    case "lodge_tier": return "Requires Lodge Tier 2.";
+    case "lodge_tier": return "Double chairs need Lodge Tier 2. Upgrade the lodge first.";
     case "max_lifts":
-      return `Dutch Hill has room for ${MAX_LIFTS} lifts.`;
+      return `Dutch Hill only has room for ${MAX_LIFTS} lifts.`;
     case "off_map":
-      return "That spot is off the map.";
+      return "That spot is off the map. Drag back onto the hill.";
     case "off_lease":
       return OFF_LEASE_MESSAGE;
     case "bottom_far":
       return "Start the lift near the base lodge.";
     case "base_occupied":
-      return "Leave room between the terminal and base buildings.";
+      return "Too close to the base buildings. Slide the terminal over.";
     case "too_steep":
-      return "Too steep for a terminal here.";
+      return "Too steep for a terminal. Look for flatter ground.";
     case "too_low":
       return "Not enough drop for a run. Pick a higher top.";
     case "too_long":
       return ctx.liftType === "surface"
-        ? "Too long for a surface lift. Try a chair or a closer top."
+        ? "Too long for a surface lift. Try a double chair or a closer top."
         : "Too long for one lift. Pick a closer top.";
     case "too_close":
-      return `Too close to the ${ctx.type ?? "other"} lift.`;
+      return `Too close to the ${ctx.type ?? "other"} lift. Spread them out.`;
     case "crosses":
-      return "Crosses another lift line.";
+      return "That crosses another lift line. Move one end.";
     case "cash":
-      return `Need ${formatMoney(Math.ceil(ctx.need ?? 0))} more.`;
+      return `Need ${formatMoney(Math.ceil(ctx.need ?? 0))} more for the deposit.`;
   }
 }
 

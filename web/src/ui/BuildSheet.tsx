@@ -32,12 +32,12 @@ function LodgeCard() {
       <p className="text-sm font-bold">{LODGE_TIERS[tier].pads} attachment pads</p>
       {construction ? (
         <p role="status" className="mt-2 font-bold">
-          Tier {construction.toTier} under construction · {construction.nightsRemaining} {construction.nightsRemaining === 1 ? "night" : "nights"} left
+          Tier {construction.toTier} is going up. {construction.nightsRemaining} {construction.nightsRemaining === 1 ? "night" : "nights"} to go.
         </p>
       ) : next && payment && (
         <>
           <p className="mt-2 text-sm font-bold">
-            Tier {next} opens {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
+            Tier {next} brings {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
           </p>
           {review ? (
             <BuildImpactCard
@@ -49,13 +49,13 @@ function LodgeCard() {
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
-              problem={cash < payment.deposit ? "You need more cash for the deposit. Check your balance after closing." : null}
+              problem={cash < payment.deposit ? "Wallet says no. Close out the day, then come back with the deposit." : null}
               confirmLabel="Start lodge upgrade"
               onCancel={() => setReview(false)}
               onConfirm={() => {
                 upgrade();
                 if (useGameStore.getState().lodgeUpgrade) {
-                  buildConfirmed("Lodge upgrade started.");
+                  buildConfirmed(`Lodge Tier ${next} is under way.`);
                 }
                 setReview(false);
               }}
@@ -91,7 +91,7 @@ function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void })
     {review !== null && state.assets[review] && quote && <BuildImpactCard
       title={`${quote.undo ? "Undo" : "Remove"} ${ASSET_CATALOG[state.assets[review].id].label}?`}
       facts={[{ label: "Cash returned", value: formatMoney(quote.refund) },
-        { label: "Effect", value: quote.undo ? "Cancel both construction installments." : "Remove this venue and stop its upkeep." }]}
+        { label: "Effect", value: quote.undo ? "Cancels the two remaining construction payments." : "Removes this venue and ends its upkeep." }]}
       problem={quote.reason} confirmLabel={quote.undo ? "Undo purchase" : "Confirm removal"}
       onCancel={() => setReview(null)} onConfirm={() => { state.removeAsset(review); setReview(null); }} />}
   </div>;
@@ -140,14 +140,14 @@ export function BuildSheet({
         hasGuestsWant: false,
       }} />
       {opening && <p className="mb-3 text-sm font-bold">
-        {opening === "lift" ? "Place a surface lift at one of the marked sites."
+        {opening === "lift" ? "Place a surface lift on one of the marked sites."
           : "Paint a trail from the lift’s top station down to the base."}
       </p>}
       <div className="grid gap-3 short:grid-cols-2 short:items-start">
         {!opening && <LodgeCard />}
         <div className="panel px-3.5 pb-4 pt-3.5">
           <SectionHeading>Lifts</SectionHeading>
-          <p className="mb-2 text-xs font-bold">Pay 40% now and 30% each of the next two nights.</p>
+          <p className="mb-2 text-xs font-bold">Pay 40% now, then 30% each of the next two nights.</p>
           <div className="grid grid-cols-2 gap-2">
             {(["surface", "chair"] as const).map((type: LiftType) => (
               <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
@@ -164,8 +164,8 @@ export function BuildSheet({
           </PrimaryButton>
           {reviewLift !== null && <BuildImpactCard title={`Close lift ${reviewLift + 1}?`}
             facts={[{ label: "Routes", value: "All trails on this lift close with it." },
-              { label: "Refund", value: "$0. Outstanding installments remain due." },
-              { label: "Timing", value: "Before opening, close now. Otherwise, close overnight." }]}
+              { label: "Refund", value: "$0. Any payments still owed stay owed." },
+              { label: "Timing", value: "Close it now if the hill hasn’t opened. Otherwise it closes overnight." }]}
             confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
             onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
           {lifts.map((lift, i) => lift.confirmed && (
@@ -198,7 +198,7 @@ export function BuildSheet({
           <SectionHeading>Snow</SectionHeading>
           <button type="button" className="key press min-h-11 px-3 font-extrabold"
             disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
-            Snow gun {tier < 2 ? "· Lodge Tier 2" : `· ${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
+            Snow gun, {tier < 2 ? "Lodge Tier 2" : `${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
           </button>
         </div>}
       </div>

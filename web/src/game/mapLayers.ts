@@ -40,8 +40,8 @@ export type MapTime = "Now" | "Close" | "Tomorrow";
 export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };
 export const MARKS = {
-  neutral: { name: "Not simulated", color: "#aeb3b2", glyph: "–" },
-  bare: { name: "Bare · closed", color: "#b18b66", glyph: "×" },
+  neutral: { name: "Not tracked", color: "#aeb3b2", glyph: "–" },
+  bare: { name: "Bare, closed", color: "#b18b66", glyph: "×" },
   shallow: { name: "Shallow", color: "#bbbdab", glyph: "·" },
   covered: { name: "Covered", color: "#9bd1df", glyph: "≈" },
   deep: { name: "Deep", color: "#e1edf7", glyph: "≋" },
@@ -269,15 +269,15 @@ export function readPoint(
   gunView: GunView = "Last night",
 ) {
   const result = {
-    title: "Not simulated",
-    detail: "The hill tracks snow on marked trails.",
+    title: "Not tracked",
+    detail: "Snow is only tracked on trails.",
     personas: [] as string[],
   };
   if (!onLease(point))
     return {
       ...result,
       title: "Outside the lease",
-      detail: "Tap inside the lease to inspect the hill.",
+      detail: "Tap inside the lease line to check a spot.",
     };
   const hit = segmentAt(state.trails, point);
   if (!hit) {
@@ -292,16 +292,16 @@ export function readPoint(
           ...result,
           title: `Gun ${gun + 1}`,
           detail:
-            "This point is within reach. Snow depth is tracked only on trails.",
+            "A gun can reach this spot, but snow is only tracked on trails.",
         };
     }
     return result;
   }
   const trail = state.trails[hit.index],
     cell = model.trails[hit.index][hit.segment];
-  result.title = `${trail.name} · segment ${hit.segment + 1} of ${trail.snow.length}`;
+  result.title = `${trail.name}, segment ${hit.segment + 1} of ${trail.snow.length}`;
   if (layer === "depth")
-    result.detail = `Depth is ${cell.snow.depth.toFixed(2)}. Cover breaks up below ${COVER_MIN}.`;
+    result.detail = `Snow depth is ${cell.snow.depth.toFixed(2)}. Cover breaks up below ${COVER_MIN}.`;
   if (layer === "guns") {
     const reach = cell.guns
       .map(
@@ -311,8 +311,8 @@ export function readPoint(
       .join(" ");
     if (gunView === "Last night") {
       result.detail = cell.reached
-        ? "Guns reached this segment last night."
-        : "Guns did not reach this segment last night.";
+        ? "A gun reached this segment last night."
+        : "No gun reached this segment last night.";
     } else {
       const service = gunView === "High" ? "high" : "mid";
       const groomed = service === "high" ? cell.highGroom : cell.midGroom;
@@ -326,18 +326,18 @@ export function readPoint(
   if (layer === "conditions") {
     const cause: Partial<Record<MarkId, string>> = {
       fresh:
-        "The crew groomed this segment and its snow quality is still high.",
+        "The crew groomed this segment and the snow quality is still high. Pure corduroy.",
       powder:
-        "The snow has continuous cover and enough quality for packed powder.",
-      worn: `${cell.runs} runs have worn down the surface.`,
-      slush: "The afternoon thaw softened this lower segment.",
-      ice: `Snow quality has fallen to ${Math.round(cell.snow.quality * 100)}%.`,
+        "The cover is continuous and the quality is good enough for packed powder.",
+      worn: `${cell.runs} runs have chewed up the surface.`,
+      slush: "The afternoon thaw has gone to work on this lower segment.",
+      ice: `Snow quality is down to ${Math.round(cell.snow.quality * 100)}%.`,
       thin: `Only ${Math.round(cell.snow.coverage * 100)}% of this segment has cover.`,
-      bare: "Less than a tenth of this segment has cover.",
+      bare: "Less than a tenth of this segment has cover. That’s mostly dirt.",
     };
     result.detail = wear
       ? cell.yesterday === undefined
-        ? "Yesterday’s run count is unavailable."
+        ? "No run count for yesterday."
         : `${cell.yesterday} runs wore this segment yesterday, costing up to ${(cell.yesterday * WEAR_PER_RUN).toFixed(2)} quality.`
       : `${MARKS[cell.condition].name}. ${cause[cell.condition]}${cell.hold ? " Its chair is on wind hold." : ""}`;
     result.personas = Object.values(PERSONAS).map((p) => {
@@ -350,7 +350,7 @@ export function readPoint(
           p.id === "first_timer" &&
           ["ice", "thin", "slush"].includes(cell.condition)
         );
-      return `${p.label} · ${suitable ? "suitable" : "avoid"}`;
+      return `${p.label}: ${suitable ? "suitable" : "avoid"}`;
     });
   }
   return result;

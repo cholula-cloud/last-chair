@@ -80,13 +80,13 @@ try {
     .getByRole("status")
     .getByText(/segment \d of 6/)
     .waitFor();
-  await panel.getByText(/First-timer ·/).waitFor();
+  await panel.getByText(/First-timer:/).waitFor();
   await button("Close").tap();
   await button("Tomorrow").tap();
   await button("High").tap();
   await panel.getByText(/Forecast chances/).waitFor();
   await button("Yesterday’s wear").tap();
-  await panel.getByText(/Yesterday’s run count is unavailable/).waitFor();
+  await panel.getByText(/No run count for yesterday/).waitFor();
   await strip.getByRole("button",{name:"Off"}).tap();
   await panel.waitFor({ state: "hidden" });
   assert.deepEqual(await save(), before, "Reading layers must preserve the saved hill");

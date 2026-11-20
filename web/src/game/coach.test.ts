@@ -13,13 +13,13 @@ const base: CoachContext = {
 };
 
 describe("coach tips", () => {
-  it("has ten tips with unique ids and plain one-sentence text", () => {
+  it("has ten tips with unique ids and short, plain text", () => {
     expect(COACH_TIPS).toHaveLength(10);
     expect(new Set(COACH_TIP_IDS).size).toBe(COACH_TIP_IDS.length);
     for (const tip of COACH_TIPS) {
       expect(tip.text).toMatch(/[.]$/);
       expect(tip.text).not.toMatch(/[—–·]/);
-      expect(tip.text.length).toBeLessThanOrEqual(80);
+      expect(tip.text.length).toBeLessThanOrEqual(100);
     }
   });
 

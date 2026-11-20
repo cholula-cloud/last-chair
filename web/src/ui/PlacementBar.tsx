@@ -43,8 +43,8 @@ function queueImpact(before: GameState, after: GameState): string {
     return total + (index < 0 ? 0 : liftWaitMin(state.lifts[index], state.talentsOwned));
   }, 0) / Object.keys(PERSONAS).length;
   const delta = expectedWait(after) - expectedWait(before);
-  if (Math.abs(delta) < 0.05) return "No immediate change";
-  return `${Math.abs(delta).toFixed(1)} min ${delta < 0 ? "less" : "more"} at current queues`;
+  if (Math.abs(delta) < 0.05) return "No change to the lines yet";
+  return `${Math.abs(delta).toFixed(1)} min ${delta < 0 ? "shorter" : "longer"} wait at current queues`;
 }
 
 function DraftActions({ canReview }: { canReview: boolean }) {
@@ -94,12 +94,12 @@ function TrailBar() {
         facts={[
           { label: "Trail", value: preview.name },
           { label: preview.deleteTrail ? "Refund" : "Cost", value: formatMoney(preview.cost) },
-          ...(preview.deleteTrail ? [{ label: "Effect", value: "Close this route. Cleared land stays cleared." }] : []),
+          ...(preview.deleteTrail ? [{ label: "Effect", value: "Closes this route. The cleared land stays cleared." }] : []),
           { label: "Difficulty", value: preview.difficulty },
           { label: "Length", value: feet(preview.lengthFt) },
           { label: "Vertical", value: feet(preview.verticalFt) },
           { label: "Area", value: acres(preview.acres) },
-          { label: "Who can ski", value: guests || "None" },
+          { label: "Who can ski", value: guests || "Nobody yet" },
           { label: "Lodge tier", value: "1" },
           ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade)) }] : []),
         ]}
@@ -109,7 +109,7 @@ function TrailBar() {
         onConfirm={() => {
           state.commitPaint(strokes, draft.glade);
           if (useGameStore.getState().trails !== state.trails) {
-            buildConfirmed(preview.deleteTrail ? "Trail closed." : preview.trailIndex !== null ? "Trail changed." : preview.glade ? "Glade marked." : "Trail cut.");
+            buildConfirmed(preview.deleteTrail ? "Trail closed." : preview.trailIndex !== null ? "Trail reworked." : preview.glade ? "Glade marked. The trees stay." : "That’s a trail. Somebody’s going to love it.");
             finishPlacement();
           }
         }}
@@ -137,7 +137,7 @@ function TrailBar() {
   if (trailPanelMode(draft) === "compact") {
     return (
       <div key="compact" className="panel trail-bar-in space-y-1.5 px-3 pb-2.5 pt-2" data-trail-panel="compact">
-        <p className="text-sm font-extrabold">Lift your finger to finish.</p>
+        <p className="text-sm font-extrabold">Lift your finger to finish the stroke.</p>
         {stats}
         {problem}
       </div>
@@ -147,12 +147,12 @@ function TrailBar() {
     <div key="full" className="panel trail-bar-in space-y-2 px-3 pb-3 pt-2" data-trail-panel="full">
       <p className="text-sm font-extrabold">
         {draft.moveCamera
-          ? "Drag or pinch to move the map. Tap Paint to continue."
+          ? "Drag or pinch to move the map, then tap Paint to keep going."
           : draft.erasing
-          ? "Drag over a trail to erase paint."
+          ? "Drag over the paint to erase it."
           : draft.strokes.length
             ? "Drag from the marked end to keep painting, or tap Review."
-            : "Drag down the hill from a lift to paint a trail. Use two fingers to move the map."}
+            : "Drag down the hill from a lift top to paint a trail. Two fingers move the map."}
       </p>
       <div className="grid grid-cols-2 gap-1" aria-label="Trail type">
         <button type="button" className={actionClass} aria-pressed={!draft.glade} onClick={() => usePlacementDraft.setState({ glade: false })}>Cleared trail</button>
@@ -215,7 +215,7 @@ function LiftBar() {
           { label: "Capacity", value: `${capacity} skiers per hour` },
           { label: "Ride time", value: `${ride?.toFixed(1)} min` },
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
-          { label: "Opens", value: "After you cut a trail" },
+          { label: "Opens", value: "Once you cut a trail" },
         ]}
         confirmLabel={`Place for ${formatMoney(constructionDraw(cost).deposit)} now`}
         problem={problem}
@@ -223,7 +223,7 @@ function LiftBar() {
         onConfirm={() => {
           state.placeLift({ type, ...line });
           if (useGameStore.getState().lifts !== state.lifts) {
-            buildConfirmed("Lift placed.");
+            buildConfirmed("Lift’s in. Now give it a trail.");
             finishPlacement();
           }
         }}
@@ -234,9 +234,9 @@ function LiftBar() {
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold" aria-live="polite">
-        {draft.moveCamera ? "Move the map, then tap Place lift to continue."
-          : top ? "Drag either end to adjust. Use two fingers to move the map."
-          : "Drag uphill from the base to place a lift."}
+        {draft.moveCamera ? "Move the map, then tap Place lift to keep going."
+          : top ? "Drag either end to adjust it. Two fingers move the map."
+          : "Drag uphill from the base to string up a lift."}
       </p>
       {readout && (
         <div className="flex flex-wrap gap-1">
@@ -278,7 +278,7 @@ function SiteBar() {
           ...(check?.ok && check.attached ? [{ label: "Lodge pad", value: "+5% attached" }] : []),
         ]}
         confirmLabel={movingAssetIndex === undefined ? "Build here" : "Move here"}
-        problem={tapPoint ? problem : "Choose a spot on the hill."}
+        problem={tapPoint ? problem : "Tap a spot on the hill first."}
         onCancel={backToDraft}
         onConfirm={() => {
           if (!check?.ok) return;
@@ -286,7 +286,7 @@ function SiteBar() {
           else if (gun) state.placeGun(check.placement.at);
           else if (asset) state.placeAsset(asset, check.placement.at);
           if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
-            buildConfirmed(`${item.label} placed.`);
+            buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
             finishPlacement();
           }
         }}
@@ -297,8 +297,8 @@ function SiteBar() {
   return (
     <div className="panel space-y-2 px-3 pb-3 pt-2">
       <p className="text-sm font-extrabold">
-        {draft.moveCamera ? "Move the map, then tap Place to continue."
-          : gun ? "Place the gun within pipe reach of the base or another gun."
+        {draft.moveCamera ? "Move the map, then tap Place to keep going."
+          : gun ? "Put the gun within pipe reach of the base or another gun."
           : `Choose a spot for ${item.label} near the lodge.`}
       </p>
       {problem && <p className="text-xs font-bold text-barn-deep">{problem}</p>}
@@ -321,7 +321,7 @@ export function PlacementBar() {
   if (!active) return null;
   return (
     <div className="pointer-events-auto max-h-[65dvh] w-full max-w-[440px] overflow-y-auto px-1 short:max-w-[270px]" data-placement-kind={kind}>
-      {showPlacementColors && <p className="key mb-1 px-2 py-1 text-xs font-bold">Green marks buildable spots. Red marks blocked spots.</p>}
+      {showPlacementColors && <p className="key mb-1 px-2 py-1 text-xs font-bold">Green means go. Red means find another spot.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
   );
