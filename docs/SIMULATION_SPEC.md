@@ -238,7 +238,7 @@ Each open lift has up to three named runs (paths stored on `TrailRun`); guests p
 
 The Slope layer samples the heightfield throughout the lease. It uses the same pitch bands as trail painting and marks the ground above the 65% painting limit as double black. Contours are 50 vertical feet apart. Painting turns this layer on automatically.
 
-**Trail endpoints (B7).** A painted stroke ends where the player lifts the brush. It connects to `terrain.base` only when the end is within `0.4 * baseAreaRadius` of it (`BASE_CONNECT_FRACTION`), and reuses another trail's remaining path only when the end is within H/20 of it (`TRAIL_JOIN_FRACTION`). A run that ends anywhere else is valid; guests who finish it walk to the lift bottom or the exit.
+**Trail endpoints (B7).** A painted stroke ends where the player lifts the brush. It connects to `terrain.base` only when the end is within `baseConnectRadius` of it: the larger of `0.4 * baseAreaRadius` (`BASE_CONNECT_FRACTION`) and the brush half-width plus 0.5 unit. It reuses another trail's remaining path only when the end is within the larger of H/20 (`TRAIL_JOIN_FRACTION`) and that trail's half-width at the segment plus 0.15 unit, so an end inside a wide ribbon joins. A run that ends anywhere else is valid; guests who finish it walk to the lift bottom or base at 250 ft per minute, and the review card shows the distance and time.
 
 Depth, snow-making and conditions use the six segments of each trail. Untracked ground has a neutral pattern. Snow-making displays last night's stored coverage or the gun reach and grooming budget for Mid or High service. The dashed snow depth boundary is 0.15.
 

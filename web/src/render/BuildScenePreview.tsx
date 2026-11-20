@@ -10,8 +10,8 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import { liftReadout } from "@/ui/liftGesture";
 import { BrushCursor } from "./BrushCursor";
 import { LiftGhost } from "./LiftGhost";
-import { STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
-import { DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
+import { baseConnectRadius, STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
+import { contextColor, DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
 import { PALETTE } from "./palette";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
@@ -109,6 +109,7 @@ function TrailPreview() {
   const phase = useGameStore((s) => s.phase);
   const clearedCells = useGameStore((s) => s.clearedCells);
   const glade = usePlacementDraft((s) => s.glade);
+  const brushWidth = usePlacementDraft((s) => s.brushWidth);
   const all = useMemo(
     () => activeStroke ? [...strokes, activeStroke] : strokes,
     [strokes, activeStroke],
@@ -125,7 +126,7 @@ function TrailPreview() {
         index,
         path: trail.path,
         widths: trail.widths ?? trail.path.map(() => STANDARD_BRUSH_WIDTH),
-        color: DIFFICULTY_COLOR[trail.difficulty],
+        color: contextColor(DIFFICULTY_COLOR[trail.difficulty]),
       }]
       : []),
     [trails, lifts],
@@ -135,7 +136,7 @@ function TrailPreview() {
   return (
     <>
       {!review && !erasing && (
-        <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
+        <TerrainRing guide at={TERRAIN.base} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
       )}
       {!review && !activeStroke && !all.length && lifts
         .filter((lift) => lift.confirmed)
@@ -148,7 +149,7 @@ function TrailPreview() {
       ))}
       {painted && painted.path.length > 1 && (
         <TrailRibbon path={painted.path} widths={painted.widths} color={color}
-          problemSegments={painted.problemSegments} live={!!activeStroke} />
+          problemSegments={painted.problemSegments} live={!!activeStroke} outline />
       )}
       {continuation && !review && !activeStroke && !erasing && !moveCamera && (
         <TerrainRing name="trail-continuation" guide at={continuation} radius={0.4} color={PALETTE.marker} />

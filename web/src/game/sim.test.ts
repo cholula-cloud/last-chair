@@ -24,6 +24,7 @@ import {
 } from "./sim";
 import { PERSONAS, skiMinutes } from "./personas";
 import { defaultTrails } from "./trails";
+import { TERRAIN } from "./terrain";
 import { starterLifts } from "./__fixtures__/built-hill";
 import { ZERO_TERMS, type DaySatisfaction, type SatTerms } from "./satisfaction";
 import { createRng } from "./rng";
@@ -520,6 +521,19 @@ describe("tickGuests", () => {
     const [queued] = tickGuests([walking], clock(T0 + 40, options));
     expect(queued.state).toBe("queue");
     expect(queued.liftIndex).toBe(0);
+  });
+
+  it("walks a skier home from a painted trail that ends about 5 units from the base", () => {
+    const base = TERRAIN.base;
+    const [first] = defaultTrails();
+    const trail = { ...first, path: [first.path[0], { x: base.x + 5, z: base.z }] };
+    const options = { trails: [trail] };
+    const [walking] = tickGuests([skier({ targetRuns: 9, energy: 1 })], clock(T0 + 30, options));
+    expect(walking).toMatchObject({ state: "walk_lift", liftIndex: 0, runs: 1 });
+    const walkMin = 5 * TERRAIN.horizontalFeetPerUnit / 250;
+    expect(Number.isFinite(walkMin)).toBe(true);
+    const [queued] = tickGuests([walking], clock(T0 + 30 + Math.ceil(walkMin) + 1, options));
+    expect(queued).toMatchObject({ state: "queue", liftIndex: 0 });
   });
 
   it("keeps a skier on the hill when the only lift is temporarily wind-held", () => {

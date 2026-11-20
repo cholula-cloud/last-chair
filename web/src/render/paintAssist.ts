@@ -110,6 +110,16 @@ export function ribbonColor(difficulty: TrailDifficulty, validated: boolean): st
   return validated ? DIFFICULTY_COLOR[difficulty] : UNVALIDATED_COLOR;
 }
 
+/** A confirmed trail seen behind a draft: lightened toward white so the draft keeps the stronger colour. */
+export function contextColor(hex: string, amount = 0.45): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const part = (shift: number) => {
+    const c = (n >> shift) & 255;
+    return Math.round(c + (255 - c) * amount).toString(16).padStart(2, "0");
+  };
+  return `#${part(16)}${part(8)}${part(0)}`;
+}
+
 /** A darker shade of a #rrggbb colour, for the ribbon edge band. */
 export function darken(hex: string, factor = EDGE_DARKEN): string {
   const n = Number.parseInt(hex.slice(1), 16);
