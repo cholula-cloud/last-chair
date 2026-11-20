@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { MOUNTAIN_CALENDARS, dayLabel, type MountainId } from "@/game/calendar";
+import { dayLabel, operatingSeasonLength, seasonCalendar, type MountainId } from "@/game/calendar";
 import { LOW_CASH } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { formatClock } from "@/game/sim";
@@ -41,6 +41,7 @@ export function TopBar({
   mountainId,
   dayIndex,
   seasonLength,
+  operatingDayIndex,
   clockMin,
   cash,
   paused,
@@ -51,6 +52,7 @@ export function TopBar({
   mountainId: MountainId;
   dayIndex: number;
   seasonLength: number;
+  operatingDayIndex: number;
   clockMin: number;
   cash: number;
   paused: boolean;
@@ -61,7 +63,9 @@ export function TopBar({
   const speed = useSpeed((s) => s.speed);
   const cycleSpeed = useSpeed((s) => s.cycle);
   const reducedMotion = useReducedMotion();
-  const { weekday, date, note } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
+  const cal = seasonCalendar({ mountainId, seasonLength });
+  const openDays = operatingSeasonLength(cal);
+  const { weekday, date, note } = dayLabel(cal, dayIndex);
   const lowCash = cash >= 0 && cash < LOW_CASH;
   return (
     <div className="flex w-full items-center gap-1.5 sm:w-[min(27rem,100%)] sm:gap-2">
@@ -79,7 +83,7 @@ export function TopBar({
       <div className="chip flex h-11 min-w-0 flex-1 items-center gap-1 px-2 sm:h-12 sm:gap-2 sm:px-3">
         <div className="flex flex-col leading-tight">
           <span className="whitespace-nowrap text-[0.85rem] font-extrabold tabular-nums sm:text-[0.9rem]">
-            Day {dayIndex}/{seasonLength}
+            Open {operatingDayIndex}/{openDays}
           </span>
           <span className="text-[0.72rem] font-bold text-ink-soft sm:text-[0.75rem]">
             {weekday} <span className="hidden whitespace-nowrap min-[380px]:inline">{date}</span>

@@ -184,6 +184,7 @@ const fields: Record<keyof PersistedState, Check> = {
   gunsVisible: boolean,
   groomVisible: boolean,
   seasonLength: (value) => integer(value) && value >= 1,
+  operatingDayIndex: (value) => integer(value) && value >= 1,
   rngState: number,
   nightRecap: nullable(recap),
   lastWinter: optional(winterRecord),

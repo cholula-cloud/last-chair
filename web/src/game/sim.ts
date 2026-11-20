@@ -1,6 +1,6 @@
 import { TALENT } from "./talents";
 import type { OperatingCosts } from "./economy";
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
+import { calendarForSeason, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
@@ -8,7 +8,7 @@ import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
-import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
+import { SUMMIT_LINK_MIN_REPUTATION, summitLinkFirstDay, type SummitLinkDecision } from "./summitLink";
 import { runEnergyCost, runSkiMinutes } from "./trails";
 import { pickSkiRoute } from "./trailNetwork";
 import {
@@ -68,12 +68,12 @@ export function formatClock(totalMinutes: number): string {
   return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
-export function weekdayLabel(dayIndex: number): string {
-  return weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
+export function weekdayLabel(dayIndex: number, seasonLength = 28): string {
+  return weekdayForDay(calendarForSeason("dutch_hill", seasonLength), dayIndex);
 }
 
-export function isWeekend(dayIndex: number): boolean {
-  const weekday = weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
+export function isWeekend(dayIndex: number, seasonLength = 28): boolean {
+  const weekday = weekdayForDay(calendarForSeason("dutch_hill", seasonLength), dayIndex);
   return weekday === "Sat" || weekday === "Sun";
 }
 
@@ -644,7 +644,7 @@ export type ArrivalInputs = {
 };
 
 function arrivalCount(opts: ArrivalInputs, noise: number): number {
-  const calendar = opts.calendar ?? DUTCH_HILL_CALENDAR;
+  const calendar = opts.calendar ?? calendarForSeason("dutch_hill", opts.seasonLength ?? 28);
   const kind = dayKind(calendar, opts.dayIndex);
   const weekend = kind !== "weekday";
   let base = weekend ? 28 : 22;
@@ -700,7 +700,7 @@ export function readyStoryBeat(input: BeatCheckInput): StoryBeatId | null {
 }
 
 function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
-  const calendar = input.calendar ?? DUTCH_HILL_CALENDAR;
+  const calendar = input.calendar ?? calendarForSeason("dutch_hill", input.seasonLength ?? 28);
   switch (id) {
     case "first_load":
       return input.liftsOpen >= 1 && input.completedRuns >= 5;
@@ -711,7 +711,8 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
-      return input.reputation >= SUMMIT_LINK_MIN_REPUTATION && input.dayIndex >= SUMMIT_LINK_FIRST_DAY &&
+      return input.reputation >= SUMMIT_LINK_MIN_REPUTATION &&
+        input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length) &&
         input.dayIndex < (input.seasonLength ?? calendar.length);
     default:
       return false;

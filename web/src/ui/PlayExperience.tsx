@@ -126,6 +126,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
+  const operatingDayIndex = useGameStore((s) => s.operatingDayIndex);
   const clockMin = useGameStore((s) => s.clockMin);
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
@@ -330,6 +331,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               mountainId={mountainId}
               dayIndex={dayIndex}
               seasonLength={seasonLength}
+              operatingDayIndex={operatingDayIndex}
               clockMin={clockMin}
               cash={cash}
               paused={paused}

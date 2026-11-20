@@ -56,7 +56,7 @@ try {
   await enterGame(page);
   await heading(/Dutch Hill, winter 1/, page).waitFor();
   await tap(/Elena Vargas/i);
-  await page.getByText(/^Day 1\/28$/).waitFor();
+  await page.getByText(/^Open 1\/\d+$/).waitFor();
   await shot("day1-hud.png");
   await buildOpening(page, cdp);
 
@@ -69,7 +69,7 @@ try {
   await tap(/^High\b/);
   await resolveRadio(page);
   await tap("Sleep until morning");
-  await page.getByText(/^Day 2\/28$/).waitFor();
+  await page.getByText(/^Open 2\/\d+$/).waitFor();
   await shot("day2-morning.png");
 
   await tap("Office");

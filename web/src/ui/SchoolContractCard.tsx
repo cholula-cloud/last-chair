@@ -1,4 +1,4 @@
-import { dayLabel, MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { dayLabel, seasonCalendar } from "@/game/calendar";
 import { formatMoney } from "@/game/format";
 import { schoolContractOfferDay } from "@/game/rules";
 import { SCHOOL_BUS_FARE, SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
@@ -23,7 +23,7 @@ export function SchoolContractCard({ night }: { night: GameState }) {
     : null;
   const busDay = day ?? scheduled;
   if (busDay === null) return null;
-  const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], busDay);
+  const { weekday, date } = dayLabel(seasonCalendar(night), busDay);
   if (day === null) {
     return (
       <p className="chip mt-3 px-3 py-2 text-sm font-bold">

@@ -13,6 +13,11 @@ import { MS_PER_GAME_MINUTE, type WeatherKind } from "./types";
 
 const SEED = 42;
 
+function legacyInitialState(seed: number) {
+  const state = createInitialState(seed);
+  return { ...state, seasonLength: 28, weatherDays: state.weatherDays.slice(0, 28) };
+}
+
 // Characterization test: drives a whole season headlessly and snapshots the
 // result. The snapshot file is the behavioral contract; never hand-edit it.
 
@@ -160,7 +165,7 @@ function storeDriver(
 }
 
 function pureDriver(seed: number): Driver {
-  let state = createInitialState(seed);
+  let state = legacyInitialState(seed);
   const apply = (f: (s: GameState) => GameState) => void (state = f(state));
   return {
     view: () => state,
@@ -216,7 +221,7 @@ describe("season characterization", () => {
     const pure = playSeason(pureDriver(SEED));
 
     const { useGameStore } = await import("./store");
-    useGameStore.setState(createInitialState(SEED));
+    useGameStore.setState(legacyInitialState(SEED));
     const viaStore = playSeason(storeDriver(useGameStore));
 
     expect(pure).toEqual(viaStore);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG } from "./base";
-import { DUTCH_HILL_CALENDAR } from "./calendar";
+import { DUTCH_HILL_CALENDAR, DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
 import { migrate } from "./migrations";
 import { acknowledgeBeat, decideSchoolContract, expectedArrivals, openNight, pickFounder, sleep, skipToClose, tick } from "./rules";
 import { nextSchoolBusDay, SCHOOL_BUS_FARE, SCHOOL_BUS_PUPILS } from "./schoolContract";
@@ -23,11 +23,12 @@ function withSchool(dayIndex = 2): GameState {
 
 describe("school bus contract", () => {
   it("schedules the next weekday inside the winter and skips a calendar holiday", () => {
-    expect(nextSchoolBusDay(DUTCH_HILL_CALENDAR, 5, 28)).toBe(8);
-    expect(nextSchoolBusDay(DUTCH_HILL_CALENDAR, 18, 28)).toBe(19);
-    expect(nextSchoolBusDay(DUTCH_HILL_CALENDAR, 19, 28)).toBeNull();
-    expect(nextSchoolBusDay({ ...DUTCH_HILL_CALENDAR, holidayWeeks: [] }, 19, 28)).toBe(23);
-    expect(nextSchoolBusDay(DUTCH_HILL_CALENDAR, 26, 28)).toBeNull();
+    const cal = DUTCH_HILL_CALENDAR_LEGACY;
+    expect(nextSchoolBusDay(cal, 5, 28)).toBe(8);
+    expect(nextSchoolBusDay(cal, 18, 28)).toBe(19);
+    expect(nextSchoolBusDay(cal, 19, 28)).toBeNull();
+    expect(nextSchoolBusDay({ ...cal, holidayWeeks: [] }, 19, 28)).toBe(23);
+    expect(nextSchoolBusDay(cal, 26, 28)).toBeNull();
   });
 
   it("offers only after completing a real lesson at a Tier 2 ski school", () => {

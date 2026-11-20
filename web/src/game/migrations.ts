@@ -2,8 +2,9 @@ import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } fr
 import { winterRecord } from "./winterMemory";
 import { validateSave } from "./saveValidation";
 import { mix32 } from "./rng";
-import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION } from "./summitLink";
+import { SUMMIT_LINK_MIN_REPUTATION, summitLinkFirstDay } from "./summitLink";
 import { resumeSeasonWeather } from "./weather";
+import { calendarForSeason, operatingDayIndex, type MountainId } from "./calendar";
 import { COACH_TIP_IDS } from "./coach";
 
 export type Raw = Record<string, unknown>;
@@ -23,7 +24,7 @@ export const MIGRATIONS: readonly Migration[] = [
     up(raw) {
       const { rngState, seasonLength, dayIndex, weather } = raw;
       if (typeof rngState !== "number" || !Number.isFinite(rngState) ||
-          typeof seasonLength !== "number" || !Number.isInteger(seasonLength) || seasonLength < 1 || seasonLength > 28 ||
+          typeof seasonLength !== "number" || !Number.isInteger(seasonLength) || seasonLength < 1 || seasonLength > 49 ||
           typeof dayIndex !== "number" || !Number.isInteger(dayIndex) || dayIndex < 1 || dayIndex > seasonLength ||
           (weather !== "clear" && weather !== "snow" && weather !== "thaw")) throw new Error("Invalid saved weather");
       const seasonSeed = mix32(rngState);
@@ -57,7 +58,7 @@ export const MIGRATIONS: readonly Migration[] = [
     up(raw) {
       const { pendingBeat, dayIndex, seasonLength, reputation } = raw;
       const validSummitLinkNight = typeof dayIndex === "number" && typeof seasonLength === "number" &&
-        typeof reputation === "number" && dayIndex >= SUMMIT_LINK_FIRST_DAY && dayIndex < seasonLength &&
+        typeof reputation === "number" && dayIndex >= summitLinkFirstDay(seasonLength) && dayIndex < seasonLength &&
         reputation >= SUMMIT_LINK_MIN_REPUTATION;
       const clearTeaser = pendingBeat === "school_bus" || (pendingBeat === "summit_link" && !validSummitLinkNight);
       const migrated = { ...raw, schoolContract: null, schoolProgramProven: false, summitLinkDecision: null };
@@ -97,6 +98,18 @@ export const MIGRATIONS: readonly Migration[] = [
     note: "Track optional cash rush for a second crew point per night.",
     up(raw) {
       return { ...raw, crewRushDay: typeof raw.crewRushDay === "number" ? raw.crewRushDay : 0 };
+    },
+  },
+  {
+    to: 11,
+    note: "Operating-day index for Fri–Sun calendar.",
+    up(raw) {
+      const mountainId = raw.mountainId === "dutch_hill" ? "dutch_hill" : "dutch_hill";
+      const seasonLength = typeof raw.seasonLength === "number" ? raw.seasonLength : 28;
+      const dayIndex = typeof raw.dayIndex === "number" ? raw.dayIndex : 1;
+      const cal = calendarForSeason(mountainId as MountainId, seasonLength);
+      const operating = raw.operatingDayIndex ?? operatingDayIndex(cal, dayIndex);
+      return { ...raw, operatingDayIndex: operating };
     },
   },
 ];

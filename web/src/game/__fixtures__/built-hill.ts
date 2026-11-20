@@ -14,10 +14,14 @@ export function starterLifts(): LiftSlot[] {
 const corridor = (trail: TrailRun) => clearingCells(trail.path, trail.path.map(() => STANDARD_BRUSH_WIDTH));
 
 /** Established hill used to isolate operations tests from the opening build. */
-export function createBuiltHill(seed?: number): GameState {
+export function createBuiltHill(seed?: number, operatingCalendar = false): GameState {
+  const raw = createInitialState(seed);
+  const base = operatingCalendar
+    ? raw
+    : { ...raw, seasonLength: 28, weatherDays: raw.weatherDays.slice(0, 28), operatingDayIndex: 1 };
   const trails = defaultTrails();
   return {
-    ...createInitialState(seed), lifts: starterLifts(), trails, clearedCells: trails.flatMap(corridor),
+    ...base, lifts: starterLifts(), trails, clearedCells: trails.flatMap(corridor),
     buildings: ["warming_hut"], assets: placedAssetsFromLegacy(["warming_hut"]),
   };
 }

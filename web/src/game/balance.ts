@@ -19,7 +19,7 @@ import {
 } from "./rules";
 import { spendAllCrewPoints } from "./talentProgress";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
-import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
+import { calendarForSeason, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
 import { dailyCosts, liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
@@ -316,7 +316,7 @@ export function runSeason(
   options: { seasonLength?: number; takeLoan?: boolean; checkMidwinter?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
-  const length = options.seasonLength ?? hill.seasonLength;
+  const length = options.seasonLength ?? 28;
   let state = pickFounder({ ...hill, seasonLength: length, weatherDays: hill.weatherDays.slice(0, length) }, founderId);
   let recap: NightRecap | null = null;
   const days: DayRecord[] = [];
@@ -333,7 +333,7 @@ export function runSeason(
     problem: recap ? biggestProblem(recap.breakdown) : null,
   });
 
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = calendarForSeason(state.mountainId, length);
   const schoolVisits: SeasonResult["schoolVisits"] = [];
   let schoolOffers = 0;
   let vivianOffers = 0;

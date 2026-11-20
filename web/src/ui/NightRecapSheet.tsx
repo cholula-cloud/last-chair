@@ -9,7 +9,7 @@ import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/
 import { expectedHillValue } from "@/game/satisfaction";
 import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
-import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
+import { dayLabel, seasonCalendar } from "@/game/calendar";
 import { talentDescription } from "@/game/content";
 import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { revenueBreakdownFromRecap } from "@/game/officeSeries";
@@ -418,7 +418,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const { dayIndex, pendingBeat, beatAcknowledged, lastDay } = night;
   const finalNight = dayIndex === night.seasonLength;
   const planNight = !finalNight;
-  const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[night.mountainId], dayIndex);
+  const { weekday, date } = dayLabel(seasonCalendar(night), dayIndex);
   const nextTalent = nextTalentName(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat);
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);

@@ -1140,7 +1140,30 @@ Open decisions:
 
 ---
 
-## PR 19: 28-day calendar
+## CAL-1: Operating calendar (Fri–Sun play, Mon–Thu background)
+
+**Goal:** Pace Act I for weekday play: guests only Fri–Sun; Mon–Thu simulate in the background after Sleep; civil late December through mid-March.
+
+**Shipped in:** CAL-1 implementation PR (schema v11, `web/src/game/calendar.ts`, `closedDays.ts`, `rules.sleep`).
+
+| Constant | Value |
+|---|---|
+| Civil length | 49 days |
+| Operating days | 21 (7 × Fri–Sun) |
+| Civil day 1 | Fri 26 Dec 2025 |
+| Legacy in-flight saves | `seasonLength` 14 or 28 → legacy calendar (all days playable) |
+| Weekday digest | Prepended to `morningHeadline` after a closed block |
+| Bankruptcy | Negative cash mornings on closed civil days count toward three-morning rule |
+
+**Tests:** `calendar.test.ts` (Sun sleep → Fri + digest; `simulateClosedDay` ≡ batch); migrations v11 `operatingDayIndex`; playtests match `Open *n*/21`.
+
+**Balance:** `npm run balance` still defaults to the 28-day legacy map so published margin tables stay valid until a follow-up 40-seed operating re-tune.
+
+---
+
+## PR 19: 28-day calendar (historical)
+
+> **Historical:** PR 19 shipped the 28 consecutive playable-day calendar. **CAL-1** superseded the default new-winter shape (49 civil / 21 open). Keep this section for save migration and legacy harness context.
 
 **Goal:** make season length, weekdays, weekends and holidays per-mountain calendar data and move Dutch Hill to 28 days.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { MOUNTAIN_CALENDARS } from "@/game/calendar";
+import { seasonCalendar } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
 import { STORY_BEATS, WINTER_GOAL } from "@/game/content";
 import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
@@ -18,7 +18,7 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
   const remaining = useGameStore(s => s.outcome === "playing" ? s.seasonLength - s.dayIndex + Number(s.phase !== "night") : 0);
   const netCash = useGameStore(liquidNetWorth);
   const days = useGameStore(s => s.seasonDays);
-  const operatingGoal = useGameStore(s => operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory));
+  const operatingGoal = useGameStore(s => operatingGoalText(seasonCalendar(s), s.dayHistory));
   const moments = useGameStore(s => s.surpriseLog);
   const playing = useGameStore(s => s.outcome === "playing");
   const schoolOffer = useGameStore(s => s.pendingBeat === "school_bus");

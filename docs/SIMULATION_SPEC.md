@@ -1,6 +1,6 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.4 · **Updated:** 2026-11-18
+**Version:** 0.5 · **Updated:** 2026-11-20
 
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
@@ -10,7 +10,8 @@
 
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
-| Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14; day is about 4 minutes at 1×, row L-F targets about 2 | 19, L-F |
+| Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; new winters use a 49-day civil calendar with 21 playable Fri–Sun days; saved 14- and 28-day seasons keep every day playable; day is about 4 minutes at 1×, row L-F targets about 2 | 19, CAL-1, L-F |
+| Operating calendar | ✅ | Fri–Sun guest days; Mon–Thu `advanceClosedDays` (costs, overnight, loan, talents, construction); weekday digest on the next open morning; bankruptcy counts closed mornings | CAL-1 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
 | Personas | ✅ | Four guest types with calendar-specific shares, measured preferences, venue visits and satisfaction weights | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
@@ -39,7 +40,16 @@
 | Day end (close) | 16:00 |
 | Realtime 1× | 120 seconds from opening to close |
 | Speed | 1×, 2× and 4× in the top bar. The selected speed carries into the next morning. New sessions use the speed in Settings (initially 1×). |
-| Season | 28 days (internal test: 14) |
+| Season (legacy save) | 14 or 28 playable civil days (Jan–Feb map) |
+| Season (new winter) | 49 civil days, **21** operating days (Fri–Sun only) |
+| Civil start (new) | Friday 26 December 2025 (`startWeekday` 4) |
+| Operating pattern | `openWeekdays`: Fri, Sat, Sun (indices 4–6) |
+| Holiday week (new) | Civil days 41–49; Presidents' Day civil day 46 |
+| `dayIndex` | Civil calendar day (weather, beats, school gates) |
+| `operatingDayIndex` | Count of playable days (HUD “Open *n*/*N*”) |
+| Closed nights | Locked `fare` and `snow` (not pending choices) |
+| Summit link first day | Civil 32 (49-day) or 18 (legacy ≤28) |
+| Balance harness default | 28-day legacy map until 40-seed operating re-tune |
 
 **Pause:** `dayClock` frozen; build allowed.  
 **Visibility:** when `document.hidden`, pause clock (mobile Safari).
