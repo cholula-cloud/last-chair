@@ -224,6 +224,7 @@ body {
     color: var(--ink-soft);
     opacity: 0.55;
     cursor: not-allowed;
+    pointer-events: none;
   }
   @media (hover: hover) and (pointer: fine) {
     .seg-btn:not(:disabled):not([aria-pressed="true"]):hover {

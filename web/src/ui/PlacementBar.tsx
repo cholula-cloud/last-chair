@@ -286,7 +286,7 @@ function TrailBar() {
               onClick={undoStroke}
             >
               <UndoIcon size={14} />
-              <span className="sr-only sm:not-sr-only">Undo</span>
+              <span className="sr-only">Undo</span>
             </button>
             <button
               type="button"
@@ -295,7 +295,7 @@ function TrailBar() {
               onClick={redoStroke}
             >
               <RedoIcon size={14} />
-              <span className="sr-only sm:not-sr-only">Redo</span>
+              <span className="sr-only">Redo</span>
             </button>
           </div>
           <DraftActions canReview={canReview} />
