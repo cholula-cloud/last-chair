@@ -60,6 +60,21 @@ async function confirmDraft(page, kind, action) {
   }
 }
 
+/** Wait for the 3D scene; one reload + Continue matches phone-check for headless WebGL flakes. */
+export async function waitSceneReady(page) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 60_000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await page.reload({ waitUntil: "domcontentloaded" });
+      const resume = button(page, /^Continue/);
+      if ((await resume.count()) > 0) await press(resume);
+    }
+  }
+}
+
 /** /play opens on the title screen; Continue resumes the active slot, otherwise start a new winter. */
 export async function enterGame(page) {
   const continueButton = button(page, /^Continue/);
@@ -69,7 +84,7 @@ export async function enterGame(page) {
   await press(resuming ? continueButton : newWinter);
   // New winter opens the cold open first; Continue never does.
   if (!resuming) await click(page, "Skip");
-  await page.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
+  await waitSceneReady(page);
 }
 
 async function openPlay(page) {

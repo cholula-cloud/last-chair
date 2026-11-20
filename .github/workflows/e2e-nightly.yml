@@ -1,0 +1,147 @@
+name: E2E full (nightly)
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-nightly
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-out-nightly
+          path: web/out/
+          retention-days: 3
+
+  winter-matrix:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: [chromium, webkit]
+        viewport: [390x844, 844x390, 820x1180, 375x667]
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Install Playwright browsers
+        env:
+          PLAYTEST_ENGINES: ${{ matrix.engine }}
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps "$PLAYTEST_ENGINES" && exit 0
+            sleep $((attempt * 4))
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-out-nightly
+          path: web/out/
+      - name: Full P1 winter
+        env:
+          PLAYTEST_ENGINES: ${{ matrix.engine }}
+          PLAYTEST_VIEWPORTS: ${{ matrix.viewport }}
+          PLAY_URL: http://127.0.0.1:3191
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run playtest:p1
+          if [[ "$PLAYTEST_VIEWPORTS" == "375x667" ]]; then
+            PLAYTEST_ENGINE="$PLAYTEST_ENGINES" npm run playtest:accessibility
+          fi
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nightly-${{ matrix.engine }}-${{ matrix.viewport }}
+          path: web/playtest-artifacts/p1/
+
+  webkit-portrait:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Install Playwright WebKit
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps webkit && exit 0
+            sleep $((attempt * 4))
+          done
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-out-nightly
+          path: web/out/
+      - name: WebKit phone-check at 390×844
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+          PHONE_CHECK_ENGINES: webkit
+          PHONE_CHECK_VIEWPORTS: 390x844
+          PHONE_CHECK_SKIP_FPS: "1"
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run phone-check
+      - name: M3 save recovery
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+          PLAYTEST_ENGINE: webkit
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          node scripts/playtest-save-recovery.mjs
+      - name: M2 opening (WebKit)
+        env:
+          PLAY_URL: http://127.0.0.1:3191
+          PLAYTEST_ENGINES: webkit
+        run: |
+          python3 -m http.server 3191 --bind 127.0.0.1 --directory out &
+          trap 'kill "$!"' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail --silent "$PLAY_URL/play/" > /dev/null
+          npm run playtest:m2
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nightly-webkit-portrait
+          path: web/playtest-artifacts/

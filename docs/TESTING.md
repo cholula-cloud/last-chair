@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.2 · **Updated:** 2026-11-20
+**Version:** 1.3 · **Updated:** 2026-11-20
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -17,10 +17,22 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Accessibility | Vitest palette contrast and Playwright, `npm run playtest:accessibility` | Eleven text/background pairs in both palettes, labelled controls and dialogs, targets, large text, keyboard story progression and silent captions | Contrast runs in CI. Set `PLAY_URL` to a served game for the browser audit. | Automated |
 | Mountain layers | Playwright, `npm run playtest:layers` | Switch all four layers, tap a real trail segment, compare gun service and scrub conditions through tomorrow without changing the save. | Set `PLAY_URL` to a running game. Use `PLAYTEST_ENGINE=webkit` for WebKit. | Automated |
 | First-winter coach | Playwright, `npm run playtest:coach` | Walk the ten tips, review and start the lodge upgrade, use the first measured problem to open its map layer and Office tab, then Sleep and reload. Uses the same four viewports as the phone check. | Set `PLAY_URL` to the running game. Chromium by default, or `PLAYTEST_ENGINE=webkit`. | Automated |
+| E2E smoke | Playwright Chromium, `npm run playtest:smoke` | Scene ready, opening build, night recap, mid-night reload at 390×844 | PR workflow when player-visible paths change; local before merge | Automated |
+| Full P1 winter | `npm run playtest:p1` → `playtest-p0.mjs` (28 days, quiet + standard) | Settlement, replay, school visit script | Nightly / manual | Automated |
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
-`npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
+`npm run check` (PR 2) runs lint, typecheck, unit tests and build. Hosted **`check`** in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) also runs `m2-gate` and `check:bundle`. Turn on branch protection with the **`check` job required** to block merges on red lint, types, tests, balance or build.
+
+### GitHub Actions tiers
+
+| Tier | Workflow | When | Jobs | Merge blocker? |
+|---|---|---|---|---|
+| 0 | `ci.yml` → `check` | Every PR and push to `main` | lint, typecheck, Vitest, m2-gate, build, bundle | **Yes** (when branch protection is on) |
+| 1 | `e2e-pr.yml` | PRs that touch `web/src`, `web/public`, `web/app`, or `web/scripts` | One shared production build, then **Chromium 390×844 smoke** | No (signal only) |
+| 2 | `e2e-nightly.yml` | Daily 09:00 UTC and `workflow_dispatch` | Shared build, then full **P1 matrix** (Chromium + WebKit × four viewports) and **WebKit portrait** phone-check / save recovery / M2 opening | No |
+
+Season logic and balance stay in Vitest; browser CI proves WebGL, touch targets, sheets, and save reload. A failed nightly WebKit leg (especially 844×390 landscape) is often a runner flake—rerun the workflow before treating it as a product bug. Artifacts upload on failure only.
 
 ### M4 screenshot scripts (Playwright, static export)
 
