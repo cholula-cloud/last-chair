@@ -151,12 +151,11 @@ const cellsOf = (dots: readonly Dot[], valid: boolean | null): XZ[] =>
 /** The reach ring: a thin line on the ground at the longest legal lift, clipped to the lease and hidden near the cable. */
 function ReachRing({ bottom, top, type, snapped }: { bottom: XZ; top?: XZ; type: LiftType; snapped: boolean }) {
   const ARC_STEPS = 128;
-  const attribute = useMemo(() => new THREE.BufferAttribute(new Float32Array(ARC_STEPS * 2 * 3), 3), []);
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
-    g.setAttribute("position", attribute);
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ARC_STEPS * 2 * 3), 3));
     return g;
-  }, [attribute]);
+  }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const segments = useMemo(() => {
     const clear = GRID_STYLE.cableClearCells * (TERRAIN.scale.horizontal / 2);
@@ -167,7 +166,11 @@ function ReachRing({ bottom, top, type, snapped }: { bottom: XZ; top?: XZ; type:
       return p && q && kept.has(p) && kept.has(q) ? [[p, q] as const] : [];
     });
   }, [bottom, top, type]);
+  const lines = useRef<THREE.LineSegments>(null);
   useLayoutEffect(() => {
+    const target = lines.current?.geometry;
+    const attribute = target?.getAttribute("position");
+    if (!target || !attribute) return;
     let n = 0;
     for (const [p, q] of segments) {
       for (const at of [p, q]) {
@@ -175,12 +178,12 @@ function ReachRing({ bottom, top, type, snapped }: { bottom: XZ; top?: XZ; type:
       }
     }
     attribute.needsUpdate = true;
-    geometry.setDrawRange(0, n);
-    geometry.computeBoundingSphere();
-  }, [segments, attribute, geometry]);
+    target.setDrawRange(0, n);
+    target.computeBoundingSphere();
+  }, [segments]);
   const style = snapped ? GRID_STYLE.reachSnapped : GRID_STYLE.reach;
   return (
-    <lineSegments geometry={geometry} renderOrder={1} frustumCulled={false}>
+    <lineSegments ref={lines} geometry={geometry} renderOrder={1} frustumCulled={false}>
       <lineBasicMaterial color={style.color} transparent opacity={style.opacity} depthWrite={false} toneMapped={false} />
     </lineSegments>
   );
