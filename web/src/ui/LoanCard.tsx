@@ -18,23 +18,24 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
   const [declined, setDeclined] = useState(false);
   const { loan } = night;
   const offered = loanOffered(night);
-  const amount = formatMoney(LOAN_TERMS.principal);
+  const rate = winterLoanRate(night);
+  const principal = formatMoney(LOAN_TERMS.principal);
 
   if (repaid > 0) {
-    return <p role="status" className="chip mt-3 px-3.5 py-3 font-bold">Winter loan repaid. The bank has its {formatMoney(repaid)} and you have your sleep back.</p>;
+    return <p role="status" className="chip mt-3 px-3.5 py-3 font-bold">Winter loan paid off in full.</p>;
   }
 
   if (loan) {
     const payoff = payoffAmount(loan);
     return (
       <section className="panel mt-3 px-3.5 py-3" aria-label="Winter loan">
-        <p className="text-base font-extrabold">You owe the bank {formatMoney(payoff)} on the winter loan</p>
+        <p className="text-base font-extrabold">Loan balance: {formatMoney(payoff)}.</p>
         {canRepayLoan(night) ? (
           <button type="button" className={`${ACTION} mt-2`} onClick={onRepay}>
-            Repay the loan
+            Repay loan ({formatMoney(payoff)})
           </button>
         ) : (
-          <p className="mt-1 text-sm font-bold text-ink-soft">Not yet. Repaying has to leave at least {RESERVE} in the till for the morning.</p>
+          <p className="mt-1 text-sm font-bold text-ink-soft">Keep {RESERVE} on hand to repay.</p>
         )}
       </section>
     );
@@ -57,11 +58,11 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
         The bank has a winter loan for you
       </p>
       <p className="mt-1 text-sm font-bold leading-snug text-ink-soft">
-        The bank will lend you {amount} at {Math.round(winterLoanRate(night) * 100)}% simple interest for the winter. Pay it back in full any night you can still keep {RESERVE} for the morning.
+        Borrow {principal} at {Math.round(rate * 100)}% interest for the winter. Repay in full any night you can keep {RESERVE} on hand.
       </p>
       <div className="mt-3 grid gap-2">
         <button type="button" className={`${ACTION} key-solid [--key-fill:var(--sign-yellow)]`} onClick={onTake}>
-          Take the {amount} loan
+          Take the {principal} loan
         </button>
         <button type="button" className={ACTION} onClick={() => setDeclined(true)}>
           Not tonight

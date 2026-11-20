@@ -31,14 +31,15 @@ export function FounderPick() {
   return (
     <Sheet
       modal
+      wide
       z="z-50"
       title="Dutch Hill, winter 1"
-      subtitle="The old lifts are gone, but the lodge lights are on again out on Route 100. Who’s signing the lease with you?"
+      subtitle="Pick a partner to sign the Dutch Hill lease with you."
     >
       <p className="mb-3 text-sm font-bold leading-snug">
         <strong>Winter goal:</strong> {WINTER_GOAL}
       </p>
-      <ul className="grid gap-3 pb-1 pt-1 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 pb-1 pt-1 sm:grid-cols-2 lg:grid-cols-3">
         {FOUNDERS.map((f, i) => (
           <li
             key={f.id}
@@ -70,9 +71,17 @@ export function FounderPick() {
                 <span className="text-[0.85rem] font-extrabold text-sign-green">
                   {f.title}
                 </span>
-                <span className="mt-1 text-[0.85rem] font-bold leading-snug text-ink-soft">
-                  <span className="block"><span aria-hidden="true">＋ </span><span className="sr-only">Bonus: </span>{f.bonus}</span>
-                  <span className="block"><span aria-hidden="true">◇ </span><span className="sr-only">Cost: </span>{f.constraint}</span>
+                <span className="mt-1 space-y-1 text-[0.85rem] font-bold leading-snug">
+                  <span className="block text-sign-green">
+                    <span aria-hidden="true">+ </span>
+                    <span className="sr-only">Benefit: </span>
+                    {f.bonus}
+                  </span>
+                  <span className="block text-barn-deep">
+                    <span aria-hidden="true">- </span>
+                    <span className="sr-only">Tradeoff: </span>
+                    {f.constraint}
+                  </span>
                 </span>
               </span>
             </button>

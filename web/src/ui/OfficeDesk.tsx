@@ -40,7 +40,7 @@ function showOnHill(item: AttentionItem) {
 
 function AttentionList({ items, showFocus }: { items: AttentionItem[]; showFocus: boolean }) {
   if (items.length === 0) {
-    return <p className="panel px-4 py-3 text-[1rem] font-bold">Nothing needs you right now. Enjoy it.</p>;
+    return <p className="panel px-4 py-3 text-[1rem] font-bold">All quiet on the hill right now.</p>;
   }
   return (
     <ul className="flex flex-col gap-2">
@@ -77,7 +77,10 @@ export function DeskTab() {
     const due = dailyCosts(state).draws;
     if (due > 0) items.push({ id: "construction", text: `${formatMoney(due)} in construction payments is due at closing.` });
     if (state.schoolContract?.decision === "accepted" && state.schoolContract.day === state.dayIndex) {
-      items.push({ id: "school", text: `The Readsboro bus pulls in at ${formatClock(SCHOOL_BUS_ARRIVAL_MIN)} today. Elena says keep the bunny slope soft.` });
+      items.push({
+        id: "school",
+        text: `The Readsboro school bus arrives at ${formatClock(SCHOOL_BUS_ARRIVAL_MIN)} today. Keep the green trail soft.`,
+      });
     }
     return items;
   }, [state]);
@@ -88,85 +91,93 @@ export function DeskTab() {
   const hasTomorrow = outlookFor(state, 1) !== null;
 
   return (
-    <div className="flex flex-col pb-2">
-      <SectionHeading>Today</SectionHeading>
-      <section aria-label="Today" className="panel px-4 py-3">
-        <p className="chip inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.85rem] font-extrabold">
-          {weather.icon}
-          {weather.label}
+    <div className="grid grid-cols-1 gap-4 pb-2 md:grid-cols-2 md:items-start">
+      <div className="flex flex-col gap-0">
+        <SectionHeading>Today</SectionHeading>
+        <section aria-label="Today" className="panel px-4 py-3">
+          <p className="chip inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.85rem] font-extrabold">
+            {weather.icon}
+            {weather.label}
+          </p>
+          <p className="mt-2 text-[1.05rem] font-bold leading-snug">{tidy(state.morningHeadline)}</p>
+        </section>
+
+        <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength, state.outcome !== "playing")}>Winter goal</SectionHeading>
+        <p className="panel mb-2 px-4 py-3 text-sm font-bold leading-snug">
+          {formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(MOUNTAIN_CALENDARS[state.mountainId], state.dayHistory)}
         </p>
-        <p className="mt-2 text-[1.05rem] font-bold leading-snug">{tidy(state.morningHeadline)}</p>
-      </section>
+        <ul aria-label="Winter goal" className="panel divide-y-2 divide-snow-2 px-4">
+          {chips.map((chip) => (
+            <li key={chip.id} className="flex items-start gap-3 py-3">
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 border-ink ${
+                  chip.status === "Done" ? "bg-sign-green text-white" : "bg-white"
+                }`}
+              >
+                {chip.status === "Done" && <CheckIcon size={14} />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[1rem] font-extrabold leading-tight">
+                  {chip.label}
+                  <span className="sr-only">{`, ${chip.status}`}</span>
+                  <span aria-hidden="true" className="ml-2 text-[0.82rem] font-bold text-ink-soft">
+                    {chip.status}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-[0.95rem] font-bold leading-snug text-ink-soft">{chip.explainer}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
 
-      <SectionHeading aside={daysLeftLine(state.dayIndex, state.seasonLength, state.outcome !== "playing")}>Winter goal</SectionHeading>
-      <p className="panel mb-2 px-4 py-3 font-bold">{formatMoney(liquidNetWorth(state))} after outstanding bills. {operatingGoalText(MOUNTAIN_CALENDARS[state.mountainId], state.dayHistory)}</p>
-      <ul aria-label="Winter goal" className="panel divide-y-2 divide-snow-2 px-4">
-        {chips.map((chip) => (
-          <li key={chip.id} className="flex items-start gap-3 py-3">
-            <span
-              aria-hidden="true"
-              className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border-2 border-ink ${
-                chip.status === "Done" ? "bg-sign-green text-white" : "bg-white"
-              }`}
-            >
-              {chip.status === "Done" && <CheckIcon size={14} />}
-            </span>
-            <div className="min-w-0">
-              <p className="text-[1rem] font-extrabold leading-tight">
-                {chip.label}
-                <span className="sr-only">{`, ${chip.status}`}</span>
-                <span aria-hidden="true" className="ml-2 text-[0.82rem] font-bold text-ink-soft">
-                  {chip.status}
-                </span>
-              </p>
-              <p className="mt-0.5 text-[0.95rem] font-bold leading-snug text-ink-soft">{chip.explainer}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
+        <SectionHeading>Needs attention</SectionHeading>
+        <AttentionList items={attention} showFocus={state.phase === "day"} />
+      </div>
 
-      <SectionHeading>End of day</SectionHeading>
-      <section aria-label="End of day" className="panel flex flex-col gap-2 px-4 py-3">
-        <p className="text-[0.95rem] font-bold leading-snug">
-          Close the hill to run the rest of today through 4 PM — queues, runs, and guest mood play out the same as if you let the clock run.
-        </p>
-        <button
-          type="button"
-          disabled={openingStep(state) !== null}
-          onClick={() => {
-            useOffice.setState({ open: false, resumeOnClose: false });
-            useGameStore.getState().skipToClose();
-          }}
-          className="key key-solid press flex min-h-12 items-center justify-center gap-2 text-[1rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
-        >
-          <MountainMoonIcon size={22} />
-          Close hill
-        </button>
-      </section>
+      <div className="flex flex-col gap-0">
+        <SectionHeading>Tomorrow</SectionHeading>
+        <section aria-label="Forecast" className="panel px-4 py-3">
+          {hasTomorrow ? (
+            <>
+              <Forecast state={state} ahead={1} />
+              <Forecast state={state} ahead={2} />
+            </>
+          ) : (
+            <p className="text-[1rem] font-bold">Today is the last day of the winter. Last chair is yours to call.</p>
+          )}
+        </section>
 
-      <SectionHeading>Tomorrow</SectionHeading>
-      <section aria-label="Forecast" className="panel px-4 py-3">
-        {hasTomorrow ? (
-          <>
-            <Forecast state={state} ahead={1} />
-            <Forecast state={state} ahead={2} />
-          </>
+        <SectionHeading>Route 100 Radio</SectionHeading>
+        {!radioEnabled ? (
+          <p className="panel px-4 py-3 font-bold">Radio is off. Switch it back on from the Story log under Reports.</p>
+        ) : radio ? (
+          <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
         ) : (
-          <p className="text-[1rem] font-bold">Today is the last day of the winter. Last chair is yours to call.</p>
+          <p className="panel px-4 py-3 text-[1rem] font-bold">
+            Maris has not been on the air yet. She will have something to say after the first closing.
+          </p>
         )}
-      </section>
 
-      <SectionHeading>Needs attention</SectionHeading>
-      <AttentionList items={attention} showFocus={state.phase === "day"} />
-
-      <SectionHeading>Route 100 Radio</SectionHeading>
-      {!radioEnabled ? <p className="panel px-4 py-3 font-bold">Radio is off. Switch it back on from the Story log under Reports.</p> : radio ? (
-        <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
-      ) : (
-        <p className="panel px-4 py-3 text-[1rem] font-bold">
-          Maris hasn’t been on the air yet. She’ll have something to say after the first closing.
-        </p>
-      )}
+        <SectionHeading>End of day</SectionHeading>
+        <section aria-label="End of day" className="panel flex flex-col gap-2 px-4 py-3">
+          <p className="text-[0.95rem] font-bold leading-snug">
+            Skip ahead to 4 PM closing. Lift lines, runs, and guest mood simulate normally.
+          </p>
+          <button
+            type="button"
+            disabled={openingStep(state) !== null}
+            onClick={() => {
+              useOffice.setState({ open: false, resumeOnClose: false });
+              useGameStore.getState().skipToClose();
+            }}
+            className="key key-solid press flex min-h-12 items-center justify-center gap-2 text-[1rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
+          >
+            <MountainMoonIcon size={22} />
+            Close hill
+          </button>
+        </section>
+      </div>
     </div>
   );
 }
