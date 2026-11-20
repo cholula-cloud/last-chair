@@ -133,6 +133,7 @@ Tokens live in `web/src/app/globals.css` (`:root` and `@theme inline`).
 ### Day is mountainous, night is cozy
 
 - **Day surfaces** (HUD, Build, Guests, title screen): bottom sheets rise with a jagged ridgeline top edge instead of rounded corners; the title screen has layered ridges with snow caps and small pines; fare options carry elevation glyphs (one peak for Cheap, two for Balanced, a jagged range for Expensive); the results sign wears a small "Dutch Hill, Monday night" tab.
+- **Day HUD on phone and iPad (PR #102):** keep the mountain as the hero. The conditions board defaults to one scannable line (queue · snow · mood) with tone dots; expanded chips match art-direction voice, not dashboard density. Primary day chrome sits in the bottom thumb zone; **Hide HUD** removes bottom bar and map tools, leaving only a **Show HUD** pill. Map tools (Layers, grid, recenter, hide) use the same sign-green key styling in a vertical rail (portrait) or compact top cluster (iPad). During placement, **Minimize** collapses tool panels to a slim `trail-bar-in` strip with compact **Cancel** and **Review** — still 3 px ink borders and hard shadows, no translucency.
 - **Night surfaces** (the closing recap): panels warm to `#FFF8EC`, outlines deepen to `#13283F`, radii grow by 2 px, a red-and-cream Nordic knit band sits under the "Closing recap" heading with "Lights on in the lodge" opposite it, the radio bubble warms to `#FFF1C2`, and Sleep shows a mug of cocoa. Night values are CSS variable overrides under a mood attribute, so the same components serve both.
 
 ### Type
@@ -224,12 +225,13 @@ Towers stretch vertically so their sheaves meet the span-cleared cable height; t
 
 ---
 
-## Audio direction (stub)
+## Audio direction
 
 - **Story:** Route 100 Radio VO/text first; music bed second.
 - **Sandbox:** same ambience, no story stingers.
 - Reference vibe: acoustic + light electronic, not epic orchestra.
-- **Implemented (row Q3):** procedural Web Audio with effects, ambience and voice buses under one master; a wind bed, a UI tap, a build thunk, a three-note radio sting and a tier-up chime. No files ship. Sound starts on the first gesture and stops when the tab hides.
+- **Runtime (row Q3 + 32):** Web Audio with effects, ambience and voice buses under one master. Optional AAC clips in `web/public/audio/` (manifest in `audio-manifest.json`) play when present; otherwise procedural synth covers wind, UI tap, build thunk, radio sting and tier-up chime. Clips are generated on ElevenLabs free-tier credits only (`tools/audio/elevenlabs.mjs --estimate` first, one take each). Licence and source for every file live in the manifest; non-CC0 authors belong on the credits screen.
+- **Gesture rules:** sound starts on the first `pointerup`, `touchend`, `click` or `keydown`; iOS uses `navigator.audioSession.type = "ambient"` when available; the tab hidden suspends the context. UI effects load after unlock; ambient beds load after `data-scene-ready`.
 - **Day tint (row Q3):** light is cool at opening, neutral at midday and warm by closing, at most 12 percent per channel.
 
 ---

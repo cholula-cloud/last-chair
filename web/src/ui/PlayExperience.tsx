@@ -19,6 +19,7 @@ import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
 import { ToneMappingSync } from "@/render/ToneMappingSync";
+import { audio } from "@/audio/engine";
 import { useSettings } from "./settingsStore";
 import { AssetInspector } from "./AssetInspector";
 import { BuildSheet } from "@/ui/BuildSheet";
@@ -227,6 +228,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     const id = requestAnimationFrame(() => setSceneReady(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => {
+    if (sceneReady) audio.prepareBeds();
+  }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
 

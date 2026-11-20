@@ -1,9 +1,9 @@
 # Last Chair game plan and design
 
-**Version:** 2.7 · **Updated:** 2026-11-20
+**Version:** 2.8 · **Updated:** 2026-11-20
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4.
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode.
 
 | Doc | Job |
 |---|---|
@@ -36,7 +36,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 | Story | Six founders, a dated story log, optional school and company offers, and a winter review with measured results and a record that survives replay |
 | Title and saves | `/play` opens on a title screen (Continue, New winter, Load, Settings, Credits). Three save slots with export and import. The game saves on build actions, phase changes and when the tab hides, and at most every 10 seconds during the day (L-D) |
 | Voice | Row C1a installs the wry Vermont local voice guide (ART_DIRECTION Voice) and rewrites HUD, build, map layer, coach, title and setup copy. Row C1b applies it to the Office, night recap, radio, story log, winter review, guests, crew talents and the company and school cards |
-| Art and UI | Toy-box UI, phone HUD, Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), `phone-check` script |
+| Art and UI | Toy-box UI, phone HUD with hide/show chrome and compact conditions (PR #102), Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines, snowcat, guns), snow shader and day/night lighting (rows 30–31), `phone-check` and WebKit portrait CI |
 
 The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. PR #80 adds the Office and map layers, new guest types, the twenty crew talents, founder effects, replay exports and the winter score. Career effects on later mountains belong to M5.
 
@@ -283,16 +283,19 @@ Browser-first, no app store for v1. **iPhone and iPad Safari are the primary tar
 
 **Layout:** respect `env(safe-area-inset-*)`; primary actions in the bottom third; touch targets ≥44 px, night tiles full-width ≥56 px; no hover-only affordances; every control has a visible label. iPhone day view is portrait first; landscape also works. Never force rotation.
 
-**Screen map (Story Mode):**
+**Screen map (Story Mode, day play after PR #102):**
 
 ```
 ┌─────────────────────────────────────┐  safe area top
-│ [Pause]  Day 12 · Sat · 11:42  [$]  │
-│  queue · snow · mood (ops strip)    │
-│     3D MOUNTAIN (main)   [Layers]   │
-│ [Build] [Guests] [Office] [Night▸]  │  thumb zone
+│ [▶]  Day 12 · Sat · 11:42  [$]      │  iPad: Layers·Grid·◎·Hide (top-right cluster)
+│  queue · snow · mood (compact strip; │  iPhone portrait: same tools on a vertical
+│   tap chevron for status words)     │  rail at the right edge above the map
+│          3D MOUNTAIN (main)         │
+│ [Menu][Build][Guests][Office][Close]│  thumb zone; Hide HUD → lone Show HUD pill
 └─────────────────────────────────────┘
 Build sheet   → Lodge card on top · Lifts · Trails · Base · Fun · Decor · Snow
+Placement     → Trail/lift/site bar; **Minimize** to a slim Tools pill + Cancel/Review;
+                two-finger pan/zoom always moves the map (no Move map mode button)
 Lodge card    → tier, what the next tier opens, Upgrade (also opens by tapping the lodge)
 Guests sheet  → list + Follow (no tiny 3D picking on phone)
 Night recap   → recap + fare + snow/service tiles + Continue
@@ -300,9 +303,9 @@ Layers strip  → Slope · Snow depth · Snow-making · Conditions (§12)
 Office        → full-screen, pauses the day: Desk · Money · Stats · Reports · Crew. Money and Stats are the CFO view (ledger plus charts from `dayHistory`); Atlas joins in M5 (§12).
 ```
 
-**Touch:** one-finger pan, pinch zoom, two-finger orbit and tilt, tap select, double-tap focus; recenter button. Build mode is an explicit toggle; inside it, one finger paints or drags and two fingers move the camera.
+**Touch:** one-finger pan on the overview; pinch zoom; two-finger orbit and tilt; tap select; double-tap focus; recenter on the map tool rail. Build mode is an explicit toggle. Inside it, one finger paints or drags lift endpoints and two fingers **always** move the camera (trail painting edge-pans near screen edges). The placement panel can **minimize** so only summary stats and Cancel/Review stay on screen.
 
-**Performance budgets:** 20–30 simulated guests on iPhone (40 on iPad); ≤24 drawn guest meshes on iPhone; instanced trees; 30 fps acceptable on a mid iPhone; heightfield ≤2K; GLB <500 KB each, with styles sharing meshes and swapping palettes where they can. A cap on placed buildings per base area is set in row 16a (proposed 12 on iPhone). Pause the clock and flush the save when the page is hidden. Never assume 60 Hz. Audio only after a user gesture. No component in `web/src/render/` passes a positive `useFrame` priority unless it calls `gl.render` itself (that bug blanked the scene from #39 to #48).
+**Performance budgets:** 20–30 simulated guests on iPhone (40 on iPad); ≤24 drawn guest meshes on iPhone; instanced trees; 30 fps acceptable on a mid iPhone; heightfield ≤2K; GLB <500 KB each, with styles sharing meshes and swapping palettes where they can. A cap on placed buildings per base area is set in row 16a (proposed 12 on iPhone). Pause the clock and flush the save when the page is hidden. Never assume 60 Hz. Audio only after a user gesture (see ART_DIRECTION Audio direction). No component in `web/src/render/` passes a positive `useFrame` priority unless it calls `gl.render` itself (that bug blanked the scene from #39 to #48).
 
 **Speed.** A standard day runs for two minutes at 1×. Players can choose 2× or 4× once the opening tips finish or are skipped. Speed carries overnight.
 
@@ -431,7 +434,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 25 | ☑ | Save recovery | Validate M3 saves and recover unreadable progress. The M3 opening clears M2 saves and backups. |
 | — | ☑ | Lodge-only opening | The player's first paid lift and ski trail open Dutch Hill. |
 | — | ☑ | Trail planning and signs | Resume a draft across brush strokes, move the map before finishing, use the downhill grid, and read difficulty at each built trail entrance. |
-| — | ☑ | Placement and base polish | Move the camera without losing a placement. Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. |
+| — | ☑ | Placement and base polish | Two-finger pan moves the map during every placement (no Move map mode toggle). Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. PR #102 adds placement **Minimize** and the HUD layout in §6. |
 | 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
 | 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config |
@@ -471,7 +474,7 @@ Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted valida
 
 ### M4: Polish and feel (code only)
 
-M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting: the build grid vanishes in lift mode and the dot field feels wrong elsewhere; trail paint hides existing trails and snaps runs to the base too aggressively. Ship **B6** and **B7** before the feel rows so building stays trustworthy. **Office economics** land in **F3** (Stats and Reports charts on top of F2’s `dayHistory`); **O4** later paints revenue and crowds on the map. The M4 gate treats the Office as the hill’s CFO dashboard, not a recap log.
+M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting: the build grid vanishes in lift mode and the dot field feels wrong elsewhere; trail paint hides existing trails and snaps runs to the base too aggressively. Ship **B6** and **B7** before the feel rows so building stays trustworthy. **Office economics** land in **F3** (Stats and Reports charts on top of F2’s `dayHistory`); **O4** later paints revenue and crowds on the map. The M4 gate treats the Office as the hill’s CFO dashboard, not a recap log, and treats the day HUD as a viewport for the mountain (map visible while building; thumb zone not buried under chips).
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
@@ -479,17 +482,18 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | C1b | ☑ | Voice and copy, part 2 | Same voice applied to the Office, night recap, radio, story log, winter review and the Abominable Snowglomerate and school cards. Radio and cast lines keep their character voices. Maris, Vivian, Dana, Elena, Frank and Riley each speak in the cast-table voice; middle dots and em dashes are gone from player-facing copy. Copy only. |
 | B6 | ☑ | Build grid and lift placement guide | A single readable guide during lift placement: anchor ring, snap feedback, and a grid that matches asset/gun placement (cell size, contrast, lease alignment). Lift mode must show useful guidance (L-A intentionally hid the dot grid; replace it with something that does not fight the cable ghost). Overview and venue modes keep a consistent dot field. |
 | B7 | ☑ | Trail paint context and freer endpoints | While painting, **all confirmed trails** stay visible (full or high-opacity ribbons; draft on top). Reduce automatic connector logic that pulls the end to `terrain.base` or reuses another trail's suffix when the player did not intend it (`paintedTrail.ts` `atBase`, prefix/suffix merge). Player-authored endpoints win unless the sim requires a lift top or a valid ski path to base. |
-| P4 | ☑ | M4 polish pass | Cross-cutting pass on **game design** (flows, coach gaps, copy), **engineering** (layering violations, perf hotspots, test gaps), and **UI** (thumb zone, sheet density, HUD clarity). **Priority:** Office economic UX — Money scanability, Stats chart legibility at 375 px, Reports archive vs season calendar hierarchy, chart table fallback under reduced motion. Outcome: a short punch list closed inside M4 or ticketed explicitly. Owner playtest notes drive priority. **Carried from the first M4 batch:** the `portrait` CI job and webkit installs flake and need reruns; B6's lift-top guide costs about 7 ms per settled bottom on desktop (profile on a mid phone); the sim's 0.5-unit remote trail-end threshold is not scaled by terrain; walking guests are drawn in a straight line that can cross lift lines; recap and Guests sheet disagree on mood words ("Mixed" vs "Grumpy"); `phone-check`'s 30 fps floor always fails under headless software rendering. |
+| P4 | ☑ | M4 polish pass | Cross-cutting pass on **game design** (flows, coach gaps, copy), **engineering** (layering violations, perf hotspots, test gaps), and **UI** (thumb zone, sheet density, HUD clarity). **Priority:** Office economic UX — Money scanability, Stats chart legibility at 375 px, Reports archive vs season calendar hierarchy, chart table fallback under reduced motion. Outcome: a short punch list closed inside M4 or ticketed explicitly. Owner playtest notes drive priority. **Closed in P4:** scaled remote trail-end threshold, guests walking along trail polylines, unified mood words via `moodLabels`. **Still open:** B6 lift-top guide ~7 ms per settled bottom on desktop; occasional WebKit install flakes in CI (rerun). **HUD clutter** addressed in PR #102 (separate row below). |
+| — | ☑ | Mobile HUD and placement chrome ([#102](https://github.com/cholula-cloud/last-chair/pull/102)) | **Hide/Show HUD** clears bottom chrome and map tools, leaving a Show pill. **Conditions** default to a one-line summary with tone dots; tap expands status chips. **Map tool rail:** Layers, Grid, Recenter, Hide on the right edge (portrait) or top cluster (iPad). **Placement:** Minimize collapses trail/lift/site tools to a slim bar with compact Cancel and Review; direct two-finger map pan (removed Move map button). Session state in `web/src/ui/hudUi.ts`. `phone-check` expects updated lift placement copy. |
 | 30 | ☑ | Snow shader | GPU coverage patches and groom stripes tied to overnight preset and wear (`snowMaterial.ts`, `snowTexture.ts`) |
-| 31 | ☑ | Day/night lighting | Moving sun rig and night recap readability (handoff PR 31) |
-| 32 | ☐ | Audio | Ambient bed, UI sounds and radio sting on top of the Q3 synth floor. Owner decision (2026-11-19): recorded effects come from ElevenLabs on the free monthly credits only (estimate first, one take each); the Web Audio synth stays the fallback (handoff PR 32) |
+| 31 | ☑ | Day/night lighting | Moving sun rig and night recap readability ([#103](https://github.com/cholula-cloud/last-chair/pull/103)) |
+| 32 | ☑ | Audio | Ambient bed, UI sounds and radio sting on top of the Q3 synth floor. Owner decision (2026-11-19): recorded effects come from ElevenLabs on the free monthly credits only (estimate first, one take each); the Web Audio synth stays the fallback (handoff PR 32) |
 | 33 | ☐ | Mobile juice | Sheet motion, build-place and lodge-upgrade feedback; reduced motion respected (handoff PR 33) |
 | O4 | ☐ | Crowd and revenue layers, demand pins | Guest density and queue length, venue takings, and "Guests want" pins on the map (§12) |
 | O5 | ☐ | Trails map layer | Named trail centerlines with difficulty colour on the hill; labels readable on phone; lift-top **trail map** readout (UI card or single board) instead of one billboard per run. Pairs with T1: detailed names live on the layer when signs stay compact |
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |
 | F3b | ☑ | Stats ops charts and Reports | Fare elasticity, arrivals, satisfaction and its five terms, wait, snow service spend, satisfaction vs revenue scatter (`officeOpsCharts.tsx`). Reports gains the 28-day **season calendar** (weather and result; tap opens that day's recap) and a ski-area snow-report style trail report (`officeReports.tsx`). Gate: opening Stats after day 7 feels like a CFO dashboard, not a log list (§12). |
 
-Suggested order: **C1a, C1b**, **B6, B7**, then **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4**. Rows 31 to 33 finish what Q3 (§11) started so outside players judge a game that sounds and looks alive.
+Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4**. Rows 31 to 33 finish what Q3 (§11) started so outside players judge a game that sounds and looks alive.
 
 ### M4b: Blender assets
 

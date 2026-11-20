@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.0 · **Updated:** 2026-11-19
+**Version:** 1.1 · **Updated:** 2026-11-20
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -34,9 +34,9 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 |---|---|---|
 | 1 | Tap **▶** to unpause | Clock advances; guests move on the mountain |
 | 2 | Read top HUD | Day, time, cash visible without zoom |
-| 3 | Read the ops strip | Queue, snow %, mood hint visible |
+| 3 | Read the ops strip | Queue, snow %, mood hint visible in the compact strip; tap to expand full status chips if needed |
 | 4 | **Guests** → **Follow** one guest | List works; camera follows |
-| 5 | **Build** → **Place on the hill** → tap a blocked spot then a valid top → **Place** (use **Lift’s in. Undo for $N.** before resuming) | Placement bar shows reason text; length and vertical in **ft** after a top tap; place only when valid and affordable; undo refunds until the clock moves |
+| 5 | **Build** → **Place on the hill** → tap a blocked spot then a valid top → **Place** (use **Lift’s in. Undo for $N.** before resuming) | Placement bar shows reason text; length and vertical in **ft** after a top tap; place only when valid and affordable; undo refunds until the clock moves. Two fingers pan the map at all times (no **Move map** toggle). **Minimize** on the placement bar should leave a slim Tools summary with **Cancel** and **Review** |
 | 6 | **Close hill** (or wait until 4 PM) | Night sheet opens |
 | 7 | Change **Fare** and **Snow & service** | Full-width tiles, no pinch to read |
 | 8 | **Sleep** | Morning; snow look changes with tier |
@@ -88,7 +88,7 @@ The strict 40-seed simulation gate passed. The painted green cut mean wait by 1.
 
 ## Performance and replay checks
 
-Run `npm run check:bundle` after the production build. The limits are 450 KiB gzip for initial play-page JavaScript and 350 KiB for the largest individual chunk, with the handoff’s 5% tolerance. The phone check records title load time (5 seconds), frame rate (30 fps), p95 frame time, draw calls (40) and triangles (200,000). Set `PHONE_CHECK_SOAK=1` for ten one-minute samples with the scene open. Software-rendered results identify the browser and renderer. Physical device testing is optional.
+Run `npm run check:bundle` after the production build. The limits are 450 KiB gzip for initial play-page JavaScript and 350 KiB for the largest individual chunk, with the handoff’s 5% tolerance. The phone check records title load time (5 seconds), frame rate (30 fps), p95 frame time, draw calls (40) and triangles (200,000). Set `PHONE_CHECK_SOAK=1` for ten one-minute samples with the scene open. Software-rendered results identify the browser and renderer. Physical device testing is optional. The WebKit portrait workflow (`.github/workflows/phone-viewport.yml`) sets `PHONE_CHECK_SKIP_FPS=1` so CI does not fail the FPS floor under headless software rendering; still measure FPS on a GPU-backed run when signing off performance.
 
 The November 19 integrated production export loaded the title in 185 ms at 390×844 in Chromium. Initial play-page JS was 177,496 bytes gzip, with the largest chunk at 337,558 bytes gzip. The scene used 28 draw calls and 182,221 triangles. Those checks passed. Under 4× CPU throttling with Mesa software rendering, the same run measured 1.8 fps and a 717 ms p95 frame. It failed the 30 fps target. Physical iPhone frame time and the device soak remain unmeasured.
 
@@ -143,6 +143,7 @@ From `web/`, run `PLAY_URL=http://localhost:3000 npm run playtest:feel` against 
 | 2026-11-19 | M3 full winter, PR #80 candidate | Production export, 390×844 Chromium | Opened Dutch Hill, followed a guest, set fare and snow service, reached settlement, reloaded the review and replayed. The settlement agreed with debt and unpaid construction, career history survived replay, and the browser logged zero errors. |
 | 2026-11-19 | Q8 accessibility | Chromium at 375×667, emulated touch and reduced motion | All four volume sliders and eight toggles had accessible names and 44 px targets. The 19 px text preference survived reload with no horizontal overflow. A muted opening showed captions and supported keyboard advance through four cards to the named founder dialog. No page errors. Eleven normal-text pairs passed 4.5:1 in both day and night palettes. Physical VoiceOver listening remains an owner device check. |
 | 2026-11-19 | M3 hill sound and ambient life | Chromium touch, 390×844, reduced motion | Sound-on opened one audio device after Continue and played wind, a tap, the construction thunk, radio notes and the Tier 2 chime. Muted opened zero audio devices. The WebGL scene showed occupied chairs during the day and the snowcat on the grooming route after closing. |
+| 2026-11-20 | Mobile HUD and placement chrome (PR #102) | `npm run check` on `main`; unit tests for `hudUi` and `trailPanel`; WebKit portrait job with `PHONE_CHECK_SKIP_FPS=1` | Merged hide/show HUD, compact conditions strip with expand, map tool rail (Layers/Grid/Recenter/Hide), placement **Minimize**, removed **Move map** mode in favor of always-on two-finger pan; `phone-check` lift copy updated to match placement hints. Uncoached device pass on Hide/Minimize still open. |
 
 Log friction as a GitHub issue with device and OS version.
 

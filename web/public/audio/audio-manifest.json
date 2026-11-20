@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "provider": "ElevenLabs (free-tier credits only; synth when files are absent)",
+  "sounds": [
+    {"id": "bed-day", "file": "bed-day.m4a", "bytes": 0, "loop": true, "loopStart": 0, "loopEnd": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "bed-night", "file": "bed-night.m4a", "bytes": 0, "loop": true, "loopStart": 0, "loopEnd": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "ui-tap", "file": "ui-tap.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "ui-select", "file": "ui-select.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "ui-sheet", "file": "ui-sheet.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "ui-blocked", "file": "ui-blocked.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "build-place", "file": "build-place.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "cash-in", "file": "cash-in.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "sleep", "file": "sleep.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "morning", "file": "morning.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "radio-sting", "file": "radio-sting.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"}
+  ]
+}

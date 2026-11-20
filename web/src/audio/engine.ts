@@ -1,5 +1,8 @@
 import { isAudible, mixGains, type BusId, type Gains } from "./mix";
+import { createSampleLibrary } from "./samples";
 import { SYNTH, startBed, type Bed, type BedMood, type SoundId } from "./synth";
+
+const BASE_PATH = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_BASE_PATH ?? "" : "";
 
 /** Seconds a sound must wait after the previous one of its kind, so a drag of taps does not buzz. */
 const MIN_GAP: Record<SoundId, number> = { tap: 0.04, thunk: 0.15, sting: 0.5, chime: 0.5 };
@@ -11,6 +14,7 @@ export type EngineDeps = {
   createContext: () => AudioContext | null;
   /** Sets the iOS audio session type. Optional; the default feature-detects navigator.audioSession. */
   setSessionType?: (type: "ambient") => void;
+  basePath?: string;
 };
 
 type Graph = { master: GainNode } & Record<BusId, GainNode>;
@@ -20,6 +24,7 @@ type Graph = { master: GainNode } & Record<BusId, GainNode>;
  * Nothing is created until unlock() runs inside a user gesture, which iOS Safari requires.
  */
 export function createAudioEngine(deps: EngineDeps) {
+  const samples = createSampleLibrary(deps.basePath ?? BASE_PATH);
   let ctx: AudioContext | null = null;
   let graph: Graph | null = null;
   let gains: Gains = mixGains({ soundOn: true, masterVolume: 80, effectsVolume: 80, ambienceVolume: 50, voiceOn: true, voiceVolume: 80 });
@@ -27,6 +32,7 @@ export function createAudioEngine(deps: EngineDeps) {
   let bed: Bed | null = null;
   let hidden = false;
   let unlocked = false;
+  let bedsAllowed = false;
   const lastPlayed: Partial<Record<SoundId, number>> = {};
   const routed = new WeakSet<HTMLMediaElement>();
 
@@ -39,11 +45,19 @@ export function createAudioEngine(deps: EngineDeps) {
     graph.voice.gain.setTargetAtTime(gains.voice, t, GAIN_SMOOTHING);
   }
 
+  function startBedForMood(c: AudioContext, next: BedMood): Bed {
+    if (bedsAllowed) {
+      const sample = samples.startBed(c, graph!.ambience, next);
+      if (sample) return sample;
+    }
+    return startBed(c, graph!.ambience, next);
+  }
+
   /** Runs the wind bed only while it can be heard, so a muted run costs no audio work. */
   function syncBed(): void {
     if (!ctx || !graph) return;
     const wanted = mood !== null && !hidden && isAudible(gains, "ambience");
-    if (wanted && !bed && mood) bed = startBed(ctx, graph.ambience, mood);
+    if (wanted && !bed && mood) bed = startBedForMood(ctx, mood);
     else if (!wanted && bed) {
       bed.stop(ctx);
       bed = null;
@@ -81,6 +95,8 @@ export function createAudioEngine(deps: EngineDeps) {
       unlocked = true;
       deps.setSessionType?.("ambient");
       if (ctx.state !== "running" && !hidden) void Promise.resolve(ctx.resume()).catch(() => undefined);
+      void samples.loadEffects(ctx).finally(() => syncBed());
+      if (bedsAllowed) void samples.loadBeds(ctx).finally(() => syncBed());
       syncBed();
     },
     get state(): AudioContextState | "none" {
@@ -105,12 +121,37 @@ export function createAudioEngine(deps: EngineDeps) {
       const last = lastPlayed[id];
       if (last !== undefined && t - last < MIN_GAP[id]) return;
       lastPlayed[id] = t;
-      SYNTH[id](ctx, graph.effects, t);
+      if (!samples.playEffect(ctx, graph.effects, id, t)) SYNTH[id](ctx, graph.effects, t);
+    },
+    prepareBeds(): void {
+      if (bedsAllowed) return;
+      bedsAllowed = true;
+      if (!ctx || !unlocked) return;
+      void samples.loadBeds(ctx).finally(() => {
+        if (bed && ctx && mood && samples.hasBed(mood)) {
+          bed.stop(ctx);
+          bed = null;
+        }
+        syncBed();
+      });
     },
     /** Sets the wind bed: "day", "night", or null for none. */
     setBed(next: BedMood | null): void {
+      const prev = mood;
       mood = next;
-      if (bed && ctx && next) bed.setMood(ctx, next);
+      if (bed && ctx) {
+        if (next === null) {
+          bed.stop(ctx);
+          bed = null;
+        } else if (bedsAllowed && (samples.hasBed(next) || (prev && samples.hasBed(prev)))) {
+          if (prev !== next) {
+            bed.stop(ctx);
+            bed = null;
+          }
+        } else if (prev !== next) {
+          bed.setMood(ctx, next);
+        }
+      }
       syncBed();
     },
     /** Tab hidden: suspend the context. Tab visible: resume it if a gesture already unlocked it. */
