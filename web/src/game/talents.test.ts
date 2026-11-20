@@ -3,7 +3,7 @@ import { createBuiltHill } from "./__fixtures__/built-hill";
 import { CREW_TALENTS, talentDescription } from "./content";
 import { operatingCosts } from "./economy";
 import { liftCapacityPerHour } from "./lifts";
-import { acknowledgeBeat, openNight, pickCrewTalent, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
+import { acknowledgeBeat, openNight, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
 import { freshTrail } from "./snow";

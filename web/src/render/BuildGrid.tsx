@@ -156,12 +156,7 @@ function LiftGrid() {
     type: draft.type, bottom: draft.bottom, top: draft.top, snapped: draft.snapped, review: draft.review,
   })));
   const rules = useGameStore(useShallow((state) => ({ lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier })));
-  if (!draftBottom) {
-    if (review) return null;
-    return <GridLines />;
-  }
-  const bottom = draftBottom;
-  const stepped = snapBottom(bottom);
+  const stepped = snapBottom(draftBottom ?? TERRAIN.base);
   // Trailing debounce of the rounded bottom: a drag settles before the cells are recomputed.
   const [settled, setSettled] = useState(stepped);
   useEffect(() => {
@@ -170,13 +165,18 @@ function LiftGrid() {
     return () => clearTimeout(timer);
   }, [stepped, settled]);
   const cells = useMemo(
-    () => review ? [] : liftTopCells(rules, type, settled),
-    [review, rules, type, settled],
+    () => review || !draftBottom ? [] : liftTopCells(rules, type, settled),
+    [review, draftBottom, rules, type, settled],
   );
+  const bottom = draftBottom ?? TERRAIN.base;
   const shown = useMemo(
     () => clearOfCable(cells, bottom, top, GRID_STYLE.cableClearCells * (TERRAIN.scale.horizontal / 2)),
     [cells, bottom, top],
   );
+  if (!draftBottom) {
+    if (review) return null;
+    return <GridLines />;
+  }
   if (review) return null;
   const fade = snapped && !!top;
   return (
