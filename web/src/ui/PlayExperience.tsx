@@ -58,7 +58,7 @@ import {
   ReadoutCard,
   SnowLayerControls,
 } from "@/ui/OverlayControls";
-import { finishPlacement, requestLodge, usePlacementDraft } from "@/ui/placementDraft";
+import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon, GridIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
@@ -168,12 +168,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
   const moodPulse = useMoodPulseTracker(mood, clockMin);
-
-  useEffect(() => usePlacementDraft.subscribe((next, prev) => {
-    if (next.lodgeRequested !== prev.lodgeRequested && useGameStore.getState().phase === "day") {
-      setBuildOpen(true);
-    }
-  }), []);
 
   useEffect(() => useGameStore.subscribe((next, prev) => {
     if (prev.phase === "day" && next.phase !== "day") {
@@ -463,10 +457,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       )}
 
       <OverlayStateSync />
-      {inspectedAsset && <AssetInspector target={inspectedAsset} onClose={closeAsset} onManageLodge={() => {
-        closeAsset();
-        requestLodge();
-      }} />}
+      {inspectedAsset && <AssetInspector target={inspectedAsset} onClose={closeAsset} />}
       {officeOpen && <OfficeSheet onLeave={() => onLeave("load")} />}
       <GuestsSheet open={guestsOpen} onClose={() => setGuestsOpen(false)} />
       <BuildSheet
