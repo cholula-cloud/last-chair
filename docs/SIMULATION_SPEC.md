@@ -1,6 +1,6 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.4 · **Updated:** 2026-11-18
+**Version:** 0.5 · **Updated:** 2026-11-20
 
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
@@ -39,7 +39,23 @@
 | Day end (close) | 16:00 |
 | Realtime 1× | 120 seconds from opening to close |
 | Speed | 1×, 2× and 4× in the top bar. The selected speed carries into the next morning. New sessions use the speed in Settings (initially 1×). |
-| Season | 28 days (internal test: 14) |
+| Season | 28 days (internal test: 14). **Proposed CAL-1:** civil winter late Dec–Mar; **N** Fri–Sun operating days; Mon–Thu background — see below |
+
+### Operating calendar (proposed, CAL-1 — not implemented)
+
+Authority: [MASTER_PLAN.md](./MASTER_PLAN.md) § M3 operating calendar brief (v2.11).
+
+| Topic | Proposed rule |
+|-------|----------------|
+| Playable days | Fri, Sat, Sun — same 07:30–16:00 loop as today |
+| Mon–Thu | Hill closed to guests; sim advances each civil day in order |
+| Night levers when closed | Repeat **last locked** fare and snow & service from the player's last open night |
+| Costs when closed | Fixed, upkeep, vacation staffing (if civil day qualifies), construction installments, loan interest — same formulas as after Sleep today, **without** ticket or venue revenue |
+| Overnight when closed | Full `nightFor` / snow and groom pipeline on locked snow tier |
+| Weather | Advance `calendarDay` into `weatherDays`; thaw arc and storm window use **civil** index |
+| UI | One **weekday digest** before the next playable morning; no separate night sheet per closed day |
+| Indices | `calendarDay` (civil) vs `operatingDay` (open days only); `seasonLength` TBD = civil end index; operating count **N** TBD |
+| Numbers | All balances, staffing bands ($550 vacation), summit and school **day** gates, and harness tables **re-record** after N and civil length are chosen |
 
 **Pause:** `dayClock` frozen; build allowed.  
 **Visibility:** when `document.hidden`, pause clock (mobile Safari).
