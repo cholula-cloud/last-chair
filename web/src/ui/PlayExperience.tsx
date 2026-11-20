@@ -80,6 +80,14 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const bottomChromeMinimized = useHudUi((s) => s.bottomChromeMinimized);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [wideHud, setWideHud] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const sync = () => setWideHud(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
   const officeOpen = useOffice((s) => s.open);
 
@@ -353,8 +361,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
-          <OverlayLegend className="sm:hidden" />
-          <LayerStrip className="max-sm:flex-col max-sm:items-stretch max-sm:[&_button]:w-full sm:hidden" />
+          {!wideHud && (
+            <>
+              <OverlayLegend />
+              <LayerStrip className="flex-col items-stretch [&_button]:w-full" />
+            </>
+          )}
         </div>
       )}
 
@@ -373,9 +385,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         <div inert={officeOpen} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
             {!placementActive && <ReadoutCard />}
-            <OverlayLegend className="hidden sm:flex" />
+            {wideHud && <OverlayLegend />}
             {!placementActive && <SnowLayerControls />}
-            {!placementActive && <LayerStrip className="hidden sm:flex" />}
+            {wideHud && <LayerStrip />}
             {!placementActive && (undoIndex >= 0 || canResume) && (
               <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
                 {undoIndex >= 0 && (
