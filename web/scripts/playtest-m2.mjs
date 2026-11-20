@@ -391,7 +391,8 @@ async function upgrade(page, cdp, engine) {
   const venueDay = await closeHill(page);
   const venueRevenue = venueDay.dayStats.venueRevenue.rentals;
   assert(venueRevenue > 0, "The placed rentals should earn revenue from guests");
-  await page.getByRole("list", { name: "Venue takings" }).getByText(/Rentals took/).waitFor();
+  await page.getByRole("button", { name: /Why\?/ }).click();
+  await page.getByRole("list", { name: "Venue takings" }).getByText(/Rentals/).waitFor();
   await screenshot(page, engine, "recap-rentals");
   await sleep(page);
   await paintTrail(page, cdp, state.lifts[0].anchor);

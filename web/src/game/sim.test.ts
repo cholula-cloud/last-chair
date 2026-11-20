@@ -151,7 +151,7 @@ describe("buildNightRecap", () => {
     const r = recapOf(12, 1, 0, day(75, { queue: -2 }));
     expect(r.cashDelta).toBeLessThan(0);
     expect(r.problem).toBe(
-      `Lost ${formatMoney(-r.cashDelta)} today. Running costs beat ticket sales on a quiet day.`,
+      `Lost ${formatMoney(-r.cashDelta)} today. Running costs beat revenue on a quiet day.`,
     );
   });
 

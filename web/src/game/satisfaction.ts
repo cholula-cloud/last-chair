@@ -306,7 +306,7 @@ export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
       return `Guests showed up in a sour mood, ${Math.round(facts.arrivalMood * 100)} out of 100. Good snow and a fair fare make a warmer welcome.`;
     default:
       return facts.cashDelta !== undefined && facts.cashDelta < 0
-        ? `Lost ${formatMoney(-facts.cashDelta)} today. Running costs beat ticket sales on a quiet day.`
+        ? `Lost ${formatMoney(-facts.cashDelta)} today. Running costs beat revenue on a quiet day.`
         : NO_PROBLEM;
   }
 }
