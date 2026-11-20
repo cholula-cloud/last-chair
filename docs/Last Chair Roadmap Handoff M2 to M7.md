@@ -1977,7 +1977,7 @@ One coordinated pass after B6/B7 or in parallel with early feel rows: design (co
 
 ### Row F3 — Stats and Reports, Office economics (M4, stub)
 
-**Split (MASTER_PLAN v2.7).** Ship as two PRs under the 400-line rule. **F3a (built):** Stats tab (`OFFICE_TABS`), pure `dayHistory` selectors (`web/src/game/officeSeries.ts`), and the five money SVG charts with table fallbacks (`web/src/ui/officeCharts.tsx`: revenue vs costs, revenue sources, morning cash trend, construction timeline, winter loan). **F3b:** ops charts (fare elasticity, arrivals, satisfaction terms, wait, snow spend, satisfaction vs revenue) and the Reports season calendar and trail report.
+**Split (MASTER_PLAN v2.7).** Ship as two PRs under the 400-line rule. **F3a (built):** Stats tab (`OFFICE_TABS`), pure `dayHistory` selectors (`web/src/game/officeSeries.ts`), and the five money charts with table fallbacks (`web/src/ui/officeCharts.tsx`: revenue vs costs, revenue sources, morning cash trend, build bills & free cash commitment bar, winter loan). **F3b (built):** ops charts (`web/src/ui/officeOpsCharts.tsx`: fare vs turnout, arrivals & wait, satisfaction & drivers, snow & service spend, satisfaction vs revenue scatter) and Reports upgrades (`web/src/ui/officeReports.tsx`: 28-day season calendar with tap-to-recap and ski-area snow report).
 
 **Goal.** The Office reads like a **ski-area CFO dashboard** (MASTER_PLAN §12). Ship the **Stats** tab and upgrade **Reports** so time series and breakdowns dominate; the recap archive remains narrative, not the only history UI.
 
