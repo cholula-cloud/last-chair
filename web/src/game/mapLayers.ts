@@ -33,9 +33,13 @@ export const LAYERS = {
   depth: "Snow depth",
   guns: "Snow-making",
   conditions: "Conditions",
+  crowds: "Crowds",
+  revenue: "Revenue",
+  demand: "Guests want",
 } as const;
 export type MapLayer = keyof typeof LAYERS;
-export type SnowLayer = Exclude<MapLayer,"slope">;
+export type SnowLayer = "depth" | "guns" | "conditions";
+export type OpsLayer = "crowds" | "revenue" | "demand";
 export type MapTime = "Now" | "Close" | "Tomorrow";
 export type GunView = "Last night" | "Mid" | "High";
 export type Mark = { name: string; color: string; glyph: string };

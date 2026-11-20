@@ -9,6 +9,7 @@ import {
 } from "@/game/overlays";
 import { LayerLegend, LayerPanel } from "./MapLayers";
 import { useLayers } from "./mapLayerStore";
+import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { CloseIcon, LayersIcon } from "@/ui/kit/icons";
@@ -60,7 +61,8 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
   const placing = usePlacementDraft((s) => s.active);
   const wear = useLayers((s) => s.wear);
   const gunView = useLayers((s) => s.gunView);
-  if (!layer || (layer.id !== "slope" && !placing)) return null;
+  const ops = layer?.id === "crowds" || layer?.id === "revenue" || layer?.id === "demand";
+  if (!layer || (layer.id !== "slope" && !placing && !ops)) return null;
   return (
     <div className="pointer-events-none flex max-w-full items-center justify-end gap-1.5" data-overlay-legend={layer.id}>
       {layer.id === "slope" ? (
@@ -69,6 +71,11 @@ export function OverlayLegend({ allowOff = true }: { allowOff?: boolean }) {
           aria-label={`${layer.label} legend`}
         >
           {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} compact />)}
+        </ul>
+      ) : layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand" ? (
+        <ul className="chip pointer-events-auto flex min-h-9 flex-wrap items-center gap-2 px-2.5 py-1"
+          aria-label={`${layer.label} legend`}>
+          {layer.legend.map((entry) => <LegendChip key={entry.id} entry={entry} />)}
         </ul>
       ) : (
         <div className="panel min-w-0 flex-1 p-1.5">
@@ -135,10 +142,15 @@ export function LayersButton({ compact = false }: { compact?: boolean }) {
 export function ReadoutCard() {
   const probe = useLayers((s) => s.point);
   const layer = getOverlayLayer(useActiveLayer());
-  const readout = useMemo(
-    () => (probe && layer?.id === "slope" ? layer.readout(probe, { terrain: TERRAIN }) : null),
-    [probe, layer],
-  );
+  const game = useGameStore();
+  const readout = useMemo(() => {
+    if (!probe || !layer) return null;
+    if (layer.id === "slope") return layer.readout(probe, { terrain: TERRAIN });
+    if (layer.id === "crowds" || layer.id === "revenue" || layer.id === "demand") {
+      return layer.readout(probe, game);
+    }
+    return null;
+  }, [probe, layer, game]);
   if (!readout) return null;
   return (
     <div className="panel pointer-events-auto flex max-w-[22rem] items-start gap-2 px-3 py-2" role="status" data-overlay-readout>
@@ -160,7 +172,9 @@ export function ReadoutCard() {
 
 export function SnowLayerControls() {
   const layer = useActiveLayer();
-  if (!layer || layer === "slope") return null;
+  if (!layer || layer === "slope" || layer === "crowds" || layer === "revenue" || layer === "demand") {
+    return null;
+  }
   return <LayerPanel layer={layer} />;
 }
 
