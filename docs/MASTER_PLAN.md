@@ -492,20 +492,20 @@ Suggested order: **C1a, C1b**, **B6, B7**, then **F2 chart-field check** (extend
 
 ### M4b: Blender assets
 
-Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB.
+Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB. Batch 1 GLBs (rows 29, T1, S2, A1 to A4; ◐) are in `web/public/models/` per `docs/M4b Asset Spec Batch 1.md`; game wiring is still open.
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | 28 | ☐ | Guest models (Blender) | Five skier and snowboarder silhouettes; jacket/helmet tint in render (handoff PR 28) |
-| 29 | ☐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
-| T1 | ☐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
+| 29 | ◐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
+| T1 | ◐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
 | S1 | ☐ | Style system (Blender) | Style picker on the building card; default style per mountain; saved `styleId` per building; each style is a Blender variant |
-| S2 | ☐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
+| S2 | ◐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
 | S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
-| A1 | ☐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
-| A2 | ☐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
-| A3 | ☐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
-| A4 | ☐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
+| A1 | ◐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
+| A2 | ◐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
+| A3 | ◐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
+| A4 | ◐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
 | A5 | ☐ | Events (Blender + catalog) | Winter carnival night choice using rink and tubing assets |
 
 ### M5: Career

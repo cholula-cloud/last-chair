@@ -1,8 +1,8 @@
 {
-  "version": 1,
+  "version": 2,
   "units": "meters",
   "upAxis": "+Y",
-  "front": "-Z (Blender -Y)",
+  "front": "+Z",
   "draco": true,
   "assets": [
     {
@@ -15,7 +15,9 @@
         19.47,
         14.2
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "clapboard-house",
@@ -27,7 +29,9 @@
         12.75,
         8.75
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "cafe",
@@ -39,7 +43,9 @@
         8.37,
         8.74
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "ski-shop",
@@ -51,7 +57,9 @@
         8.17,
         6.17
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "warming-hut",
@@ -63,7 +71,9 @@
         5.44,
         4.04
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "lift-tower",
@@ -75,7 +85,9 @@
         4.1,
         1.7
       ],
-      "recolorMaterials": [],
+      "tags": [
+        "lift"
+      ],
       "ropeOffsetXMeters": 1.6
     },
     {
@@ -88,7 +100,9 @@
         7.98,
         7.9
       ],
-      "recolorMaterials": [],
+      "tags": [
+        "lift"
+      ],
       "ropeOffsetXMeters": 1.6
     },
     {
@@ -101,7 +115,9 @@
         7.81,
         6.5
       ],
-      "recolorMaterials": [],
+      "tags": [
+        "lift"
+      ],
       "ropeOffsetXMeters": 1.6
     },
     {
@@ -114,7 +130,9 @@
         1.15,
         0.34
       ],
-      "recolorMaterials": [],
+      "tags": [
+        "carrier"
+      ],
       "gripHeightMeters": 2.31
     },
     {
@@ -127,7 +145,9 @@
         1.42,
         1.08
       ],
-      "recolorMaterials": [],
+      "tags": [
+        "carrier"
+      ],
       "gripHeightMeters": 2.45
     },
     {
@@ -140,7 +160,10 @@
         0.8,
         1.62
       ],
-      "recolorMaterials": [
+      "tags": [
+        "guest"
+      ],
+      "split": [
         "jacket",
         "pants",
         "helmet"
@@ -156,7 +179,9 @@
         1.26,
         2.0
       ],
-      "recolorMaterials": []
+      "tags": [
+        "prop"
+      ]
     },
     {
       "name": "snowcat",
@@ -168,7 +193,9 @@
         4.6,
         8.02
       ],
-      "recolorMaterials": []
+      "tags": [
+        "vehicle"
+      ]
     },
     {
       "name": "lamp-post",
@@ -180,7 +207,9 @@
         0.42,
         0.42
       ],
-      "recolorMaterials": []
+      "tags": [
+        "prop"
+      ]
     },
     {
       "name": "pine-a",
@@ -192,7 +221,9 @@
         4.14,
         4.78
       ],
-      "recolorMaterials": []
+      "tags": [
+        "tree"
+      ]
     },
     {
       "name": "pine-b",
@@ -204,7 +235,9 @@
         4.04,
         3.84
       ],
-      "recolorMaterials": []
+      "tags": [
+        "tree"
+      ]
     },
     {
       "name": "pine-c",
@@ -216,7 +249,9 @@
         5.74,
         5.46
       ],
-      "recolorMaterials": []
+      "tags": [
+        "tree"
+      ]
     },
     {
       "name": "lodge-tier-2",
@@ -228,7 +263,9 @@
         21.37,
         20.2
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "lodge-tier-3",
@@ -240,7 +277,9 @@
         22.1,
         20.2
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "a-frame-lodge",
@@ -252,7 +291,9 @@
         16.89,
         15.8
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "ticket-booth",
@@ -264,7 +305,9 @@
         4.75,
         3.84
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "patrol-hut",
@@ -276,7 +319,9 @@
         8.2,
         6.29
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "maintenance-garage",
@@ -288,7 +333,9 @@
         15.1,
         9.65
       ],
-      "recolorMaterials": []
+      "tags": [
+        "building"
+      ]
     },
     {
       "name": "birch",
@@ -300,7 +347,9 @@
         3.67,
         3.35
       ],
-      "recolorMaterials": []
+      "tags": [
+        "tree"
+      ]
     },
     {
       "name": "sedan",
@@ -312,7 +361,10 @@
         1.87,
         4.72
       ],
-      "recolorMaterials": [
+      "tags": [
+        "vehicle"
+      ],
+      "split": [
         "paint"
       ]
     },
@@ -326,7 +378,10 @@
         1.92,
         4.92
       ],
-      "recolorMaterials": [
+      "tags": [
+        "vehicle"
+      ],
+      "split": [
         "paint"
       ]
     },
@@ -340,7 +395,10 @@
         2.02,
         5.36
       ],
-      "recolorMaterials": [
+      "tags": [
+        "vehicle"
+      ],
+      "split": [
         "paint"
       ]
     },
@@ -354,7 +412,9 @@
         0.94,
         0.11
       ],
-      "recolorMaterials": []
+      "tags": [
+        "sign"
+      ]
     },
     {
       "name": "area-sign",
@@ -366,7 +426,9 @@
         2.7,
         0.3
       ],
-      "recolorMaterials": []
+      "tags": [
+        "sign"
+      ]
     },
     {
       "name": "skier-kid",
@@ -378,7 +440,10 @@
         0.54,
         1.16
       ],
-      "recolorMaterials": [
+      "tags": [
+        "guest"
+      ],
+      "split": [
         "jacket",
         "helmet"
       ]
@@ -393,7 +458,10 @@
         0.87,
         1.76
       ],
-      "recolorMaterials": [
+      "tags": [
+        "guest"
+      ],
+      "split": [
         "jacket",
         "helmet"
       ]
@@ -408,7 +476,10 @@
         1.8,
         0.5
       ],
-      "recolorMaterials": [
+      "tags": [
+        "guest"
+      ],
+      "split": [
         "jacket",
         "helmet"
       ]
@@ -423,10 +494,454 @@
         1.4,
         0.38
       ],
-      "recolorMaterials": [
+      "tags": [
+        "guest"
+      ],
+      "split": [
         "jacket",
         "helmet"
       ]
+    },
+    {
+      "name": "surface-terminal-bottom",
+      "file": "surface-terminal-bottom.glb",
+      "tris": 328,
+      "sizeBytes": 9752,
+      "heightMeters": 4.0,
+      "footprintMeters": [
+        8.97,
+        5.63
+      ],
+      "tags": [
+        "lift"
+      ],
+      "ropeYMeters": 2.5,
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "surface-terminal-top",
+      "file": "surface-terminal-top.glb",
+      "tris": 216,
+      "sizeBytes": 7160,
+      "heightMeters": 3.75,
+      "footprintMeters": [
+        3.36,
+        3.2
+      ],
+      "tags": [
+        "lift"
+      ],
+      "ropeYMeters": 2.5,
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "platter",
+      "file": "platter.glb",
+      "tris": 76,
+      "sizeBytes": 3552,
+      "heightMeters": 2.28,
+      "footprintMeters": [
+        0.4,
+        0.4
+      ],
+      "tags": [
+        "carrier"
+      ],
+      "gripHeightMeters": 2.2
+    },
+    {
+      "name": "lift-tower-derelict",
+      "file": "lift-tower-derelict.glb",
+      "tris": 184,
+      "sizeBytes": 5956,
+      "heightMeters": 7.96,
+      "footprintMeters": [
+        4.01,
+        1.7
+      ],
+      "tags": [
+        "lift"
+      ],
+      "ropeYMeters": 7.12,
+      "ropeOffsetXMeters": 1.6
+    },
+    {
+      "name": "lodge-tier-1",
+      "file": "lodge-tier-1.glb",
+      "tris": 1968,
+      "sizeBytes": 20188,
+      "heightMeters": 13.96,
+      "footprintMeters": [
+        19.47,
+        14.2
+      ],
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "name": "trail-sign",
+      "file": "trail-sign.glb",
+      "tris": 134,
+      "sizeBytes": 5348,
+      "heightMeters": 2.44,
+      "footprintMeters": [
+        1.3,
+        0.64
+      ],
+      "tags": [
+        "sign",
+        "prop"
+      ],
+      "split": [
+        "sign-face"
+      ]
+    },
+    {
+      "name": "trail-sign-double",
+      "file": "trail-sign-double.glb",
+      "tris": 198,
+      "sizeBytes": 6640,
+      "heightMeters": 2.44,
+      "footprintMeters": [
+        1.3,
+        0.64
+      ],
+      "tags": [
+        "sign",
+        "prop"
+      ],
+      "split": [
+        "sign-face",
+        "sign-face-2"
+      ]
+    },
+    {
+      "name": "trail-map-kiosk",
+      "file": "trail-map-kiosk.glb",
+      "tris": 220,
+      "sizeBytes": 7276,
+      "heightMeters": 3.22,
+      "footprintMeters": [
+        3.47,
+        1.28
+      ],
+      "tags": [
+        "sign",
+        "prop"
+      ],
+      "split": [
+        "map-face"
+      ]
+    },
+    {
+      "name": "rope-gate",
+      "file": "rope-gate.glb",
+      "tris": 116,
+      "sizeBytes": 4268,
+      "heightMeters": 1.8,
+      "footprintMeters": [
+        3.05,
+        0.05
+      ],
+      "tags": [
+        "sign",
+        "prop"
+      ],
+      "split": [
+        "closed-face"
+      ]
+    },
+    {
+      "name": "tubing-hut",
+      "file": "tubing-hut.glb",
+      "tris": 660,
+      "sizeBytes": 14836,
+      "heightMeters": 5.81,
+      "footprintMeters": [
+        7.46,
+        5.39
+      ],
+      "tags": [
+        "activity",
+        "building"
+      ]
+    },
+    {
+      "name": "tube",
+      "file": "tube.glb",
+      "tris": 56,
+      "sizeBytes": 1900,
+      "heightMeters": 0.32,
+      "footprintMeters": [
+        1.06,
+        1.09
+      ],
+      "tags": [
+        "activity",
+        "prop"
+      ],
+      "split": [
+        "tube"
+      ]
+    },
+    {
+      "name": "magic-carpet",
+      "file": "magic-carpet.glb",
+      "tris": 200,
+      "sizeBytes": 6224,
+      "heightMeters": 2.12,
+      "footprintMeters": [
+        1.7,
+        10.0
+      ],
+      "tags": [
+        "activity"
+      ]
+    },
+    {
+      "name": "tubing-lane",
+      "file": "tubing-lane.glb",
+      "tris": 58,
+      "sizeBytes": 3168,
+      "heightMeters": 0.78,
+      "footprintMeters": [
+        5.2,
+        10.0
+      ],
+      "tags": [
+        "activity"
+      ]
+    },
+    {
+      "name": "ice-rink",
+      "file": "ice-rink.glb",
+      "tris": 884,
+      "sizeBytes": 17260,
+      "heightMeters": 7.68,
+      "footprintMeters": [
+        32.6,
+        22.05
+      ],
+      "tags": [
+        "activity"
+      ]
+    },
+    {
+      "name": "skater",
+      "file": "skater.glb",
+      "tris": 324,
+      "sizeBytes": 10524,
+      "heightMeters": 2.1,
+      "footprintMeters": [
+        0.94,
+        1.11
+      ],
+      "tags": [
+        "guest"
+      ],
+      "split": [
+        "jacket",
+        "helmet"
+      ]
+    },
+    {
+      "name": "apres-bar",
+      "file": "apres-bar.glb",
+      "tris": 2148,
+      "sizeBytes": 23568,
+      "heightMeters": 10.4,
+      "footprintMeters": [
+        15.95,
+        14.6
+      ],
+      "tags": [
+        "building",
+        "activity"
+      ]
+    },
+    {
+      "name": "fire-pit",
+      "file": "fire-pit.glb",
+      "tris": 95,
+      "sizeBytes": 4976,
+      "heightMeters": 1.46,
+      "footprintMeters": [
+        1.7,
+        3.58
+      ],
+      "tags": [
+        "decor"
+      ]
+    },
+    {
+      "name": "string-lights",
+      "file": "string-lights.glb",
+      "tris": 180,
+      "sizeBytes": 4976,
+      "heightMeters": 3.52,
+      "footprintMeters": [
+        10.24,
+        0.32
+      ],
+      "tags": [
+        "decor"
+      ]
+    },
+    {
+      "name": "ski-rack",
+      "file": "ski-rack.glb",
+      "tris": 120,
+      "sizeBytes": 4684,
+      "heightMeters": 1.7,
+      "footprintMeters": [
+        3.2,
+        0.5
+      ],
+      "tags": [
+        "decor"
+      ]
+    },
+    {
+      "name": "bench",
+      "file": "bench.glb",
+      "tris": 120,
+      "sizeBytes": 3124,
+      "heightMeters": 1.39,
+      "footprintMeters": [
+        1.82,
+        1.3
+      ],
+      "tags": [
+        "decor"
+      ]
+    },
+    {
+      "name": "picnic-table",
+      "file": "picnic-table.glb",
+      "tris": 96,
+      "sizeBytes": 3744,
+      "heightMeters": 0.88,
+      "footprintMeters": [
+        1.9,
+        1.64
+      ],
+      "tags": [
+        "decor"
+      ]
+    },
+    {
+      "name": "direction-sign",
+      "file": "direction-sign.glb",
+      "tris": 102,
+      "sizeBytes": 4948,
+      "heightMeters": 2.8,
+      "footprintMeters": [
+        2.12,
+        0.3
+      ],
+      "tags": [
+        "decor"
+      ],
+      "split": [
+        "arrow-face"
+      ]
+    },
+    {
+      "name": "lodge-tier-1-chalet70s",
+      "file": "lodge-tier-1-chalet70s.glb",
+      "tris": 1746,
+      "sizeBytes": 18980,
+      "heightMeters": 14.77,
+      "footprintMeters": [
+        19.69,
+        14.31
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-tier-1"
+    },
+    {
+      "name": "lodge-tier-2-chalet70s",
+      "file": "lodge-tier-2-chalet70s.glb",
+      "tris": 2561,
+      "sizeBytes": 24908,
+      "heightMeters": 14.77,
+      "footprintMeters": [
+        21.59,
+        20.43
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-tier-2"
+    },
+    {
+      "name": "lodge-tier-3-chalet70s",
+      "file": "lodge-tier-3-chalet70s.glb",
+      "tris": 3220,
+      "sizeBytes": 28572,
+      "heightMeters": 16.02,
+      "footprintMeters": [
+        22.1,
+        20.43
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-tier-3"
+    },
+    {
+      "name": "cafe-chalet70s",
+      "file": "cafe-chalet70s.glb",
+      "tris": 895,
+      "sizeBytes": 16680,
+      "heightMeters": 8.97,
+      "footprintMeters": [
+        8.64,
+        8.91
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "cafe"
+    },
+    {
+      "name": "ski-shop-chalet70s",
+      "file": "ski-shop-chalet70s.glb",
+      "tris": 571,
+      "sizeBytes": 13408,
+      "heightMeters": 8.32,
+      "footprintMeters": [
+        8.33,
+        6.22
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "ski-shop"
+    },
+    {
+      "name": "warming-hut-chalet70s",
+      "file": "warming-hut-chalet70s.glb",
+      "tris": 438,
+      "sizeBytes": 11644,
+      "heightMeters": 6.17,
+      "footprintMeters": [
+        5.47,
+        4.03
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "warming-hut"
     }
   ]
 }
