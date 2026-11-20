@@ -42,7 +42,7 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 |--------|----------|
 | Macro goal | “Reopen Dutch Hill, survive the winter” is clear in founder sheet and title copy |
 | Session goal | Day: operate hill; night: fix what recap named — matches pillar “see it, fix it” |
-| Micro goal (opening) | `StartCallout` + build sheet text (“Place surface lift…”, “Paint a trail…”) state objectives; **solution** (drag on canvas, Move map, Review) is not separated from objective |
+| Micro goal (opening) | `StartCallout` + build sheet text (“Place surface lift…”, “Paint a trail…”) state objectives; **solution** (drag on canvas, two-finger map pan, Review / **Minimize**) is not fully separated from objective |
 | Progress legibility | HUD day/cash/ops strip readable; “open the hill” gated until lift + trail |
 
 **GDV pressure test — “Can players state the current objective in their own words?”**
@@ -63,7 +63,7 @@ Source framework: clear goals, learnable rules, meaningful choices, responsive f
 |----------|----------------|
 | Pause / speed / close hill | Strong — labeled controls, phone-check OK |
 | Lift place + snap | Medium — placement bar helps; blocked vs valid reasons need reading |
-| Trail paint + cut | Low-medium — steepness, move map, undo; high cognitive load on phone |
+| Trail paint + cut | Low-medium — steepness, two-finger pan (no separate Move map mode), undo; **Minimize** on the placement bar reduces chrome (PR #102) but steepness still loads the phone |
 | Fare / snow presets | Medium — tiles clear; **effect** on queue/mood not taught in one interaction |
 | Lodge tier / venues | Medium — gating messages (“Requires Lodge Tier 2”) work when player opens Build |
 | Founder modifiers | Weak — blurbs thematic; numeric sim effects subtle in HUD |
@@ -346,13 +346,13 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 ### Onboarding and first session
 
 - **Teach the loop before the canvas.** Give players one guided win (place lift → paint → unpause → see guests ride) before exposing optional build depth (steepness, second lift, lodge). A short in-world coach beats a manual.
-- **Separate objective from solution** (GDV): keep “Build a lift” / “Paint a trail”; teach drag + Move map in situ with highlights, not paragraphs.
+- **Separate objective from solution** (GDV): keep “Build a lift” / “Paint a trail”; teach drag + two-finger map pan in situ with highlights, not paragraphs.
 - **Time-box opening pressure.** If day-1 weather or wind hold fires during `openingStep`, queue those callouts until the hill is open so challenge matches skills taught.
 - **Ship a “session 1” path in design docs:** explicit target — title to first Sleep in ~15 minutes on Safari, with one explainable fare or snow change (MASTER_PLAN success metrics).
 
 ### Mobile UX and readability
 
-- **Protect the build canvas.** During placement, collapse or dim non-essential HUD; keep placement bar and undo above the action bar without intercepting taps (known Playwright/touch issue).
+- **Protect the build canvas.** During placement, use **Minimize** on the placement bar and **Hide HUD** when the mountain needs room; keep Cancel/Review and undo reachable without intercepting canvas taps (Playwright/touch regressions still warrant spot checks).
 - **One thumb zone for urgency:** play/pause, close hill, and Sleep should stay predictable; avoid moving speed or recenter during opening week.
 - **Night sheet information order.** Show the measured problem and fare/snow tradeoffs, followed by any radio item, the forecast and Sleep. Radio should not feel like a gate without narrative payoff.
 - **Founder copy:** add one **gameplay sentence** per card (“Families +8% mood at arrival”) alongside flavor; keep blurbs for tone.
