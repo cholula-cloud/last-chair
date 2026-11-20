@@ -42,7 +42,6 @@ export const usePlacementDraft = create<{
   activeStroke: PaintStroke | null;
   /** The active stroke has reached its point cap. */
   strokeFull: boolean;
-  lodgeRequested: number;
 }>(() => ({
   active: false,
   showBuildGrid: false,
@@ -62,14 +61,12 @@ export const usePlacementDraft = create<{
   redo: [],
   activeStroke: null,
   strokeFull: false,
-  lodgeRequested: 0,
 }));
 
 export {
   cancelPlacement,
   finishPlacement,
   requestFocus,
-  requestLodge,
   startAssetPlacement,
   startGunPlacement,
   startPaintPlacement,

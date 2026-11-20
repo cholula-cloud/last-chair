@@ -78,10 +78,6 @@ export function finishPlacement() {
   useGameStore.getState().setBuildMode(false);
 }
 
-export function requestLodge() {
-  usePlacementDraft.setState((s) => s.active ? {} : { lodgeRequested: s.lodgeRequested + 1 });
-}
-
 export function requestFocus(points: import("@/game/terrain").XZ[]) {
   usePlacementDraft.setState((s) => ({
     focus: { points, nonce: (s.focus?.nonce ?? 0) + 1 },

@@ -11,6 +11,7 @@ import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { DAY_START_MIN, LIFT_LABELS, SNOW_LABELS } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
+import { LodgeUpgradeControl } from "./LodgeUpgradeControl";
 import { Sheet } from "./kit/Sheet";
 
 function assetDetails(state: GameState, target: AssetTarget): {
@@ -116,10 +117,9 @@ function assetDetails(state: GameState, target: AssetTarget): {
   }
 }
 
-export function AssetInspector({ target, onClose, onManageLodge }: {
+export function AssetInspector({ target, onClose }: {
   target: AssetTarget;
   onClose: () => void;
-  onManageLodge: () => void;
 }) {
   const state = useGameStore();
   const details = assetDetails(state, target);
@@ -163,9 +163,7 @@ export function AssetInspector({ target, onClose, onManageLodge }: {
           <span role="status" className="sr-only">{saved ? "Name saved." : ""}</span>
         </form>
       )}
-      {target.kind === "lodge" && (
-        <button type="button" className="key press mt-3 min-h-11 px-3 text-sm font-extrabold" onClick={onManageLodge}>Manage lodge</button>
-      )}
+      {target.kind === "lodge" && <LodgeUpgradeControl variant="inspector" />}
     </Sheet>
   );
 }

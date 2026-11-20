@@ -2,8 +2,8 @@
 
 import { CoachTip } from "./CoachTip";
 import { useState } from "react";
-import { liftName, lodgeName, venueName } from "@/game/assetNames";
-import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, nextLodgeTier, type AssetId } from "@/game/base";
+import { liftName, venueName } from "@/game/assetNames";
+import { ASSET_CATALOG, type AssetId } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
 import { constructionDraw } from "@/game/economy";
@@ -15,63 +15,7 @@ import { startAssetPlacement, startGunPlacement, startPlacement } from "@/ui/pla
 import { Sheet } from "@/ui/kit/Sheet";
 import { PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 import { TrailsPanel } from "@/ui/TrailsPanel";
-import { buildConfirmed } from "@/ui/feel";
-
-function LodgeCard() {
-  const tier = useGameStore((s) => s.lodgeTier);
-  const name = useGameStore(lodgeName);
-  const construction = useGameStore((s) => s.lodgeUpgrade);
-  const cash = useGameStore((s) => s.cash);
-  const upgrade = useGameStore((s) => s.beginLodgeUpgrade);
-  const [review, setReview] = useState(false);
-  const next = nextLodgeTier(tier);
-  const unlocks = next ? lodgeTierUnlocks(next) : [];
-  const payment = next ? constructionDraw(LODGE_TIERS[next].cost) : null;
-
-  return (
-    <div className="panel px-3.5 pb-4 pt-3.5" data-lodge-card>
-      <SectionHeading aside={`Tier ${tier}`}>{name}</SectionHeading>
-      <p className="text-sm font-bold">{LODGE_TIERS[tier].pads} attachment pads</p>
-      {construction ? (
-        <p role="status" className="mt-2 font-bold">
-          Tier {construction.toTier} is going up. {construction.nightsRemaining} {construction.nightsRemaining === 1 ? "night" : "nights"} to go.
-        </p>
-      ) : next && payment && (
-        <>
-          <p className="mt-2 text-sm font-bold">
-            Tier {next} brings {unlocks.length ? unlocks.join(", ") : "more lodge attachment pads"}.
-          </p>
-          {review ? (
-            <BuildImpactCard
-              title={`Upgrade to ${LODGE_TIERS[next].label}`}
-              facts={[
-                { label: "Total cost", value: formatMoney(LODGE_TIERS[next].cost) },
-                { label: "Payment", value: `${formatMoney(payment.deposit)} now, ${formatMoney(payment.first)} each of the next two nights` },
-                { label: "Construction", value: "Two nights" },
-                { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
-                ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
-              ]}
-              problem={cash < payment.deposit ? "Wallet says no. Close out the day, then come back with the deposit." : null}
-              confirmLabel="Start lodge upgrade"
-              onCancel={() => setReview(false)}
-              onConfirm={() => {
-                upgrade();
-                if (useGameStore.getState().lodgeUpgrade) {
-                  buildConfirmed(`Lodge Tier ${next} is under way.`);
-                }
-                setReview(false);
-              }}
-            />
-          ) : (
-            <PrimaryButton className="mt-2 min-h-11" onClick={() => setReview(true)}>
-              Review Tier {next} upgrade
-            </PrimaryButton>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
+import { LodgeUpgradeControl } from "@/ui/LodgeUpgradeControl";
 
 function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void }) {
   const state = useGameStore();
@@ -147,7 +91,6 @@ export function BuildSheet({
           : "Paint a trail from the lift’s top station down to the base."}
       </p>}
       <div className="grid gap-3 short:grid-cols-2 short:items-start">
-        {!opening && <LodgeCard />}
         <div className="panel px-3.5 pb-4 pt-3.5">
           <SectionHeading>Lifts</SectionHeading>
           <p className="mb-2 text-xs font-bold">Pay 40% now, then 30% each of the next two nights.</p>
@@ -197,6 +140,7 @@ export function BuildSheet({
               );
             })}
           </div>
+          {!opening && <LodgeUpgradeControl variant="compact" />}
           <VenueManagement onStartPlacement={onStartPlacement} />
           <SectionHeading>Snow</SectionHeading>
           <button type="button" className="key press min-h-11 px-3 font-extrabold"
