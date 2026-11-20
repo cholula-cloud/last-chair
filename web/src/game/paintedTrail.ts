@@ -28,6 +28,13 @@ const MAX_SAVED_TRAILS = 24;
 const MAX_DRAFT_POINTS = 2_048;
 const MAX_TRAIL_SAMPLES = 768;
 const DRAFT_TOO_LONG = "That draft’s too long. Undo a stroke or paint a shorter run.";
+/**
+ * A stroke connects to the village only when it ends this share of the base area (in world units,
+ * `baseAreaRadius`) from `terrain.base`. Ending anywhere else leaves the line where the player put it.
+ */
+export const BASE_CONNECT_FRACTION = 0.4;
+/** A stroke end joins another trail only inside this share of the horizontal scale H. */
+export const TRAIL_JOIN_FRACTION = 1 / 20;
 const DISCONNECTED_STROKE = "Start your next stroke at the end of the draft.";
 
 export type PaintStroke = {
@@ -365,8 +372,8 @@ export function previewPaintedTrail(
   const enterByTrail = start && (nearestLift < 0 || start.distance < nearestDistance);
   const liftIndex = enterByTrail ? state.trails[start.index].liftIndex : nearestLift;
   const end = path.at(-1);
-  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseRadius;
-  const finish = !disconnected && !atBase && end && trailHit(end, state, H / 6);
+  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseRadius * BASE_CONNECT_FRACTION;
+  const finish = !disconnected && !atBase && end && trailHit(end, state, H * TRAIL_JOIN_FRACTION);
   if (path.length && liftIndex >= 0) path[0] = enterByTrail ? start.at : state.lifts[liftIndex].anchor;
   if (path.length > 1 && finish) path[path.length - 1] = finish.at;
   if (path.length > 1 && atBase && end && distance(end, terrain.base) > 1e-8) {

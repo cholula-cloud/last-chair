@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { previewPaintedTrail, simplifyStroke, type PaintStroke } from "./paintedTrail";
+import { rulesFor } from "./descent";
+import {
+  BASE_CONNECT_FRACTION, previewPaintedTrail, simplifyStroke, TRAIL_JOIN_FRACTION, type PaintStroke,
+} from "./paintedTrail";
 import { freshTrail } from "./snow";
 import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain, type XZ } from "./terrain";
@@ -226,5 +229,53 @@ describe("trail paint geometry", () => {
     const preview = previewPaintedTrail({ lifts: [lift(top)], trails: [starter] }, [stroke(path)]);
     expect(preview.reason).toBeNull();
     expect(preview.trailIndex).toBeNull();
+  });
+});
+
+describe("trail endpoints", () => {
+  const H = slope.scale.horizontal;
+  const connect = rulesFor(slope).baseAreaRadius * BASE_CONNECT_FRACTION;
+  const join = H * TRAIL_JOIN_FRACTION;
+  const down = (end: XZ) => [mainLift.anchor, p(2, 7), p(3, 10), end];
+
+  it("leaves a run that ends above the village where the player put it", () => {
+    const end = p(3, 13);
+    const draft = previewPaintedTrail(plain, [stroke(down(end))], slope);
+    expect(draft.reason).toBeNull();
+    expect(draft.path.at(-1)).toEqual(end);
+  });
+
+  it("stays put in the band between the connect radius and the lift-bottom area", () => {
+    const area = rulesFor(slope).baseAreaRadius;
+    const end = p(0, slope.base.z - (connect + area) / 2);
+    const draft = previewPaintedTrail(plain, [stroke([mainLift.anchor, p(2, 7), end])], slope);
+    expect(draft.path.at(-1)).toEqual(end);
+  });
+
+  it("connects to the base when the stroke ends inside the connect radius", () => {
+    const end = p(0.2, slope.base.z - connect * 0.5);
+    const draft = previewPaintedTrail(plain, [stroke(down(end))], slope);
+    expect(draft.reason).toBeNull();
+    expect(draft.path.at(-1)).toEqual(slope.base);
+    expect(draft.draftEnd).toEqual(end);
+  });
+
+  it("joins another trail only when the end is within the join radius", () => {
+    const state = { ...plain, trails: [existing()] };
+    const branch = (end: XZ) => [p(2, 7), p(6, 9), end];
+    const onTrail = p(1.5, 15);
+    const near = previewPaintedTrail(state, [stroke(branch(p(onTrail.x + join * 0.5, onTrail.z)))], slope);
+    expect(near.path.at(-1)).toEqual(slope.base);
+    const far = p(onTrail.x + join * 3, onTrail.z);
+    const apart = previewPaintedTrail(state, [stroke(branch(far))], slope);
+    expect(apart.path.at(-1)).toEqual(far);
+  });
+
+  it("keeps a far-off end valid for guests, who walk back from it", () => {
+    const end = p(9, 14);
+    const draft = previewPaintedTrail(plain, [stroke([mainLift.anchor, p(5, 8), end])], slope);
+    expect(draft.reason).toBeNull();
+    expect(draft.path.at(-1)).toEqual(end);
+    expect(draft.cost).toBeGreaterThan(0);
   });
 });

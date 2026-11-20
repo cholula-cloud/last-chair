@@ -13,6 +13,7 @@ const EDGE_BAND = 0.09;
 /** Cross-sections across the fill between the two edge bands. */
 const FILL_STEPS = 4;
 const RIBBON_OPACITY = 0.85;
+const CONTEXT_OPACITY = 0.7;
 
 /** Columns across the ribbon: the edge band, a hard step, the fill, a hard step, the edge band. */
 const COLUMNS: { s: number; edge: boolean }[] = (() => {
@@ -100,21 +101,23 @@ type TrailRibbonProps = {
   problemSegments: readonly number[];
   /** A finger is still painting: build a lighter ribbon, full detail follows on release. */
   live?: boolean;
+  /** Confirmed trails shown behind a draft: dimmer, and drawn under it. */
+  context?: boolean;
 };
 
 /** The painted trail on the snow. The geometry is rebuilt only when the stroke or its colour changes. */
-export function TrailRibbon({ path, widths, color, problemSegments, live = false }: TrailRibbonProps) {
+export function TrailRibbon({ path, widths, color, problemSegments, live = false, context = false }: TrailRibbonProps) {
   const geometry = useMemo(
     () => ribbonGeometry(path, widths, ribbonSegmentCount(path.length, live), color, problemSegments),
     [path, widths, color, problemSegments, live],
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <mesh geometry={geometry} renderOrder={2} frustumCulled={false}>
+    <mesh geometry={geometry} renderOrder={context ? 1 : 2} frustumCulled={false}>
       <meshBasicMaterial
         vertexColors
         transparent
-        opacity={RIBBON_OPACITY}
+        opacity={context ? CONTEXT_OPACITY : RIBBON_OPACITY}
         depthWrite={false}
         toneMapped={false}
         polygonOffset
