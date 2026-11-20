@@ -10,6 +10,7 @@ import { ReplayNotes } from "./ReplayNotes";
 import { DeskTab } from "@/ui/OfficeDesk";
 import { SettingsControls } from "@/ui/SettingsControls";
 import { CloseIcon } from "@/ui/kit/icons";
+import { motionPref } from "@/ui/motion";
 
 type Panel = "tabs" | "settings" | "slots";
 
@@ -40,12 +41,7 @@ function centreTab(strip: HTMLElement | null, instant: boolean) {
 }
 
 function prefersReducedMotion(): boolean {
-  if (document.documentElement.dataset.reduceMotion === "true") return true;
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
+  return motionPref.get();
 }
 
 function Slots({ onLeave, onBack }: { onLeave: () => void; onBack: () => void }) {
