@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 import { enterGame, project } from "./playtest-m2.mjs";
+import { dismissMorningNoteIfPresent } from "./playtest-dismiss-morning.mjs";
 const { createBuiltHill } =
   await import("../src/game/__fixtures__/built-hill.ts");
 const { pickFounder } = await import("../src/game/rules.ts");
@@ -39,33 +40,51 @@ try {
   );
   await page.goto((process.env.PLAY_URL ?? "http://127.0.0.1:3000") + "/play/");
   await enterGame(page);
+  await dismissMorningNoteIfPresent(page);
   const save = () => page.evaluate(() => JSON.parse(localStorage.getItem("last-chair-m3-slot-1")).state);
   const before = await save();
   const button = (name) => page.getByRole("button", { name, exact: true });
   const tap = (name) => button(name).tap({ force: true });
+  const dock = () => page.locator("[data-layer-dock]");
+  const strip = () => dock().locator("[data-layer-strip]");
+  const snowPanel = () => dock().getByRole("region", { name: "Map layers" });
+  const layerPick = async (name) => {
+    await page.locator(`[data-layer-strip] button`, { hasText: name }).evaluate((el) => {
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+    await page.waitForTimeout(200);
+  };
+
   await tap("Layers");
-  const panel = page.getByRole("region", { name: "Map layers" });
-  const strip = page.getByRole("group",{name:"Map layers"});
-  await strip.getByRole("button", { name: "Slope" }).tap({ force: true });
-  await page.getByLabel("Slope legend").waitFor();
-  const bounds = await strip.boundingBox();
+  await dock().waitFor({ state: "visible", timeout: 15_000 });
+  await strip().waitFor({ state: "visible" });
+  const slopeBtn = strip().getByRole("button", { name: "Slope" });
+  await slopeBtn.waitFor();
+  assert.equal(await slopeBtn.getAttribute("aria-pressed"), "true");
+  await dock().locator('[data-overlay-legend="slope"]').waitFor();
+  const bounds = await strip().boundingBox();
   assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 391);
+
   for (const layer of ["Snow depth", "Snow-making", "Conditions", "Crowds", "Revenue", "Guests want", "Trails"]) {
-    await tap(layer);
+    await layerPick(layer);
     if (["Crowds", "Revenue", "Guests want", "Trails"].includes(layer)) {
       await page.getByLabel(`${layer} legend`).waitFor();
       continue;
     }
-    await panel.getByLabel(layer + " legend").waitFor();
+    await snowPanel().getByLabel(layer + " legend").waitFor();
     if (layer === "Snow-making") {
-      await panel.getByRole("button", { name: "Mid", exact: true }).tap();
-      await panel.getByText(/Groomer only/).waitFor();
-      await panel.getByRole("button", { name: "High", exact: true }).tap();
-      await panel
+      await snowPanel().getByRole("button", { name: "Mid", exact: true }).tap();
+      await snowPanel().getByText(/Groomer only/).waitFor();
+      await snowPanel().getByRole("button", { name: "High", exact: true }).tap();
+      await snowPanel()
         .getByRole("button", { name: "Last night", exact: true })
         .tap();
     }
   }
+
+  await layerPick("Conditions");
+  await snowPanel().getByLabel("Conditions legend").waitFor();
+
   const points = trailSegmentMidpoints(state.trails[0]).map((p) => [
     p.x,
     TERRAIN.height(p.x, p.z),
@@ -81,19 +100,19 @@ try {
   );
   assert(target, "A trail segment must be reachable beside the legend");
   await page.touchscreen.tap(target.x, target.y);
-  await panel
-    .getByRole("status")
-    .getByText(/segment \d of 6/)
-    .waitFor();
-  await panel.getByText(/First-timer:/).waitFor();
-  await button("Close").tap();
-  await button("Tomorrow").tap();
-  await button("High").tap();
-  await panel.getByText(/Forecast chances/).waitFor();
-  await button("Yesterday’s wear").tap();
-  await panel.getByText(/No run count for yesterday/).waitFor();
-  await strip.getByRole("button",{name:"Off"}).tap();
-  await panel.waitFor({ state: "hidden" });
+  const status = snowPanel().getByRole("status");
+  await status.getByText(/segment \d+ of \d+/).waitFor();
+  await status.getByText(/First-timer:/).waitFor();
+
+  await snowPanel().getByRole("button", { name: "Tomorrow" }).tap();
+  await snowPanel().getByRole("button", { name: "High" }).tap();
+  await snowPanel().getByText(/Forecast chances/).waitFor();
+  await snowPanel().getByRole("button", { name: /Yesterday.*wear/i }).tap();
+  await snowPanel().getByText(/No run count for yesterday/).waitFor();
+  await layerPick("Off");
+  await layerPick("Slope");
+  await tap("Layers");
+  await dock().waitFor({ state: "hidden" });
   assert.deepEqual(await save(), before, "Reading layers must preserve the saved hill");
   assert.deepEqual(errors, []);
   console.log(

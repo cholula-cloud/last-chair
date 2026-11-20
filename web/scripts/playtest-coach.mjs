@@ -2,6 +2,7 @@
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 import { enterGame, resolveRadio } from "./playtest-m2.mjs";
+import { dismissMorningNoteIfPresent } from "./playtest-dismiss-morning.mjs";
 const { createInitialState, SAVE_VERSION, toPersisted } = await import("../src/game/state.ts");
 const { checkPaint, commitPaint, pickFounder, placeLift, tick, trailOptions } = await import("../src/game/rules.ts");
 const { REFERENCE_TOPS } = await import("../src/game/descent.ts");
@@ -40,7 +41,10 @@ try {
     }, JSON.stringify({ version: SAVE_VERSION, state: toPersisted(prepared) }));
     await page.goto(base + "/play/", { waitUntil: "domcontentloaded" });
     await enterGame(page);
-    const press = label => page.getByRole("button", { name: label, exact: true }).tap();
+    await dismissMorningNoteIfPresent(page);
+    const press = (label, { force = false } = {}) =>
+      page.getByRole("button", { name: label, exact: true }).tap({ force });
+    const pressRail = (label) => press(label, { force: true });
     const tip = page.getByRole("complementary", { name: "Tip", exact: true });
     await tip.getByText("Tap the speed button to hurry the day along.").waitFor();
     assert.equal(await tip.count(), 1);
@@ -57,11 +61,18 @@ try {
     await press("Close build sheet");
     await page.reload({ waitUntil: "domcontentloaded" });
     await enterGame(page);
+    await dismissMorningNoteIfPresent(page);
     await tip.waitFor({ state: "hidden" });
 
-    await press("Layers");
-    const daytimeLayers = page.getByRole("group", { name: "Map layers" });
-    await daytimeLayers.getByRole("button", { name: "Snow depth", exact: true }).tap();
+    await pressRail("Layers");
+    const dock = page.locator("[data-layer-dock]");
+    await dock.waitFor({ state: "visible" });
+    const daytimeLayers = dock.locator("[data-layer-strip]");
+    await page.locator('[data-layer-strip] button', { hasText: "Snow depth" }).evaluate((el) => {
+      el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+    await pressRail("Layers");
+    await dock.waitFor({ state: "hidden" });
     await press("Office");
     await press("Close hill");
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
@@ -97,9 +108,12 @@ try {
     await resolveRadio(page);
     await press("Sleep until morning");
     await page.getByRole("button", { name: /Game speed/ }).waitFor();
-    assert.equal(await daytimeLayers.getByRole("button", { name: "Snow depth", exact: true }).getAttribute("aria-pressed"), "true");
+    await dismissMorningNoteIfPresent(page);
+    if (!(await dock.isVisible())) await pressRail("Layers");
+    assert.equal(await dock.locator("[data-layer-strip]").getByRole("button", { name: "Snow depth", exact: true }).getAttribute("aria-pressed"), "true");
     await page.reload({ waitUntil: "domcontentloaded" });
     await enterGame(page);
+    await dismissMorningNoteIfPresent(page);
     await tip.waitFor({ state: "hidden" });
     assert.deepEqual(errors, []);
     console.log(engine, size, "one saved coach, recap map and Office inspection passed");

@@ -7,7 +7,7 @@ import path from "node:path";
 import "./register-game.mjs";
 import { chromium } from "playwright";
 
-const [{ createBuiltHill }, { pickFounder }, { SAVE_KEY, SAVE_VERSION, toPersisted }] = await Promise.all([
+const [{ createBuiltHill }, { pickFounder }, { SAVE_VERSION, toPersisted }] = await Promise.all([
   import("../src/game/__fixtures__/built-hill.ts"),
   import("../src/game/rules.ts"),
   import("../src/game/state.ts"),
@@ -82,6 +82,17 @@ try {
   if (!(await legend.isVisible())) fail("Slope legend missing from bottom dock");
   await shot(page, "02-layers-slope-strip");
   await page.getByRole("button", { name: "Layers" }).click();
+  await page.waitForTimeout(300);
+
+  await page.getByRole("button", { name: "Build" }).click();
+  await page.getByRole("button", { name: /Paint a trail/i }).click();
+  await page.locator('[data-placement-kind="trail"]').waitFor({ timeout: 15_000 });
+  const paintDock = page.locator('[data-overlay-legend="slope"]');
+  if (!(await paintDock.isVisible())) {
+    fail("Slope legend missing above placement bar during trail paint (#106/#110)");
+  }
+  await shot(page, "02b-trail-paint-slope-legend");
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.waitForTimeout(300);
 
   await page.getByRole("button", { name: "Grid off" }).click();
