@@ -63,6 +63,25 @@ export function autoPickTalent(state: Pick<GameState, "talentsOwned" | "lodgeTie
   return next.id;
 }
 
+export const CREW_RUSH_COST = 2000;
+
+/** Spend every unspent crew point in roster order (balance harness and sleep fallback). */
+export function spendAllCrewPoints(state: GameState): { state: GameState; picked: TalentId[] } {
+  let next = state;
+  const picked: TalentId[] = [];
+  while (next.crewPoints > 0) {
+    const talent = CREW_TALENTS.find((t) => !next.talentsOwned.includes(t.id));
+    if (!talent) break;
+    const need = talentRequiresTier(talent.id);
+    if (next.lodgeTier < need) next = { ...next, lodgeTier: need };
+    const before = next.talentsOwned.length;
+    next = pickTalent(next, talent.id);
+    if (next.talentsOwned.length > before) picked.push(talent.id);
+    else break;
+  }
+  return { state: next, picked };
+}
+
 /** Layout positions for the talent tree (column = crew). */
 export const TALENT_TREE_ROW: Record<TalentId, number> = Object.fromEntries(
   CREW_TALENTS.map((t, i) => [t.id, i]),

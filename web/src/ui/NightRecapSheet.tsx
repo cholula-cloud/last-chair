@@ -14,6 +14,7 @@ import { talentDescription } from "@/game/content";
 import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { revenueBreakdownFromRecap } from "@/game/officeSeries";
 import { nextTalentName, type NightRecap } from "@/game/sim";
+import { pickableTalents, CREW_RUSH_COST } from "@/game/talentProgress";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
@@ -386,6 +387,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const markTipSeen = useGameStore(s => s.markTipSeen);
   const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
+  const rushCrewPoint = useGameStore((s) => s.rushCrewPoint);
 
   const recap = night?.nightRecap;
   if (!night || !recap) return null;
@@ -419,11 +421,34 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             setPendingSnow={setPendingSnow}
           />}
 
-          {dayIndex < night.seasonLength && nextTalent && (
-            <p className="chip mt-4 px-3.5 py-2.5 text-[0.92rem] font-bold">
-              Overnight, the crew picks up{" "}
-              <span className="font-extrabold text-sign-green">{talentDescription(nextTalent, night)}</span>
-            </p>
+          {dayIndex < night.seasonLength && (
+            <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
+              {night.crewPoints > 0 ? (
+                <p>
+                  <span className="font-extrabold text-sign-green">{night.crewPoints}</span> crew{" "}
+                  {night.crewPoints === 1 ? "point" : "points"} saved. Pick in Office before sleep, or turn in to auto-hire
+                  in roster order.
+                </p>
+              ) : nextTalent ? (
+                <p>Earn one crew point when you sleep. Next on the board: {talentDescription(nextTalent, night)}.</p>
+              ) : null}
+              {pickableTalents(night).length > 0 && (
+                <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => onOffice("Crew")}>
+                  Pick crew talent
+                </button>
+              )}
+              {night.crewRushDay !== dayIndex &&
+                night.cash >= CREW_RUSH_COST &&
+                pickableTalents({ ...night, crewPoints: night.crewPoints + 1 }).length > 0 && (
+                  <button
+                    type="button"
+                    className="key press min-h-11 w-full px-3 text-xs font-extrabold"
+                    onClick={() => rushCrewPoint()}
+                  >
+                    Rush hire (+1 point, {formatMoney(CREW_RUSH_COST)})
+                  </button>
+                )}
+            </div>
           )}
         </>
       }

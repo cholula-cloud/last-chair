@@ -17,9 +17,7 @@ import {
   takeLoan,
   trailOptions,
 } from "./rules";
-import { pickTalent, talentRequiresTier } from "./talentProgress";
-import { CREW_TALENTS } from "./talents";
-import type { LodgeTier } from "./base";
+import { spendAllCrewPoints } from "./talentProgress";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
 import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
@@ -37,17 +35,7 @@ import { outlookFor } from "./weather";
 
 /** Headless seasons auto-spend crew points in roster order, like the old overnight auto-learn. */
 function spendCrewPoints(state: GameState): GameState {
-  let next = state;
-  while (next.crewPoints > 0) {
-    const talent = CREW_TALENTS.find((t) => !next.talentsOwned.includes(t.id));
-    if (!talent) break;
-    const need = talentRequiresTier(talent.id);
-    if (next.lodgeTier < need) next = { ...next, lodgeTier: need as LodgeTier };
-    const before = next.talentsOwned.length;
-    next = pickTalent(next, talent.id);
-    if (next.talentsOwned.length === before) break;
-  }
-  return next;
+  return spendAllCrewPoints(state).state;
 }
 
 /**

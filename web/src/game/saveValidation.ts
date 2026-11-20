@@ -167,6 +167,7 @@ const fields: Record<keyof PersistedState, Check> = {
   selectedLiftType: liftType,
   talentsOwned: array(string),
   crewPoints: index,
+  crewRushDay: index,
   completedBeats: array(beat),
   summitLinkDecision: nullable(summitLinkDecision),
   tipsSeen: array(string),

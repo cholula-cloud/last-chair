@@ -4,8 +4,6 @@ import { CREW_TALENTS, talentDescription } from "./content";
 import { operatingCosts } from "./economy";
 import { liftCapacityPerHour } from "./lifts";
 import { acknowledgeBeat, openNight, pickCrewTalent, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
-import { canUnlockTalent, talentRequiresTier } from "./talentProgress";
-import type { LodgeTier } from "./base";
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
 import { freshTrail } from "./snow";
@@ -27,11 +25,7 @@ describe("crew order and operations", () => {
     let state = { ...hill, cash: 100_000 };
     for (const talent of CREW_TALENTS) {
       state = sleep(acknowledgeBeat(openNight(state)));
-      expect(state.crewPoints).toBeGreaterThan(0);
-      while (!canUnlockTalent(state, talent.id) && state.lodgeTier < talentRequiresTier(talent.id)) {
-        state = { ...state, lodgeTier: (state.lodgeTier + 1) as LodgeTier };
-      }
-      state = pickCrewTalent(state, talent.id);
+      expect(state.crewPoints).toBe(0);
       expect(state.talentsOwned.at(-1)).toBe(talent.id);
     }
     expect(state.dayIndex).toBe(21);
@@ -46,8 +40,7 @@ describe("crew order and operations", () => {
     const loaded = migrate(JSON.parse(JSON.stringify(saved)), SAVE_VERSION);
     expect(loaded.reset).toBe(false);
     expect(loaded.state.talentsOwned).toEqual(owned);
-    let morning = sleep(acknowledgeBeat(openNight({ ...hill, ...loaded.state, crewPoints: 0 })));
-    morning = pickCrewTalent({ ...morning, crewPoints: 1 }, "ticket_booth");
+    const morning = sleep(acknowledgeBeat(openNight({ ...hill, ...loaded.state, crewPoints: 0 })));
     expect(morning.talentsOwned).toEqual([...owned, "ticket_booth"]);
   });
   it("rope tow saves $40 per open surface lift", () => {

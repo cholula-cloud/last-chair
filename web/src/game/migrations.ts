@@ -92,6 +92,13 @@ export const MIGRATIONS: readonly Migration[] = [
       return { ...raw, crewPoints: typeof raw.crewPoints === "number" ? raw.crewPoints : 0 };
     },
   },
+  {
+    to: 10,
+    note: "Track optional cash rush for a second crew point per night.",
+    up(raw) {
+      return { ...raw, crewRushDay: typeof raw.crewRushDay === "number" ? raw.crewRushDay : 0 };
+    },
+  },
 ];
 
 type MigrationResult =

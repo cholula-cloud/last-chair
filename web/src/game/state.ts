@@ -130,6 +130,8 @@ export type PersistedState = {
   talentsOwned: string[];
   /** Unspent crew points from nightly crew meetings; spend in Office to unlock talents. */
   crewPoints: number;
+  /** dayIndex when the player last bought a rush crew point (one per closing). */
+  crewRushDay: number;
   completedBeats: StoryBeatId[];
   summitLinkDecision: SummitLinkDecision | null;
   /** Coach tips the player has already seen this winter (see coach.ts). */
@@ -224,6 +226,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     selectedLiftType: "surface",
     talentsOwned: [],
     crewPoints: 0,
+    crewRushDay: 0,
     completedBeats: [],
     summitLinkDecision: null,
     tipsSeen: [],
@@ -286,6 +289,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     selectedLiftType: state.selectedLiftType,
     talentsOwned: state.talentsOwned,
     crewPoints: state.crewPoints,
+    crewRushDay: state.crewRushDay,
     completedBeats: state.completedBeats,
     summitLinkDecision: state.summitLinkDecision,
     tipsSeen: state.tipsSeen,
@@ -322,4 +326,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;

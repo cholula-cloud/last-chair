@@ -38,6 +38,18 @@ export const LAYERS = {
   demand: "Guests want",
   trails: "Trails",
 } as const;
+
+/** Short labels for the compact layer strip (see OverlayControls). */
+export const LAYER_SHORT: Record<MapLayer, string> = {
+  slope: "Slope",
+  depth: "Depth",
+  guns: "Guns",
+  conditions: "Cond.",
+  crowds: "Crowd",
+  revenue: "Rev.",
+  demand: "Want",
+  trails: "Runs",
+};
 export type MapLayer = keyof typeof LAYERS;
 export type SnowLayer = "depth" | "guns" | "conditions";
 export type OpsLayer = "crowds" | "revenue" | "demand";

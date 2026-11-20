@@ -50,14 +50,18 @@ export function LayerLegend({
   );
 }
 
-export function LayerPanel({ layer }: { layer: SnowLayer }) {
+export function LayerPanel({ layer, compact = false }: { layer: SnowLayer; compact?: boolean }) {
   const { time, preset, point, wear, gunView } = useLayers();
   const { state, model } = useLayerSnapshot(layer);
   const read = point && readPoint(state, model, layer, point, wear, gunView);
   return (
     <section
       aria-label="Map layers"
-      className="panel pointer-events-auto max-h-[37dvh] w-[min(92vw,25rem)] space-y-2 overflow-y-auto overscroll-contain p-2"
+      className={
+        compact
+          ? "panel pointer-events-auto w-full space-y-2 p-2"
+          : "panel pointer-events-auto max-h-[37dvh] w-[min(92vw,25rem)] space-y-2 overflow-y-auto overscroll-contain p-2"
+      }
     >
       {layer === "guns" && (
         <div className="flex gap-1" aria-label="Snow-making service">
@@ -119,24 +123,26 @@ export function LayerPanel({ layer }: { layer: SnowLayer }) {
                 ))}
               </div>
               {model.forecast && (
-                <p className="text-xs">
-                  Forecast chances:{" "}
-                  {Object.entries(model.forecast)
-                    .map(([kind, odds]) => `${kind} ${Math.round(odds * 100)}%`)
-                    .join(", ")}
-                  .
-                </p>
+                <div className="flex flex-wrap gap-1" aria-label="Forecast chances">
+                  {Object.entries(model.forecast).map(([kind, odds]) => (
+                    <span key={kind} className="chip px-1.5 py-0.5 text-[0.65rem] font-extrabold">
+                      {kind} {Math.round(odds * 100)}%
+                    </span>
+                  ))}
+                </div>
               )}
             </>
           )}
         </>
       )}
-      <LayerLegend
-        layer={layer}
-        gunView={gunView}
-        wear={layer === "conditions" && wear}
-      />
-      <p className="text-xs font-bold text-ink-soft">Tap or hold the hill.</p>
+      {!compact && (
+        <LayerLegend
+          layer={layer}
+          gunView={gunView}
+          wear={layer === "conditions" && wear}
+        />
+      )}
+      {!compact && <p className="text-xs font-bold text-ink-soft">Tap or hold the hill.</p>}
       {read && (
         <div role="status" className="border-t border-ink pt-1 text-xs">
           <strong>{read.title}</strong>
