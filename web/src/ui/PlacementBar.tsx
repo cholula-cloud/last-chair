@@ -74,6 +74,12 @@ function MoveMapButton({ resumeLabel, className = actionClass }: { resumeLabel: 
   );
 }
 
+/** Non-blocking: a run that ends away from the lift is legal; guests just walk home from it. */
+export function walkBackNote({ ft, minutes }: { ft: number; minutes: number }) {
+  const min = Math.max(1, Math.round(minutes));
+  return `Ends ${Math.round(ft).toLocaleString("en-US")} ft from the base. Guests will hoof it back, about ${min} min.`;
+}
+
 function TrailBar() {
   const draft = usePlacementDraft();
   const state = useGameStore();
@@ -100,6 +106,7 @@ function TrailBar() {
           { label: "Length", value: feet(preview.lengthFt) },
           { label: "Vertical", value: feet(preview.verticalFt) },
           { label: "Area", value: acres(preview.acres) },
+          ...(preview.walkBack ? [{ label: "Walk back", value: walkBackNote(preview.walkBack) }] : []),
           { label: "Who can ski", value: guests || "Nobody yet" },
           { label: "Lodge tier", value: "1" },
           ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade)) }] : []),

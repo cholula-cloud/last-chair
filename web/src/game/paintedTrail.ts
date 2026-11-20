@@ -28,6 +28,25 @@ const MAX_SAVED_TRAILS = 24;
 const MAX_DRAFT_POINTS = 2_048;
 const MAX_TRAIL_SAMPLES = 768;
 const DRAFT_TOO_LONG = "That draft’s too long. Undo a stroke or paint a shorter run.";
+/**
+ * A stroke connects to the village only when it ends this share of the base area (in world units,
+ * `baseAreaRadius`) from `terrain.base`. Ending anywhere else leaves the line where the player put it.
+ */
+export const BASE_CONNECT_FRACTION = 0.4;
+/** A stroke end joins another trail only inside this share of the horizontal scale H. */
+export const TRAIL_JOIN_FRACTION = 1 / 20;
+/** A finger lands a little off the ribbon edge; this margin (world units) is added to a trail's half-width. */
+const JOIN_FINGER_MARGIN = 0.15;
+/** The base connect circle always clears the brush by this much (world units). */
+const BASE_BRUSH_MARGIN = 0.5;
+
+/** World-unit radius within which a stroke of this brush width ends "at the base" and connects to it. */
+export function baseConnectRadius(terrain: Terrain, widthFt: number): number {
+  return Math.max(
+    rulesFor(terrain).baseAreaRadius * BASE_CONNECT_FRACTION,
+    widthFt / (2 * terrain.horizontalFeetPerUnit) + BASE_BRUSH_MARGIN,
+  );
+}
 const DISCONNECTED_STROKE = "Start your next stroke at the end of the draft.";
 
 export type PaintStroke = {
@@ -54,6 +73,8 @@ export type PaintedTrailPreview = {
   deleteTrail: boolean;
   reason: string | null;
   problemSegments: number[];
+  /** Set when the run ends away from where guests are collected; the sim walks them back. */
+  walkBack: { ft: number; minutes: number } | null;
 };
 
 type PaintState = Pick<GameState, "lifts" | "trails">;
@@ -131,13 +152,17 @@ function onExistingTrail(p: XZ, state: PaintState): boolean {
   return state.trails.some((trail) => withinPath(p, trail.path, 0.05));
 }
 
-function trailHit(p: XZ, state: PaintState, radius: number) {
+/** `byWidth` widens the radius to the trail's own half-width at the segment, plus a finger margin. */
+function trailHit(p: XZ, state: PaintState, radius: number, terrain?: Terrain, byWidth = false) {
   let best: { index: number; segment: number; at: XZ; distance: number } | null = null;
   for (const [index, trail] of state.trails.entries()) {
     if (!trail.open || !state.lifts[trail.liftIndex]?.confirmed) continue;
     for (let i = 1; i < trail.path.length; i++) {
       const hit = project(p, trail.path[i - 1], trail.path[i]);
-      if (hit.distance <= radius && (!best || hit.distance < best.distance)) {
+      const reach = byWidth && terrain
+        ? Math.max(radius, Math.max(trailWidth(trail, i - 1), trailWidth(trail, i)) / (2 * terrain.horizontalFeetPerUnit) + JOIN_FINGER_MARGIN)
+        : radius;
+      if (hit.distance <= reach && (!best || hit.distance < best.distance)) {
         best = { index, segment: i - 1, at: hit.at, distance: hit.distance };
       }
     }
@@ -248,6 +273,15 @@ function summarize(path: XZ[], widths: number[], terrain: Terrain) {
   };
 }
 
+/** Mirrors the sim: a run ending over half a unit from the lift bottom (or base) is walked back at 250 ft per minute. */
+function walkBackFor(end: XZ | undefined, bottom: XZ | undefined, terrain: Terrain) {
+  if (!end) return null;
+  const gap = distance(end, bottom ?? terrain.base);
+  if (gap <= 0.5) return null;
+  const ft = gap * terrain.horizontalFeetPerUnit;
+  return { ft, minutes: ft / 250 };
+}
+
 function rejectedPreview(reason: string): PaintedTrailPreview {
   return {
     path: [],
@@ -265,6 +299,7 @@ function rejectedPreview(reason: string): PaintedTrailPreview {
     deleteTrail: false,
     reason,
     problemSegments: [],
+    walkBack: null,
   };
 }
 
@@ -305,6 +340,7 @@ function editTrail(state: PaintState, trailIndex: number, strokes: readonly Pain
     trailIndex,
     deleteTrail,
     reason,
+    walkBack: null,
     problemSegments: path.flatMap((_, i) => i + 1 < widths.length && (!widths[i] || !widths[i + 1]) ? [i] : []),
   };
 }
@@ -365,8 +401,8 @@ export function previewPaintedTrail(
   const enterByTrail = start && (nearestLift < 0 || start.distance < nearestDistance);
   const liftIndex = enterByTrail ? state.trails[start.index].liftIndex : nearestLift;
   const end = path.at(-1);
-  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseRadius;
-  const finish = !disconnected && !atBase && end && trailHit(end, state, H / 6);
+  const atBase = !disconnected && !!end && distance(end, terrain.base) <= baseConnectRadius(terrain, active.at(-1)?.widthFt ?? STANDARD_BRUSH_WIDTH);
+  const finish = !disconnected && !atBase && end && trailHit(end, state, H * TRAIL_JOIN_FRACTION, terrain, true);
   if (path.length && liftIndex >= 0) path[0] = enterByTrail ? start.at : state.lifts[liftIndex].anchor;
   if (path.length > 1 && finish) path[path.length - 1] = finish.at;
   if (path.length > 1 && atBase && end && distance(end, terrain.base) > 1e-8) {
@@ -445,5 +481,6 @@ export function previewPaintedTrail(
     deleteTrail: false,
     reason,
     problemSegments,
+    walkBack: walkBackFor(full.path.at(-1), liftIndex >= 0 ? state.lifts[liftIndex]?.bottom : undefined, terrain),
   };
 }

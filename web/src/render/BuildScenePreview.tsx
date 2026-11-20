@@ -10,10 +10,13 @@ import { usePlacementDraft } from "@/ui/placementDraft";
 import { liftReadout } from "@/ui/liftGesture";
 import { BrushCursor } from "./BrushCursor";
 import { LiftGhost } from "./LiftGhost";
-import { DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
+import { baseConnectRadius, STANDARD_BRUSH_WIDTH } from "@/game/paintedTrail";
+import { contextColor, DIFFICULTY_COLOR, ribbonColor } from "./paintAssist";
 import { PALETTE } from "./palette";
 import { LIFT_BUILD_ANCHORS } from "./placementTap";
 import { TrailRibbon } from "./TrailRibbon";
+
+const NO_PROBLEMS: readonly number[] = [];
 
 function TerrainRing({ at, radius, color, guide = false, name }: {
   name?: string;
@@ -106,6 +109,7 @@ function TrailPreview() {
   const phase = useGameStore((s) => s.phase);
   const clearedCells = useGameStore((s) => s.clearedCells);
   const glade = usePlacementDraft((s) => s.glade);
+  const brushWidth = usePlacementDraft((s) => s.brushWidth);
   const all = useMemo(
     () => activeStroke ? [...strokes, activeStroke] : strokes,
     [strokes, activeStroke],
@@ -116,21 +120,36 @@ function TrailPreview() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- the slices below are what the check reads
     [lifts, trails, cash, phase, clearedCells, all, glade],
   );
+  const confirmed = useMemo(
+    () => trails.flatMap((trail, index) => trail.open && lifts[trail.liftIndex]?.confirmed && trail.path.length > 1
+      ? [{
+        index,
+        path: trail.path,
+        widths: trail.widths ?? trail.path.map(() => STANDARD_BRUSH_WIDTH),
+        color: contextColor(DIFFICULTY_COLOR[trail.difficulty]),
+      }]
+      : []),
+    [trails, lifts],
+  );
   const continuation = painted?.draftEnd;
   const color = painted ? ribbonColor(painted.difficulty, !painted.reason) : DIFFICULTY_COLOR.green;
   return (
     <>
       {!review && !erasing && (
-        <TerrainRing guide at={TERRAIN.base} radius={0.9} color={PALETTE.marker} />
+        <TerrainRing guide at={TERRAIN.base} radius={baseConnectRadius(TERRAIN, brushWidth)} color={PALETTE.marker} />
       )}
       {!review && !activeStroke && !all.length && lifts
         .filter((lift) => lift.confirmed)
         .map(({ anchor }) => (
           <TerrainRing guide key={`${anchor.x}/${anchor.z}`} at={anchor} radius={0.65} color={DIFFICULTY_COLOR.green} />
         ))}
+      {confirmed.map((trail) => (
+        <TrailRibbon key={`context-${trail.index}`} context path={trail.path} widths={trail.widths}
+          color={trail.color} problemSegments={NO_PROBLEMS} />
+      ))}
       {painted && painted.path.length > 1 && (
         <TrailRibbon path={painted.path} widths={painted.widths} color={color}
-          problemSegments={painted.problemSegments} live={!!activeStroke} />
+          problemSegments={painted.problemSegments} live={!!activeStroke} outline />
       )}
       {continuation && !review && !activeStroke && !erasing && !moveCamera && (
         <TerrainRing name="trail-continuation" guide at={continuation} radius={0.4} color={PALETTE.marker} />

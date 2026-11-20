@@ -13,6 +13,10 @@ const EDGE_BAND = 0.09;
 /** Cross-sections across the fill between the two edge bands. */
 const FILL_STEPS = 4;
 const RIBBON_OPACITY = 0.85;
+const CONTEXT_OPACITY = 0.45;
+/** Ink outline around the draft: a wider ribbon underneath (ft added to the scaled width). */
+const OUTLINE_SCALE = 1.18;
+const OUTLINE_EXTRA_FT = 5;
 
 /** Columns across the ribbon: the edge band, a hard step, the fill, a hard step, the edge band. */
 const COLUMNS: { s: number; edge: boolean }[] = (() => {
@@ -100,26 +104,45 @@ type TrailRibbonProps = {
   problemSegments: readonly number[];
   /** A finger is still painting: build a lighter ribbon, full detail follows on release. */
   live?: boolean;
+  /** Confirmed trails shown behind a draft: dimmer, and drawn under it. */
+  context?: boolean;
+  /** An ink edge under the ribbon, so the draft reads as the one being drawn. */
+  outline?: boolean;
 };
 
 /** The painted trail on the snow. The geometry is rebuilt only when the stroke or its colour changes. */
-export function TrailRibbon({ path, widths, color, problemSegments, live = false }: TrailRibbonProps) {
+export function TrailRibbon({ path, widths, color, problemSegments, live = false, context = false, outline = false }: TrailRibbonProps) {
   const geometry = useMemo(
     () => ribbonGeometry(path, widths, ribbonSegmentCount(path.length, live), color, problemSegments),
     [path, widths, color, problemSegments, live],
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
+  const edge = useMemo(
+    () => outline
+      ? ribbonGeometry(path, widths.map((w) => w * OUTLINE_SCALE + OUTLINE_EXTRA_FT), ribbonSegmentCount(path.length, live), PALETTE.inkDeep, [])
+      : null,
+    [outline, path, widths, live],
+  );
+  useEffect(() => () => edge?.dispose(), [edge]);
   return (
-    <mesh geometry={geometry} renderOrder={2} frustumCulled={false}>
+    <>
+    {edge && (
+      <mesh geometry={edge} renderOrder={1.5} frustumCulled={false}>
+        <meshBasicMaterial vertexColors transparent opacity={0.9} depthWrite={false} toneMapped={false}
+          polygonOffset polygonOffsetFactor={-3} />
+      </mesh>
+    )}
+    <mesh geometry={geometry} renderOrder={context ? 1 : 2} frustumCulled={false}>
       <meshBasicMaterial
         vertexColors
         transparent
-        opacity={RIBBON_OPACITY}
+        opacity={context ? CONTEXT_OPACITY : RIBBON_OPACITY}
         depthWrite={false}
         toneMapped={false}
         polygonOffset
         polygonOffsetFactor={-4}
       />
     </mesh>
+    </>
   );
 }
