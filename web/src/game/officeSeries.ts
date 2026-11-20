@@ -1,4 +1,5 @@
-import { morningCash, payoffAmount } from "./economy";
+import { ASSET_CATALOG, type AssetId } from "./base";
+import { morningCash, payoffAmount, type Payable } from "./economy";
 import type { DayReport, GameState } from "./state";
 
 export type RevCostPoint = {
@@ -20,12 +21,6 @@ export type CashPoint = {
   day: number;
   cash: number;
   projected?: boolean;
-};
-
-export type ConstructionPoint = {
-  day: number;
-  paid: number;
-  scheduled: number;
 };
 
 export type LoanPoint = {
@@ -75,30 +70,48 @@ export function cashTrendSeries(state: GameState): CashPoint[] {
   return settled;
 }
 
+export type UpcomingBill = {
+  dueDay: number;
+  label: string;
+  amount: number;
+  timing: string;
+};
+
+function payableLabel(what: Payable["what"]): string {
+  if (what === "lift") return "Lift";
+  if (what === "lodge") return "Lodge upgrade";
+  return ASSET_CATALOG[what as AssetId]?.label ?? what;
+}
+
 export function constructionSeries(state: GameState): {
-  points: ConstructionPoint[];
+  upcoming: UpcomingBill[];
+  cashOnHand: number;
+  freeCash: number;
+  shortfall: number;
   totalPaid: number;
   totalScheduled: number;
 } {
-  const byDay = new Map<number, ConstructionPoint>();
-  let totalPaid = 0;
-  let totalScheduled = 0;
-  for (const d of state.dayHistory) {
-    const paid = Math.round(d.constructionDue);
-    if (paid > 0) {
-      totalPaid += paid;
-      byDay.set(d.day, { day: d.day, paid, scheduled: 0 });
-    }
-  }
-  for (const p of state.payables) {
-    const amount = Math.round(p.amount);
-    if (amount <= 0) continue;
-    totalScheduled += amount;
-    const prev = byDay.get(p.dueDay) ?? { day: p.dueDay, paid: 0, scheduled: 0 };
-    byDay.set(p.dueDay, { ...prev, scheduled: prev.scheduled + amount });
-  }
-  const points = [...byDay.values()].sort((a, b) => a.day - b.day);
-  return { points, totalPaid, totalScheduled };
+  const totalPaid = state.dayHistory.reduce((sum, d) => sum + Math.round(d.constructionDue), 0);
+  const upcoming: UpcomingBill[] = state.payables
+    .filter((p) => p.amount > 0)
+    .slice()
+    .sort((a, b) => a.dueDay - b.dueDay)
+    .map((p) => ({
+      dueDay: p.dueDay,
+      label: payableLabel(p.what),
+      amount: Math.round(p.amount),
+      timing:
+        p.dueDay <= state.dayIndex
+          ? `Tonight (Day ${p.dueDay})`
+          : p.dueDay === state.dayIndex + 1
+            ? `Tomorrow (Day ${p.dueDay})`
+            : `Day ${p.dueDay}`,
+    }));
+  const totalScheduled = upcoming.reduce((sum, item) => sum + item.amount, 0);
+  const cashOnHand = Math.round(state.cash);
+  const freeCash = Math.max(0, cashOnHand - totalScheduled);
+  const shortfall = Math.max(0, totalScheduled - Math.max(0, cashOnHand));
+  return { upcoming, cashOnHand, freeCash, shortfall, totalPaid, totalScheduled };
 }
 
 export function loanSeries(state: GameState): {

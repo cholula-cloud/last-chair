@@ -26,7 +26,7 @@ describe("officeSeries money selectors", () => {
     expect(revCostSeries(s.dayHistory)).toEqual([]);
     expect(revenueSourcesSeries(s.dayHistory)).toEqual([]);
     expect(cashTrendSeries(s)).toEqual([{ day: 1, cash: Math.round(morningCash(s)), projected: true }]);
-    expect(constructionSeries(s)).toEqual({ points: [], totalPaid: 0, totalScheduled: 0 });
+    expect(constructionSeries(s)).toMatchObject({ upcoming: [], totalPaid: 0, totalScheduled: 0, shortfall: 0 });
     expect(loanSeries(s)).toEqual({ points: [], totalBorrowed: 0, totalRepaid: 0, currentPayoff: 0, active: false });
     expect(bestDayBy([], (x: { day: number }) => x.day)).toBeNull();
   });
@@ -65,10 +65,10 @@ describe("officeSeries money selectors", () => {
     const timeline = constructionSeries(withPayables);
     expect(timeline.totalPaid).toBe(600);
     expect(timeline.totalScheduled).toBe(1200);
-    expect(timeline.points).toEqual([
-      { day: 2, paid: 600, scheduled: 0 },
-      { day: 3, paid: 0, scheduled: 600 },
-      { day: 4, paid: 0, scheduled: 600 },
+    expect(timeline.freeCash).toBe(Math.max(0, Math.round(withPayables.cash) - 1200));
+    expect(timeline.upcoming).toEqual([
+      { dueDay: 3, label: "Café", amount: 600, timing: "Tonight (Day 3)" },
+      { dueDay: 4, label: "Café", amount: 600, timing: "Tomorrow (Day 4)" },
     ]);
   });
 

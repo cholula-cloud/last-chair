@@ -344,6 +344,84 @@ function CashTrendChart({ state }: { state: GameState }) {
   );
 }
 
+function BuildCommitmentsCard({ state }: { state: GameState }) {
+  const stripeId = useId();
+  const clipId = useId();
+  const build = constructionSeries(state);
+  const hasAny = build.upcoming.length > 0 || build.totalPaid > 0;
+  const totalBar = Math.max(1, build.totalScheduled + build.freeCash);
+  const barW = CHART_W - 24;
+  const committedW = (build.totalScheduled / totalBar) * barW;
+  const freeW = (build.freeCash / totalBar) * barW;
+  const heroTone = build.shortfall > 0 ? "bad" : build.totalScheduled === 0 ? "good" : "neutral";
+
+  return (
+    <ChartCard
+      title="Build bills & free cash"
+      hero={build.totalScheduled > 0 ? `${formatMoney(build.totalScheduled)} due` : "$0 due"}
+      heroTone={heroTone}
+      caption="How much of your cash is already spoken for by 40/30/30 build installments."
+      comparisons={[
+        build.shortfall > 0 ? `Shortfall: ${formatMoney(build.shortfall)}` : `Free to spend: ${formatMoney(build.freeCash)}`,
+        `Paid this winter: ${formatMoney(build.totalPaid)}`,
+      ]}
+      empty={!hasAny ? "No build bills on the books. Every dollar on hand is free to spend." : undefined}
+      columns={[
+        { key: "when", label: "Due" },
+        { key: "what", label: "Build" },
+        { key: "amount", label: "Amount", align: "right" },
+      ]}
+      rows={
+        build.upcoming.length > 0
+          ? build.upcoming.map((b) => ({ when: b.timing, what: b.label, amount: formatMoney(b.amount) }))
+          : [{ when: "None due", what: "All installments paid", amount: formatMoney(build.totalPaid) }]
+      }
+      legend={[
+        { label: "Spoken for", color: build.shortfall > 0 ? "var(--barn)" : "var(--sign-yellow)", pattern: "stripe" },
+        { label: "Free to spend", color: "var(--gold)" },
+      ]}
+    >
+      <div className="space-y-2 p-1">
+        <svg viewBox={`0 0 ${CHART_W} 40`} className="block h-auto w-full" role="img" aria-label="Cash committed to upcoming builds versus free to spend">
+          <ChartPatterns stripeId={stripeId} />
+          <defs>
+            <clipPath id={clipId}>
+              <rect x={12} y={8} width={barW} height={24} rx={8} />
+            </clipPath>
+          </defs>
+          <rect x={12} y={8} width={barW} height={24} rx={8} fill="var(--snow)" />
+          <g clipPath={`url(#${clipId})`}>
+            {committedW > 0 && (
+              <>
+                <rect x={12} y={8} width={committedW} height={24} fill={build.shortfall > 0 ? "var(--barn)" : "var(--sign-yellow)"} />
+                <rect x={12} y={8} width={committedW} height={24} fill={`url(#${stripeId})`} />
+              </>
+            )}
+            {freeW > 0 && <rect x={12 + committedW} y={8} width={freeW} height={24} fill="var(--gold)" />}
+            {committedW > 0 && freeW > 0 && (
+              <line x1={12 + committedW} x2={12 + committedW} y1={8} y2={32} stroke="var(--ink)" strokeWidth={2.4} />
+            )}
+          </g>
+          <rect x={12} y={8} width={barW} height={24} rx={8} fill="none" stroke="var(--ink)" strokeWidth={2.4} />
+        </svg>
+        {build.upcoming.length > 0 ? (
+          <ul className="divide-y divide-ink/15 rounded-[var(--r-chip)] bg-snow px-2.5 text-xs font-extrabold tabular-nums">
+            {build.upcoming.map((b, i) => (
+              <li key={`${b.dueDay}-${b.label}-${i}`} className="flex items-center justify-between gap-2 py-1.5">
+                <span className="text-ink-soft">{b.timing}</span>
+                <span className="min-w-0 flex-1 truncate text-ink">{b.label}</span>
+                <span className="shrink-0 text-ink">{formatMoney(b.amount)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-1 text-xs font-extrabold text-sign-green">All installments cleared. Your full cash balance is free to spend.</p>
+        )}
+      </div>
+    </ChartCard>
+  );
+}
+
 export function MoneyStatsCharts({ state }: { state: GameState }) {
   const rc = revCostSeries(state.dayHistory);
   const rcNet = rc.reduce((sum, d) => sum + d.net, 0);
@@ -353,7 +431,6 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
   const srcTotal = src.reduce((sum, d) => sum + d.total, 0);
   const srcBest = bestDayBy(src, (d) => d.total);
 
-  const build = constructionSeries(state);
   const loan = loanSeries(state);
 
   return (
@@ -405,29 +482,7 @@ export function MoneyStatsCharts({ state }: { state: GameState }) {
 
       <CashTrendChart state={state} />
 
-      <ChartCard
-        title="Construction timeline"
-        hero={build.points.length ? formatMoney(build.totalPaid + build.totalScheduled) : undefined}
-        caption="Installments already paid and bills still coming due from recent builds."
-        comparisons={build.points.length ? [`Paid so far: ${formatMoney(build.totalPaid)}`, `Upcoming due: ${formatMoney(build.totalScheduled)}`] : undefined}
-        empty={build.points.length === 0 ? "No construction installments on the books yet." : undefined}
-        columns={[{ key: "day", label: "Day" }, { key: "paid", label: "Paid", align: "right" }, { key: "due", label: "Scheduled", align: "right" }]}
-        rows={build.points.map((p) => ({ day: `Day ${p.day}`, paid: formatMoney(p.paid), due: formatMoney(p.scheduled) }))}
-        legend={[{ label: "Paid", color: "var(--sign-brown)" }, { label: "Scheduled", color: "var(--sign-yellow)", pattern: "stripe" }]}
-      >
-        <BarChartSvg
-          mode="stacked"
-          minMax={500}
-          ariaLabel="Construction installments paid and scheduled"
-          groups={build.points.map((p) => ({
-            label: `D${p.day}`,
-            bars: [
-              { value: p.paid, color: "var(--sign-brown)" },
-              { value: p.scheduled, color: "var(--sign-yellow)", pattern: "stripe" },
-            ],
-          }))}
-        />
-      </ChartCard>
+      <BuildCommitmentsCard state={state} />
 
       <ChartCard
         title="Winter loan"
