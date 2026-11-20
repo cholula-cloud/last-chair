@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.1 · **Updated:** 2026-11-20
+**Version:** 1.2 · **Updated:** 2026-11-20
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -21,6 +21,18 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
 `npm run check` (PR 2) runs lint, typecheck, unit tests and build. GitHub Actions (`.github/workflows/ci.yml`) runs the same steps on every PR and push to `main`. To block merging on a red check, turn on branch protection for `main` with the `check` job required.
+
+### M4 screenshot scripts (Playwright, static export)
+
+Serve a fresh `npm run build` export (`npx serve@latest out -p 3010` from `web/`), set `PLAY_URL=http://127.0.0.1:3010`, then:
+
+| Script | Output (default `/opt/cursor/artifacts/`) |
+|---|---|
+| `npm run screenshots:juice33` | `390x844-juice-{home-full-motion,home-reduced-motion,night-cash-count}.png` |
+| `npm run screenshots:o4` | `390x844-o4-{crowds,revenue,guests-want}.png` |
+| `npm run screenshots:o5` | `390x844-o5-trails.png` |
+
+Also: `screenshots:snow30`, `screenshots:p4`, `screenshots:b6`, `screenshots:b7`, and lighting scripts from row 31.
 
 ---
 
