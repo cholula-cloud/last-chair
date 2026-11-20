@@ -227,3 +227,16 @@ describe("audio engine visibility", () => {
     expect(h.engine.state).toBe("none");
   });
 });
+
+describe("audio engine recorded clips", () => {
+  it("falls back to synth when prepareBeds runs without files", async () => {
+    const h = setup();
+    await start(h);
+    h.engine.prepareBeds();
+    await Promise.resolve();
+    h.engine.setBed("day");
+    expect(h.ctx.count("source")).toBe(1);
+    h.engine.play("tap");
+    expect(h.ctx.count("osc")).toBeGreaterThan(0);
+  });
+});
