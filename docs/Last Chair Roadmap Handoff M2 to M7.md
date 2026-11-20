@@ -1957,7 +1957,7 @@ Numbers labelled proposed (weather transition matrix, storm and wind effects, ho
 
 This part specifies roadmap rows 28 to 40 and the M7 pass. Row numbers are MASTER_PLAN plan rows. GitHub PR numbers are separate and already collide (GitHub PR #28 removed Vercel; plan row 28 is guest models). Write the plan row in branch names and PR titles, for example `claude/row28-guest-models`, "Row 28: guest models".
 
-**M4 vs M4b (MASTER_PLAN v2.9).** **M4 code is complete on `main` (2026-11-20):** build UX (**B6**, **B7**), **P4**, Office economics (**F3a**, **F3b**), feel (**30–33**), map layers **O4** and **O5**, HUD follow-up **#106**, trail network / asset inspectors **#105** (save v8 fields, `trailNetwork.ts`, `AssetInspector.tsx`), and docked trail-paint slope legend **#110** (single `OverlayLegend` above `PlacementBar`; supersedes closed **#108**). No Blender in M4. **Next queue:** **M4b** (rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**). Handoff briefs below for rows 28 and 29 belong to M4b; expand **T1** before signage work.
+**M4 vs M4b (MASTER_PLAN v2.10).** **M4 code is complete on `main` (2026-11-20):** build UX (**B6**, **B7**), **P4**, Office economics (**F3a**, **F3b**), feel (**30–33**), map layers **O4** and **O5**, HUD follow-up **#106**, trail network / asset inspectors **#105** (`trailNetwork.ts`, `AssetInspector.tsx`, save v8), and docked slope legend during trail paint **#110** (`OverlayLegend` above `PlacementBar`). No Blender in M4. **Next queue:** **M4b** (rows **28**, **29**, **T1**, **S1 to S3**, **A1 to A5**). Handoff briefs below for rows 28 and 29 belong to M4b; expand **T1** before signage work.
 
 ### Row B6 — Build grid and lift placement guide (M4, built)
 
