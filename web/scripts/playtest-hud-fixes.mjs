@@ -71,9 +71,18 @@ try {
 
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(400);
-  const strip = page.locator("[data-layer-strip]").first();
-  if (!(await strip.isVisible())) fail("Layer strip did not open from Layers button");
+  const dock = page.locator("[data-layer-dock]");
+  if (!(await dock.isVisible())) fail("Layer dock did not open at bottom from Layers button");
+  const strip = dock.locator("[data-layer-strip]");
+  if (!(await strip.isVisible())) fail("Layer strip missing from bottom dock");
+  if (await page.getByRole("navigation", { name: "Hill actions" }).isVisible()) {
+    fail("Action bar still visible while layer dock is open");
+  }
+  const legend = dock.locator('[data-overlay-legend="slope"]');
+  if (!(await legend.isVisible())) fail("Slope legend missing from bottom dock");
   await shot(page, "02-layers-slope-strip");
+  await page.getByRole("button", { name: "Layers" }).click();
+  await page.waitForTimeout(300);
 
   await page.getByRole("button", { name: "Grid off" }).click();
   await page.waitForTimeout(500);

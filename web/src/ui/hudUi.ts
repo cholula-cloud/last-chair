@@ -35,6 +35,11 @@ export function toggleBottomChromeMinimized() {
   useHudUi.setState((s) => ({ bottomChromeMinimized: !s.bottomChromeMinimized }));
 }
 
+/** Hill chrome wins over the layer dock when the player brings controls back. */
+export function showBottomChrome() {
+  useHudUi.setState({ bottomChromeMinimized: false });
+}
+
 export function setBottomChromeMinimized(bottomChromeMinimized: boolean) {
   useHudUi.setState({ bottomChromeMinimized });
 }

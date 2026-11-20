@@ -46,7 +46,7 @@ import {
   useHudUi,
 } from "@/ui/hudUi";
 import { PlacementBar } from "@/ui/PlacementBar";
-import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
+import { LayerBottomDock, LayersButton, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
 import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon, GridIcon } from "@/ui/kit/icons";
@@ -80,14 +80,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const bottomChromeMinimized = useHudUi((s) => s.bottomChromeMinimized);
   const [buildOpen, setBuildOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  const [wideHud, setWideHud] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    const sync = () => setWideHud(mq.matches);
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
+  const layerStripOpen = useLayers((s) => s.stripOpen);
   useEffect(() => () => useOffice.setState({ open: false, resumeOnClose: false }), []);
   const officeOpen = useOffice((s) => s.open);
 
@@ -241,6 +234,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+  const layerDock =
+    phase === "day" &&
+    !placementActive &&
+    !hudSuppressed &&
+    layerStripOpen &&
+    !bottomChromeMinimized;
 
   const mapToolButtons = (
     <>
@@ -361,12 +360,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
-          {!wideHud && (
-            <>
-              <OverlayLegend />
-              <LayerStrip className="flex-col items-stretch [&_button]:w-full" />
-            </>
-          )}
         </div>
       )}
 
@@ -384,11 +377,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       {phase === "day" && !hudSuppressed && (
         <div inert={officeOpen} className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-1.5 px-3 pb-[max(0.65rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] ${placementActive ? "sm:justify-center" : "sm:flex-row sm:items-end sm:justify-between sm:gap-2"}`}>
           <div className="pointer-events-none absolute right-[max(0.75rem,env(safe-area-inset-right))] bottom-full mb-1.5 flex max-w-[calc(100%-1.5rem)] flex-col items-end gap-1.5">
-            {!placementActive && <ReadoutCard />}
-            {wideHud && <OverlayLegend />}
-            {!placementActive && <SnowLayerControls />}
-            {wideHud && <LayerStrip />}
-            {!placementActive && (undoIndex >= 0 || canResume) && (
+            {!placementActive && !layerDock && <ReadoutCard />}
+            {!placementActive && !layerDock && (undoIndex >= 0 || canResume) && (
               <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-1.5">
                 {undoIndex >= 0 && (
                   <LiftUndoChip refund={undoRefund} onClick={() => undoLift()} />
@@ -404,7 +394,10 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               </div>
             )}
           </div>
-          {!placementActive && !bottomChromeMinimized && (
+          {layerDock && (
+            <LayerBottomDock />
+          )}
+          {!layerDock && !placementActive && !bottomChromeMinimized && (
             <div className="w-full sm:w-auto sm:min-w-[290px] sm:max-w-[380px]">
               <ConditionsBoard
                 avgQueue={avgQueue}
@@ -421,7 +414,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
           )}
           {placementActive ? (
             <PlacementBar />
-          ) : bottomChromeMinimized ? (
+          ) : layerDock ? null : bottomChromeMinimized ? (
             <div className="pointer-events-auto flex w-full justify-center sm:w-auto">
               <BottomChromeRestoreButton onClick={toggleBottomChromeMinimized} />
             </div>

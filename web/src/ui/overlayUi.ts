@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayers } from "./mapLayerStore";
+import { showBottomChrome } from "./hudUi";
 export { useActiveLayer } from "./mapLayerStore";
 import { nextSelection, resolveActiveLayer, type OverlayId } from "@/game/overlays";
 import type { XZ } from "@/game/terrain";
@@ -40,8 +41,13 @@ export function toggleLayersRail() {
     useLayers.setState({ stripOpen: false });
     return;
   }
+  showBottomChrome();
   useLayers.setState({ stripOpen: true });
   if (!shown) pickLayer("slope", true);
+}
+
+export function closeLayerDock() {
+  useLayers.setState({ stripOpen: false });
 }
 
 export function setProbe(at: XZ | null) {
