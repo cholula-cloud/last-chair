@@ -30,6 +30,7 @@ export function TrailsMapOverlay() {
   return (
     <>
       {trails.map((trail, i) => {
+        const mid = trailMidpoint(trail);
         const points = trail.path.map((p) => {
           const y = TERRAIN.height(p.x, p.z) + 0.12;
           return new THREE.Vector3(p.x, y, p.z);
@@ -38,11 +39,7 @@ export function TrailsMapOverlay() {
           <group key={`trail-layer-${i}-${trail.name}`}>
             <Line points={points} color={TRAIL_LAYER_COLOR[trail.difficulty]} lineWidth={3} />
             <Html
-              position={[
-                trailMidpoint(trail).x,
-                TERRAIN.height(trailMidpoint(trail).x, trailMidpoint(trail).z) + 0.35,
-                trailMidpoint(trail).z,
-              ]}
+              position={[mid.x, TERRAIN.height(mid.x, mid.z) + 0.35, mid.z]}
               center
               distanceFactor={14}
               className="pointer-events-none select-none"
