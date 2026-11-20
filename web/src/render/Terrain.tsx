@@ -23,7 +23,7 @@ import {
   SNOW_TEX_TRAILS,
   bakeSnowAttributes,
   groomStyle,
-  snowTextureData,
+  snowTextureBytes,
   snowWearByTrail,
 } from "./snowTexture";
 import { patchSnowMaterial, snowUniforms, syncSnowNightUniform } from "./snowMaterial";
@@ -190,13 +190,13 @@ export function Terrain({
   }, [geometry, influence]);
 
   const snowTex = useMemo(() => {
-    const data = snowTextureData(trails, groomed ?? [], snowPreset);
+    const data = snowTextureBytes(trails, groomed ?? [], snowPreset);
     const tex = new THREE.DataTexture(
       data,
       SNOW_TEX_SEGMENTS,
       SNOW_TEX_TRAILS,
       THREE.RGBAFormat,
-      THREE.FloatType,
+      THREE.UnsignedByteType,
     );
     tex.magFilter = THREE.LinearFilter;
     tex.minFilter = THREE.LinearFilter;

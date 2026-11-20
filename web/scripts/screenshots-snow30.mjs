@@ -8,8 +8,6 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import "./register-game.mjs";
 import { chromium } from "playwright";
-import { enterGame } from "./playtest-m2.mjs";
-
 const [
   { createBuiltHill },
   { pickFounder },
@@ -99,36 +97,36 @@ const browser = await chromium.launch({
   args: ["--enable-unsafe-swiftshader"],
 });
 try {
-  const context = await browser.newContext({
-    viewport: { width, height },
-    deviceScaleFactor: 2,
-    isMobile: true,
-    hasTouch: true,
-  });
-  await context.addInitScript(() => {
-    localStorage.setItem("last-chair-settings", JSON.stringify({
-      version: 1,
-      state: { tips: false, radioEnabled: false, voiceVolume: 0 },
-    }));
-  });
-  const page = await context.newPage();
-  page.setDefaultTimeout(30000);
-
   for (const key of Object.keys(SCENES)) {
     const save = saveForScene(key);
-    await page.goto(`${base}/play/`, { waitUntil: "domcontentloaded" });
-    await page.evaluate((payload) => {
+    const sceneContext = await browser.newContext({
+      viewport: { width, height },
+      deviceScaleFactor: 2,
+      isMobile: true,
+      hasTouch: true,
+    });
+    await sceneContext.addInitScript(({ payload }) => {
       localStorage.setItem("last-chair-m3-slot-1", payload);
-    }, save);
-    await enterGame(page);
-    await page.locator('[data-scene-ready="true"]').waitFor();
-    for (let i = 0; i < 45; i++) await page.evaluate(() => new Promise(requestAnimationFrame));
+      localStorage.setItem("last-chair-active-slot", "1");
+      localStorage.setItem("last-chair-settings", JSON.stringify({
+        version: 1,
+        state: { tips: false, radioEnabled: false, voiceVolume: 0 },
+      }));
+    }, { payload: save });
+    const scenePage = await sceneContext.newPage();
+    scenePage.setDefaultTimeout(30000);
+    await scenePage.goto(`${base}/play/`, { waitUntil: "domcontentloaded" });
+    const resume = scenePage.getByRole("button", { name: /^Continue/ });
+    if ((await resume.count()) > 0) await resume.tap();
+    else await scenePage.getByRole("button", { name: "New winter" }).tap();
+    await scenePage.locator('[data-scene-ready="true"]').waitFor({ timeout: 45000 });
+    for (let i = 0; i < 45; i++) await scenePage.evaluate(() => new Promise(requestAnimationFrame));
     const name = `${width}x${height}-snow-${key}.png`;
-    await page.screenshot({ path: path.join(outRoot, name) });
-    await page.screenshot({ path: path.join(outLocal, name) });
+    await scenePage.screenshot({ path: path.join(outRoot, name) });
+    await scenePage.screenshot({ path: path.join(outLocal, name) });
     console.log("wrote", name);
+    await sceneContext.close();
   }
-  await context.close();
 } finally {
   await browser.close();
 }

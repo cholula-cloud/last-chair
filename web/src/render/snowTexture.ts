@@ -41,6 +41,19 @@ export function snowTextureData(
   return data;
 }
 
+/** GPU texture bytes (linear decode in shader) for float-filter compatibility on software WebGL. */
+export function snowTextureBytes(
+  trails: readonly Trail[],
+  groomed: readonly (boolean[] | undefined)[],
+  preset: SnowPreset,
+  width = SNOW_TEX_SEGMENTS,
+): Uint8Array {
+  const data = snowTextureData(trails, groomed, preset, width);
+  const out = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) out[i] = Math.round(Math.max(0, Math.min(1, data[i])) * 255);
+  return out;
+}
+
 export type SnowVertexAttrs = {
   aTrail: Float32Array;
   aT: Float32Array;
