@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import type { MapLayer } from "@/game/mapLayers";
 import { useLayers } from "./mapLayerStore";
 import { pickLayer, toggleLayersRail } from "./overlayUi";
 
 const layerDefaults = {
-  layer: null as const,
+  layer: null as MapLayer | null,
   nightInspection: false,
   stripOpen: false,
   autoOff: false,
