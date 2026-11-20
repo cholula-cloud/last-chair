@@ -41,6 +41,7 @@ import {
   TopBar,
   WindHoldCallout,
 } from "@/ui/Hud";
+import { useMoodPulseTracker } from "@/ui/motion";
 import { toggleConditionsExpanded, toggleHudHidden, useHudUi } from "@/ui/hudUi";
 import { PlacementBar } from "@/ui/PlacementBar";
 import { LayerStrip, SnowLayerControls, LayersButton, OverlayLegend, OverlayStateSync, ReadoutCard } from "@/ui/OverlayControls";
@@ -152,6 +153,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const undoRefund = undoIndex >= 0 ? (lifts[undoIndex]?.paid ?? 0) : 0;
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
+  const moodPulse = useMoodPulseTracker(mood, clockMin);
 
   useEffect(() => usePlacementDraft.subscribe((next, prev) => {
     if (next.lodgeRequested !== prev.lodgeRequested && useGameStore.getState().phase === "day") {
@@ -397,6 +399,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                 snowDepth={snowDepth}
                 snowRead={snowRead}
                 mood={mood}
+                moodDelta={moodPulse.delta}
+                moodPulseTick={moodPulse.pulseTick}
                 anyOnHill={anyOnHill}
                 expanded={conditionsExpanded}
                 onToggleExpand={toggleConditionsExpanded}

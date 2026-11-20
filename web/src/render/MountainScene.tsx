@@ -27,6 +27,7 @@ import { MAX_DISTANCE, MIN_DISTANCE } from "./cameraControls";
 import { Guests } from "./Guests";
 import type { GuestPlacement } from "./guestPlacement";
 import { Lift } from "./Lift";
+import { LiftPlacementMotion } from "./LiftPlacementMotion";
 import { Village } from "./Lodge";
 import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
@@ -139,11 +140,16 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
           );
         })}
 
-        {confirmedLifts.map(({ lift, index }) => (
-          <group key={`lift-${index}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`} userData={{ asset: { kind: "lift", index } }}>
-            <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} closing={lift.closing} />
-          </group>
-        ))}
+        {confirmedLifts.map(({ lift, index }) => {
+          const key = `lift-${index}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`;
+          return (
+            <group key={key} userData={{ asset: { kind: "lift", index } }}>
+              <LiftPlacementMotion liftKey={key} preview={false}>
+                <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} closing={lift.closing} />
+              </LiftPlacementMotion>
+            </group>
+          );
+        })}
 
         <BuildScenePreview />
         <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />

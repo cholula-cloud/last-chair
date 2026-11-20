@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { applyReduceMotionFromSettings, type ReduceMotionPref } from "@/ui/motion";
 
 export type GameSpeed = 1 | 2 | 4;
 export const SPEEDS: readonly GameSpeed[] = [1, 2, 4];
@@ -21,7 +22,7 @@ export type Settings = {
   tips: boolean;
   captions: boolean;
   radioEnabled: boolean;
-  reduceMotion: boolean;
+  reduceMotion: ReduceMotionPref;
   defaultSpeed: GameSpeed;
 };
 
@@ -42,7 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   patternAids: true,
   captions: true,
   radioEnabled: true,
-  reduceMotion: false,
+  reduceMotion: "system",
   defaultSpeed: 1,
 };
 
@@ -70,7 +71,14 @@ export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "
     patternAids: typeof r.patternAids === "boolean" ? r.patternAids : DEFAULT_SETTINGS.patternAids,
     radioEnabled: typeof r.radioEnabled === "boolean" ? r.radioEnabled : DEFAULT_SETTINGS.radioEnabled,
     captions: typeof r.captions === "boolean" ? r.captions : DEFAULT_SETTINGS.captions,
-    reduceMotion: typeof r.reduceMotion === "boolean" ? r.reduceMotion : DEFAULT_SETTINGS.reduceMotion,
+    reduceMotion:
+      r.reduceMotion === "system" || r.reduceMotion === "on" || r.reduceMotion === "off"
+        ? r.reduceMotion
+        : r.reduceMotion === true
+          ? "on"
+          : r.reduceMotion === false
+            ? DEFAULT_SETTINGS.reduceMotion
+            : DEFAULT_SETTINGS.reduceMotion,
     defaultSpeed: speed,
   };
 }
@@ -91,16 +99,11 @@ export const useSettings = create<SettingsStore>()(
   ),
 );
 
-/** Mirrors reduce motion onto the page root so styles can react to it. */
-export function applyReduceMotion(on: boolean): void {
-  if (typeof document !== "undefined") document.documentElement.dataset.reduceMotion = String(on);
-}
-
 if (typeof document !== "undefined") {
   function applyDisplay(settings: Settings) {
     document.documentElement.dataset.textSize = settings.textSize;
     document.documentElement.dataset.patternAids = String(settings.patternAids);
-    applyReduceMotion(settings.reduceMotion);
+    applyReduceMotionFromSettings(settings);
   }
   applyDisplay(useSettings.getState());
   useSettings.subscribe((s, prev) => {
