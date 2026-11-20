@@ -256,10 +256,9 @@ export function Crew({ s }: { s: GameState }) {
           </Section>
         )}
         <Section title="Base lodge">
-          <p className="text-sm font-bold">
-            {tier.label}, tier {s.lodgeTier}
+          <p className="text-sm font-extrabold">
+            {lodgeName(s)} (Tier {s.lodgeTier})
           </p>
-          <p className="text-sm font-bold">{lodgeName(s)}</p>
           <LedgerRow label="Parking spaces" value={String(tier.stalls)} />
           <LedgerRow label="Annex pads" value={String(tier.pads)} />
           {nextTier && (
