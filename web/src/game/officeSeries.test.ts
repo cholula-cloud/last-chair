@@ -5,9 +5,13 @@ import {
   bestDayBy,
   cashTrendSeries,
   constructionSeries,
+  fareElasticitySeries,
   loanSeries,
+  opsSeries,
   revCostSeries,
   revenueSourcesSeries,
+  seasonCalendarCells,
+  trailReportRows,
 } from "./officeSeries";
 import { acknowledgeBeat, pickFounder, skipToClose, sleep } from "./rules";
 import type { GameState } from "./state";
@@ -91,5 +95,29 @@ describe("officeSeries money selectors", () => {
     expect(ls.totalRepaid).toBe(2000);
     expect(ls.currentPayoff).toBe(Math.round(payoffAmount(loan)));
     expect(ls.points).toHaveLength(2);
+  });
+
+  it("builds ops series, fare elasticity, 28-day calendar, and trail snow report", () => {
+    const s = runDays(4);
+    const ops = opsSeries(s.dayHistory);
+    expect(ops).toHaveLength(4);
+    expect(ops[0].arrivals).toBe(s.dayHistory[0].recap.arrivals);
+
+    const fares = fareElasticitySeries(s.dayHistory);
+    expect(fares).toHaveLength(1);
+    expect(fares[0].fare).toBe("balanced");
+    expect(fares[0].days).toBe(4);
+
+    const cal = seasonCalendarCells(s);
+    expect(cal).toHaveLength(s.seasonLength);
+    expect(cal[0].status).toBe("settled");
+    expect(cal[4].status).toBe("today");
+    expect(cal[5].status).toBe("upcoming");
+    expect(cal[5].weather).toBeNull();
+
+    const report = trailReportRows(s);
+    expect(report.length).toBeGreaterThan(0);
+    expect(report[0].open).toBe(true);
+    expect(report[0].depthPct).toBeGreaterThan(0);
   });
 });

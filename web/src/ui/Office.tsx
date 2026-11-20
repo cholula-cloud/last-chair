@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeTierUnlocks, type AssetId } from "@/game/base";
 import { MOUNTAIN_CALENDARS } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
@@ -16,6 +16,8 @@ import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { schoolMemory } from "@/game/winterMemory";
 import { StoryEntries } from "./StoryLog";
 import { MoneyStatsCharts } from "./officeCharts";
+import { OpsStatsCharts } from "./officeOpsCharts";
+import { SeasonCalendar, SnowReport } from "./officeReports";
 import { tidy } from "@/ui/kit/parts";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -59,11 +61,40 @@ export function Money({ s }: { s: GameState }) {
 }
 
 export function Stats({ s }: { s: GameState }) {
-  return <MoneyStatsCharts state={s} />;
+  const [view, setView] = useState<"all" | "money" | "ops">("all");
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-1 rounded-[var(--r-key)] border-2 border-ink bg-snow-2 p-1" role="group" aria-label="Stats section">
+        {(
+          [
+            ["all", "All"],
+            ["money", "Money"],
+            ["ops", "Operations"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={view === id}
+            onClick={() => setView(id)}
+            className={`min-h-11 rounded-[calc(var(--r-key)-4px)] text-xs font-extrabold transition-colors ${
+              view === id ? "bg-sign-green text-white shadow-[0_2px_0_var(--ink)]" : "text-ink"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {view !== "ops" && <MoneyStatsCharts state={s} />}
+      {view !== "money" && <OpsStatsCharts state={s} />}
+    </div>
+  );
 }
 
 export function Reports({ s }: { s: GameState }) {
   return <>
+    <SeasonCalendar state={s} />
+    <SnowReport state={s} />
     <Section title="Recap archive">{s.dayHistory.length === 0 && <p>Closed days show up here as the winter goes on.</p>}
       {s.dayHistory.slice().reverse().map(d => <details key={d.day}><summary className="min-h-11 cursor-pointer py-2 font-bold">Day {d.day}, {d.weather}, {formatMoney(d.recap.cashDelta, {signed:true})}</summary>
         <p>{tidy(d.recap.problem)}</p><p>{d.recap.arrivals} guests. Satisfaction {Math.round(d.recap.satisfaction)}/100. Average wait {d.recap.facts.avgWaitMin.toFixed(1)} minutes.</p>
