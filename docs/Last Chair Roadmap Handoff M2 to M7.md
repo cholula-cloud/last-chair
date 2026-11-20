@@ -1152,8 +1152,8 @@ Open decisions:
 | Operating days | 21 (7 × Fri–Sun) |
 | Civil day 1 | Fri 26 Dec 2025 |
 | Legacy in-flight saves | `seasonLength` 14 or 28 → legacy calendar (all days playable) |
-| Weekday digest | Prepended to `morningHeadline` after a closed block |
-| Bankruptcy | Negative cash mornings on closed civil days count toward three-morning rule |
+| Weekday digest | Prepended to `morningHeadline` after a closed block (Olympic committee lease covers lift/snow ops) |
+| Closed-day cash | Operating stack net zero to the player; loan interest and construction installments still debit |
 
 **Tests:** `calendar.test.ts` (Sun sleep → Fri + digest; `simulateClosedDay` ≡ batch); migrations v11 `operatingDayIndex`; playtests match `Open *n*/21`.
 

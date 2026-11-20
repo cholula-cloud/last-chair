@@ -1,5 +1,4 @@
 import { formatMoney } from "./format";
-import { operatingCosts } from "./economy";
 import { closedDaysBeforeNextOpen, dayLabel, type CalendarDef } from "./calendar";
 import { spendAllCrewPoints } from "./talentProgress";
 import type { GameState } from "./state";
@@ -7,7 +6,7 @@ import { applyOvernight } from "./sim";
 import { trailExposure } from "./clearing";
 import { groomCoverage, gunCoverage } from "./guns";
 import { morningWeatherHeadline, weatherForDay } from "./weather";
-import { snowNightCost, type SnowPreset } from "./types";
+import type { SnowPreset } from "./types";
 
 export type ClosedDaySummary = {
   days: number[];
@@ -43,14 +42,14 @@ function overnightForClosed(state: GameState, snow: SnowPreset, calendarDay: num
   return { overnight, state: spentNight.state };
 }
 
-/** One civil day with no guests; locked fare and snow tiers stay as-is. */
+/**
+ * One civil day with no public skiing. Operating and snow-service costs are covered by a
+ * weekday lease to the local Olympic training committee; the hill still ages snow and crew overnight.
+ */
 export function simulateClosedDay(state: GameState, calendarDay: number): GameState {
-  const ops = operatingCosts({ ...state, dayIndex: calendarDay });
-  const snowNight = calendarDay < state.seasonLength ? snowNightCost(state.snow, state.talentsOwned) : 0;
   const draws = state.payables.reduce((sum, item) => sum + (item.dueDay <= calendarDay ? item.amount : 0), 0);
   const interest = state.loan ? state.loan.principal * state.loan.ratePerDay : 0;
-  const cash =
-    state.cash - (ops.fixed + ops.founder + ops.liftOps + ops.upkeep + snowNight + draws + interest);
+  const cash = state.cash - (draws + interest);
   const next: GameState = {
     ...state,
     dayIndex: calendarDay,
@@ -87,19 +86,26 @@ export function advanceClosedDays(
   const days = closedDaysBeforeNextOpen(cal, fromCalendarDay);
   if (!days.length) return { state, summary: null };
   let s = state;
-  let snowTotal = 0;
   const headlines: string[] = [];
   const cashStart = state.cash;
   for (const d of days) {
-    snowTotal += snowNightCost(s.snow, s.talentsOwned);
     s = simulateClosedDay(s, d);
     headlines.push(`${dayLabel(cal, d).weekday}: ${morningWeatherHeadline(s.weather)}`);
   }
   return {
     state: s,
-    summary: { days, cashDelta: s.cash - cashStart, snowNight: snowTotal, headlines },
+    summary: { days, cashDelta: s.cash - cashStart, snowNight: 0, headlines },
   };
 }
+
+/** Weekday digest copy (Neon). {span} is a weekday range or single date. */
+const WEEKDAY_DIGEST_COPY = {
+  opening: (span: string) => `Closed to the public (${span}).`,
+  lease:
+    "The Readsboro Olympic committee leased the hill to run gates and race training, picking up the lift and snow bills so the weekdays broke even without selling a single lift ticket.",
+  ledgerEven: "Nothing came due on loans or construction, so the cash box stayed put.",
+  ledgerDebt: (amount: string) => `Loan interest and construction bills still took their cut (${amount}).`,
+} as const;
 
 export function formatWeekdayDigest(cal: CalendarDef, summary: ClosedDaySummary): string {
   const last = summary.days.at(-1)!;
@@ -107,9 +113,9 @@ export function formatWeekdayDigest(cal: CalendarDef, summary: ClosedDaySummary)
   const span = summary.days.length === 1
     ? dayLabel(cal, first).date
     : `${dayLabel(cal, first).weekday}–${dayLabel(cal, last).weekday}`;
-  const cashLine = summary.cashDelta === 0
-    ? "Cash held steady off the hill."
-    : `Off the hill: ${formatMoney(summary.cashDelta)} in operating costs.`;
   const weather = summary.headlines[summary.headlines.length - 1] ?? "";
-  return `While Dutch Hill was closed (${span}), ${cashLine} ${weather}`;
+  const ledger = summary.cashDelta === 0
+    ? WEEKDAY_DIGEST_COPY.ledgerEven
+    : WEEKDAY_DIGEST_COPY.ledgerDebt(formatMoney(summary.cashDelta));
+  return `${WEEKDAY_DIGEST_COPY.opening(span)} ${WEEKDAY_DIGEST_COPY.lease} ${ledger} ${weather}`;
 }

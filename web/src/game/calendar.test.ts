@@ -77,7 +77,7 @@ describe("Dutch Hill calendar", () => {
     const after = sleep({ ...night, pendingBeat: null, beatAcknowledged: true });
     expect(after.dayIndex).toBe(8);
     expect(after.operatingDayIndex).toBe(4);
-    expect(after.morningHeadline).toMatch(/While Dutch Hill was closed/);
+    expect(after.morningHeadline).toMatch(/Readsboro Olympic committee.*gates and race training/);
   });
 
   it("boosts vacation demand on the legacy 28-day map", () => {
@@ -105,5 +105,12 @@ describe("closed day advance", () => {
     const once = advanceClosedDays(sunday, cal, 3).state;
     expect(batch.cash).toBeCloseTo(once.cash, 2);
     expect(batch.dayIndex).toBe(7);
+  });
+
+  it("keeps cash even on operations while the Olympic committee covers weekdays", () => {
+    const base = pickFounder(createBuiltHill(7, true), "elena");
+    const cal = DUTCH_HILL_CALENDAR;
+    const { state } = advanceClosedDays({ ...base, dayIndex: 3, cash: 9000, loan: null, payables: [] }, cal, 3);
+    expect(state.cash).toBe(9000);
   });
 });
