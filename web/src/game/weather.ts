@@ -99,9 +99,9 @@ export function isWindHeld(type: LiftType, wind: Wind, clockMin: number, owned: 
 
 export function morningWeatherHeadline(kind: WeatherKind): string {
   switch (kind) {
-    case "snow": return "Overnight squall leaves fresh snow on the hill.";
-    case "storm": return "An overnight storm buries the hill. Slow roads may keep skiers home.";
-    case "thaw": return "Thaw watch. Lower trails soften by noon.";
-    case "clear": return "Clear and cold. Groomed snow should hold.";
+    case "snow": return "A squall came through overnight and left fresh snow on the hill.";
+    case "storm": return "A storm buried the hill overnight. Roads are slow, so some skiers may stay home.";
+    case "thaw": return "Thaw today. The lower trails go soft by noon, then freeze hard.";
+    case "clear": return "Clear and cold. Groomed snow should hold, and the sky is showing off.";
   }
 }

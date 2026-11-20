@@ -169,7 +169,7 @@ export type GameState = PersistedState & {
 
 export const DEFAULT_SEED = 1;
 
-export const OPENING_HEADLINE = "Dutch Hill has a lodge. Build a lift and paint a trail to open.";
+export const OPENING_HEADLINE = "Dutch Hill has a lodge and not much else. Build a lift and paint a trail to open.";
 
 export function createInitialState(seed: number = DEFAULT_SEED): GameState {
   const mountainId = "dutch_hill";

@@ -27,17 +27,17 @@ describe("guestsWantLine", () => {
 
   it("asks for a second lift when one lift has long lines", () => {
     const recap = { ...withBreakdown({ queue: -9 }), facts: { ...calm.facts, avgWaitMin: 7, busiestLift: { label: "Surface lift 1", min: 10.4 } } };
-    expect(guestsWantLine(recap, ctx)).toBe("Guests want a second lift. Lines ran over 10 minutes.");
+    expect(guestsWantLine(recap, ctx)).toBe("The lift line got long enough to need its own zip code. It ran over 10 minutes, so guests want a second lift.");
   });
 
   it("names the busiest lift when there are already two", () => {
     const recap = { ...withBreakdown({ queue: -6 }), facts: { ...calm.facts, busiestLift: { label: "Chair 2", min: 6.2 } } };
-    expect(guestsWantLine(recap, { ...ctx, liftCount: 2 })).toBe("Guests want shorter lift lines. Chair 2 ran over 6 minutes.");
+    expect(guestsWantLine(recap, { ...ctx, liftCount: 2 })).toBe("Guests were checking their watches at Chair 2, which ran over 6 minutes. They want shorter lift lines.");
   });
 
   it("asks for another green trail when beginner terrain is crowded", () => {
     const line = guestsWantLine(withBreakdown({ runs: -3 }), { ...ctx, greenTrailCount: 1, greenRuns: 40 });
-    expect(line).toBe("Guests want another green trail.");
+    expect(line).toBe("The green trail is wall to wall with beginners. Guests want another green trail.");
   });
 
   it("does not call a quiet green trail crowded", () => {
@@ -45,12 +45,12 @@ describe("guestsWantLine", () => {
   });
 
   it("asks for more lodge seats when the lodge was full for long", () => {
-    expect(guestsWantLine(calm, { ...ctx, seatsFullMin: 90 })).toBe("Guests want more seats at the lodge.");
+    expect(guestsWantLine(calm, { ...ctx, seatsFullMin: 90 })).toBe("The lodge ran out of seats and lunch went standing up. Guests want more seats.");
   });
 
   it("asks for better snow when the snow term hurts", () => {
     const recap = { ...withBreakdown({ snow: -8 }), facts: { ...calm.facts, snowLabel: "Icy bottom" } };
-    expect(guestsWantLine(recap, ctx)).toBe("Guests want better snow. Cover was icy bottom.");
+    expect(guestsWantLine(recap, ctx)).toBe("Cover was icy bottom and guests noticed. They want better snow.");
   });
 
   it("picks the largest pain when several apply", () => {

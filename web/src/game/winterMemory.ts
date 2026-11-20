@@ -4,13 +4,13 @@ import type { GameState } from "./state";
 import { SCHOOL_BUS_PUPILS, type SchoolContract } from "./schoolContract";
 
 export function schoolMemory(contract: SchoolContract | null): string {
-  if (!contract) return "No Readsboro school visit is on record this winter.";
-  if (contract.decision === "declined") return "Al offered a school day. You kept the tow open for the usual weekday crowd.";
+  if (!contract) return "No Readsboro school visit this winter. Al never called.";
+  if (contract.decision === "declined") return "Al offered a school day and you passed. The tow stayed open for the usual weekday crowd.";
   const taught = contract.pupilsTaught;
-  if (taught === null) return "Al had a bus on the calendar. The winter ended before its visit.";
-  if (taught === SCHOOL_BUS_PUPILS) return `Al took all ${taught} pupils home with a ski lesson behind them.`;
-  if (taught === 0) return "Al booked a school day. The visit closed without a lesson for any pupil.";
-  return `The Readsboro bus came. Of the ${SCHOOL_BUS_PUPILS} pupils booked, ${taught} finished a lesson.`;
+  if (taught === null) return "Al had a bus on the calendar, and the winter ended before it could pull in.";
+  if (taught === SCHOOL_BUS_PUPILS) return `All ${taught} Readsboro pupils went home with a ski lesson behind them. Al is telling people.`;
+  if (taught === 0) return "The Readsboro bus came, but no pupil finished a lesson. Al noticed.";
+  return `The Readsboro bus came. Of the ${SCHOOL_BUS_PUPILS} pupils on board, ${taught} finished a lesson.`;
 }
 
 type WinterScore = {

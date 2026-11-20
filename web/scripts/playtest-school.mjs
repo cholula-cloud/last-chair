@@ -89,8 +89,8 @@ try {
       await office.getByRole("tab", { name: "Crew", exact: true }).tap();
       await office.getByRole("heading", { name: "Crew talents" }).waitFor();
       await office.getByRole("tab", { name: "Reports", exact: true }).tap();
-      await office.locator("summary").filter({ hasText: /^Day 3 ·/ }).tap();
-      await office.getByText(`School tickets $150 · ${bus.taught} of 6 pupils taught`).waitFor();
+      await office.locator("summary").filter({ hasText: /^Day 3,/ }).tap();
+      await office.getByText(`School tickets $150. ${bus.taught} of 6 pupils taught.`).waitFor();
       await office.getByRole("button", { name: "Close Office" }).tap();
       await button("Pause day").waitFor();
       assert.equal((await read()).paused, false);

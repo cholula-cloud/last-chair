@@ -434,7 +434,7 @@ export function buildNightRecap(opts: {
     revenue,
     loanReceived: 0,
     loanRepaid: 0,
-    problem: stats.arrivals === 0 ? "No skiers arrived today." : problemLine(day.breakdown, {
+    problem: stats.arrivals === 0 ? "Nobody came today. The lifts turned for the crows." : problemLine(day.breakdown, {
       avgWaitMin: stats.avgQueueMin,
       dispatched: stats.dispatched,
       snowQuality: opts.snowQuality,

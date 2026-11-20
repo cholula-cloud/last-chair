@@ -32,13 +32,13 @@ describe("needsAttention", () => {
     const items = needsAttention({ ...day(), cash: -400 });
     expect(items[0]).toEqual({
       id: "cash-negative",
-      text: "Cash is −$400. 3 mornings in a row below zero end the winter.",
+      text: "Cash is −$400. 3 mornings in a row below zero and the bank closes the book on your winter.",
     });
   });
 
   it("flags low cash, but not at the threshold", () => {
     const low = needsAttention({ ...day(), cash: 900 });
-    expect(low).toEqual([{ id: "cash-low", text: "Cash is down to $900. Hold off on building until tickets bring more in." }]);
+    expect(low).toEqual([{ id: "cash-low", text: "Cash is down to $900. Hold off on building until the ticket window catches up." }]);
     expect(needsAttention({ ...day(), cash: 1500 })).toEqual([]);
   });
 
@@ -48,7 +48,7 @@ describe("needsAttention", () => {
     const items = needsAttention({ ...base, lifts: [...base.lifts, second] });
     expect(items).toEqual([{
       id: "lift-no-trail-1",
-      text: "Surface lift 2 has no open trail. Paint a trail from it so guests can ride.",
+      text: "Surface lift 2 has no open trail yet. Paint one from the top so guests have somewhere to go.",
       focus: [TERRAIN.base, second.anchor],
     }]);
   });
@@ -64,13 +64,13 @@ describe("needsAttention", () => {
     const gusty = base.weatherDays.map((w, i) => (i === base.dayIndex - 1 ? { ...w, wind: "gusty" as const } : w));
     const windy = { ...base, lifts: [chair], weatherDays: gusty };
     expect(needsAttention({ ...windy, clockMin: 11 * 60 }).map((i) => i.text))
-      .toEqual(["Double chair 1 is on wind hold until 1:00 PM."]);
+      .toEqual(["Double chair 1 is on wind hold until 1:00 PM. Dana says nobody is happy and everybody is safe."]);
     expect(needsAttention({ ...windy, clockMin: 14 * 60 })).toEqual([]);
   });
 
   it("turns the recap's Guests want logic into an item once enough guests have arrived", () => {
     expect(needsAttention(withLongLines(day()))).toEqual([
-      { id: "guests-want", text: "Guests want a second lift. Lines ran over 10 minutes." },
+      { id: "guests-want", text: "The lift line got long enough to need its own zip code. It ran over 10 minutes, so guests want a second lift." },
     ]);
   });
 
@@ -83,7 +83,7 @@ describe("needsAttention", () => {
     const base = day();
     const items = needsAttention({ ...base, trails: bareTrails(base) });
     expect(items.map((i) => i.id)).toEqual(["snow"]);
-    expect(items[0].text).toMatch(/^.+\. Pick more snow and service at Night\.$/);
+    expect(items[0].text).toMatch(/^.+\. Pick more snow and service tonight at closing\.$/);
   });
 
   it("does not list bad snow twice when Guests want already asks for better snow", () => {

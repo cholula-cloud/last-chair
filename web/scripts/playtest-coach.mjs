@@ -66,10 +66,10 @@ try {
     await page.getByRole("heading", { name: "Closing recap" }).waitFor();
     await page.locator('section[data-state="open"]').waitFor();
     const guide = page.getByRole("complementary", { name: "First problem guide" });
-    const mapButton = guide.getByRole("button", { name: /^Map · / });
-    const layer = (await mapButton.innerText()).split(" · ")[1];
-    const officeButton = guide.getByRole("button", { name: /^Office · / });
-    const tab = (await officeButton.innerText()).split(" · ")[1];
+    const mapButton = guide.getByRole("button", { name: /^Map: / });
+    const layer = (await mapButton.innerText()).split(": ")[1];
+    const officeButton = guide.getByRole("button", { name: /^Office: / });
+    const tab = (await officeButton.innerText()).split(": ")[1];
     const readWinter = () => page.evaluate(() => JSON.parse(localStorage.getItem("last-chair-m3-slot-1")).state);
     const beforeInspection = await readWinter();
     await mapButton.tap();

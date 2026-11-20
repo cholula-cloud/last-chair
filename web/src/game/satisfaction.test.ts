@@ -250,17 +250,17 @@ describe("problem line", () => {
 
   it("names a cash loss when no satisfaction term is a problem, and only then", () => {
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: -105 })).toBe(
-      "Lost $105 today — running costs beat ticket sales on a quiet day.",
+      "Lost $105 today. Running costs beat ticket sales on a quiet day.",
     );
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: 40 })).toBe(NO_PROBLEM);
-    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Long lift lines");
+    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Lift lines ran long");
   });
 
   it("quotes the real number in each sentence", () => {
     expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("7.4 min a ride");
     expect(problemLine({ ...ZERO_TERMS, snow: -10 }, facts)).toContain("30%");
     expect(problemLine({ ...ZERO_TERMS, value: -10 }, facts)).toContain("$62");
-    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, facts)).toContain("3 turned away");
+    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, facts)).toContain("3 were turned away");
     expect(problemLine({ ...ZERO_TERMS, runs: -10 }, { ...facts, turnedAway: 0 })).toContain("2.5 runs");
     expect(problemLine({ ...ZERO_TERMS, arrivalMood: -10 }, facts)).toContain("60");
   });
@@ -397,7 +397,7 @@ describe("whole days", () => {
     for (const seed of seeds) {
       const r = playDay(seed, SATURDAY).nightRecap!;
       expect(r.breakdown.queue).toBeLessThan(-10);
-      expect(r.problem).toContain("Long lift lines");
+      expect(r.problem).toContain("Lift lines ran long");
       expect(r.satisfaction).toBeLessThan(65);
     }
   });
@@ -405,9 +405,9 @@ describe("whole days", () => {
   it("a thin-snow day blames the snow, a steep-fare day the ticket", () => {
     for (const seed of seeds) {
       const thin = playDay(seed, WEEKDAY, { snowQuality: 0.3 }, true).nightRecap!;
-      expect(thin.problem).toContain("bump Snow & service tonight");
+      expect(thin.problem).toContain("Bump up Snow & service tonight");
       expect(thin.facts.snowQuality).toBeLessThan(0.3);
-      expect(thin.problem).toContain(`(mean quality ${Math.round(thin.facts.snowQuality * 100)}%)`);
+      expect(thin.problem).toContain(`(quality ${Math.round(thin.facts.snowQuality * 100)}%)`);
       const steep = playDay(seed, WEEKDAY, { fare: "expensive" }, true).nightRecap!;
       expect(steep.problem).toContain("steep");
       expect(steep.problem).toContain("$62");
@@ -416,11 +416,11 @@ describe("whole days", () => {
 
   it("the problem is always the most negative term of the stored breakdown", () => {
     const keyword = {
-      queue: "Long lift lines",
+      queue: "Lift lines ran long",
       snow: "Thin, scraped snow",
       value: "ticket was steep",
-      runs: "barely skied",
-      arrivalMood: "cold welcome",
+      runs: "barely got a run in",
+      arrivalMood: "sour mood",
     } as const;
     for (const seed of seeds) {
       for (const over of [{}, { snowQuality: 0.3 }, { fare: "expensive" as const }]) {

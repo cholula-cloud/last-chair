@@ -43,11 +43,14 @@ export function RadioCard({
   children,
   action,
   announce = true,
+  from = "Maris on Route 100 Radio",
 }: {
   title: string;
   children: ReactNode;
   action?: ReactNode;
   announce?: boolean;
+  /** Who is speaking. Maris unless a named caller is on the line. */
+  from?: string;
 }) {
   useEffect(() => { if (announce) radioArrived(); }, [announce]);
   return (
@@ -60,7 +63,7 @@ export function RadioCard({
       </div>
       <div className="bubble min-w-0 flex-1 px-4 pb-3.5 pt-3">
         <p className="text-[0.88rem] font-extrabold leading-tight text-ink-soft">
-          Maris on Route 100 Radio
+          {from}
         </p>
         <p className="display mt-1.5 text-[1.2rem] text-ink">{title}</p>
         <p className="mt-1 text-[1rem] font-bold leading-[1.4] text-ink">

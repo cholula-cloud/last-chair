@@ -57,7 +57,7 @@ async function checkQuietRecap(radioEnabled) {
     await guide.getByRole("status").filter({ hasText: /check|inspect|find/i }).waitFor();
     const coach = recap.getByRole("complementary", { name: "Tip", exact: true }).getByRole("status");
     const radio = recap.getByRole("region", { name: /Route 100 Radio: First uphill load/ });
-    if (radioEnabled) await radio.getByRole("status").filter({ hasText: /First tickets since 1985/ }).waitFor();
+    if (radioEnabled) await radio.getByRole("status").filter({ hasText: /First paid ride up Dutch Hill since 1985/ }).waitFor();
     else assert.equal(await radio.count(), 0);
 
     const motion = await recap.evaluate(() => [...document.querySelectorAll(

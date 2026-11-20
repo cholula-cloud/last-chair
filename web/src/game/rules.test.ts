@@ -419,7 +419,7 @@ describe("lastDay", () => {
     expect(day.dayStats.arrivals).toBeGreaterThan(0);
     const night = rules.openNight(day);
     const recap = night.nightRecap!;
-    expect(recap).toMatchObject({ arrivals: 0, revenue: 0, problem: "No skiers arrived today." });
+    expect(recap).toMatchObject({ arrivals: 0, revenue: 0, problem: "Nobody came today. The lifts turned for the crows." });
     expect(night.reputation).toBe(day.reputation);
     expect(observeGuests(recap)).toBeNull();
     expect(rules.sleep(night).lastDay?.observation).toBeUndefined();

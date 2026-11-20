@@ -141,7 +141,7 @@ describe("buildNightRecap", () => {
 
   it("says the day was good when no term is meaningfully negative", () => {
     expect(recapOf(30, 1, 0, day(75, { queue: -2, value: -1 })).problem).toBe(
-      "Good day on the hill.",
+      "Good day on the hill. Nobody has a complaint.",
     );
   });
 
@@ -149,7 +149,7 @@ describe("buildNightRecap", () => {
     const r = recapOf(12, 1, 0, day(75, { queue: -2 }));
     expect(r.cashDelta).toBeLessThan(0);
     expect(r.problem).toBe(
-      `Lost ${formatMoney(-r.cashDelta)} today — running costs beat ticket sales on a quiet day.`,
+      `Lost ${formatMoney(-r.cashDelta)} today. Running costs beat ticket sales on a quiet day.`,
     );
   });
 
@@ -240,7 +240,7 @@ describe("applyOvernight", () => {
     expect(r.weather).toBe("snow");
     expect(r.daysWithoutSnow).toBe(0);
     expect(r.snowDepth).toBeGreaterThan(0.3);
-    expect(r.morningHeadline).toContain("Overnight squall");
+    expect(r.morningHeadline).toContain("A squall came through overnight");
   });
 
   it("a storm morning resets daysWithoutSnow and names the storm", () => {
@@ -255,7 +255,7 @@ describe("applyOvernight", () => {
     expect(r.weather).toBe("thaw");
     expect(r.daysWithoutSnow).toBe(2);
     expect(r.snowDepth).toBeLessThan(0.3);
-    expect(r.morningHeadline).toContain("Thaw watch");
+    expect(r.morningHeadline).toContain("Thaw today");
   });
 
   it("a clear morning counts a dry day", () => {

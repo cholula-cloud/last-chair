@@ -24,26 +24,26 @@ const LABEL: Record<keyof SatTerms, string> = {
 function detailFor(key: keyof SatTerms, points: number, f: NightRecap["facts"]): string {
   switch (key) {
     case "queue":
-      if (f.dispatched === 0) return "No completed lift waits to average";
-      return `waited ${f.avgWaitMin.toFixed(1)} min a ride${f.busiestLift ? `, longest at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}`;
+      if (f.dispatched === 0) return "No lift rides finished, so there are no waits to average.";
+      return `Guests waited ${f.avgWaitMin.toFixed(1)} min a ride${f.busiestLift ? `, worst at ${f.busiestLift.label} (${f.busiestLift.min.toFixed(1)} min)` : ""}.`;
     case "snow":
-      return `Today's average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%`;
+      return `Today’s average: ${f.snowLabel.toLowerCase()}, quality ${Math.round(f.snowQuality * 100)}%.`;
     case "value": {
-      const worth = `guests felt today was worth about ${formatMoney(f.hillValue)}`;
+      const worth = `about ${formatMoney(f.hillValue)}`;
       const price = formatMoney(f.farePrice);
       if (f.schoolBus?.arrived) {
-        return `Public tickets were ${price}, with ${formatMoney(SCHOOL_BUS_FARE)} school tickets. On average, ${worth}.`;
+        return `Public tickets were ${price}, with ${formatMoney(SCHOOL_BUS_FARE)} school tickets. On average, guests felt today was worth ${worth}.`;
       }
-      if (points <= -1) return `${price} felt steep for the day (${worth})`;
-      if (points >= 1) return `${price} felt like a fair deal (${worth})`;
-      return `${price} about right (${worth})`;
+      if (points <= -1) return `${price} felt steep. Guests figured the day was worth ${worth}.`;
+      if (points >= 1) return `${price} felt like a fair deal. Guests figured the day was worth ${worth}.`;
+      return `${price} was about right. Guests figured the day was worth ${worth}.`;
     }
     case "runs":
       return f.turnedAway > 0
-        ? `${f.turnedAway} turned away at close, ${f.runsPerGuest.toFixed(1)} runs each`
-        : `${f.runsPerGuest.toFixed(1)} runs each`;
+        ? `${f.turnedAway} guests turned away at close, ${f.runsPerGuest.toFixed(1)} runs each.`
+        : `${f.runsPerGuest.toFixed(1)} runs each.`;
     case "arrivalMood":
-      return `mood ${Math.round(f.arrivalMood * 100)} on arrival`;
+      return `Guests arrived in a mood of ${Math.round(f.arrivalMood * 100)} out of 100.`;
   }
 }
 

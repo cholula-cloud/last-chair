@@ -20,7 +20,7 @@ export function operatingGoals(calendar: CalendarDef, history: DayReport[]) {
 
 export function operatingGoalText(calendar: CalendarDef, history: DayReport[]): string {
   const { firstMarginDay, vacationDay } = operatingGoals(calendar, history);
-  if (vacationDay) return `Vacation Saturday met on day ${vacationDay}: the lifts ran, average wait was at most five minutes and operating income covered snow service.`;
-  if (firstMarginDay) return `Day ${firstMarginDay} covered operations and snow service. Next, do that on a vacation Saturday while keeping the average lift wait at five minutes or less.`;
-  return "First, host paying guests and finish a day with money left after operations and snow service.";
+  if (vacationDay) return `Vacation Saturday done on day ${vacationDay}. The lifts ran, the average wait stayed at five minutes or less and operating income covered snow service.`;
+  if (firstMarginDay) return `Day ${firstMarginDay} covered operations and snow service. Next, pull that off on a vacation Saturday with the average lift wait at five minutes or less.`;
+  return "First, get paying guests up the hill and finish a day with money left after operations and snow service.";
 }
