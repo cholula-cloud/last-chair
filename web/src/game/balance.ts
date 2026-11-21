@@ -8,6 +8,7 @@ import {
   cutTrail,
   pickFounder,
   placeAsset,
+  placeAssetAtPad,
   placeLift,
   placeGun,
   setPendingFare,
@@ -274,8 +275,8 @@ export type SeasonResult = {
 function applyBuild(state: GameState, action: BuildAction): GameState {
   if (action === "upgrade_lodge") return beginLodgeUpgrade(state);
   if (action === "rentals" || action === "ski_school") {
-    for (const pad of lodgeAttachPads(state.lodgeTier)) {
-      const next = placeAsset(state, action, pad);
+    for (const [padIndex] of lodgeAttachPads(state.lodgeTier).entries()) {
+      const next = placeAssetAtPad(state, action, padIndex);
       if (next !== state) return next;
     }
     const detached = action === "rentals"

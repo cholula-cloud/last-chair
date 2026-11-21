@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG, lodgeAttachPads } from "./base";
-import { assetRemovalQuote, buyBuilding, moveAsset, pickFounder, placeAsset, removeAsset } from "./rules";
+import { assetRemovalQuote, buyBuilding, moveAsset, pickFounder, placeAsset, placeAssetAtPad, removeAsset } from "./rules";
 import { migrate } from "./migrations";
 import { SAVE_VERSION, toPersisted } from "./state";
 
@@ -11,7 +11,7 @@ const pad = lodgeAttachPads(2)[0];
 describe("venue forgiveness", () => {
   it("undoes only one of two identical deposits and pairs of installments", () => {
     const first = buyBuilding(started(), "cafe");
-    const both = placeAsset(first, "cafe", pad);
+    const both = placeAssetAtPad(first, "cafe", 0);
     expect(both.assets).toHaveLength(first.assets.length + 1);
     expect(assetRemovalQuote(both, 1)).toEqual({ undo: true, refund: 480, reason: null });
     const undone = removeAsset(both, 1);
@@ -26,9 +26,11 @@ describe("venue forgiveness", () => {
     const state = buyBuilding(started(), "cafe");
     const restored = migrate(JSON.parse(JSON.stringify(toPersisted(state))), SAVE_VERSION);
     expect(restored.reset).toBe(false);
-    const moved = moveAsset({ ...state, ...restored.state, cash: 0 }, 1, pad);
+    const open = { x: 11.5, z: 15.5 };
+    const moved = moveAsset({ ...state, ...restored.state, cash: 0 }, 1, open);
     expect(moved.cash).toBe(0);
-    expect(moved.assets[1]).toMatchObject({ at: pad, attachPad: 0, purchase: state.assets[1].purchase });
+    expect(moved.assets[1]).toMatchObject({ at: open, purchase: state.assets[1].purchase });
+    expect(moved.assets[1]?.attachPad).toBeUndefined();
     expect(moved.payables).toEqual(state.payables);
     const invalid = moveAsset(moved, 1, { x: Infinity, z: 0 });
     expect(invalid).toBe(moved);
@@ -43,7 +45,7 @@ describe("venue forgiveness", () => {
     const running = { ...tom, clockMin: tom.clockMin + 10 };
     expect(removeAsset(running, 0)).toBe(running);
     expect(moveAsset(running, 0, pad)).toBe(running);
-    const school = placeAsset({ ...state, lodgeTier: 2 }, "ski_school", pad);
+    const school = placeAssetAtPad({ ...state, lodgeTier: 2 }, "ski_school", 0);
     const booked = { ...school, schoolContract: { decision: "accepted" as const, day: 7, pupilsTaught: null } };
     expect(removeAsset(booked, 1)).toBe(booked);
   });

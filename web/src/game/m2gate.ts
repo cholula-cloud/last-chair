@@ -8,7 +8,7 @@ import {
   closeLift,
   commitPaint,
   pickFounder,
-  placeAsset,
+  placeAssetAtPad,
   placeLift,
   replyToSummitLink,
   setPendingFare,
@@ -109,13 +109,13 @@ export function gateScenarios(seed: number) {
 }
 
 export function gateRevenue(morning: GameState): GameState {
-  const pads = lodgeAttachPads(2);
-  for (const pad of pads) {
-    const rentals = placeAsset(morning, "rentals", pad);
+  const padCount = lodgeAttachPads(2).length;
+  for (let padIndex = 0; padIndex < padCount; padIndex++) {
+    const rentals = placeAssetAtPad(morning, "rentals", padIndex);
     if (rentals !== morning) return playGateDay(rentals);
   }
   throw new Error(`Gate rentals do not fit the Tier 2 lodge: ${JSON.stringify(
-    pads.map((pad) => checkAssetPlacement(morning, "rentals", pad)),
+  lodgeAttachPads(2).map((at, padIndex) => checkAssetPlacement(morning, "rentals", at, { padIndex })),
   )}`);
 }
 

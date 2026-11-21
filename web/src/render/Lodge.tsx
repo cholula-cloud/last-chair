@@ -68,23 +68,27 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
 type Placement = { name: VillageKitName; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
 export const LODGE_BASE_KIT = "base-lodge" as const satisfies KitAsset;
-export const LODGE_ANNEX_KITS = ["lodge-annex-2", "lodge-annex-3"] as const satisfies readonly KitAsset[];
+export const LODGE_TIER_SHELL_KITS = ["lodge-tier-2", "lodge-tier-3"] as const satisfies readonly KitAsset[];
+
+/** One full-shell lodge GLB per sim tier at the lodge anchor. */
+export function lodgeTierKit(tier: LodgeTier, lodgeStyleId: string): VillageKitName {
+  if (tier === 1) return resolveLodgeCoreKit(lodgeStyleId) as VillageKitName;
+  const styleOf = tier === 2 ? "lodge-tier-2" : "lodge-tier-3";
+  return resolveStyledKit(styleOf, lodgeStyleId) as VillageKitName;
+}
 
 /** Structural lodge pieces drawn at the lodge anchor for the current sim tier. */
 export function lodgeStructureKits(tier: LodgeTier, lodgeStyleId: string): readonly VillageKitName[] {
-  const kits: VillageKitName[] = [resolveLodgeCoreKit(lodgeStyleId) as VillageKitName];
-  if (tier >= 2) kits.push(resolveStyledKit("lodge-annex-2", lodgeStyleId) as VillageKitName);
-  if (tier >= 3) kits.push(resolveStyledKit("lodge-annex-3", lodgeStyleId) as VillageKitName);
-  return kits;
+  return [lodgeTierKit(tier, lodgeStyleId)];
 }
 
 /** Kit assets the village merge loop must register (prevents tier lodge skip). */
 export const VILLAGE_SCENE_KITS = [
   LODGE_BASE_KIT,
-  ...LODGE_ANNEX_KITS,
+  ...LODGE_TIER_SHELL_KITS,
   "lodge-tier-1-chalet70s",
-  "lodge-annex-2-chalet70s",
-  "lodge-annex-3-chalet70s",
+  "lodge-tier-2-chalet70s",
+  "lodge-tier-3-chalet70s",
   "clapboard-house",
   "cafe",
   "cafe-chalet70s",
@@ -123,10 +127,9 @@ export function villagePlacements(
     const base = ASSET_MODELS[asset.id] ?? kitForAsset(asset.id);
     if (!base) continue;
     const attached = asset.attachPad !== undefined;
-    const kitBase = attached ? "warming-hut" : base;
     const name = (ASSET_MODELS[asset.id]
-      ? resolveVenueKit(kitBase, asset.styleId)
-      : kitBase) as VillageKitName;
+      ? resolveVenueKit(base, asset.styleId)
+      : base) as VillageKitName;
     list.push({
       name,
       ...asset.at,
