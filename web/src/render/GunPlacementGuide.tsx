@@ -12,7 +12,7 @@ import { GRID_STYLE } from "./buildGridStyle";
 
 const ARC_STEPS = 96;
 
-function groundRing(at: XZ, radius: number, color: string, opacity: number) {
+function GroundRing({ at, radius, color, opacity }: { at: XZ; radius: number; color: string; opacity: number }) {
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ARC_STEPS * 3), 3));
@@ -54,8 +54,8 @@ export function GunPlacementGuide() {
       {anchors.map((anchor, i) => (
         <PipeArc key={`pipe-${i}-${anchor.x}-${anchor.z}`} anchor={anchor} reach={pipeReach} />
       ))}
-      {tapPoint && groundRing(tapPoint, snowReach, "#2a6b7a", 0.85)}
-      {tapPoint && groundRing(tapPoint, pipeReach, "#4a8fb0", 0.55)}
+      {tapPoint && <GroundRing at={tapPoint} radius={snowReach} color="#2a6b7a" opacity={0.85} />}
+      {tapPoint && <GroundRing at={tapPoint} radius={pipeReach} color="#4a8fb0" opacity={0.55} />}
     </>
   );
 }
