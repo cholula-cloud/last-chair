@@ -36,7 +36,10 @@ import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./p
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
 import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
-import { CREW_RUSH_COST, pickTalent as applyTalentPick, spendAllCrewPoints, type TalentId } from "./talentProgress";
+import { CREW_RUSH_COST, pickTalent as applyTalentPick, type TalentId } from "./talentProgress";
+
+/** Bonus crew point when a lodge upgrade finishes (Tier 2 or 3 opening). */
+export const LODGE_UPGRADE_CREW_POINT = 1;
 import {
   checkLiftLine,
   checkSpacing,
@@ -1329,13 +1332,12 @@ export function sleep(state: GameState): GameState {
     return { ...review, lastWinter: record, career: [...review.career, record] };
   }
 
-  const { overnight, talentsOwned, crewPoints } = nightFor(carry, carry.pendingSnow);
-  const spentNight = spendAllCrewPoints({ ...carry, talentsOwned, crewPoints });
-  const afterPick = spentNight.state;
+  const { overnight, talentsOwned, crewPoints: earnedCrewPoints } = nightFor(carry, carry.pendingSnow);
+  const morningCrewPoints = earnedCrewPoints + (completedTier ? LODGE_UPGRADE_CREW_POINT : 0);
   const carried: GameState = {
     ...carry,
     lodgeUpgrade: upgrade,
-    lodgeTier: completedTier ?? afterPick.lodgeTier,
+    lodgeTier: completedTier ?? carry.lodgeTier,
     lastDay,
     paused: true,
     constructionSpent: 0,
@@ -1365,8 +1367,8 @@ export function sleep(state: GameState): GameState {
         ? `${weekdayDigest} ${overnight.morningHeadline}`
         : overnight.morningHeadline,
     daysWithoutSnow: overnight.daysWithoutSnow,
-    talentsOwned: afterPick.talentsOwned,
-    crewPoints: afterPick.crewPoints,
+    talentsOwned,
+    crewPoints: morningCrewPoints,
     nightRecap: null,
     pendingBeat: null,
   };
@@ -1382,7 +1384,7 @@ export function sleep(state: GameState): GameState {
     snowQuality: overnight.snowQuality,
     weather: overnight.weather,
     buildings: state.buildings,
-    talentsOwned: afterPick.talentsOwned,
+    talentsOwned: carried.talentsOwned,
     founderId: state.founderId,
     reputation: state.reputation,
     rand,
@@ -1399,15 +1401,24 @@ export function sleep(state: GameState): GameState {
     ...carried,
     phase: "day",
     gunsVisible: overnight.gunsFired,
-    talentToast: spentNight.picked.length > 0
-      ? spentNight.picked.length === 1
-        ? `New on the crew: ${talentDescription(CREW_TALENTS.find((t) => t.id === spentNight.picked[0])!.name, carried)}`
-        : `Crew picked up ${spentNight.picked.length} talents overnight.`
-      : crewPoints > state.crewPoints
-        ? `Crew point earned. Open Office → Crew to choose before tonight's rush, or sleep to auto-hire in roster order.`
-        : overnight.nextTalentHint
-          ? `Crew board: ${overnight.nextTalentHint} is next when you earn a point.`
-          : null,
+    talentToast: (() => {
+      const parts: string[] = [];
+      if (morningCrewPoints > state.crewPoints) {
+        const gained = morningCrewPoints - state.crewPoints;
+        parts.push(
+          gained === 1
+            ? "Crew point earned. Open Office → Crew to unlock a skill."
+            : `${gained} crew points earned. Open Office → Crew to unlock skills.`,
+        );
+      }
+      if (completedTier) {
+        parts.push(`Lodge Tier ${completedTier} is open — the crew celebrated with a bonus point.`);
+      }
+      if (parts.length) return parts.join(" ");
+      return overnight.nextTalentHint
+        ? `Crew board: ${overnight.nextTalentHint} is next when you earn a point.`
+        : null;
+    })(),
     clockMin: DAY_START_MIN,
     dayIndex: openDay,
     operatingDayIndex: operatingDayIndex(calendar, openDay),

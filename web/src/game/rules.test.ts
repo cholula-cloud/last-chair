@@ -450,6 +450,7 @@ describe("building and save continuity", () => {
     const second = overnight(resumed);
     expect(second.lodgeTier).toBe(2);
     expect(second.lodgeUpgrade).toBeNull();
+    expect(second.crewPoints).toBe(3);
     expect(second.morningHeadline).toContain("Lodge Tier 2");
     expect(rules.placeLift(second, chair).lifts).toHaveLength(2);
     const guns = rules.placeGun(second, TERRAIN.base);

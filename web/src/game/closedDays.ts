@@ -1,6 +1,5 @@
 import { formatMoney } from "./format";
 import { closedDaysBeforeNextOpen, dayLabel, type CalendarDef } from "./calendar";
-import { spendAllCrewPoints } from "./talentProgress";
 import type { GameState } from "./state";
 import { applyOvernight } from "./sim";
 import { trailExposure } from "./clearing";
@@ -38,8 +37,7 @@ function overnightForClosed(state: GameState, snow: SnowPreset, calendarDay: num
     daysWithoutSnow: state.daysWithoutSnow,
   });
   const crewPoints = state.crewPoints + overnight.crewPointsEarned;
-  const spentNight = spendAllCrewPoints({ ...state, talentsOwned: state.talentsOwned, crewPoints });
-  return { overnight, state: spentNight.state };
+  return { overnight, state: { ...state, crewPoints } };
 }
 
 /**
