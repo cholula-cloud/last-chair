@@ -43,12 +43,11 @@ export type TreeSpot = {
   s: number;
   rot: number;
   tint: number;
-  birch: boolean;
   variant: 0 | 1 | 2 | 3;
   size: 0 | 1 | 2;
 };
 
-type Candidate = { x: number; z: number; keep: number; variant: number; birch: boolean };
+type Candidate = { x: number; z: number; keep: number; variant: number };
 
 export type ForestClearings = {
   lines: readonly LiftLine[];
@@ -98,9 +97,8 @@ function chunkCandidates(cx: number, cz: number): Candidate[] {
       const x = gx + jx * GRID_SPACING * 0.88;
       const z = gz + jz * GRID_SPACING * 0.88;
       const keep = hash01(seed, i, 3);
-      const birch = hash01(seed, i, 4) < 0.25;
       const variant = hash32(seed, i, 5) % 4;
-      out.push({ x, z, keep, variant, birch });
+      out.push({ x, z, keep, variant });
       i++;
     }
   }
@@ -180,7 +178,6 @@ function spotFrom(c: Candidate, scale: number): TreeSpot {
     s: (0.78 + hash01(c.x, c.z) * 0.42) * scale * SIZE_MUL[size],
     rot: hash01(c.x, c.z, 2) * Math.PI * 2,
     tint: 0.86 + hash01(c.x, c.z, 3) * 0.2,
-    birch: c.birch,
     variant: c.variant as 0 | 1 | 2 | 3,
     size,
   };
@@ -219,7 +216,6 @@ let leaseCandidates: Candidate[] | null = null;
 export type LeaseCell = {
   key: string;
   pines: TreeSpot[];
-  birch: TreeSpot[];
 };
 
 /**
@@ -237,8 +233,8 @@ export function leaseForest(clearings: ForestClearings): LeaseCell[] {
     const cz = Math.floor((c.z - bounds.zMin) / LEASE_CELL);
     const key = `${cx},${cz}`;
     let cell = cells.get(key);
-    if (!cell) cells.set(key, (cell = { key, pines: [], birch: [] }));
-    (c.birch ? cell.birch : cell.pines).push(spotFrom(c, 1));
+    if (!cell) cells.set(key, (cell = { key, pines: [] }));
+    cell.pines.push(spotFrom(c, 1));
   }
   return [...cells.values()].sort((a, b) => (a.key < b.key ? -1 : 1));
 }

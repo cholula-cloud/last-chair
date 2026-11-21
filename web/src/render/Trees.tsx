@@ -24,7 +24,6 @@ const PINE_SIZE: readonly (readonly [number, number])[] = [
   [0.66, 0.96],
   [0.62, 0.74],
 ];
-const BIRCH_SCALE = 0.17;
 /** Far billboards: slightly wider so they do not read skinny vs lease pines, still one draw call. */
 const FAR_SIZE = [0.56, 0.88] as const;
 const PINE_SIDES = 6;
@@ -32,10 +31,10 @@ const PINE_VARIANTS = 4 as const;
 
 type Tier = { y0: number; y1: number; r: number; base: string };
 
-/** One cone with a green rim fading to snow at the tip: a vertex-coloured stand-in for a kit pine tier. */
+/** One cone with dense green at the base and a slightly lighter green at the tip. */
 function pushCone(pos: number[], col: number[], tier: Tier, sides: number, twist: number) {
   const base = new THREE.Color(tier.base);
-  const tip = base.clone().lerp(new THREE.Color(PALETTE.snow), 0.62);
+  const tip = base.clone().lerp(new THREE.Color(PALETTE.pineTip), 0.55).lerp(new THREE.Color(PALETTE.snow), 0.12);
   for (let i = 0; i < sides; i++) {
     const a0 = twist + (i / sides) * Math.PI * 2;
     const a1 = twist + ((i + 1) / sides) * Math.PI * 2;
@@ -129,36 +128,6 @@ function buildLeasePines(lowDetail: boolean): readonly [THREE.BufferGeometry, TH
   return [pineA(), pineB(), pineC(), pineD()];
 }
 
-/** Birch: pale trunk and gold crowns, scaled larger on the hill. */
-function leaseBirch(): THREE.BufferGeometry {
-  const parts: { geo: THREE.BufferGeometry; color: string; pos: [number, number, number]; rot?: number }[] = [
-    { geo: new THREE.CylinderGeometry(0.08, 0.11, 1.15, 5, 1, true), color: PALETTE.trimWhite, pos: [0, 0.57, 0] },
-    { geo: new THREE.ConeGeometry(0.26, 0.38, 5, 1, true), color: PALETTE.birchCrown, pos: [0, 1.08, 0] },
-    { geo: new THREE.ConeGeometry(0.18, 0.32, 5, 1, true), color: PALETTE.birchCrown, pos: [0.1, 1.32, 0], rot: 0.4 },
-  ];
-  const pos: number[] = [];
-  const col: number[] = [];
-  const nor: number[] = [];
-  const m = new THREE.Matrix4();
-  const v = new THREE.Vector3();
-  for (const part of parts) {
-    const g = part.geo.toNonIndexed();
-    m.makeRotationY(part.rot ?? 0).setPosition(...part.pos);
-    g.applyMatrix4(m);
-    const c = new THREE.Color(part.color);
-    const p = g.attributes.position;
-    const n = g.attributes.normal;
-    for (let i = 0; i < p.count; i++) {
-      pos.push(p.getX(i), p.getY(i), p.getZ(i));
-      v.set(n.getX(i), n.getY(i), n.getZ(i)).transformDirection(m);
-      nor.push(v.x, v.y, v.z);
-      col.push(c.r, c.g, c.b);
-    }
-    g.dispose();
-  }
-  return build(pos, col, nor);
-}
-
 /** Cone that only casts a shadow; sized to match wider crowns. */
 function shadowProxy(): THREE.BufferGeometry {
   return new THREE.ConeGeometry(0.38, 0.92, 4, 1, true).translate(0, 0.5, 0);
@@ -179,7 +148,7 @@ function farTree(): THREE.BufferGeometry {
   for (const turn of [0, 1]) {
     for (const tier of tiers) {
       const base = new THREE.Color(tier.base);
-      const tip = base.clone().lerp(new THREE.Color(PALETTE.snow), 0.62);
+      const tip = base.clone().lerp(new THREE.Color(PALETTE.pineTip), 0.55).lerp(new THREE.Color(PALETTE.snow), 0.12);
       const corner = (u: number, y: number) => (turn === 0 ? [u, y, 0] : [0, y, u]);
       pos.push(...corner(-tier.hw, tier.y0), ...corner(tier.hw, tier.y0), ...corner(0, tier.y1));
       col.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);
@@ -220,7 +189,6 @@ function writeInstances(
 
 type Shared = {
   pines: readonly [THREE.BufferGeometry, THREE.BufferGeometry, THREE.BufferGeometry, THREE.BufferGeometry];
-  birch: THREE.BufferGeometry;
   proxy: THREE.BufferGeometry;
 };
 
@@ -255,7 +223,6 @@ function Instances({
 }
 
 const pineSize = (p: TreeSpot) => PINE_SIZE[p.variant] ?? PINE_SIZE[0];
-const birchSize = () => [BIRCH_SCALE, BIRCH_SCALE] as const;
 const proxySize = () => [1, 1] as const;
 const farSize = () => FAR_SIZE;
 
@@ -265,14 +232,12 @@ function LeaseCellTrees({ cell, shared }: { cell: LeaseCell; shared: Shared }) {
     for (const p of cell.pines) buckets[p.variant].push(p);
     return buckets;
   }, [cell.pines]);
-  const all = useMemo(() => [...cell.pines, ...cell.birch], [cell]);
   return (
     <group>
       {Array.from({ length: PINE_VARIANTS }, (_, v) => (
         <Instances key={v} geo={shared.pines[v]} spots={byVariant[v]} size={pineSize} />
       ))}
-      <Instances geo={shared.birch} spots={cell.birch} size={birchSize} />
-      <Instances geo={shared.proxy} spots={all} size={proxySize} shadowOnly />
+      <Instances geo={shared.proxy} spots={cell.pines} size={proxySize} shadowOnly />
     </group>
   );
 }
@@ -300,7 +265,7 @@ function FarTrees({ geo, spots }: { geo: THREE.BufferGeometry; spots: readonly T
 export const Trees = memo(function Trees({ lines, paths, lowDetail }: ForestClearings & { lowDetail: boolean }) {
   const shared = useMemo<Shared>(() => {
     const pines = buildLeasePines(lowDetail);
-    return { pines, birch: leaseBirch(), proxy: shadowProxy() };
+    return { pines, proxy: shadowProxy() };
   }, [lowDetail]);
   const far = useMemo(() => farTree(), []);
   useEffect(() => () => {
@@ -311,7 +276,6 @@ export const Trees = memo(function Trees({ lines, paths, lowDetail }: ForestClea
         g.dispose();
       }
     }
-    shared.birch.dispose();
     shared.proxy.dispose();
   }, [shared]);
   useEffect(() => () => far.dispose(), [far]);
@@ -322,7 +286,7 @@ export const Trees = memo(function Trees({ lines, paths, lowDetail }: ForestClea
     if (!clearedCells.length) return cells;
     const cut = new Set(clearedCells);
     const keep = (spot: TreeSpot) => !isClearedAt(spot, cut);
-    return cells.map((cell) => ({ ...cell, pines: cell.pines.filter(keep), birch: cell.birch.filter(keep) }));
+    return cells.map((cell) => ({ ...cell, pines: cell.pines.filter(keep) }));
   }, [cells, clearedCells]);
 
   const farSpots = useMemo(() => {
