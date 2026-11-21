@@ -19,6 +19,7 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
+import { CameraDebugHud } from "@/ui/CameraDebugHud";
 import { ToneMappingSync } from "@/render/ToneMappingSync";
 import { audio } from "@/audio/engine";
 import { useSettings } from "./settingsStore";
@@ -300,6 +301,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink"
       data-scene-ready={sceneReady ? "true" : undefined}
     >
+      <CameraDebugHud />
       <Canvas
         frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
