@@ -1,4 +1,4 @@
-import { ASSET_CATALOG, assetRevenue, type AssetId, type PlacedAsset } from "./base";
+import { assetRevenue, type AssetId, type PlacedAsset } from "./base";
 import type { GameState } from "./state";
 import { weekdayForDay, seasonCalendar } from "./calendar";
 
