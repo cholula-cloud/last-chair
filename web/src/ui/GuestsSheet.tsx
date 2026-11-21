@@ -9,6 +9,7 @@ import { useGameStore } from "@/game/store";
 import type { GuestState } from "@/game/types";
 import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { Sheet } from "@/ui/kit/Sheet";
+import { MoodIcon } from "@/ui/kit/icons";
 
 const STATE_WORD: Record<GuestState, string> = {
   pending: "Not here yet",
@@ -53,6 +54,8 @@ export function GuestsSheet({
   const assets = useGameStore((s) => s.assets);
   const followId = useGameStore((s) => s.followId);
   const setFollowId = useGameStore((s) => s.setFollowId);
+  const guestLens = useGameStore((s) => s.guestLens);
+  const setGuestLens = useGameStore((s) => s.setGuestLens);
 
   if (!open) return null;
 
@@ -64,6 +67,33 @@ export function GuestsSheet({
       onClose={onClose}
       closeLabel="Close guests sheet"
     >
+      <div className="panel mb-2 px-3.5 py-2">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[0.92rem] font-extrabold">
+          <input
+            type="checkbox"
+            className="size-5 accent-barn"
+            checked={guestLens === "mood"}
+            onChange={(e) => setGuestLens(e.target.checked ? "mood" : "off")}
+          />
+          Colour jackets by mood on the hill
+        </label>
+        {guestLens === "mood" && (
+          <ul className="mt-2 flex flex-wrap gap-2 text-[0.8rem] font-bold text-ink-soft" aria-label="Mood colour legend">
+            <li className="flex items-center gap-1">
+              <MoodIcon mood={75} className="size-5" aria-hidden />
+              Happy (70+)
+            </li>
+            <li className="flex items-center gap-1">
+              <MoodIcon mood={60} className="size-5" aria-hidden />
+              Mixed (50–69)
+            </li>
+            <li className="flex items-center gap-1">
+              <MoodIcon mood={40} className="size-5" aria-hidden />
+              Grumpy (under 50)
+            </li>
+          </ul>
+        )}
+      </div>
       <div className="panel px-3.5 py-1">
         {guests.length === 0 && (
           <p className="py-6 text-center text-[0.92rem] font-bold text-ink-soft">

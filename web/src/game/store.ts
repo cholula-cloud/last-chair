@@ -71,6 +71,8 @@ type GameActions = {
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
   dismissSaveNotice: () => void;
+  guestLens: "off" | "mood";
+  setGuestLens: (lens: "off" | "mood") => void;
 };
 
 type GameStore = GameState & GameActions & { saveNotice: string | null };
@@ -298,6 +300,8 @@ export const useGameStore = create<GameStore>()(
         finishWinterReview: command("finishWinterReview"),
         startNewSeason: command("startNewSeason"),
         nextTalentHint: () => rules.nextTalentHint(get()),
+        guestLens: "off",
+        setGuestLens: (guestLens) => set({ guestLens }),
       };
     },
     {
