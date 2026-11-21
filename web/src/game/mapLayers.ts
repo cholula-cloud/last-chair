@@ -1,3 +1,4 @@
+import { hasMaintenanceGarage } from "./base";
 import {
   groomCoverage,
   gunCoverage,
@@ -140,6 +141,7 @@ export function overlayModel(
       close.dayStats.runsByTrail,
       snow,
       state.talentsOwned,
+      hasMaintenanceGarage(state.assets, state.lodgeTier),
     );
   const mid = service("mid"),
     high = service("high");

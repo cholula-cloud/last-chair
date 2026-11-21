@@ -318,7 +318,7 @@ describe("planArrivals", () => {
     expect(planArrivals({ ...base, founderId: "elena" })).toBe(clear + 2);
   });
 
-  it("keeps a minimum roster of 12 and lets busy weekends exceed 48", () => {
+  it("keeps a minimum roster of 12 and clamps busy weekends to the lodge cap", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     expect(
       planArrivals({
@@ -340,7 +340,25 @@ describe("planArrivals", () => {
         reputation: 100,
         rand: () => 0.99,
       }),
-    ).toBe(62);
+    ).toBe(58);
+  });
+
+  it("raises the arrival cap with lodge tier", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const busy = {
+      ...base,
+      dayIndex: 6,
+      fare: "cheap" as const,
+      weather: "snow" as const,
+      reputation: 100,
+      founderId: "elena" as const,
+      talentsOwned: ["ticket_booth"] as string[],
+      buildings: ["cafe"] as BuildingId[],
+      rand: () => 0.99,
+    };
+    expect(planArrivals({ ...busy, lodgeTier: 1 })).toBe(58);
+    expect(planArrivals({ ...busy, lodgeTier: 3 })).toBeGreaterThan(58);
+    expect(planArrivals({ ...busy, lodgeTier: 3 })).toBeLessThanOrEqual(84);
   });
 });
 

@@ -12,11 +12,11 @@ const day = (): GameState => pickFounder(createBuiltHill(7), "elena");
 /** Six guests who have waited ten minutes a ride, enough for a "Guests want" line about lift lines. */
 function withLongLines(state: GameState): GameState {
   const guests = Array.from({ length: 6 }, (_, i) =>
-    makeGuest({ id: `q${i}`, state: "ski", waitMin: 60, waitCount: 6, runs: 6 }));
+    makeGuest({ id: `q${i}`, state: "ski", waitMin: 120, waitCount: 6, runs: 6, snowSum: 4.2 }));
   return {
     ...state,
     guests,
-    dayStats: { ...state.dayStats, byLift: [{ rides: 6, waitSumMin: 60 }], dispatched: 6, waitSumMin: 60 },
+    dayStats: { ...state.dayStats, byLift: [{ rides: 6, waitSumMin: 120 }], dispatched: 6, waitSumMin: 120 },
   };
 }
 
@@ -70,7 +70,7 @@ describe("needsAttention", () => {
 
   it("turns the recap's Guests want logic into an item once enough guests have arrived", () => {
     expect(needsAttention(withLongLines(day()))).toEqual([
-      { id: "guests-want", text: "Lift lines topped 10 minutes today. Skiers want a second lift." },
+      { id: "guests-want", text: "Lift lines topped 20 minutes today. Skiers want a second lift." },
     ]);
   });
 

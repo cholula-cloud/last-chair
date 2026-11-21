@@ -123,27 +123,27 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
   },
   string_lights: {
     label: "String lights", category: "decor", footprint: { width: 2.4, depth: 0.35 },
-    cost: 320, upkeep: 8, effect: { arrivalMood: 0.015 },
+    cost: 120, upkeep: 2, effect: { arrivalMood: 0.015 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   bench: {
     label: "Bench", category: "decor", footprint: { width: 0.9, depth: 0.55 },
-    cost: 180, upkeep: 2, effect: { arrivalMood: 0.01 },
+    cost: 120, upkeep: 1, effect: { arrivalMood: 0.01 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   ski_rack: {
     label: "Ski rack", category: "decor", footprint: { width: 1.1, depth: 0.5 },
-    cost: 220, upkeep: 3, effect: { arrivalMood: 0.01 },
+    cost: 140, upkeep: 2, effect: { arrivalMood: 0.01 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   picnic_table: {
     label: "Picnic table", category: "decor", footprint: { width: 1.2, depth: 0.9 },
-    cost: 240, upkeep: 3, effect: { arrivalMood: 0.012 },
+    cost: 160, upkeep: 2, effect: { arrivalMood: 0.012 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   direction_sign: {
     label: "Direction sign", category: "decor", footprint: { width: 0.5, depth: 0.5 },
-    cost: 350, upkeep: 4, effect: { arrivalMood: 0.008 },
+    cost: 180, upkeep: 2, effect: { arrivalMood: 0.008 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
 };
@@ -152,10 +152,30 @@ export const LODGE_FOOTPRINT: Footprint = DUTCH_HILL_SITE.buildings.lodge.footpr
 const TERMINAL_FOOTPRINT: Footprint = { width: 0.9, depth: 0.9 };
 const TERMINAL_CLEARANCE = 0.08;
 export const LODGE_TIERS = {
-  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 0 },
-  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 1 },
-  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 2 },
+  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 0, maxArrivals: 58, seatMultiplier: 1 },
+  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 1, maxArrivals: 70, seatMultiplier: 1.2 },
+  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 2, maxArrivals: 84, seatMultiplier: 1.4 },
 } as const;
+
+/** Hospitality venues guests refuel at when tired or balking in long lines. */
+export const REFUEL_HOSPITALITY_IDS = ["cafe", "warming_hut", "apres_bar", "waffle_haus"] as const satisfies readonly AssetId[];
+
+export function isRefuelHospitality(id: AssetId): boolean {
+  return (REFUEL_HOSPITALITY_IDS as readonly string[]).includes(id);
+}
+
+export function hasPlacedAsset(assets: readonly PlacedAsset[], id: AssetId): boolean {
+  return assets.some((asset) => asset.id === id);
+}
+
+/** Tier 1 uses the base snowcat yard; Tier 2+ needs a maintenance garage for full overnight groom. */
+export function hasMaintenanceGarage(assets: readonly PlacedAsset[], lodgeTier: LodgeTier = 1): boolean {
+  return lodgeTier < 2 || hasPlacedAsset(assets, "maintenance_garage");
+}
+
+export function hasCafeForArrivals(buildings: readonly string[], assets: readonly PlacedAsset[]): boolean {
+  return buildings.includes("cafe") || hasPlacedAsset(assets, "cafe");
+}
 
 export function nextLodgeTier(tier: LodgeTier): 2 | 3 | null {
   if (tier === 1) return 2;
@@ -404,6 +424,20 @@ export function assetMultiplier(asset: PlacedAsset): number {
 
 export function assetEffect(asset: PlacedAsset, key: keyof Asset["effect"]): number {
   return (ASSET_CATALOG[asset.id].effect[key] ?? 0) * assetMultiplier(asset);
+}
+
+/** Seat counts scale with lodge tier; mood and hillValue are unchanged. */
+export function scaledAssetEffect(asset: PlacedAsset, lodgeTier: LodgeTier, key: keyof Asset["effect"]): number {
+  const raw = assetEffect(asset, key);
+  if (key !== "seats" || raw <= 0) return raw;
+  return Math.floor(raw * LODGE_TIERS[lodgeTier].seatMultiplier);
+}
+
+export function hospitalitySeats(assets: readonly PlacedAsset[], lodgeTier: LodgeTier): number {
+  return assets.reduce(
+    (sum, asset) => sum + (isRefuelHospitality(asset.id) ? scaledAssetEffect(asset, lodgeTier, "seats") : 0),
+    0,
+  );
 }
 
 export function assetRevenue(asset: PlacedAsset, founder?: import("./types").FounderId | null): number {

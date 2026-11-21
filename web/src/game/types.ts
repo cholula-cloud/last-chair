@@ -196,8 +196,8 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
   high: 350,
 };
 
-export function snowNightCost(preset: SnowPreset, owned: readonly string[]): number {
-  if (TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
+export function snowNightCost(preset: SnowPreset, owned: readonly string[], hasGarage = true): number {
+  if (hasGarage && TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
   return SNOW_NIGHT_COST[preset];
 }
 

@@ -20,6 +20,8 @@ export const GUN_WIND_EXPOSURE = 0.35;
 export const GUN_FOOTPRINT_DESIGN = 0.1;
 export const GUN_RADIUS_DESIGN = 0.5;
 export const GROOM_FT: Record<SnowPreset, number> = { minimal: 0, mid: 3000, high: 5000 };
+/** Mid/High groom budget without a maintenance garage on the hill. */
+export const GROOM_WITHOUT_GARAGE = 0.4;
 
 const distance = (a: XZ, b: XZ) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -108,9 +110,12 @@ export function groomCoverage(
   runsByTrail: readonly number[],
   preset: SnowPreset,
   talentsOwned: readonly string[] = [],
+  hasGarage = true,
 ): boolean[][] {
   const coverage = trails.map((trail) => trail.snow.map(() => false));
-  let remainingFt = GROOM_FT[preset] * (TALENT.groomPass.learned(talentsOwned) ? TALENT.groomPass.capacity : 1);
+  const garageFactor = preset === "minimal" || hasGarage ? 1 : GROOM_WITHOUT_GARAGE;
+  const talentFactor = TALENT.groomPass.learned(talentsOwned) ? TALENT.groomPass.capacity : 1;
+  let remainingFt = GROOM_FT[preset] * garageFactor * talentFactor;
   if (remainingFt <= 0) return coverage;
 
   const order = trails.map((trail, index) => ({ trail, index, runs: runsByTrail[index] ?? 0 }))
@@ -133,8 +138,9 @@ export function groomedFeet(
   runsByTrail: readonly number[],
   preset: SnowPreset,
   talentsOwned: readonly string[] = [],
+  hasGarage = true,
 ): number {
-  const coverage = groomCoverage(trails, runsByTrail, preset, talentsOwned);
+  const coverage = groomCoverage(trails, runsByTrail, preset, talentsOwned, hasGarage);
   let ft = 0;
   trails.forEach((trail, i) => {
     if (!trail.open || trail.lengthFt <= 0) return;

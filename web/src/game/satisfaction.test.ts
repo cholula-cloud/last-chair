@@ -62,14 +62,14 @@ describe("guest satisfaction terms", () => {
   });
 
   it("longer waits lower the score", () => {
-    const waits = [1, 2, 3, 4.5, 6, 7].map((m) => score(finished({ waitMin: m * 8 })));
+    const waits = [6, 7, 8, 9, 10, 12].map((m) => score(finished({ waitMin: m * 8 })));
     for (let i = 1; i < waits.length; i++) expect(waits[i]).toBeLessThan(waits[i - 1]);
-    // A wait inside the free minute costs nothing.
-    expect(score(finished({ waitMin: 0 }))).toBe(waits[0]);
+    // Waits inside the free window cost nothing.
+    expect(score(finished({ waitMin: 0 }))).toBe(score(finished({ waitMin: 8 * 4 })));
   });
 
-  it("a wait of a minute or less is free, and pain eases past the knee", () => {
-    expect(queuePain(0.9)).toBe(0);
+  it("waits up to five minutes are free, and pain eases past the knee", () => {
+    expect(queuePain(4.9)).toBe(0);
     expect(queuePain(SAT.QUEUE_KNEE_MIN) - queuePain(SAT.QUEUE_KNEE_MIN - 1)).toBeCloseTo(1, 10);
     expect(queuePain(SAT.QUEUE_KNEE_MIN + 1) - queuePain(SAT.QUEUE_KNEE_MIN)).toBeCloseTo(
       SAT.QUEUE_FAR_SLOPE,
@@ -89,7 +89,7 @@ describe("guest satisfaction terms", () => {
   });
 
   it("weighs queue pain by persona (regulars mind more than first-timers)", () => {
-    const wait = { waitMin: 8 * 5 };
+    const wait = { waitMin: 8 * 8 };
     const reg = guestTerms(finished({ ...wait, persona: "regular" }), ctx()).queue;
     const first = guestTerms(finished({ ...wait, persona: "first_timer" }), ctx()).queue;
     expect(reg).toBeLessThan(first);

@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { type AssetId, type LodgeTier, type PlacedAsset } from "@/game/base";
+import { hasMaintenanceGarage } from "@/game/base";
 import { groomCoverage } from "@/game/guns";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
@@ -228,7 +229,13 @@ export function Village() {
   const night = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength ? s : null);
   const groom = useMemo(() => {
     if (!night || night.pendingSnow === "minimal") return null;
-    const coverage = groomCoverage(night.trails, night.dayStats.runsByTrail, night.pendingSnow, night.talentsOwned);
+    const coverage = groomCoverage(
+      night.trails,
+      night.dayStats.runsByTrail,
+      night.pendingSnow,
+      night.talentsOwned,
+      hasMaintenanceGarage(night.assets, night.lodgeTier),
+    );
     const index = coverage.findIndex(row => row.some(Boolean));
     if (index < 0) return null;
     const first = coverage[index].indexOf(true) / coverage[index].length;

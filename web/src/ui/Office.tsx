@@ -284,12 +284,15 @@ export function Crew({ s }: { s: GameState }) {
           <p className="text-sm font-extrabold">
             {lodgeName(s)} (Tier {s.lodgeTier})
           </p>
+          <LedgerRow label="Daily skier cap" value={`~${tier.maxArrivals}`} />
+          <LedgerRow label="Hospitality seating" value={`×${tier.seatMultiplier}`} />
           <LedgerRow label="Parking spaces" value={String(tier.stalls)} />
           <LedgerRow label="Annex pads" value={String(tier.pads)} />
           {nextTier && (
             <p className="pt-2 text-xs font-bold leading-snug text-ink-soft">
-              {LODGE_TIERS[nextTier].label} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking and{" "}
-              {LODGE_TIERS[nextTier].pads - tier.pads} pads. Unlocks {lodgeTierUnlocks(nextTier).join(", ")}.
+              {LODGE_TIERS[nextTier].label} raises the cap to ~{LODGE_TIERS[nextTier].maxArrivals}, scales seated
+              venues ×{LODGE_TIERS[nextTier].seatMultiplier}, and adds {LODGE_TIERS[nextTier].pads - tier.pads} annex
+              pads. Unlocks {lodgeTierUnlocks(nextTier).join(", ")}.
             </p>
           )}
           {s.lodgeUpgrade && (
