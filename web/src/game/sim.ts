@@ -264,7 +264,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       return reopensLater ? { ...joinLine(guest), joinedQueueAtMin: now } : goHome(guest);
     }
     if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
-      const stop = visit(guest, ["cafe", "warming_hut", "apres_bar"], true);
+      const stop = visit(guest, ["cafe", "warming_hut", "apres_bar", "waffle_haus"], true);
       if (stop) return stop;
     }
     return joinLine(guest);
@@ -296,7 +296,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const returning = {
           ...g,
           ...(asset?.id === "ski_school" ? { schoolLessonCompleted: true } : {}),
-          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar") && g.visitMinutes !== 15
+          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar" || asset.id === "waffle_haus") && g.visitMinutes !== 15
             ? Math.min(1, g.energy + 0.35 * (asset.attachPad == null ? 1 : 1.05)) : g.energy,
         };
         return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
@@ -307,7 +307,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         if (waited > 12 && (g.balks ?? 0) < 2) {
           const next = visit({
             ...g, waitMin: g.waitMin + waited, waitCount: g.waitCount + 1, joinedQueueAtMin: undefined,
-          }, ["cafe", "warming_hut", "apres_bar"], true);
+          }, ["cafe", "warming_hut", "apres_bar", "waffle_haus"], true);
           if (next) return next;
         }
         return g;
@@ -389,7 +389,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
           ? walkDurationMin(walkToLiftPath(trail?.path, destination), TERRAIN)
           : 0;
         if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
-          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut", "apres_bar"]);
+          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut", "apres_bar", "waffle_haus"]);
           if (stop) return stop;
         }
         const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;

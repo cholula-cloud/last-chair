@@ -236,7 +236,7 @@ export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERR
 export const BUILDING_LABELS: Record<BuildingId, string> = {
   warming_hut: "Warming hut",
   cafe: "Café",
-  shop: "Shop",
+  shop: "Ski shop",
   snow_guns: "Snow guns",
 };
 
