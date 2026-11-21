@@ -177,7 +177,7 @@ function LodgePadGuides() {
   })));
   const tier = useGameStore((s) => s.lodgeTier);
   const assets = useGameStore((s) => s.assets);
-  if (!active || kind !== "asset" || !asset || !ASSET_CATALOG[asset].attachable || review) return null;
+  if (!active || kind !== "asset" || !asset || !ASSET_CATALOG[asset].attachable || review || lodgePad === undefined) return null;
   const occupied = new Set(assets.map((a) => a.attachPad).filter((p): p is number => p !== undefined));
   return (
     <>

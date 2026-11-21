@@ -890,7 +890,12 @@ function purchaseConstruction(state: GameState, total: number, what: Payable["wh
 
 type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "lodgeStyleId" | "cash">;
 
-export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, "assets">, id: AssetId, at: XZ) {
+export function checkAssetPlacement(
+  state: SitePlacementState & Pick<GameState, "assets">,
+  id: AssetId,
+  at: XZ,
+  options: { padIndex?: number } = {},
+) {
   if (state.phase !== "day") return { ok: false as const, reason: "Building happens during the day. Wait for morning." };
   if (openingStep(state)) return { ok: false as const, reason: "Build a lift and a trail first. The rest of the hill opens up after that." };
   if (id === "snow_guns") return { ok: false as const, reason: "Place snow guns from the Snow section." };
@@ -902,9 +907,21 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, {
     terminals,
     defaultStyleId: state.lodgeStyleId,
+    padIndex: options.padIndex,
   });
   if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash for the deposit. Close out the day, then check your balance." };
   return preview;
+}
+
+export function checkAssetPlacementAtPad(
+  state: SitePlacementState & Pick<GameState, "assets">,
+  id: AssetId,
+  padIndex: number,
+) {
+  const pads = lodgeAttachPads(state.lodgeTier);
+  const at = pads[padIndex];
+  if (!at) return { ok: false as const, reason: "That lodge pad isn't open yet." };
+  return checkAssetPlacement(state, id, at, { padIndex });
 }
 
 export function pickCrewTalent(state: GameState, id: TalentId): GameState {
@@ -925,10 +942,16 @@ export function rushCrewPoint(state: GameState): GameState {
 }
 
 export function placeAssetAtPad(state: GameState, id: AssetId, padIndex: number): GameState {
-  const pads = lodgeAttachPads(state.lodgeTier);
-  const at = pads[padIndex];
-  if (!at) return state;
-  return placeAsset(state, id, at);
+  const preview = checkAssetPlacementAtPad(state, id, padIndex);
+  if (!preview.ok) return state;
+  const buildings = id === "cafe" || id === "shop" || id === "warming_hut"
+    ? Array.from(new Set([...state.buildings, id])) : state.buildings;
+  return {
+    ...state,
+    ...purchaseConstruction(state, preview.cost, id),
+    buildings,
+    assets: [...state.assets, { ...preview.placement, purchase: { day: state.dayIndex, minute: state.clockMin, price: preview.cost } }],
+  };
 }
 
 export function placeAsset(state: GameState, id: AssetId, at: XZ): GameState {

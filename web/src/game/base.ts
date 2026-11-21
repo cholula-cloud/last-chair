@@ -277,12 +277,21 @@ export function previewSlopeAssetPlacement(
   return { ok: true, placement, cost: asset.cost, acres, attached: false };
 }
 
+export type PreviewAssetPlacementOptions = {
+  site?: SiteDef;
+  terrain?: Terrain;
+  terminals?: readonly XZ[];
+  defaultStyleId?: string;
+  /** Lodge inspector pad attach only; never inferred from map proximity. */
+  padIndex?: number;
+};
+
 export function previewAssetPlacement(
   id: AssetId,
   at: XZ,
   tier: LodgeTier,
   assets: readonly PlacedAsset[],
-  options: { site?: SiteDef; terrain?: Terrain; terminals?: readonly XZ[]; defaultStyleId?: string } = {},
+  options: PreviewAssetPlacementOptions = {},
 ): AssetPreview {
   if (id === "snow_guns") return { ok: false, reason: "Place snow guns from the Snow section." };
   const asset = ASSET_CATALOG[id];
@@ -291,24 +300,29 @@ export function previewAssetPlacement(
   if (!asset || asset.placementZone !== "base") return { ok: false, reason: "That one goes up on the hill, not at the base." };
   if (tier < asset.opensAtTier) return { ok: false, reason: `Needs Lodge Tier ${asset.opensAtTier} first.` };
   if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area’s full. Move or remove something first." };
-  if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) return { ok: false, reason: "Pick a spot in the base area." };
 
-  const padLocations = lodgeAttachPads(tier, site).map((point, index) => ({
-    point, index, distance: Math.hypot(at.x - point.x, at.z - point.z),
-  }));
-  const snap = asset.attachable
-    ? padLocations.filter(({ distance }) => distance <= 0.32).sort((a, b) => a.distance - b.distance)[0]
-    : undefined;
-  const position = snap?.point ?? at;
+  const padIndex = options.padIndex;
+  const lodgeAttach = padIndex !== undefined;
+  if (lodgeAttach) {
+    if (!asset.attachable) return { ok: false, reason: "That venue can't attach inside the lodge." };
+    const pads = lodgeAttachPads(tier, site);
+    if (padIndex < 0 || padIndex >= pads.length) {
+      return { ok: false, reason: "That lodge pad isn't open yet." };
+    }
+    if (assets.some((placed) => placed.attachPad === padIndex)) {
+      return { ok: false, reason: "Another venue already has that lodge pad. Try a different pad." };
+    }
+  } else if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) {
+    return { ok: false, reason: "Pick a spot in the base area." };
+  }
+
+  const position = lodgeAttach ? lodgeAttachPads(tier, site)[padIndex!] : at;
   const size = asset.footprint;
   if (!footprintOnLease(position, size.width, size.depth, terrain)) return { ok: false, reason: OFF_LEASE_MESSAGE };
-  if (snap && assets.some((placed) => placed.attachPad === snap.index)) {
-    return { ok: false, reason: "Another venue already has that lodge pad. Try a different pad." };
-  }
   if (!inBaseZone(position, size, site, terrain)) {
     return { ok: false, reason: "Venues need flat ground. Try a flatter spot near the lodge." };
   }
-  if (!snap) {
+  if (!lodgeAttach) {
     if (overlaps(position, size, site.buildings.lodge, site.buildings.lodge.footprint, 0.1)
       || assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.08))) {
       return { ok: false, reason: "Too close to another building. Leave some elbow room." };
@@ -331,8 +345,8 @@ export function previewAssetPlacement(
 
   const acres = size.width * size.depth * terrain.horizontalFeetPerUnit ** 2 / 43560;
   const placement: PlacedAsset = { id, at: { ...position }, styleId: options.defaultStyleId ?? asset.styleId };
-  if (snap) placement.attachPad = snap.index;
-  return { ok: true, placement, cost: asset.cost, acres, attached: snap !== undefined };
+  if (lodgeAttach) placement.attachPad = padIndex;
+  return { ok: true, placement, cost: asset.cost, acres, attached: lodgeAttach };
 }
 
 const LEGACY_LOCATIONS = {
