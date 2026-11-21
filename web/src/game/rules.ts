@@ -71,6 +71,7 @@ import {
   wearTrail,
 } from "./snow";
 import { SAT, daySatisfaction, venueValue, type SatisfactionContext } from "./satisfaction";
+import { settleOperatingDay, ticketBaseOnArrival } from "./intradayCash";
 import { observeGuests } from "./why";
 import {
   DAY_END_MIN,
@@ -202,19 +203,20 @@ export function openNight(state: GameState): GameState {
   const schoolProgramProven = state.schoolProgramProven || (
     state.lodgeTier >= 2 && state.guests.some((guest) => guest.schoolLessonCompleted)
   );
+  const settled = settleOperatingDay({ ...state, dayStats: stats }, day.score, arrived);
   const recap = buildNightRecap({
-    stats: { ...stats, arrivals: day.guests },
-    fare: state.fare,
-    snowQuality: state.snowQuality,
-    snowTrouble: readSnow(snowCarriers(state.trails)).trouble,
-    snowLabel: readSnow(snowCarriers(state.trails)).label,
+    stats: { ...settled.dayStats, arrivals: day.guests },
+    fare: settled.fare,
+    snowQuality: settled.snowQuality,
+    snowTrouble: readSnow(snowCarriers(settled.trails)).trouble,
+    snowLabel: readSnow(snowCarriers(settled.trails)).label,
     day,
     arrivalMood: day.guests ? SAT.ARRIVAL_NEUTRAL + day.breakdown.arrivalMood / SAT.ARRIVAL_PTS : ctx.arrivalMood,
-    costs: operatingCosts(state),
+    costs: operatingCosts(settled),
     schoolBus: invited ? { invited, arrived, taught, ticketRevenue: arrived * SCHOOL_BUS_FARE } : undefined,
-    busiestLift: stats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
+    busiestLift: settled.dayStats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
       const min = record.rides ? record.waitSumMin / record.rides : 0;
-      const lift = state.lifts[i];
+      const lift = settled.lifts[i];
       return min > (busiest?.min ?? 0) && lift ? { min, label: liftName(lift, i) } : busiest;
     }, undefined),
   });
@@ -239,26 +241,26 @@ export function openNight(state: GameState): GameState {
       (id !== "school_bus" || state.schoolContract !== null) &&
       (id !== "summit_link" || state.summitLinkDecision !== null)),
   });
-  const surprise = resolveSurprise(state.surprise, state.guests);
+  const surprise = resolveSurprise(settled.surprise, settled.guests);
   return {
-    ...state,
+    ...settled,
     phase: "night",
     paused: true,
     nightRecap: recap,
     surprise: null,
-    surpriseLog: surprise ? [...state.surpriseLog, surprise] : state.surpriseLog,
-    pendingFare: state.fare,
-    pendingSnow: state.snow,
+    surpriseLog: surprise ? [...settled.surpriseLog, surprise] : settled.surpriseLog,
+    pendingFare: settled.fare,
+    pendingSnow: settled.snow,
     reputation: reputationAfterBeat(
       pendingBeat === "summit_link" && state.completedBeats.includes(pendingBeat) ? null : pendingBeat,
     ),
     pendingBeat,
     beatAcknowledged: pendingBeat == null,
     schoolProgramProven,
-    schoolContract: invited && state.schoolContract?.decision === "accepted"
-      ? { ...state.schoolContract, pupilsTaught: taught }
-      : state.schoolContract,
-    dayStats: stats,
+    schoolContract: invited && settled.schoolContract?.decision === "accepted"
+      ? { ...settled.schoolContract, pupilsTaught: taught }
+      : settled.schoolContract,
+    dayStats: settled.dayStats,
   };
 }
 
@@ -302,6 +304,10 @@ export function tick(state: GameState, deltaMs: number): GameState {
   const previousSegmentRuns = state.dayStats.segmentRunsByTrail;
   let segmentRunsByTrail = previousSegmentRuns && trails.map((_, i) => previousSegmentRuns[i]?.slice() ?? null);
   const venueRevenue = { ...state.dayStats.venueRevenue };
+  let cash = state.cash;
+  let ticketBasePosted = state.dayStats.ticketBasePosted ?? 0;
+  let schoolBusPosted = state.dayStats.schoolBusPosted ?? 0;
+  let intradayRevenue = Boolean(state.dayStats.intradayRevenue);
   const seats = state.assets.reduce((sum, asset) =>
     sum + ((asset.id === "cafe" || asset.id === "warming_hut") ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
   const exposure = state.weather === "thaw" && clockMin + addMin >= THAW_START_MIN
@@ -351,16 +357,29 @@ export function tick(state: GameState, deltaMs: number): GameState {
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
         const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
+        cash += rate;
+        intradayRevenue = true;
         if (asset.id === "cafe" || asset.id === "warming_hut") {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");
           if (shop && !was.refuelled && g.refuelled) {
-            venueRevenue.shop = (venueRevenue.shop ?? 0) + assetRevenue(shop, state.founderId);
+            const shopRate = assetRevenue(shop, state.founderId);
+            venueRevenue.shop = (venueRevenue.shop ?? 0) + shopRate;
+            cash += shopRate;
           }
         }
       }
-      if (was.state === "pending" && g.state !== "pending") guestsArrived += 1;
+      if (was.state === "pending" && g.state !== "pending") {
+        guestsArrived += 1;
+        const fare = ticketBaseOnArrival(g, state.fare);
+        if (fare > 0) {
+          cash += fare;
+          intradayRevenue = true;
+          if (g.schoolPupil) schoolBusPosted += fare;
+          else ticketBasePosted += fare;
+        }
+      }
       // Sent home from the line at closing before a single ride.
       if (was.state === "queue" && g.state === "depart" && g.runs === 0) turnedAway += 1;
     });
@@ -396,6 +415,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
 
   const next: GameState = {
     ...state,
+    cash,
     clockMin,
     guests,
     lifts,
@@ -421,6 +441,9 @@ export function tick(state: GameState, deltaMs: number): GameState {
       maxQueueLength,
       peakWaitMin,
       avgQueueMin: dispatched > 0 ? waitSumMin / dispatched : 0,
+      ticketBasePosted,
+      schoolBusPosted,
+      ...(intradayRevenue ? { intradayRevenue: true } : {}),
     },
   };
   return clockMin >= DAY_END_MIN

@@ -1,6 +1,6 @@
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
 import { ASSET_CATALOG } from "./base";
-import { constructionDraw } from "./economy";
+import { constructionDraw, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
 import { TERRAIN } from "./terrain";
 import { describe, expect, it } from "vitest";
@@ -76,7 +76,8 @@ describe("skipToClose and sleep", () => {
     const next = pure(rules.sleep, withSnow);
     expect(next.phase).toBe("day");
     expect(next.dayIndex).toBe(night.dayIndex + 1);
-    expect(next.cash).toBe(night.cash + recap.cashDelta - SNOW_NIGHT_COST.high);
+    expect(next.cash).toBe(morningCash(withSnow));
+    expect(next.cash).toBe(night.cash - SNOW_NIGHT_COST.high);
     expect(next.nightRecap).toBeNull();
     expect(next.guests.length).toBe(next.dayStats.arrivals);
   });
@@ -87,7 +88,7 @@ describe("skipToClose and sleep", () => {
     night.weather = night.weatherDays[night.dayIndex - 1].kind;
     const review = pure(rules.sleep, night);
     expect(review.phase).toBe("winter_review");
-    expect(review.cash).toBe(night.cash + night.nightRecap!.cashDelta);
+    expect(review.cash).toBe(morningCash(night));
     expect(review.lastDay?.cashDelta).toBe(night.nightRecap!.cashDelta);
     expect(review.fare).toBe(night.fare);
     expect(review.snow).toBe(night.snow);

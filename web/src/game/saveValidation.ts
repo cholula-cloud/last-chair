@@ -108,6 +108,10 @@ const recap = shape({
 const dayStats = shape({
   ...numbers("arrivals", "guestsArrived", "completedRuns", "runsPerGuest", "turnedAway", "peakOnHill", "avgQueueMin",
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
+  ticketBasePosted: optional(number),
+  schoolBusPosted: optional(number),
+  intradayRevenue: optional(boolean),
+  operatingSettled: optional(boolean),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
   segmentRunsByTrail: optional(array(nullable(array(number)))),
 });

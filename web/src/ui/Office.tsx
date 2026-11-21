@@ -17,7 +17,9 @@ import { StoryEntries } from "./StoryLog";
 import { MoneyStatsCharts } from "./officeCharts";
 import { OpsStatsCharts } from "./officeOpsCharts";
 import { SeasonCalendar, SnowReport } from "./officeReports";
+import { todaySales } from "@/game/intradayCash";
 import { revenueBreakdownFromRecap } from "@/game/officeSeries";
+import { liveSatisfaction } from "@/game/rules";
 import { tidy } from "@/ui/kit/parts";
 import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
@@ -50,6 +52,8 @@ export function Money({ s }: { s: GameState }) {
   const breakdown = recap ? revenueBreakdownFromRecap(recap) : null;
   const upcoming = s.dayIndex < s.seasonLength && s.outcome === "playing";
   const cashLabel = s.phase === "night" ? "Projected morning cash" : "Tomorrow's cash";
+  const showToday = s.phase === "day" && s.outcome === "playing";
+  const today = showToday ? todaySales(s, liveSatisfaction(s)) : null;
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
@@ -98,6 +102,26 @@ export function Money({ s }: { s: GameState }) {
         )}
       </div>
 
+      <div className="flex flex-col gap-4">
+        {today && (
+          <Section title="Today">
+            <LedgerRow label="Lift tickets (base)" value={formatMoney(today.ticketBase)} />
+            {today.ticketBonusEstimate > 0 && (
+              <LedgerRow
+                label="Lift tickets (satisfaction est.)"
+                value={formatMoney(today.ticketBonusEstimate)}
+              />
+            )}
+            {today.schoolBus > 0 && <LedgerRow label="School bus" value={formatMoney(today.schoolBus)} />}
+            {today.venues > 0 && <LedgerRow label="Base venues" value={formatMoney(today.venues)} />}
+            <LedgerRow label="Running sales" value={formatMoney(today.runningSales)} highlight />
+            <LedgerRow
+              label="Operating costs (settles at 4 PM)"
+              value={formatMoney(today.operatingCostsAtClose)}
+            />
+          </Section>
+        )}
+
       <Section title="Last day's ledger">
         {recap ? (
           <>
@@ -136,6 +160,7 @@ export function Money({ s }: { s: GameState }) {
           <p className="text-sm font-bold text-ink-soft">No closed days yet. Your first ledger appears at 4 PM closing.</p>
         )}
       </Section>
+      </div>
     </div>
   );
 }
