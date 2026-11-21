@@ -49,29 +49,32 @@ describe("venue placement", () => {
   });
 
   it("snaps to a free pad and gives exactly a five percent bonus to effects and per-use revenue", () => {
-    const pad = lodgeAttachPads(1)[1];
-    const preview = previewAssetPlacement("cafe", { ...pad, x: pad.x + 0.1 }, 1, assets);
-    expect(preview).toMatchObject({ ok: true, attached: true, placement: { at: pad, attachPad: 1 } });
+    const pad = lodgeAttachPads(2)[0];
+    const preview = previewAssetPlacement("cafe", { ...pad, x: pad.x + 0.1 }, 2, assets);
+    expect(preview).toMatchObject({ ok: true, attached: true, placement: { at: pad, attachPad: 0 } });
     if (!preview.ok) throw new Error(preview.reason);
     expect(assetRevenue(preview.placement)).toBeCloseTo(9.45, 8);
     expect(assetEffect(preview.placement, "hillValue")).toBeCloseTo(3.15, 8);
-    expect(previewAssetPlacement("shop", pad, 1, [...assets, preview.placement])).toEqual({
+    expect(previewAssetPlacement("shop", pad, 2, [...assets, preview.placement])).toEqual({
       ok: false,
       reason: "Another venue already has that lodge pad. Try a different pad.",
     });
   });
 
-  it("provides six distinct usable pads at Tier 3", () => {
+  it("unlocks one annex pad at Tier 2 and two at Tier 3", () => {
+    expect(lodgeAttachPads(1)).toHaveLength(0);
+    expect(lodgeAttachPads(2)).toHaveLength(1);
     const wings: PlacedAsset[] = [];
     for (const [index, pad] of lodgeAttachPads(3).entries()) {
-      const preview = previewAssetPlacement("cafe", pad, 3, wings);
+      const id = index === 0 ? "cafe" : "shop";
+      const preview = previewAssetPlacement(id, pad, 3, wings);
       expect(preview).toMatchObject({
         ok: true, attached: true, placement: { attachPad: index },
       });
       if (!preview.ok) throw new Error(preview.reason);
       wings.push(preview.placement);
     }
-    expect(lodgeAttachPads(3)).toHaveLength(6);
+    expect(lodgeAttachPads(3)).toHaveLength(2);
   });
 
   it("protects the lodge, parking lot and approach path from detached buildings", () => {

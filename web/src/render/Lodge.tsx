@@ -103,7 +103,7 @@ export function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTie
     list.push({
       name: attached ? "warming-hut" : name,
       ...asset.at,
-      yaw: (asset.attachPad ?? -1) >= 4 ? Math.PI : 0,
+      yaw: asset.attachPad === 1 ? Math.PI : 0,
       scale: B * (attached ? 1.15 : 1.05),
       asset: { kind: "venue", index },
     });
@@ -153,7 +153,7 @@ function venueDetails(assets: readonly PlacedAsset[]): Part[] {
     if (id === "rentals" || id === "ski_school" || attachPad !== undefined) {
       const color = id === "rentals" ? "#286889" : id === "ski_school" ? "#cd861d"
         : id === "cafe" ? "#713c2e" : id === "shop" ? "#31594c" : TIMBER;
-      const front = attachPad !== undefined && attachPad >= 4 ? -0.23 : 0.34;
+      const front = attachPad === 1 ? -0.23 : 0.34;
       parts.push(
         { geo: box(0.19, 0.12, 0.025), pos: [at.x, ground + 0.22, at.z + front], color },
         { geo: box(0.12, 0.025, 0.034), pos: [at.x, ground + 0.232, at.z + front], color: TRIM },
