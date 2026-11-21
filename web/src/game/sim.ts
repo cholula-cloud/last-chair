@@ -556,7 +556,7 @@ export function applyOvernight(opts: {
   talentsOwned: string[];
   daysWithoutSnow: number;
 }): OvernightResult {
-  const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
+  const hasGuns = opts.hasPlacedGuns === true;
   const hasTrailGuns = TALENT.trailGuns.learned(opts.talentsOwned);
   const hasGroom = TALENT.groomPass.learned(opts.talentsOwned);
 

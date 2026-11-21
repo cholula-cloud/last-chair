@@ -52,7 +52,7 @@ describe("crew order and operations", () => {
   });
   it("trail guns reach farther when a gun is installed", () => {
     const run = (talentsOwned: string[]) => applyOvernight({ ...hill, talentsOwned, trails: [freshTrail()],
-      snow: "mid", buildings: ["snow_guns"], weatherTomorrow: { kind: "clear", wind: "calm" } });
+      snow: "mid", hasPlacedGuns: true, weatherTomorrow: { kind: "clear", wind: "calm" } });
     expect(run(["trail_guns"]).gunReach).toBeGreaterThan(run([]).gunReach);
   });
   it("groom pass raises groom quality seven points", () => {

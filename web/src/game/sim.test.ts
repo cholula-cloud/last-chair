@@ -191,6 +191,8 @@ describe("applyOvernight", () => {
     buildings: [] as BuildingId[],
     talentsOwned: [] as string[],
     daysWithoutSnow: 0,
+    hasPlacedGuns: false,
+    gunCoverage: undefined as boolean[][] | undefined,
   };
   const run = (snow: SnowPreset, over: Partial<typeof start> = {}) =>
     applyOvernight({ snow, ...start, ...over });
@@ -202,9 +204,9 @@ describe("applyOvernight", () => {
   });
 
   it("snow guns fire on mid and high only", () => {
-    expect(run("mid", { buildings: ["snow_guns"] }).gunsFired).toBe(true);
+    expect(run("mid", { hasPlacedGuns: true, gunCoverage: [[true]] }).gunsFired).toBe(true);
     expect(run("mid").gunsFired).toBe(false);
-    expect(run("minimal", { buildings: ["snow_guns"] }).gunsFired).toBe(false);
+    expect(run("minimal", { hasPlacedGuns: true, gunCoverage: [[true]] }).gunsFired).toBe(false);
   });
 
   it("trail_guns stays dormant without equipment", () => {
@@ -235,7 +237,7 @@ describe("applyOvernight", () => {
   it("snow guns do not affect the scheduled weather", () => {
     const weatherTomorrow = { kind: "thaw", wind: "gusty" } as const;
     expect(run("mid", { weatherTomorrow }).weather).toBe("thaw");
-    expect(run("mid", { weatherTomorrow, buildings: ["snow_guns"] }).weather).toBe("thaw");
+    expect(run("mid", { weatherTomorrow, hasPlacedGuns: true }).weather).toBe("thaw");
   });
 
   it("a snow morning resets daysWithoutSnow and adds depth", () => {
