@@ -6,6 +6,8 @@
 
 **Playtest basis:** Local dev, 390×844 Chromium touch; `playtest:m2` (opening ~86.8s scripted, lodge Tier 2, rentals, recap deltas); `phone-check` passed. Uncoached human opening and real Safari not sign-off. `playtest:p0` stale (title screen flow).
 
+**Doc refresh (2026-11-21):** Scores in Parts A–D reflect the **Nov 2026 agent playtest**, before row 26 coach tips and M4b Batch 1 landed on `main` ([#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#149](https://github.com/cholula-cloud/last-chair/pull/149)). Re-run human playtest for an updated verdict.
+
 ---
 
 ## Executive summary
@@ -14,7 +16,7 @@
 |------|---------|----------------|
 | GDV goals & learnability | **Mixed** | Opening is a high-skill 3D task before the core loop is legible |
 | GDV choices & feedback | **Strong core** | Night recap + “Why?” + on-hill queues deliver diagnosis; fare/snow levers under-fed |
-| GDV challenge & progression | **Mixed** | Sim depth and lodge gating work; coach and story choices not shipped |
+| GDV challenge & progression | **Mixed** | Sim depth and lodge gating work; contextual coach shipped (row 26); story choices still night-only |
 | GDV coherence | **Strong** | Cozy tycoon + honest sim + Route 100 tone align |
 | NYFA characters | **Partial** | Six founders read well; *player* and recurring cast thin in play |
 | NYFA world | **Strong** | Dutch Hill / Ice Coast / heritage hooks land in copy |
@@ -22,7 +24,7 @@
 
 **Planning themes from the playtest**
 
-1. **Onboarding coach (MASTER_PLAN ~26)** — GDV goals + learnability gate.
+1. **Onboarding coach (row 26)** — **Shipped** contextual tips + problem guide; still need Q1 human sign-off and optional anchored CoachCard (handoff spec).
 2. **Nightly operating decisions** — GDV meaningful choices and feedback for fare and snow.
 3. **Story as systems (rows 23–24)** — NYFA conflict + GDV consequences for radio / Abominable Snowglomerate.
 4. **Founder legibility** — NYFA characters + GDV rule comprehension.
@@ -287,7 +289,7 @@ Retained for planning; details in agent playtest report.
 
 ### Challenge
 
-- **Major:** No coach; uncertain cold-start winter 1 without docs.
+- **Major:** Opening skill wall; coach tips help but anchored founder walkthrough and human cold-start sign-off remain open (Q1).
 
 ### Cross-cutting
 
@@ -317,7 +319,7 @@ The matrix retains other review findings for prioritization. Impact describes th
 
 | ID | Work item | GDV principles | NYFA | Impact | Effort | Suggested row |
 |----|-----------|------------------|------|--------|--------|----------------|
-| P1 | Contextual coach (lift → trail → play) | 1, 2, 5 | — | High | M | L-E, 26 |
+| P1 | Contextual coach (lift → trail → play) | 1, 2, 5 | — | High | M | L-E, 26 — **☑ shipped** ([#149](https://github.com/cholula-cloud/last-chair/pull/149)); verify on device |
 | P2 | Measured night recap and fare/snow tradeoffs | 3, 4 | — | High | M | L-E, 26 |
 | P3 | Founder effect surfacing (1 metric each) | 2, 3 | Characters | Med | S | 22 |
 | P4 | Local surprises and story log | 4, 7 | World, conflict | High | L | 23 |

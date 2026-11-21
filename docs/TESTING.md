@@ -1,6 +1,6 @@
 # Last Chair — testing
 
-**Version:** 1.3 · **Updated:** 2026-11-20
+**Version:** 1.4 · **Updated:** 2026-11-21
 Merged from the former P0 and P1 playtest scripts. PR rules that require these tests: [MASTER_PLAN.md §8](./MASTER_PLAN.md#8-how-we-work).
 
 ---
@@ -173,6 +173,7 @@ From `web/`, run `PLAY_URL=http://localhost:3000 npm run playtest:feel` against 
 | 2026-11-19 | M3 hill sound and ambient life | Chromium touch, 390×844, reduced motion | Sound-on opened one audio device after Continue and played wind, a tap, the construction thunk, radio notes and the Tier 2 chime. Muted opened zero audio devices. The WebGL scene showed occupied chairs during the day and the snowcat on the grooming route after closing. |
 | 2026-11-20 | Mobile HUD and placement chrome (PR #102) | `npm run check` on `main`; unit tests for `hudUi` and `trailPanel`; WebKit portrait job with `PHONE_CHECK_SKIP_FPS=1` | Merged hide/show HUD, compact conditions strip with expand, map tool rail (Layers/Grid/Recenter/Hide), placement **Minimize**, removed **Move map** mode in favor of always-on two-finger pan; `phone-check` lift copy updated to match placement hints. Uncoached device pass on Hide/Minimize still open. |
 | 2026-11-20 | M4 stack merge overlap (#97–#111) | `npm run check`, `npm run m2-gate`; Playwright: `playtest-hud-fixes`, `playtest:m2`, `playtest:p0`, `playtest:layers`, `playtest:coach` (Chromium, static export) | Parallel HUD/layer-dock (#106) hid overlay readouts and overlapped morning note vs map rail; playtests updated for bottom layer dock. No leftover conflict markers; #110 slope-legend fix holds. |
+| 2026-11-21 | M4b Batch 1 + forest + plan v2.13 | `npm run check` on `main` (967 tests, 66 asset rows); PRs [#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#149](https://github.com/cholula-cloud/last-chair/pull/149) merged | Activities, mood lens, kit forest, coach/`problemGuide` alignment documented in MASTER_PLAN v2.13. Device Q1 sign-off still open. |
 
 Log friction as a GitHub issue with device and OS version.
 
