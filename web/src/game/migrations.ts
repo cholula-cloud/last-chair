@@ -128,7 +128,8 @@ export const MIGRATIONS: readonly Migration[] = [
           const attachPad = (entry as { attachPad?: unknown }).attachPad;
           if (typeof attachPad !== "number" || !Number.isInteger(attachPad) || attachPad < 0) return entry;
           if (attachPad >= maxPad || attachPad >= 3) {
-            const { attachPad: _removed, ...rest } = entry as { attachPad?: number };
+            const rest = { ...(entry as Record<string, unknown>) };
+            delete rest.attachPad;
             return rest;
           }
           return entry;
