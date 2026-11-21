@@ -300,7 +300,7 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
 | Daily fixed cost | $1,095 plus the founder's fixed cost adjustment |
 | Lift operations per day | $180 per operating lift, with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
-| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $60 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
+| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $60 each, rentals $20 each, ski school desk $25 each, warming hut $0, tubing $35, rink $80, après bar $55, fire pit $5, string lights $8 |
 | Snow and service | Minimal $0 / Mid $150 / High $350 per night |
 | Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
 

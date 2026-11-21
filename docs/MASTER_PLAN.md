@@ -514,11 +514,11 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |
 | F3b | ☑ | Stats ops charts and Reports | Fare elasticity, arrivals, satisfaction and its five terms, wait, snow service spend, satisfaction vs revenue scatter (`officeOpsCharts.tsx`). Reports gains the 28-day **season calendar** (weather and result; tap opens that day's recap) and a ski-area snow-report style trail report (`officeReports.tsx`). Gate: opening Stats after day 7 feels like a CFO dashboard, not a log list (§12). |
 
-Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **Next queue:** **M4b** Blender rows.
+Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **M4b Batch 1** (guests, kit, trail signage, styles, activities) is ☑ on `main`; **next queue:** **M5** career rows unless owner adds M4b batch 2.
 
 ### M4b: Blender assets
 
-Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB. Batch 1 GLBs (rows 29, T1, S2, A1 to A4; ◐) are in `web/public/models/` per `docs/M4b Asset Spec Batch 1.md`; game wiring is still open.
+Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB. **Batch 1 is complete on `main`** (rows 28, 29, T1, S1 to S3, A1 to A5; see [#142](https://github.com/cholula-cloud/last-chair/pull/142), [#143](https://github.com/cholula-cloud/last-chair/pull/143), and activity/style wiring PRs).
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
@@ -527,12 +527,12 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 | T1 | ☑ | Trail signage kit (Blender) | `TrailSign.tsx` uses Blender `trail-sign` kit with runtime `sign-face` texture; entrance placement along corridor (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
 | S1 | ☑ | Style system (code) | Manifest-driven kit resolution; `lodgeStyleId` in saves (schema 14); lodge + venue style picker in asset inspector; `chalet70s` GLBs wired (see `docs/reference/lodge-styles.md`) |
 | S2 | ☑ | Style packs (Blender) | Dutch Hill timber50s + chalet70s for lodge tiers and venues; café outdoor patio on both `cafe` / `cafe-chalet70s` |
-| S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
-| A1 | ◐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
-| A2 | ◐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
-| A3 | ◐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
-| A4 | ◐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
-| A5 | ☐ | Events (Blender + catalog) | Winter carnival night choice using rink and tubing assets |
+| S3 | ☑ | Unlockable styles (Blender) | `chalet70s` unlocks at Lodge Tier 2 (or after winter review); `StylePicker` respects unlocks |
+| A1 | ☑ | Tubing hill (Blender + catalog) | Catalog + `tubing-hut` render; slope placement; ticket revenue at close |
+| A2 | ☑ | Ice rink (Blender + catalog) | Catalog + `ice-rink` render; tier 3 gate; ticket revenue |
+| A3 | ☑ | Bar and restaurant (Blender + catalog) | `apres_bar` venue: après seats, visits, `apres-bar` GLB |
+| A4 | ☑ | Decor (Blender + catalog) | `fire_pit`, `string_lights` decor rows; arrival mood; kit render |
+| A5 | ☑ | Events (Blender + catalog) | Saturday winter carnival bonus when tubing + rink are both built |
 
 ### M5: Career
 

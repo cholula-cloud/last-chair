@@ -32,7 +32,8 @@ import {
 import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
-import { isKnownStyleId, normalizeStyleId } from "./styles";
+import { applyActivityEconomy } from "./activities";
+import { isKnownStyleId, isStyleUnlocked, normalizeStyleId } from "./styles";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
@@ -191,20 +192,21 @@ const BEAT_REPUTATION_BONUS = 2;
 
 export function openNight(state: GameState): GameState {
   if (state.phase !== "day" || openingStep(state)) return state;
-  const calendar = seasonCalendar(state);
-  const openLifts = state.lifts.filter((lift, i) => isLiftOperational(lift, i, state.trails)).length;
-  const avgQueueMin = measuredWaitMin(state);
-  const ctx = satisfactionContext(state);
-  const day = daySatisfaction(state.guests, ctx);
-  const stats = { ...state.dayStats, avgQueueMin };
-  const invited = schoolBusPupils(state.schoolContract, state.dayIndex);
-  const pupils = invited ? state.guests.filter((guest) => guest.schoolPupil) : [];
+  const withActivities = applyActivityEconomy(state);
+  const calendar = seasonCalendar(withActivities);
+  const openLifts = withActivities.lifts.filter((lift, i) => isLiftOperational(lift, i, withActivities.trails)).length;
+  const avgQueueMin = measuredWaitMin(withActivities);
+  const ctx = satisfactionContext(withActivities);
+  const day = daySatisfaction(withActivities.guests, ctx);
+  const stats = { ...withActivities.dayStats, avgQueueMin };
+  const invited = schoolBusPupils(withActivities.schoolContract, withActivities.dayIndex);
+  const pupils = invited ? withActivities.guests.filter((guest) => guest.schoolPupil) : [];
   const arrived = pupils.filter((guest) => guest.state !== "pending").length;
   const taught = pupils.filter((guest) => guest.schoolLessonCompleted).length;
-  const schoolProgramProven = state.schoolProgramProven || (
-    state.lodgeTier >= 2 && state.guests.some((guest) => guest.schoolLessonCompleted)
+  const schoolProgramProven = withActivities.schoolProgramProven || (
+    withActivities.lodgeTier >= 2 && withActivities.guests.some((guest) => guest.schoolLessonCompleted)
   );
-  const settled = settleOperatingDay({ ...state, dayStats: stats }, day.score, arrived);
+  const settled = settleOperatingDay({ ...withActivities, dayStats: stats }, day.score, arrived);
   const recap = buildNightRecap({
     stats: { ...settled.dayStats, arrivals: day.guests },
     fare: settled.fare,
@@ -310,7 +312,8 @@ export function tick(state: GameState, deltaMs: number): GameState {
   let schoolBusPosted = state.dayStats.schoolBusPosted ?? 0;
   let intradayRevenue = Boolean(state.dayStats.intradayRevenue);
   const seats = state.assets.reduce((sum, asset) =>
-    sum + ((asset.id === "cafe" || asset.id === "warming_hut") ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
+    sum + ((asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar")
+      ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
   const exposure = state.weather === "thaw" && clockMin + addMin >= THAW_START_MIN
     ? exposureFor(state)
     : [];
@@ -354,13 +357,13 @@ export function tick(state: GameState, deltaMs: number): GameState {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
-      if (asset?.id === "cafe" || asset?.id === "warming_hut") occupiedSeats += 1;
+      if (asset?.id === "cafe" || asset?.id === "warming_hut" || asset?.id === "apres_bar") occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
         const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         cash += rate;
         intradayRevenue = true;
-        if (asset.id === "cafe" || asset.id === "warming_hut") {
+        if (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar") {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");
@@ -1009,6 +1012,7 @@ export function moveAsset(state: GameState, index: number, at: XZ): GameState {
 export function setLodgeStyle(state: GameState, styleId: string): GameState {
   if (!isKnownStyleId(styleId)) return state;
   const lodgeStyleId = normalizeStyleId(styleId);
+  if (!isStyleUnlocked(lodgeStyleId, state)) return state;
   return lodgeStyleId === state.lodgeStyleId ? state : { ...state, lodgeStyleId };
 }
 
@@ -1017,6 +1021,7 @@ export function setAssetStyle(state: GameState, index: number, styleId: string):
   const asset = state.assets[index];
   if (!asset) return state;
   const nextStyle = normalizeStyleId(styleId);
+  if (!isStyleUnlocked(nextStyle, state)) return state;
   if (nextStyle === asset.styleId) return state;
   if (venueChangeProblem(state, index)) return state;
   return { ...state, assets: state.assets.map((a, i) => (i === index ? { ...a, styleId: nextStyle } : a)) };
