@@ -69,39 +69,87 @@ def _tier2(a, W, D, H, F):
     a.box((0, cy + wl / 2 + 0.2, 0.25), (3.0, 1.2, 0.5), "snow", bevel=0.18)
 
 
+def _tier3_main_grand(a, W, D, H, F):
+    """Grand-lodge read on the main block (composited with base-lodge at tier 3)."""
+    fy = -D / 2
+    # stone terrace across the front porch
+    a.box((0, fy - 2.6, F - 0.08), (11.2, 5.6, 0.28), "stone-grey")
+    a.box((0, fy - 2.15, F + 0.12), (10.6, 4.8, 0.14), "trim-white")
+    # wider gabled portico over the entry
+    for x in (-2.4, 2.4):
+        a.box((x, fy - 1.05, F + 1.45), (0.32, 0.32, 3.35), "trim-white")
+    a.box((0, fy - 0.85, F + 3.55), (5.8, 3.4, 0.24), "trim-white")
+    a.gable_end((0, fy - 0.85, F + 3.65), 3.4, 5.8, 1.9, "barn-red", rz=90)
+    a.gable_roof((0, fy - 0.85, F + 3.65), 3.4, 5.8, 1.9, "slate-roof", rz=90, thick=0.18,
+                 overhang=0.35, snow_thick=0.3, snow_over=0.1, snow_bevel=0.1)
+    a.box((0, fy - 1.05, F + 2.75), (2.4, 0.12, 0.85), "cream-sign")
+    a.box((0, fy - 1.12, F + 2.65), (1.8, 0.06, 0.45), "navy")
+    for x in (-1.8, 1.8):
+        a.box((x, fy - 0.55, F + 2.1), (0.28, 0.28, 0.42), "lamp-glow")
+    # lodge banners flanking the approach
+    for x in (-5.6, 5.6):
+        a.box((x, fy - 2.9, F + 0.15), (0.18, 0.18, 4.6), "timber-brown")
+        a.box((x + 0.55 * (1 if x > 0 else -1), fy - 2.65, F + 3.7), (1.1, 0.08, 1.65), "navy")
+        a.box((x + 0.55 * (1 if x > 0 else -1), fy - 2.65, F + 3.72), (1.0, 0.04, 1.55), "trim-white")
+    # wider upper gallery across the great-room windows
+    gz = 4.85
+    a.box((0, fy - 0.35, gz - 0.12), (9.8, 1.6, 0.22), "timber-brown")
+    for bx in (-4.2, -1.4, 1.4, 4.2):
+        a.box((bx, fy - 0.35, gz - 0.45), (0.2, 0.2, 0.85), "trim-white")
+    for bx in (-3.5, 0.0, 3.5):
+        a.box((bx, fy - 0.48, gz + 0.62), (1.8, 0.1, 0.1), "timber-brown")
+        a.box((bx, fy - 0.48, gz + 0.68), (1.85, 0.14, 0.08), "snow")
+
+
 def _tier3_delta(a, W, D, H, F):
-    """Tier-3-only addition: second storey on dining wing, cupola, extra stack."""
+    """Tier-3-only addition: grand dining wing, ridge cupola, main-lodge polish."""
+    _tier3_main_grand(a, W, D, H, F)
     wcx, wcy = -8.2, -0.6
-    wl, wd = 4.8, 6.2
-    z0, z1 = 3.6, 6.4
+    wl, wd = 5.1, 6.4
+    z0, z1 = 3.6, 7.1
     a.box((wcx, wcy, (z0 + z1) / 2), (wl, wd, z1 - z0), "barn-red")
     for sy in (-1, 1):
-        a.box((wcx - wl / 2, wcy + sy * wd / 2, (z0 + z1) / 2), (0.28, 0.28, z1 - z0), "trim-white")
-    a.box((wcx, wcy, z0), (wl + 0.1, wd + 0.1, 0.2), "trim-white")
-    rise = 2.7
-    cx2, len2 = wcx + 0.7, wl + 2.2
+        a.box((wcx - wl / 2, wcy + sy * wd / 2, (z0 + z1) / 2), (0.32, 0.32, z1 - z0), "trim-white")
+    a.box((wcx, wcy, z0), (wl + 0.12, wd + 0.12, 0.24), "trim-white")
+    for z in (4.6, 5.8):
+        a.box((wcx, wcy, z), (wl + 0.06, wd + 0.06, 0.12), "timber-dark")
+    rise = 3.1
+    cx2, len2 = wcx + 0.75, wl + 2.4
     a.gable_end((cx2, wcy, z1), len2, wd, rise, "barn-red")
-    a.gable_roof((cx2, wcy, z1), len2, wd, rise, "slate-roof", thick=0.22, overhang=0.5,
-                 snow_thick=0.4, snow_over=0.12, snow_bevel=0.12)
+    a.gable_roof((cx2, wcy, z1), len2, wd, rise, "slate-roof", thick=0.24, overhang=0.6,
+                 snow_thick=0.45, snow_over=0.14, snow_bevel=0.13)
     fy = wcy - wd / 2
-    for x in (wcx - 1.2, wcx + 1.2):
-        a.window((x, fy, 5.0), 1.1, 1.4, '-Y')
-    a.window((wcx - wl / 2, wcy - 1.6, 5.0), 1.0, 1.3, '-X')
+    for x in (wcx - 1.35, wcx, wcx + 1.35):
+        a.window((x, fy, 5.2), 1.15, 1.5, '-Y')
+        a.window((x, fy, 6.7), 0.95, 1.2, '-Y', mullion=False)
+    a.window((wcx - wl / 2, wcy - 1.7, 5.5), 1.05, 1.4, '-X')
+    a.window((wcx - wl / 2, wcy + 1.5, 6.2), 0.9, 1.1, '-X', mullion=False)
+    # upper gallery on the dining wing
+    bz = F + 3.0
+    gx0, gx1 = wcx - 1.8, wcx + 1.8
+    a.box(((gx0 + gx1) / 2, fy - 0.55, bz - 0.1), (gx1 - gx0, 1.2, 0.2), "timber-brown")
+    for gx in (gx0, gx1):
+        a.box((gx, fy - 0.55, bz + 0.45), (0.18, 0.18, 1.0), "trim-white")
+    for gx in (wcx - 0.9, wcx + 0.9):
+        a.box((gx, fy - 0.62, bz + 1.02), (0.85, 0.1, 0.1), "timber-brown")
     # second stone stack on the dining wing end
-    sx, sy = wcx - wl / 2 - 0.9, wcy + 1.4
-    a.box((sx, sy, 1.8), (1.8, 1.9, 3.6), "stone-grey")
-    a.box((sx, sy, 7.5), (1.4, 1.5, 7.8), "stone-grey")
-    a.box((sx, sy, 11.55), (1.7, 1.7, 0.3), "stone-dark")
-    a.box((sx, sy, 11.85), (1.5, 1.5, 0.28), "snow", bevel=0.1)
-    for z in (5.0, 8.5):
-        a.box((sx, sy, z), (1.55, 1.6, 0.16), "stone-dark")
-    # ridge cupola
-    cz = H + 6.6
-    a.box((0, 0.2, cz + 0.55), (1.6, 1.6, 1.2), "trim-white")
-    for face, (x, y) in {'-Y': (0, -0.6), '+Y': (0, 1.0), '-X': (-0.8, 0.2), '+X': (0.8, 0.2)}.items():
-        a.window((x, y, cz + 0.6), 0.7, 0.6, face, sill=False, mullion=False, frame="trim-white")
-    a.cyl((0, 0.2, cz + 1.15), 1.35, 0.0, 1.1, 4, "slate-roof", rot=(0, 0, 45))
-    a.cyl((0, 0.2, cz + 1.7), 0.5, 0.0, 0.55, 4, "snow", rot=(0, 0, 45))
+    sx, sy = wcx - wl / 2 - 0.95, wcy + 1.5
+    a.box((sx, sy, 2.0), (1.95, 2.05, 3.8), "stone-grey")
+    a.box((sx, sy, 8.0), (1.55, 1.65, 8.2), "stone-grey")
+    a.box((sx, sy, 12.25), (1.85, 1.85, 0.32), "stone-dark")
+    a.box((sx, sy, 12.58), (1.65, 1.65, 0.3), "snow", bevel=0.1)
+    for z in (5.2, 9.0, 11.5):
+        a.box((sx, sy, z), (1.6, 1.65, 0.18), "stone-dark")
+    # grand ridge cupola (lantern room)
+    cz = H + 6.85
+    a.box((0, 0.35, cz + 0.65), (2.05, 2.05, 1.45), "trim-white")
+    for face, (x, y) in {'-Y': (0, -0.75), '+Y': (0, 1.15), '-X': (-0.95, 0.2), '+X': (0.95, 0.2)}.items():
+        a.window((x, y, cz + 0.75), 0.85, 0.75, face, sill=False, mullion=False, frame="trim-white")
+    a.box((0, 0.35, cz + 1.55), (0.9, 0.9, 0.65), "lamp-glow")
+    a.cyl((0, 0.35, cz + 1.35), 1.55, 0.0, 1.25, 4, "slate-roof", rot=(0, 0, 45))
+    a.cyl((0, 0.35, cz + 1.95), 0.62, 0.0, 0.65, 4, "snow", rot=(0, 0, 45))
+    a.box((0, 0.35, cz + 2.35), (0.12, 0.12, 1.1), "steel-dark")
+    a.sphere((0, 0.35, cz + 2.95), 0.22, "snow")
 
 
 def _tier3(a, W, D, H, F):
