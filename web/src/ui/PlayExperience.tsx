@@ -393,7 +393,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         <div
           inert={officeOpen || !!inspectedAsset}
           data-map-rail="vertical"
-          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
+          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-40 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
         </div>
