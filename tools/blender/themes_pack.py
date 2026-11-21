@@ -118,7 +118,9 @@ def make_lodge(style, tier):
     rise = _gabled_shell(a, W, D, H, F, t)
     fy = -D / 2
     _front_glaze(a, fy, H, F, rise if not t.get("prism") else rise * 0.5, t)
-    _deck_front(a, fy, F, t)
+    # Tier 2+ layout owns the approach deck — skip base deck clutter.
+    if tier < 2:
+        _deck_front(a, fy, F, t)
     cx = W / 2 + 0.7
     a.box((cx, 1.0, 2.0), (1.6, 1.8, 3.5), t["stone"])
     a.box((cx, 1.0, 8.0), (1.3, 1.4, 8.0), t["stone"])
@@ -128,7 +130,7 @@ def make_lodge(style, tier):
         layout.tier2_front_bay(a, _mats(t), W, D, F)
     if tier >= 3:
         layout.tier3_front_grand(a, _mats(t), W, D, H, F)
-        _cupola(a, H, rise if not t.get("prism") else 6.0, t)
+        # Layout ridge lantern covers Tier 3; theme cupola only on T1/T2 sugarhouse.
     else:
         _cupola(a, H, rise if not t.get("prism") else 6.0, t)
     return a.finish()

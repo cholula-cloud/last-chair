@@ -37,12 +37,12 @@ def _deck(a, x0, x1, y0, y1, z, rail=True):
 
 
 def _tier2(a, W, D, H, F):
-    """Camera-facing tier-2: forward bay, deck, flank ski rack, modest side wing."""
+    """Camera-facing tier-2: wide pavilion, wrap balcony, guest wing, dining uplift."""
     layout.tier2_front_bay(a, layout.timber_mats(), W, D, F)
 
 
 def _tier3_delta(a, W, D, H, F):
-    """Tier-3-only: portico, gallery, banners, cupola, fire pits, flank dining tower."""
+    """Tier-3-only: porte-cochère, crown, ridge lantern, flank towers, stone plaza."""
     layout.tier3_front_grand(a, layout.timber_mats(), W, D, H, F)
 
 

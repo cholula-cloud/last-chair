@@ -7,6 +7,8 @@ def b_lodge(name="base-lodge", extra=None):
     a = Asset(name)
     W, D, H = 12.0, 9.0, 6.4      # walls x, y, eave height
     F = 0.7                        # foundation height
+    # Tier extras rebuild the approach — skip base porch/deck to avoid stacked clutter.
+    approach = extra is None
     a.box((0, 0, F / 2), (W + 0.3, D + 0.3, F), "stone-grey")
     a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "barn-red")
     # corner trim + floor band
@@ -59,40 +61,38 @@ def b_lodge(name="base-lodge", extra=None):
     for x in (wcx - 1.2, wcx + 1.2):
         a.window((x, -0.6 - wd / 2, 2.05), 1.6, 1.6, '-Y')
     a.window((wx1, -0.6, 2.05), 1.8, 1.6, '-X')
-    # front deck
-    dy0, dy1 = fy - 0.1, fy - 3.4
-    dz = F
-    a.box((0, (dy0 + dy1) / 2, dz - 0.1), (10.4, dy0 - dy1, 0.2), "timber-brown")
-    a.box((0, (dy0 + dy1) / 2, dz / 2 - 0.15), (10.0, dy0 - dy1 - 0.3, dz - 0.3), "timber-dark")
-    # steps
-    for i in range(2):
-        a.box((0, dy1 - 0.35 - i * 0.35, dz - 0.25 - i * 0.22), (2.4, 0.4, 0.2), "timber-brown")
-    # railing
-    rx = 5.1
-    posts = [(-rx, dy1), (-rx, dy0), (rx, dy1), (rx, dy0), (-1.3, dy1), (1.3, dy1), (-3.2, dy1), (3.2, dy1),
-             (-rx, (dy0 + dy1) / 2), (rx, (dy0 + dy1) / 2)]
-    for (x, y) in posts:
-        a.box((x, y, dz + 0.55), (0.18, 0.18, 1.1), "timber-brown")
-    rails = [((-rx + -1.3) / 2, dy1, abs(-1.3 + rx)), ((rx + 1.3) / 2, dy1, abs(rx - 1.3))]
-    for (x, y, L) in rails:
-        a.box((x, y, dz + 1.05), (L + 0.2, 0.14, 0.12), "timber-brown")
-        a.box((x, y, dz + 0.55), (L, 0.08, 0.08), "timber-brown")
-        a.box((x, y, dz + 1.15), (L + 0.2, 0.2, 0.09), "snow")
-    for sx in (-1, 1):
-        L = dy0 - dy1
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.05), (0.14, L, 0.12), "timber-brown")
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 0.55), (0.08, L, 0.08), "timber-brown")
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.15), (0.2, L, 0.09), "snow")
-    # entry porch: small gable on two posts over the door
-    for x in (-1.6, 1.6):
-        a.box((x, fy - 2.0, F + 1.35), (0.24, 0.24, 2.7), "trim-white")
-    a.box((0, fy - 1.0, F + 2.75), (3.6, 2.2, 0.22), "trim-white")
-    a.gable_end((0, fy - 1.0, F + 2.85), 2.2, 3.6, 1.5, "barn-red", rz=90)
-    a.gable_roof((0, fy - 1.0, F + 2.85), 2.4, 3.6, 1.5, "slate-roof", rz=90, thick=0.18,
-                 overhang=0.3, snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
-    # lanterns either side of door
-    for x in (-1.25, 1.25):
-        a.box((x, fy - 0.15, F + 2.3), (0.26, 0.26, 0.38), "lamp-glow")
+    if approach:
+        # front deck
+        dy0, dy1 = fy - 0.1, fy - 3.4
+        dz = F
+        a.box((0, (dy0 + dy1) / 2, dz - 0.1), (10.4, dy0 - dy1, 0.2), "timber-brown")
+        a.box((0, (dy0 + dy1) / 2, dz / 2 - 0.15), (10.0, dy0 - dy1 - 0.3, dz - 0.3), "timber-dark")
+        for i in range(2):
+            a.box((0, dy1 - 0.35 - i * 0.35, dz - 0.25 - i * 0.22), (2.4, 0.4, 0.2), "timber-brown")
+        rx = 5.1
+        posts = [(-rx, dy1), (-rx, dy0), (rx, dy1), (rx, dy0), (-1.3, dy1), (1.3, dy1), (-3.2, dy1), (3.2, dy1),
+                 (-rx, (dy0 + dy1) / 2), (rx, (dy0 + dy1) / 2)]
+        for (x, y) in posts:
+            a.box((x, y, dz + 0.55), (0.18, 0.18, 1.1), "timber-brown")
+        rails = [((-rx + -1.3) / 2, dy1, abs(-1.3 + rx)), ((rx + 1.3) / 2, dy1, abs(rx - 1.3))]
+        for (x, y, L) in rails:
+            a.box((x, y, dz + 1.05), (L + 0.2, 0.14, 0.12), "timber-brown")
+            a.box((x, y, dz + 0.55), (L, 0.08, 0.08), "timber-brown")
+            a.box((x, y, dz + 1.15), (L + 0.2, 0.2, 0.09), "snow")
+        for sx in (-1, 1):
+            L = dy0 - dy1
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.05), (0.14, L, 0.12), "timber-brown")
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 0.55), (0.08, L, 0.08), "timber-brown")
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.15), (0.2, L, 0.09), "snow")
+        # entry porch: small gable on two posts over the door
+        for x in (-1.6, 1.6):
+            a.box((x, fy - 2.0, F + 1.35), (0.24, 0.24, 2.7), "trim-white")
+        a.box((0, fy - 1.0, F + 2.75), (3.6, 2.2, 0.22), "trim-white")
+        a.gable_end((0, fy - 1.0, F + 2.85), 2.2, 3.6, 1.5, "barn-red", rz=90)
+        a.gable_roof((0, fy - 1.0, F + 2.85), 2.4, 3.6, 1.5, "slate-roof", rz=90, thick=0.18,
+                     overhang=0.3, snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
+        for x in (-1.25, 1.25):
+            a.box((x, fy - 0.15, F + 2.3), (0.26, 0.26, 0.38), "lamp-glow")
     # snow drifts at base corners
     a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
     a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)

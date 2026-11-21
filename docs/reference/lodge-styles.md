@@ -18,12 +18,12 @@ Shared layout lives in [`tools/blender/lodge_tier_layout.py`](../../tools/blende
 
 | Tier | Player-facing read |
 |------|--------------------|
-| **2** | Forward two-story gabled bay on −Y, wider deck + stairs, flank ski rack, modest ±X wing |
-| **3** | Portico / porte-cochère on −Y, front gallery, banner poles, ridge cupola, fire pits on approach, flank dining tower |
+| **2** | Wide two-story −Y pavilion (replaces base porch), wrap balcony, deep approach deck, +X guest wing, −X dining uplift, twin dormers |
+| **3** | Stone plaza + porte-cochère, pavilion crown (3rd level), ridge lantern, twin flank towers (±X), high balconies, terrace fire pits |
 
 **Do not** grow primary upgrade mass on **+Y (rear)** — that reads as “behind” the lodge from the game camera.
 
-Tier upgrades stack annex GLBs (`base-lodge` / `lodge-tier-1-{style}` + `lodge-annex-2/3` or styled counterparts). Full-shell `lodge-tier-2*` / `lodge-tier-3*` meshes match for asset review.
+Tier extras **replace** the Tier‑1 porch/deck (no stacked fronts). Full-shell `lodge-tier-2*` / `lodge-tier-3*` are what the game draws; annex GLBs keep the delta-only pieces for review.
 
 ## Base venues per theme
 
