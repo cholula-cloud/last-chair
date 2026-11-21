@@ -65,14 +65,23 @@ try {
   const bounds = await strip().boundingBox();
   assert(bounds && bounds.x >= 0 && bounds.x + bounds.width <= 391);
 
-  for (const layer of ["Snow depth", "Snow-making", "Conditions", "Crowds", "Revenue", "Guests want", "Trails"]) {
-    await layerPick(layer);
-    if (["Crowds", "Revenue", "Guests want", "Trails"].includes(layer)) {
-      await page.getByLabel(`${layer} legend`).waitFor();
+  const layers = [
+    { strip: "Depth", legend: "Snow depth" },
+    { strip: "Guns", legend: "Snow-making" },
+    { strip: "Snow", legend: "Conditions" },
+    { strip: "Crowds", legend: "Crowds" },
+    { strip: "Cash", legend: "Revenue" },
+    { strip: "Demand", legend: "Guests want" },
+    { strip: "Trails", legend: "Trails" },
+  ];
+  for (const { strip: stripLabel, legend } of layers) {
+    await layerPick(stripLabel);
+    if (["Crowds", "Revenue", "Guests want", "Trails"].includes(legend)) {
+      await page.getByLabel(`${legend} legend`).waitFor();
       continue;
     }
-    await snowPanel().getByLabel(layer + " legend").waitFor();
-    if (layer === "Snow-making") {
+    await snowPanel().getByLabel(`${legend} legend`).waitFor();
+    if (legend === "Snow-making") {
       await snowPanel().getByRole("button", { name: "Mid", exact: true }).tap();
       await snowPanel().getByText(/Groomer only/).waitFor();
       await snowPanel().getByRole("button", { name: "High", exact: true }).tap();
@@ -81,9 +90,6 @@ try {
         .tap();
     }
   }
-
-  await layerPick("Conditions");
-  await snowPanel().getByLabel("Conditions legend").waitFor();
 
   const points = trailSegmentMidpoints(state.trails[0]).map((p) => [
     p.x,

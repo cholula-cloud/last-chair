@@ -407,7 +407,14 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const radio = useSettings(s => s.radioEnabled);
   const sleep = useGameStore((s) => s.sleep);
   const rushCrewPoint = useGameStore((s) => s.rushCrewPoint);
+  const recapDayIndex = useGameStore((s) => (s.phase === "night" && s.nightRecap ? s.dayIndex : null));
   const [mobileStep, setMobileStep] = useState<"results" | "plan">("results");
+  const [mobileStepNight, setMobileStepNight] = useState<number | null>(null);
+  // Sheet stays mounted through the day; reset phone tabs each night.
+  if (recapDayIndex != null && recapDayIndex !== mobileStepNight) {
+    setMobileStepNight(recapDayIndex);
+    setMobileStep("results");
+  }
 
   const recap = night?.nightRecap;
   if (!night || !recap) return null;

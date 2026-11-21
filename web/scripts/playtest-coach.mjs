@@ -46,14 +46,14 @@ try {
       page.getByRole("button", { name: label, exact: true }).tap({ force });
     const pressRail = (label) => press(label, { force: true });
     const tip = page.getByRole("complementary", { name: "Tip", exact: true });
-    await tip.getByText("Tap the speed button to hurry the day along.").waitFor();
+    await tip.getByText(/Use the speed button to fast-forward through the ski day/i).waitFor();
     assert.equal(await tip.count(), 1);
     await page.getByRole("button", { name: /Game speed/ }).waitFor();
     await press("Dismiss tip");
     await tip.waitFor({ state: "hidden" });
 
     await press("Build");
-    await tip.getByText("The dashed lease line marks where you can build. Past it, it’s somebody else’s woods.").waitFor();
+    await tip.getByText(/Stay inside the dashed lease line when placing lifts, trails, and venues/i).waitFor();
     await press("Dismiss tip");
     await press("Review Tier 2 upgrade");
     await press("Start lodge upgrade");
@@ -67,7 +67,7 @@ try {
     await pressRail("Layers");
     const dock = page.locator("[data-layer-dock]");
     await dock.waitFor({ state: "visible" });
-    await page.locator('[data-layer-strip] button', { hasText: "Snow depth" }).evaluate((el) => {
+    await page.locator('[data-layer-strip] button', { hasText: "Depth" }).evaluate((el) => {
       el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
     await pressRail("Layers");
@@ -99,9 +99,9 @@ try {
     assert.deepEqual(await readWinter(), beforeInspection, "Map and Office inspections preserve the closed day");
 
     await press("Dismiss advice");
-    await tip.getByText(/The night recap tells you/).waitFor();
+    await tip.getByText(/Check the night recap to see how today went/i).waitFor();
     await press("Dismiss tip");
-    await tip.getByText(/line under the problem/).waitFor();
+    await tip.getByText(/Check the top takeaway below to see what skiers wanted most today/i).waitFor();
     await press("Skip tips");
     await tip.waitFor({ state: "hidden" });
     await resolveRadio(page);
@@ -109,7 +109,7 @@ try {
     await page.getByRole("button", { name: /Game speed/ }).waitFor();
     await dismissMorningNoteIfPresent(page);
     if (!(await dock.isVisible())) await pressRail("Layers");
-    assert.equal(await dock.locator("[data-layer-strip]").getByRole("button", { name: "Snow depth", exact: true }).getAttribute("aria-pressed"), "true");
+    assert.equal(await dock.locator("[data-layer-strip]").getByRole("button", { name: "Depth", exact: true }).getAttribute("aria-pressed"), "true");
     await page.reload({ waitUntil: "domcontentloaded" });
     await enterGame(page);
     await dismissMorningNoteIfPresent(page);

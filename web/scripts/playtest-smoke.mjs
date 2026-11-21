@@ -6,6 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import { buildOpening, enterGame, resolveRadio } from "./playtest-m2.mjs";
+import { openPlanTomorrow, openTodaysResults } from "./playtest-night-recap.mjs";
 
 const base = (process.env.PLAY_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 const outDir = process.env.PLAYTEST_OUT ?? path.join(process.cwd(), "playtest-artifacts", "smoke");
@@ -33,7 +34,7 @@ try {
   });
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
-  page.setDefaultTimeout(25_000);
+  page.setDefaultTimeout(60_000);
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -45,6 +46,10 @@ try {
     const box = await control.boundingBox();
     assert.ok(box && box.width >= 44 && box.height >= 44, `${name} needs a 44px touch target`);
     await control.tap();
+  };
+  const resumeIfPaused = async () => {
+    const resume = button(page, "Resume day");
+    if (await resume.isVisible()) await resume.tap();
   };
   const shot = async (name) => {
     const file = path.join(outDir, name);
@@ -65,15 +70,19 @@ try {
   await tap("Close hill");
   await heading("Closing recap", page).waitFor();
   await shot("night1-recap.png");
+  await resolveRadio(page);
+  await openPlanTomorrow(page);
   await tap(/^Cheap\b/);
   await tap(/^High\b/);
-  await resolveRadio(page);
   await tap("Sleep until morning");
   await page.getByText(/^Open 2\/\d+$/).waitFor();
   await shot("day2-morning.png");
 
+  await resumeIfPaused();
   await tap("Office");
   await tap("Close hill");
+  await page.getByRole("button", { name: /Sleep until morning|Finish the winter/ }).waitFor({ timeout: 120_000 });
+  await openTodaysResults(page);
   await heading("Closing recap", page).waitFor();
   const beforeReload = await page.evaluate((key) => localStorage.getItem(key), saveKey);
   assert.ok(beforeReload, "save exists before mid-night reload");

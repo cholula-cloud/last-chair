@@ -97,6 +97,11 @@ async function buildMenu(page) {
   if (!(await page.locator("[data-build-sheet]").isVisible())) await opener.click();
 }
 
+async function buildSection(page, id) {
+  const tab = page.getByRole("group", { name: "Build sections" }).getByRole("button", { name: id });
+  if (await tab.isVisible()) await press(tab);
+}
+
 export async function project(page, locations) {
   const element = page.locator("canvas").first();
   return element.evaluate((canvas, points) => {
@@ -355,6 +360,7 @@ async function upgrade(page, cdp, engine) {
   });
   await openPlay(page);
   await buildMenu(page);
+  await buildSection(page, "Base");
   const rentals = button(page, /^Rentals\b/i);
   assert(await rentals.isDisabled(), "Rentals should require the Tier 2 lodge");
   await click(page, "Review Tier 2 upgrade");
@@ -380,6 +386,7 @@ async function upgrade(page, cdp, engine) {
   assert.equal(state.lodgeUpgrade, null);
 
   await buildMenu(page);
+  await buildSection(page, "Base");
   assert(await rentals.isEnabled(), "Tier 2 should unlock Rentals");
   await press(rentals);
   await page.locator('[data-placement-kind="asset"]').waitFor();
