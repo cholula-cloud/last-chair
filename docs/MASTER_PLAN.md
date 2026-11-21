@@ -522,11 +522,11 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 28 | ☐ | Guest models (Blender) | Five skier and snowboarder silhouettes; jacket/helmet tint in render (handoff PR 28) |
-| 29 | ◐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
-| T1 | ◐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
+| 28 | ☑ | Guest models (Blender) | Five skier and snowboarder silhouettes wired in `Guests.tsx` via `guestLook.ts`; jacket/helmet instancing per variant |
+| 29 | ☑ | Lift and lodge GLB kit (Blender) | Manifest-driven rope/grip in `kitManifest.ts`; surface terminals in `Lift.tsx`; `check-assets.mjs` in CI |
+| T1 | ☑ | Trail signage kit (Blender) | `TrailSign.tsx` uses Blender `trail-sign` kit with runtime `sign-face` texture; entrance placement along corridor (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
 | S1 | ☑ | Style system (code) | Manifest-driven kit resolution; `lodgeStyleId` in saves (schema 14); lodge + venue style picker in asset inspector; `chalet70s` GLBs wired (see `docs/reference/lodge-styles.md`) |
-| S2 | ◐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
+| S2 | ☑ | Style packs (Blender) | Dutch Hill timber50s + chalet70s for lodge tiers and venues; café outdoor patio on both `cafe` / `cafe-chalet70s` |
 | S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
 | A1 | ◐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
 | A2 | ◐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |

@@ -37,7 +37,7 @@
       "name": "cafe",
       "file": "cafe.glb",
       "tris": 848,
-      "sizeBytes": 14808,
+      "sizeBytes": 61776,
       "heightMeters": 8.7,
       "footprintMeters": [
         8.37,
@@ -177,7 +177,7 @@
       "heightMeters": 6.28,
       "footprintMeters": [
         1.26,
-        2.0
+        2
       ],
       "tags": [
         "prop"
@@ -507,7 +507,7 @@
       "file": "surface-terminal-bottom.glb",
       "tris": 328,
       "sizeBytes": 9752,
-      "heightMeters": 4.0,
+      "heightMeters": 4,
       "footprintMeters": [
         8.97,
         5.63
@@ -693,7 +693,7 @@
       "heightMeters": 2.12,
       "footprintMeters": [
         1.7,
-        10.0
+        10
       ],
       "tags": [
         "activity"
@@ -707,7 +707,7 @@
       "heightMeters": 0.78,
       "footprintMeters": [
         5.2,
-        10.0
+        10
       ],
       "tags": [
         "activity"
@@ -899,7 +899,7 @@
       "name": "cafe-chalet70s",
       "file": "cafe-chalet70s.glb",
       "tris": 895,
-      "sizeBytes": 16680,
+      "sizeBytes": 64332,
       "heightMeters": 8.97,
       "footprintMeters": [
         8.64,

@@ -1,5 +1,7 @@
 import type { LiftLine } from "@/game/descent";
-import { LIFT_TERMINAL_H, LIFT_TOWER_H } from "./layout";
+import type { LiftType } from "@/game/types";
+import { KIT_ROPE_Y } from "@/game/kitManifest";
+import { LIFT_TOWER_H } from "./layout";
 import { clamp01 } from "./math";
 import { TERRAIN } from "@/game/terrain";
 import { DAY_START_MIN } from "@/game/types";
@@ -21,8 +23,16 @@ export function liftFrame(line: LiftLine) {
   return { fx, fz, px: -fz, pz: fx, len, yaw: Math.atan2(fx, fz) };
 }
 
+const ROPE_Y_TO_WORLD = 0.2 / 1.6;
+
+export function liftTerminalH(type: LiftType = "chair"): number {
+  const rope = type === "surface" ? KIT_ROPE_Y.surfaceTerminal : KIT_ROPE_Y.chairTerminal;
+  return rope * ROPE_Y_TO_WORLD;
+}
+
 /** Terminals + intermediate towers along the lift line, base first. */
-export function liftTowers(line: LiftLine): LiftPoint[] {
+export function liftTowers(line: LiftLine, type: LiftType = "chair"): LiftPoint[] {
+  const terminalH = liftTerminalH(type);
   const { len } = liftFrame(line);
   const inner = Math.max(3, Math.min(10, Math.round(len / 3)));
   const n = inner + 2;
@@ -33,7 +43,7 @@ export function liftTowers(line: LiftLine): LiftPoint[] {
     const z = line.bottom.z + (line.top.z - line.bottom.z) * t;
     const ground = TERRAIN.height(x, z);
     const terminal = i === 0 || i === n - 1;
-    pts.push({ x, z, ground, top: ground + (terminal ? LIFT_TERMINAL_H : LIFT_TOWER_H) });
+    pts.push({ x, z, ground, top: ground + (terminal ? terminalH : LIFT_TOWER_H) });
   }
   for (let pass = 0; pass < 4; pass++) {
     for (let i = 0; i < n - 1; i++) {
