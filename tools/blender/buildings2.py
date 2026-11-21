@@ -99,6 +99,12 @@ def _tier3_main_grand(a, W, D, H, F):
     for bx in (-3.5, 0.0, 3.5):
         a.box((bx, fy - 0.48, gz + 0.62), (1.8, 0.1, 0.1), "timber-brown")
         a.box((bx, fy - 0.48, gz + 0.68), (1.85, 0.14, 0.08), "snow")
+        a.box((bx, fy - 0.48, gz + 0.78), (0.14, 0.14, 0.14), "lamp-glow")
+    # après fire pits on the grand terrace
+    for fx in (-3.6, 3.6):
+        a.box((fx, fy - 2.35, F + 0.06), (1.1, 1.1, 0.2), "stone-dark")
+        a.box((fx, fy - 2.35, F + 0.28), (0.68, 0.68, 0.16), "lamp-glow")
+        a.box((fx, fy - 2.35, F + 0.46), (0.32, 0.32, 0.1), "lamp-glow")
 
 
 def _tier3_delta(a, W, D, H, F):
