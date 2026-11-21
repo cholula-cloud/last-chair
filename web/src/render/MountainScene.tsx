@@ -38,6 +38,14 @@ import { TrailSign } from "./TrailSign";
 const TrailMapKiosk = lazy(() =>
   import("./TrailMapKiosk").then((m) => ({ default: m.TrailMapKiosk })),
 );
+const DirectionSigns = lazy(() =>
+  import("./DirectionSign").then((m) => ({ default: m.DirectionSigns })),
+);
+const RopeGate = lazy(() => import("./RopeGate").then((m) => ({ default: m.RopeGate })));
+const TubingHillDressing = lazy(() =>
+  import("./TubingHillDressing").then((m) => ({ default: m.TubingHillDressing })),
+);
+const RinkSkaters = lazy(() => import("./RinkSkaters").then((m) => ({ default: m.RinkSkaters })));
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
 
@@ -132,15 +140,24 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
       <BuildGrid />
       <Suspense fallback={null}>
         <Village />
+        <DirectionSigns />
+        <TubingHillDressing />
+        <RinkSkaters />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
         <SnowGuns />
         <Trees lowDetail={lowDetail} lines={clearingLines} paths={forestPaths} />
 
         {trailRuns.map((run, ti) => {
-          if (!run.open || !lifts[run.liftIndex]?.confirmed) return null;
-          const lane = trailRuns.slice(0, ti).filter((trail) => trail.open && trail.liftIndex === run.liftIndex).length;
+          const liftOk = lifts[run.liftIndex]?.confirmed;
+          if (!liftOk || run.path.length < 2) return null;
+          if (run.open) {
+            const lane = trailRuns.slice(0, ti).filter((trail) => trail.open && trail.liftIndex === run.liftIndex).length;
+            return <TrailSign key={ti} index={ti} run={run} lane={lane} />;
+          }
           return (
-            <TrailSign key={ti} index={ti} run={run} lane={lane} />
+            <Suspense key={ti} fallback={null}>
+              <RopeGate run={run} index={ti} />
+            </Suspense>
           );
         })}
 

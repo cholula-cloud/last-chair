@@ -133,7 +133,7 @@ function roundDeep(v: unknown): unknown {
 function finalState(v: View) {
   const rest: Record<string, unknown> = {};
   for (const [k, x] of Object.entries(v)) {
-    if (typeof x === "function" || k === "guests" || k === "rngState" || k === "saveNotice") continue;
+    if (typeof x === "function" || k === "guests" || k === "rngState" || k === "saveNotice" || k === "guestLens") continue;
     rest[k] = x;
   }
   return { ...(roundDeep(rest) as object), guestCount: v.guests.length };

@@ -522,16 +522,16 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 28 | ☑ | Guest models (Blender) | Five skier and snowboarder silhouettes wired in `Guests.tsx` via `guestLook.ts`; jacket/helmet instancing per variant |
+| 28 | ☑ | Guest models (Blender) | Five skier and snowboarder silhouettes wired in `Guests.tsx` via `guestLook.ts`; jacket/helmet instancing per variant; **Colour by mood** lens in Guests sheet (`guestLens` in store) |
 | 29 | ☑ | Lift and lodge GLB kit (Blender) | Manifest-driven rope/grip in `kitManifest.ts`; surface terminals in `Lift.tsx`; `check-assets.mjs` in CI |
-| T1 | ☑ | Trail signage kit (Blender) | `TrailSign.tsx` uses Blender `trail-sign` kit with runtime `sign-face` texture; entrance placement along corridor (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
+| T1 | ☑ | Trail signage kit (Blender) | `TrailSign.tsx` uses Blender `trail-sign` kit with runtime `sign-face` texture; **`RopeGate.tsx`** at closed-trail entrances; lift-unload **`TrailMapKiosk`**. One sign per **trail entrance** along the corridor, not stacked at the anchor |
 | S1 | ☑ | Style system (code) | Manifest-driven kit resolution; `lodgeStyleId` in saves (schema 14); lodge + venue style picker in asset inspector; `chalet70s` GLBs wired (see `docs/reference/lodge-styles.md`) |
 | S2 | ☑ | Style packs (Blender) | Dutch Hill timber50s + chalet70s for lodge tiers and venues; café outdoor patio on both `cafe` / `cafe-chalet70s` |
 | S3 | ☑ | Unlockable styles (Blender) | `chalet70s` unlocks at Lodge Tier 2 (or after winter review); `StylePicker` respects unlocks |
-| A1 | ☑ | Tubing hill (Blender + catalog) | Catalog + `tubing-hut` render; slope placement; ticket revenue at close |
-| A2 | ☑ | Ice rink (Blender + catalog) | Catalog + `ice-rink` render; tier 3 gate; ticket revenue |
+| A1 | ☑ | Tubing hill (Blender + catalog) | Catalog + `tubing-hut` render; `TubingHillDressing` (lanes, carpet, tubes); slope placement; ticket revenue |
+| A2 | ☑ | Ice rink (Blender + catalog) | Catalog + `ice-rink` render; decorative `skater` props (`RinkSkaters`); tier 3 gate; ticket revenue |
 | A3 | ☑ | Bar and restaurant (Blender + catalog) | `apres_bar` venue: après seats, visits, `apres-bar` GLB |
-| A4 | ☑ | Decor (Blender + catalog) | `fire_pit`, `string_lights` decor rows; arrival mood; kit render |
+| A4 | ☑ | Decor (Blender + catalog) | `fire_pit`, `string_lights`, `bench`, `ski_rack`, `picnic_table`, `direction_sign` (runtime `arrow-face` label); arrival mood; kit render |
 | A5 | ☑ | Events (Blender + catalog) | Saturday winter carnival bonus when tubing + rink are both built |
 
 ### M5: Career

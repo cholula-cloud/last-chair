@@ -25,6 +25,9 @@ export const VILLAGE_KIT_POOL = [
   "apres-bar",
   "fire-pit",
   "string-lights",
+  "bench",
+  "ski-rack",
+  "picnic-table",
 ] as const satisfies readonly KitAsset[];
 
 export type VillageKitName = (typeof VILLAGE_KIT_POOL)[number];
@@ -51,5 +54,8 @@ export function useVillageKitScenes(): Record<VillageKitName, THREE.Object3D> {
     "apres-bar": useKit("apres-bar"),
     "fire-pit": useKit("fire-pit"),
     "string-lights": useKit("string-lights"),
+    bench: useKit("bench"),
+    "ski-rack": useKit("ski-rack"),
+    "picnic-table": useKit("picnic-table"),
   };
 }

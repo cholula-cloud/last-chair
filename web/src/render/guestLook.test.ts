@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { moodBand, variantOf } from "./guestLook";
+import { jacketForGuest, moodBand, variantOf } from "./guestLook";
 describe("guestLook", () => {
   it("variantOf is stable for an id", () => {
     expect(variantOf("g-42", "regular")).toBe(variantOf("g-42", "regular"));
+  });
+
+  it("jacketForGuest respects lens", () => {
+    expect(jacketForGuest({ id: "g-1" }, "off", 80)).toBeNull();
+    expect(jacketForGuest({ id: "g-1" }, "mood", 80)).toBe("#2f7de1");
+    expect(jacketForGuest({ id: "g-1" }, "mood", 55)).toBe("#f2c014");
+    expect(jacketForGuest({ id: "g-1" }, "mood", 30)).toBe("#d7263d");
   });
 
   it("moodBand boundaries", () => {

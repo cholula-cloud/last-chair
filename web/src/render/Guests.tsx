@@ -3,6 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useShallow } from "zustand/react/shallow";
 import * as THREE from "three";
 import type { LiftType } from "@/game/types";
 import type { LiftLine } from "@/game/descent";
@@ -16,7 +17,9 @@ import { TBAR_DROP, useCarrierGeometry } from "./Lift";
 import { cableHeightAt, liftFrame, liftTowers } from "./liftLine";
 import { HATS, JACKETS, PALETTE } from "./palette";
 import { OVERLAY_DIM } from "./terrainOverlay";
-import { type GuestVariant, variantOf } from "./guestLook";
+import { satisfactionContext } from "@/game/rules";
+import { guestSatisfaction } from "@/game/satisfaction";
+import { jacketForGuest, type GuestVariant, variantOf } from "./guestLook";
 import { GUEST_SCALE, GUEST_VARIANTS, GuestVariantLayer, type VariantMeshes } from "./GuestVariantLayers";
 
 const MAX = 24;
@@ -62,6 +65,8 @@ export function Guests({
   const assets = useGameStore((s) => s.assets);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const followId = useGameStore((s) => s.followId);
+  const guestLens = useGameStore((s) => s.guestLens);
+  const moodCtx = useGameStore(useShallow(satisfactionContext));
   const stallMap = useStallMap(guests, dayIndex);
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls as OrbitControlsImpl | undefined);
@@ -165,11 +170,12 @@ export function Guests({
       dummy.scale.setScalar(GUEST_SCALE * sizeScale * variantScale(variant) * (isFollowed ? 1.25 : 1));
       dummy.updateMatrix();
       const h = idHash(g.id);
+      const moodJacket = jacketForGuest(g, guestLens, guestSatisfaction(g, moodCtx));
       setGuestMatrix(
         variant,
         slot,
         dummy.matrix,
-        jacketTint.set(JACKETS[h % JACKETS.length]),
+        jacketTint.set(moodJacket ?? JACKETS[h % JACKETS.length]),
         hatTint.set(HATS[(h >> 3) % HATS.length]),
       );
 
@@ -234,7 +240,7 @@ export function Guests({
     tbarMesh.instanceMatrix.needsUpdate = true;
     chairMesh.count = chairs;
     chairMesh.instanceMatrix.needsUpdate = true;
-  }, [guests, placements, followId, placedLifts, followedRef, camera, controls, routes, reduced, meshLayersReady]);
+  }, [guests, placements, followId, placedLifts, followedRef, camera, controls, routes, reduced, meshLayersReady, guestLens, moodCtx]);
 
   useFrame(({ clock }) => {
     const p = followedRef.current;

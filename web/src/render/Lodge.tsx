@@ -119,6 +119,7 @@ export function villagePlacements(
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   );
   for (const [index, asset] of assets.entries()) {
+    if (asset.id === "direction_sign") continue;
     const base = ASSET_MODELS[asset.id] ?? kitForAsset(asset.id);
     if (!base) continue;
     const attached = asset.attachPad !== undefined;

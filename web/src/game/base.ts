@@ -18,7 +18,11 @@ export type AssetId =
   | "ice_rink"
   | "apres_bar"
   | "fire_pit"
-  | "string_lights";
+  | "string_lights"
+  | "bench"
+  | "ski_rack"
+  | "picnic_table"
+  | "direction_sign";
 export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; name?: string; attachPad?: number; purchase?: { day: number; minute: number; price: number } };
 
 type Footprint = { width: number; depth: number };
@@ -96,6 +100,26 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
   string_lights: {
     label: "String lights", category: "decor", footprint: { width: 2.4, depth: 0.35 },
     cost: 320, upkeep: 8, effect: { arrivalMood: 0.015 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  bench: {
+    label: "Bench", category: "decor", footprint: { width: 0.9, depth: 0.55 },
+    cost: 180, upkeep: 2, effect: { arrivalMood: 0.01 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  ski_rack: {
+    label: "Ski rack", category: "decor", footprint: { width: 1.1, depth: 0.5 },
+    cost: 220, upkeep: 3, effect: { arrivalMood: 0.01 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  picnic_table: {
+    label: "Picnic table", category: "decor", footprint: { width: 1.2, depth: 0.9 },
+    cost: 240, upkeep: 3, effect: { arrivalMood: 0.012 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  direction_sign: {
+    label: "Direction sign", category: "decor", footprint: { width: 0.5, depth: 0.5 },
+    cost: 350, upkeep: 4, effect: { arrivalMood: 0.008 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
 };
