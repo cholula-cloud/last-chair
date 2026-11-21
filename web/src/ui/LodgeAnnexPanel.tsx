@@ -35,7 +35,7 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
     return (
       <section className="panel mt-3 space-y-2 p-3" aria-label="Lodge annex pads">
         <p className="text-sm font-bold leading-snug">
-          Upgrade to Village Lodge to unlock annex wings (+{Math.round(ATTACH_BONUS * 100)}% when attached).
+          Upgrade to {LODGE_TIERS[2].label} to unlock an annex pad (+{Math.round(ATTACH_BONUS * 100)}% when attached).
         </p>
       </section>
     );

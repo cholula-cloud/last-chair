@@ -137,6 +137,30 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  {
+    to: 13,
+    note: "Two lodge annex pads total: one at Tier 2, one at Tier 3.",
+    up(raw) {
+      const tier = (raw.lodgeTier === 1 || raw.lodgeTier === 2 || raw.lodgeTier === 3 ? raw.lodgeTier : 1) as LodgeTier;
+      const maxPad = LODGE_TIERS[tier].pads;
+      const assets = raw.assets;
+      if (!Array.isArray(assets)) return raw;
+      return {
+        ...raw,
+        assets: assets.map((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry;
+          const attachPad = (entry as { attachPad?: unknown }).attachPad;
+          if (typeof attachPad !== "number" || !Number.isInteger(attachPad) || attachPad < 0) return entry;
+          if (attachPad >= maxPad) {
+            const rest = { ...(entry as Record<string, unknown>) };
+            delete rest.attachPad;
+            return rest;
+          }
+          return entry;
+        }),
+      };
+    },
+  },
 ];
 
 type MigrationResult =

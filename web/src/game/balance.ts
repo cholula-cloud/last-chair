@@ -148,7 +148,7 @@ export const ADAPTIVE: Strategy = {
     const buyingChair = problem === "queue" && canAffordChair(state);
     if (buyingChair) actions.push("chair");
     let cash = liquidNetWorth(state) - (buyingChair ? CHAIR_COST : 0);
-    for (const id of ["rentals", "ski_school"] as const) {
+    for (const id of ["ski_school", "rentals"] as const) {
       if (state.assets.some((asset) => asset.id === id)) continue;
       const { cost } = ASSET_CATALOG[id];
       if (cash < cost + CASH_RESERVE) continue;
