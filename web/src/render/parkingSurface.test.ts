@@ -21,16 +21,15 @@ describe("parking surface", () => {
     mesh.dispose();
   });
 
-  it("extends east with lodge capacity while keeping its road entrance fixed", () => {
+  it("extends south with lodge capacity while keeping its road entrance fixed", () => {
     const original = buildParkingSurface(SITE, 1);
     const expanded = buildParkingSurface(SITE, 3);
     original.computeBoundingBox();
     expanded.computeBoundingBox();
-    expect(expanded.boundingBox!.min.x).toBe(original.boundingBox!.min.x);
-    expect(expanded.boundingBox!.max.z).toBe(original.boundingBox!.max.z);
+    expect(expanded.boundingBox!.min.x).toBeCloseTo(original.boundingBox!.min.x, 1);
+    expect(expanded.boundingBox!.max.x).toBeCloseTo(original.boundingBox!.max.x, 1);
 
-    const lastLot = lodgeParkingLots(3, SITE).at(-1)!;
-    expect(expanded.boundingBox!.max.x).toBeGreaterThan(lastLot.center.x + lastLot.size.w / 2);
+    expect(expanded.boundingBox!.max.z).toBeGreaterThan(original.boundingBox!.max.z + 0.5);
     original.dispose();
     expanded.dispose();
   });

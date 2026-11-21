@@ -127,21 +127,23 @@ export function lodgeAttachPads(tier: LodgeTier, site: SiteDef = DUTCH_HILL_SITE
   return LODGE_PAD_SLOTS_BY_TIER[tier].map((index) => sites[index]);
 }
 
-/** Parking grows east of the original lot without moving the existing stalls or spur. */
+/** Parking grows south of the original lot (across the road side) without moving the road crossing. */
 export function lodgeParkingLots(tier: LodgeTier, site: SiteDef = DUTCH_HILL_SITE) {
   const arrival = site.arrival;
-  const pitch = arrival.size.w / (arrival.stalls / arrival.rows);
   const lots = [{ center: arrival.center, size: arrival.size, stalls: arrival.stalls }];
-  let edge = arrival.center.x + arrival.size.w / 2;
+  let southEdge = arrival.center.z + arrival.size.d / 2;
   for (const next of [2, 3] as const) {
     if (next > tier) break;
     const previous = next === 2 ? arrival.stalls : LODGE_TIERS[2].stalls;
     const stalls = LODGE_TIERS[next].stalls - previous;
     if (stalls <= 0) continue;
-    const w = pitch * Math.ceil(stalls / arrival.rows);
-    const x = edge + 0.2 + w / 2;
-    lots.push({ center: { x, z: arrival.center.z }, size: { w, d: arrival.size.d }, stalls });
-    edge = x + w / 2;
+    const z = southEdge + 0.2 + arrival.size.d / 2;
+    lots.push({
+      center: { x: arrival.center.x, z },
+      size: { w: arrival.size.w, d: arrival.size.d },
+      stalls,
+    });
+    southEdge = z + arrival.size.d / 2;
   }
   return lots;
 }

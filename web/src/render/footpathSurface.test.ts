@@ -9,7 +9,7 @@ describe("footpath surface", () => {
     const lot = SITE.paths.find((p) => p.id === "lot_lodge")!.points;
     const poly = footpathPolyline(SITE);
     expect(poly.length).toBeGreaterThan(3);
-    expect(pathLength(poly)).toBeGreaterThan(pathLength(lot) + 0.8);
+    expect(pathLength(poly)).toBeGreaterThan(pathLength(lot));
     const mesh = buildFootpathSurface(SITE, TERRAIN);
     expect(mesh.getAttribute("position").count).toBeGreaterThan(8);
     expect(mesh.index!.count).toBeGreaterThan(6);

@@ -25,8 +25,8 @@ describe("Dutch Hill site", () => {
   it("path lengths match the handoff targets", () => {
     const lotLodge = DUTCH_HILL_SITE.paths.find((p) => p.id === "lot_lodge")!;
     const lodgeLift = DUTCH_HILL_SITE.paths.find((p) => p.id === "lodge_lift")!;
-    expect(pathLength(lotLodge.points)).toBeGreaterThan(3.0);
-    expect(pathLength(lotLodge.points)).toBeLessThan(3.6);
+    expect(pathLength(lotLodge.points)).toBeGreaterThan(10.0);
+    expect(pathLength(lotLodge.points)).toBeLessThan(12.5);
     expect(pathLength(lodgeLift.points)).toBeGreaterThan(2.3);
     expect(pathLength(lodgeLift.points)).toBeLessThan(2.9);
   });
@@ -34,6 +34,6 @@ describe("Dutch Hill site", () => {
   it("exposes the lot far corner for home framing", () => {
     const c = lotFarCorner(DUTCH_HILL_SITE);
     expect(c.x).toBeCloseTo(4.7, 1);
-    expect(c.z).toBeCloseTo(18.8, 1);
+    expect(c.z).toBeCloseTo(25.1, 1);
   });
 });

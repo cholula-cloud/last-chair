@@ -8,7 +8,8 @@ export const DUTCH_HILL_BUILDING_STYLE: BuildingStyleId = "1950s-timber";
 export const DUTCH_HILL_SITE: SiteDef = {
   arrival: {
     kind: "gravel_lot",
-    center: { x: 7.2, z: 19.8 },
+    /** South of Route 100; guests cross the road to the lodge path. */
+    center: { x: 7.2, z: 26.1 },
     size: { w: 5.0, d: 2.0 },
     yaw: 0,
     stalls: 30,
@@ -20,11 +21,13 @@ export const DUTCH_HILL_SITE: SiteDef = {
       to: { x: 24, z: 24 },
     },
   },
-  road: { z: 24, xFrom: -16, xTo: 34, spur: [{ x: 7.2, z: 24 }, { x: 7.2, z: 20.9 }] },
+  road: { z: 24, xFrom: -16, xTo: 34, spur: [{ x: 7.2, z: 24 }, { x: 7.2, z: 25.15 }] },
   paths: [
     {
       id: "lot_lodge",
       points: [
+        { x: 7.2, z: 25.15 },
+        { x: 7.2, z: 24.05 },
         { x: 7.2, z: 18.55 },
         { x: 6.1, z: 16.85 },
         { x: 5.35, z: 15.62 },
