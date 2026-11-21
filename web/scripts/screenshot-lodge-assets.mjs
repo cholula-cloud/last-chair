@@ -7,7 +7,7 @@ import "./register-game.mjs";
 import { chromium } from "playwright";
 import { enterGame } from "./playtest-m2.mjs";
 
-const [{ createBuiltHill }, { lodgeAttachPads }, { pickFounder, placeAsset }, { SAVE_VERSION, toPersisted }] =
+const [{ createBuiltHill }, { lodgeAttachPads }, { pickFounder, placeAssetAtPad }, { SAVE_VERSION, toPersisted }] =
   await Promise.all([
     import("../src/game/__fixtures__/built-hill.ts"),
     import("../src/game/base.ts"),
@@ -37,11 +37,11 @@ function saveForTier(tier, withAnnexVenues = false) {
   if (withAnnexVenues && tier >= 2) {
     const pads = lodgeAttachPads(tier);
     if (pads[0]) {
-      const next = placeAsset(state, "cafe", pads[0]);
+      const next = placeAssetAtPad(state, "cafe", 0);
       if (next !== state) state = next;
     }
     if (tier >= 3 && pads[1]) {
-      const next = placeAsset(state, "shop", pads[1]);
+      const next = placeAssetAtPad(state, "shop", 1);
       if (next !== state) state = next;
     }
   }
