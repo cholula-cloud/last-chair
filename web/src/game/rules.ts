@@ -30,7 +30,16 @@ import {
   type AssetId,
 } from "./base";
 import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
-import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
+import {
+  gunCoverageForTrails,
+  gunPlacementReason,
+  groomCoverage,
+  groomedFeet,
+  gunSegmentsTonight,
+  GUN_COST,
+  maxGunsFor,
+  type GunPlacementReason,
+} from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
 import { applyActivityEconomy } from "./activities";
 import { isKnownStyleId, isStyleUnlocked, normalizeStyleId } from "./styles";
@@ -1070,12 +1079,14 @@ const GUN_REASON_COPY: Record<GunPlacementReason, string> = {
   off_map: "That spot is off the map. Drag back onto the hill.",
   off_lease: OFF_LEASE_MESSAGE,
   out_of_pipe_reach: "Too far from the pipe. Place guns near the base or another gun.",
-  max_guns: `Dutch Hill only has room for ${MAX_GUNS} snow guns.`,
+  max_guns: "Dutch Hill only has room for more snow guns.",
   gun_here: "There’s already a snow gun here.",
 };
 
-function gunReasonCopy(reason: GunPlacementReason | null): string | null {
-  return reason ? GUN_REASON_COPY[reason] : null;
+function gunReasonCopy(reason: GunPlacementReason | null, cap: number): string | null {
+  if (!reason) return null;
+  if (reason === "max_guns") return `Dutch Hill only has room for ${cap} snow guns.`;
+  return GUN_REASON_COPY[reason];
 }
 
 export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
@@ -1083,7 +1094,8 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
   const reason = state.phase !== "day" ? "Building happens during the day. Wait for morning."
     : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
     : state.lodgeTier < 2 ? "Snow guns need Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
+    : gunReasonCopy(gunPlacementReason(point, state.guns, TERRAIN, maxGunsFor(state.trails)), maxGunsFor(state.trails))
+      ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,
@@ -1191,14 +1203,15 @@ function nightFor(
 ) {
   const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
   state = closeLiftsNow(state, closing);
+  const exposure = exposureFor(state);
   const overnight = applyOvernight({
     snow,
     cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
-    gunCoverage: state.trails.map((t) => t.open ? gunCoverage(t, state.guns, state.talentsOwned) : []),
+    gunCoverage: gunCoverageForTrails(state.trails, state.guns, state.talentsOwned, weatherTomorrow.wind, exposure),
     groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
-    exposure: exposureFor(state),
+    exposure,
     hasPlacedGuns: state.guns.length > 0,
     trailElevations: state.trails.map((t) => t.elevations),
     weatherTomorrow,
@@ -1228,6 +1241,19 @@ export type OvernightPreview = {
   outlook: Outlook | null;
   results: ReturnType<typeof forecastResults>;
 };
+
+/** Gun and groom workload for a snow preset (closing state, tomorrow wind on gun reach). */
+export function snowServiceStats(
+  state: GameState,
+  snow: SnowPreset,
+  weatherTomorrow: DayWeather = state.weatherDays[state.dayIndex] ?? weatherForDay(state),
+) {
+  const exposure = exposureFor(state);
+  return {
+    gunSegments: gunSegmentsTonight(state.trails, state.guns, snow, state.talentsOwned, weatherTomorrow.wind, exposure),
+    groomFeet: groomedFeet(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
+  };
+}
 
 /** Tomorrow's snow across plausible conditions. Pure and independent of the guest RNG. */
 export function previewOvernight(state: GameState, snow: SnowPreset): OvernightPreview {

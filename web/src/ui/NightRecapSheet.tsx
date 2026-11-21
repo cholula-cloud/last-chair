@@ -5,7 +5,7 @@ import { TALENT } from "@/game/talents";
 import { useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
+import { expectedArrivals, previewOvernight, snowServiceStats, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
@@ -357,12 +357,21 @@ function Choices({
     SnowPreset,
     ReturnType<typeof previewOvernight>
   >;
-  const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
-    value: v,
-    label: SNOW_LABELS[v],
-    detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
-    note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
-  }));
+  const tomorrow = night.weatherDays[night.dayIndex];
+  const thawOutlook = (outlookFor(night, 1)?.thaw ?? 0) >= 0.45;
+  const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => {
+    const stats = snowServiceStats(night, v, tomorrow);
+    const crew =
+      v === "minimal"
+        ? "guns and cat off"
+        : `guns on ${stats.gunSegments} seg · cat ${stats.groomFeet.toLocaleString()} ft`;
+    return {
+      value: v,
+      label: SNOW_LABELS[v],
+      detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
+      note: `${crew} · ~${Math.round(previews[v].meanQuality * 100)}% quality`,
+    };
+  });
   const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
   const chosen = previews[pendingSnow];
   return (
@@ -384,6 +393,18 @@ function Choices({
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         This service should leave the snow at about {Math.round(chosen.meanQuality * 100)}% quality by morning.
         In the most likely weather, that looks like {chosen.label.toLowerCase()}.
+        {pendingSnow !== "minimal" && (
+          <>
+            {" "}
+            {(() => {
+              const s = snowServiceStats(night, pendingSnow, tomorrow);
+              return `Snow guns hit ${s.gunSegments} trail segments; the cat grooms about ${s.groomFeet.toLocaleString()} ft.`;
+            })()}
+          </>
+        )}
+        {thawOutlook && pendingSnow !== "minimal" && night.guns.length > 0 && (
+          <> Thaw is likely tonight: guns hold the base; grooming fixes how it skis.</>
+        )}
       </p>
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
         {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Service is free tonight."}

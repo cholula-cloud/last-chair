@@ -147,6 +147,14 @@ export const QUALITY_FLOOR = 0.2;
 export const GROOM_PUSH: Record<SnowPreset, number> = { minimal: 0, mid: 0.04, high: 0.06 };
 /** Depth the guns add on each segment they reach. */
 export const GUN_DEPTH: Record<SnowPreset, number> = { minimal: 0, mid: 0.14, high: 0.2 };
+/** Gun depth on snow/storm nights (natural snow already adds mass). */
+export const GUN_DEPTH_NATURAL_MULT = 0.5;
+/** Extra gun depth on thaw nights before weather loss. */
+export const GUN_DEPTH_THAW_MULT = 1.25;
+/** Fraction of thaw loss absorbed on gun-covered segments. */
+export const GUN_THAW_SHIELD = 0.5;
+/** Quality cap on gun-only segments until the cat grooms them. */
+export const GUN_MANMADE_QUALITY_CAP = 0.55;
 /** Fraction of the trail, measured from the bottom, the guns reach. */
 export const GUN_REACH: Record<SnowPreset, number> = { minimal: 0, mid: 0.5, high: 1 };
 export const TRAIL_GUNS_EXTRA_REACH = TALENT.trailGuns.extraReach;
@@ -206,21 +214,30 @@ export function overnightTrail(
 
     // Gun coverage and grooming use separate segment budgets.
     const guns = gunCoverage ? gunCoverage[i] : reach > 0 && inReach(i, reach, n, elevations);
-    if (guns) depth += GUN_DEPTH[o.snow];
-    if (groomCoverage ? groomCoverage[i] : o.snow !== "minimal") {
+  const groomed = groomCoverage ? groomCoverage[i] : o.snow !== "minimal";
+    if (guns && o.snow !== "minimal") {
+      let gunDepth = GUN_DEPTH[o.snow];
+      if (o.weather === "thaw") gunDepth *= GUN_DEPTH_THAW_MULT;
+      else if (o.weather === "snow" || o.weather === "storm") gunDepth *= GUN_DEPTH_NATURAL_MULT;
+      depth += gunDepth;
+    }
+    if (groomed) {
       depth += GROOM_PUSH[o.snow];
       quality = Math.min(QUALITY_CAP, Math.max(quality, target) + GROOM_CRISP[o.snow]);
       if (depth >= COVER_MIN) {
         coverage = o.snow === "high" ? 1 : Math.min(1, coverage + MID_COVERAGE_RECOVERY);
       }
-    } else {
+    } else if (o.snow === "minimal") {
       quality = Math.max(QUALITY_FLOOR, quality - MINIMAL_DRIFT);
+    } else if (guns) {
+      quality = Math.min(quality, GUN_MANMADE_QUALITY_CAP);
     }
     depth = clamp01(depth);
 
     // Weather.
     const low = (1 - e) * (1 - e);
     const exposed = 1 + 0.3 * (exposure?.[i] ?? 0);
+    const fence = o.snowFences && i >= n - TALENT.snowFences.segments ? TALENT.snowFences.depthLoss : 1;
     if (o.weather === "snow") {
       depth = clamp01(depth + 0.12 + 0.08 * e);
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.06 + 0.04 * e);
@@ -230,8 +247,11 @@ export function overnightTrail(
       quality = Math.min(QUALITY_CAP + 0.02, quality + 0.10);
       if (depth >= COVER_MIN) coverage = 1;
     } else if (o.weather === "thaw") {
-      depth = Math.max(0.02, depth - (0.02 + 0.12 * low) * exposed * (o.snowFences && i >= n - TALENT.snowFences.segments ? TALENT.snowFences.depthLoss : 1));
-      quality = Math.max(0.1, quality - (0.04 + 0.16 * low) * exposed);
+      const depthLoss = (0.02 + 0.12 * low) * exposed * fence;
+      const qualityLoss = (0.04 + 0.16 * low) * exposed;
+      const shield = guns ? GUN_THAW_SHIELD : 0;
+      depth = Math.max(0.02, depth - depthLoss * (1 - shield));
+      quality = Math.max(0.1, quality - qualityLoss * (1 - shield));
     } else {
       depth = Math.max(0.02, depth - 0.01 * exposed);
       quality = Math.max(0.1, quality - 0.02);

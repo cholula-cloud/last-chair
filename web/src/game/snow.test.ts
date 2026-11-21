@@ -38,6 +38,16 @@ const mean = (t: Trail, k: "depth" | "quality" | "coverage") =>
   t.reduce((a, s) => a + s[k], 0) / t.length;
 const last = (t: Trail) => t[t.length - 1];
 
+describe("gun thaw shield", () => {
+  it("loses less depth on thaw when guns covered the segment", () => {
+    const start = freshTrail(0.35, 0.5);
+    const gunCov = [false, false, false, false, false, true];
+    const without = overnightTrail(start, { snow: "mid", weather: "thaw", hasGuns: true, hasTrailGuns: false, hasGroom: false }, undefined, gunCov);
+    const bare = overnightTrail(start, { snow: "mid", weather: "thaw", hasGuns: true, hasTrailGuns: false, hasGroom: false }, undefined, [false, false, false, false, false, false]);
+    expect(last(without).depth).toBeGreaterThan(last(bare).depth);
+  });
+});
+
 describe("overnight presets", () => {
   const start = freshTrail(0.4, 0.5);
 

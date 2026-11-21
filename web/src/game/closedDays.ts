@@ -3,7 +3,7 @@ import { closedDaysBeforeNextOpen, dayLabel, type CalendarDef } from "./calendar
 import type { GameState } from "./state";
 import { applyOvernight } from "./sim";
 import { trailExposure } from "./clearing";
-import { groomCoverage, gunCoverage } from "./guns";
+import { groomCoverage, gunCoverageForTrails } from "./guns";
 import { morningWeatherHeadline, weatherForDay } from "./weather";
 import type { SnowPreset } from "./types";
 
@@ -26,7 +26,13 @@ function overnightForClosed(state: GameState, snow: SnowPreset, calendarDay: num
     cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
-    gunCoverage: state.trails.map((t) => (t.open ? gunCoverage(t, state.guns, state.talentsOwned) : [])),
+    gunCoverage: gunCoverageForTrails(
+      state.trails,
+      state.guns,
+      state.talentsOwned,
+      weatherTomorrow.wind,
+      trailExposureGrid(state),
+    ),
     groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
     exposure: trailExposureGrid(state),
     hasPlacedGuns: state.guns.length > 0,

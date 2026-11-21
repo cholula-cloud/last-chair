@@ -24,6 +24,7 @@ import {
   snapBottom,
   type Dot,
 } from "./buildGridModel";
+import { GunPlacementGuide } from "./GunPlacementGuide";
 
 export {
   clearOfCable,
@@ -250,6 +251,7 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
   return (
     <>
       <GridLines />
+      {mode === "gun" && <GunPlacementGuide />}
       <DotLayer cells={blocked} capacity={FIELD_CAPACITY} mode={mode} kind="blocked" />
       <DotLayer cells={valid} capacity={FIELD_CAPACITY} mode={mode} kind="valid" />
       <DotLayer cells={neutral} capacity={FIELD_CAPACITY} mode={mode} kind="neutral" />

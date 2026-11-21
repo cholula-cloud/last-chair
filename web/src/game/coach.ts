@@ -133,7 +133,7 @@ export function problemGuide(
     case "queue":
       return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for a deposit you can afford." };
     case "snow":
-      return { layer: "conditions", tab: "Desk", text: "Look at the cover on Conditions, then check tomorrow’s forecast at the Desk." };
+      return { layer: "guns", tab: "Desk", text: "Check Snow-making for gun reach, then pick Mid or High if thaw is in the forecast." };
     case "runs":
       return { layer: "slope", tab: "Crew", text: "Hunt for a gentler route on Slope, then check Crew for your next lift or trail unlock." };
     case "value":
