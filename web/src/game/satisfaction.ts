@@ -13,8 +13,10 @@ export const SAT = {
   ARRIVAL_PTS: 40,
   /** Points per minute of pain before the persona weight. */
   QUEUE_PTS: 3.5,
-  /** Mean wait per ride that costs nothing. */
+  /** Mean wait per ride that costs nothing in the score and ticket-value loss. */
   QUEUE_FREE_MIN: 1,
+  /** Mean wait per ride at or below this is normal; recap and Desk skip queue nags. */
+  QUEUE_NAG_MIN: 5,
   /** Pain grows 1:1 up to this mean wait, then at `QUEUE_FAR_SLOPE`. */
   QUEUE_KNEE_MIN: 6,
   QUEUE_FAR_SLOPE: 0.5,
@@ -272,11 +274,27 @@ export const NO_SKIERS_PROBLEM = "No skiers showed up today. The lifts spun empt
 
 export const NO_PROBLEM = "Smooth day on the hill. Skiers left happy.";
 
+/** Whether measured waits are long enough to name queues on recap, coach, and balance AI. */
+export function queueNags(gate: {
+  avgWaitMin: number;
+  dispatched?: number;
+  busiestLift?: { min: number };
+}): boolean {
+  if (gate.dispatched === 0) return false;
+  const wait = Math.max(gate.avgWaitMin, gate.busiestLift?.min ?? 0);
+  return wait > SAT.QUEUE_NAG_MIN;
+}
+
 /** The term with the largest negative average contribution, or null if none is below `SAT.PROBLEM_MIN`. */
-export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
+export function biggestProblem(
+  breakdown: SatTerms,
+  gate?: { avgWaitMin: number; dispatched?: number },
+): keyof SatTerms | null {
+  const ignoreQueue = gate !== undefined && !queueNags(gate);
   let worst: keyof SatTerms | null = null;
   let worstPts: number = SAT.PROBLEM_MIN;
   for (const k of SAT_TERM_KEYS) {
+    if (k === "queue" && ignoreQueue) continue;
     if (breakdown[k] < worstPts) {
       worst = k;
       worstPts = breakdown[k];
@@ -287,7 +305,7 @@ export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
 
 /** One fixable sentence naming the biggest real cause of unhappiness today. */
 export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
-  switch (biggestProblem(breakdown)) {
+  switch (biggestProblem(breakdown, facts)) {
     case "queue":
       return facts.dispatched === 0
         ? "Skiers queued up, but nobody boarded a lift. Check that lifts and trails are open."

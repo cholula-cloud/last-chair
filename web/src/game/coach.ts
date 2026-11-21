@@ -120,10 +120,10 @@ export type ProblemGuide = {
 
 /** Pair a measured shortfall with tools that can actually explain it. */
 export function problemGuide(
-  recap: Pick<NightRecap, "arrivals" | "breakdown" | "cashDelta">,
+  recap: Pick<NightRecap, "arrivals" | "breakdown" | "cashDelta" | "facts">,
   demand?: Demand["key"],
 ): ProblemGuide | null {
-  const issue = demand ?? biggestProblem(recap.breakdown);
+  const issue = demand ?? biggestProblem(recap.breakdown, recap.facts);
   switch (recap.arrivals ? issue : null) {
     case "seats":
       return { layer: "slope", tab: "Crew", text: "Check Slope for flat base space, or upgrade your lodge in Build for more seats." };

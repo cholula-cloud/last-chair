@@ -23,7 +23,7 @@ import { calendarForSeason, dayKind, inHolidayWeek, weekdayForDay } from "./cale
 import { trailsOnLift } from "./trails";
 import { dailyCosts, liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
-import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
+import { NO_PROBLEM, SAT, biggestProblem, type SatTerms } from "./satisfaction";
 import type { NightRecap } from "./sim";
 import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
@@ -329,8 +329,8 @@ export function runSeason(
   const ctxOf = (): StrategyContext => ({
     state,
     recap,
-    sawSaturdayQueue: days.some((day) => day.saturday && biggestProblem(day.breakdown) === "queue"),
-    problem: recap ? biggestProblem(recap.breakdown) : null,
+    sawSaturdayQueue: days.some((day) => day.saturday && day.avgWaitMin > SAT.QUEUE_NAG_MIN),
+    problem: recap ? biggestProblem(recap.breakdown, recap.facts) : null,
   });
 
   const calendar = calendarForSeason(state.mountainId, length);

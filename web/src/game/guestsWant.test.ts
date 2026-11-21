@@ -6,6 +6,7 @@ const calm: Parameters<typeof guestsWantLine>[0] = {
   breakdown: { arrivalMood: 0, queue: 0, snow: 0, value: 0, runs: 0 },
   facts: {
     avgWaitMin: 1,
+    dispatched: 20,
     snowQuality: 0.7,
     snowLabel: "Good cover",
     farePrice: 45,
@@ -23,6 +24,16 @@ describe("guestsWantLine", () => {
   it("shows nothing when nothing is pressing", () => {
     expect(guestsWantLine(calm, ctx)).toBeNull();
     expect(guestsWantLine(withBreakdown({ queue: -1.5, snow: -1 }), ctx)).toBeNull();
+  });
+
+  it("shows no lift-line demand at 5 min or less even when the queue term hurts", () => {
+    const recap = {
+      ...withBreakdown({ queue: -12 }),
+      facts: { ...calm.facts, avgWaitMin: 5, busiestLift: { label: "Surface lift 1", min: 4.8 } },
+    };
+    expect(guestsWantLine(recap, ctx)).toBeNull();
+    const atTwo = { ...recap, facts: { ...recap.facts, avgWaitMin: 2, busiestLift: undefined } };
+    expect(guestsWantLine(atTwo, ctx)).toBeNull();
   });
 
   it("asks for a second lift when one lift has long lines", () => {
