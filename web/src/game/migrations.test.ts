@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(13);
+    expect(SAVE_VERSION).toBe(14);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -65,6 +65,19 @@ describe("M3 schema migration", () => {
     expect(result.reset).toBe(false);
     expect(result.state.assets[0]).toMatchObject({ attachPad: 0 });
     expect(result.state.assets[1]).not.toHaveProperty("attachPad");
+  });
+
+  it("adds lodgeStyleId and normalizes style ids when upgrading from schema 13", () => {
+    const base = toPersisted(createInitialState(7));
+    delete (base as { lodgeStyleId?: string }).lodgeStyleId;
+    const withLegacyStyle = {
+      ...base,
+      assets: [{ id: "cafe", at: { x: 1, z: 1 }, styleId: "timber50s" }],
+    };
+    const result = migrate(withLegacyStyle, 13);
+    expect(result.reset).toBe(false);
+    expect(result.state.lodgeStyleId).toBe("1950s-timber");
+    expect(result.state.assets[0].styleId).toBe("1950s-timber");
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

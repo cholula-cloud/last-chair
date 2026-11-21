@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LodgeTier } from "@/game/base";
+import { DEFAULT_STYLE, type LodgeTier } from "@/game/base";
 import { KIT_ASSETS } from "./kit";
 import {
   LODGE_ANNEX_KITS,
@@ -18,15 +18,23 @@ describe("village lodge rendering", () => {
   });
 
   it("composes one annex per lodge tier", () => {
-    expect(lodgeStructureKits(1)).toEqual([LODGE_BASE_KIT]);
-    expect(lodgeStructureKits(2)).toEqual([LODGE_BASE_KIT, LODGE_ANNEX_KITS[0]]);
-    expect(lodgeStructureKits(3)).toEqual([LODGE_BASE_KIT, ...LODGE_ANNEX_KITS]);
+    expect(lodgeStructureKits(1, DEFAULT_STYLE)).toEqual([LODGE_BASE_KIT]);
+    expect(lodgeStructureKits(2, DEFAULT_STYLE)).toEqual([LODGE_BASE_KIT, LODGE_ANNEX_KITS[0]]);
+    expect(lodgeStructureKits(3, DEFAULT_STYLE)).toEqual([LODGE_BASE_KIT, ...LODGE_ANNEX_KITS]);
+  });
+
+  it("composes chalet annexes for alternate styles", () => {
+    expect(lodgeStructureKits(3, "chalet70s")).toEqual([
+      "lodge-tier-1-chalet70s",
+      "lodge-annex-2-chalet70s",
+      "lodge-annex-3-chalet70s",
+    ]);
   });
 
   it("places structural lodge pieces only on the main lodge anchor", () => {
     for (const tier of [1, 2, 3] as const satisfies LodgeTier[]) {
-      const placements = villagePlacements([], tier);
-      const lodges = placements.filter((p) => lodgeStructureKits(tier).includes(p.name));
+      const placements = villagePlacements([], tier, DEFAULT_STYLE);
+      const lodges = placements.filter((p) => lodgeStructureKits(tier, DEFAULT_STYLE).includes(p.name));
       expect(lodges).toHaveLength(tier);
       const main = lodges.find((p) => p.asset?.kind === "lodge");
       expect(main?.name).toBe(LODGE_BASE_KIT);
@@ -35,7 +43,7 @@ describe("village lodge rendering", () => {
 
   it("uses only village scene kits for every placement", () => {
     for (const tier of [1, 2, 3] as const satisfies LodgeTier[]) {
-      for (const p of villagePlacements([], tier)) {
+      for (const p of villagePlacements([], tier, DEFAULT_STYLE)) {
         expect(VILLAGE_SCENE_KITS).toContain(p.name);
       }
     }
