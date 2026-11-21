@@ -3,9 +3,13 @@ import { PALETTE } from "./palette";
 
 type Tier = { y0: number; y1: number; r: number; base: string };
 
+function coneTip(base: THREE.Color): THREE.Color {
+  return base.clone().lerp(new THREE.Color(PALETTE.pineTip), 0.55).lerp(new THREE.Color(PALETTE.snow), 0.12);
+}
+
 function pushCone(pos: number[], col: number[], tier: Tier, sides: number, twist: number) {
   const base = new THREE.Color(tier.base);
-  const tip = base.clone().lerp(new THREE.Color(PALETTE.snow), 0.62);
+  const tip = coneTip(base);
   for (let i = 0; i < sides; i++) {
     const a0 = twist + (i / sides) * Math.PI * 2;
     const a1 = twist + ((i + 1) / sides) * Math.PI * 2;
@@ -35,36 +39,6 @@ export function leasePineLow(): THREE.BufferGeometry {
   return build(pos, col);
 }
 
-/** Low graphics birch: pale trunk and gold crowns (unit height). */
-export function leaseBirchLow(): THREE.BufferGeometry {
-  const parts: { geo: THREE.BufferGeometry; color: string; pos: [number, number, number]; rot?: number }[] = [
-    { geo: new THREE.CylinderGeometry(0.06, 0.08, 0.72, 5, 1, true), color: PALETTE.trimWhite, pos: [0, 0.36, 0] },
-    { geo: new THREE.ConeGeometry(0.22, 0.28, 5, 1, true), color: PALETTE.birchCrown, pos: [0, 0.78, 0] },
-    { geo: new THREE.ConeGeometry(0.14, 0.22, 5, 1, true), color: PALETTE.birchCrown, pos: [0.08, 0.95, 0], rot: 0.4 },
-  ];
-  const pos: number[] = [];
-  const col: number[] = [];
-  const nor: number[] = [];
-  const m = new THREE.Matrix4();
-  const v = new THREE.Vector3();
-  for (const part of parts) {
-    const g = part.geo.toNonIndexed();
-    m.makeRotationY(part.rot ?? 0).setPosition(...part.pos);
-    g.applyMatrix4(m);
-    const c = new THREE.Color(part.color);
-    const p = g.attributes.position;
-    const n = g.attributes.normal;
-    for (let i = 0; i < p.count; i++) {
-      pos.push(p.getX(i), p.getY(i), p.getZ(i));
-      v.set(n.getX(i), n.getY(i), n.getZ(i)).transformDirection(m);
-      nor.push(v.x, v.y, v.z);
-      col.push(c.r, c.g, c.b);
-    }
-    g.dispose();
-  }
-  return build(pos, col, nor);
-}
-
 /** Shadow-only cone sized for kit crowns. */
 export function shadowProxyLow(): THREE.BufferGeometry {
   return new THREE.ConeGeometry(0.38, 0.92, 4, 1, true).translate(0, 0.5, 0);
@@ -84,7 +58,7 @@ export function farTreeImpostor(): THREE.BufferGeometry {
     const cs = Math.cos((turn * Math.PI) / 3);
     for (const tier of tiers) {
       const base = new THREE.Color(tier.base);
-      const tip = base.clone().lerp(new THREE.Color(PALETTE.snow), 0.62);
+      const tip = coneTip(base);
       const corner = (u: number, y: number) => [sn * u, y, cs * u];
       pos.push(...corner(-tier.hw, tier.y0), ...corner(tier.hw, tier.y0), ...corner(0, tier.y1));
       col.push(base.r, base.g, base.b, base.r, base.g, base.b, tip.r, tip.g, tip.b);

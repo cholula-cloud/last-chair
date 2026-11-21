@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { manifestEntry } from "@/game/kitManifest";
 import { bakeKit, DRACO_PATH, METERS_TO_WORLD, type KitAsset, useKit } from "./kit";
+import { PALETTE } from "./palette";
 
 /** Trees read larger than raw metres so crowns match the toy diorama on phone. */
 export const TREE_TOY_SCALE = 1.45;
@@ -18,7 +19,7 @@ export function pineKitName(variant: number): (typeof PINE_KITS)[number] {
   return PINE_KITS[variant] ?? PINE_KITS[0];
 }
 
-const TREE_PRELOAD = [...PINE_KITS, "birch"] as const satisfies readonly KitAsset[];
+const TREE_PRELOAD = PINE_KITS;
 
 if (typeof window !== "undefined") {
   for (const name of TREE_PRELOAD) {
@@ -67,13 +68,35 @@ export function farTreeWorldSize(): readonly [number, number] {
 
 export type TreeKitGeometries = {
   pines: readonly THREE.BufferGeometry[];
-  birch: THREE.BufferGeometry;
   proxy: THREE.BufferGeometry;
 };
 
+const _snow = new THREE.Color(PALETTE.snow);
+const _pine = new THREE.Color(PALETTE.pine);
+const _pineTip = new THREE.Color(PALETTE.pineTip);
+const _vc = new THREE.Color();
+
+/** Kit pines ship with heavy snow caps; nudge baked vertex colours greener at runtime. */
+export function greenerKitTreeColors(geo: THREE.BufferGeometry): void {
+  const attr = geo.getAttribute("color");
+  if (!attr || attr.itemSize !== 3) return;
+  for (let i = 0; i < attr.count; i++) {
+    _vc.fromBufferAttribute(attr, i);
+    const lum = _vc.r * 0.299 + _vc.g * 0.587 + _vc.b * 0.114;
+    if (_vc.distanceTo(_snow) < 0.42 || lum > 0.82) {
+      _vc.lerp(_pineTip, 0.72).lerp(_snow, 0.1);
+    } else {
+      _vc.lerp(_pine, 0.22);
+    }
+    attr.setXYZ(i, _vc.r, _vc.g, _vc.b);
+  }
+}
+
 function bakeTree(scene: THREE.Object3D): THREE.BufferGeometry {
   const { body } = bakeKit(scene);
-  return normalizeTreeGeo(body);
+  const g = normalizeTreeGeo(body);
+  greenerKitTreeColors(g);
+  return g;
 }
 
 /** Baked, normalized kit meshes for forest instancing (must run under Suspense). */
@@ -83,14 +106,12 @@ export function useTreeKit(): TreeKitGeometries {
   const pineB = useKit("pine-b");
   const pineC = useKit("pine-c");
   const pineD = useKit("pine-d");
-  const birchScene = useKit("birch");
 
   return useMemo(() => {
     const pines = [pineA, pineB, pineC, pineD].map((scene) => bakeTree(scene));
-    const birch = bakeTree(birchScene);
     const wide = pines[2] ?? pines[0];
     const proxy = wide.clone();
     proxy.computeBoundingSphere();
-    return { pines, birch, proxy };
-  }, [pineA, pineB, pineC, pineD, birchScene]);
+    return { pines, proxy };
+  }, [pineA, pineB, pineC, pineD]);
 }

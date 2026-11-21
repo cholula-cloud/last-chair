@@ -24,7 +24,7 @@ const lineAt = (top: { x: number; z: number }) => ({ bottom: TERRAIN.base, top }
 const DEFAULT_LINES = REFERENCE_TOPS.map(lineAt);
 const clearings = { lines: DEFAULT_LINES };
 const home = TERRAIN.base;
-const all = (cells: ReturnType<typeof leaseForest>) => cells.flatMap((c) => [...c.pines, ...c.birch]);
+const all = (cells: ReturnType<typeof leaseForest>) => cells.flatMap((c) => c.pines);
 
 beforeEach(() => _clearForestCache());
 
@@ -120,7 +120,7 @@ describe("the lease forest", () => {
     expect(cells.length).toBeGreaterThan(1);
     for (const cell of cells) {
       const [cx, cz] = cell.key.split(",").map(Number);
-      for (const t of [...cell.pines, ...cell.birch]) {
+      for (const t of cell.pines) {
         const b = TERRAIN.lease!;
         const xMin = Math.min(...b.map((p) => p.x));
         const zMin = Math.min(...b.map((p) => p.z));

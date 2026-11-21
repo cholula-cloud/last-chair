@@ -7,7 +7,7 @@ export const PALETTE = {
   navy: "#0b1628",
   snow: "#f4f7fb",
   amber: "#e85d26",
-  pine: "#2d5a4a",
+  pine: "#2b6b48",
 
   snowShade: "#bccbec",
   snowWarm: "#fff4e4",
@@ -16,12 +16,13 @@ export const PALETTE = {
   snowIce: "#8995a8",
   rock: "#5d5650",
   earth: "#7a6850",
-  pineDeep: "#1f4a3d",
+  pineDeep: "#1a5238",
+  /** Lighter green for cone tips (barely any snow). */
+  pineTip: "#4a9a6a",
   /** Soft green wash under forest snow (terrain vertex tint). */
   forestFloor: "#2a4f42",
-  birchCrown: "#c4a24a",
   trimWhite: "#f0ebe2",
-  pineCool: "#356b5e",
+  pineCool: "#327a58",
   bark: "#4a3526",
   barnRed: "#a8382b",
   clapboard: "#ece6da",

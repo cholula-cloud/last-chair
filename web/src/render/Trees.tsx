@@ -17,7 +17,6 @@ import { SHADOW_LAYER_MASK } from "./kit";
 import { outsideWeight, patchLeaseDim } from "./leaseDim";
 import {
   farTreeImpostor,
-  leaseBirchLow,
   leasePineLow,
   shadowProxyLow,
 } from "./treeFallback";
@@ -38,7 +37,6 @@ const FAR_USE_KIT = false;
 
 type Shared = {
   pines: readonly THREE.BufferGeometry[];
-  birch: THREE.BufferGeometry;
   proxy: THREE.BufferGeometry;
   /** When true, geometries are owned by this component and must be disposed. */
   ownsGeo: boolean;
@@ -106,7 +104,6 @@ const pineSize = (p: TreeSpot) => {
   const name = pineKitName(p.variant);
   return [treeWorldWidth(name), treeWorldHeight(name)] as const;
 };
-const birchSize = () => [treeWorldWidth("birch"), treeWorldHeight("birch")] as const;
 const proxySize = () => {
   const [w, h] = farTreeWorldSize();
   return [w, h] as const;
@@ -120,14 +117,12 @@ function LeaseCellTrees({ cell, shared }: { cell: LeaseCell; shared: Shared }) {
     for (const p of cell.pines) buckets[p.variant]?.push(p);
     return buckets;
   }, [cell.pines]);
-  const all = useMemo(() => [...cell.pines, ...cell.birch], [cell]);
   return (
     <group>
       {Array.from({ length: PINE_VARIANTS }, (_, v) => (
         <Instances key={v} geo={shared.pines[v]} spots={byVariant[v]} size={pineSize} />
       ))}
-      <Instances geo={shared.birch} spots={cell.birch} size={birchSize} />
-      <Instances geo={shared.proxy} spots={all} size={proxySize} shadowOnly />
+      <Instances geo={shared.proxy} spots={cell.pines} size={proxySize} shadowOnly />
     </group>
   );
 }
@@ -167,7 +162,7 @@ function ForestBody({
     if (!clearedCells.length) return cells;
     const cut = new Set(clearedCells);
     const keep = (spot: TreeSpot) => !isClearedAt(spot, cut);
-    return cells.map((cell) => ({ ...cell, pines: cell.pines.filter(keep), birch: cell.birch.filter(keep) }));
+    return cells.map((cell) => ({ ...cell, pines: cell.pines.filter(keep) }));
   }, [cells, clearedCells]);
 
   const farSpots = useMemo(() => {
@@ -190,7 +185,6 @@ function TreesKit({ lines, paths }: ForestClearings) {
   const kit = useTreeKit();
   const shared = useMemo<Shared>(() => ({
     pines: kit.pines,
-    birch: kit.birch,
     proxy: kit.proxy,
     ownsGeo: false,
   }), [kit]);
@@ -203,7 +197,6 @@ function TreesLow({ lines, paths }: ForestClearings) {
     const pine = leasePineLow();
     return {
       pines: [pine, pine, pine, pine],
-      birch: leaseBirchLow(),
       proxy: shadowProxyLow(),
       ownsGeo: true,
     };
@@ -217,15 +210,14 @@ function TreesLow({ lines, paths }: ForestClearings) {
         g.dispose();
       }
     }
-    shared.birch.dispose();
     shared.proxy.dispose();
   }, [shared]);
   return <ForestBody shared={shared} lines={lines} paths={paths} />;
 }
 
 /**
- * Forest fixed in world space: kit-instanced pines and birch on the lease,
- * three-plane impostors beyond it. lowDetail skips GLBs for soft renderers.
+ * Forest fixed in world space: kit-instanced pines on the lease, three-plane
+ * impostors beyond it. lowDetail skips GLBs for soft renderers.
  */
 export const Trees = memo(function Trees({ lines, paths, lowDetail }: ForestClearings & { lowDetail: boolean }) {
   if (lowDetail) return <TreesLow lines={lines} paths={paths} />;

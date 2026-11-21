@@ -11,9 +11,8 @@ def _pine(name, H, tiers, R, green, slim=1.0, seg=7):
         rot = (0, 0, i * 28)
         a.cyl((0, 0, z), r, 0.0, h, seg, green, rot=rot)
         sz = z + h * 0.4
-        a.cyl((0, 0, sz), r * 0.64, 0.0, h * 0.6 + 0.02, seg, "snow", rot=(0, 0, i * 28 + 28))
-        # snow skirt on tier rim
-        a.cyl((0, 0, z - 0.02), r * 1.06, r * 0.88, h * 0.16, seg, "snow", rot=rot, caps=False)
+        # light tip only — most foliage stays green (runtime also tints GLBs)
+        a.cyl((0, 0, sz), r * 0.45, 0.0, h * 0.32 + 0.02, seg, "snow", rot=(0, 0, i * 28 + 28))
         z += span * 0.72
     return a.finish()
 
