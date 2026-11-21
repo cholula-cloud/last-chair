@@ -12,6 +12,7 @@ import { useReducedMotion } from "./useReducedMotion";
 import { pathSampler } from "./trail";
 import { sceneMood } from "./Atmosphere";
 import { box, merge, placeParts, type Part } from "./geo";
+import { kitForAsset } from "@/game/activities";
 import { resolveLodgeCoreKit, resolveStyledKit, resolveVenueKit } from "@/game/styles";
 import {
   bakeKit,
@@ -92,6 +93,11 @@ export const VILLAGE_SCENE_KITS = [
   "warming-hut",
   "warming-hut-chalet70s",
   "lamp-post",
+  "tubing-hut",
+  "ice-rink",
+  "apres-bar",
+  "fire-pit",
+  "string-lights",
 ] as const satisfies readonly KitAsset[];
 
 export function villagePlacements(
@@ -113,11 +119,13 @@ export function villagePlacements(
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   );
   for (const [index, asset] of assets.entries()) {
-    const base = ASSET_MODELS[asset.id];
+    const base = ASSET_MODELS[asset.id] ?? kitForAsset(asset.id);
     if (!base) continue;
     const attached = asset.attachPad !== undefined;
     const kitBase = attached ? "warming-hut" : base;
-    const name = resolveVenueKit(kitBase, asset.styleId) as VillageKitName;
+    const name = (ASSET_MODELS[asset.id]
+      ? resolveVenueKit(kitBase, asset.styleId)
+      : kitBase) as VillageKitName;
     list.push({
       name,
       ...asset.at,

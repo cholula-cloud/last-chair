@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_STYLE } from "./base";
-import { manifestStyleFor, normalizeStyleId, resolveLodgeCoreKit, resolveStyledKit } from "./styles";
+import {
+  manifestStyleFor,
+  normalizeStyleId,
+  resolveLodgeCoreKit,
+  resolveStyledKit,
+  unlockedBuildingStyles,
+} from "./styles";
 
 describe("building styles", () => {
   it("normalizes legacy timber ids to the catalog default", () => {
@@ -17,5 +23,10 @@ describe("building styles", () => {
   it("keeps default style kits unchanged", () => {
     expect(resolveLodgeCoreKit(DEFAULT_STYLE)).toBe("base-lodge");
     expect(resolveStyledKit("cafe", DEFAULT_STYLE)).toBe("cafe");
+  });
+
+  it("unlocks chalet70s at tier 2", () => {
+    expect(unlockedBuildingStyles({ lodgeTier: 1, completedBeats: [] })).toEqual([DEFAULT_STYLE]);
+    expect(unlockedBuildingStyles({ lodgeTier: 2, completedBeats: [] })).toContain("chalet70s");
   });
 });

@@ -47,8 +47,33 @@ function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void })
   </div>;
 }
 
-const BASE_ASSETS = (Object.keys(ASSET_CATALOG) as AssetId[])
-  .filter((id) => ASSET_CATALOG[id].placementZone === "base");
+const CATALOG = Object.entries(ASSET_CATALOG) as [AssetId, (typeof ASSET_CATALOG)[AssetId]][];
+const BASE_ASSETS = CATALOG.filter(([, spec]) => spec.category === "hospitality" || spec.category === "services")
+  .map(([id]) => id);
+const FUN_ASSETS = CATALOG.filter(([, spec]) => spec.category === "activity").map(([id]) => id);
+const DECOR_ASSETS = CATALOG.filter(([, spec]) => spec.category === "decor").map(([id]) => id);
+
+function AssetGrid({ ids, tier, onBuild }: { ids: AssetId[]; tier: LodgeTier; onBuild: (id: AssetId) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {ids.map((id) => {
+        const asset = ASSET_CATALOG[id];
+        const locked = tier < asset.opensAtTier;
+        return (
+          <button key={id} type="button" disabled={locked} onClick={() => onBuild(id)}
+            className="key press min-h-14 p-2 text-left font-extrabold">
+            {asset.label}
+            <small className="block">
+              {locked
+                ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}`
+                : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}
+            </small>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function BuildSheet({
   open,
@@ -123,19 +148,11 @@ export function BuildSheet({
   const basePanel = (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading>Base</SectionHeading>
-      <div className="grid grid-cols-2 gap-2">
-        {BASE_ASSETS.map((id) => {
-          const asset = ASSET_CATALOG[id];
-          const locked = tier < asset.opensAtTier;
-          return (
-            <button key={id} type="button" disabled={locked} onClick={() => buildAsset(id)}
-              className="key press min-h-14 p-2 text-left font-extrabold">
-              {asset.label}
-              <small className="block">{locked ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}` : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}</small>
-            </button>
-          );
-        })}
-      </div>
+      <AssetGrid ids={BASE_ASSETS} tier={tier} onBuild={buildAsset} />
+      <SectionHeading>Fun</SectionHeading>
+      <AssetGrid ids={FUN_ASSETS} tier={tier} onBuild={buildAsset} />
+      <SectionHeading>Decor</SectionHeading>
+      <AssetGrid ids={DECOR_ASSETS} tier={tier} onBuild={buildAsset} />
       <LodgeUpgradeControl variant="compact" />
       <VenueManagement onStartPlacement={onStartPlacement} />
       <SectionHeading>Snow</SectionHeading>

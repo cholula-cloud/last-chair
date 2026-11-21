@@ -7,17 +7,22 @@ export function StylePicker({
   onChange,
   label = "Style",
   disabled = false,
+  allowed,
 }: {
   value: BuildingStyleId | string;
   onChange: (styleId: BuildingStyleId) => void;
   label?: string;
   disabled?: boolean;
+  allowed?: readonly BuildingStyleId[];
 }) {
+  const choices = allowed
+    ? BUILDING_STYLES.filter((style) => allowed.includes(style.id))
+    : BUILDING_STYLES;
   return (
     <fieldset className="mt-3">
       <legend className="text-sm font-bold">{label}</legend>
       <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
-        {BUILDING_STYLES.map((style) => {
+        {choices.map((style) => {
           const active = value === style.id;
           return (
             <button

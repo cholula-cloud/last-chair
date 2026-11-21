@@ -7,13 +7,24 @@ import { BUILDING_COSTS, BUILDING_LABELS } from "./types";
 
 export type { LodgeTier } from "./site";
 export type LodgeUpgrade = { toTier: 2 | 3; nightsRemaining: number };
-export type AssetId = "warming_hut" | "cafe" | "shop" | "snow_guns" | "rentals" | "ski_school";
+export type AssetId =
+  | "warming_hut"
+  | "cafe"
+  | "shop"
+  | "snow_guns"
+  | "rentals"
+  | "ski_school"
+  | "tubing_hill"
+  | "ice_rink"
+  | "apres_bar"
+  | "fire_pit"
+  | "string_lights";
 export type PlacedAsset = { id: AssetId; at: XZ; styleId: string; name?: string; attachPad?: number; purchase?: { day: number; minute: number; price: number } };
 
 type Footprint = { width: number; depth: number };
 type Asset = {
   label: string;
-  category: "hospitality" | "services" | "infrastructure";
+  category: "hospitality" | "services" | "infrastructure" | "activity" | "decor";
   footprint: Footprint;
   cost: number;
   upkeep: number;
@@ -62,6 +73,31 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     cost: 250, upkeep: 60, effect: {},
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
   },
+  tubing_hill: {
+    label: "Tubing hill", category: "activity", footprint: { width: 1.4, depth: 1.1 },
+    cost: 2800, upkeep: 35, effect: { hillValue: 4, arrivalMood: 0.03 },
+    revenuePerUse: 12, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  ice_rink: {
+    label: "Ice rink", category: "activity", footprint: { width: 2.2, depth: 1.4 },
+    cost: 4500, upkeep: 80, effect: { hillValue: 5, arrivalMood: 0.04 },
+    revenuePerUse: 9, visitMinutes: 0, opensAtTier: 3, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  apres_bar: {
+    label: "Après bar", category: "hospitality", footprint: { width: 1.5, depth: 1.2 },
+    cost: 6200, upkeep: 55, effect: { seats: 24, arrivalMood: 0.05, hillValue: 6 },
+    revenuePerUse: 14, visitMinutes: 25, opensAtTier: 3, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
+  },
+  fire_pit: {
+    label: "Fire pit", category: "decor", footprint: { width: 0.7, depth: 0.7 },
+    cost: 450, upkeep: 5, effect: { arrivalMood: 0.02 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  string_lights: {
+    label: "String lights", category: "decor", footprint: { width: 2.4, depth: 0.35 },
+    cost: 320, upkeep: 8, effect: { arrivalMood: 0.015 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
 };
 
 export const LODGE_FOOTPRINT: Footprint = DUTCH_HILL_SITE.buildings.lodge.footprint;
@@ -80,9 +116,11 @@ export function nextLodgeTier(tier: LodgeTier): 2 | 3 | null {
 }
 
 export function lodgeTierUnlocks(tier: LodgeTier): string[] {
-  const assets = Object.values(ASSET_CATALOG).filter((asset) => asset.opensAtTier === tier);
-  const labels = assets.map((asset) => asset.label);
+  const assets = (Object.entries(ASSET_CATALOG) as [AssetId, Asset][])
+    .filter(([id, asset]) => asset.opensAtTier === tier && id !== "snow_guns");
+  const labels = assets.map(([, asset]) => asset.label);
   if (tier === CHAIR_TIER) labels.unshift("Double chair");
+  if (tier === 2) labels.push("Snow guns");
   return labels;
 }
 
@@ -188,6 +226,33 @@ type AssetPreview =
   | { ok: true; placement: PlacedAsset; cost: number; acres: number; attached: boolean }
   | { ok: false; reason: string };
 
+export function previewSlopeAssetPlacement(
+  id: AssetId,
+  at: XZ,
+  tier: LodgeTier,
+  assets: readonly PlacedAsset[],
+  options: { terrain?: Terrain } = {},
+): AssetPreview {
+  const terrain = options.terrain ?? TERRAIN;
+  const asset = ASSET_CATALOG[id];
+  if (!asset || asset.placementZone !== "slope") return { ok: false, reason: "That asset belongs in the base area." };
+  if (tier < asset.opensAtTier) return { ok: false, reason: `Needs Lodge Tier ${asset.opensAtTier} first.` };
+  if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area’s full. Move or remove something first." };
+  if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) return { ok: false, reason: "Pick a spot on the hill." };
+  const position = at;
+  const size = asset.footprint;
+  if (!footprintOnLease(position, size.width, size.depth, terrain)) return { ok: false, reason: OFF_LEASE_MESSAGE };
+  if (terrain.grade(position.x, position.z) > 0.42) {
+    return { ok: false, reason: "Tubing needs a gentle slope. Try a mellower pitch." };
+  }
+  if (assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.12))) {
+    return { ok: false, reason: "Too close to another building. Leave some elbow room." };
+  }
+  const placement: PlacedAsset = { id, at: { ...position }, styleId: asset.styleId };
+  const acres = size.width * size.depth * terrain.horizontalFeetPerUnit ** 2 / 43560;
+  return { ok: true, placement, cost: asset.cost, acres, attached: false };
+}
+
 export function previewAssetPlacement(
   id: AssetId,
   at: XZ,
@@ -195,8 +260,10 @@ export function previewAssetPlacement(
   assets: readonly PlacedAsset[],
   options: { site?: SiteDef; terrain?: Terrain; terminals?: readonly XZ[]; defaultStyleId?: string } = {},
 ): AssetPreview {
-  const { site = DUTCH_HILL_SITE, terrain = TERRAIN, terminals = [terrain.base] } = options;
+  if (id === "snow_guns") return { ok: false, reason: "Place snow guns from the Snow section." };
   const asset = ASSET_CATALOG[id];
+  if (asset?.placementZone === "slope") return previewSlopeAssetPlacement(id, at, tier, assets, options);
+  const { site = DUTCH_HILL_SITE, terrain = TERRAIN, terminals = [terrain.base] } = options;
   if (!asset || asset.placementZone !== "base") return { ok: false, reason: "That one goes up on the hill, not at the base." };
   if (tier < asset.opensAtTier) return { ok: false, reason: `Needs Lodge Tier ${asset.opensAtTier} first.` };
   if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area’s full. Move or remove something first." };

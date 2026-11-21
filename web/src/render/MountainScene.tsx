@@ -33,6 +33,7 @@ import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
 import { OverlayScene } from "./OverlayScene";
 import { Road, Terrain } from "./Terrain";
+import { TrailMapKiosk } from "./TrailMapKiosk";
 import { TrailSign } from "./TrailSign";
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
@@ -142,11 +143,13 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
 
         {confirmedLifts.map(({ lift, index }) => {
           const key = `lift-${index}-${lift.type}-${lift.anchor.x}-${lift.anchor.z}`;
+          const line = liftLineOf(lift);
           return (
             <group key={key} userData={{ asset: { kind: "lift", index } }}>
               <LiftPlacementMotion liftKey={key} preview={false}>
-                <Lift line={liftLineOf(lift)} previewInvalid={false} type={lift.type} closing={lift.closing} />
+                <Lift line={line} previewInvalid={false} type={lift.type} closing={lift.closing} />
               </LiftPlacementMotion>
+              <TrailMapKiosk line={line} trails={trailRuns} liftIndex={index} />
             </group>
           );
         })}

@@ -1,5 +1,6 @@
 import { DEFAULT_STYLE } from "./base";
 import { styledKitName } from "./kitManifest";
+import type { LodgeTier } from "./site";
 
 export type BuildingStyleId = typeof BUILDING_STYLES[number]["id"];
 
@@ -31,6 +32,23 @@ export function normalizeStyleId(styleId: string): BuildingStyleId {
 
 export function styleOptions(): readonly (typeof BUILDING_STYLES)[number][] {
   return BUILDING_STYLES;
+}
+
+/** S3: chalet unlocks at Village Lodge (tier 2) or after a completed winter review. */
+export function unlockedBuildingStyles(ctx: {
+  lodgeTier: LodgeTier;
+  completedBeats: readonly string[];
+}): BuildingStyleId[] {
+  const out: BuildingStyleId[] = [DEFAULT_STYLE];
+  if (ctx.lodgeTier >= 2 || ctx.completedBeats.includes("winter_review")) out.push("chalet70s");
+  return out;
+}
+
+export function isStyleUnlocked(
+  styleId: BuildingStyleId,
+  ctx: { lodgeTier: LodgeTier; completedBeats: readonly string[] },
+): boolean {
+  return unlockedBuildingStyles(ctx).includes(normalizeStyleId(styleId));
 }
 
 export function manifestStyleFor(styleId: string): string | null {

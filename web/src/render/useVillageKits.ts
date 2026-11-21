@@ -20,6 +20,11 @@ export const VILLAGE_KIT_POOL = [
   "warming-hut",
   "warming-hut-chalet70s",
   "lamp-post",
+  "tubing-hut",
+  "ice-rink",
+  "apres-bar",
+  "fire-pit",
+  "string-lights",
 ] as const satisfies readonly KitAsset[];
 
 export type VillageKitName = (typeof VILLAGE_KIT_POOL)[number];
@@ -41,5 +46,10 @@ export function useVillageKitScenes(): Record<VillageKitName, THREE.Object3D> {
     "warming-hut": useKit("warming-hut"),
     "warming-hut-chalet70s": useKit("warming-hut-chalet70s"),
     "lamp-post": useKit("lamp-post"),
+    "tubing-hut": useKit("tubing-hut"),
+    "ice-rink": useKit("ice-rink"),
+    "apres-bar": useKit("apres-bar"),
+    "fire-pit": useKit("fire-pit"),
+    "string-lights": useKit("string-lights"),
   };
 }
