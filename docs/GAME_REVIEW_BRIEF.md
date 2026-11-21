@@ -373,7 +373,7 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 - **Give offers consequences.** Readsboro changes one weekday and the school outcome depends on lessons delivered. Vivian exchanges cash now for a real fare ceiling. The pie gives locals a moment on the hill with no change to the operating numbers.
 - **Show the town in sim hooks:** bus day, après revenue, heritage sign — tie NYFA **world** to counters players already watch.
 - **Give the operator a voice sparingly:** one-line reactions in winter review or after hard nights; no dialogue trees required for Dutch Hill.
-- **Career map as long-term goal:** when Tenney unlocks, frame it as **escape velocity** from Abominable Snowglomerate pressure, not a generic level select.
+- **Career map as long-term goal:** when the first career hill (Mount Tom, see STORY.md) unlocks, frame it as **escape velocity** from Abominable Snowglomerate pressure, not a generic level select.
 
 ### Content, scope, and discipline
 

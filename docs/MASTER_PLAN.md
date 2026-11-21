@@ -1,15 +1,16 @@
 # Last Chair game plan and design
 
-**Version:** 2.13 · **Updated:** 2026-11-21
+**Version:** 2.14 · **Updated:** 2026-11-21
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode. v2.9 closes the **M4 code gate**: F3a/F3b Office economics ([#97](https://github.com/cholula-cloud/last-chair/pull/97)–[#99](https://github.com/cholula-cloud/last-chair/pull/99)), feel rows 30–33, map layers **O4** and **O5**, follow-up HUD polish ([#106](https://github.com/cholula-cloud/last-chair/pull/106)), and records P4 punch-list leftovers. v2.10 lands the remaining M4 stack on `main`: trail network and asset inspectors ([#105](https://github.com/cholula-cloud/last-chair/pull/105)), plan docs ([#107](https://github.com/cholula-cloud/last-chair/pull/107), [#109](https://github.com/cholula-cloud/last-chair/pull/109)), and docked slope legend during trail paint ([#110](https://github.com/cholula-cloud/last-chair/pull/110)). v2.11 records the approved Dutch Hill **operating calendar** (row **CAL-1**, shipped: Fri–Sun playable days, Mon–Thu background sim, civil Dec–Mar). v2.12 records the **kit forest + valley beauty** pass ([#147](https://github.com/cholula-cloud/last-chair/pull/147)): lease pines a–d and birch from Blender kit GLBs (`treeKit.ts`), far-ring impostors, and valley glue (canopy wash, pine-tinted ridges, greener horizon). See [tree-rendering-guide.md](./reference/tree-rendering-guide.md). v2.13 closes **M4b Batch 1** on `main` ([#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#146](https://github.com/cholula-cloud/last-chair/pull/146): activity catalog wiring, mood lens, decor/dressing, reference PNGs; forest docs in [#148](https://github.com/cholula-cloud/last-chair/pull/148)) and records **playtest coach alignment** ([#149](https://github.com/cholula-cloud/last-chair/pull/149): `COACH_TIPS` + `problemGuide` → map layer and Office tab). Mobile Build tabs and paint assist shipped earlier ([#119](https://github.com/cholula-cloud/last-chair/pull/119)). The **active queue is M5** career rows unless the owner adds M4b batch 2.
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode. v2.9 closes the **M4 code gate**: F3a/F3b Office economics ([#97](https://github.com/cholula-cloud/last-chair/pull/97)–[#99](https://github.com/cholula-cloud/last-chair/pull/99)), feel rows 30–33, map layers **O4** and **O5**, follow-up HUD polish ([#106](https://github.com/cholula-cloud/last-chair/pull/106)), and records P4 punch-list leftovers. v2.10 lands the remaining M4 stack on `main`: trail network and asset inspectors ([#105](https://github.com/cholula-cloud/last-chair/pull/105)), plan docs ([#107](https://github.com/cholula-cloud/last-chair/pull/107), [#109](https://github.com/cholula-cloud/last-chair/pull/109)), and docked slope legend during trail paint ([#110](https://github.com/cholula-cloud/last-chair/pull/110)). v2.11 records the approved Dutch Hill **operating calendar** (row **CAL-1**, shipped: Fri–Sun playable days, Mon–Thu background sim, civil Dec–Mar). v2.12 records the **kit forest + valley beauty** pass ([#147](https://github.com/cholula-cloud/last-chair/pull/147)): lease pines a–d and birch from Blender kit GLBs (`treeKit.ts`), far-ring impostors, and valley glue (canopy wash, pine-tinted ridges, greener horizon). See [tree-rendering-guide.md](./reference/tree-rendering-guide.md). v2.13 closes **M4b Batch 1** on `main` ([#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#146](https://github.com/cholula-cloud/last-chair/pull/146): activity catalog wiring, mood lens, decor/dressing, reference PNGs; forest docs in [#148](https://github.com/cholula-cloud/last-chair/pull/148)) and records **playtest coach alignment** ([#149](https://github.com/cholula-cloud/last-chair/pull/149): `COACH_TIPS` + `problemGuide` → map layer and Office tab). Mobile Build tabs and paint assist shipped earlier ([#119](https://github.com/cholula-cloud/last-chair/pull/119)). The **active queue is M5** career rows unless the owner adds M4b batch 2. v2.14 adds [STORY.md](./STORY.md) as the authority for Story Mode narrative, replaces the §2 career roster (Tenney and Crotched West cut, Hogback lore only, Mount Tom, Snow Valley, Enchanted Mountain and Evergreen Valley added, all proposed pending owner), states in §4 that the §2 story belongs to Story Mode only, changes row 36 from Tenney to Mount Tom, and adds the **N track** of narrative rows to §9.
 
 | Doc | Job |
 |---|---|
 | **MASTER_PLAN.md** (this) | Game plan and design: vision, story, the lodge, modes, build experience, roadmap, how we work |
 | [Last Chair Roadmap Handoff M2 to M7.md](./Last%20Chair%20Roadmap%20Handoff%20M2%20to%20M7.md) | Per-PR specs for roadmap rows 13 to 40 and the M7 pass. Read the row's section before building it. Its PR 16 section is superseded by rows 16a to 16d below. Unbuilt rows with no handoff section yet: T1 (expand brief before M4b), S1 to S3, A1 to A5, 41 to 48. Blender rows 28 and 29 are in the handoff Part C. M4 code rows **O4**, **O5**, **P4**, and **F3** are built; sections below record what shipped |
 | [SIMULATION_SPEC.md](./SIMULATION_SPEC.md) | Numbers and formulas, marked spec vs implemented |
+| [STORY.md](./STORY.md) | **Authority for Story Mode narrative:** the player, intro, cast, surprise catalog, mountain roster, next-hill hook, endings and the N track. Covers Story Mode only |
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
 | [TESTING.md](./TESTING.md) | Automated tests, device playtest scripts, sign-off log |
@@ -87,11 +88,15 @@ A winter is **28 days** and ends in a **winter review**. The loop is about **dia
 
 ## 2. Story Mode: the narrative and what it does to play
 
-Story Mode is the product. It is the career from Dutch Hill onward, played in the Simple ruleset (you build and set two nightly levers; the crew runs operations).
+Story Mode is the product. It is the career from Dutch Hill onward, played in the Simple ruleset (you build and set two nightly levers; the crew runs operations). This section is a short summary. The full story lives in [STORY.md](./STORY.md), which wins on narrative: the player, the intro, the cast, the surprise catalog, the mountain roster, the next-hill hook and the endings.
+
+Items marked **proposed, pending owner** here and in STORY.md (D1 to D6 there) are not decided. Each has a recommended default in STORY.md §10.
 
 ### Premise
 
 The Ice Coast is New England's nickname for its hard, freeze-thaw snow. Hundreds of small hills here closed between the 1970s and 2000s: bad winters, rising insurance, and megaresorts that pulled skiers north. You are the person who takes the note on one of those dead lift lines. The town wants the only lit slope in the valley back on.
+
+In STORY.md you are a Readsboro kid who spent ten winters on a snowmaking crew up north, and your grandmother Nan kept the last Dutch Hill punch card with one ride left on it. That card is the game's title: every winter ends with the last chair and the card gets punched. The past at an Abominable Snowglomerate resort is **proposed, pending owner (D2)**.
 
 Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Saving it is tycoon fiction; the history on the heritage card is not.
 
@@ -101,15 +106,17 @@ Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Sa
 
 ### Arc across the career
 
+Proposed, pending owner (D1, D5): the roster below replaces the earlier list. **Tenney Mountain** is cut because it reopened in 2018 and operates today. **Crotched West** is cut because its western side was rebuilt in 2003 as today's operating Crotched Mountain. **Hogback** is lore only (radio and Atlas pin), because its published vertical is smaller than Dutch Hill's. Maple Valley is in Dummerston, Windham County. Hill facts marked † in STORY.md §5.3 need a check before they appear in player copy.
+
 | Act | Hills | Story question | What changes in play |
 |---|---|---|---|
-| I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian can make one offer in the last third of winter |
-| II | Tenney Mountain, NH · Maple Valley, VT | Can you win a hill Abominable Snowglomerate also wants? | Colder, steeper, more capital. Abominable Snowglomerate competes for the same guests; its offers get bigger |
-| III | Mount Whittier, NH · Hogback, VT | Can an independent run big lifts and hard terrain? | Lift reliability, wind holds, glades |
-| IV | Brodie, MA · Crotched West, NH | Can the independents hold together? | Night skiing, racing, split-area politics. Caretaker income from earlier hills funds the push |
-| Ending | | Who owns the Ice Coast? | Branches on your choices: a co-op of independent hills, a sale to Abominable Snowglomerate, or going it alone (proposed) |
+| I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian scouts the hill as a guest, then makes one offer in the last third of winter |
+| II | Mount Tom, MA and Maple Valley, VT | Can you win a hill Abominable Snowglomerate also wants? | Night session and guns from day 1 at Mount Tom; a season-long school program, tubing and a land parcel at Maple Valley. Abominable Snowglomerate competes for the same guests; its offers get bigger |
+| III | Snow Valley, VT, Enchanted Mountain, ME and Evergreen Valley, ME | Can an independent run bigger hills with harder conditions? | Riders and a shared guest pool; wind and road closures; a lease covenant measured each winter |
+| IV | Brodie, MA and Mount Whittier, NH (finale) | Can the independents hold together? | Night skiing and events at scale; a gondola with two bases. Caretaker income from earlier hills funds the push |
+| Ending | | Who owns the Ice Coast? | Vivian's coast offer at Mount Whittier. Branches on your choices and on the Atlas dots: a co-op of independent hills, a sale to Abominable Snowglomerate, going alone, or the forest (proposed) |
 
-Full roster and per-hill hooks: [WORLD.md Part 3](./WORLD.md#part-3-career-mountains).
+Full roster, per-hill design, difficulty table and endings: [STORY.md](./STORY.md#5-mountain-roster-and-progression). Lore and the respect line: [WORLD.md Part 3](./WORLD.md#part-3-career-mountains).
 
 ### How the story changes gameplay
 
@@ -122,10 +129,10 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 | **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
 | **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
 | **Readsboro school visit** | Once Tier 2 and a ski school are available, accept or decline one weekday visit for six pupils at a discounted fare. Track booked, delivered and missed lessons separately. The optional goal is credited only for lessons actually delivered |
-| **Abominable Snowglomerate offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect |
+| **Abominable Snowglomerate offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect. STORY.md proposes a scouting visit before the offer and a smaller $3,000 offer at reputation 40 to 49, so every player meets her (row N6) |
 | **Named crew** (Frank, Dana, Elena) | Their biases explain the fixed talent order, so a talent arriving reads as a person learning, not a menu |
 | **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Vivian results when present, and the operator's choices and measured results. Records a career result for later use by the map |
-| **Caretaker** | Hills you leave keep running off-screen and pay a small income that funds the next hill |
+| **Caretaker** | Hills you leave keep running off-screen under a named local ally and pay a small income that funds the next hill. Vivian bids on departed hills that slip. The Atlas map, with yours, the pass and the forest as dot colors, decides the ending (STORY.md §6) |
 
 ---
 
@@ -197,9 +204,11 @@ Every asset is a revenue line or a mood term in the Ledger, never filler. The Bu
 | Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat Abominable Snowglomerate |
 | Ruleset | Simple: build + fare + snow & service | Simple, with optional manual ops later | Simple at each hill, plus a company layer |
 | Economy | Real pressure | Normal / Comfortable / Unlimited | Real pressure, shared market, banks, stock market |
-| Story | Radio beats, Abominable Snowglomerate arc | Off | The rival's moves are the story |
+| Story | The §2 story: Nan, the cast, radio beats, the Abominable Snowglomerate arc, endings | Off | The rival's moves are the story |
 | Win | Finish the career | None | Selectable goals (below) |
 | Save | Local now, cloud later | Local slots | Local slot |
+
+The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode does not use the player's history, Nan, the Story cast, beats, surprises or endings; it may reuse the career hills and the rival company, and its Abominable Snowglomerate is an AI company with no named rep. No Story save carries into Capitalist Mode. The boundary is in [STORY.md §6.4](./STORY.md#64-boundary-with-capitalist-mode).
 
 **Sandbox settings (M6):** mountain (blank, Dutch Hill template, imported layout later), money (Normal / Comfortable / Unlimited), weather (live random, fixed sunny, storm week), story off, talents (all, crew order, manual), lodge tier (any). The lodge is present on a blank mountain too. New build tools are tried in Sandbox before Story balance.
 
@@ -384,7 +393,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M3** One full winter (MVP) | Dutch Hill from founder pick to winter review, with consequences | Automated winter playthrough, save/reload and balance checks pass |
 | **M4** Polish and feel (code) | Build UX fixes, shaders, lighting, audio, juice, overlays, Office economics (Money ledger polish plus F3 chart tabs), and a cross-cutting design/engineering/UI pass. **No Blender.** | Owner can place a lift with a readable guide; characters sound like people (C1); trail paint shows other trails and does not over-snap to base; muted vs unmuted and day vs night read clearly; the Office reads like a ski-area CFO dashboard (Money plus Stats/Reports charts from real `dayHistory`, not a text log); phone check green |
 | **M4b** Blender assets | Guest silhouettes, lodge/lift kit, **trail signage**, style variants, activity/decoration GLBs plus catalog rows | Every M4b asset is built in Blender, in manifest v2, and wired through the asset table; trail entrances use realistic signs (not stacked billboards at the lift); Tier 3 activity placeholders render on the hill |
-| **M5** Career | Tenney Mountain, the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
+| **M5** Career | Mount Tom (proposed, replaces Tenney), the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
 | **M6** Sandbox | Free-build mode and save slots | Sandbox hill saves and reloads |
 | **M7** 110% pass | Polish the best ideas after a side-by-side with ICR | Owner sign-off |
 | **M8** Capitalist Mode | A company across New England against Abominable Snowglomerate | A match plays to a winner in the harness and on a phone |
@@ -542,9 +551,35 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 |---|---|---|
 | 34 | ☐ | Mountain definitions as data (terrain, start state, lodge position and start tier, archetype tags, beats) |
 | 35 | ☐ | Atlas tab, also called F5: the career map (New England pins, locked hills with one-line history, heritage cards) and the live trail map of your own hill |
-| 36 | ☐ | Tenney Mountain, NH (Act II): colder, steeper, more capital; Abominable Snowglomerate competes for the same guests |
+| 36 | ☐ | Mount Tom, MA (Act II, replaces Tenney; proposed, pending owner, STORY.md D1): night session as a building plus a snow & service tile option, guns from day 1, more capital; Abominable Snowglomerate competes for the same guests |
 | 37 | ☐ | Caretaker income from departed hills, built on a coarse off-screen hill sim |
 | 38 | ☐ | Ledger, fuller statements: income statement, balance and caretaker lines on top of the F2 Money tab |
+
+### N track: Story Mode narrative
+
+Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-class work (code, copy and 2D stills, no Blender). N9 and N10 sit with M5. N11 to N18 sit with M7, or earlier if the owner wants the hills before polish. Rows 34, 35, 37 and 38 above keep their scope and gain the story content listed in STORY.md §9. Rows that depend on an owner decision (D1 to D6 in STORY.md §10) are **proposed, pending owner**.
+
+| # | Milestone | Status | PR | Accomplishes | Save / sim |
+|---|---|---|---|---|---|
+| N0 | M4 | ☐ | STORY.md and roster docs | STORY.md lands; WORLD.md Part 3 roster replaced; MASTER_PLAN §2 arc table and row 36 updated | Docs only |
+| N1 | M4 | ☐ | Cold open v2 | Six cards (two new stills, two rewritten), punch-card flip and title drop, optional name on the lease (D3), one ElevenLabs take for cards 3 to 6 on free credits (D6), captions fallback | **Save:** `operatorName` |
+| N2 | M4 | ☐ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Vivian, Al and Nan lines, "the operator" fallback | Copy only |
+| N3 | M4 | ☐ | The last chair | First-ride toast, final-day last chair toast and camera ease, punch-card line in the winter review; Tenney card replaced by a placeholder call card until N9 | None |
+| N4 | M4 | ☐ | Surprise scheduler | One radio item a night with priority, weekly caps, quiet days, midpoint window; existing three surprises move onto it | **Sim:** re-baseline snapshot |
+| N5 | M4 | ☐ | Dutch Hill surprise pack | DH2 copy, DH4, DH5, DH9, DH10, DH11, DH12 branch | **Save:** `SurpriseKind` enum. **Sim:** snow-day mix override |
+| N6 | M4 | ☐ | Vivian skis Dutch Hill | DH6 visitor guest with stored facts, offer copy quotes them, offer gate at reputation 50 with a $3,000 variant at 40 to 49 | **Save:** `vivianVisit`. **Sim:** harness rerun |
+| N7 | M4 | ☐ | Decision surprises | DH7 club bus and DH8 groomer down, with cards, recap results and review memory lines | **Save:** `clubBooking`, `groomerDown`. **Sim** |
+| N8 | M4 | ☐ | Last Saturday | DH13 set piece: preview, arrival bonus, torchlight decoration, Nan cameo | **Sim:** small arrival term |
+| N9 | M5 | ☐ | The call | Next-hill call from a measured result, Maris's threat line, town match from winter score, branching from Act II | Reads `winterRecord` |
+| N10 | M5 | ☐ | Lost hills (D4) | Bankrupt later hill turns pass or forest; career continues; Forest epilogue when none remain | **Save:** status transitions |
+| N11 | M7 | ☐ | Maple Valley, VT | District school program, tubing, orchard parcel bid, inspector's Tuesday (needs lift wear in the sim) | Sim |
+| N12 | M7 | ☐ | Guest scaling | One agent stands for several skiers so hills 4 to 8 keep 20 to 30 agents on iPhone; recap and "Why?" stay exact | **Sim** |
+| N13 | M7 | ☐ | Snow Valley, VT | Rider persona, shared guest pool with a fictional pass resort, SV1 to SV3 | Sim |
+| N14 | M7 | ☐ | Enchanted Mountain, ME | Wind-dominant weather, road closure days, EM1 and EM2, Vivian backstory | Sim |
+| N15 | M7 | ☐ | Evergreen Valley, ME | Lease covenant score, ranger inspection, rival lease bid | **Save**, sim |
+| N16 | M7 | ☐ | Brodie, MA | Night at scale and events (uses A5), Frank poach decision, BR1 | Sim |
+| N17 | M7 | ☐ | Mount Whittier, NH | Gondola lift type, two bases with a shuttle, wind holds on the gondola, MW1, the coast offer | **Sim** |
+| N18 | M7 | ☐ | Endings (D6) | Four endings from Atlas dots and the final reply; four voiced lines | Reads `careerHills` |
 
 ### M6: Sandbox
 
