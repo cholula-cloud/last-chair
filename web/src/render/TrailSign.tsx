@@ -4,7 +4,7 @@ import { Billboard } from "@react-three/drei";
 import { useEffect, useMemo } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import { TERRAIN } from "@/game/terrain";
-import { MARKS, segmentCondition } from "@/game/mapLayers";
+import { MARKS } from "@/game/mapLayers";
 import { useGameStore } from "@/game/store";
 import { weatherForDay, isWindHeld } from "@/game/weather";
 import type { TrailRun } from "@/game/trails";
@@ -51,14 +51,12 @@ function signTexture(name: string, difficulty: TrailRun["difficulty"], glyph: st
 }
 
 export function TrailSign({ run, lane, index }: { run: TrailRun; lane: number; index: number }) {
-  const glyph = useGameStore(state => {
+  const glyph = useGameStore((state) => {
     const lift = state.lifts[run.liftIndex];
-    if (lift && isWindHeld(lift.type, weatherForDay(state).wind, state.clockMin, state.talentsOwned)) return MARKS.hold.glyph;
-    if (!run.snow.length) return "";
-    const i = run.snow.reduce((worst, segment, index) =>
-      Math.min(segment.quality, segment.coverage) < Math.min(run.snow[worst].quality, run.snow[worst].coverage) ? index : worst, 0);
-    return MARKS[segmentCondition(run.snow[i], !!run.groomed?.[i], state.weather, state.clockMin,
-      run.elevations[i], state.dayStats.runsByTrail[index] ?? 0)].glyph;
+    if (lift && isWindHeld(lift.type, weatherForDay(state).wind, state.clockMin, state.talentsOwned)) {
+      return MARKS.hold.glyph;
+    }
+    return "";
   });
   const texture = useMemo(() => signTexture(run.name, run.difficulty, glyph), [run.name, run.difficulty, glyph]);
   useEffect(() => () => texture?.dispose(), [texture]);

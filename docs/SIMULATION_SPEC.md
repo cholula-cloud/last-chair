@@ -286,7 +286,7 @@ The season stores one seeded weather outcome per day. Conditions influence the n
 
 **Words.** The conditions board shows the worst segment ("Icy bottom", "Thin snow", "Bare bottom", "Good cover", "Fresh corduroy") beside the mean quality, and the snow problem line names where ("Bare patches at the bottom of the trail", "Icy up top").
 
-**Render.** A float RGBA snow state texture (one row per trail, six segments per row) uploads when segment values snap to 0.05. The terrain shader blends coverage patches, quality tint, and groom stripes from preset strength and per-trail wear (`runsByTrail / 150`); off-trail hollows and rock stay CPU vertex colours. Night darkens stripes 20%. Guns plume only on the segments inside last night's reach (`gunReach`).
+**Render.** Segment depth, quality, and coverage still drive simulation and the **Conditions** map overlay. In-world corridor conditioning (row 30 groom stripes, quality tint, wear) is gated off via `MOUNTAIN_TRAIL_CONDITIONING` in `snowMaterial.ts` until the art pass is ready; trails then read as normal hill snow. When that flag is true, a float RGBA snow state texture (one row per trail, six segments per row) uploads when values snap to 0.05 and the terrain shader blends patches and stripes from preset strength and per-trail wear (`runsByTrail / 150`); off-trail hollows and rock stay CPU vertex colours. Night darkens stripes 20%. Guns plume only on the segments inside last night's reach (`gunReach`).
 
 Persistence: save version 5. A v4 save gets every lift a trail with all segments at the old global depth and quality.
 

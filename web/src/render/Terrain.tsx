@@ -26,7 +26,12 @@ import {
   snowTextureBytes,
   snowWearByTrail,
 } from "./snowTexture";
-import { patchSnowMaterial, snowUniforms, syncSnowNightUniform } from "./snowMaterial";
+import {
+  MOUNTAIN_TRAIL_CONDITIONING,
+  patchSnowMaterial,
+  snowUniforms,
+  syncSnowNightUniform,
+} from "./snowMaterial";
 
 // Paths and widths are immutable. Key by array identity so an edit with the
 // same endpoints still updates the terrain without serializing every point.
@@ -181,6 +186,7 @@ export function Terrain({
   }, [geometry, q, d, canGrow]);
 
   useLayoutEffect(() => {
+    if (!MOUNTAIN_TRAIL_CONDITIONING) return;
     const count = geometry.attributes.position.count;
     const { aTrail, aT, aU, aW } = bakeSnowAttributes(influence, count);
     geometry.setAttribute("aTrail", new THREE.BufferAttribute(aTrail, 1));
@@ -190,6 +196,7 @@ export function Terrain({
   }, [geometry, influence]);
 
   const snowTex = useMemo(() => {
+    if (!MOUNTAIN_TRAIL_CONDITIONING) return null;
     const data = snowTextureBytes(trails, groomed ?? [], snowPreset);
     const tex = new THREE.DataTexture(
       data,
@@ -205,6 +212,7 @@ export function Terrain({
   }, [trails, groomed, snowPreset]);
 
   useLayoutEffect(() => {
+    if (!MOUNTAIN_TRAIL_CONDITIONING || !snowTex) return;
     snowUniforms.uSnow.value = snowTex;
     snowUniforms.uTrailCount.value = Math.min(trails.length, SNOW_TEX_TRAILS);
     const style = groomStyle(snowPreset);
@@ -213,16 +221,17 @@ export function Terrain({
     snowUniforms.uWear.value.set(snowWearByTrail(runsByTrail ?? []));
   }, [snowTex, trails.length, snowPreset, runsByTrail]);
 
-  const material = useMemo(
-    () => patchOverlay(patchLeaseDim(patchSnowMaterial(new THREE.MeshLambertMaterial({ vertexColors: true })))),
-    [],
-  );
+  const material = useMemo(() => {
+    const base = new THREE.MeshLambertMaterial({ vertexColors: true });
+    const withSnow = MOUNTAIN_TRAIL_CONDITIONING ? patchSnowMaterial(base) : base;
+    return patchOverlay(patchLeaseDim(withSnow));
+  }, []);
 
   useFrame(() => syncSnowNightUniform());
 
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
-  useEffect(() => () => snowTex.dispose(), [snowTex]);
+  useEffect(() => () => snowTex?.dispose(), [snowTex]);
 
   return (
     <mesh geometry={geometry} material={material} receiveShadow />
