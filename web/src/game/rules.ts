@@ -35,7 +35,7 @@ import { OFF_LEASE_MESSAGE } from "./lease";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
-import { CREW_TALENTS, FOUNDERS, founderById, talentDescription } from "./content";
+import { FOUNDERS, founderById } from "./content";
 import { CREW_RUSH_COST, pickTalent as applyTalentPick, type TalentId } from "./talentProgress";
 
 /** Bonus crew point when a lodge upgrade finishes (Tier 2 or 3 opening). */
