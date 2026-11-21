@@ -148,7 +148,7 @@ export function spendAllCrewPoints(state: GameState): { state: GameState; picked
 /** Layout positions for the talent tree (column = crew). */
 export const TALENT_TREE_ROW: Record<TalentId, number> = Object.fromEntries(
   (Object.entries(CREW_TRACK_ORDER) as [CrewMember, readonly TalentId[]][]).flatMap(
-    ([crew, ids]) => ids.map((id, i) => [id, i]),
+    ([, ids]) => ids.map((id, i) => [id, i]),
   ),
 ) as Record<TalentId, number>;
 
