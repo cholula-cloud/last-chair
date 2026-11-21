@@ -1,3 +1,4 @@
+import { LODGE_TIERS, type LodgeTier } from "./base";
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
 import { winterRecord } from "./winterMemory";
 import { validateSave } from "./saveValidation";
@@ -110,6 +111,29 @@ export const MIGRATIONS: readonly Migration[] = [
       const cal = calendarForSeason(mountainId as MountainId, seasonLength);
       const operating = raw.operatingDayIndex ?? operatingDayIndex(cal, dayIndex);
       return { ...raw, operatingDayIndex: operating };
+    },
+  },
+  {
+    to: 12,
+    note: "One lodge attach pad per tier; drop annex flag on pads that no longer exist.",
+    up(raw) {
+      const tier = (raw.lodgeTier === 1 || raw.lodgeTier === 2 || raw.lodgeTier === 3 ? raw.lodgeTier : 1) as LodgeTier;
+      const maxPad = LODGE_TIERS[tier].pads;
+      const assets = raw.assets;
+      if (!Array.isArray(assets)) return raw;
+      return {
+        ...raw,
+        assets: assets.map((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry;
+          const attachPad = (entry as { attachPad?: unknown }).attachPad;
+          if (typeof attachPad !== "number" || !Number.isInteger(attachPad) || attachPad < 0) return entry;
+          if (attachPad >= maxPad || attachPad >= 3) {
+            const { attachPad: _removed, ...rest } = entry as { attachPad?: number };
+            return rest;
+          }
+          return entry;
+        }),
+      };
     },
   },
 ];

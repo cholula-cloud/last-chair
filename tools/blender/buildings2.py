@@ -69,9 +69,8 @@ def _tier2(a, W, D, H, F):
     a.box((0, cy + wl / 2 + 0.2, 0.25), (3.0, 1.2, 0.5), "snow", bevel=0.18)
 
 
-def _tier3(a, W, D, H, F):
-    """Tier 2 plus a second storey over the dining wing, a ridge cupola and a second stone stack."""
-    _tier2(a, W, D, H, F)
+def _tier3_delta(a, W, D, H, F):
+    """Tier-3-only addition: second storey on dining wing, cupola, extra stack."""
     wcx, wcy = -8.2, -0.6
     wl, wd = 4.8, 6.2
     z0, z1 = 3.6, 6.4
@@ -103,6 +102,30 @@ def _tier3(a, W, D, H, F):
         a.window((x, y, cz + 0.6), 0.7, 0.6, face, sill=False, mullion=False, frame="trim-white")
     a.cyl((0, 0.2, cz + 1.15), 1.35, 0.0, 1.1, 4, "slate-roof", rot=(0, 0, 45))
     a.cyl((0, 0.2, cz + 1.7), 0.5, 0.0, 0.55, 4, "snow", rot=(0, 0, 45))
+
+
+def _tier3(a, W, D, H, F):
+    """Tier 2 plus tier-3 delta."""
+    _tier2(a, W, D, H, F)
+    _tier3_delta(a, W, D, H, F)
+
+
+def _lodge_dims():
+    return 12.0, 9.0, 6.4, 0.7
+
+
+def b_lodge_annex_2():
+    a = Asset("lodge-annex-2")
+    W, D, H, F = _lodge_dims()
+    _tier2(a, W, D, H, F)
+    return a.finish()
+
+
+def b_lodge_annex_3():
+    a = Asset("lodge-annex-3")
+    W, D, H, F = _lodge_dims()
+    _tier3_delta(a, W, D, H, F)
+    return a.finish()
 
 
 def b_lodge2():
@@ -255,7 +278,7 @@ def b_garage():
     return a.finish()
 
 
-BUILDERS = [b_lodge2, b_lodge3, b_aframe, b_ticket, b_patrol, b_garage]
+BUILDERS = [b_lodge_annex_2, b_lodge_annex_3, b_lodge2, b_lodge3, b_aframe, b_ticket, b_patrol, b_garage]
 
 
 def build_all(out=None, export_glb=True):

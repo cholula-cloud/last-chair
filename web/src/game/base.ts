@@ -90,12 +90,40 @@ export function advanceLodgeUpgrade(upgrade: LodgeUpgrade): LodgeUpgrade | null 
   return { ...upgrade, nightsRemaining: upgrade.nightsRemaining - 1 };
 }
 
-export function lodgeAttachPads(tier: LodgeTier, site: SiteDef = DUTCH_HILL_SITE): XZ[] {
-  const { x, z } = site.buildings.lodge;
+/** Full annex ring around the lodge; not every slot clears the warming hut or east wing. */
+const LODGE_PAD_SITES: XZ[] = (() => {
+  const { x, z } = DUTCH_HILL_SITE.buildings.lodge;
   return [
     { x: x - 1.12, z: z - 0.63 },
     { x: x + 1.12, z: z - 0.20 },
-  ].slice(0, LODGE_TIERS[tier].pads);
+    { x: x - 1.12, z: z + 0.65 },
+    { x: x + 1.12, z: z + 0.85 },
+    { x: x - 0.55, z: z - 1.5 },
+    { x: x + 0.55, z: z - 1.5 },
+  ];
+})();
+
+/** One attach pad unlocks at Tier 2, a second at Tier 3 (east front, then west side). */
+const LODGE_PAD_SLOTS_BY_TIER: Record<LodgeTier, number[]> = {
+  1: [],
+  2: [1],
+  3: [1, 2],
+};
+
+export function lodgeAttachPads(tier: LodgeTier, site: SiteDef = DUTCH_HILL_SITE): XZ[] {
+  if (site === DUTCH_HILL_SITE) {
+    return LODGE_PAD_SLOTS_BY_TIER[tier].map((index) => LODGE_PAD_SITES[index]);
+  }
+  const { x, z } = site.buildings.lodge;
+  const sites = [
+    { x: x - 1.12, z: z - 0.63 },
+    { x: x + 1.12, z: z - 0.20 },
+    { x: x - 1.12, z: z + 0.65 },
+    { x: x + 1.12, z: z + 0.85 },
+    { x: x - 0.55, z: z - 1.5 },
+    { x: x + 0.55, z: z - 1.5 },
+  ];
+  return LODGE_PAD_SLOTS_BY_TIER[tier].map((index) => sites[index]);
 }
 
 /** Parking grows east of the original lot without moving the existing stalls or spur. */

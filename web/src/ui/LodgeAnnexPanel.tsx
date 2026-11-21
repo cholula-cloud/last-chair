@@ -9,9 +9,10 @@ import { venueName } from "@/game/assetNames";
 import { startLodgePadPlacement } from "@/ui/placementDraftActions";
 const BASE_ATTACH: AssetId[] = ["warming_hut", "cafe", "shop", "rentals", "ski_school"];
 
+const PAD_LABELS = ["east front", "west side"] as const;
+
 function padLabel(index: number): string {
-  const side = index === 0 ? "west" : "east";
-  return `Annex ${index + 1} (${side} wing)`;
+  return `Annex ${index + 1} (${PAD_LABELS[index] ?? "lodge"})`;
 }
 
 export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => void }) {
