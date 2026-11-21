@@ -36,9 +36,9 @@ def _deck(a, x0, x1, y0, y1, z, rail=True):
         a.box((bx, by, z + 1.15), (sx + (0.06 if sx > 0.2 else 0.0), sy + (0.06 if sy > 0.2 else 0.0), 0.09), "snow")
 
 
-def _tier2(a, W, D, H, F):
+def _tier2(a, W, D, H, F, include_deck=True):
     """Camera-facing tier-2: wide pavilion, wrap balcony, guest wing, dining uplift."""
-    layout.tier2_front_bay(a, layout.timber_mats(), W, D, F)
+    layout.tier2_front_bay(a, layout.timber_mats(), W, D, F, include_deck=include_deck)
 
 
 def _tier3_delta(a, W, D, H, F):
@@ -47,8 +47,8 @@ def _tier3_delta(a, W, D, H, F):
 
 
 def _tier3(a, W, D, H, F):
-    """Tier 2 plus tier-3 delta."""
-    _tier2(a, W, D, H, F)
+    """Tier 2 massing (no timber deck) plus tier-3 plaza / towers."""
+    _tier2(a, W, D, H, F, include_deck=False)
     _tier3_delta(a, W, D, H, F)
 
 

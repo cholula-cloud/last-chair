@@ -270,12 +270,12 @@
     {
       "name": "lodge-tier-2",
       "file": "lodge-tier-2.glb",
-      "tris": 5016,
-      "sizeBytes": 282616,
-      "heightMeters": 15.95,
+      "tris": 4052,
+      "sizeBytes": 229284,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.15,
-        21.85
+        24.67,
+        20.54
       ],
       "tags": [
         "building"
@@ -284,12 +284,12 @@
     {
       "name": "lodge-tier-3",
       "file": "lodge-tier-3.glb",
-      "tris": 8708,
-      "sizeBytes": 486764,
-      "heightMeters": 19.83,
+      "tris": 6316,
+      "sizeBytes": 356288,
+      "heightMeters": 16.93,
       "footprintMeters": [
-        31.65,
-        24.6
+        29.32,
+        22.74
       ],
       "tags": [
         "building"
@@ -880,12 +880,12 @@
     {
       "name": "lodge-tier-2-chalet70s",
       "file": "lodge-tier-2-chalet70s.glb",
-      "tris": 4710,
-      "sizeBytes": 266404,
-      "heightMeters": 15.95,
+      "tris": 3834,
+      "sizeBytes": 218208,
+      "heightMeters": 14.77,
       "footprintMeters": [
-        25.37,
-        21.96
+        24.89,
+        20.91
       ],
       "tags": [
         "building"
@@ -896,12 +896,12 @@
     {
       "name": "lodge-tier-3-chalet70s",
       "file": "lodge-tier-3-chalet70s.glb",
-      "tris": 9073,
-      "sizeBytes": 506868,
-      "heightMeters": 19.02,
+      "tris": 6769,
+      "sizeBytes": 381304,
+      "heightMeters": 15.13,
       "footprintMeters": [
-        31.65,
-        24.72
+        29.32,
+        23.11
       ],
       "tags": [
         "building"
@@ -960,12 +960,12 @@
     {
       "name": "lodge-annex-2",
       "file": "lodge-annex-2.glb",
-      "tris": 3552,
-      "sizeBytes": 201368,
-      "heightMeters": 15.95,
+      "tris": 2676,
+      "sizeBytes": 153196,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        20.28
+        24.32,
+        19.15
       ],
       "tags": [
         "building"
@@ -974,12 +974,12 @@
     {
       "name": "lodge-annex-3",
       "file": "lodge-annex-3.glb",
-      "tris": 3692,
-      "sizeBytes": 211480,
-      "heightMeters": 19.83,
+      "tris": 2828,
+      "sizeBytes": 164548,
+      "heightMeters": 16.93,
       "footprintMeters": [
-        31.65,
-        22.68
+        29.32,
+        20.82
       ],
       "tags": [
         "building"
@@ -988,12 +988,12 @@
     {
       "name": "lodge-annex-2-chalet70s",
       "file": "lodge-annex-2-chalet70s.glb",
-      "tris": 3552,
-      "sizeBytes": 201408,
-      "heightMeters": 15.95,
+      "tris": 2676,
+      "sizeBytes": 153236,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        20.28
+        24.32,
+        19.15
       ],
       "tags": [
         "building"
@@ -1004,12 +1004,12 @@
     {
       "name": "lodge-annex-3-chalet70s",
       "file": "lodge-annex-3-chalet70s.glb",
-      "tris": 3692,
-      "sizeBytes": 210740,
-      "heightMeters": 19.02,
+      "tris": 2828,
+      "sizeBytes": 163808,
+      "heightMeters": 15.13,
       "footprintMeters": [
-        31.65,
-        22.68
+        29.32,
+        20.82
       ],
       "tags": [
         "building"
@@ -1127,12 +1127,12 @@
     {
       "name": "lodge-tier-2-aframe60s",
       "file": "lodge-tier-2-aframe60s.glb",
-      "tris": 4016,
-      "sizeBytes": 228124,
-      "heightMeters": 15.95,
+      "tris": 3140,
+      "sizeBytes": 179940,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        21.48
+        24.32,
+        20.44
       ],
       "tags": [
         "building"
@@ -1143,12 +1143,12 @@
     {
       "name": "lodge-tier-3-aframe60s",
       "file": "lodge-tier-3-aframe60s.glb",
-      "tris": 7708,
-      "sizeBytes": 431744,
-      "heightMeters": 19.02,
+      "tris": 5404,
+      "sizeBytes": 306400,
+      "heightMeters": 14.65,
       "footprintMeters": [
-        31.65,
-        24.24
+        29.32,
+        22.64
       ],
       "tags": [
         "building"
@@ -1159,12 +1159,12 @@
     {
       "name": "lodge-annex-2-aframe60s",
       "file": "lodge-annex-2-aframe60s.glb",
-      "tris": 3552,
-      "sizeBytes": 201388,
-      "heightMeters": 15.95,
+      "tris": 2676,
+      "sizeBytes": 153212,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        20.28
+        24.32,
+        19.15
       ],
       "tags": [
         "building"
@@ -1175,12 +1175,12 @@
     {
       "name": "lodge-annex-3-aframe60s",
       "file": "lodge-annex-3-aframe60s.glb",
-      "tris": 3692,
-      "sizeBytes": 211500,
-      "heightMeters": 19.83,
+      "tris": 2828,
+      "sizeBytes": 164568,
+      "heightMeters": 16.93,
       "footprintMeters": [
-        31.65,
-        22.68
+        29.32,
+        20.82
       ],
       "tags": [
         "building"
@@ -1303,12 +1303,12 @@
     {
       "name": "lodge-tier-2-adirondack",
       "file": "lodge-tier-2-adirondack.glb",
-      "tris": 4076,
-      "sizeBytes": 230572,
-      "heightMeters": 15.95,
+      "tris": 3200,
+      "sizeBytes": 182392,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        21.91
+        24.32,
+        20.86
       ],
       "tags": [
         "building"
@@ -1319,12 +1319,12 @@
     {
       "name": "lodge-tier-3-adirondack",
       "file": "lodge-tier-3-adirondack.glb",
-      "tris": 7768,
-      "sizeBytes": 433812,
-      "heightMeters": 19.02,
+      "tris": 5464,
+      "sizeBytes": 308212,
+      "heightMeters": 15.73,
       "footprintMeters": [
-        31.65,
-        24.67
+        29.32,
+        23.06
       ],
       "tags": [
         "building"
@@ -1335,12 +1335,12 @@
     {
       "name": "lodge-annex-2-adirondack",
       "file": "lodge-annex-2-adirondack.glb",
-      "tris": 3552,
-      "sizeBytes": 200600,
-      "heightMeters": 15.95,
+      "tris": 2676,
+      "sizeBytes": 152436,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        20.28
+        24.32,
+        19.15
       ],
       "tags": [
         "building"
@@ -1351,12 +1351,12 @@
     {
       "name": "lodge-annex-3-adirondack",
       "file": "lodge-annex-3-adirondack.glb",
-      "tris": 3692,
-      "sizeBytes": 209932,
-      "heightMeters": 19.83,
+      "tris": 2828,
+      "sizeBytes": 163256,
+      "heightMeters": 16.93,
       "footprintMeters": [
-        31.65,
-        22.68
+        29.32,
+        20.82
       ],
       "tags": [
         "building"
@@ -1479,12 +1479,12 @@
     {
       "name": "lodge-tier-2-sugarhouse",
       "file": "lodge-tier-2-sugarhouse.glb",
-      "tris": 4172,
-      "sizeBytes": 235972,
-      "heightMeters": 15.95,
+      "tris": 3296,
+      "sizeBytes": 187808,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        21.45
+        24.32,
+        20.41
       ],
       "tags": [
         "building"
@@ -1495,12 +1495,12 @@
     {
       "name": "lodge-tier-3-sugarhouse",
       "file": "lodge-tier-3-sugarhouse.glb",
-      "tris": 7816,
-      "sizeBytes": 437012,
-      "heightMeters": 19.02,
+      "tris": 5512,
+      "sizeBytes": 311676,
+      "heightMeters": 15.73,
       "footprintMeters": [
-        31.65,
-        24.21
+        29.32,
+        22.61
       ],
       "tags": [
         "building"
@@ -1511,12 +1511,12 @@
     {
       "name": "lodge-annex-2-sugarhouse",
       "file": "lodge-annex-2-sugarhouse.glb",
-      "tris": 3552,
-      "sizeBytes": 201404,
-      "heightMeters": 15.95,
+      "tris": 2676,
+      "sizeBytes": 153232,
+      "heightMeters": 14.57,
       "footprintMeters": [
-        25.07,
-        20.28
+        24.32,
+        19.15
       ],
       "tags": [
         "building"
@@ -1527,12 +1527,12 @@
     {
       "name": "lodge-annex-3-sugarhouse",
       "file": "lodge-annex-3-sugarhouse.glb",
-      "tris": 3740,
-      "sizeBytes": 214304,
-      "heightMeters": 19.83,
+      "tris": 2828,
+      "sizeBytes": 164588,
+      "heightMeters": 16.93,
       "footprintMeters": [
-        31.65,
-        22.68
+        29.32,
+        20.82
       ],
       "tags": [
         "building"

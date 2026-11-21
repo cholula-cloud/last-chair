@@ -127,7 +127,7 @@ def make_lodge(style, tier):
     a.box((cx, 1.0, 12.2), (1.5, 1.5, 0.3), t["stone_d"])
     a.box((cx, 1.0, 12.5), (1.3, 1.3, 0.28), "snow", bevel=0.1)
     if tier >= 2:
-        layout.tier2_front_bay(a, _mats(t), W, D, F)
+        layout.tier2_front_bay(a, _mats(t), W, D, F, include_deck=(tier < 3))
     if tier >= 3:
         layout.tier3_front_grand(a, _mats(t), W, D, H, F)
         # Layout ridge lantern covers Tier 3; theme cupola only on T1/T2 sugarhouse.
@@ -145,7 +145,6 @@ def make_annex(style, tier):
         layout.tier2_front_bay(a, _mats(t), W, D, F)
     else:
         layout.tier3_front_grand(a, _mats(t), W, D, H, F)
-        _cupola(a, H, 6.0, t)
     return a.finish()
 
 

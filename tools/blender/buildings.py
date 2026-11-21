@@ -93,9 +93,10 @@ def b_lodge(name="base-lodge", extra=None):
                      overhang=0.3, snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
         for x in (-1.25, 1.25):
             a.box((x, fy - 0.15, F + 2.3), (0.26, 0.26, 0.38), "lamp-glow")
-    # snow drifts at base corners
-    a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
-    a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
+    # snow drifts — skip when tier extras attach (they collide with wing footings)
+    if approach:
+        a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
+        a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
     if extra:
         extra(a, W, D, H, F)
     return a.finish()

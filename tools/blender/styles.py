@@ -280,9 +280,9 @@ def _lodge(name, tier):
     wh = 6.35 if tier >= 3 else 3.4
     _chalet_dining_wing(a, W, F, wh, tier3=(tier >= 3))
     if tier >= 2:
-        _wing(a, F)
+        # Tier 3 plaza replaces the timber deck — skip deck when both apply.
+        _wing(a, F, include_deck=(tier < 3))
     if tier >= 3:
-        # Shared grand massing (porte-cochère, flank towers, plaza) + chalet lookout.
         _chalet_wing3_delta(a, F, H, rise)
     a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
     a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
@@ -294,10 +294,12 @@ def _chalet_mats():
     return (WALL, OCH, SHAKE, BAT, STONED, STONE, "snow", "ski", BAT, "lamp-glow")
 
 
-def _wing(a, F):
+def _wing(a, F, include_deck=True):
     """Tier 2 annex: camera-facing forward bay (shared layout, chalet materials)."""
     import lodge_tier_layout as layout
-    layout.tier2_front_bay(a, _chalet_mats(), layout.LODGE_W, layout.LODGE_D, F)
+    layout.tier2_front_bay(
+        a, _chalet_mats(), layout.LODGE_W, layout.LODGE_D, F, include_deck=include_deck
+    )
 
 
 def _chalet_wing3_delta(a, F, H, rise=0):

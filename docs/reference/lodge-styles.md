@@ -18,8 +18,8 @@ Shared layout lives in [`tools/blender/lodge_tier_layout.py`](../../tools/blende
 
 | Tier | Player-facing read |
 |------|--------------------|
-| **2** | Wide two-story −Y pavilion (replaces base porch), wrap balcony, deep approach deck, +X guest wing, −X dining uplift, twin dormers |
-| **3** | Stone plaza + porte-cochère, pavilion crown (3rd level), ridge lantern, twin flank towers (±X), high balconies, terrace fire pits |
+| **2** | Wide two-story −Y pavilion (replaces base porch), one front balcony under F2 windows, approach deck, +X guest wing, −X dining uplift |
+| **3** | Stone plaza + shallow porte-cochère, setback crown, ridge lantern, twin flank towers (±X) with aligned window grids |
 
 **Do not** grow primary upgrade mass on **+Y (rear)** — that reads as “behind” the lodge from the game camera.
 
