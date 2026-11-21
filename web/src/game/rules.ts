@@ -885,7 +885,7 @@ function purchaseConstruction(state: GameState, total: number, what: Payable["wh
   };
 }
 
-type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "cash">;
+type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "lodgeStyleId" | "cash">;
 
 export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, "assets">, id: AssetId, at: XZ) {
   if (state.phase !== "day") return { ok: false as const, reason: "Building happens during the day. Wait for morning." };
