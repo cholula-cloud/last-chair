@@ -2,7 +2,7 @@
 
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { OrbitControlsImpl } from "./orbitControlsType";
 import type { PerspectiveCamera } from "three";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";

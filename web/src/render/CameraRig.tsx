@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { OrbitControlsImpl } from "./orbitControlsType";
 import * as THREE from "three";
 import type { AssetTarget } from "@/game/assetNames";
 import { TERRAIN } from "@/game/terrain";
@@ -84,6 +84,9 @@ export function CameraRig({
   const userMoved = useRef(false);
   const appliedPortrait = useRef<boolean | null>(null);
   const interacting = useRef(false);
+  /** After a drag ends, orbit damping can still move the camera — pause follow/return until it settles. */
+  const orbitSettlingUntil = useRef(0);
+  const ORBIT_SETTLE_MS = 450;
   const raw = useRef(new THREE.Vector3());
   const applied = useRef(new THREE.Vector3());
   const rawReady = useRef(false);
@@ -143,6 +146,7 @@ export function CameraRig({
     const onStart = () => {
       userMoved.current = true;
       interacting.current = true;
+      orbitSettlingUntil.current = 0;
       glide.current = null;
       cameraBus.cancelMotion?.();
       returning.current = false;
@@ -154,6 +158,7 @@ export function CameraRig({
     };
     const onEnd = () => {
       interacting.current = false;
+      orbitSettlingUntil.current = performance.now() + ORBIT_SETTLE_MS;
     };
     controls.addEventListener("start", onStart);
     controls.addEventListener("end", onEnd);
@@ -176,6 +181,8 @@ export function CameraRig({
       active.delete(e.pointerId);
       push(e, "up");
       if (active.size > 0) return;
+      interacting.current = false;
+      orbitSettlingUntil.current = performance.now() + ORBIT_SETTLE_MS;
       const kind = classifyPointer(events, prevTap);
       prevTap = kind === "TAP" ? { x: e.clientX, y: e.clientY, t: e.timeStamp } : null;
       events = [];
@@ -216,6 +223,8 @@ export function CameraRig({
         panEnded = false;
       }
       active.add(e.pointerId);
+      interacting.current = true;
+      orbitSettlingUntil.current = 0;
       push(e, "down");
     };
     const onMove = (e: PointerEvent) => {
@@ -239,6 +248,10 @@ export function CameraRig({
       active.delete(e.pointerId);
       events = [];
       panEnded = false;
+      if (active.size === 0) {
+        interacting.current = false;
+        orbitSettlingUntil.current = performance.now() + ORBIT_SETTLE_MS;
+      }
     };
     dom.addEventListener("pointerdown", onDown);
     dom.addEventListener("pointermove", onMove);
@@ -417,7 +430,9 @@ export function CameraRig({
       moved = true;
     }
     const followActive = useGameStore.getState().followId;
-    const pos = followActive && !interacting.current ? followedRef.current : null;
+    const userHoldsCamera =
+      interacting.current || performance.now() < orbitSettlingUntil.current;
+    const pos = followActive && !userHoldsCamera ? followedRef.current : null;
     if (pos) {
       if (glide.current) glide.current = null;
       wasFollowing.current = true;
@@ -433,7 +448,7 @@ export function CameraRig({
     } else {
       if (wasFollowing.current) returning.current = !suppressReturn.current;
       wasFollowing.current = false;
-      if (returning.current && !interacting.current) {
+      if (returning.current && !userHoldsCamera) {
         if (reduced.current) cam.position.add(AWAY.copy(home.target).sub(controls.target));
         controls.target.lerp(home.target, reduced.current ? 1 : 0.08);
         if (controls.target.distanceTo(home.target) < 0.02) returning.current = false;
@@ -453,7 +468,7 @@ export function CameraRig({
       applied.current.copy(controls.target);
     }
     r.add(GOAL.copy(controls.target).sub(applied.current));
-    if (!interacting.current) {
+    if (!userHoldsCamera) {
       const inside = insideLease(r);
       r.x += (inside.x - r.x) * 0.1;
       r.z += (inside.z - r.z) * 0.1;
@@ -490,7 +505,7 @@ export function CameraRig({
           tilt: !!tilt.current,
           building: draft.active,
           moveCamera: draft.moveCamera,
-          interacting: interacting.current,
+          interacting: userHoldsCamera,
         }),
       });
     }

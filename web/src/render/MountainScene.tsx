@@ -4,7 +4,7 @@ import { BuildGrid } from "./BuildGrid";
 import { LeaseBoundary } from "./LeaseBoundary";
 import { CameraRig } from "./CameraRig";
 
-import { OrbitControls } from "@react-three/drei";
+import { MountainOrbitControls } from "./MountainOrbitControls";
 import { useFrame, useThree } from "@react-three/fiber";
 import { lazy, Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
@@ -181,7 +181,7 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
       </Suspense>
       <PlacementController />
       <CameraRig followId={followId} followedRef={followedRef} onInspectAsset={onInspectAsset} />
-      <OrbitControls
+      <MountainOrbitControls
         makeDefault
         domElement={canvas}
         enablePan
