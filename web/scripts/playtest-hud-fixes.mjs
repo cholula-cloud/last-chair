@@ -102,6 +102,8 @@ try {
   }
 
   await page.getByRole("button", { name: "Build" }).click();
+  const trailsTab = page.getByRole("group", { name: "Build sections" }).getByRole("button", { name: "Trails" });
+  if (await trailsTab.isVisible()) await trailsTab.click();
   await page.getByRole("button", { name: /Paint a trail/i }).click();
   await page.locator('[data-placement-kind="trail"]').waitFor({ timeout: 15_000 });
   const paintDock = page.locator('[data-overlay-legend="slope"]');

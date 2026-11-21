@@ -54,7 +54,7 @@ async function checkQuietRecap(radioEnabled) {
     await recap.goto(base + "/play/", { waitUntil: "domcontentloaded" });
     await enterGame(recap);
     const guide = recap.getByRole("complementary", { name: "First problem guide" });
-    await guide.getByRole("status").filter({ hasText: /check|inspect|find/i }).waitFor();
+    await guide.getByRole("status").filter({ hasText: /check|inspect|find|scout|compare/i }).waitFor();
     const coach = recap.getByRole("complementary", { name: "Tip", exact: true }).getByRole("status");
     const radio = recap.getByRole("region", { name: /Route 100 Radio: First uphill load/ });
     if (radioEnabled) await radio.getByRole("status").filter({ hasText: /First paid ride up Dutch Hill since 1985/ }).waitFor();
@@ -74,7 +74,7 @@ async function checkQuietRecap(radioEnabled) {
     const updates = await recap.evaluate(() => window.liveUpdates);
     const tips = updates.filter(update => update.source === "coach");
     assert.equal(tips.length, 2);
-    assert.match(tips[0].text, /check|inspect|find/i);
+    assert.match(tips[0].text, /check|inspect|find|scout|compare/i);
     assert.match(tips[1].text, /The night recap tells you/);
     const broadcasts = updates.filter(update => update.source === "radio" && update.text.includes("First uphill load"));
     assert.equal(broadcasts.length, radioEnabled ? 1 : 0);

@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium, webkit } from "playwright";
 import { buildOpening, enterGame, resolveRadio } from "./playtest-m2.mjs";
+import { openPlanTomorrow } from "./playtest-night-recap.mjs";
 
 const base = (process.env.PLAY_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 const outDir = process.env.PLAYTEST_OUT ?? path.join(process.cwd(), "playtest-artifacts");
@@ -116,6 +117,8 @@ try {
 
   await closeHill();
   await screenshot("night-recap.png");
+  await resolveRadio(page);
+  await openPlanTomorrow(page);
   await tap(/^Cheap\b/);
   await tap(/^High\b/);
   await finishNight();
