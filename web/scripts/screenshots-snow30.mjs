@@ -1,5 +1,6 @@
 /**
  * Row 30 snow shader: morning looks after Minimal / Mid / High and a thaw afternoon.
+ * Requires MOUNTAIN_TRAIL_CONDITIONING = true in snowMaterial.ts (off by default; use Conditions overlay).
  * Usage: PLAY_URL=http://127.0.0.1:3000 node scripts/screenshots-snow30.mjs
  * Output: /opt/cursor/artifacts/390x844-snow-*.png
  */
