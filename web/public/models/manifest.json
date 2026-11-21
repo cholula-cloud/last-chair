@@ -354,12 +354,12 @@
     {
       "name": "birch",
       "file": "birch.glb",
-      "tris": 292,
-      "sizeBytes": 6440,
-      "heightMeters": 7.2,
+      "tris": 540,
+      "sizeBytes": 10132,
+      "heightMeters": 7.26,
       "footprintMeters": [
-        3.67,
-        3.35
+        4.79,
+        3.95
       ],
       "tags": [
         "tree"
