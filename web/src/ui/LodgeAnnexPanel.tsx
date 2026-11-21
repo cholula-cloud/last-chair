@@ -10,9 +10,8 @@ import { startLodgePadPlacement } from "@/ui/placementDraftActions";
 const BASE_ATTACH: AssetId[] = ["warming_hut", "cafe", "shop", "rentals", "ski_school"];
 
 function padLabel(index: number): string {
-  const side = index % 2 === 0 ? "west" : "east";
-  const row = index < 2 ? "front" : index < 4 ? "side" : "upper";
-  return `Pad ${index + 1} (${side} ${row})`;
+  const side = index === 0 ? "west" : "east";
+  return `Annex ${index + 1} (${side} wing)`;
 }
 
 export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => void }) {
@@ -31,10 +30,20 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
     startLodgePadPlacement(asset, padIndex);
   };
 
+  if (pads.length === 0) {
+    return (
+      <section className="panel mt-3 space-y-2 p-3" aria-label="Lodge annex pads">
+        <p className="text-sm font-bold leading-snug">
+          Upgrade to Village Lodge to unlock annex wings (+{Math.round(ATTACH_BONUS * 100)}% when attached).
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="panel mt-3 space-y-2 p-3" aria-label="Lodge annex pads">
       <p className="text-sm font-bold leading-snug">
-        Attach venues directly to the lodge for +{Math.round(ATTACH_BONUS * 100)}% revenue and effects.
+        Attach venues as lodge wings for +{Math.round(ATTACH_BONUS * 100)}% revenue and effects.
       </p>
       <ul className="space-y-2">
         {pads.map((_, padIndex) => {

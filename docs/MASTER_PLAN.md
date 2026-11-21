@@ -147,7 +147,7 @@ An upgrade does not add seats or a café inside the lodge. It gates what you may
 |---|---|---|---|
 | Cost | Free, on day 1 | $3,500 | $9,000 |
 | Car park (visual) | 30 stalls | 50 | 80 |
-| Attach pads | 2 | 4 | 6 |
+| Attach pads | 0 | 1 | 2 |
 | Opens to build | Surface lift, trails, warming hut, café, shop | Double chair, snow guns, rentals, ski school desk, tubing, basic decor | Bar and après, restaurant, ice rink, events, premium decor |
 | New revenue | Day tickets, café, shop | Rentals, lessons, tubing | Bar and restaurant, events |
 | Look | Small A-frame, plain | Wings, bigger porch, signage | Full timber lodge, lit windows, flags |

@@ -327,7 +327,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 |---|---|---|---|
 | Upgrade cost | free | $3,500 | $9,000 |
 | Car park stalls | 30 | 50 | 80 |
-| Attach pads | 2 | 4 | 6 |
+| Attach pads | 0 | 1 | 2 |
 
 - **No arrival cap.** Tier does not change `planArrivals`. Car park stalls are visual, as today.
 - **Upgrade timing.** The deposit starts construction. The old tier operates until the upgrade completes after two Sleeps.

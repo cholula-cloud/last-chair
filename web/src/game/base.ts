@@ -67,9 +67,9 @@ export const LODGE_FOOTPRINT: Footprint = DUTCH_HILL_SITE.buildings.lodge.footpr
 const TERMINAL_FOOTPRINT: Footprint = { width: 0.9, depth: 0.9 };
 const TERMINAL_CLEARANCE = 0.08;
 export const LODGE_TIERS = {
-  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 2 },
-  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 4 },
-  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 6 },
+  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 0 },
+  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 1 },
+  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 2 },
 } as const;
 
 export function nextLodgeTier(tier: LodgeTier): 2 | 3 | null {
@@ -95,10 +95,6 @@ export function lodgeAttachPads(tier: LodgeTier, site: SiteDef = DUTCH_HILL_SITE
   return [
     { x: x - 1.12, z: z - 0.63 },
     { x: x + 1.12, z: z - 0.20 },
-    { x: x - 1.12, z: z + 0.65 },
-    { x: x + 1.12, z: z + 0.85 },
-    { x: x - 0.55, z: z - 1.5 },
-    { x: x + 0.55, z: z - 1.5 },
   ].slice(0, LODGE_TIERS[tier].pads);
 }
 
@@ -190,9 +186,11 @@ export function previewAssetPlacement(
   if (!inBaseZone(position, size, site, terrain)) {
     return { ok: false, reason: "Venues need flat ground. Try a flatter spot near the lodge." };
   }
-  if ((!snap && overlaps(position, size, site.buildings.lodge, site.buildings.lodge.footprint, 0.1))
-    || assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.08))) {
-    return { ok: false, reason: "Too close to another building. Leave some elbow room." };
+  if (!snap) {
+    if (overlaps(position, size, site.buildings.lodge, site.buildings.lodge.footprint, 0.1)
+      || assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.08))) {
+      return { ok: false, reason: "Too close to another building. Leave some elbow room." };
+    }
   }
   if (lodgeParkingLots(3, site).some((lot) =>
     overlaps(position, size, lot.center, { width: lot.size.w, depth: lot.size.d }, 0.3))

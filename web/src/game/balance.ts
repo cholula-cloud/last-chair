@@ -278,7 +278,11 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
       const next = placeAsset(state, action, pad);
       if (next !== state) return next;
     }
-    return state;
+    const detached = action === "rentals"
+      ? { x: 11.5, z: 15.5 }
+      : { x: 12.8, z: 14.8 };
+    const free = placeAsset(state, action, detached);
+    return free === state ? state : free;
   }
   if (action === "chair") {
     const placed = placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
