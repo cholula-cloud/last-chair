@@ -228,6 +228,7 @@ describe("day satisfaction", () => {
 describe("problem line", () => {
   const facts = {
     avgWaitMin: 7.4,
+    dispatched: 30,
     snowQuality: 0.3,
     fare: "expensive" as const,
     turnedAway: 3,
@@ -254,6 +255,15 @@ describe("problem line", () => {
     );
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: 40 })).toBe(NO_PROBLEM);
     expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Lift lines averaged");
+  });
+
+  it("does not blame queues at 5 min or less even when the term is negative", () => {
+    const mild = { ...facts, avgWaitMin: 5, dispatched: 40 };
+    const short = { ...facts, avgWaitMin: 2, dispatched: 40 };
+    expect(problemLine({ ...ZERO_TERMS, queue: -12 }, mild)).toBe(NO_PROBLEM);
+    expect(biggestProblem({ ...ZERO_TERMS, queue: -12, snow: 1 }, mild)).toBeNull();
+    expect(problemLine({ ...ZERO_TERMS, queue: -12 }, short)).toBe(NO_PROBLEM);
+    expect(biggestProblem({ ...ZERO_TERMS, queue: -20, snow: -12 }, { ...facts, avgWaitMin: 5.1, dispatched: 40 })).toBe("queue");
   });
 
   it("quotes the real number in each sentence", () => {

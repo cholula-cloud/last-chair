@@ -1,4 +1,5 @@
 import type { NightRecap } from "./sim";
+import { queueNags } from "./satisfaction";
 import type { GameState } from "./state";
 
 /** What the day looked like beyond the recap's own numbers. */
@@ -37,7 +38,8 @@ export function topGuestDemand(
   ctx: DemandContext,
 ): Demand | null {
   const demands: Demand[] = [];
-  demands.push({ key: "lines", points: -recap.breakdown.queue, line: lineText(recap, ctx.liftCount) });
+  const linePain = queueNags(recap.facts) ? -recap.breakdown.queue : 0;
+  demands.push({ key: "lines", points: linePain, line: lineText(recap, ctx.liftCount) });
   demands.push({
     key: "seats",
     points: ctx.seatsFullMin / SEATS_FULL_PER_POINT,

@@ -79,6 +79,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
           breakdown: arrived.breakdown,
           facts: {
             avgWaitMin: measuredWaitMin(state as GameState),
+            dispatched: state.dayStats.dispatched,
             snowQuality: state.snowQuality,
             snowLabel: reading.label,
             farePrice: FARE_PRICES[state.fare],
