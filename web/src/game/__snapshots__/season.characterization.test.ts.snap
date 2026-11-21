@@ -175,7 +175,9 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
       "refuels": 0,
       "runsByTrail": [],
       "runsPerGuest": 0,
+      "schoolBusPosted": 0,
       "seatsFullMin": 0,
+      "ticketBasePosted": 0,
       "turnedAway": 0,
       "venueRevenue": {},
       "waitSumMin": 0,
@@ -486,7 +488,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 23,
       "beats": "",
-      "cash": 9215,
+      "cash": 8952,
       "cashDelta": -263,
       "dayIndex": 1,
       "lodgeTier": 1,
@@ -502,7 +504,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 21,
       "beats": "first_load",
-      "cash": 6912,
+      "cash": 6764,
       "cashDelta": -148,
       "dayIndex": 2,
       "lodgeTier": 1,
@@ -518,7 +520,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 17,
       "beats": "first_load",
-      "cash": 4644,
+      "cash": 4434,
       "cashDelta": -210,
       "dayIndex": 3,
       "lodgeTier": 2,
@@ -534,7 +536,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 35,
       "beats": "first_load",
-      "cash": 2775,
+      "cash": 2659,
       "cashDelta": -116,
       "dayIndex": 4,
       "lodgeTier": 2,
@@ -550,7 +552,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 21,
       "beats": "first_load",
-      "cash": 1759,
+      "cash": 1264,
       "cashDelta": -495,
       "dayIndex": 5,
       "lodgeTier": 2,
@@ -566,7 +568,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 36,
       "beats": "first_load",
-      "cash": 164,
+      "cash": 917,
       "cashDelta": 753,
       "dayIndex": 6,
       "lodgeTier": 2,
@@ -582,7 +584,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 48,
       "beats": "first_load,saturday",
-      "cash": 917,
+      "cash": 1054,
       "cashDelta": 137,
       "dayIndex": 7,
       "lodgeTier": 2,
@@ -598,7 +600,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 22,
       "beats": "first_load,saturday",
-      "cash": 904,
+      "cash": 418,
       "cashDelta": -486,
       "dayIndex": 8,
       "lodgeTier": 2,
@@ -614,7 +616,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 23,
       "beats": "first_load,saturday",
-      "cash": 68,
+      "cash": 189,
       "cashDelta": 121,
       "dayIndex": 9,
       "lodgeTier": 2,
@@ -630,7 +632,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 28,
       "beats": "first_load,saturday",
-      "cash": 189,
+      "cash": -218,
       "cashDelta": -407,
       "dayIndex": 10,
       "lodgeTier": 2,
@@ -646,7 +648,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 31,
       "beats": "first_load,saturday",
-      "cash": -368,
+      "cash": -94,
       "cashDelta": 274,
       "dayIndex": 11,
       "lodgeTier": 2,
@@ -662,7 +664,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 24,
       "beats": "first_load,saturday",
-      "cash": -444,
+      "cash": -246,
       "cashDelta": 198,
       "dayIndex": 12,
       "lodgeTier": 2,
@@ -1000,7 +1002,9 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
       "refuels": 0,
       "runsByTrail": [],
       "runsPerGuest": 0,
+      "schoolBusPosted": 0,
       "seatsFullMin": 0,
+      "ticketBasePosted": 0,
       "turnedAway": 0,
       "venueRevenue": {},
       "waitSumMin": 0,
@@ -1541,7 +1545,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 27,
       "beats": "",
-      "cash": 9215,
+      "cash": 8956,
       "cashDelta": -259,
       "dayIndex": 1,
       "lodgeTier": 1,
@@ -1557,7 +1561,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 29,
       "beats": "first_load",
-      "cash": 6916,
+      "cash": 7096,
       "cashDelta": 180,
       "dayIndex": 2,
       "lodgeTier": 1,
@@ -1573,7 +1577,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 25,
       "beats": "first_load",
-      "cash": 4976,
+      "cash": 5414,
       "cashDelta": 438,
       "dayIndex": 3,
       "lodgeTier": 2,
@@ -1589,7 +1593,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 32,
       "beats": "first_load",
-      "cash": 3755,
+      "cash": 3576,
       "cashDelta": -179,
       "dayIndex": 4,
       "lodgeTier": 2,
@@ -1605,7 +1609,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 36,
       "beats": "first_load",
-      "cash": 2676,
+      "cash": 3224,
       "cashDelta": 548,
       "dayIndex": 5,
       "lodgeTier": 2,
@@ -1621,7 +1625,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 44,
       "beats": "first_load",
-      "cash": 2124,
+      "cash": 4000,
       "cashDelta": 1876,
       "dayIndex": 6,
       "lodgeTier": 2,
@@ -1637,7 +1641,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 49,
       "beats": "first_load,saturday",
-      "cash": 4000,
+      "cash": 4494,
       "cashDelta": 494,
       "dayIndex": 7,
       "lodgeTier": 2,
@@ -1653,7 +1657,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 35,
       "beats": "first_load,saturday",
-      "cash": 4344,
+      "cash": 4870,
       "cashDelta": 526,
       "dayIndex": 8,
       "lodgeTier": 2,
@@ -1669,7 +1673,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 36,
       "beats": "first_load,saturday",
-      "cash": 4520,
+      "cash": 5690,
       "cashDelta": 1170,
       "dayIndex": 9,
       "lodgeTier": 2,
@@ -1685,7 +1689,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 39,
       "beats": "first_load,saturday",
-      "cash": 5690,
+      "cash": 5943,
       "cashDelta": 253,
       "dayIndex": 10,
       "lodgeTier": 2,
@@ -1701,7 +1705,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 33,
       "beats": "first_load,saturday",
-      "cash": 5793,
+      "cash": 6200,
       "cashDelta": 407,
       "dayIndex": 11,
       "lodgeTier": 2,
@@ -1717,7 +1721,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 32,
       "beats": "first_load,saturday",
-      "cash": 5850,
+      "cash": 6655,
       "cashDelta": 805,
       "dayIndex": 12,
       "lodgeTier": 2,
@@ -1733,7 +1737,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 58,
       "beats": "first_load,saturday",
-      "cash": 6655,
+      "cash": 7402,
       "cashDelta": 747,
       "dayIndex": 13,
       "lodgeTier": 2,
@@ -1749,7 +1753,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 53,
       "beats": "first_load,saturday",
-      "cash": 7252,
+      "cash": 8639,
       "cashDelta": 1387,
       "dayIndex": 14,
       "lodgeTier": 2,
@@ -1765,7 +1769,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 31,
       "beats": "first_load,saturday",
-      "cash": 8289,
+      "cash": 8996,
       "cashDelta": 707,
       "dayIndex": 15,
       "lodgeTier": 2,
@@ -1781,7 +1785,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 32,
       "beats": "first_load,saturday",
-      "cash": 8996,
+      "cash": 8703,
       "cashDelta": -293,
       "dayIndex": 16,
       "lodgeTier": 2,
@@ -1797,7 +1801,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 28,
       "beats": "first_load,saturday",
-      "cash": 8553,
+      "cash": 8419,
       "cashDelta": -134,
       "dayIndex": 17,
       "lodgeTier": 2,
@@ -1813,7 +1817,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 33,
       "beats": "first_load,saturday",
-      "cash": 8069,
+      "cash": 8918,
       "cashDelta": 849,
       "dayIndex": 18,
       "lodgeTier": 2,
@@ -1829,7 +1833,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 36,
       "beats": "first_load,saturday,summit_link",
-      "cash": 8918,
+      "cash": 8906,
       "cashDelta": -12,
       "dayIndex": 19,
       "lodgeTier": 2,
@@ -1845,7 +1849,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 50,
       "beats": "first_load,saturday,summit_link",
-      "cash": 8756,
+      "cash": 9293,
       "cashDelta": 537,
       "dayIndex": 20,
       "lodgeTier": 2,
@@ -1861,7 +1865,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 47,
       "beats": "first_load,saturday,summit_link",
-      "cash": 8943,
+      "cash": 9835,
       "cashDelta": 892,
       "dayIndex": 21,
       "lodgeTier": 2,
@@ -1877,7 +1881,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 54,
       "beats": "first_load,saturday,summit_link",
-      "cash": 9835,
+      "cash": 9826,
       "cashDelta": -9,
       "dayIndex": 22,
       "lodgeTier": 2,
@@ -1893,7 +1897,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 35,
       "beats": "first_load,saturday,summit_link",
-      "cash": 9676,
+      "cash": 9558,
       "cashDelta": -118,
       "dayIndex": 23,
       "lodgeTier": 2,
@@ -1909,7 +1913,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 34,
       "beats": "first_load,saturday,summit_link",
-      "cash": 9208,
+      "cash": 9396,
       "cashDelta": 188,
       "dayIndex": 24,
       "lodgeTier": 2,
@@ -1925,7 +1929,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 30,
       "beats": "first_load,saturday,summit_link",
-      "cash": 9396,
+      "cash": 8341,
       "cashDelta": -1055,
       "dayIndex": 25,
       "lodgeTier": 2,
@@ -1941,7 +1945,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 35,
       "beats": "first_load,saturday,summit_link",
-      "cash": 8191,
+      "cash": 7803,
       "cashDelta": -388,
       "dayIndex": 26,
       "lodgeTier": 2,
@@ -1957,7 +1961,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 45,
       "beats": "first_load,saturday,summit_link",
-      "cash": 7453,
+      "cash": 8306,
       "cashDelta": 853,
       "dayIndex": 27,
       "lodgeTier": 2,
@@ -1973,7 +1977,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 61,
       "beats": "first_load,saturday,summit_link",
-      "cash": 8306,
+      "cash": 8493,
       "cashDelta": 187,
       "dayIndex": 28,
       "lodgeTier": 2,

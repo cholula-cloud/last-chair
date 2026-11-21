@@ -175,6 +175,8 @@ describe("buildNightRecap", () => {
       refuels: 0,
       balked: 0,
       seatsFullMin: 0,
+      ticketBasePosted: 0,
+      schoolBusPosted: 0,
     });
   });
 });
