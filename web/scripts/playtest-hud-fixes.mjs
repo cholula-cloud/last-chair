@@ -39,7 +39,7 @@ async function startPlay(page) {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /^Continue/ }).click({ timeout: 30_000 });
   await waitSceneReady(page);
-  await page.getByText(/Day 1\/28/).waitFor({ timeout: 15_000 });
+  await page.getByText(/Open 1\/\d+/).waitFor({ timeout: 15_000 });
 }
 
 async function shot(page, name) {
@@ -102,6 +102,8 @@ try {
   }
 
   await page.getByRole("button", { name: "Build" }).click();
+  const trailsTab = page.getByRole("group", { name: "Build sections" }).getByRole("button", { name: "Trails" });
+  if (await trailsTab.isVisible()) await trailsTab.click();
   await page.getByRole("button", { name: /Paint a trail/i }).click();
   await page.locator('[data-placement-kind="trail"]').waitFor({ timeout: 15_000 });
   const paintDock = page.locator('[data-overlay-legend="slope"]');

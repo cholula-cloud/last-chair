@@ -5,8 +5,8 @@ import { assetRemovalQuote, buyBuilding, moveAsset, pickFounder, placeAsset, rem
 import { migrate } from "./migrations";
 import { SAVE_VERSION, toPersisted } from "./state";
 
-const started = () => pickFounder(createBuiltHill(99), "elena");
-const pad = lodgeAttachPads(1)[1];
+const started = () => ({ ...pickFounder(createBuiltHill(99), "elena"), lodgeTier: 2 as const });
+const pad = lodgeAttachPads(2)[0];
 
 describe("venue forgiveness", () => {
   it("undoes only one of two identical deposits and pairs of installments", () => {
@@ -28,7 +28,7 @@ describe("venue forgiveness", () => {
     expect(restored.reset).toBe(false);
     const moved = moveAsset({ ...state, ...restored.state, cash: 0 }, 1, pad);
     expect(moved.cash).toBe(0);
-    expect(moved.assets[1]).toMatchObject({ at: pad, attachPad: 1, purchase: state.assets[1].purchase });
+    expect(moved.assets[1]).toMatchObject({ at: pad, attachPad: 0, purchase: state.assets[1].purchase });
     expect(moved.payables).toEqual(state.payables);
     const invalid = moveAsset(moved, 1, { x: Infinity, z: 0 });
     expect(invalid).toBe(moved);

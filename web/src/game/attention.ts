@@ -29,7 +29,7 @@ type AttentionState = Pick<
   GameState,
   | "phase" | "cash" | "lifts" | "trails" | "talentsOwned" | "guests" | "dayStats"
   | "fare" | "buildings" | "assets" | "founderId" | "weather" | "weatherDays" | "dayIndex" | "clockMin"
-  | "snowQuality" | "mountainId"
+  | "snowQuality" | "mountainId" | "seasonLength"
 >;
 
 const liftLabel = (state: Pick<GameState, "lifts">, i: number) => liftName(state.lifts[i], i);
@@ -45,7 +45,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
   if (state.cash < 0) {
     items.push({
       id: "cash-negative",
-      text: `Cash is ${formatMoney(state.cash)}. ${BANKRUPTCY_MORNINGS} mornings in a row below zero and the bank closes the book on your winter.`,
+      text: `Cash is ${formatMoney(state.cash)}. ${BANKRUPTCY_MORNINGS} straight mornings below zero ends the winter.`,
     });
   }
 
@@ -53,7 +53,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
     if (!lift.confirmed || isLiftOperational(lift, i, state.trails)) return;
     items.push({
       id: `lift-no-trail-${i}`,
-      text: `${liftLabel(state, i)} has no open trail yet. Paint one from the top so guests have somewhere to go.`,
+      text: `${liftLabel(state, i)} has no open trail. Paint one from the top so skiers can ride.`,
       focus: [lift.bottom ?? TERRAIN.base, lift.anchor],
     });
   });
@@ -64,7 +64,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
       if (!isLiftOperational(lift, i, state.trails) || !isWindHeld(lift.type, wind, state.clockMin)) return;
       items.push({
         id: `lift-wind-${i}`,
-        text: `${liftLabel(state, i)} is on wind hold until ${formatClock(WIND_HOLD.toMin)}. Dana is holding the chair.`,
+        text: `${liftLabel(state, i)} is on wind hold until ${formatClock(WIND_HOLD.toMin)}.`,
         focus: [lift.bottom ?? TERRAIN.base, lift.anchor],
       });
     });
@@ -79,6 +79,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
           breakdown: arrived.breakdown,
           facts: {
             avgWaitMin: measuredWaitMin(state as GameState),
+            dispatched: state.dayStats.dispatched,
             snowQuality: state.snowQuality,
             snowLabel: reading.label,
             farePrice: FARE_PRICES[state.fare],
@@ -96,7 +97,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
   const wantIsSnow = demand?.key === "snow";
 
   if (reading.tone === "bad" && !wantIsSnow) {
-    items.push({ id: "snow", text: `${reading.trouble}. Pick more snow and service tonight at closing.` });
+    items.push({ id: "snow", text: `${reading.trouble}. Bump up overnight snow prep at closing.` });
   }
 
   if (want) items.push({ id: "guests-want", text: want });
@@ -104,7 +105,7 @@ export function needsAttention(state: AttentionState): AttentionItem[] {
   if (state.cash >= 0 && state.cash < LOW_CASH) {
     items.push({
       id: "cash-low",
-      text: `Cash is down to ${formatMoney(state.cash)}. Hold off on building until the ticket window catches up.`,
+      text: `Cash is down to ${formatMoney(state.cash)}. Hold off on big builds until ticket sales catch up.`,
     });
   }
 

@@ -3,8 +3,6 @@
 import { useState, type ReactNode } from "react";
 import { lodgeName } from "@/game/assetNames";
 import { LODGE_TIERS, lodgeTierUnlocks } from "@/game/base";
-import { MOUNTAIN_CALENDARS } from "@/game/calendar";
-import { operatingGoalText } from "@/game/winterArc";
 import { founderById } from "@/game/content";
 import { TalentTreePanel } from "@/ui/TalentTreePanel";
 import { dailyCosts, morningCash, payoffAmount } from "@/game/economy";
@@ -13,19 +11,38 @@ import { expectedArrivals } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import type { GameState } from "@/game/state";
 import { FARE_LABELS, FARE_PRICES } from "@/game/types";
-import { goalChips, goalInputs } from "@/game/goals";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { schoolMemory } from "@/game/winterMemory";
 import { StoryEntries } from "./StoryLog";
 import { MoneyStatsCharts } from "./officeCharts";
 import { OpsStatsCharts } from "./officeOpsCharts";
 import { SeasonCalendar, SnowReport } from "./officeReports";
+import { todaySales } from "@/game/intradayCash";
 import { revenueBreakdownFromRecap } from "@/game/officeSeries";
+import { liveSatisfaction } from "@/game/rules";
 import { tidy } from "@/ui/kit/parts";
 import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="panel space-y-2 p-4"><h3 className="display text-xl">{title}</h3>{children}</section>;
+function Section({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
+  return (
+    <section className={`panel space-y-2 p-4 ${className ?? ""}`}>
+      <h3 className="display text-xl">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function LedgerRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div
+      className={`flex items-baseline justify-between gap-3 border-b border-snow-2 py-1.5 text-sm font-bold last:border-b-0 ${
+        highlight ? "rounded-[var(--r-chip)] bg-gold/30 px-2 -mx-2 border-b-0" : ""
+      }`}
+    >
+      <span className={highlight ? "font-extrabold" : undefined}>{label}</span>
+      <span className={`shrink-0 tabular-nums ${highlight ? "font-extrabold" : ""}`}>{value}</span>
+    </div>
+  );
 }
 
 export function Money({ s }: { s: GameState }) {
@@ -34,46 +51,118 @@ export function Money({ s }: { s: GameState }) {
   const costs = dailyCosts(s);
   const breakdown = recap ? revenueBreakdownFromRecap(recap) : null;
   const upcoming = s.dayIndex < s.seasonLength && s.outcome === "playing";
-  return <>
-    <Section title="Cash and commitments">
-      <p>Cash on hand <strong>{formatMoney(s.cash)}</strong></p>
-      <p>Loan balance {formatMoney(s.loan ? payoffAmount(s.loan) : 0)}</p>
-      {s.payables.map((p,i) => <p key={i}>Day {p.dueDay}: {p.what} installment {formatMoney(p.amount)}</p>)}
-      <p>{s.phase === "night" ? "Projected morning cash" : "Cash after scheduled payments, before today’s results"} <strong>{formatMoney(morningCash(s))}</strong></p>
-      <p>Snow service tonight {formatMoney(costs.snowNight)}. Construction installments due {formatMoney(costs.draws)}.</p>
-    </Section>
-    <Section title={recap ? `Operating ledger, day ${s.nightRecap ? s.dayIndex : report?.day}` : "Operating ledger"}>
-      {recap ? <>
-        {breakdown && breakdown.total > 0 && (
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3">
-              <p>Day revenue <strong>{formatMoney(breakdown.total)}</strong></p>
-              <RevenueMixDonut breakdown={breakdown} size={88} />
-            </div>
-            {breakdown.tickets > 0 && <p>Lift tickets {formatMoney(breakdown.tickets)}</p>}
-            {breakdown.venues > 0 && (
-              <div>
-                <p>Base venues {formatMoney(breakdown.venues)}</p>
-                <VenueRevenueList facts={recap.facts} />
+  const cashLabel = s.phase === "night" ? "Projected morning cash" : "Tomorrow's cash";
+  const showToday = s.phase === "day" && s.outcome === "playing";
+  const today = showToday ? todaySales(s, liveSatisfaction(s)) : null;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+      <div className="flex flex-col gap-4">
+        <Section title="Cash and bills">
+          <LedgerRow label="Cash on hand" value={formatMoney(s.cash)} />
+          <LedgerRow label="Loan balance" value={formatMoney(s.loan ? payoffAmount(s.loan) : 0)} />
+          {s.payables.map((p, i) => (
+            <LedgerRow key={i} label={`Day ${p.dueDay}: ${p.what}`} value={formatMoney(p.amount)} />
+          ))}
+          <LedgerRow label="Snow prep tonight" value={formatMoney(costs.snowNight)} />
+          <LedgerRow label="Construction due" value={formatMoney(costs.draws)} />
+          <LedgerRow label={cashLabel} value={formatMoney(morningCash(s))} highlight />
+        </Section>
+
+        {upcoming && (
+          <Section title="Tomorrow's fare outlook">
+            <LedgerRow label="Reputation" value={String(s.reputation)} />
+            <LedgerRow
+              label="Estimated hill value"
+              value={formatMoney(expectedHillValue(s.reputation, s.buildings, s.talentsOwned))}
+            />
+            <table className="mt-2 w-full text-sm font-bold">
+              <thead>
+                <tr className="border-b-2 border-snow-2 text-left text-xs font-extrabold text-ink-soft">
+                  <th className="pb-1.5 pr-2">Fare</th>
+                  <th className="pb-1.5 text-right">Expected skiers</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(["cheap", "balanced", "expensive"] as const).map((fare) => (
+                  <tr key={fare} className="border-b border-snow-2">
+                    <td className="py-1.5 pr-2">
+                      {FARE_LABELS[fare]} ({formatMoney(FARE_PRICES[fare])})
+                    </td>
+                    <td className="py-1.5 text-right tabular-nums">
+                      {fare === "expensive" && s.summitLinkDecision === "accepted"
+                        ? "Capped by pass deal"
+                        : `~${Math.round(expectedArrivals(s, fare))}`}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Section>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {today && (
+          <Section title="Today">
+            <LedgerRow label="Lift tickets (base)" value={formatMoney(today.ticketBase)} />
+            {today.ticketBonusEstimate > 0 && (
+              <LedgerRow
+                label="Lift tickets (satisfaction est.)"
+                value={formatMoney(today.ticketBonusEstimate)}
+              />
+            )}
+            {today.schoolBus > 0 && <LedgerRow label="School bus" value={formatMoney(today.schoolBus)} />}
+            {today.venues > 0 && <LedgerRow label="Base venues" value={formatMoney(today.venues)} />}
+            <LedgerRow label="Running sales" value={formatMoney(today.runningSales)} highlight />
+            <LedgerRow
+              label="Operating costs (settles at 4 PM)"
+              value={formatMoney(today.operatingCostsAtClose)}
+            />
+          </Section>
+        )}
+
+      <Section title="Last day's ledger">
+        {recap ? (
+          <>
+            {breakdown && breakdown.total > 0 && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <LedgerRow label="Day revenue" value={formatMoney(breakdown.total)} />
+                  <RevenueMixDonut breakdown={breakdown} size={88} />
+                </div>
+                {breakdown.tickets > 0 && <LedgerRow label="Lift tickets" value={formatMoney(breakdown.tickets)} />}
+                {breakdown.venues > 0 && (
+                  <div className="space-y-1">
+                    <LedgerRow label="Base venues" value={formatMoney(breakdown.venues)} />
+                    <VenueRevenueList facts={recap.facts} />
+                  </div>
+                )}
+                {breakdown.schoolBus > 0 && <LedgerRow label="School bus" value={formatMoney(breakdown.schoolBus)} />}
               </div>
             )}
-            {breakdown.schoolBus > 0 && <p>School bus {formatMoney(breakdown.schoolBus)}</p>}
-          </div>
+            {recap.costs && (
+              <>
+                <LedgerRow label="Fixed costs" value={formatMoney(recap.costs.fixed)} />
+                <LedgerRow label="Founder adjustment" value={formatMoney(recap.costs.founder)} />
+                <LedgerRow label="Lift operations" value={formatMoney(recap.costs.liftOps)} />
+                <LedgerRow label="Upkeep" value={formatMoney(recap.costs.upkeep)} />
+              </>
+            )}
+            <LedgerRow label="Net result" value={formatMoney(recap.cashDelta, { signed: true })} highlight />
+            {recap.loanReceived > 0 && <LedgerRow label="Loan received" value={formatMoney(recap.loanReceived)} />}
+            {recap.loanRepaid > 0 && <LedgerRow label="Loan repayment" value={formatMoney(recap.loanRepaid)} />}
+            {recap.summitLinkReply === "accepted" && (
+              <LedgerRow label="Summit Link payment" value={formatMoney(SUMMIT_LINK_PAYMENT)} />
+            )}
+          </>
+        ) : (
+          <p className="text-sm font-bold text-ink-soft">No closed days yet. Your first ledger appears at 4 PM closing.</p>
         )}
-        {recap.costs && <p>Fixed costs {formatMoney(recap.costs.fixed)}. Founder adjustment {formatMoney(recap.costs.founder)}. Lift operations {formatMoney(recap.costs.liftOps)}. Upkeep {formatMoney(recap.costs.upkeep)}.</p>}
-        <p>Operating result <strong>{formatMoney(recap.cashDelta, { signed: true })}</strong></p>
-        {recap.loanReceived > 0 && <p>Loan received {formatMoney(recap.loanReceived)}</p>}
-        {recap.loanRepaid > 0 && <p>Loan repayment {formatMoney(recap.loanRepaid)}</p>}
-        {recap.summitLinkReply === "accepted" && <p>Abominable Snowglomerate paid {formatMoney(SUMMIT_LINK_PAYMENT)}</p>}
-      </> : <p>Nothing to report yet. The first ledger prints at closing.</p>}
-    </Section>
-    <Section title="Fare and turnout">
-      <p>Reputation {s.reputation}. Locals expect a day here to be worth about {formatMoney(expectedHillValue(s.reputation, s.buildings, s.talentsOwned))}.</p>
-      {recap && <p>Last closing: fare {formatMoney(recap.facts.farePrice)}, guests felt a day was worth {formatMoney(recap.facts.hillValue)}, {recap.arrivals} arrivals.</p>}
-      {upcoming && <><h4 className="font-bold">Expected turnout tomorrow</h4>{(["cheap","balanced","expensive"] as const).map(fare =>
-        <p key={fare}>{FARE_LABELS[fare]} ({formatMoney(FARE_PRICES[fare])}): {fare === "expensive" && s.summitLinkDecision === "accepted" ? "off the table under Vivian’s pass agreement" : `about ${Math.round(expectedArrivals(s,fare))} guests`}</p>)}</>}
-    </Section>
-  </>;
+      </Section>
+      </div>
+    </div>
+  );
 }
 
 export function Stats({ s }: { s: GameState }) {
@@ -101,45 +190,120 @@ export function Stats({ s }: { s: GameState }) {
           </button>
         ))}
       </div>
-      {view !== "ops" && <MoneyStatsCharts state={s} />}
-      {view !== "money" && <OpsStatsCharts state={s} />}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+        {view !== "ops" && <MoneyStatsCharts state={s} />}
+        {view !== "money" && <OpsStatsCharts state={s} />}
+      </div>
     </div>
   );
 }
 
 export function Reports({ s }: { s: GameState }) {
-  return <>
-    <SeasonCalendar state={s} />
-    <SnowReport state={s} />
-    <Section title="Recap archive">{s.dayHistory.length === 0 && <p>Closed days show up here as the winter goes on.</p>}
-      {s.dayHistory.slice().reverse().map(d => <details key={d.day}><summary className="min-h-11 cursor-pointer py-2 font-bold">Day {d.day}, {d.weather}, {formatMoney(d.recap.cashDelta, {signed:true})}</summary>
-        <p>{tidy(d.recap.problem)}</p><p>{d.recap.arrivals} guests. Satisfaction {Math.round(d.recap.satisfaction)}/100. Average wait {d.recap.facts.avgWaitMin.toFixed(1)} minutes.</p>
-        {d.recap.facts.schoolBus && <p>School tickets {formatMoney(d.recap.facts.schoolBus.ticketRevenue)}. {d.recap.facts.schoolBus.taught} of {d.recap.facts.schoolBus.invited} pupils taught.</p>}
-        <p>Service {formatMoney(d.snowCost)}. Construction installments {formatMoney(d.constructionDue)}. Settled cash {formatMoney(d.closingCash)}.</p>
-      </details>)}</Section>
-    <Section title="Story log"><StoryEntries /></Section>
-    <Section title="Winter reviews">{s.career.length === 0 ? <p>Your first review shows up once the winter wraps.</p> : s.career.map((w,i) =>
-      <details key={i}><summary className="min-h-11 cursor-pointer py-2 font-bold">Winter {i+1}: {w.bankrupt ? "bank called" : w.netWorth >= 0 ? "solvency goal met" : "solvency goal missed"}</summary>
-        <p>{w.day} days. Cash {formatMoney(w.cash)}. Loan {formatMoney(w.loan)}. Construction {formatMoney(w.construction)}. Net worth {formatMoney(w.netWorth)}.</p>
-        {w.score && <p>Winter score {w.score.total}/100</p>}<p>{schoolMemory(w.school)}</p>
-        {w.summitLink && <p>{w.summitLink === "accepted" ? "You took Vivian’s offer." : "You turned down Vivian’s offer."}</p>}
-      </details>)}</Section>
-  </>;
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+        <SeasonCalendar state={s} />
+        <SnowReport state={s} />
+      </div>
+      <Section title="Recap archive">
+        {s.dayHistory.length === 0 && (
+          <p className="text-sm font-bold text-ink-soft">Closed days show up here as the winter goes on.</p>
+        )}
+        {s.dayHistory.slice().reverse().map((d) => (
+          <details key={d.day} className="border-b border-snow-2 pb-2">
+            <summary className="flex min-h-11 cursor-pointer items-baseline justify-between gap-2 py-2 font-extrabold">
+              <span>Day {d.day}, {d.weather}</span>
+              <span className="tabular-nums">{formatMoney(d.recap.cashDelta, { signed: true })}</span>
+            </summary>
+            <p className="text-sm font-bold leading-snug">{tidy(d.recap.problem)}</p>
+            <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs font-bold tabular-nums">
+              <div className="flex justify-between gap-2"><dt className="text-ink-soft">Guests</dt><dd>{d.recap.arrivals}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-ink-soft">Satisfaction</dt><dd>{Math.round(d.recap.satisfaction)}/100</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-ink-soft">Avg wait</dt><dd>{d.recap.facts.avgWaitMin.toFixed(1)} min</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-ink-soft">Settled cash</dt><dd>{formatMoney(d.closingCash)}</dd></div>
+            </dl>
+            {d.recap.facts.schoolBus && (
+              <p className="mt-1 text-xs font-bold">
+                School tickets {formatMoney(d.recap.facts.schoolBus.ticketRevenue)}. {d.recap.facts.schoolBus.taught} of{" "}
+                {d.recap.facts.schoolBus.invited} pupils taught.
+              </p>
+            )}
+            <p className="mt-1 text-xs font-bold text-ink-soft">
+              Service {formatMoney(d.snowCost)}. Construction {formatMoney(d.constructionDue)}.
+            </p>
+          </details>
+        ))}
+      </Section>
+      <Section title="Story log">
+        <StoryEntries compact />
+      </Section>
+      <Section title="Winter reviews">
+        {s.career.length === 0 ? (
+          <p className="text-sm font-bold text-ink-soft">Your first review shows up once the winter wraps.</p>
+        ) : (
+          s.career.map((w, i) => (
+            <details key={i}>
+              <summary className="min-h-11 cursor-pointer py-2 font-bold">
+                Winter {i + 1}: {w.bankrupt ? "bank called" : w.netWorth >= 0 ? "solvency goal met" : "solvency goal missed"}
+              </summary>
+              <p className="text-sm font-bold">
+                {w.day} days. Cash {formatMoney(w.cash)}. Loan {formatMoney(w.loan)}. Construction {formatMoney(w.construction)}. Net worth{" "}
+                {formatMoney(w.netWorth)}.
+              </p>
+              {w.score && <p className="text-sm font-bold">Winter score {w.score.total}/100</p>}
+              <p className="text-sm font-bold">{schoolMemory(w.school)}</p>
+              {w.summitLink && (
+                <p className="text-sm font-bold">
+                  {w.summitLink === "accepted" ? "You took Vivian's offer." : "You turned down Vivian's offer."}
+                </p>
+              )}
+            </details>
+          ))
+        )}
+      </Section>
+    </div>
+  );
 }
 
 export function Crew({ s }: { s: GameState }) {
   const founder = founderById(s.founderId);
   const nextTier = s.lodgeTier === 1 ? 2 : s.lodgeTier === 2 ? 3 : null;
   const tier = LODGE_TIERS[s.lodgeTier];
-  return <>
-    <Section title="Lodge"><p>Tier {s.lodgeTier}, {lodgeName(s)}, {tier.stalls} parking spaces</p>
-      {nextTier && <p>Tier {nextTier} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking spaces and {LODGE_TIERS[nextTier].pads - tier.pads} attachment pads, and opens up {lodgeTierUnlocks(nextTier).join(", ")}.</p>}
-      {s.lodgeUpgrade && <p>Upgrade underway, {s.lodgeUpgrade.nightsRemaining} {s.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} to go.</p>}</Section>
-    <Section title="Goal checklist">
-      {goalChips(goalInputs(s)).map(goal => <p key={goal.id}><strong>{goal.label}, {goal.status}.</strong> {goal.explainer}</p>)}
-      <p>{operatingGoalText(MOUNTAIN_CALENDARS[s.mountainId], s.dayHistory)}</p>
-      <p>{s.outcome !== "playing" && s.lastWinter?.score ? `Winter score ${s.lastWinter.score.total}/100` : "The winter score gets tallied at the review."}</p></Section>
-    {founder && <Section title={founder.name}><p>{founder.bonus}</p><p>{founder.constraint}</p></Section>}
-    <Section title="Crew talents"><TalentTreePanel /></Section>
-  </>;
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {founder && (
+          <Section title="Your founder">
+            <p className="text-sm font-extrabold">{founder.name}</p>
+            <p className="text-xs font-bold text-ink-soft">{founder.title}</p>
+            <p className="mt-2 text-sm font-bold text-sign-green">+ {founder.bonus}</p>
+            <p className="mt-1 text-sm font-bold text-barn-deep">- {founder.constraint}</p>
+          </Section>
+        )}
+        <Section title="Base lodge">
+          <p className="text-sm font-extrabold">
+            {lodgeName(s)} (Tier {s.lodgeTier})
+          </p>
+          <LedgerRow label="Parking spaces" value={String(tier.stalls)} />
+          <LedgerRow label="Annex pads" value={String(tier.pads)} />
+          {nextTier && (
+            <p className="pt-2 text-xs font-bold leading-snug text-ink-soft">
+              {LODGE_TIERS[nextTier].label} adds {LODGE_TIERS[nextTier].stalls - tier.stalls} parking and{" "}
+              {LODGE_TIERS[nextTier].pads - tier.pads} pads. Unlocks {lodgeTierUnlocks(nextTier).join(", ")}.
+            </p>
+          )}
+          {s.lodgeUpgrade && (
+            <p className="pt-1 text-sm font-extrabold text-gold">
+              Upgrade in progress: {s.lodgeUpgrade.nightsRemaining}{" "}
+              {s.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} left.
+            </p>
+          )}
+        </Section>
+      </div>
+      <section className="panel space-y-2 p-4">
+        <h3 className="display text-xl">Crew skills</h3>
+        <TalentTreePanel />
+      </section>
+    </div>
+  );
 }

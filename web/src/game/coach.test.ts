@@ -75,7 +75,11 @@ describe("contextual problem guidance", () => {
     ["queue", "slope", "Money"], ["snow", "conditions", "Desk"], ["value", "conditions", "Money"],
     ["runs", "slope", "Crew"], ["arrivalMood", "slope", "Crew"],
   ])("matches %s to an available layer and Office section", (issue, layer, tab) => {
-    expect(problemGuide({ arrivals: 20, breakdown: { ...neutral, [issue]: -10 }, cashDelta: 12 })).toMatchObject({ layer, tab });
+    expect(problemGuide({
+      arrivals: 20,
+      breakdown: { ...neutral, [issue]: -10 },
+      cashDelta: 12,
+    })).toMatchObject({ layer, tab });
   });
   it("uses the same measured demand as the Guests want line", () => {
     const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30 };

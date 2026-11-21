@@ -1,8 +1,9 @@
 import { liftOpsAfterRepair, loanRateFor } from "./founders";
 import { TALENT } from "./talents";
 import { ASSET_CATALOG, type AssetId } from "./base";
-import { inHolidayWeek, MOUNTAIN_CALENDARS } from "./calendar";
+import { inHolidayWeek, seasonCalendar } from "./calendar";
 import { founderById } from "./content";
+import { operatingSettledAtClose } from "./intradayCash";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
 import { DAILY_FIXED_COST, LIFT_OPS_COST, snowNightCost } from "./types";
@@ -54,7 +55,7 @@ export function operatingCosts(state: GameState): OperatingCosts {
   const liftCost = openLifts.reduce((sum, lift) => sum + LIFT_OPS_COST
     + (lift.type === "chair" ? CHAIR_DAILY_SURCHARGE : 0)
     - (lift.type === "surface" && TALENT.ropeTow.learned(state.talentsOwned) ? TALENT.ropeTow.savings : 0), 0);
-  const staffing = inHolidayWeek(MOUNTAIN_CALENDARS[state.mountainId], state.dayIndex) ? VACATION_STAFFING_COST : 0;
+  const staffing = inHolidayWeek(seasonCalendar(state), state.dayIndex) ? VACATION_STAFFING_COST : 0;
   return {
     ...(staffing ? { vacationStaffing: staffing } : {}),
     fixed: DAILY_FIXED_COST + staffing - (TALENT.volunteerPatrol.learned(state.talentsOwned) ? TALENT.volunteerPatrol.savings : 0),
@@ -78,7 +79,11 @@ export function dailyCosts(state: GameState): CostLines {
 /** Cash after settlement, before any loans taken or repaid on this screen. */
 export function morningCash(state: GameState): number {
   const { snowNight, draws } = dailyCosts(state);
-  return state.cash + (state.nightRecap?.cashDelta ?? 0) - snowNight - draws;
+  const operatingInCash = state.nightRecap && operatingSettledAtClose(state.dayStats);
+  const base = operatingInCash
+    ? state.cash
+    : state.cash + (state.nightRecap?.cashDelta ?? 0);
+  return base - snowNight - draws;
 }
 
 export function loanOffered(state: GameState): boolean {

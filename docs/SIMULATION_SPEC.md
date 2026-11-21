@@ -1,6 +1,6 @@
 # Last Chair — simulation spec (Dutch Hill v0)
 
-**Version:** 0.4 · **Updated:** 2026-11-18
+**Version:** 0.5 · **Updated:** 2026-11-20
 
 **Scope:** Numbers for the Dutch Hill core loop and Act I winter. Plan and gates: [MASTER_PLAN.md](./MASTER_PLAN.md).
 
@@ -10,7 +10,8 @@
 
 | Section | Status | Gap | Fixed by PR |
 |---|---|---|---|
-| Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; season is 28 days; saved 14-day winters finish at 14; day is about 4 minutes at 1×, row L-F targets about 2 | 19, L-F |
+| Time | 🟡 | Clock, pause, 07:30–16:00 day; hidden-tab pause not verified; new winters use a 49-day civil calendar with 21 playable Fri–Sun days; saved 14- and 28-day seasons keep every day playable; day is about 4 minutes at 1×, row L-F targets about 2 | 19, CAL-1, L-F |
+| Operating calendar | ✅ | Fri–Sun guest days; Mon–Thu `advanceClosedDays` (overnight, talents; operating and snow costs covered by Readsboro Olympic weekday lease; player still pays loan interest and construction due); weekday digest on the next open morning | CAL-1 |
 | Guest day script | 🟡 | Arrival curve, walk-in, energy, laps, lift-close and departure, plus seat-limited venue stops, rentals, lessons and queue balks | 16d |
 | Personas | ✅ | Four guest types with calendar-specific shares, measured preferences, venue visits and satisfaction weights | P1 |
 | Satisfaction formula | ✅ | Per guest from five terms, day score is the guest mean, recap stores the per-term breakdown and names the largest negative term (PR 7). The value term judges the fare against what the hill gave that guest in dollars (PR 9). Constants calibrated in PR 10 (see Balance) | — |
@@ -39,7 +40,16 @@
 | Day end (close) | 16:00 |
 | Realtime 1× | 120 seconds from opening to close |
 | Speed | 1×, 2× and 4× in the top bar. The selected speed carries into the next morning. New sessions use the speed in Settings (initially 1×). |
-| Season | 28 days (internal test: 14) |
+| Season (legacy save) | 14 or 28 playable civil days (Jan–Feb map) |
+| Season (new winter) | 49 civil days, **21** operating days (Fri–Sun only) |
+| Civil start (new) | Friday 26 December 2025 (`startWeekday` 4) |
+| Operating pattern | `openWeekdays`: Fri, Sat, Sun (indices 4–6) |
+| Holiday week (new) | Civil days 41–49; Presidents' Day civil day 46 |
+| `dayIndex` | Civil calendar day (weather, beats, school gates) |
+| `operatingDayIndex` | Count of playable days (HUD “Open *n*/*N*”) |
+| Closed nights | Locked `fare` and `snow` (not pending choices) |
+| Summit link first day | Civil 32 (49-day) or 18 (legacy ≤28) |
+| Balance harness default | 28-day legacy map until 40-seed operating re-tune |
 
 **Pause:** `dayClock` frozen; build allowed.  
 **Visibility:** when `document.hidden`, pause clock (mobile Safari).
@@ -98,7 +108,7 @@ Every term is signed points from a neutral baseline, in `satisfaction.ts` (`SAT`
 | Term | Formula | Constants |
 |---|---|---|
 | `arrivalMood` | `40 × (mood − 0.70)` | `mood` = `arrivalMood(buildings, founder, weather)`: 0.65 + hut 0.05 + lodge 0.08 + café 0.04 + founder bonus, weather snow +0.06 / thaw −0.08, clamped 0–0.95. Hut only on a clear day is 0 |
-| `queue` | `−min(35, 3.5 × queueWeight × pain)` | `pain(w)` for mean wait per ride `w` minutes: 0 up to 1 min, then `w − 1` up to 6 min, then 5 + half a point per minute beyond. Includes the line the guest is standing in; a line left at closing counts as a wait |
+| `queue` | `−min(35, 3.5 × queueWeight × pain)` | `pain(w)` for mean wait per ride `w` minutes: 0 up to 1 min, then `w − 1` up to 6 min, then 5 + half a point per minute beyond. Includes the line the guest is standing in; a line left at closing counts as a wait. Recap problem lines, Desk "Guests want," and the balance harness ignore queue when measured wait is 5 min or less (mean or busiest lift) |
 | `snow` | `50 × snowWeight × (avgQuality − expected)` | `expected` = 0.55 + founder `snowExpectationPenalty`; `avgQuality` is the mean snow quality under the guest's finished runs; 0 before the first run |
 | `value` | `clamp(30 × valueWeight × (hillValue − fare) / fare, −20, +10)` | `hillValue` is dollars, see Ticket value below |
 | `runs` | finished guests only: `share = min(1, runs / targetRuns)`; `5 × (share − 0.6) / 0.4` from 0.6 up, `−8 × (0.6 − share) / 0.6` below | Full target +5, 0.6 of target 0, zero runs (turned away) −8 |
@@ -130,7 +140,7 @@ The value term is `valueWeight × 30 × (hillValue − fare) / fare`, clamped to
 
 **Yesterday.** `lastDay` (`arrivals`, `satisfaction`, `cashDelta`, `avgWaitMin`, `fare`, `snow`) is written at Sleep and cleared by a new season. The next recap shows today-versus-yesterday deltas (hidden on day 1).
 
-**Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill.", or, when today lost cash, "Lost $N today — running costs beat ticket sales on a quiet day." (PR 10b). A story beat's +2 reputation is applied when the night opens (`openNight`), so the recap previews do not move when the beat is acknowledged Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
+**Problem line.** The term with the largest negative breakdown, if it is below −3 points, gives the recap sentence (with the real number); otherwise "Good day on the hill.", or, when today lost cash, "Lost $N today — running costs beat ticket sales on a quiet day." (PR 10b). The queue term is skipped when mean wait per ride is 5 min or less so a normal line does not dominate the headline. A story beat's +2 reputation is applied when the night opens (`openNight`), so the recap previews do not move when the beat is acknowledged Terms: `queue` (mean wait per ride), `snow` (snow quality %), `value` (the fare), `runs` (guests turned away, else runs per guest), `arrivalMood` (the mood on arrival).
 
 **Observed (mean of 10 seeds, Elena, balanced fare, snow 0.55):** weekday surface + chair 78; weekday surface only 76 (queue −2); Saturday surface only 50 (queue −28); Saturday surface + chair 78; weekday snow 0.30 65 (snow −13); weekday snow 0.85 94; weekday Expensive 68 (value −10); weekday Cheap 82; Saturday surface only and Expensive 39.
 
@@ -276,7 +286,7 @@ The season stores one seeded weather outcome per day. Conditions influence the n
 
 **Words.** The conditions board shows the worst segment ("Icy bottom", "Thin snow", "Bare bottom", "Good cover", "Fresh corduroy") beside the mean quality, and the snow problem line names where ("Bare patches at the bottom of the trail", "Icy up top").
 
-**Render.** A float RGBA snow state texture (one row per trail, six segments per row) uploads when segment values snap to 0.05. The terrain shader blends coverage patches, quality tint, and groom stripes from preset strength and per-trail wear (`runsByTrail / 150`); off-trail hollows and rock stay CPU vertex colours. Night darkens stripes 20%. Guns plume only on the segments inside last night's reach (`gunReach`).
+**Render.** Segment depth, quality, and coverage still drive simulation and the **Conditions** map overlay. In-world corridor conditioning (row 30 groom stripes, quality tint, wear) is gated off via `MOUNTAIN_TRAIL_CONDITIONING` in `snowMaterial.ts` until the art pass is ready; trails then read as normal hill snow. When that flag is true, a float RGBA snow state texture (one row per trail, six segments per row) uploads when values snap to 0.05 and the terrain shader blends patches and stripes from preset strength and per-trail wear (`runsByTrail / 150`); off-trail hollows and rock stay CPU vertex colours. Night darkens stripes 20%. Guns plume only on the segments inside last night's reach (`gunReach`).
 
 Persistence: save version 5. A v4 save gets every lift a trail with all segments at the old global depth and quality.
 
@@ -290,7 +300,7 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 | Ticket fare presets | Cheap $35 / Balanced $48 / Expensive $62 |
 | Daily fixed cost | $1,095 plus the founder's fixed cost adjustment |
 | Lift operations per day | $180 per operating lift, with a $180 minimum. Each operating chair adds $5. A lift operates when confirmed and serving an open trail |
-| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $60 each, rentals $20 each, ski school desk $25 each, warming hut $0 |
+| Upkeep per day | Lodge $60, café $40 each, shop $25 each, snow gun $60 each, rentals $20 each, ski school desk $25 each, warming hut $0, tubing $35, rink $80, après bar $55, fire pit $5, string lights $8 |
 | Snow and service | Minimal $0 / Mid $150 / High $350 per night |
 | Lift build cost | `roundTo50(base + perLength × length + perVertical × vertical)`, per type (below) |
 
@@ -303,7 +313,7 @@ Persistence: save version 5. A v4 save gets every lift a trail with all segments
 
 **Construction payments.** Lifts, lodge upgrades, venues and snow guns take a 40% deposit at purchase, with 30% due that night and the rest due the next night. The first two payments round to the nearest dollar, and the last covers the remainder. A day-two café costs $480 up front and $360 on each of nights two and three. Buying requires cash for the deposit. Undoing a lift at its construction minute refunds the deposit and cancels both installments. Trail survey and clearing charges are paid when the trail is built.
 
-**Daily settlement.** Ticket revenue is `round(arrivals × fare × (0.5 + 0.7 × satisfaction / 100))`. The recap adds actual venue receipts and subtracts fixed costs, the founder adjustment, lift operations and upkeep to get the rounded operating cash change. Projected morning cash adds that change to current cash and subtracts tonight's snow service and any construction installments due. The recap's cash breakdown also shows construction paid earlier in the day and any borrowing or repayment that night.
+**Daily settlement.** Ticket revenue is `round(arrivals × fare × (0.5 + 0.7 × satisfaction / 100))`. Each public guest posts the base ticket share (`fare × 0.5`) to cash on arrival; school pupils post the bus fare on arrival; venue sales post when charged during the day. At 4 PM closing, the satisfaction ticket bonus is posted and operating costs (fixed, founder, lift ops, upkeep) are debited. The night recap still records the full revenue and cost lines and the same net `cashDelta` as before. Sleep applies only snow service, construction installments due that night, and loan interest—it does not re-apply operating `cashDelta` when the day was settled at close. Projected morning cash is `cash on hand minus tonight's snow and construction draws`. Construction deposits still leave cash at purchase; the recap's cash breakdown also shows construction paid earlier in the day and any borrowing or repayment that night.
 
 **Cash warnings and winter loan.** The cash badge warns below $1,500 and flags a negative balance. Before the final night, the bank offers one $10,000 loan per winter when projected morning cash is below zero. Taking it adds the principal to cash immediately. At each Sleep, the balance accrues simple interest on the remaining principal at `0.08 / seasonLength`. A loan taken on night one and carried through all 28 Sleeps has a $10,800 payoff. The recap offers full repayment on any night when the payment leaves at least $2,000 in projected morning cash. The rules also support partial repayments against principal under the same eligibility condition.
 
@@ -317,7 +327,7 @@ The lodge is a fixed HQ, present from day 1. Its tier is one number in state (`l
 |---|---|---|---|
 | Upgrade cost | free | $3,500 | $9,000 |
 | Car park stalls | 30 | 50 | 80 |
-| Attach pads | 2 | 4 | 6 |
+| Attach pads | 0 | 1 | 2 |
 
 - **No arrival cap.** Tier does not change `planArrivals`. Car park stalls are visual, as today.
 - **Upgrade timing.** The deposit starts construction. The old tier operates until the upgrade completes after two Sleeps.
@@ -346,30 +356,15 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ## Crew talents
 
-Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/talents.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
+Each closed night earns **one crew point** (plus one when a lodge upgrade opens). The player spends points in **Office → Crew**; sleep does not auto-unlock skills. About fifteen points land in a typical winter against **twenty** skills, so the tree is a choice, not a checklist.
 
-| Order | Talent | Crew | Effect |
-|---|---|---|---|
-| 1 | Rope Tow | Frank | Save $40 per operating surface lift. |
-| 2 | Trail Guns | Frank | Snow guns reach 25% farther. |
-| 3 | Groom Pass | Frank | Groom 20% farther and raise groom quality by 7 points. |
-| 4 | Ticket Booth | Elena | One more guest on weekends and holidays. |
-| 5 | Patrol Radio | Dana | All lifts load 5% faster. |
-| 6 | School Day | Elena | Two more guests on weekdays. |
-| 7 | House Band | Elena | Welcome mood rises 3 points Friday through Sunday and on holidays. |
-| 8 | Café Shift | Elena | Café adds $2 to perceived value. |
-| 9 | Wind Hold | Dana | Gusty chair holds run from 11:00 to 12:15. |
-| 10 | Corduroy | Frank | Groom quality rises another 3 points. |
-| 11 | Snow Fences | Frank | Bottom two segments lose 30% less depth in thaws. |
-| 12 | Heritage Sign | Elena | Gain 2 reputation each Sunday. |
-| 13 | Bull Wheel Tune | Frank | Chairs load 5% faster. |
-| 14 | Ski School | Elena | First-timer welcome mood rises 5 points. |
-| 15 | Early Plow | Frank | Three more guests reach the hill during storms. |
-| 16 | Volunteer Patrol | Dana | Save $50 in daily fixed costs. |
-| 17 | Night Lights | Frank | Lifts stay open ten extra minutes. |
-| 18 | Groomer Rebuild | Frank | Mid service costs $120 and High costs $300. |
-| 19 | First Aid Hut | Dana | Poor snow costs 15% fewer satisfaction points. |
-| 20 | Route 100 Billboard | Elena | Expected hill value rises by $2. |
+Tracks live in `web/src/game/talentProgress.ts` (`CREW_TRACK_ORDER`):
+
+- **Frank (ops)** and **Elena (guest)** are available at Lodge Tier 1; mid skills need Tier 2; Frank’s Groomer Overhaul needs Tier 3.
+- **Dana (patrol)** is locked until Lodge Tier 2; every skill in that column needs the previous one in the column.
+- Within a column, spend on the next skill down that column only.
+
+The headless balance harness still auto-spends points via `spendAllCrewPoints` for simulation; player rules use manual spend only. Equipment-specific skills take effect when their equipment is available.
 
 ## Founder modifiers
 

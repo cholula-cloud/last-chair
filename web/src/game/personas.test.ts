@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import type { PlacedAsset } from "./base";
-import { guestMixForDay, DUTCH_HILL_CALENDAR } from "./calendar";
+import { guestMixForDay, DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
 import { PERSONAS, drawPersona, personaShare } from "./personas";
 import { makeGuest, schoolBusGuests, tickGuests } from "./sim";
 import { pickTrailIndex } from "./trails";
@@ -15,7 +15,7 @@ describe("Family Pack and Race Kid", () => {
       expect(Object.values(PERSONAS).reduce((sum, p) => sum + personaShare(p, mix), 0)).toBeCloseTo(1);
       expect(drawPersona(0.95, mix)).toBe("race_kid");
     }
-    expect(guestMixForDay(DUTCH_HILL_CALENDAR, 23)).toBe("holiday");
+    expect(guestMixForDay(DUTCH_HILL_CALENDAR_LEGACY, 23)).toBe("holiday");
     expect(drawPersona(0.63, "holiday")).toBe("family_pack");
     expect(drawPersona(0.63, "weekday")).toBe("regular");
   });

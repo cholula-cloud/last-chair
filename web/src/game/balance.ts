@@ -19,11 +19,11 @@ import {
 } from "./rules";
 import { spendAllCrewPoints } from "./talentProgress";
 import { ASSET_CATALOG, LODGE_TIERS, lodgeAttachPads } from "./base";
-import { MOUNTAIN_CALENDARS, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
+import { calendarForSeason, dayKind, inHolidayWeek, weekdayForDay } from "./calendar";
 import { trailsOnLift } from "./trails";
 import { dailyCosts, liquidNetWorth, loanOffered, morningCash } from "./economy";
 import { REFERENCE_TOPS } from "./descent";
-import { NO_PROBLEM, biggestProblem, type SatTerms } from "./satisfaction";
+import { NO_PROBLEM, SAT, biggestProblem, type SatTerms } from "./satisfaction";
 import type { NightRecap } from "./sim";
 import type { GameState } from "./state";
 import { addReferenceDescent, createBuiltHill } from "./__fixtures__/built-hill";
@@ -148,7 +148,7 @@ export const ADAPTIVE: Strategy = {
     const buyingChair = problem === "queue" && canAffordChair(state);
     if (buyingChair) actions.push("chair");
     let cash = liquidNetWorth(state) - (buyingChair ? CHAIR_COST : 0);
-    for (const id of ["rentals", "ski_school"] as const) {
+    for (const id of ["ski_school", "rentals"] as const) {
       if (state.assets.some((asset) => asset.id === id)) continue;
       const { cost } = ASSET_CATALOG[id];
       if (cash < cost + CASH_RESERVE) continue;
@@ -278,7 +278,11 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
       const next = placeAsset(state, action, pad);
       if (next !== state) return next;
     }
-    return state;
+    const detached = action === "rentals"
+      ? { x: 11.5, z: 15.5 }
+      : { x: 12.8, z: 14.8 };
+    const free = placeAsset(state, action, detached);
+    return free === state ? state : free;
   }
   if (action === "chair") {
     const placed = placeLift(state, { type: "chair", bottom: TERRAIN.base, top: REFERENCE_TOPS[1] });
@@ -316,7 +320,7 @@ export function runSeason(
   options: { seasonLength?: number; takeLoan?: boolean; checkMidwinter?: boolean; school?: "accepted" | "declined"; summitLink?: "accepted" | "declined" } = {},
 ): SeasonResult {
   const hill = createBuiltHill(seed);
-  const length = options.seasonLength ?? hill.seasonLength;
+  const length = options.seasonLength ?? 28;
   let state = pickFounder({ ...hill, seasonLength: length, weatherDays: hill.weatherDays.slice(0, length) }, founderId);
   let recap: NightRecap | null = null;
   const days: DayRecord[] = [];
@@ -329,11 +333,11 @@ export function runSeason(
   const ctxOf = (): StrategyContext => ({
     state,
     recap,
-    sawSaturdayQueue: days.some((day) => day.saturday && biggestProblem(day.breakdown) === "queue"),
-    problem: recap ? biggestProblem(recap.breakdown) : null,
+    sawSaturdayQueue: days.some((day) => day.saturday && day.avgWaitMin > SAT.QUEUE_NAG_MIN),
+    problem: recap ? biggestProblem(recap.breakdown, recap.facts) : null,
   });
 
-  const calendar = MOUNTAIN_CALENDARS[state.mountainId];
+  const calendar = calendarForSeason(state.mountainId, length);
   const schoolVisits: SeasonResult["schoolVisits"] = [];
   let schoolOffers = 0;
   let vivianOffers = 0;

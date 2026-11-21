@@ -102,8 +102,8 @@ describe("the lease forest", () => {
 
   it("uses one scale range everywhere, with no growth with distance", () => {
     const sizes = trees.map((t) => t.s);
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(0.78);
-    expect(Math.max(...sizes)).toBeLessThanOrEqual(1.2 + 1e-9);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(0.68);
+    expect(Math.max(...sizes)).toBeLessThanOrEqual(1.42 + 1e-9);
     const far = trees.filter((t) => Math.hypot(t.x - home.x, t.z - home.z) > 40).map((t) => t.s);
     const near = trees.filter((t) => Math.hypot(t.x - home.x, t.z - home.z) < 20).map((t) => t.s);
     expect(Math.max(...far)).toBeLessThanOrEqual(Math.max(...near) + 0.05);
@@ -173,8 +173,8 @@ describe("the far forest", () => {
     expect(far.every((t) => !onLease(t))).toBe(true);
     expect(far.length).toBeLessThan(8000);
     // The same scale range as a lease tree: far trees never grow.
-    expect(Math.min(...far.map((t) => t.s))).toBeGreaterThanOrEqual(0.78);
-    expect(Math.max(...far.map((t) => t.s))).toBeLessThanOrEqual(1.2 + 1e-9);
+    expect(Math.min(...far.map((t) => t.s))).toBeGreaterThanOrEqual(0.68);
+    expect(Math.max(...far.map((t) => t.s))).toBeLessThanOrEqual(1.42 + 1e-9);
   });
 
   it("is built once", () => {

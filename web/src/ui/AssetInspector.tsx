@@ -11,8 +11,10 @@ import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { DAY_START_MIN, LIFT_LABELS, SNOW_LABELS } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
+import { normalizeStyleId, unlockedBuildingStyles, type BuildingStyleId } from "@/game/styles";
 import { LodgeUpgradeControl } from "./LodgeUpgradeControl";
 import { LodgeAnnexPanel } from "./LodgeAnnexPanel";
+import { StylePicker } from "./StylePicker";
 import { Sheet } from "./kit/Sheet";
 
 function assetDetails(state: GameState, target: AssetTarget): {
@@ -123,6 +125,9 @@ export function AssetInspector({ target, onClose }: {
   onClose: () => void;
 }) {
   const state = useGameStore();
+  const setLodgeStyle = useGameStore((s) => s.setLodgeStyle);
+  const setAssetStyle = useGameStore((s) => s.setAssetStyle);
+  const styleChoices = unlockedBuildingStyles(state);
   const details = assetDetails(state, target);
   const [draft, setDraft] = useState(() => details?.name ?? "");
   const [saved, setSaved] = useState(false);
@@ -140,13 +145,34 @@ export function AssetInspector({ target, onClose }: {
   return (
     <Sheet title={<span className="break-words">{details.name}</span>} subtitle={details.type}
       modal compact focusClose onClose={onClose} closeLabel="Close asset details" dataMarker="asset-inspector">
-      <dl className="panel grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-x-3 gap-y-2 p-3 text-sm">
-        {details.facts.map(([label, value]) => (
-          <div className="contents" key={label}>
-            <dt className="font-bold text-ink-soft">{label}</dt>
-            <dd className="break-words text-right font-extrabold tabular-nums">{value}</dd>
-          </div>
-        ))}
+      <dl className="panel grid grid-cols-1 gap-y-0 p-3 text-sm sm:grid-cols-2 sm:gap-x-3 sm:gap-y-2">
+        {details.facts.map(([label, value]) => {
+          const trailNames =
+            target.kind === "gun" && label === "Trails in reach" && value !== "None"
+              ? String(value).split(", ")
+              : null;
+          return (
+            <div
+              key={label}
+              className={`flex justify-between gap-2 border-b border-snow-2 py-1.5 last:border-b-0 sm:block sm:border-b-0 sm:py-0${trailNames ? " sm:col-span-2" : ""}`}
+            >
+              <dt className="font-bold text-ink-soft">{label}</dt>
+              {trailNames ? (
+                <dd className="mt-1 sm:mt-1.5">
+                  <ul className="flex flex-wrap gap-1">
+                    {trailNames.map((name) => (
+                      <li key={name} className="chip px-1.5 py-0.5 text-xs font-extrabold [--lift:2px]">
+                        {name}
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              ) : (
+                <dd className="break-words text-right font-extrabold tabular-nums sm:text-left">{value}</dd>
+              )}
+            </div>
+          );
+        })}
       </dl>
       {canRename && (
         <form onSubmit={submitName} className="mt-3">
@@ -164,10 +190,26 @@ export function AssetInspector({ target, onClose }: {
           <span role="status" className="sr-only">{saved ? "Name saved." : ""}</span>
         </form>
       )}
-      {target.kind === "lodge" && <>
-        <LodgeAnnexPanel onCloseInspector={onClose} />
-        <LodgeUpgradeControl variant="inspector" />
-      </>}
+      {target.kind === "lodge" && (
+        <div className="mt-3 space-y-0">
+          <StylePicker
+            value={normalizeStyleId(state.lodgeStyleId)}
+            onChange={(styleId: BuildingStyleId) => setLodgeStyle(styleId)}
+            label="Lodge look"
+            allowed={styleChoices}
+          />
+          <LodgeAnnexPanel onCloseInspector={onClose} />
+          <LodgeUpgradeControl variant="inspector" className="mt-3" />
+        </div>
+      )}
+      {target.kind === "venue" && (
+        <StylePicker
+          value={normalizeStyleId(state.assets[target.index].styleId)}
+          onChange={(styleId: BuildingStyleId) => setAssetStyle(target.index, styleId)}
+          label="Building look"
+          allowed={styleChoices}
+        />
+      )}
     </Sheet>
   );
 }

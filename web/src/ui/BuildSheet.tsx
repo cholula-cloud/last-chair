@@ -17,6 +17,10 @@ import { PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 import { TrailsPanel } from "@/ui/TrailsPanel";
 import { LodgeUpgradeControl } from "@/ui/LodgeUpgradeControl";
 
+const SEG_BTN = "seg-btn min-h-10 px-2 text-sm font-extrabold";
+
+type BuildTab = "lifts" | "trails" | "base";
+
 function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void }) {
   const state = useGameStore();
   const [review, setReview] = useState<number | null>(null);
@@ -43,8 +47,33 @@ function VenueManagement({ onStartPlacement }: { onStartPlacement: () => void })
   </div>;
 }
 
-const BASE_ASSETS = (Object.keys(ASSET_CATALOG) as AssetId[])
-  .filter((id) => ASSET_CATALOG[id].placementZone === "base");
+const CATALOG = Object.entries(ASSET_CATALOG) as [AssetId, (typeof ASSET_CATALOG)[AssetId]][];
+const BASE_ASSETS = CATALOG.filter(([, spec]) => spec.category === "hospitality" || spec.category === "services")
+  .map(([id]) => id);
+const FUN_ASSETS = CATALOG.filter(([, spec]) => spec.category === "activity").map(([id]) => id);
+const DECOR_ASSETS = CATALOG.filter(([, spec]) => spec.category === "decor").map(([id]) => id);
+
+function AssetGrid({ ids, tier, onBuild }: { ids: AssetId[]; tier: LodgeTier; onBuild: (id: AssetId) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {ids.map((id) => {
+        const asset = ASSET_CATALOG[id];
+        const locked = tier < asset.opensAtTier;
+        return (
+          <button key={id} type="button" disabled={locked} onClick={() => onBuild(id)}
+            className="key press min-h-14 p-2 text-left font-extrabold">
+            {asset.label}
+            <small className="block">
+              {locked
+                ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}`
+                : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}
+            </small>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function BuildSheet({
   open,
@@ -67,12 +96,72 @@ export function BuildSheet({
   const opening = useGameStore(openingStep);
   const activeLifts = lifts.filter((lift) => lift.confirmed && !lift.closing).length;
   const selectedLift = selected === "chair" && tier < 2 ? "surface" : selected;
+  const [tab, setTab] = useState<BuildTab>("lifts");
 
   const buildAsset = (id: AssetId) => {
     if (id === "snow_guns") startGunPlacement();
     else startAssetPlacement(id);
     onStartPlacement();
   };
+
+  const tabHidden = (id: BuildTab) =>
+    !opening && tab !== id ? "hidden md:contents" : "contents";
+
+  const liftsPanel = (
+    <div className="panel px-3.5 pb-4 pt-3.5">
+      <SectionHeading>Lifts</SectionHeading>
+      <p className="chip mb-2 mt-1 w-fit px-2 py-1 text-xs font-extrabold [--lift:2px]">
+        Payment plan: 40% down today, 30% for the next two nights.
+      </p>
+      <div className="grid grid-cols-2 gap-2">
+        {(["surface", "chair"] as const).map((type: LiftType) => (
+          <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
+            disabled={type === "chair" && tier < 2} aria-pressed={selectedLift === type} onClick={() => select(type)}>
+            {LIFT_LABELS[type]}
+            {type === "chair" && tier < 2 && <small className="block">Lodge Tier 2</small>}
+          </button>
+        ))}
+      </div>
+      <PrimaryButton className="mt-2 min-h-11"
+        disabled={opening === "trail" || lifts.filter((lift) => lift.confirmed).length >= MAX_LIFTS || lifts.length >= MAX_LIFT_SLOTS}
+        onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
+        Place lift
+      </PrimaryButton>
+      {reviewLift !== null && lifts[reviewLift] && <BuildImpactCard title={`Close ${liftName(lifts[reviewLift], reviewLift)}?`}
+        facts={[{ label: "Routes", value: "All trails on this lift close with it." },
+          { label: "Refund", value: "$0. Any payments still owed stay owed." },
+          { label: "Timing", value: "Close it now if the hill hasn't opened. Otherwise it closes overnight." }]}
+        problem={closeProblem} confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
+        onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
+      {lifts.map((lift, i) => lift.confirmed && (
+        <div key={i} className="mt-2 flex items-center justify-between gap-2 text-sm font-bold">
+          <span className="min-w-0 break-words">{liftName(lift, i)}</span>
+          {lift.closing ? "Closing tonight" : (
+            <button className="key min-h-11 px-2" disabled={activeLifts <= 1} type="button"
+              aria-label={`Close ${liftName(lift, i)}`} onClick={() => setReviewLift(i)}>Close lift</button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const basePanel = (
+    <div className="panel px-3.5 pb-4 pt-3.5">
+      <SectionHeading>Base</SectionHeading>
+      <AssetGrid ids={BASE_ASSETS} tier={tier} onBuild={buildAsset} />
+      <SectionHeading>Fun</SectionHeading>
+      <AssetGrid ids={FUN_ASSETS} tier={tier} onBuild={buildAsset} />
+      <SectionHeading>Decor</SectionHeading>
+      <AssetGrid ids={DECOR_ASSETS} tier={tier} onBuild={buildAsset} />
+      <LodgeUpgradeControl variant="compact" />
+      <VenueManagement onStartPlacement={onStartPlacement} />
+      <SectionHeading>Snow</SectionHeading>
+      <button type="button" className="key press min-h-11 px-3 font-extrabold"
+        disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
+        Snow gun, {tier < 2 ? "Lodge Tier 2" : `${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
+      </button>
+    </div>
+  );
 
   return open ? (
     <Sheet title="Build" subtitle={<>Cash on hand <b>{formatMoney(cash)}</b></>} onClose={onClose}
@@ -88,67 +177,39 @@ export function BuildSheet({
       }} />
       {opening && <p className="mb-3 text-sm font-bold">
         {opening === "lift" ? "Place a surface lift on one of the marked sites."
-          : "Paint a trail from the lift’s top station down to the base."}
+          : "Paint a trail from the lift's top station down to the base."}
       </p>}
-      <div className="grid gap-3 short:grid-cols-2 short:items-start">
-        <div className="panel px-3.5 pb-4 pt-3.5">
-          <SectionHeading>Lifts</SectionHeading>
-          <p className="mb-2 text-xs font-bold">Pay 40% now, then 30% each of the next two nights.</p>
-          <div className="grid grid-cols-2 gap-2">
-            {(["surface", "chair"] as const).map((type: LiftType) => (
-              <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
-                disabled={type === "chair" && tier < 2} aria-pressed={selectedLift === type} onClick={() => select(type)}>
-                {LIFT_LABELS[type]}
-                {type === "chair" && tier < 2 && <small className="block">Lodge Tier 2</small>}
-              </button>
-            ))}
-          </div>
-          <PrimaryButton className="mt-2 min-h-11"
-            disabled={opening === "trail" || lifts.filter((lift) => lift.confirmed).length >= MAX_LIFTS || lifts.length >= MAX_LIFT_SLOTS}
-            onClick={() => { startPlacement(selectedLift); onStartPlacement(); }}>
-            Place lift
-          </PrimaryButton>
-          {reviewLift !== null && lifts[reviewLift] && <BuildImpactCard title={`Close ${liftName(lifts[reviewLift], reviewLift)}?`}
-            facts={[{ label: "Routes", value: "All trails on this lift close with it." },
-              { label: "Refund", value: "$0. Any payments still owed stay owed." },
-              { label: "Timing", value: "Close it now if the hill hasn’t opened. Otherwise it closes overnight." }]}
-            problem={closeProblem} confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
-            onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
-          {lifts.map((lift, i) => lift.confirmed && (
-            <div key={i} className="mt-2 flex items-center justify-between gap-2 text-sm font-bold">
-              <span className="min-w-0 break-words">{liftName(lift, i)}</span>
-              {lift.closing ? "Closing tonight" : (
-                <button className="key min-h-11 px-2" disabled={activeLifts <= 1} type="button"
-                  aria-label={`Close ${liftName(lift, i)}`} onClick={() => setReviewLift(i)}>Close lift</button>
-              )}
-            </div>
+      {!opening && (
+        <div className="seg mb-3 grid grid-cols-3 sm:hidden" role="group" aria-label="Build sections">
+          {(["lifts", "trails", "base"] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              className={SEG_BTN}
+              aria-pressed={tab === id}
+              onClick={() => setTab(id)}
+            >
+              {id === "lifts" ? "Lifts" : id === "trails" ? "Trails" : "Base"}
+            </button>
           ))}
         </div>
-        <TrailsPanel onStartPlacement={onStartPlacement} />
-        {!opening && <div className="panel px-3.5 pb-4 pt-3.5">
-          <SectionHeading>Base</SectionHeading>
-          <div className="grid grid-cols-2 gap-2">
-            {BASE_ASSETS.map((id) => {
-              const asset = ASSET_CATALOG[id];
-              const locked = tier < asset.opensAtTier;
-              return (
-                <button key={id} type="button" disabled={locked} onClick={() => buildAsset(id)}
-                  className="key press min-h-14 p-2 text-left font-extrabold">
-                  {asset.label}
-                  <small className="block">{locked ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}` : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}</small>
-                </button>
-              );
-            })}
+      )}
+      {opening ? (
+        <div className="grid gap-3 short:grid-cols-2 short:items-start">
+          {liftsPanel}
+          <TrailsPanel onStartPlacement={onStartPlacement} />
+        </div>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 md:items-start">
+          <div className="grid gap-3">
+            <div className={tabHidden("lifts")}>{liftsPanel}</div>
+            <div className={tabHidden("trails")}>
+              <TrailsPanel onStartPlacement={onStartPlacement} />
+            </div>
           </div>
-          {!opening && <LodgeUpgradeControl variant="compact" />}
-          <VenueManagement onStartPlacement={onStartPlacement} />
-          <SectionHeading>Snow</SectionHeading>
-          <button type="button" className="key press min-h-11 px-3 font-extrabold"
-            disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
-            Snow gun, {tier < 2 ? "Lodge Tier 2" : `${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
-          </button>
-        </div>}
-      </div>
+          <div className={tabHidden("base")}>{basePanel}</div>
+        </div>
+      )}
     </Sheet>
   ) : null;
 }

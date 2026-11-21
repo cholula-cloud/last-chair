@@ -72,7 +72,7 @@ async function startPlay(page) {
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: /Elena Vargas/i }).click();
   await waitSceneReady(page);
-  await page.getByText(/Day 1\/28/).waitFor({ timeout: 15_000 });
+  await page.getByText(/Open 1\/\d+/).waitFor({ timeout: 15_000 });
 }
 
 async function shot(page, engine, tag, name) {
@@ -299,7 +299,7 @@ async function runViewport(engine, launch, vp) {
     await page.getByRole("button", { name: "Build", exact: true }).click();
     await page.getByRole("heading", { name: "Build" }).waitFor();
     await page.getByRole("button", { name: "Place lift", exact: true }).click();
-    await page.getByText(/Drag uphill from the base/i).waitFor({ timeout: 5000 });
+    await page.getByRole("complementary", { name: "Tip" }).getByText(/Tap the base area, then tap uphill/i).waitFor({ timeout: 5000 });
     await shot(page, engine, tag, "placement-bar");
 
     await page.getByLabel("Game speed 1x, tap to change").click();

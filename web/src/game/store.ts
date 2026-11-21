@@ -51,6 +51,8 @@ type GameActions = {
   commitPaint: (strokes: readonly PaintStroke[], glade?: boolean, connectCrossings?: boolean) => void;
   removeAsset: (index: number) => void;
   renameAsset: (target: AssetTarget, name: string) => void;
+  setLodgeStyle: (styleId: string) => void;
+  setAssetStyle: (index: number, styleId: string) => void;
   moveAsset: (index: number, at: XZ) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
   pickCrewTalent: (id: import("./talentProgress").TalentId) => void;
@@ -69,6 +71,8 @@ type GameActions = {
   startNewSeason: () => void;
   nextTalentHint: () => string | null;
   dismissSaveNotice: () => void;
+  guestLens: "off" | "mood";
+  setGuestLens: (lens: "off" | "mood") => void;
 };
 
 type GameStore = GameState & GameActions & { saveNotice: string | null };
@@ -279,6 +283,8 @@ export const useGameStore = create<GameStore>()(
         commitPaint: action("commitPaint"),
         removeAsset: action("removeAsset"),
         renameAsset: action("renameAsset"),
+        setLodgeStyle: action("setLodgeStyle"),
+        setAssetStyle: action("setAssetStyle"),
         moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
         pickCrewTalent: action("pickCrewTalent"),
@@ -294,6 +300,8 @@ export const useGameStore = create<GameStore>()(
         finishWinterReview: command("finishWinterReview"),
         startNewSeason: command("startNewSeason"),
         nextTalentHint: () => rules.nextTalentHint(get()),
+        guestLens: "off",
+        setGuestLens: (guestLens) => set({ guestLens }),
       };
     },
     {

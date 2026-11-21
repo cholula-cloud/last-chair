@@ -137,13 +137,13 @@ describe("buildNightRecap", () => {
   it("carries the day's breakdown and names its largest negative term", () => {
     const r = recapOf(10, 1, 0, day(50, { queue: -9, snow: -12, value: -2 }));
     expect(r.breakdown).toEqual({ ...ZERO_TERMS, queue: -9, snow: -12, value: -2 });
-    expect(r.problem).toContain("Thin, scraped snow");
+    expect(r.problem).toContain("overnight snow prep");
     expect(r.problem).toContain("70%");
   });
 
   it("says the day was good when no term is meaningfully negative", () => {
     expect(recapOf(30, 1, 0, day(75, { queue: -2, value: -1 })).problem).toBe(
-      "Good day on the hill. Nobody has a complaint.",
+      "Smooth day on the hill. Skiers left happy.",
     );
   });
 
@@ -151,7 +151,7 @@ describe("buildNightRecap", () => {
     const r = recapOf(12, 1, 0, day(75, { queue: -2 }));
     expect(r.cashDelta).toBeLessThan(0);
     expect(r.problem).toBe(
-      `Lost ${formatMoney(-r.cashDelta)} today. Running costs beat revenue on a quiet day.`,
+      `Lost ${formatMoney(-r.cashDelta)} today. Daily costs outpaced revenue on a quiet day.`,
     );
   });
 
@@ -175,6 +175,8 @@ describe("buildNightRecap", () => {
       refuels: 0,
       balked: 0,
       seatsFullMin: 0,
+      ticketBasePosted: 0,
+      schoolBusPosted: 0,
     });
   });
 });
@@ -219,8 +221,8 @@ describe("applyOvernight", () => {
   it("earns a crew point instead of auto-learning talents", () => {
     expect(run("mid").talentLearned).toBeNull();
     expect(run("mid").crewPointsEarned).toBe(1);
-    expect(run("mid").nextTalentHint).toBe(CREW_TALENTS[0].name);
-    expect(run("mid", { talentsOwned: ["rope_tow"] }).nextTalentHint).toBe(CREW_TALENTS[1].name);
+    expect(run("mid").nextTalentHint).toBe("Surface Lift Tune");
+    expect(run("mid", { talentsOwned: ["rope_tow"] }).nextTalentHint).toBe("Wide Grooming Pass");
   });
 
   it("returns no hint once all talents are owned", () => {

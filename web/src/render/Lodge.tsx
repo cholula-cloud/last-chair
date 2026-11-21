@@ -12,6 +12,8 @@ import { useReducedMotion } from "./useReducedMotion";
 import { pathSampler } from "./trail";
 import { sceneMood } from "./Atmosphere";
 import { box, merge, placeParts, type Part } from "./geo";
+import { kitForAsset } from "./activityKits";
+import { resolveLodgeCoreKit, resolveStyledKit, resolveVenueKit } from "@/game/styles";
 import {
   bakeKit,
   type KitAsset,
@@ -21,6 +23,7 @@ import {
   placeKit,
   useKit,
 } from "./kit";
+import { useVillageKitScenes, type VillageKitName } from "./useVillageKits";
 import { HOUSES, LODGE, ROAD_Z, SNOWCAT_POS } from "./layout";
 import { OVERLAY_DIM } from "./terrainOverlay";
 
@@ -62,31 +65,72 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
   return tex;
 }
 
-type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
+type Placement = { name: VillageKitName; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
-function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
+export const LODGE_BASE_KIT = "base-lodge" as const satisfies KitAsset;
+export const LODGE_ANNEX_KITS = ["lodge-annex-2", "lodge-annex-3"] as const satisfies readonly KitAsset[];
+
+/** Structural lodge pieces drawn at the lodge anchor for the current sim tier. */
+export function lodgeStructureKits(tier: LodgeTier, lodgeStyleId: string): readonly VillageKitName[] {
+  const kits: VillageKitName[] = [resolveLodgeCoreKit(lodgeStyleId) as VillageKitName];
+  if (tier >= 2) kits.push(resolveStyledKit("lodge-annex-2", lodgeStyleId) as VillageKitName);
+  if (tier >= 3) kits.push(resolveStyledKit("lodge-annex-3", lodgeStyleId) as VillageKitName);
+  return kits;
+}
+
+/** Kit assets the village merge loop must register (prevents tier lodge skip). */
+export const VILLAGE_SCENE_KITS = [
+  LODGE_BASE_KIT,
+  ...LODGE_ANNEX_KITS,
+  "lodge-tier-1-chalet70s",
+  "lodge-annex-2-chalet70s",
+  "lodge-annex-3-chalet70s",
+  "clapboard-house",
+  "cafe",
+  "cafe-chalet70s",
+  "ski-shop",
+  "ski-shop-chalet70s",
+  "warming-hut",
+  "warming-hut-chalet70s",
+  "lamp-post",
+  "tubing-hut",
+  "ice-rink",
+  "apres-bar",
+  "fire-pit",
+  "string-lights",
+] as const satisfies readonly KitAsset[];
+
+export function villagePlacements(
+  assets: readonly PlacedAsset[],
+  tier: LodgeTier,
+  lodgeStyleId: string,
+): Placement[] {
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
-  const list: Placement[] = [
-    {
-      name: (["base-lodge", "lodge-tier-2", "lodge-tier-3"] as const)[tier - 1],
-      x: LODGE.x,
-      z: LODGE.z + 0.05,
-      yaw: 0,
-      scale: B,
-      asset: { kind: "lodge" },
-    },
+  const lodgeAnchor = { x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B };
+  const structure = lodgeStructureKits(tier, lodgeStyleId);
+  const list: Placement[] = structure.map((name, index) => ({
+    name,
+    ...lodgeAnchor,
+    ...(index === 0 ? { asset: { kind: "lodge" } as const } : {}),
+  }));
+  list.push(
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
-  ];
+  );
   for (const [index, asset] of assets.entries()) {
-    const name = ASSET_MODELS[asset.id];
-    if (!name) continue;
+    if (asset.id === "direction_sign") continue;
+    const base = ASSET_MODELS[asset.id] ?? kitForAsset(asset.id);
+    if (!base) continue;
     const attached = asset.attachPad !== undefined;
+    const kitBase = attached ? "warming-hut" : base;
+    const name = (ASSET_MODELS[asset.id]
+      ? resolveVenueKit(kitBase, asset.styleId)
+      : kitBase) as VillageKitName;
     list.push({
-      name: attached ? "warming-hut" : name,
+      name,
       ...asset.at,
-      yaw: (asset.attachPad ?? -1) >= 4 ? Math.PI : 0,
+      yaw: asset.attachPad === 1 ? Math.PI : 0,
       scale: B * (attached ? 1.15 : 1.05),
       asset: { kind: "venue", index },
     });
@@ -94,25 +138,9 @@ function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Pla
   return list;
 }
 
-function lodgeDetails(tier: LodgeTier, construction: boolean): Part[] {
+function lodgeDetails(construction: boolean): Part[] {
   const parts: Part[] = [];
-  if (tier >= 2) {
-    parts.push(
-      { geo: box(1.21, 0.12, 0.33), pos: [0, 0.07, 0.60], color: TIMBER },
-      { geo: box(0.8, 0.13, 0.04), pos: [0, 0.49, 0.56], color: TRIM },
-    );
-    for (const x of [-0.52, -0.23, 0.23, 0.52]) {
-      parts.push({ geo: box(0.038, 0.21, 0.038), pos: [x, 0.23, 0.74], color: TRIM });
-    }
-  }
-  if (tier === 3) {
-    for (const x of [-0.65, 0.65]) {
-      parts.push(
-        { geo: box(0.023, 0.55, 0.023), pos: [x, 0.34, 0.78], color: TRIM },
-        { geo: box(0.025, 0.20, 0.21), pos: [x, 0.51, 0.88], color: "#9d3627" },
-      );
-    }
-  }
+  // Tier 2/3 meshes include wings, trim, and chimneys; only draw upgrade scaffolding here.
   if (construction) {
     const color = "#ce9a4b";
     for (const x of [-0.74, 0.74]) {
@@ -152,7 +180,7 @@ function venueDetails(assets: readonly PlacedAsset[]): Part[] {
     if (id === "rentals" || id === "ski_school" || attachPad !== undefined) {
       const color = id === "rentals" ? "#286889" : id === "ski_school" ? "#cd861d"
         : id === "cafe" ? "#713c2e" : id === "shop" ? "#31594c" : TIMBER;
-      const front = attachPad !== undefined && attachPad >= 4 ? -0.23 : 0.34;
+      const front = attachPad === 1 ? -0.23 : 0.34;
       parts.push(
         { geo: box(0.19, 0.12, 0.025), pos: [at.x, ground + 0.22, at.z + front], color },
         { geo: box(0.12, 0.025, 0.034), pos: [at.x, ground + 0.232, at.z + front], color: TRIM },
@@ -166,13 +194,10 @@ function venueDetails(assets: readonly PlacedAsset[]): Part[] {
 export function Village() {
   const assets = useGameStore((s) => s.assets);
   const tier = useGameStore((s) => s.lodgeTier);
+  const lodgeStyleId = useGameStore((s) => s.lodgeStyleId);
   const construction = useGameStore((s) => s.lodgeUpgrade !== null);
 
-  const lodgeKit = useKit("base-lodge");
-  const houseKit = useKit("clapboard-house");
-  const cafeKit = useKit("cafe");
-  const shopKit = useKit("ski-shop");
-  const hutKit = useKit("warming-hut");
+  const villageKits = useVillageKitScenes();
   const catKit = useKit("snowcat");
   const cat = bakeKit(catKit);
   const catRef = useRef<THREE.Group>(null);
@@ -187,22 +212,12 @@ export function Village() {
     const sample = pathSampler(night.trails[index].path);
     return (t: number) => sample(first + (1 - first) * t);
   }, [night]);
-  const lampKit = useKit("lamp-post");
-
   const { body, glow, pickMeshes } = useMemo(() => {
-    const scenes: Partial<Record<KitAsset, THREE.Object3D>> = {
-      "base-lodge": lodgeKit,
-      "clapboard-house": houseKit,
-      cafe: cafeKit,
-      "ski-shop": shopKit,
-      "warming-hut": hutKit,
-      "lamp-post": lampKit,
-    };
     const bodies: THREE.BufferGeometry[] = [];
     const glows: THREE.BufferGeometry[] = [];
     const pickMeshes: { placement: Placement; geometry: THREE.BufferGeometry; y: number }[] = [];
-    for (const p of villagePlacements(assets, tier)) {
-      const scene = scenes[p.name];
+    for (const p of villagePlacements(assets, tier, lodgeStyleId)) {
+      const scene = villageKits[p.name];
       if (!scene) continue;
       const kit = bakeKit(scene);
       const y = TERRAIN.height(p.x, p.z) - 0.02;
@@ -210,11 +225,11 @@ export function Village() {
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
       if (p.asset) pickMeshes.push({ placement: p, geometry: kit.body, y });
     }
-    const additions = [...lodgeDetails(tier, construction), ...venueDetails(assets)];
+    const additions = [...lodgeDetails(construction), ...venueDetails(assets)];
     if (additions.length > 0) bodies.push(merge(additions));
 
     return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
-  }, [assets, tier, construction, lodgeKit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
+  }, [assets, tier, lodgeStyleId, construction, villageKits]);
 
   useEffect(
     () => () => {

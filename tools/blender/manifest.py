@@ -13,12 +13,13 @@ KEY_ORDER = ["name", "file", "tris", "sizeBytes", "heightMeters", "footprintMete
 
 LEGACY_TAGS = {
     "building": ["base-lodge", "clapboard-house", "cafe", "ski-shop", "warming-hut", "lodge-tier-2",
-                 "lodge-tier-3", "a-frame-lodge", "ticket-booth", "patrol-hut", "maintenance-garage"],
+                 "lodge-tier-3", "lodge-annex-2", "lodge-annex-3", "a-frame-lodge", "ticket-booth",
+                 "patrol-hut", "maintenance-garage"],
     "lift": ["lift-tower", "lift-terminal-bottom", "lift-terminal-top"],
     "carrier": ["t-bar", "chair-double"],
     "guest": ["skier", "skier-kid", "skier-coat", "boarder", "boarder-kid"],
     "vehicle": ["snowcat", "sedan", "wagon", "pickup"],
-    "tree": ["pine-a", "pine-b", "pine-c", "birch"],
+    "tree": ["pine-a", "pine-b", "pine-c", "pine-d", "birch"],
     "prop": ["snow-gun", "lamp-post"],
     "sign": ["sign-post", "area-sign"],
 }

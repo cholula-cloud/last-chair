@@ -36,7 +36,7 @@ Open http://localhost:3000/play. `/` is the landing page.
 | `npm test` | Vitest unit tests (`npm run test:watch` to watch) |
 | `npm run check` | Lint, typecheck, test, build, stopping at the first failure |
 | `npm run playtest:smoke` | Fast Playwright smoke (Chromium 390×844) |
-| `npm run playtest:p0` | Full 28-day Playwright winter |
+| `npm run playtest:p0` | Full operating-calendar Playwright winter (21 open days) |
 
 CI **`check`** (lint, typecheck, test, m2-gate, build, bundle) runs on every PR. Player-visible changes also run **`e2e-pr`** (one Chromium smoke). Full browser matrix runs **nightly** (`e2e-nightly.yml`).
 

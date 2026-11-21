@@ -108,6 +108,10 @@ const recap = shape({
 const dayStats = shape({
   ...numbers("arrivals", "guestsArrived", "completedRuns", "runsPerGuest", "turnedAway", "peakOnHill", "avgQueueMin",
     "dispatched", "waitSumMin", "maxQueueLength", "peakWaitMin", "refuels", "balked", "seatsFullMin"),
+  ticketBasePosted: optional(number),
+  schoolBusPosted: optional(number),
+  intradayRevenue: optional(boolean),
+  operatingSettled: optional(boolean),
   byLift: array(shape(numbers("rides", "waitSumMin"))), runsByTrail: array(number), venueRevenue: revenue,
   segmentRunsByTrail: optional(array(nullable(array(number)))),
 });
@@ -155,6 +159,7 @@ const fields: Record<keyof PersistedState, Check> = {
   founderId: founder,
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
+  lodgeStyleId: string,
   lodgeName: optional(string),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
   assets: array(shape({ id: assetId, at: point, styleId: string, name: optional(string), attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),
@@ -184,6 +189,7 @@ const fields: Record<keyof PersistedState, Check> = {
   gunsVisible: boolean,
   groomVisible: boolean,
   seasonLength: (value) => integer(value) && value >= 1,
+  operatingDayIndex: (value) => integer(value) && value >= 1,
   rngState: number,
   nightRecap: nullable(recap),
   lastWinter: optional(winterRecord),

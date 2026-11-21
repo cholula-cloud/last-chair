@@ -127,7 +127,7 @@ For the first-winter work, show supported expected directions on the night contr
 | Cash / bankruptcy arc | Yes — warnings in economy |
 | Opening 3D build | **Friction risk** — skill test before loop taught |
 | Wind hold day 1 | Thematic but **untimely** vs opening skills |
-| 28-day winter length | Appropriate for tycoon; session 1 metric is 15 min (MASTER_PLAN) |
+| Operating calendar (CAL-1) | 21 Fri–Sun play days over ~7 weeks; Mon–Thu background sim + digest; legacy 28-day saves unchanged until new winter |
 
 **GDV:** Increase **decision complexity** (second lift + fare) not just **duration** or opaque failure. Opening duration alone is not depth.
 
@@ -389,7 +389,7 @@ Actionable improvements drawn from the review above. Prefer these over new featu
 
 ### Business and audience (light touch)
 
-- **Browser-first positioning:** emphasize “one winter tonight” in store copy — matches 28-day arc and mobile session design.
+- **Browser-first positioning:** emphasize “one winter tonight” in store copy — matches seven-weekend operating arc and mobile session design.
 - **Heritage / DHASH:** optional heritage card for players who want lore; default path stays operational, not homework.
 - **No pay-to-skip tension** in design; speed control is for convenience, not monetization (protects cozy tone).
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
-import { DUTCH_HILL_CALENDAR } from "./calendar";
+import { DUTCH_HILL_CALENDAR_LEGACY as DUTCH_HILL_CALENDAR } from "./calendar";
 import { acknowledgeBeat, pickFounder, skipToClose, sleep } from "./rules";
 import { operatingGoals } from "./winterArc";
 

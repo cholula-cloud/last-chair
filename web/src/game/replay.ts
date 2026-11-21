@@ -28,6 +28,8 @@ export const replayRules = {
   commitPaint: rules.commitPaint,
   renameAsset,
   placeAsset: rules.placeAsset,
+  setLodgeStyle: rules.setLodgeStyle,
+  setAssetStyle: rules.setAssetStyle,
   pickCrewTalent: rules.pickCrewTalent,
   rushCrewPoint: rules.rushCrewPoint,
   moveAsset: rules.moveAsset,

@@ -1,4 +1,5 @@
 import { liquidNetWorth } from "./economy";
+import { operatingDaysLeft, seasonCalendar } from "./calendar";
 import { schoolContractOfferDay } from "./rules";
 import { SCHOOL_BUS_PUPILS } from "./schoolContract";
 import type { GameState } from "./state";
@@ -27,22 +28,22 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "lodge",
     label: "Lodge Tier 2",
     status: lodge ? "Done" : settled ? "Missed" : "To do",
-    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is built and open.` : settled ? "The winter ended with the lodge still at Tier 1." : "Upgrade the lodge to Tier 2 from the Build sheet. Bigger lodge, bigger crowds.",
+    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is open.` : settled ? "Winter ended at Lodge Tier 1." : "Upgrade to Tier 2 in Build to unlock chairlifts, ski school, and more parking.",
   }];
   const contract = state.schoolContract;
   if (contract || state.schoolEligible) {
     let status: GoalChip["status"] = "To do";
-    let explainer = "Keep an ear on the radio. Al Waters may call about a school bus.";
+    let explainer = "Watch Route 100 Radio for Al Waters to call about the Readsboro school bus.";
     if (contract?.decision === "declined") {
       status = "Declined";
-      explainer = "You turned down the Readsboro school visit. Al will understand.";
+      explainer = "You passed on the Readsboro school visit.";
     } else if (contract?.decision === "accepted") {
       if (contract.pupilsTaught !== null) {
         status = contract.pupilsTaught > 0 ? "Done" : "Missed";
-        explainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} Readsboro pupils finished a lesson.`;
+        explainer = `${contract.pupilsTaught} of ${SCHOOL_BUS_PUPILS} Readsboro kids finished a lesson.`;
       } else {
         status = settled ? "Missed" : "Booked";
-        explainer = settled ? "The winter ended before the bus showed up." : `The Readsboro bus pulls in on day ${contract.day}.`;
+        explainer = settled ? "Winter ended before the school bus arrived." : `The Readsboro bus arrives on day ${contract.day}.`;
       }
     }
     chips.push({ id: "bus", label: "Optional school visit", status, explainer });
@@ -53,14 +54,23 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "solvent", label: "Finish solvent",
     status: settled ? (met ? "Done" : "Missed") : (solvent ? "On track" : "At risk"),
     explainer: settled
-      ? (met ? "You finished in the black. Cash covers the loan and anything unpaid on construction." : state.outcome === "bankrupt" ? "The bank came calling before the winter was over." : "The loan and unpaid construction came to more than your closing cash.")
-      : (solvent ? "Cash covers your loan and unpaid construction today. Keep it that way." : "Your loan and unpaid construction add up to more than your cash right now. Time to get some guests up the hill."),
+      ? (met ? "Finished in the black with all loans and construction covered." : state.outcome === "bankrupt" ? "The bank called your loan before winter ended." : "Closing cash fell short of your loan and unpaid construction.")
+      : (solvent ? "Cash covers your loan and unpaid construction bills." : "Loan and construction bills exceed cash right now. Build ticket revenue."),
   });
   return chips;
 }
 
-/** The current day counts until the winter settles. */
+/** Legacy: consecutive civil days. Prefer operatingDaysLeftLine for the operating calendar. */
 export function daysLeftLine(dayIndex: number, seasonLength: number, settled = false): string {
   const left = settled ? 0 : Math.max(0, seasonLength - dayIndex + 1);
   return left === 1 ? "1 day left." : `${left} days left.`;
+}
+
+export function operatingDaysLeftLine(
+  state: Pick<import("./state").GameState, "mountainId" | "seasonLength" | "dayIndex" | "outcome">,
+  settled = false,
+): string {
+  const cal = seasonCalendar(state);
+  const left = settled || state.outcome !== "playing" ? 0 : operatingDaysLeft(cal, state.dayIndex);
+  return left === 1 ? "1 open day left." : `${left} open days left.`;
 }

@@ -1,4 +1,5 @@
 import type { NightRecap } from "./sim";
+import { queueNags } from "./satisfaction";
 import type { GameState } from "./state";
 
 /** What the day looked like beyond the recap's own numbers. */
@@ -24,8 +25,8 @@ function lineText(recap: Pick<NightRecap, "facts">, liftCount: number): string {
   const busiest = recap.facts.busiestLift;
   const minutes = Math.max(1, Math.floor(busiest ? busiest.min : recap.facts.avgWaitMin));
   const unit = minutes === 1 ? "minute" : "minutes";
-  if (liftCount <= 1) return `The lift line got long enough to need its own zip code. It ran over ${minutes} ${unit}, so guests want a second lift.`;
-  return `Guests were checking their watches at ${busiest?.label ?? "one lift"}, which ran over ${minutes} ${unit}. They want shorter lift lines.`;
+  if (liftCount <= 1) return `Lift lines topped ${minutes} ${unit} today. Skiers want a second lift.`;
+  return `${busiest?.label ?? "One lift"} backed up past ${minutes} ${unit}. Skiers want shorter lift lines.`;
 }
 
 /**
@@ -37,21 +38,22 @@ export function topGuestDemand(
   ctx: DemandContext,
 ): Demand | null {
   const demands: Demand[] = [];
-  demands.push({ key: "lines", points: -recap.breakdown.queue, line: lineText(recap, ctx.liftCount) });
+  const linePain = queueNags(recap.facts) ? -recap.breakdown.queue : 0;
+  demands.push({ key: "lines", points: linePain, line: lineText(recap, ctx.liftCount) });
   demands.push({
     key: "seats",
     points: ctx.seatsFullMin / SEATS_FULL_PER_POINT,
-    line: "The lodge ran out of seats and lunch went standing up. Guests want more seats.",
+    line: "The lodge ran out of seats at lunch. Skiers want more indoor space.",
   });
   const greenCrowded =
     ctx.greenTrailCount > 0 && ctx.greenRuns / ctx.greenTrailCount >= GREEN_CROWDED_RUNS;
   if (greenCrowded) {
-    demands.push({ key: "green", points: Math.max(-recap.breakdown.runs, DEMAND_MIN_POINTS), line: "The green trail is wall to wall with beginners. Guests want another green trail." });
+    demands.push({ key: "green", points: Math.max(-recap.breakdown.runs, DEMAND_MIN_POINTS), line: "The green trail was packed with beginners. Skiers want another easy run." });
   }
   demands.push({
     key: "snow",
     points: -recap.breakdown.snow,
-    line: `Cover was ${recap.facts.snowLabel.toLowerCase()} and guests noticed. They want better snow.`,
+    line: `Snow cover was ${recap.facts.snowLabel.toLowerCase()} today. Skiers want better grooming or snowmaking.`,
   });
   const top = demands
     .filter((d) => d.points >= DEMAND_MIN_POINTS)

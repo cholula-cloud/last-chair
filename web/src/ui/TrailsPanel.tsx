@@ -12,17 +12,23 @@ export function TrailsPanel({ onStartPlacement }: { onStartPlacement: () => void
   const canPaint = state.lifts.some((lift) => lift.confirmed);
 
   return (
-    <div className="panel px-3.5 pb-4 pt-3.5 short:col-span-2">
+    <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading>Trails</SectionHeading>
-      <ul className="space-y-1">
-        {open.map((trail, index) => (
-          <li key={`${trail.liftIndex}-${index}`} className="flex items-center gap-2 text-sm font-bold">
-            <DifficultyIcon difficulty={trail.difficulty} size={16} />
-            <span className="min-w-0 flex-1 truncate">{trail.name}</span>
-            <span className="tabular-nums text-ink-soft">{trail.lengthFt} ft</span>
-          </li>
-        ))}
-      </ul>
+      {open.length === 0 ? (
+        <p className="text-sm font-bold text-ink-soft">
+          No open trails yet. Paint one from a lift top to start skiing.
+        </p>
+      ) : (
+        <ul className="space-y-1">
+          {open.map((trail, index) => (
+            <li key={`${trail.liftIndex}-${index}`} className="flex items-center gap-2 text-sm font-bold">
+              <DifficultyIcon difficulty={trail.difficulty} size={16} />
+              <span className="min-w-0 flex-1 truncate">{trail.name}</span>
+              <span className="tabular-nums text-ink-soft">{trail.lengthFt} ft</span>
+            </li>
+          ))}
+        </ul>
+      )}
       <PrimaryButton className="mt-3 min-h-11" disabled={!canPaint} onClick={() => {
         startPaintPlacement();
         onStartPlacement();

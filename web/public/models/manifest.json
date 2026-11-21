@@ -37,7 +37,7 @@
       "name": "cafe",
       "file": "cafe.glb",
       "tris": 848,
-      "sizeBytes": 14808,
+      "sizeBytes": 61776,
       "heightMeters": 8.7,
       "footprintMeters": [
         8.37,
@@ -177,7 +177,7 @@
       "heightMeters": 6.28,
       "footprintMeters": [
         1.26,
-        2.0
+        2
       ],
       "tags": [
         "prop"
@@ -270,12 +270,12 @@
     {
       "name": "lodge-tier-3",
       "file": "lodge-tier-3.glb",
-      "tris": 3384,
-      "sizeBytes": 29280,
-      "heightMeters": 15.25,
+      "tris": 4232,
+      "sizeBytes": 250232,
+      "heightMeters": 17.87,
       "footprintMeters": [
-        22.1,
-        20.2
+        22.38,
+        21.3
       ],
       "tags": [
         "building"
@@ -507,7 +507,7 @@
       "file": "surface-terminal-bottom.glb",
       "tris": 328,
       "sizeBytes": 9752,
-      "heightMeters": 4.0,
+      "heightMeters": 4,
       "footprintMeters": [
         8.97,
         5.63
@@ -693,7 +693,7 @@
       "heightMeters": 2.12,
       "footprintMeters": [
         1.7,
-        10.0
+        10
       ],
       "tags": [
         "activity"
@@ -707,7 +707,7 @@
       "heightMeters": 0.78,
       "footprintMeters": [
         5.2,
-        10.0
+        10
       ],
       "tags": [
         "activity"
@@ -882,9 +882,9 @@
     {
       "name": "lodge-tier-3-chalet70s",
       "file": "lodge-tier-3-chalet70s.glb",
-      "tris": 3220,
-      "sizeBytes": 28572,
-      "heightMeters": 16.02,
+      "tris": 3408,
+      "sizeBytes": 201392,
+      "heightMeters": 16.65,
       "footprintMeters": [
         22.1,
         20.43
@@ -899,7 +899,7 @@
       "name": "cafe-chalet70s",
       "file": "cafe-chalet70s.glb",
       "tris": 895,
-      "sizeBytes": 16680,
+      "sizeBytes": 64332,
       "heightMeters": 8.97,
       "footprintMeters": [
         8.64,
@@ -942,6 +942,66 @@
       ],
       "style": "chalet70s",
       "styleOf": "warming-hut"
+    },
+    {
+      "name": "lodge-annex-2",
+      "file": "lodge-annex-2.glb",
+      "tris": 832,
+      "sizeBytes": 53692,
+      "heightMeters": 7.72,
+      "footprintMeters": [
+        13.42,
+        10.17
+      ],
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "name": "lodge-annex-3",
+      "file": "lodge-annex-3.glb",
+      "tris": 1432,
+      "sizeBytes": 95184,
+      "heightMeters": 17.87,
+      "footprintMeters": [
+        19.38,
+        13.35
+      ],
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "name": "lodge-annex-2-chalet70s",
+      "file": "lodge-annex-2-chalet70s.glb",
+      "tris": 815,
+      "sizeBytes": 53704,
+      "heightMeters": 10.04,
+      "footprintMeters": [
+        13.78,
+        10.63
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-annex-2"
+    },
+    {
+      "name": "lodge-annex-3-chalet70s",
+      "file": "lodge-annex-3-chalet70s.glb",
+      "tris": 1399,
+      "sizeBytes": 123716,
+      "heightMeters": 18.15,
+      "footprintMeters": [
+        19.73,
+        12.62
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-annex-3"
     }
   ]
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { nextTip } from "@/game/coach";
 import { TALENT } from "@/game/talents";
 
 import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
@@ -18,6 +19,7 @@ import { flushSave, useGameStore } from "@/game/store";
 import { SNOW_LABELS, SNOW_NIGHT_COST } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
 import { MountainScene } from "@/render/MountainScene";
+import { CameraDebugHud } from "@/ui/CameraDebugHud";
 import { ToneMappingSync } from "@/render/ToneMappingSync";
 import { audio } from "@/audio/engine";
 import { useSettings } from "./settingsStore";
@@ -125,6 +127,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const mountainId = useGameStore((s) => s.mountainId);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
+  const operatingDayIndex = useGameStore((s) => s.operatingDayIndex);
   const clockMin = useGameStore((s) => s.clockMin);
   const paused = useGameStore((s) => s.paused);
   const cash = useGameStore((s) => s.cash);
@@ -148,6 +151,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const paidForSnow = useGameStore((s) => s.lastDay?.snowNightCost ?? SNOW_NIGHT_COST[s.snow]);
   const snowPreset = useGameStore((s) => s.snow);
   const talentToast = useGameStore((s) => s.talentToast);
+  const tipsSeen = useGameStore((s) => s.tipsSeen);
+  const tipsEnabled = useSettings((s) => s.tips);
   const saveNotice = useGameStore((s) => s.saveNotice);
   const dismissSaveNotice = useGameStore((s) => s.dismissSaveNotice);
   const togglePause = useGameStore((s) => s.togglePause);
@@ -243,6 +248,26 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+  const activeCoachTip =
+    hydrated &&
+    phase === "day" &&
+    !buildOpen &&
+    !guestsOpen &&
+    !officeOpen &&
+    !placementActive &&
+    !hudSuppressed &&
+    !inspectedAsset
+      ? nextTip(tipsSeen, {
+          phase,
+          dayIndex,
+          opening,
+          running: !notStarted,
+          placementActive,
+          buildOpen: false,
+          hasGuestsWant: false,
+          enabled: tipsEnabled,
+        })
+      : null;
   const layerDock =
     phase === "day" &&
     !placementActive &&
@@ -276,6 +301,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
       className="relative h-[100dvh] w-full overflow-hidden bg-ink text-ink"
       data-scene-ready={sceneReady ? "true" : undefined}
     >
+      <CameraDebugHud />
       <Canvas
         frameloop={officeOpen ? "never" : "always"}
         className="block h-full w-full touch-none"
@@ -307,6 +333,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               mountainId={mountainId}
               dayIndex={dayIndex}
               seasonLength={seasonLength}
+              operatingDayIndex={operatingDayIndex}
               clockMin={clockMin}
               cash={cash}
               paused={paused}
@@ -334,6 +361,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             />
           )}
           {showNote && !placementActive && !hudSuppressed && (
+            <div className={activeCoachTip ? "hidden w-full sm:block" : "w-full"}>
             <MorningNote
               weather={weather}
               headline={tidy(morningHeadline)}
@@ -347,6 +375,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
               onExpand={() => setNoteExpandedDay(dayIndex)}
               onDismiss={() => setNoteDismissedDay(dayIndex)}
             />
+            </div>
           )}
         </div>
 
@@ -366,7 +395,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         <div
           inert={officeOpen || !!inspectedAsset}
           data-map-rail="vertical"
-          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-20 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
+          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-40 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
         </div>

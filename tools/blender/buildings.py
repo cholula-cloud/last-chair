@@ -193,9 +193,15 @@ def b_cafe():
     # stove pipe
     a.cyl((-1.8, 1.2, H + 1.5), 0.22, 0.22, 3.2, 6, "steel-dark")
     a.cyl((-1.8, 1.2, H + 4.7), 0.36, 0.36, 0.2, 6, "snow")
-    # bistro table + sign lantern
-    a.cyl((-3.2, fy - 1.9, 0), 0.06, 0.06, 0.9, 5, "shutter-black")
-    a.cyl((-3.2, fy - 1.9, 0.9), 0.4, 0.4, 0.06, 8, "shutter-black")
+    # outdoor patio in front of the door (+x, guest side)
+    px, py, pw, pd = 1.4, fy - 1.25, 2.7, 2.1
+    a.box((px, py, 0.07), (pw, pd, 0.14), "stone-dark", bevel=0.05)
+    for sx in (-1, 1):
+        a.box((px + sx * (pw / 2 + 0.04), py, 0.46), (0.1, pd + 0.12, 0.92), "timber-brown")
+    a.box((px, py - pd / 2 - 0.05, 0.46), (pw + 0.16, 0.1, 0.92), "timber-brown")
+    for tx, ty in ((px - 0.55, py + 0.35), (px + 0.55, py + 0.35)):
+        a.cyl((tx, ty, 0), 0.06, 0.06, 0.88, 5, "shutter-black")
+        a.cyl((tx, ty, 0.88), 0.38, 0.38, 0.06, 8, "shutter-black")
     a.box((W / 2 + 0.05, fy + 0.3, 3.0), (0.1, 0.6, 0.6), "shutter-black")
     a.box((W / 2 + 0.25, fy + 0.3, 2.6), (0.3, 0.3, 0.4), "lamp-glow")
     return a.finish()

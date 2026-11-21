@@ -13,8 +13,10 @@ export const SAT = {
   ARRIVAL_PTS: 40,
   /** Points per minute of pain before the persona weight. */
   QUEUE_PTS: 3.5,
-  /** Mean wait per ride that costs nothing. */
+  /** Mean wait per ride that costs nothing in the score and ticket-value loss. */
   QUEUE_FREE_MIN: 1,
+  /** Mean wait per ride at or below this is normal; recap and Desk skip queue nags. */
+  QUEUE_NAG_MIN: 5,
   /** Pain grows 1:1 up to this mean wait, then at `QUEUE_FAR_SLOPE`. */
   QUEUE_KNEE_MIN: 6,
   QUEUE_FAR_SLOPE: 0.5,
@@ -268,15 +270,31 @@ export type ProblemFacts = {
 };
 
 /** The recap line for a day nobody skied. */
-export const NO_SKIERS_PROBLEM = "Nobody came today. The lifts turned for the crows.";
+export const NO_SKIERS_PROBLEM = "No skiers showed up today. The lifts spun empty.";
 
-export const NO_PROBLEM = "Good day on the hill. Nobody has a complaint.";
+export const NO_PROBLEM = "Smooth day on the hill. Skiers left happy.";
+
+/** Whether measured waits are long enough to name queues on recap, coach, and balance AI. */
+export function queueNags(gate: {
+  avgWaitMin: number;
+  dispatched?: number;
+  busiestLift?: { min: number };
+}): boolean {
+  if (gate.dispatched === 0) return false;
+  const wait = Math.max(gate.avgWaitMin, gate.busiestLift?.min ?? 0);
+  return wait > SAT.QUEUE_NAG_MIN;
+}
 
 /** The term with the largest negative average contribution, or null if none is below `SAT.PROBLEM_MIN`. */
-export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
+export function biggestProblem(
+  breakdown: SatTerms,
+  gate?: { avgWaitMin: number; dispatched?: number },
+): keyof SatTerms | null {
+  const ignoreQueue = gate !== undefined && !queueNags(gate);
   let worst: keyof SatTerms | null = null;
   let worstPts: number = SAT.PROBLEM_MIN;
   for (const k of SAT_TERM_KEYS) {
+    if (k === "queue" && ignoreQueue) continue;
     if (breakdown[k] < worstPts) {
       worst = k;
       worstPts = breakdown[k];
@@ -287,26 +305,26 @@ export function biggestProblem(breakdown: SatTerms): keyof SatTerms | null {
 
 /** One fixable sentence naming the biggest real cause of unhappiness today. */
 export function problemLine(breakdown: SatTerms, facts: ProblemFacts): string {
-  switch (biggestProblem(breakdown)) {
+  switch (biggestProblem(breakdown, facts)) {
     case "queue":
       return facts.dispatched === 0
-        ? "Guests stood in line and nobody ever boarded a lift. Check that your lifts and trails are open."
-        : `Lift lines ran long. Guests waited ${facts.avgWaitMin.toFixed(1)} min a ride. More lift capacity or a higher fare will thin the crowd.`;
+        ? "Skiers queued up, but nobody boarded a lift. Check that lifts and trails are open."
+        : `Lift lines averaged ${facts.avgWaitMin.toFixed(1)} min per ride. Add lift capacity or raise the fare to thin the crowd.`;
     case "snow":
       return facts.snowTrouble
-        ? `${facts.snowTrouble}, and guests felt every inch of it (quality ${Math.round(facts.snowQuality * 100)}%). Bump up Snow & service tonight.`
-        : `Thin, scraped snow (quality ${Math.round(facts.snowQuality * 100)}%). Bump up Snow & service tonight.`;
+        ? `${facts.snowTrouble} (${Math.round(facts.snowQuality * 100)}% quality). Bump up overnight snow prep tonight.`
+        : `Snow was scraped and thin (${Math.round(facts.snowQuality * 100)}% quality). Bump up overnight snow prep tonight.`;
     case "value":
-      return `Guests thought the ${formatMoney(FARE_PRICES[facts.fare])} ticket was steep for what they got.`;
+      return `Skiers felt ${formatMoney(FARE_PRICES[facts.fare])} was too steep for what the hill offered today.`;
     case "runs":
       return facts.turnedAway > 0
-        ? `Lots of guests barely got a run in. ${facts.turnedAway} were turned away at close.`
-        : `Lots of guests barely got a run in, ${facts.runsPerGuest.toFixed(1)} runs each. Faster lifts would let them ski more.`;
+        ? `Skiers could not get enough runs in, and ${facts.turnedAway} missed last chair.`
+        : `Skiers averaged only ${facts.runsPerGuest.toFixed(1)} runs each. Faster lifts will keep them moving.`;
     case "arrivalMood":
-      return `Guests showed up in a sour mood, ${Math.round(facts.arrivalMood * 100)} out of 100. Good snow and a fair fare make a warmer welcome.`;
+      return `Skiers arrived in a rough mood (${Math.round(facts.arrivalMood * 100)}%). Fresh snow and fair fares lift spirits.`;
     default:
       return facts.cashDelta !== undefined && facts.cashDelta < 0
-        ? `Lost ${formatMoney(-facts.cashDelta)} today. Running costs beat revenue on a quiet day.`
+        ? `Lost ${formatMoney(-facts.cashDelta)} today. Daily costs outpaced revenue on a quiet day.`
         : NO_PROBLEM;
   }
 }

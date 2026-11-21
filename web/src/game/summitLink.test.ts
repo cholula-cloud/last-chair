@@ -12,15 +12,15 @@ import {
   startNewSeason,
 } from "./rules";
 import { hydrate, SAVE_VERSION, toPersisted } from "./state";
-import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_PAYMENT } from "./summitLink";
+import { SUMMIT_LINK_FIRST_DAY_LEGACY, SUMMIT_LINK_PAYMENT } from "./summitLink";
 import type { FounderId } from "./types";
 
 function openingNight(founder: FounderId = "elena") {
   const state = pickFounder(createBuiltHill(), founder);
   return openNight({
     ...state,
-    dayIndex: SUMMIT_LINK_FIRST_DAY,
-    weather: state.weatherDays[SUMMIT_LINK_FIRST_DAY - 1].kind,
+    dayIndex: SUMMIT_LINK_FIRST_DAY_LEGACY,
+    weather: state.weatherDays[SUMMIT_LINK_FIRST_DAY_LEGACY - 1].kind,
     reputation: 80,
     fare: "expensive",
     completedBeats: ["first_load"],

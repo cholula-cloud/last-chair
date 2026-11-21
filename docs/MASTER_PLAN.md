@@ -1,9 +1,9 @@
 # Last Chair game plan and design
 
-**Version:** 2.10 · **Updated:** 2026-11-20
+**Version:** 2.11 · **Updated:** 2026-11-20
 **Status:** Authority document. When any other doc disagrees with this one, this one wins.
 
-This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode. v2.9 closes the **M4 code gate**: F3a/F3b Office economics ([#97](https://github.com/cholula-cloud/last-chair/pull/97)–[#99](https://github.com/cholula-cloud/last-chair/pull/99)), feel rows 30–33, map layers **O4** and **O5**, follow-up HUD polish ([#106](https://github.com/cholula-cloud/last-chair/pull/106)), and records P4 punch-list leftovers. v2.10 lands the remaining M4 stack on `main`: trail network and asset inspectors ([#105](https://github.com/cholula-cloud/last-chair/pull/105)), plan docs ([#107](https://github.com/cholula-cloud/last-chair/pull/107), [#109](https://github.com/cholula-cloud/last-chair/pull/109)), and docked slope legend during trail paint ([#110](https://github.com/cholula-cloud/last-chair/pull/110)). The **active queue is M4b** (Blender rows).
+This file answers four questions: what the game is, what the player does and why (story, modes and the lodge), what we build next and in what order, and how we work. Per-PR specifications live in the handoff doc; numbers live in the spec. v2.1 replaced the v2.0 plans for the lodge, village venues and Rival Mode. v2.2 sets the Dutch Hill first-winter decisions, story choices and review, fixes status contradictions with the code, and adds §11 (quality bar and gaps) and §12 (map overlays and the Office); the owner accepted the new rows into M3 on 2026-11-19. v2.3 splits **M4** (code-only polish: feel, build UX, product pass) from **M4b** (Blender-only: GLBs, styles, activity meshes). v2.4 adds **T1** (realistic trail signage in Blender) and **O5** (Trails map layer in M4) so lift tops are not covered in canvas billboard boxes. v2.5 reframes the **Office** as the hill’s economic command center in M4: **Money** and time-series **Stats** lead; row **F3** ships chart-heavy tabs (and **P4** sweeps that UX); gate language treats the Office like a ski-area CFO dashboard, not a log viewer. v2.6 adds row C1 (voice and copy) to M4 after the owner rejected the terse copy rules. v2.7 records the first M4 batch (C1a, C1b, B6, B7 merged as #91, #92, #93, #95), splits F3 into F3a and F3b, and adds the punch-list items found in that batch to P4. v2.8 records the mobile HUD and placement chrome redesign ([#102](https://github.com/cholula-cloud/last-chair/pull/102)), marks row 31 merged ([#103](https://github.com/cholula-cloud/last-chair/pull/103)), and refreshes §6 for hide/show HUD, the compact conditions strip, the map tool rail, and placement minimize mode. v2.9 closes the **M4 code gate**: F3a/F3b Office economics ([#97](https://github.com/cholula-cloud/last-chair/pull/97)–[#99](https://github.com/cholula-cloud/last-chair/pull/99)), feel rows 30–33, map layers **O4** and **O5**, follow-up HUD polish ([#106](https://github.com/cholula-cloud/last-chair/pull/106)), and records P4 punch-list leftovers. v2.10 lands the remaining M4 stack on `main`: trail network and asset inspectors ([#105](https://github.com/cholula-cloud/last-chair/pull/105)), plan docs ([#107](https://github.com/cholula-cloud/last-chair/pull/107), [#109](https://github.com/cholula-cloud/last-chair/pull/109)), and docked slope legend during trail paint ([#110](https://github.com/cholula-cloud/last-chair/pull/110)). v2.11 records the approved Dutch Hill **operating calendar** (row **CAL-1**, shipped: Fri–Sun playable days, Mon–Thu background sim, civil Dec–Mar). The **active queue is M4b** (Blender rows).
 
 | Doc | Job |
 |---|---|
@@ -21,7 +21,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a 28-day winter from the founder pick to settlement. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
+M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a **49-day civil winter** with **21 Fri–Sun operating days** (Mon–Thu simulate in the background). In-flight 14- and 28-day saves keep the legacy every-day calendar until the player starts a new winter. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
 
 **Built and merged**
 
@@ -30,7 +30,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 | Foundation | Pure TypeScript sim over one serializable `GameState`, seeded RNG, CI, GitHub Pages deploy, M3 save schema v8 with validation and recovery |
 | Core loop | Lifts as FIFO servers (surface and double chair), guest day script with arrival curve, energy and laps, four personas, satisfaction from five terms, the "Why?" breakdown and yesterday deltas, three fare presets with elasticity, snow per trail segment with thaw by elevation, overnight presets, balance harness |
 | Build | Free camera, Dutch Hill at 6×/3× scale, tiered forest, car park with parked cars and walking paths, touch lift dragging and snapping, brush-painted trails, shared build review, guests choose trails by skill, convex hill (#50), trail ribbon fix (#49), render fix (#48), lift tool with cable ghost (L-A), visible brush and ribbon (L-B), lease boundary with a fixed far forest (L-C), build grid and lift placement guide (B6: faint legal-top dots in lift mode, one shared dot style with faint blocked cells in venue and gun mode), trail paint context and freer endpoints (B7: confirmed trails stay on screen while a draft is painted; a stroke connects to the village only within max(0.4 of the base area, brush half-width + 0.5 unit) of the base and joins another trail only within max(H/20, that trail's half-width + 0.15 unit); otherwise the line stays where it was drawn, the review card says how far guests walk back, and guests walk home from its end) |
-| Season | Seeded forecast, storms and thaw runs, chair wind holds, 28-day calendar with weekends and holiday weeks |
+| Season | Seeded forecast, storms and thaw runs, chair wind holds, operating calendar (CAL-1): Fri–Sun guests, Mon–Thu background sim, weekday digest |
 | Buildings | Fixed lodge with three tiers, placed venues, lodge attachment pads, and per-venue receipts |
 | Economy | Operating costs and upkeep, staged construction, a winter loan, and bankruptcy in the winter review |
 | Story | Six founders, a dated story log, optional school and company offers, and a winter review with measured results and a record that survives replay |
@@ -147,7 +147,7 @@ An upgrade does not add seats or a café inside the lodge. It gates what you may
 |---|---|---|---|
 | Cost | Free, on day 1 | $3,500 | $9,000 |
 | Car park (visual) | 30 stalls | 50 | 80 |
-| Attach pads | 2 | 4 | 6 |
+| Attach pads | 0 | 1 | 2 |
 | Opens to build | Surface lift, trails, warming hut, café, shop | Double chair, snow guns, rentals, ski school desk, tubing, basic decor | Bar and après, restaurant, ice rink, events, premium decor |
 | New revenue | Day tickets, café, shop | Rentals, lessons, tubing | Bar and restaurant, events |
 | Look | Small A-frame, plain | Wings, bigger porch, signage | Full timber lodge, lit windows, flags |
@@ -438,7 +438,8 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | — | ☑ | Placement and base polish | Two-finger pan moves the map during every placement (no Move map mode toggle). Lift carriers follow the clock at skier speed. The winter parking lot follows the ground and still expands with the lodge. PR #102 adds placement **Minimize** and the HUD layout in §6. |
 | 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
-| 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config |
+| 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config (legacy map; see CAL-1) |
+| CAL-1 | ☑ | Operating calendar | Fri–Sun playable days; Mon–Thu `advanceClosedDays`; 49 civil / 21 operating; weekday digest; save v11 |
 | 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
 | L-A | ☑ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
@@ -473,6 +474,25 @@ Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted valida
 | 5 | Vivian's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
 | 6 | Winter memory | 24, 27 | End with the measured settlement, the same common goal for all paths and a truthful record of choices and outcomes. Check the balance and playtest the whole arc. |
 
+#### Dutch Hill operating calendar (approved 2026-11-20, shipped CAL-1)
+
+Supersedes the **player-facing** shape of “28 playable days in a row.” **Civil time** runs **late December through March** (49 civil days, 21 operating days — numbers in [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)). The day-by-day loop is unchanged on days the hill is open.
+
+| Decision | Choice |
+|---|---|
+| **Open to guests** | **Friday, Saturday, Sunday** each week — full playable days (pause, build, guests, close, night choices, Sleep) |
+| **Monday–Thursday** | **Background simulation.** Closed to guests; weather, overnight snow and grooming, fixed and upkeep costs, loan interest, construction installments, talent learning, reputation drift where rules already apply overnight, `daysWithoutSnow`, and calendar position all **keep advancing** |
+| **Night levers on closed days** | Use the **last fare and snow & service** the player set on the prior open night (document in SIMULATION_SPEC; no new nightly UI on Mon–Thu) |
+| **Player summary** | After advancing through closed days, show a **short weekday digest** on the next open morning (Maris or Desk): cash change, weather, snow quality, anything that would have fired as a dated note — not four separate night sheets |
+| **Two indices** | **`calendarDay`** (civil index through the winter) drives weekday names, holidays, school bus eligibility, vacation staffing bands, and weather arc position. **`operatingDay`** (1…N) indexes playable days, `dayHistory`, and HUD “open day k of N.” N and the civil-length map are tuning inputs, not fixed at 21 until balance passes |
+| **Solvency & review** | Unchanged intent: one winter, one **winter review**, same liquid-net-worth goal; bankruptcy rules still use consecutive negative **mornings** on the civil clock unless CAL-1 specifies open-morning only |
+| **Legacy saves** | 14- and 28-day seasons keep every civil day playable (Jan–Feb map) |
+| **New winters** | 49 civil days, **21** Fri–Sun operating days; weekday digest after Mon–Thu background sim |
+
+**Why background weekdays:** A small hill can be “weekends only” while bills and weather do not pause. Players keep **day-by-day** play on busy days without sitting through quiet Tue–Thu sessions. Readsboro and weekday surprises remain possible on civil weekdays; school bus does not require inventing a fake “Friday field trip” unless playtests prefer that.
+
+**CAL-1 implementation:** `sleep()` after the last open day of the week runs `advanceClosedDays` through Mon–Thu (`closedDays.ts`); save v11 carries civil vs operating indices; harness still default 28-day legacy map until operating-calendar rebalance. Design rationale above is the authority brief; live rules are in SIMULATION_SPEC **Time** and **Operating calendar** rows.
+
 ### M4: Polish and feel (code only)
 
 M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting: the build grid vanishes in lift mode and the dot field feels wrong elsewhere; trail paint hides existing trails and snaps runs to the base too aggressively. Ship **B6** and **B7** before the feel rows so building stays trustworthy. **Office economics** land in **F3** (Stats and Reports charts on top of F2’s `dayHistory`); **O4** later paints revenue and crowds on the map. The M4 gate treats the Office as the hill’s CFO dashboard, not a recap log, and treats the day HUD as a viewport for the mountain (map visible while building; thumb zone not buried under chips).
@@ -494,25 +514,25 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |
 | F3b | ☑ | Stats ops charts and Reports | Fare elasticity, arrivals, satisfaction and its five terms, wait, snow service spend, satisfaction vs revenue scatter (`officeOpsCharts.tsx`). Reports gains the 28-day **season calendar** (weather and result; tap opens that day's recap) and a ski-area snow-report style trail report (`officeReports.tsx`). Gate: opening Stats after day 7 feels like a CFO dashboard, not a log list (§12). |
 
-Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **Next queue:** **M4b** Blender rows.
+Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **M4b Batch 1** (guests, kit, trail signage, styles, activities) is ☑ on `main`; **next queue:** **M5** career rows unless owner adds M4b batch 2.
 
 ### M4b: Blender assets
 
-Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB. Batch 1 GLBs (rows 29, T1, S2, A1 to A4; ◐) are in `web/public/models/` per `docs/M4b Asset Spec Batch 1.md`; game wiring is still open.
+Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/public/models/`**, and registered in **manifest v2**. Style swaps are palette/mesh variants of catalog assets, not shader tricks. Activity rows (A1 to A5) add catalog entries, placement rules, and render hooks in the **same PR** as their GLB. **Batch 1 is complete on `main`** (rows 28, 29, T1, S1 to S3, A1 to A5; see [#142](https://github.com/cholula-cloud/last-chair/pull/142), [#143](https://github.com/cholula-cloud/last-chair/pull/143), and activity/style wiring PRs).
 
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
-| 28 | ☐ | Guest models (Blender) | Five skier and snowboarder silhouettes; jacket/helmet tint in render (handoff PR 28) |
-| 29 | ◐ | Lift and lodge GLB kit (Blender) | Tier 2/3 lodges, surface terminals, manifest v2 from Blender scripts; most GLBs already in `web/public/models/` (handoff PR 29) |
-| T1 | ◐ | Trail signage kit (Blender) | Replace `TrailSign.tsx` canvas **billboards and box posts** (one per trail clustered at the lift top) with Blender props: wooden post, US-style trail sign board, optional **one** lift-unload trail-map kiosk. One sign per **trail entrance** along the corridor, not stacked at the anchor. Name and difficulty on the mesh (decal slots or one shared dynamic texture per sign). Condition glyph stays tied to the Conditions layer logic |
-| S1 | ☐ | Style system (Blender) | Style picker on the building card; default style per mountain; saved `styleId` per building; each style is a Blender variant |
-| S2 | ◐ | Style packs (Blender) | Dutch Hill 1950s timber plus one alternate style for lodge tiers and venues |
-| S3 | ☐ | Unlockable styles (Blender) | Story beats, tier-ups and winter-review rewards ship new Blender style variants |
-| A1 | ◐ | Tubing hill (Blender + catalog) | Tier 2; family draw, ticket revenue |
-| A2 | ◐ | Ice rink (Blender + catalog) | Tier 3; teen and family draw, upkeep |
-| A3 | ◐ | Bar and restaurant (Blender + catalog) | Tier 3; après revenue |
-| A4 | ◐ | Decor (Blender + catalog) | Fire pits, string lights, base-area signs (not trail entrance signage; see T1); small arrival-mood terms |
-| A5 | ☐ | Events (Blender + catalog) | Winter carnival night choice using rink and tubing assets |
+| 28 | ☑ | Guest models (Blender) | Five skier and snowboarder silhouettes wired in `Guests.tsx` via `guestLook.ts`; jacket/helmet instancing per variant; **Colour by mood** lens in Guests sheet (`guestLens` in store) |
+| 29 | ☑ | Lift and lodge GLB kit (Blender) | Manifest-driven rope/grip in `kitManifest.ts`; surface terminals in `Lift.tsx`; `check-assets.mjs` in CI |
+| T1 | ☑ | Trail signage kit (Blender) | `TrailSign.tsx` uses Blender `trail-sign` kit with runtime `sign-face` texture; **`RopeGate.tsx`** at closed-trail entrances; lift-unload **`TrailMapKiosk`**. One sign per **trail entrance** along the corridor, not stacked at the anchor |
+| S1 | ☑ | Style system (code) | Manifest-driven kit resolution; `lodgeStyleId` in saves (schema 14); lodge + venue style picker in asset inspector; `chalet70s` GLBs wired (see `docs/reference/lodge-styles.md`) |
+| S2 | ☑ | Style packs (Blender) | Dutch Hill timber50s + chalet70s for lodge tiers and venues; café outdoor patio on both `cafe` / `cafe-chalet70s` |
+| S3 | ☑ | Unlockable styles (Blender) | `chalet70s` unlocks at Lodge Tier 2 (or after winter review); `StylePicker` respects unlocks |
+| A1 | ☑ | Tubing hill (Blender + catalog) | Catalog + `tubing-hut` render; `TubingHillDressing` (lanes, carpet, tubes); slope placement; ticket revenue |
+| A2 | ☑ | Ice rink (Blender + catalog) | Catalog + `ice-rink` render; decorative `skater` props (`RinkSkaters`); tier 3 gate; ticket revenue |
+| A3 | ☑ | Bar and restaurant (Blender + catalog) | `apres_bar` venue: après seats, visits, `apres-bar` GLB |
+| A4 | ☑ | Decor (Blender + catalog) | `fire_pit`, `string_lights`, `bench`, `ski_rack`, `picnic_table`, `direction_sign` (runtime `arrow-face` label); arrival mood; kit render |
+| A5 | ☑ | Events (Blender + catalog) | Saturday winter carnival bonus when tubing + rink are both built |
 
 ### M5: Career
 

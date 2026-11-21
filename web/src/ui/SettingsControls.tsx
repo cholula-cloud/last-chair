@@ -2,6 +2,8 @@
 
 import { useId } from "react";
 import { cycleReduceMotion, reduceMotionLabel } from "@/ui/motion";
+import type { BuildingStyleId } from "@/game/base";
+import { styleOptions } from "@/game/styles";
 import { SPEEDS, useSettings } from "@/ui/settingsStore";
 import { useSpeed } from "@/ui/speed";
 
@@ -50,8 +52,9 @@ function VolumeSlider({ label, value, onChange }: { label: string; value: number
 /** The settings list, shared by the title screen and the Office. */
 export function SettingsControls() {
   const settings = useSettings();
-  const { captions, reduceMotion, defaultSpeed, set } = settings;
+  const { buildingStyle, captions, reduceMotion, defaultSpeed, set } = settings;
   const speedId = useId();
+  const styleId = useId();
   return (
     <div className="flex flex-col gap-4">
       <Toggle label="Sound" on={!settings.muted} onChange={on => set({ muted: !on })} />
@@ -59,6 +62,22 @@ export function SettingsControls() {
         <VolumeSlider key={key} label={label} value={settings[key]} onChange={value => set({ [key]: value })} />
       ))}
       <Toggle label="Large text" on={settings.textSize === "large"} onChange={on => set({ textSize: on ? "large" : "standard" })} />
+      <div role="group" aria-labelledby={styleId} className="flex flex-col gap-2">
+        <span id={styleId} className="font-extrabold">Village buildings</span>
+        <div className="flex flex-col gap-2">
+          {styleOptions().map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={buildingStyle === id}
+              onClick={() => set({ buildingStyle: id })}
+              className={`${BTN_SM} text-left`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <Toggle label="Low graphics" on={settings.graphicsQuality === "low"} onChange={on => set({ graphicsQuality: on ? "low" : "standard" })} />
       <Toggle label="Pattern aids" on={settings.patternAids} onChange={on => set({ patternAids: on })} />
       <Toggle label="Voice" on={settings.voiceOn} onChange={on => set({ voiceOn: on })} />

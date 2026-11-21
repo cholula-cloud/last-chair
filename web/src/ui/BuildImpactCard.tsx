@@ -20,11 +20,11 @@ export function BuildImpactCard({
   return (
     <section aria-label={title} className="panel overflow-y-auto px-3.5 pb-4 pt-3.5">
       <h3 ref={heading} tabIndex={-1} className="display text-lg">{title}</h3>
-      <dl className="my-2 grid grid-cols-2 gap-x-3 gap-y-1.5">
+      <dl className="my-2 grid grid-cols-1 gap-y-1.5 sm:grid-cols-2 sm:gap-x-3">
         {facts.map(({ label, value }) => (
-          <div key={label}>
+          <div key={label} className="flex justify-between gap-2 sm:block">
             <dt className="text-xs font-bold text-ink-soft">{label}</dt>
-            <dd className="text-sm font-extrabold tabular-nums">{value}</dd>
+            <dd className="text-sm font-extrabold tabular-nums sm:mt-0.5">{value}</dd>
           </div>
         ))}
       </dl>

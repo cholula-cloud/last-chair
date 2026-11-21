@@ -91,7 +91,7 @@ export function GridAxes({
   );
 }
 
-function LegendSwatch({ color, pattern }: { color: string; pattern?: "stripe" | "dots" }) {
+export function LegendSwatch({ color, pattern }: { color: string; pattern?: "stripe" | "dots" }) {
   const id = useId();
   return (
     <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden="true" className="shrink-0">

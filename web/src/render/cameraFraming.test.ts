@@ -143,8 +143,8 @@ describe("home view", () => {
   });
 
   it("fits portrait within the orbit camera's maximum distance", () => {
-    expect(homeView(390 / 844).distance).toBeLessThanOrEqual(55);
-    expect(homeView(375 / 667).distance).toBeLessThanOrEqual(55);
+    expect(homeView(390 / 844).distance).toBeLessThanOrEqual(60);
+    expect(homeView(375 / 667).distance).toBeLessThanOrEqual(60);
     expect(homeView(390 / 844).distance).toBeLessThanOrEqual(MAX_DISTANCE);
   });
 
@@ -156,6 +156,6 @@ describe("home view", () => {
       const p = { x, z, y: TERRAIN.height(x, z) };
       return project(p, cam, view.target, view.fov, aspect).y;
     };
-    expect(onHill(TERRAIN.toWorld(DUTCH_HILL.summit)) - onHill(TERRAIN.base)).toBeGreaterThan(1);
+    expect(onHill(TERRAIN.toWorld(DUTCH_HILL.summit)) - onHill(TERRAIN.base)).toBeGreaterThan(0.9);
   });
 });

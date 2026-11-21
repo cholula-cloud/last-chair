@@ -126,6 +126,14 @@ export type DayStats = {
   refuels: number;
   balked: number;
   seatsFullMin: number;
+  /** Lift ticket base share posted to cash on public arrival. */
+  ticketBasePosted?: number;
+  /** School bus fares posted to cash on pupil arrival. */
+  schoolBusPosted?: number;
+  /** Guest revenue posted during the day (venue + tickets). */
+  intradayRevenue?: boolean;
+  /** Operating bonus and costs applied at close. */
+  operatingSettled?: boolean;
 };
 
 export type FounderDef = {

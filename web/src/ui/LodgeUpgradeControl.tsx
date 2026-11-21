@@ -28,13 +28,16 @@ export function LodgeUpgradeControl({
   if (!construction && (!next || !payment)) return null;
 
   const wrap = variant === "inspector" ? (className ?? "mt-3") : "mt-2";
+  const stallGain = next ? LODGE_TIERS[next].stalls - LODGE_TIERS[tier].stalls : 0;
+  const padGain = next ? LODGE_TIERS[next].pads - LODGE_TIERS[tier].pads : 0;
 
   return (
     <div className={wrap} data-lodge-upgrade data-variant={variant}>
       {construction ? (
         <p role="status" className={variant === "compact" ? "text-sm font-bold" : "font-bold"}>
-          Tier {construction.toTier} is going up. {construction.nightsRemaining}{" "}
-          {construction.nightsRemaining === 1 ? "night" : "nights"} to go.
+          Tier {construction.toTier} underway.{" "}
+          {construction.nightsRemaining}{" "}
+          {construction.nightsRemaining === 1 ? "night" : "nights"} left.
         </p>
       ) : next && payment && (
         <>
@@ -67,9 +70,27 @@ export function LodgeUpgradeControl({
               }}
             />
           ) : (
-            <PrimaryButton className="min-h-11" onClick={() => setReview(true)}>
-              Review Tier {next} upgrade
-            </PrimaryButton>
+            <div className="space-y-2">
+              <p className="text-sm font-extrabold">{LODGE_TIERS[next].label}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
+                  {formatMoney(payment.deposit)} now, {formatMoney(payment.first)} x2 nights
+                </span>
+                {(stallGain > 0 || padGain > 0) && (
+                  <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
+                    +{stallGain} parking, +{padGain} annex {padGain === 1 ? "pad" : "pads"}
+                  </span>
+                )}
+                {unlocks.length > 0 && (
+                  <span className="chip px-2 py-0.5 text-xs font-bold [--lift:2px]">
+                    {unlocks.join(", ")}
+                  </span>
+                )}
+              </div>
+              <PrimaryButton className="min-h-11" onClick={() => setReview(true)}>
+                Review Tier {next} upgrade
+              </PrimaryButton>
+            </div>
           )}
         </>
       )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
-import { MOUNTAIN_CALENDARS, dayLabel } from "@/game/calendar";
+import { dayLabel, seasonCalendar } from "@/game/calendar";
 import { readActiveSlot } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { closeOffice, OFFICE_TABS, setOfficeTab, useOffice, type OfficeTabId } from "@/ui/officeStore";
@@ -20,7 +20,7 @@ function TabPanel({ tab }: { tab: OfficeTabId }) {
   const state = useGameStore();
   switch (tab) {
     case "Desk":
-      return <><DeskTab /><ReplayNotes /></>;
+      return <DeskTab />;
     case "Money":
       return <Money s={state} />;
     case "Stats":
@@ -49,21 +49,21 @@ function Slots({ onLeave, onBack }: { onLeave: () => void; onBack: () => void })
   return (
     <section aria-label="Save slots" className="flex flex-col gap-3">
       <p className="panel px-4 py-3 text-[1rem] font-bold leading-snug">
-        This winter saves to slot {slot} as you play.
+        Auto-saving to slot {slot}.
       </p>
       <p className="px-1 text-[0.95rem] font-bold leading-snug">
-        To load, export or delete a save, go to the menu. Your winter is saved first.
+        Return to the title menu to switch, export, or delete saves.
       </p>
       <div className="flex gap-2">
         <button type="button" onClick={onBack} className={`${HEADER_BTN} flex-1`}>
-          Stay in the Office
+          Back to Office
         </button>
         <button
           type="button"
           onClick={onLeave}
           className={`${HEADER_BTN} key-solid flex-1 [--key-fill:var(--barn-deep)] [--key-ink:#fff]`}
         >
-          Go to the menu
+          Title menu
         </button>
       </div>
     </section>
@@ -77,7 +77,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
   const phase = useGameStore((s) => s.phase);
   const dayIndex = useGameStore((s) => s.dayIndex);
   const seasonLength = useGameStore((s) => s.seasonLength);
-  const mountainId = useGameStore((s) => s.mountainId);
+  const cal = useGameStore((s) => seasonCalendar(s));
   const [panel, setPanel] = useState<Panel>("tabs");
   const titleId = useId();
   const stripRef = useRef<HTMLDivElement>(null);
@@ -94,7 +94,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
     if (panel === "tabs") centreTab(stripRef.current, prefersReducedMotion());
   }, [panel, tab]);
 
-  const { weekday, date } = dayLabel(MOUNTAIN_CALENDARS[mountainId], dayIndex);
+  const { weekday, date } = dayLabel(cal, dayIndex);
   const back = (body: ReactNode, label: string) => (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -120,14 +120,20 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
     >
       <header className="border-b-[3px] border-ink px-3 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 id={titleId} ref={headingRef} tabIndex={-1} className="display min-w-[5rem] flex-1 text-[1.7rem] leading-none outline-none">
+          <h2 id={titleId} ref={headingRef} tabIndex={-1} className="display min-w-[5rem] flex-1 text-[1.45rem] sm:text-[1.7rem] leading-none outline-none">
             Dutch Hill Office
           </h2>
-          <button type="button" aria-pressed={panel === "settings"} onClick={() => setPanel("settings")} className={HEADER_BTN}>
+          <button
+            type="button"
+            aria-pressed={panel === "settings"}
+            onClick={() => setPanel("settings")}
+            className={`${HEADER_BTN} px-2.5 sm:px-3`}
+          >
             Settings
           </button>
           <button type="button" aria-pressed={panel === "slots"} onClick={() => setPanel("slots")} className={HEADER_BTN}>
-            Save slots
+            <span className="sm:hidden">Saves</span>
+            <span className="hidden sm:inline">Save slots</span>
           </button>
           <button
             type="button"
@@ -148,7 +154,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
           ref={stripRef}
           role="tablist"
           aria-label="Office tabs"
-          className="flex shrink-0 snap-x gap-2 overflow-x-auto overscroll-x-contain px-3 py-2 [scrollbar-width:none]"
+          className="flex shrink-0 snap-x gap-2 overflow-x-auto overscroll-x-contain px-3 py-2 md:justify-center md:overflow-x-visible [scrollbar-width:none]"
         >
           {OFFICE_TABS.map((t) => (
             <button
@@ -176,9 +182,15 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
         aria-labelledby={panel === "tabs" ? `office-tab-${tab}` : undefined}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-2"
       >
-        <div className="mx-auto w-full max-w-xl space-y-3">
+        <div className="mx-auto w-full max-w-xl space-y-3 md:max-w-4xl">
           {panel === "tabs" && <TabPanel tab={tab} />}
-          {panel === "settings" && back(<div className="panel p-4"><SettingsControls /></div>, "Settings")}
+          {panel === "settings" && back(
+            <div className="flex flex-col gap-4">
+              <div className="panel p-4"><SettingsControls /></div>
+              <ReplayNotes />
+            </div>,
+            "Settings",
+          )}
           {panel === "slots" && back(<Slots onLeave={onLeave} onBack={() => setPanel("tabs")} />, "Save slots")}
         </div>
       </div>

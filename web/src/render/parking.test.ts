@@ -19,7 +19,7 @@ describe("assignStalls", () => {
     expect([first.length, second.length, third.length]).toEqual([30, 50, 80]);
     expect(second.slice(0, first.length)).toEqual(first);
     expect(third.slice(0, second.length)).toEqual(second);
-    expect(third.every(({ z }) => z < DUTCH_HILL_SITE.road.z - 0.8)).toBe(true);
+    expect(third.every(({ z }) => z > DUTCH_HILL_SITE.road.z + 0.5)).toBe(true);
 
     const guests = Array.from({ length: 31 }, (_, i) => g(`grow-${i}`, "queue", i));
     const before = assignStalls(new Map(), guests, first, shoulder);

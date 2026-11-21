@@ -1,6 +1,7 @@
 import { TALENT } from "./talents";
+import { TALENT_PICK_ORDER } from "./talentProgress";
 import type { OperatingCosts } from "./economy";
-import { DUTCH_HILL_CALENDAR, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
+import { calendarForSeason, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
 import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
@@ -8,7 +9,7 @@ import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
-import { SUMMIT_LINK_FIRST_DAY, SUMMIT_LINK_MIN_REPUTATION, type SummitLinkDecision } from "./summitLink";
+import { SUMMIT_LINK_MIN_REPUTATION, summitLinkFirstDay, type SummitLinkDecision } from "./summitLink";
 import { runEnergyCost, runSkiMinutes } from "./trails";
 import { pickSkiRoute } from "./trailNetwork";
 import {
@@ -68,12 +69,12 @@ export function formatClock(totalMinutes: number): string {
   return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
 }
 
-export function weekdayLabel(dayIndex: number): string {
-  return weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
+export function weekdayLabel(dayIndex: number, seasonLength = 28): string {
+  return weekdayForDay(calendarForSeason("dutch_hill", seasonLength), dayIndex);
 }
 
-export function isWeekend(dayIndex: number): boolean {
-  const weekday = weekdayForDay(DUTCH_HILL_CALENDAR, dayIndex);
+export function isWeekend(dayIndex: number, seasonLength = 28): boolean {
+  const weekday = weekdayForDay(calendarForSeason("dutch_hill", seasonLength), dayIndex);
   return weekday === "Sat" || weekday === "Sun";
 }
 
@@ -263,7 +264,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       return reopensLater ? { ...joinLine(guest), joinedQueueAtMin: now } : goHome(guest);
     }
     if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
-      const stop = visit(guest, ["cafe", "warming_hut"], true);
+      const stop = visit(guest, ["cafe", "warming_hut", "apres_bar"], true);
       if (stop) return stop;
     }
     return joinLine(guest);
@@ -295,7 +296,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const returning = {
           ...g,
           ...(asset?.id === "ski_school" ? { schoolLessonCompleted: true } : {}),
-          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut") && g.visitMinutes !== 15
+          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar") && g.visitMinutes !== 15
             ? Math.min(1, g.energy + 0.35 * (asset.attachPad == null ? 1 : 1.05)) : g.energy,
         };
         return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
@@ -306,7 +307,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         if (waited > 12 && (g.balks ?? 0) < 2) {
           const next = visit({
             ...g, waitMin: g.waitMin + waited, waitCount: g.waitCount + 1, joinedQueueAtMin: undefined,
-          }, ["cafe", "warming_hut"], true);
+          }, ["cafe", "warming_hut", "apres_bar"], true);
           if (next) return next;
         }
         return g;
@@ -388,7 +389,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
           ? walkDurationMin(walkToLiftPath(trail?.path, destination), TERRAIN)
           : 0;
         if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
-          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut"]);
+          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut", "apres_bar"]);
           if (stop) return stop;
         }
         const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
@@ -591,12 +592,10 @@ export function applyOvernight(opts: {
   };
 }
 
-function learnNextTalent(owned: string[]) {
-  return CREW_TALENTS.find((t) => !t.learned(owned)) ?? null;
-}
-
 export function nextTalentName(owned: string[]): string | null {
-  return learnNextTalent(owned)?.name ?? null;
+  const nextId = TALENT_PICK_ORDER.find((id) => !owned.includes(id));
+  if (!nextId) return null;
+  return CREW_TALENTS.find((t) => t.id === nextId)?.name ?? null;
 }
 
 /**
@@ -632,6 +631,7 @@ export function fareDemandMultiplier(
 
 export type ArrivalInputs = {
   calendar?: CalendarDef;
+  seasonLength?: number;
   dayIndex: number;
   fare: FarePreset;
   snowQuality: number;
@@ -644,7 +644,7 @@ export type ArrivalInputs = {
 };
 
 function arrivalCount(opts: ArrivalInputs, noise: number): number {
-  const calendar = opts.calendar ?? DUTCH_HILL_CALENDAR;
+  const calendar = opts.calendar ?? calendarForSeason("dutch_hill", opts.seasonLength ?? 28);
   const kind = dayKind(calendar, opts.dayIndex);
   const weekend = kind !== "weekday";
   let base = weekend ? 28 : 22;
@@ -700,7 +700,7 @@ export function readyStoryBeat(input: BeatCheckInput): StoryBeatId | null {
 }
 
 function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
-  const calendar = input.calendar ?? DUTCH_HILL_CALENDAR;
+  const calendar = input.calendar ?? calendarForSeason("dutch_hill", input.seasonLength ?? 28);
   switch (id) {
     case "first_load":
       return input.liftsOpen >= 1 && input.completedRuns >= 5;
@@ -711,7 +711,8 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
-      return input.reputation >= SUMMIT_LINK_MIN_REPUTATION && input.dayIndex >= SUMMIT_LINK_FIRST_DAY &&
+      return input.reputation >= SUMMIT_LINK_MIN_REPUTATION &&
+        input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length) &&
         input.dayIndex < (input.seasonLength ?? calendar.length);
     default:
       return false;
@@ -737,6 +738,8 @@ export function emptyDayStats(): DayStats {
     refuels: 0,
     balked: 0,
     seatsFullMin: 0,
+    ticketBasePosted: 0,
+    schoolBusPosted: 0,
   };
 }
 

@@ -6,6 +6,9 @@ import { SNOW_TEX_SEGMENTS, SNOW_TEX_TRAILS } from "./snowTexture";
 
 const color = (hex: string) => new THREE.Color(hex);
 
+/** When false, corridor condition art defers to the Conditions map overlay (row O3). */
+export const MOUNTAIN_TRAIL_CONDITIONING = false;
+
 export const snowUniforms = {
   uSnow: { value: null as THREE.DataTexture | null },
   uTrailCount: { value: 0 },
@@ -93,6 +96,7 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
 
 /** GPU snow patches and groom stripes (row 30). Chain before overlay / lease dim patches. */
 export function patchSnowMaterial<T extends THREE.Material>(material: T): T {
+  if (!MOUNTAIN_TRAIL_CONDITIONING) return material;
   const previous = material.onBeforeCompile;
   material.onBeforeCompile = (shader, renderer) => {
     previous?.call(material, shader, renderer);
@@ -111,5 +115,6 @@ export function patchSnowMaterial<T extends THREE.Material>(material: T): T {
 
 /** Writes night mood into the snow shader each frame. */
 export function syncSnowNightUniform(): void {
+  if (!MOUNTAIN_TRAIL_CONDITIONING) return;
   snowUniforms.uNight.value = sceneMood.night;
 }

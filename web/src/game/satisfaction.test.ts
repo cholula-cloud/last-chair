@@ -228,6 +228,7 @@ describe("day satisfaction", () => {
 describe("problem line", () => {
   const facts = {
     avgWaitMin: 7.4,
+    dispatched: 30,
     snowQuality: 0.3,
     fare: "expensive" as const,
     turnedAway: 3,
@@ -250,18 +251,27 @@ describe("problem line", () => {
 
   it("names a cash loss when no satisfaction term is a problem, and only then", () => {
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: -105 })).toBe(
-      "Lost $105 today. Running costs beat revenue on a quiet day.",
+      "Lost $105 today. Daily costs outpaced revenue on a quiet day.",
     );
     expect(problemLine(ZERO_TERMS, { ...facts, cashDelta: 40 })).toBe(NO_PROBLEM);
-    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Lift lines ran long");
+    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, { ...facts, cashDelta: -105 })).toContain("Lift lines averaged");
+  });
+
+  it("does not blame queues at 5 min or less even when the term is negative", () => {
+    const mild = { ...facts, avgWaitMin: 5, dispatched: 40 };
+    const short = { ...facts, avgWaitMin: 2, dispatched: 40 };
+    expect(problemLine({ ...ZERO_TERMS, queue: -12 }, mild)).toBe(NO_PROBLEM);
+    expect(biggestProblem({ ...ZERO_TERMS, queue: -12, snow: 1 }, mild)).toBeNull();
+    expect(problemLine({ ...ZERO_TERMS, queue: -12 }, short)).toBe(NO_PROBLEM);
+    expect(biggestProblem({ ...ZERO_TERMS, queue: -20, snow: -12 }, { ...facts, avgWaitMin: 5.1, dispatched: 40 })).toBe("queue");
   });
 
   it("quotes the real number in each sentence", () => {
-    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("7.4 min a ride");
+    expect(problemLine({ ...ZERO_TERMS, queue: -10 }, facts)).toContain("7.4 min per ride");
     expect(problemLine({ ...ZERO_TERMS, snow: -10 }, facts)).toContain("30%");
     expect(problemLine({ ...ZERO_TERMS, value: -10 }, facts)).toContain("$62");
-    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, facts)).toContain("3 were turned away");
-    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, { ...facts, turnedAway: 0 })).toContain("2.5 runs");
+    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, facts)).toContain("3 missed last chair");
+    expect(problemLine({ ...ZERO_TERMS, runs: -10 }, { ...facts, turnedAway: 0 })).toContain("2.5 runs each");
     expect(problemLine({ ...ZERO_TERMS, arrivalMood: -10 }, facts)).toContain("60");
   });
 });
@@ -389,7 +399,7 @@ describe("whole days", () => {
       expect(r.satisfaction).toBeGreaterThan(65);
       expect(r.satisfaction).toBeLessThan(85);
       // A weekday near break-even may also name a small cash loss; no satisfaction term is blamed.
-      expect(r.problem).toMatch(/^(Good day on the hill\.|Lost \$\d+ today)/);
+      expect(r.problem).toMatch(/^(Smooth day on the hill\.|Lost \$\d+ today)/);
     }
   });
 
@@ -397,7 +407,7 @@ describe("whole days", () => {
     for (const seed of seeds) {
       const r = playDay(seed, SATURDAY).nightRecap!;
       expect(r.breakdown.queue).toBeLessThan(-10);
-      expect(r.problem).toContain("Lift lines ran long");
+      expect(r.problem).toContain("Lift lines averaged");
       expect(r.satisfaction).toBeLessThan(65);
     }
   });
@@ -405,9 +415,9 @@ describe("whole days", () => {
   it("a thin-snow day blames the snow, a steep-fare day the ticket", () => {
     for (const seed of seeds) {
       const thin = playDay(seed, WEEKDAY, { snowQuality: 0.3 }, true).nightRecap!;
-      expect(thin.problem).toContain("Bump up Snow & service tonight");
+      expect(thin.problem).toContain("Bump up overnight snow prep tonight");
       expect(thin.facts.snowQuality).toBeLessThan(0.3);
-      expect(thin.problem).toContain(`(quality ${Math.round(thin.facts.snowQuality * 100)}%)`);
+      expect(thin.problem).toContain(`(${Math.round(thin.facts.snowQuality * 100)}% quality)`);
       const steep = playDay(seed, WEEKDAY, { fare: "expensive" }, true).nightRecap!;
       expect(steep.problem).toContain("steep");
       expect(steep.problem).toContain("$62");
@@ -416,11 +426,11 @@ describe("whole days", () => {
 
   it("the problem is always the most negative term of the stored breakdown", () => {
     const keyword = {
-      queue: "Lift lines ran long",
-      snow: "Thin, scraped snow",
-      value: "ticket was steep",
-      runs: "barely got a run in",
-      arrivalMood: "sour mood",
+      queue: "Lift lines averaged",
+      snow: "overnight snow prep",
+      value: "too steep",
+      runs: "missed last chair",
+      arrivalMood: "rough mood",
     } as const;
     for (const seed of seeds) {
       for (const over of [{}, { snowQuality: 0.3 }, { fare: "expensive" as const }]) {

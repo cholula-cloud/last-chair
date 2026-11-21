@@ -6,6 +6,7 @@ import { useShallow } from "zustand/react/shallow";
 import { ASSET_CATALOG } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { GUN_COST } from "@/game/guns";
+import { leaseBounds } from "@/game/lease";
 import { checkAssetPlacement, checkGunPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -227,6 +228,7 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
     phase: state.phase,
     dayIndex: state.dayIndex,
     lodgeTier: state.lodgeTier,
+    lodgeStyleId: state.lodgeStyleId,
   } : null));
   const dots = useMemo(() => {
     if (!mode) return [];

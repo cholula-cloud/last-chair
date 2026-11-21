@@ -3,6 +3,7 @@
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { KIT_GRIP_Y as MANIFEST_GRIP, KIT_MANIFEST, KIT_ROPE_Y as MANIFEST_ROPE } from "@/game/kitManifest";
 import { PALETTE } from "./palette";
 
 /**
@@ -20,52 +21,42 @@ export const LIFT_TOY_SCALE = 0.2 / (1.6 * METERS_TO_WORLD);
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 export const DRACO_PATH = `${BASE}/draco/`;
 
-/** Rope heights in the kit, metres above the asset origin. */
-export const KIT_ROPE_Y = { tower: 7.1, terminal: 4.3 } as const;
-export const KIT_GRIP_Y = { "t-bar": 2.31, "chair-double": 2.45 } as const;
+/** Rope heights in the kit, metres above the asset origin (from manifest v2). */
+export const KIT_ROPE_Y = {
+  tower: MANIFEST_ROPE.tower,
+  terminal: MANIFEST_ROPE.chairTerminal,
+  chairTerminal: MANIFEST_ROPE.chairTerminal,
+  surfaceTerminal: MANIFEST_ROPE.surfaceTerminal,
+} as const;
+export const KIT_GRIP_Y = MANIFEST_GRIP;
 /** T-bar crossbar height above the asset origin. */
 export const KIT_TBAR_BAR_Y = 0.32;
 
-export const KIT_ASSETS = [
+const _kitNames = KIT_MANIFEST.assets.map((e) => e.name);
+export const KIT_ASSETS = _kitNames as readonly KitAsset[];
+export type KitAsset = (typeof _kitNames)[number];
+
+const REQUIRED_GAME_ASSETS = [
   "base-lodge",
-  "clapboard-house",
-  "cafe",
-  "ski-shop",
-  "warming-hut",
   "lift-tower",
   "lift-terminal-bottom",
   "lift-terminal-top",
+  "surface-terminal-bottom",
+  "surface-terminal-top",
   "t-bar",
   "chair-double",
+  "platter",
   "skier",
-  "snow-gun",
-  "snowcat",
-  "lamp-post",
-  "pine-a",
-  "pine-b",
-  "pine-c",
-  // Kit v1.1: loaded on demand (not preloaded) until a renderer uses them.
-  "lodge-tier-2",
-  "lodge-tier-3",
-  "a-frame-lodge",
-  "ticket-booth",
-  "patrol-hut",
-  "maintenance-garage",
-  "birch",
-  "sedan",
-  "wagon",
-  "pickup",
-  "sign-post",
-  "area-sign",
-  "skier-kid",
-  "skier-coat",
-  "boarder",
-  "boarder-kid",
-] as const;
-export type KitAsset = (typeof KIT_ASSETS)[number];
+  "trail-sign",
+  "cafe",
+  "cafe-chalet70s",
+] as const satisfies readonly KitAsset[];
+for (const name of REQUIRED_GAME_ASSETS) {
+  if (!_kitNames.includes(name)) throw new Error(`manifest missing required kit: ${name}`);
+}
 
 /** Assets fetched at startup; the rest load when first used. */
-const PRELOAD_COUNT = KIT_ASSETS.indexOf("lodge-tier-2");
+const PRELOAD_COUNT = KIT_ASSETS.indexOf("lodge-tier-2") + 1;
 
 const url = (name: KitAsset) => `${BASE}/models/${name}.glb`;
 

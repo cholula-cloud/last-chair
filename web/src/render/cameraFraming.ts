@@ -120,11 +120,15 @@ export function keyPoints(portrait = false): Vec3[] {
     z,
   });
   const lot = lotFarCorner(SITE);
+  const lotRoadEdge = {
+    x: SITE.arrival.center.x,
+    z: SITE.arrival.center.z - SITE.arrival.size.d / 2,
+  };
   const summit = TERRAIN.toWorld(DUTCH_HILL.summit);
   const pts: Vec3[] = [
     onTerrain(TERRAIN.base.x, TERRAIN.base.z, LIFT_TERMINAL_H),
+    onTerrain(lotRoadEdge.x, lotRoadEdge.z, 0),
     onTerrain(lot.x, lot.z, 0),
-    onTerrain(SITE.arrival.center.x, SITE.arrival.center.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0),
     onTerrain(LODGE.x, LODGE.z, 0.9),
     onTerrain(summit.x, summit.z, 0),

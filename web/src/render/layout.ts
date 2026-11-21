@@ -1,7 +1,9 @@
 /** World-space layout constants; positions come from per-mountain site data. */
 
 import { TERRAIN } from "@/game/terrain";
-import { DUTCH_HILL_SITE } from "@/game/mountains/dutchHill.site";
+import { DUTCH_HILL_BUILDING_STYLE, DUTCH_HILL_SITE } from "@/game/mountains/dutchHill.site";
+
+export const MOUNTAIN_BUILDING_STYLE = DUTCH_HILL_BUILDING_STYLE;
 
 const B = DUTCH_HILL_SITE.buildings;
 

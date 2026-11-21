@@ -97,6 +97,11 @@ async function buildMenu(page) {
   if (!(await page.locator("[data-build-sheet]").isVisible())) await opener.click();
 }
 
+async function buildSection(page, id) {
+  const tab = page.getByRole("group", { name: "Build sections" }).getByRole("button", { name: id });
+  if (await tab.isVisible()) await press(tab);
+}
+
 export async function project(page, locations) {
   const element = page.locator("canvas").first();
   return element.evaluate((canvas, points) => {
@@ -277,8 +282,9 @@ export async function buildOpening(page, cdp) {
   await click(page, "Place lift");
   await page.locator('[data-placement-kind="lift"]').waitFor();
   const ridge = world(REFERENCE_TOPS[0].x, REFERENCE_TOPS[0].z);
+  const baseLoad = world(TERRAIN.base.x, TERRAIN.base.z);
+  await drag(page, cdp, [baseLoad]);
   await drag(page, cdp, [ridge]);
-  await moveDraftMap(page, cdp, ridge, "Place lift");
   await confirmDraft(page, "lift", /^Place for /);
   const withLift = (await save(page)).state;
   assert.equal(withLift.lifts.length, initial.lifts.length + 1, "The lift needs to be saved");
@@ -354,6 +360,7 @@ async function upgrade(page, cdp, engine) {
   });
   await openPlay(page);
   await buildMenu(page);
+  await buildSection(page, "Base");
   const rentals = button(page, /^Rentals\b/i);
   assert(await rentals.isDisabled(), "Rentals should require the Tier 2 lodge");
   await click(page, "Review Tier 2 upgrade");
@@ -379,6 +386,7 @@ async function upgrade(page, cdp, engine) {
   assert.equal(state.lodgeUpgrade, null);
 
   await buildMenu(page);
+  await buildSection(page, "Base");
   assert(await rentals.isEnabled(), "Tier 2 should unlock Rentals");
   await press(rentals);
   await page.locator('[data-placement-kind="asset"]').waitFor();

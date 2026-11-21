@@ -3,6 +3,8 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { applyReduceMotionFromSettings, type ReduceMotionPref } from "@/ui/motion";
+import type { BuildingStyleId } from "@/game/base";
+import { MOUNTAIN_BUILDING_STYLE } from "@/render/layout";
 
 export type GameSpeed = 1 | 2 | 4;
 export const SPEEDS: readonly GameSpeed[] = [1, 2, 4];
@@ -24,6 +26,8 @@ export type Settings = {
   radioEnabled: boolean;
   reduceMotion: ReduceMotionPref;
   defaultSpeed: GameSpeed;
+  /** Village lodge + default new venue look (mountain style when unset). */
+  buildingStyle: BuildingStyleId;
 };
 
 type SettingsStore = Settings & {
@@ -45,6 +49,7 @@ export const DEFAULT_SETTINGS: Settings = {
   radioEnabled: true,
   reduceMotion: "system",
   defaultSpeed: 1,
+  buildingStyle: MOUNTAIN_BUILDING_STYLE,
 };
 
 /** Keeps stored values in range so a hand-edited key cannot break the UI. */
@@ -80,6 +85,10 @@ export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "
             ? DEFAULT_SETTINGS.reduceMotion
             : DEFAULT_SETTINGS.reduceMotion,
     defaultSpeed: speed,
+    buildingStyle:
+      r.buildingStyle === "chalet70s" || r.buildingStyle === "1950s-timber"
+        ? r.buildingStyle
+        : DEFAULT_SETTINGS.buildingStyle,
   };
 }
 

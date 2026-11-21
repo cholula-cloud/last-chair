@@ -1,4 +1,4 @@
-import { dayLabel, MOUNTAIN_CALENDARS } from "./calendar";
+import { calendarForSeason, dayLabel, isOperatingDay, operatingDayIndex } from "./calendar";
 import { isLiftOperational } from "./lifts";
 import type { SatTerms } from "./satisfaction";
 import { readSnow } from "./snow";
@@ -73,19 +73,26 @@ export type CalendarCell = {
   date: string;
   holiday: string | null;
   weather: WeatherKind | null;
-  status: "settled" | "today" | "upcoming";
+  status: "settled" | "today" | "upcoming" | "closed";
   report: DayReport | null;
 };
 
 export function seasonCalendarCells(state: GameState): CalendarCell[] {
-  const cal = MOUNTAIN_CALENDARS[state.mountainId];
-  const byDay = new Map(state.dayHistory.map((d) => [d.day, d]));
+  const cal = calendarForSeason(state.mountainId, state.seasonLength);
+  const byOperatingDay = new Map(state.dayHistory.map((d) => [d.day, d]));
   const cells: CalendarCell[] = [];
   for (let day = 1; day <= state.seasonLength; day++) {
     const meta = dayLabel(cal, day);
-    const report = byDay.get(day) ?? null;
-    const status = report ? "settled" : day === state.dayIndex ? "today" : "upcoming";
-    const weather = report ? report.weather : day === state.dayIndex ? state.weather : null;
+    const open = isOperatingDay(cal, day);
+    const report = open ? byOperatingDay.get(operatingDayIndex(cal, day)) ?? null : null;
+    const status = !open
+      ? "closed"
+      : report
+        ? "settled"
+        : day === state.dayIndex
+          ? "today"
+          : "upcoming";
+    const weather = report ? report.weather : open && day === state.dayIndex ? state.weather : null;
     cells.push({
       day,
       weekday: meta.weekday,

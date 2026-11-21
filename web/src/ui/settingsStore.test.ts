@@ -3,7 +3,7 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
-    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: "on" as const, defaultSpeed: 4 as const };
+    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: "on" as const, defaultSpeed: 4 as const, buildingStyle: "chalet70s" as const };
     expect(cleanSettings(s)).toEqual({ ...DEFAULT_SETTINGS, ...s });
   });
 

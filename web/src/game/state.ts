@@ -1,6 +1,8 @@
 import type { WinterRecord } from "./winterMemory";
+import { DEFAULT_STYLE } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
-import { MOUNTAIN_CALENDARS, type MountainId } from "./calendar";
+import { mountainDefaultStyle } from "./styles";
+import { calendarForSeason, MOUNTAIN_CALENDARS, operatingDayIndex, type MountainId } from "./calendar";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { Loan, Payable } from "./economy";
 import type { ClearingCell } from "./clearing";
@@ -119,6 +121,7 @@ export type PersistedState = {
   founderId: FounderId | null;
   buildings: BuildingId[];
   lodgeTier: LodgeTier;
+  lodgeStyleId: string;
   lodgeName?: string;
   lodgeUpgrade: LodgeUpgrade | null;
   assets: PlacedAsset[];
@@ -150,6 +153,8 @@ export type PersistedState = {
   gunsVisible: boolean;
   groomVisible: boolean;
   seasonLength: number;
+  /** Playable open day index (1…N). Legacy saves without the field derive from civil dayIndex. */
+  operatingDayIndex: number;
   /** Internal state of the seeded RNG (see rng.ts). */
   rngState: number;
   /** The open night sheet, so a reload during the night restores it. */
@@ -185,6 +190,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
   return {
     mountainId,
     dayIndex: 1,
+    operatingDayIndex: 1,
     clockMin: DAY_START_MIN,
     phase: "setup",
     paused: true,
@@ -217,6 +223,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     founderId: null,
     buildings: [],
     lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
+    lodgeStyleId: mountainDefaultStyle(mountainId),
     lodgeUpgrade: null,
     assets: [],
     guns: [],
@@ -279,6 +286,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     founderId: state.founderId,
     buildings: state.buildings,
     lodgeTier: state.lodgeTier,
+    lodgeStyleId: state.lodgeStyleId,
     ...(state.lodgeName ? { lodgeName: state.lodgeName } : {}),
     lodgeUpgrade: state.lodgeUpgrade,
     assets: state.assets,
@@ -306,6 +314,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     gunsVisible: state.gunsVisible,
     groomVisible: state.groomVisible,
     seasonLength: state.seasonLength,
+    operatingDayIndex: state.operatingDayIndex,
     rngState: state.rngState,
     nightRecap: state.nightRecap,
     surprise: state.surprise ?? null,
@@ -319,11 +328,22 @@ export function toPersisted(state: PersistedState): PersistedState {
 /** Merge a validated saved slice into the current session. */
 export function hydrate<T extends GameState>(p: PersistedState | undefined, current: T): T {
   if (!p) return current;
-  const next: T = { ...current, ...p, lastWinter: p.lastWinter, phase: p.founderId ? p.phase : "setup" };
+  const cal = calendarForSeason(p.mountainId, p.seasonLength);
+  const openDay = p.operatingDayIndex ?? operatingDayIndex(cal, p.dayIndex);
+  const next: T = {
+    ...current,
+    ...p,
+    operatingDayIndex: openDay,
+    lastWinter: p.lastWinter,
+    phase: p.founderId ? p.phase : "setup",
+  };
   if (p.lodgeName === undefined) delete next.lodgeName;
+  if (p.lodgeStyleId === undefined) {
+    next.lodgeStyleId = mountainDefaultStyle(p.mountainId);
+  }
   return next;
 }
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 14;

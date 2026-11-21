@@ -35,6 +35,8 @@ export const APRON_PAD = 2;
 
 const MEADOW = { cx: 1.8, cz: 9.6, rx: 7, rz: 4 };
 
+const SIZE_MUL = [0.88, 1, 1.18] as const;
+
 export type TreeSpot = {
   x: number;
   z: number;
@@ -42,7 +44,8 @@ export type TreeSpot = {
   rot: number;
   tint: number;
   birch: boolean;
-  variant: 0 | 1 | 2;
+  variant: 0 | 1 | 2 | 3;
+  size: 0 | 1 | 2;
 };
 
 type Candidate = { x: number; z: number; keep: number; variant: number; birch: boolean };
@@ -96,7 +99,7 @@ function chunkCandidates(cx: number, cz: number): Candidate[] {
       const z = gz + jz * GRID_SPACING * 0.88;
       const keep = hash01(seed, i, 3);
       const birch = hash01(seed, i, 4) < 0.25;
-      const variant = hash32(seed, i, 5) % 3;
+      const variant = hash32(seed, i, 5) % 4;
       out.push({ x, z, keep, variant, birch });
       i++;
     }
@@ -170,14 +173,16 @@ export function forested(x: number, z: number, clearings: ForestClearings): bool
 }
 
 function spotFrom(c: Candidate, scale: number): TreeSpot {
+  const size = (Math.floor(hash01(c.x, c.z, 6) * 3) % 3) as 0 | 1 | 2;
   return {
     x: c.x,
     z: c.z,
-    s: (0.78 + hash01(c.x, c.z) * 0.42) * scale,
+    s: (0.78 + hash01(c.x, c.z) * 0.42) * scale * SIZE_MUL[size],
     rot: hash01(c.x, c.z, 2) * Math.PI * 2,
     tint: 0.86 + hash01(c.x, c.z, 3) * 0.2,
     birch: c.birch,
-    variant: c.variant as 0 | 1 | 2,
+    variant: c.variant as 0 | 1 | 2 | 3,
+    size,
   };
 }
 
