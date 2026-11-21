@@ -6,17 +6,16 @@ import { talentNeedLabel } from "@/game/content";
 import { useGameStore } from "@/game/store";
 import {
   canUnlockTalent,
+  CREW_COLUMN_MIN_TIER,
   CREW_POINT_COST,
+  talentBlockReason,
   talentRequiresTier,
+  talentsForCrew,
 } from "@/game/talentProgress";
 import { CREW_ROLES, CREW_TALENTS, type CrewMember } from "@/game/talents";
 
 const CREW_ORDER: CrewMember[] = ["Frank", "Dana", "Elena"];
 type CrewFilter = "All" | CrewMember;
-
-function talentsFor(member: CrewMember) {
-  return CREW_TALENTS.filter((t) => t.crew === member);
-}
 
 function SkillCard({ talentId }: { talentId: (typeof CREW_TALENTS)[number]["id"] }) {
   const state = useGameStore();
@@ -49,15 +48,35 @@ function SkillCard({ talentId }: { talentId: (typeof CREW_TALENTS)[number]["id"]
           >
             Unlock ({CREW_POINT_COST} pt)
           </button>
-        ) : state.lodgeTier < tier ? (
-          <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
-            Needs {LODGE_TIERS[tier].label}
-          </span>
-        ) : (
-          <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
-            Locked
-          </span>
-        )}
+        ) : (() => {
+          const block = talentBlockReason(state, talent.id);
+          if (block === "column") {
+            return (
+              <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
+                Needs {LODGE_TIERS[CREW_COLUMN_MIN_TIER[talent.crew]].label}
+              </span>
+            );
+          }
+          if (block === "lodge") {
+            return (
+              <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
+                Needs {LODGE_TIERS[tier].label}
+              </span>
+            );
+          }
+          if (block === "prerequisite") {
+            return (
+              <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
+                Needs skill above
+              </span>
+            );
+          }
+          return (
+            <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
+              Need a crew point
+            </span>
+          );
+        })()}
       </div>
     </div>
   );
@@ -67,7 +86,7 @@ export function TalentTreePanel() {
   const state = useGameStore();
   const [filter, setFilter] = useState<CrewFilter>("All");
   const byCrew = useMemo(
-    () => Object.fromEntries(CREW_ORDER.map((m) => [m, talentsFor(m)])) as Record<CrewMember, typeof CREW_TALENTS>,
+    () => Object.fromEntries(CREW_ORDER.map((m) => [m, talentsForCrew(m)])) as Record<CrewMember, typeof CREW_TALENTS>,
     [],
   );
 
@@ -80,7 +99,8 @@ export function TalentTreePanel() {
           </span>
         </p>
         <p className="text-xs font-bold leading-snug text-ink-soft">
-          Earn 1 point each night you sleep, plus 1 when a lodge upgrade opens. Spend points to unlock skills below.
+          Earn about one point per night — not enough to max every column. Go deep in one crew track or spread out.
+          Patrol skills need Lodge Tier 2; advanced ops and guest skills need Tier 2–3.
         </p>
       </div>
 
@@ -112,6 +132,11 @@ export function TalentTreePanel() {
             <div key={member} className="space-y-2">
               <h4 className="text-sm font-extrabold text-ink">
                 {member}: {role.role}
+                {CREW_COLUMN_MIN_TIER[member] > 1 && state.lodgeTier < CREW_COLUMN_MIN_TIER[member] ? (
+                  <span className="ml-1 text-xs font-bold text-ink-soft">
+                    (opens at {LODGE_TIERS[CREW_COLUMN_MIN_TIER[member]].label})
+                  </span>
+                ) : null}
               </h4>
               <ul className="flex flex-col gap-2">
                 {byCrew[member].map((talent) => (
