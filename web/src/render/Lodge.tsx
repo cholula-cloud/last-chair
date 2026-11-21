@@ -64,12 +64,29 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
 
 type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
-function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
+/** Main lodge GLB per sim tier; must stay in sync with `Village` scene kits. */
+export const LODGE_KIT_BY_TIER = ["base-lodge", "lodge-tier-2", "lodge-tier-3"] as const satisfies readonly KitAsset[];
+
+export function lodgeKitName(tier: LodgeTier): KitAsset {
+  return LODGE_KIT_BY_TIER[tier - 1];
+}
+
+/** Kit assets the village merge loop must register (prevents tier lodge skip). */
+export const VILLAGE_SCENE_KITS = [
+  ...LODGE_KIT_BY_TIER,
+  "clapboard-house",
+  "cafe",
+  "ski-shop",
+  "warming-hut",
+  "lamp-post",
+] as const satisfies readonly KitAsset[];
+
+export function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
   const list: Placement[] = [
     {
-      name: (["base-lodge", "lodge-tier-2", "lodge-tier-3"] as const)[tier - 1],
+      name: lodgeKitName(tier),
       x: LODGE.x,
       z: LODGE.z + 0.05,
       yaw: 0,
@@ -94,25 +111,9 @@ function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Pla
   return list;
 }
 
-function lodgeDetails(tier: LodgeTier, construction: boolean): Part[] {
+function lodgeDetails(construction: boolean): Part[] {
   const parts: Part[] = [];
-  if (tier >= 2) {
-    parts.push(
-      { geo: box(1.21, 0.12, 0.33), pos: [0, 0.07, 0.60], color: TIMBER },
-      { geo: box(0.8, 0.13, 0.04), pos: [0, 0.49, 0.56], color: TRIM },
-    );
-    for (const x of [-0.52, -0.23, 0.23, 0.52]) {
-      parts.push({ geo: box(0.038, 0.21, 0.038), pos: [x, 0.23, 0.74], color: TRIM });
-    }
-  }
-  if (tier === 3) {
-    for (const x of [-0.65, 0.65]) {
-      parts.push(
-        { geo: box(0.023, 0.55, 0.023), pos: [x, 0.34, 0.78], color: TRIM },
-        { geo: box(0.025, 0.20, 0.21), pos: [x, 0.51, 0.88], color: "#9d3627" },
-      );
-    }
-  }
+  // Tier 2/3 meshes include wings, trim, and chimneys; only draw upgrade scaffolding here.
   if (construction) {
     const color = "#ce9a4b";
     for (const x of [-0.74, 0.74]) {
@@ -169,6 +170,8 @@ export function Village() {
   const construction = useGameStore((s) => s.lodgeUpgrade !== null);
 
   const lodgeKit = useKit("base-lodge");
+  const lodgeTier2Kit = useKit("lodge-tier-2");
+  const lodgeTier3Kit = useKit("lodge-tier-3");
   const houseKit = useKit("clapboard-house");
   const cafeKit = useKit("cafe");
   const shopKit = useKit("ski-shop");
@@ -192,6 +195,8 @@ export function Village() {
   const { body, glow, pickMeshes } = useMemo(() => {
     const scenes: Partial<Record<KitAsset, THREE.Object3D>> = {
       "base-lodge": lodgeKit,
+      "lodge-tier-2": lodgeTier2Kit,
+      "lodge-tier-3": lodgeTier3Kit,
       "clapboard-house": houseKit,
       cafe: cafeKit,
       "ski-shop": shopKit,
@@ -210,11 +215,11 @@ export function Village() {
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
       if (p.asset) pickMeshes.push({ placement: p, geometry: kit.body, y });
     }
-    const additions = [...lodgeDetails(tier, construction), ...venueDetails(assets)];
+    const additions = [...lodgeDetails(construction), ...venueDetails(assets)];
     if (additions.length > 0) bodies.push(merge(additions));
 
     return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
-  }, [assets, tier, construction, lodgeKit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
+  }, [assets, tier, construction, lodgeKit, lodgeTier2Kit, lodgeTier3Kit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
 
   useEffect(
     () => () => {
