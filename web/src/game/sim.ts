@@ -1,4 +1,5 @@
 import { TALENT } from "./talents";
+import { TALENT_PICK_ORDER } from "./talentProgress";
 import type { OperatingCosts } from "./economy";
 import { calendarForSeason, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
@@ -591,12 +592,10 @@ export function applyOvernight(opts: {
   };
 }
 
-function learnNextTalent(owned: string[]) {
-  return CREW_TALENTS.find((t) => !t.learned(owned)) ?? null;
-}
-
 export function nextTalentName(owned: string[]): string | null {
-  return learnNextTalent(owned)?.name ?? null;
+  const nextId = TALENT_PICK_ORDER.find((id) => !owned.includes(id));
+  if (!nextId) return null;
+  return CREW_TALENTS.find((t) => t.id === nextId)?.name ?? null;
 }
 
 /**

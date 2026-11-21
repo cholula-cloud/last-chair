@@ -219,8 +219,8 @@ describe("applyOvernight", () => {
   it("earns a crew point instead of auto-learning talents", () => {
     expect(run("mid").talentLearned).toBeNull();
     expect(run("mid").crewPointsEarned).toBe(1);
-    expect(run("mid").nextTalentHint).toBe(CREW_TALENTS[0].name);
-    expect(run("mid", { talentsOwned: ["rope_tow"] }).nextTalentHint).toBe(CREW_TALENTS[1].name);
+    expect(run("mid").nextTalentHint).toBe("Surface Lift Tune");
+    expect(run("mid", { talentsOwned: ["rope_tow"] }).nextTalentHint).toBe("Wide Grooming Pass");
   });
 
   it("returns no hint once all talents are owned", () => {

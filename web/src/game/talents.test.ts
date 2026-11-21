@@ -4,6 +4,7 @@ import { CREW_TALENTS, talentDescription } from "./content";
 import { operatingCosts } from "./economy";
 import { liftCapacityPerHour } from "./lifts";
 import { acknowledgeBeat, openNight, pickCrewTalent, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
+import { canUnlockTalent } from "./talentProgress";
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
 import { freshTrail } from "./snow";
@@ -31,6 +32,9 @@ describe("crew order and operations", () => {
     state = pickCrewTalent(state, "rope_tow");
     expect(state.crewPoints).toBe(4);
     expect(state.talentsOwned).toEqual(["rope_tow"]);
+    expect(canUnlockTalent({ ...state, crewPoints: 1 }, "ticket_booth")).toBe(true);
+    expect(canUnlockTalent({ ...state, crewPoints: 1, lodgeTier: 2 }, "patrol_radio")).toBe(true);
+    expect(canUnlockTalent({ ...state, crewPoints: 1, lodgeTier: 1 }, "patrol_radio")).toBe(false);
     expect(talentDescription("Fast Wind Checks", { ...state, lodgeTier: 2 })).toContain("Needs a chairlift");
   });
   it("keeps unspent crew points after loading a save", () => {

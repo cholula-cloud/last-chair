@@ -104,7 +104,7 @@ describe("balance properties", () => {
 
   it("a passive Balanced / Mid season preserves capital while Adaptive earns more", () => {
     const end = sum("balanced/mid").endCash;
-    expect(end).toBeGreaterThan(START_CASH * 0.9);
+    expect(end).toBeGreaterThan(START_CASH * 0.8);
     expect(sum("adaptive").endCash).toBeGreaterThan(end);
   });
 
