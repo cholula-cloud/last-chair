@@ -38,8 +38,14 @@ import type { FollowedRef } from "./Guests";
 import { LIFT_TERMINAL_H } from "./layout";
 import { sceneCameraTarget } from "./sceneCamera";
 import { cameraBus } from "./cameraBus";
+import { cameraDebug, cameraDebugEnabled, inferLockReason, ORBIT_PAN_STATES } from "./cameraDebug";
 import { useCameraKeys } from "./useCameraKeys";
 import { useReducedMotion } from "./useReducedMotion";
+
+function orbitControlState(controls: OrbitControlsImpl): number | null {
+  const state = (controls as OrbitControlsImpl & { state?: number }).state;
+  return typeof state === "number" ? state : null;
+}
 
 /** Length of the paint tilt, in milliseconds. */
 const TILT_MS = 320;
@@ -72,6 +78,7 @@ export function CameraRig({
     };
   }, [aspect]);
   const returning = useRef(false);
+  const prevFollowId = useRef<string | null>(null);
   const wasFollowing = useRef(false);
   const suppressReturn = useRef(false);
   const userMoved = useRef(false);
@@ -105,11 +112,19 @@ export function CameraRig({
     if (pos) glideTo(new THREE.Vector3(pos.x, pos.y + 0.35, pos.z), FOCUS_DISTANCE);
     else goHome();
   }, [followedRef, glideTo, goHome]);
+  const clearAutomatedMotion = useCallback(() => {
+    returning.current = false;
+    glide.current = null;
+    cameraBus.cancelMotion?.();
+    cameraDebug.push("userOverride");
+  }, []);
+
   useCameraKeys({
     onFocus: focus,
     onHome: goHome,
     onUserMoved: () => {
       userMoved.current = true;
+      clearAutomatedMotion();
     },
   });
 
@@ -131,6 +146,11 @@ export function CameraRig({
       glide.current = null;
       cameraBus.cancelMotion?.();
       returning.current = false;
+      const state = orbitControlState(controls);
+      if (state !== null && ORBIT_PAN_STATES.has(state) && useGameStore.getState().followId) {
+        endFollow();
+        cameraDebug.push("panStartEndFollow");
+      }
     };
     const onEnd = () => {
       interacting.current = false;
@@ -141,7 +161,7 @@ export function CameraRig({
       controls.removeEventListener("start", onStart);
       controls.removeEventListener("end", onEnd);
     };
-  }, [controls]);
+  }, [controls, endFollow]);
 
   useEffect(() => {
     if (!controls) return;
@@ -352,12 +372,17 @@ export function CameraRig({
   }, [controls, get, home]);
 
   useEffect(() => {
+    const prev = prevFollowId.current;
+    prevFollowId.current = followId;
     if (followId) {
       useCameraUi.setState({ resumeFollowId: null });
+      cameraDebug.push(`follow ${followId}`);
     } else if (suppressReturn.current) {
       suppressReturn.current = false;
-    } else {
+      cameraDebug.push("followEndNoReturn");
+    } else if (prev !== null) {
       returning.current = true;
+      cameraDebug.push("returnHomeStart");
     }
   }, [followId]);
 
@@ -391,7 +416,8 @@ export function CameraRig({
       }
       moved = true;
     }
-    const pos = useGameStore.getState().followId ? followedRef.current : null;
+    const followActive = useGameStore.getState().followId;
+    const pos = followActive && !interacting.current ? followedRef.current : null;
     if (pos) {
       if (glide.current) glide.current = null;
       wasFollowing.current = true;
@@ -407,7 +433,7 @@ export function CameraRig({
     } else {
       if (wasFollowing.current) returning.current = !suppressReturn.current;
       wasFollowing.current = false;
-      if (returning.current) {
+      if (returning.current && !interacting.current) {
         if (reduced.current) cam.position.add(AWAY.copy(home.target).sub(controls.target));
         controls.target.lerp(home.target, reduced.current ? 1 : 0.08);
         if (controls.target.distanceTo(home.target) < 0.02) returning.current = false;
@@ -444,6 +470,30 @@ export function CameraRig({
     sceneCameraTarget.x = controls.target.x;
     sceneCameraTarget.z = controls.target.z;
     if (moved) controls.update();
+
+    if (cameraDebugEnabled()) {
+      const draft = usePlacementDraft.getState();
+      cameraDebug.patch({
+        followId: followActive,
+        returning: returning.current,
+        interacting: interacting.current,
+        glide: !!glide.current,
+        tilt: !!tilt.current,
+        building: draft.active,
+        moveCamera: draft.moveCamera,
+        targetDistFromHome: controls.target.distanceTo(home.target),
+        orbitState: orbitControlState(controls),
+        lockReason: inferLockReason({
+          followId: followActive,
+          returning: returning.current,
+          glide: !!glide.current,
+          tilt: !!tilt.current,
+          building: draft.active,
+          moveCamera: draft.moveCamera,
+          interacting: interacting.current,
+        }),
+      });
+    }
   });
 
   return null;
