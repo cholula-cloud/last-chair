@@ -50,8 +50,6 @@ export const KIT_ASSETS = [
   "lodge-tier-2",
   "lodge-tier-3",
   "lodge-tier-1-chalet70s",
-  "lodge-tier-2-chalet70s",
-  "lodge-tier-3-chalet70s",
   "lodge-annex-2-chalet70s",
   "lodge-annex-3-chalet70s",
   "cafe-chalet70s",

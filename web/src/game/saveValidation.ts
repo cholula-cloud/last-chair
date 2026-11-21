@@ -159,6 +159,7 @@ const fields: Record<keyof PersistedState, Check> = {
   founderId: founder,
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
+  lodgeStyleId: string,
   lodgeName: optional(string),
   lodgeUpgrade: nullable(shape({ toTier: oneOf(2, 3), nightsRemaining: number })),
   assets: array(shape({ id: assetId, at: point, styleId: string, name: optional(string), attachPad: optional(index), purchase: optional(shape({ day: index, minute: number, price: index })) })),

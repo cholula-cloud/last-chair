@@ -1,4 +1,5 @@
-import { LODGE_TIERS, type LodgeTier } from "./base";
+import { DEFAULT_STYLE, LODGE_TIERS, type LodgeTier } from "./base";
+import { normalizeStyleId } from "./styles";
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
 import { winterRecord } from "./winterMemory";
 import { validateSave } from "./saveValidation";
@@ -157,6 +158,27 @@ export const MIGRATIONS: readonly Migration[] = [
             return rest;
           }
           return entry;
+        }),
+      };
+    },
+  },
+  {
+    to: 14,
+    note: "Cosmetic building styles: lodge default + per-venue style ids.",
+    up(raw) {
+      const lodgeStyleId = typeof raw.lodgeStyleId === "string"
+        ? normalizeStyleId(raw.lodgeStyleId)
+        : DEFAULT_STYLE;
+      const assets = raw.assets;
+      if (!Array.isArray(assets)) return { ...raw, lodgeStyleId };
+      return {
+        ...raw,
+        lodgeStyleId,
+        assets: assets.map((entry) => {
+          if (!entry || typeof entry !== "object" || Array.isArray(entry)) return entry;
+          const styleId = (entry as { styleId?: unknown }).styleId;
+          if (typeof styleId !== "string") return entry;
+          return { ...entry, styleId: normalizeStyleId(styleId) };
         }),
       };
     },

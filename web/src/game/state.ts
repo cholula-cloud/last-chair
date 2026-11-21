@@ -1,5 +1,7 @@
 import type { WinterRecord } from "./winterMemory";
+import { DEFAULT_STYLE } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
+import { mountainDefaultStyle } from "./styles";
 import { calendarForSeason, MOUNTAIN_CALENDARS, operatingDayIndex, type MountainId } from "./calendar";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { Loan, Payable } from "./economy";
@@ -119,6 +121,7 @@ export type PersistedState = {
   founderId: FounderId | null;
   buildings: BuildingId[];
   lodgeTier: LodgeTier;
+  lodgeStyleId: string;
   lodgeName?: string;
   lodgeUpgrade: LodgeUpgrade | null;
   assets: PlacedAsset[];
@@ -220,6 +223,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     founderId: null,
     buildings: [],
     lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
+    lodgeStyleId: mountainDefaultStyle(mountainId),
     lodgeUpgrade: null,
     assets: [],
     guns: [],
@@ -282,6 +286,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     founderId: state.founderId,
     buildings: state.buildings,
     lodgeTier: state.lodgeTier,
+    lodgeStyleId: state.lodgeStyleId,
     ...(state.lodgeName ? { lodgeName: state.lodgeName } : {}),
     lodgeUpgrade: state.lodgeUpgrade,
     assets: state.assets,
@@ -333,9 +338,12 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
     phase: p.founderId ? p.phase : "setup",
   };
   if (p.lodgeName === undefined) delete next.lodgeName;
+  if (p.lodgeStyleId === undefined) {
+    next.lodgeStyleId = mountainDefaultStyle(p.mountainId);
+  }
   return next;
 }
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
