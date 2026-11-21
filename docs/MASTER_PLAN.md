@@ -536,7 +536,7 @@ Queued from owner design review (2026-11-21). Full brief: [plans/SNOW_SERVICE_RE
 | SM1 | ☑ | Snow service UX | Night sheet and coach separate **gun segments** from **groom miles**; gun placement shows pipe + coverage reach rings; thaw-forward copy on night tiles |
 | SM2 | ☑ | Snow service sim | Thaw-favor guns, gusty-wind reach shrink, snow/storm diminishing returns, light man-made quality cap; `hasPlacedGuns` from `guns[]` only; balance harness green |
 | SM3 | ☑ | Gun placement | Looser pipe (0.72) / cap scaled to trail length; placement rings + dynamic max-gun copy |
-| SM4 | ☐ | Snow service feel | Trail conditioning shader still off; night recap names gun vs groom workload (DH8 groomer-down deferred with N7) |
+| SM4 | ☑ | Snow service feel | Trail conditioning on; gun vs groom terrain tint; thaw morning line; DH8 groomer-down beat |
 
 Suggested order: **SM1**, **SM2** (balance snapshot), **SM3** and **SM4** in either order after SM2.
 

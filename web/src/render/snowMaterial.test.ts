@@ -3,15 +3,11 @@ import * as THREE from "three";
 import { MOUNTAIN_TRAIL_CONDITIONING, patchSnowMaterial } from "./snowMaterial";
 
 describe("patchSnowMaterial", () => {
-  it("is a no-op when mountain conditioning is off", () => {
-    expect(MOUNTAIN_TRAIL_CONDITIONING).toBe(false);
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    const out = patchSnowMaterial(mat);
-    expect(out).toBe(mat);
-    expect(out.customProgramCacheKey?.()).not.toContain("+snow");
+  it("enables trail conditioning", () => {
+    expect(MOUNTAIN_TRAIL_CONDITIONING).toBe(true);
   });
 
-  it.skipIf(!MOUNTAIN_TRAIL_CONDITIONING)("injects snow shader chunks", () => {
+  it("injects snow shader chunks when conditioning is on", () => {
     const mat = patchSnowMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }));
     let source = "";
     const shader = {

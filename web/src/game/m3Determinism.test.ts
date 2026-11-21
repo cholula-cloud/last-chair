@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { ADAPTIVE, runSeason, seedList } from "./balance";
 import { migrate } from "./migrations";
-import { acknowledgeBeat, decideSchoolContract, pickFounder, replyToSummitLink, skipToClose, sleep, tick } from "./rules";
+import { acknowledgeBeat, decideGroomerDown, decideSchoolContract, pickFounder, replyToSummitLink, skipToClose, sleep, tick } from "./rules";
 import { createInitialState, hydrate, SAVE_VERSION, toPersisted, type GameState } from "./state";
 import { MS_PER_GAME_MINUTE } from "./types";
 
@@ -13,6 +13,7 @@ it.each(seedList(6))("replays the complete adaptive winter for seed %i", { timeo
 function nextMorning(night: GameState) {
   if (night.pendingBeat === "school_bus") return sleep(decideSchoolContract(night, "declined"));
   if (night.pendingBeat === "summit_link") return sleep(replyToSummitLink(night, "declined"));
+  if (night.pendingBeat === "groomer_down") return sleep(decideGroomerDown(night, "go_without"));
   return sleep(acknowledgeBeat(night));
 }
 

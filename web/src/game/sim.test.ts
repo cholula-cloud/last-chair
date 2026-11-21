@@ -458,6 +458,21 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat({ ...quiet, dayIndex: 2, arrivals: 28 })).toBeNull();
   });
 
+  it("groomer_down fires in the midpoint window with groom history and recent Mid/High", () => {
+    const mid = 10;
+    const eligible = {
+      ...quiet,
+      seasonLength: 28,
+      dayIndex: mid,
+      seasonGroomFeet: 6000,
+      recentSnowPresets: ["mid", "high", "mid", "high", "minimal"] as const,
+    };
+    expect(readyStoryBeat(eligible)).toBe("groomer_down");
+    expect(readyStoryBeat({ ...eligible, dayIndex: 5 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, seasonGroomFeet: 1000 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, recentSnowPresets: ["minimal", "minimal", "mid"] })).toBeNull();
+  });
+
   it("dry_week fires at 3 dry days and depth under 0.35, not at the edge", () => {
     const at = { ...quiet, daysWithoutSnow: 3, snowDepth: 0.34 };
     expect(readyStoryBeat(at)).toBe("dry_week");

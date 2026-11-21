@@ -45,6 +45,7 @@ export type StoryBeatId =
   | "saturday"
   | "school_bus"
   | "dry_week"
+  | "groomer_down"
   | "summit_link"
   | "winter_review";
 

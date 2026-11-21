@@ -1,6 +1,7 @@
 import { canTakeSummitLinkEquity } from "./founders";
 import {
   acknowledgeBeat,
+  decideGroomerDown,
   decideSchoolContract,
   replyToSummitLink,
   beginLodgeUpgrade,
@@ -303,6 +304,7 @@ function firstFrozenPressureDay(halfway: GameState): number | null {
     let night = skipToClose(state);
     if (night.pendingBeat === "school_bus") night = decideSchoolContract(night, "declined");
     else if (night.pendingBeat === "summit_link") night = replyToSummitLink(night, "declined");
+    else if (night.pendingBeat === "groomer_down") night = decideGroomerDown(night, "go_without");
     else night = acknowledgeBeat(night);
     const recap = night.nightRecap!;
     night = setPendingSnow(setPendingFare(night, halfway.fare), halfway.snow);
@@ -356,6 +358,8 @@ export function runSeason(
     if (state.pendingBeat === "school_bus") {
       schoolOffers++;
       state = decideSchoolContract(state, options.school ?? "declined");
+    } else if (state.pendingBeat === "groomer_down") {
+      state = decideGroomerDown(state, "go_without");
     } else if (state.pendingBeat === "summit_link") {
       vivianOffers++;
       const reply = !canTakeSummitLinkEquity({ founderId }) ? "declined" : options.summitLink ?? "declined";

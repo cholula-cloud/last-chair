@@ -183,6 +183,20 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  {
+    to: 15,
+    note: "DH8 groomer-down beat tracking and season groom mileage.",
+    up(raw) {
+      const clearTeaser = raw.pendingBeat === "groomer_down";
+      const migrated = {
+        ...raw,
+        groomerDownDecision: null,
+        groomerDownTonight: false,
+        seasonGroomFeet: 0,
+      };
+      return clearTeaser ? { ...migrated, pendingBeat: null, beatAcknowledged: true } : migrated;
+    },
+  },
 ];
 
 type MigrationResult =

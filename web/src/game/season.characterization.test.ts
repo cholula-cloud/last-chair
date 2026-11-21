@@ -57,6 +57,7 @@ type Driver = {
   setPendingSnow(s: "minimal" | "mid" | "high"): void;
   acknowledgeBeat(): void;
   declineSchoolContract(): void;
+  skipGroomerDown(): void;
   declineSummitLink(): void;
   sleep(): void;
   finishWinterReview(): void;
@@ -109,6 +110,7 @@ function playSeason(d: Driver) {
     nights.push(summarize(d.view()));
     const pendingBeat = d.view().pendingBeat;
     if (pendingBeat === "school_bus") d.declineSchoolContract();
+    else if (pendingBeat === "groomer_down") d.skipGroomerDown();
     else if (pendingBeat === "summit_link") d.declineSummitLink();
     else if (pendingBeat) d.acknowledgeBeat();
     d.sleep();
@@ -157,6 +159,7 @@ function storeDriver(
     setPendingSnow: (x) => s().setPendingSnow(x),
     acknowledgeBeat: () => s().acknowledgeBeat(),
     declineSchoolContract: () => s().decideSchoolContract("declined"),
+    skipGroomerDown: () => s().decideGroomerDown("go_without"),
     declineSummitLink: () => s().replyToSummitLink("declined"),
     sleep: () => s().sleep(),
     finishWinterReview: () => s().finishWinterReview(),
@@ -181,6 +184,7 @@ function pureDriver(seed: number): Driver {
     setPendingSnow: (x) => apply((s) => rules.setPendingSnow(s, x)),
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),
     declineSchoolContract: () => apply((s) => rules.decideSchoolContract(s, "declined")),
+    skipGroomerDown: () => apply((s) => rules.decideGroomerDown(s, "go_without")),
     declineSummitLink: () => apply((s) => rules.replyToSummitLink(s, "declined")),
     sleep: () => apply(rules.sleep),
     finishWinterReview: () => apply(rules.finishWinterReview),
