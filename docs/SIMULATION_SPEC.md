@@ -356,30 +356,15 @@ Max **2** player choices Act I (+ optional story reply when beat ready).
 
 ## Crew talents
 
-Each overnight settlement before the next playable morning teaches the first unowned talent in the order defined in `web/src/game/talents.ts`. The twenty talents name their crew member and explain their effect. Equipment-specific skills take effect when their equipment is available.
+Each closed night earns **one crew point** (plus one when a lodge upgrade opens). The player spends points in **Office → Crew**; sleep does not auto-unlock skills. About fifteen points land in a typical winter against **twenty** skills, so the tree is a choice, not a checklist.
 
-| Order | Talent | Crew | Effect |
-|---|---|---|---|
-| 1 | Rope Tow | Frank | Save $40 per operating surface lift. |
-| 2 | Trail Guns | Frank | Snow guns reach 25% farther. |
-| 3 | Groom Pass | Frank | Groom 20% farther and raise groom quality by 7 points. |
-| 4 | Ticket Booth | Elena | One more guest on weekends and holidays. |
-| 5 | Patrol Radio | Dana | All lifts load 5% faster. |
-| 6 | School Day | Elena | Two more guests on weekdays. |
-| 7 | House Band | Elena | Welcome mood rises 3 points Friday through Sunday and on holidays. |
-| 8 | Café Shift | Elena | Café adds $2 to perceived value. |
-| 9 | Wind Hold | Dana | Gusty chair holds run from 11:00 to 12:15. |
-| 10 | Corduroy | Frank | Groom quality rises another 3 points. |
-| 11 | Snow Fences | Frank | Bottom two segments lose 30% less depth in thaws. |
-| 12 | Heritage Sign | Elena | Gain 2 reputation each Sunday. |
-| 13 | Bull Wheel Tune | Frank | Chairs load 5% faster. |
-| 14 | Ski School | Elena | First-timer welcome mood rises 5 points. |
-| 15 | Early Plow | Frank | Three more guests reach the hill during storms. |
-| 16 | Volunteer Patrol | Dana | Save $50 in daily fixed costs. |
-| 17 | Night Lights | Frank | Lifts stay open ten extra minutes. |
-| 18 | Groomer Rebuild | Frank | Mid service costs $120 and High costs $300. |
-| 19 | First Aid Hut | Dana | Poor snow costs 15% fewer satisfaction points. |
-| 20 | Route 100 Billboard | Elena | Expected hill value rises by $2. |
+Tracks live in `web/src/game/talentProgress.ts` (`CREW_TRACK_ORDER`):
+
+- **Frank (ops)** and **Elena (guest)** are available at Lodge Tier 1; mid skills need Tier 2; Frank’s Groomer Overhaul needs Tier 3.
+- **Dana (patrol)** is locked until Lodge Tier 2; every skill in that column needs the previous one in the column.
+- Within a column, spend on the next skill down that column only.
+
+The headless balance harness still auto-spends points via `spendAllCrewPoints` for simulation; player rules use manual spend only. Equipment-specific skills take effect when their equipment is available.
 
 ## Founder modifiers
 
