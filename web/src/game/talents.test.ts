@@ -35,7 +35,7 @@ describe("crew order and operations", () => {
     expect(canUnlockTalent({ ...state, crewPoints: 1 }, "ticket_booth")).toBe(true);
     expect(canUnlockTalent({ ...state, crewPoints: 1, lodgeTier: 2 }, "patrol_radio")).toBe(true);
     expect(canUnlockTalent({ ...state, crewPoints: 1, lodgeTier: 1 }, "patrol_radio")).toBe(false);
-    expect(talentDescription("Fast Wind Checks", { ...state, lodgeTier: 2 })).toContain("Needs a chairlift");
+    expect(talentDescription("Fast Wind Checks", state)).toContain("Needs a chairlift");
   });
   it("keeps unspent crew points after loading a save", () => {
     const owned = ["rope_tow", "trail_guns", "house_band", "groom_pass"];
