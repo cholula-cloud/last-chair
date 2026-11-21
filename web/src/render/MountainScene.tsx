@@ -6,7 +6,7 @@ import { CameraRig } from "./CameraRig";
 
 import { OrbitControls } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useMemo, useRef } from "react";
+import { lazy, Suspense, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { AssetTarget } from "@/game/assetNames";
 import { REFERENCE_TOPS, type LiftAnchor, type LiftLine } from "@/game/descent";
@@ -33,8 +33,11 @@ import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
 import { OverlayScene } from "./OverlayScene";
 import { Road, Terrain } from "./Terrain";
-import { TrailMapKiosk } from "./TrailMapKiosk";
 import { TrailSign } from "./TrailSign";
+
+const TrailMapKiosk = lazy(() =>
+  import("./TrailMapKiosk").then((m) => ({ default: m.TrailMapKiosk })),
+);
 import { Trees } from "./Trees";
 import { ArrivalArea } from "./Vehicles";
 
@@ -149,7 +152,9 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
               <LiftPlacementMotion liftKey={key} preview={false}>
                 <Lift line={line} previewInvalid={false} type={lift.type} closing={lift.closing} />
               </LiftPlacementMotion>
-              <TrailMapKiosk line={line} trails={trailRuns} liftIndex={index} />
+              <Suspense fallback={null}>
+                <TrailMapKiosk line={line} trails={trailRuns} liftIndex={index} />
+              </Suspense>
             </group>
           );
         })}

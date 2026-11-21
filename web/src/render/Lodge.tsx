@@ -12,7 +12,7 @@ import { useReducedMotion } from "./useReducedMotion";
 import { pathSampler } from "./trail";
 import { sceneMood } from "./Atmosphere";
 import { box, merge, placeParts, type Part } from "./geo";
-import { kitForAsset } from "@/game/activities";
+import { kitForAsset } from "./activityKits";
 import { resolveLodgeCoreKit, resolveStyledKit, resolveVenueKit } from "@/game/styles";
 import {
   bakeKit,

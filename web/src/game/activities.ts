@@ -1,4 +1,4 @@
-import { assetRevenue, type AssetId, type PlacedAsset } from "./base";
+import { assetRevenue, type AssetId } from "./base";
 import type { GameState } from "./state";
 import { weekdayForDay, seasonCalendar } from "./calendar";
 
@@ -58,27 +58,4 @@ export function applyActivityEconomy(state: GameState): GameState {
     cash,
     dayStats: { ...state.dayStats, venueRevenue, intradayRevenue: true },
   };
-}
-
-export function kitForAsset(id: AssetId): string | undefined {
-  const map: Partial<Record<AssetId, string>> = {
-    tubing_hill: "tubing-hut",
-    ice_rink: "ice-rink",
-    apres_bar: "apres-bar",
-    fire_pit: "fire-pit",
-    string_lights: "string-lights",
-    cafe: "cafe",
-    shop: "ski-shop",
-    warming_hut: "warming-hut",
-    rentals: "ski-shop",
-    ski_school: "warming-hut",
-  };
-  return map[id];
-}
-
-export function placedActivityKits(assets: readonly PlacedAsset[]): { id: AssetId; at: import("./terrain").XZ; kit: string }[] {
-  return assets.flatMap((asset) => {
-    const kit = kitForAsset(asset.id);
-    return kit ? [{ id: asset.id, at: asset.at, kit }] : [];
-  });
 }
