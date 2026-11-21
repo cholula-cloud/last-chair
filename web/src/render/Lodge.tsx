@@ -64,16 +64,21 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
 
 type Placement = { name: KitAsset; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
-/** Main lodge GLB per sim tier; must stay in sync with `Village` scene kits. */
-export const LODGE_KIT_BY_TIER = ["base-lodge", "lodge-tier-2", "lodge-tier-3"] as const satisfies readonly KitAsset[];
+export const LODGE_BASE_KIT = "base-lodge" as const satisfies KitAsset;
+export const LODGE_ANNEX_KITS = ["lodge-annex-2", "lodge-annex-3"] as const satisfies readonly KitAsset[];
 
-export function lodgeKitName(tier: LodgeTier): KitAsset {
-  return LODGE_KIT_BY_TIER[tier - 1];
+/** Structural lodge pieces drawn at the lodge anchor for the current sim tier. */
+export function lodgeStructureKits(tier: LodgeTier): readonly KitAsset[] {
+  const kits: KitAsset[] = [LODGE_BASE_KIT];
+  if (tier >= 2) kits.push(LODGE_ANNEX_KITS[0]);
+  if (tier >= 3) kits.push(LODGE_ANNEX_KITS[1]);
+  return kits;
 }
 
 /** Kit assets the village merge loop must register (prevents tier lodge skip). */
 export const VILLAGE_SCENE_KITS = [
-  ...LODGE_KIT_BY_TIER,
+  LODGE_BASE_KIT,
+  ...LODGE_ANNEX_KITS,
   "clapboard-house",
   "cafe",
   "ski-shop",
@@ -84,18 +89,16 @@ export const VILLAGE_SCENE_KITS = [
 export function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
-  const list: Placement[] = [
-    {
-      name: lodgeKitName(tier),
-      x: LODGE.x,
-      z: LODGE.z + 0.05,
-      yaw: 0,
-      scale: B,
-      asset: { kind: "lodge" },
-    },
+  const lodgeAnchor = { x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B };
+  const list: Placement[] = lodgeStructureKits(tier).map((name, index) => ({
+    name,
+    ...lodgeAnchor,
+    ...(index === 0 ? { asset: { kind: "lodge" } as const } : {}),
+  }));
+  list.push(
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
-  ];
+  );
   for (const [index, asset] of assets.entries()) {
     const name = ASSET_MODELS[asset.id];
     if (!name) continue;
@@ -169,9 +172,9 @@ export function Village() {
   const tier = useGameStore((s) => s.lodgeTier);
   const construction = useGameStore((s) => s.lodgeUpgrade !== null);
 
-  const lodgeKit = useKit("base-lodge");
-  const lodgeTier2Kit = useKit("lodge-tier-2");
-  const lodgeTier3Kit = useKit("lodge-tier-3");
+  const lodgeKit = useKit(LODGE_BASE_KIT);
+  const lodgeAnnex2Kit = useKit(LODGE_ANNEX_KITS[0]);
+  const lodgeAnnex3Kit = useKit(LODGE_ANNEX_KITS[1]);
   const houseKit = useKit("clapboard-house");
   const cafeKit = useKit("cafe");
   const shopKit = useKit("ski-shop");
@@ -194,9 +197,9 @@ export function Village() {
 
   const { body, glow, pickMeshes } = useMemo(() => {
     const scenes: Partial<Record<KitAsset, THREE.Object3D>> = {
-      "base-lodge": lodgeKit,
-      "lodge-tier-2": lodgeTier2Kit,
-      "lodge-tier-3": lodgeTier3Kit,
+      [LODGE_BASE_KIT]: lodgeKit,
+      [LODGE_ANNEX_KITS[0]]: lodgeAnnex2Kit,
+      [LODGE_ANNEX_KITS[1]]: lodgeAnnex3Kit,
       "clapboard-house": houseKit,
       cafe: cafeKit,
       "ski-shop": shopKit,
@@ -219,7 +222,7 @@ export function Village() {
     if (additions.length > 0) bodies.push(merge(additions));
 
     return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
-  }, [assets, tier, construction, lodgeKit, lodgeTier2Kit, lodgeTier3Kit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
+  }, [assets, tier, construction, lodgeKit, lodgeAnnex2Kit, lodgeAnnex3Kit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
 
   useEffect(
     () => () => {

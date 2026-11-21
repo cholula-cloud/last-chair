@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(11);
+    expect(SAVE_VERSION).toBe(13);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -37,6 +37,34 @@ describe("M3 schema migration", () => {
     const history = [{ day: 1, fare: "balanced", snow: "mid", arrivals: 20, satisfaction: 75 }];
     const preview = migrate({ ...previous.state, seasonDays: history }, 7);
     expect(preview).toMatchObject({ reset: false, state: { seasonDays: history, tipsSeen: [], dayHistory: [] } });
+  });
+
+  it("strips attachPad when the pad index is beyond the lodge tier cap", () => {
+    const base = toPersisted(createInitialState(7));
+    const withPad = {
+      ...base,
+      lodgeTier: 2,
+      assets: [{ id: "cafe", at: { x: 1, z: 1 }, styleId: "timber50s", attachPad: 4 }],
+    };
+    const result = migrate(withPad, 11);
+    expect(result.reset).toBe(false);
+    expect(result.state.assets[0]).not.toHaveProperty("attachPad");
+  });
+
+  it("keeps one annex flag at Tier 2 and drops extras after the two-pad cap", () => {
+    const base = toPersisted(createInitialState(7));
+    const withPads = {
+      ...base,
+      lodgeTier: 2,
+      assets: [
+        { id: "rentals", at: { x: 1, z: 1 }, styleId: "timber50s", attachPad: 0 },
+        { id: "cafe", at: { x: 2, z: 2 }, styleId: "timber50s", attachPad: 1 },
+      ],
+    };
+    const result = migrate(withPads, 12);
+    expect(result.reset).toBe(false);
+    expect(result.state.assets[0]).toMatchObject({ attachPad: 0 });
+    expect(result.state.assets[1]).not.toHaveProperty("attachPad");
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

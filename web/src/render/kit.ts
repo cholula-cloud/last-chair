@@ -44,7 +44,9 @@ export const KIT_ASSETS = [
   "pine-a",
   "pine-b",
   "pine-c",
-  // Kit v1.1: loaded on demand (not preloaded) until a renderer uses them.
+  "lodge-annex-2",
+  "lodge-annex-3",
+  // Kit v1.1: full-tier meshes kept for regression; village composes base + annexes.
   "lodge-tier-2",
   "lodge-tier-3",
   "a-frame-lodge",
@@ -65,7 +67,7 @@ export const KIT_ASSETS = [
 export type KitAsset = (typeof KIT_ASSETS)[number];
 
 /** Assets fetched at startup; the rest load when first used. */
-const PRELOAD_COUNT = KIT_ASSETS.indexOf("lodge-tier-2");
+const PRELOAD_COUNT = KIT_ASSETS.indexOf("lodge-tier-2") + 1;
 
 const url = (name: KitAsset) => `${BASE}/models/${name}.glb`;
 

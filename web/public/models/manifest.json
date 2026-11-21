@@ -942,6 +942,66 @@
       ],
       "style": "chalet70s",
       "styleOf": "warming-hut"
+    },
+    {
+      "name": "lodge-annex-2",
+      "file": "lodge-annex-2.glb",
+      "tris": 832,
+      "sizeBytes": 53692,
+      "heightMeters": 7.72,
+      "footprintMeters": [
+        13.42,
+        10.17
+      ],
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "name": "lodge-annex-3",
+      "file": "lodge-annex-3.glb",
+      "tris": 584,
+      "sizeBytes": 38208,
+      "heightMeters": 15.25,
+      "footprintMeters": [
+        13.35,
+        7.65
+      ],
+      "tags": [
+        "building"
+      ]
+    },
+    {
+      "name": "lodge-annex-2-chalet70s",
+      "file": "lodge-annex-2-chalet70s.glb",
+      "tris": 815,
+      "sizeBytes": 53704,
+      "heightMeters": 10.04,
+      "footprintMeters": [
+        13.78,
+        10.63
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-annex-2"
+    },
+    {
+      "name": "lodge-annex-3-chalet70s",
+      "file": "lodge-annex-3-chalet70s.glb",
+      "tris": 647,
+      "sizeBytes": 42428,
+      "heightMeters": 16.02,
+      "footprintMeters": [
+        12.07,
+        7.08
+      ],
+      "tags": [
+        "building"
+      ],
+      "style": "chalet70s",
+      "styleOf": "lodge-annex-3"
     }
   ]
 }

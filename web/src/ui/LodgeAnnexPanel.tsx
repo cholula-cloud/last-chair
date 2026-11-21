@@ -9,9 +9,10 @@ import { venueName } from "@/game/assetNames";
 import { startLodgePadPlacement } from "@/ui/placementDraftActions";
 const BASE_ATTACH: AssetId[] = ["warming_hut", "cafe", "shop", "rentals", "ski_school"];
 
+const PAD_LABELS = ["east front", "west side"] as const;
+
 function padLabel(index: number): string {
-  const side = index === 0 ? "west" : "east";
-  return `Annex ${index + 1} (${side} wing)`;
+  return `Annex ${index + 1} (${PAD_LABELS[index] ?? "lodge"})`;
 }
 
 export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => void }) {
@@ -34,7 +35,7 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
     return (
       <section className="panel mt-3 space-y-2 p-3" aria-label="Lodge annex pads">
         <p className="text-sm font-bold leading-snug">
-          Upgrade to Village Lodge to unlock annex wings (+{Math.round(ATTACH_BONUS * 100)}% when attached).
+          Upgrade to {LODGE_TIERS[2].label} to unlock an annex pad (+{Math.round(ATTACH_BONUS * 100)}% when attached).
         </p>
       </section>
     );

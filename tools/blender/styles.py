@@ -296,6 +296,38 @@ def _wing(a, F):
     a.box((0, wy1 + 0.4, 0.25), (3.0, 1.2, 0.5), "snow", bevel=0.18)
 
 
+def _chalet_wing3_delta(a, F, H, rise):
+    """Chalet tier-3 annex: upper wing storey, stack, cross gable, ridge lookout."""
+    W, wy, wd, wh = 12.0, -0.6, 6.4, 6.0
+    wx0, wx1 = -W / 2 + 0.2, -W / 2 - 4.6
+    wcx = (wx0 + wx1) / 2
+    bz = F + 2.8
+    a.box((wx1 - 0.7, wy, bz - 0.12), (1.4, 4.4, 0.24), BAT)
+    rail(a, wx1 - 1.35, wx1 - 1.35, wy - 2.2, wy + 2.2, bz, posts=False, balusters=0.55)
+    for sy in (-1, 1):
+        rail(a, wx1, wx1 - 1.35, wy + sy * 2.2, wy + sy * 2.2, bz, posts=False)
+    chimney(a, wx1 - 0.9, wy + 2.35, 3.6, 1.4, 12.2, footing=(1.8, 1.9, 3.6))
+    gy = wy - wd / 2
+    a.box((wcx, gy + 0.9, (3.4 + wh) / 2), (3.0, 1.8, wh - 3.4), WALL)
+    roof(a, (wcx, gy + 1.0, wh), 2.4, 3.0, 2.6, rz=90, ov=0.5, thick=0.22, snow=0.4, short=0.35,
+         ends=(-1,), board=0.24)
+    glaze(a, (wcx, gy, 0), '-Y', -1.1, 1.1, 3.55, wh + 2.6 - 0.4, 2.6 / 1.5, mull=(0,),
+          transoms=(wh,))
+    _lookout(a, H + rise)
+
+
+def c_lodge_annex_2():
+    a = Asset("lodge-annex-2-" + STYLE)
+    _wing(a, 0.7)
+    return a.finish()
+
+
+def c_lodge_annex_3():
+    a = Asset("lodge-annex-3-" + STYLE)
+    _chalet_wing3_delta(a, 0.7, 4.6, 8.0)
+    return a.finish()
+
+
 def c_lodge1():
     return _lodge("lodge-tier-1-" + STYLE, 1)
 
@@ -404,6 +436,8 @@ VARIANTS = [
     (c_lodge1, "lodge-tier-1", 2300),
     (c_lodge2, "lodge-tier-2", 3200),
     (c_lodge3, "lodge-tier-3", 4100),
+    (c_lodge_annex_2, "lodge-annex-2", 1800),
+    (c_lodge_annex_3, "lodge-annex-3", 1400),
     (c_cafe, "cafe", 1000),
     (c_shop, "ski-shop", 650),
     (c_hut, "warming-hut", 460),
