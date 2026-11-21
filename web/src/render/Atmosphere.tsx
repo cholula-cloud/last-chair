@@ -58,13 +58,16 @@ const rigScratch: Rig = {
 };
 
 /** Layered hazy ridges behind the hill so it sits in a valley. */
-function ridgeGeometry(radius: number, base: number, amp: number, seed: number, color: string) {
+function ridgeGeometry(radius: number, base: number, amp: number, seed: number, color: string, treeLine = 0.3) {
   const segs = 120;
   const pos: number[] = [];
   const colors: number[] = [];
   const idx: number[] = [];
   const low = new THREE.Color(color);
-  const top = low.clone().lerp(new THREE.Color(PALETTE.snow), 0.6);
+  const top = low
+    .clone()
+    .lerp(new THREE.Color(PALETTE.snow), 0.55)
+    .lerp(new THREE.Color(PALETTE.pineDeep), treeLine);
   for (let i = 0; i <= segs; i++) {
     const a = -2.4 + (i / segs) * 4.8;
     const x = HILL_CENTER.x + Math.sin(a) * radius;
@@ -87,9 +90,9 @@ function ridgeGeometry(radius: number, base: number, amp: number, seed: number, 
 }
 
 const RIDGES = [
-  { radius: 520, base: 54, amp: 42, seed: 11.3, color: PALETTE.ridgeFar },
-  { radius: 420, base: 36, amp: 33, seed: 4.7, color: PALETTE.ridgeMid },
-  { radius: 320, base: 21, amp: 24, seed: 23.1, color: PALETTE.ridgeNear },
+  { radius: 520, base: 54, amp: 42, seed: 11.3, color: PALETTE.ridgeFar, treeLine: 0.18 },
+  { radius: 420, base: 36, amp: 33, seed: 4.7, color: PALETTE.ridgeMid, treeLine: 0.28 },
+  { radius: 320, base: 21, amp: 24, seed: 23.1, color: PALETTE.ridgeNear, treeLine: 0.38 },
 ];
 
 const SHADOW_TEXEL = 28 / 1024;
@@ -132,7 +135,7 @@ export function Atmosphere() {
     [skyHorizonColor, skyTopColor],
   );
   const ridgeGeos = useMemo(
-    () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color)),
+    () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color, r.treeLine)),
     [],
   );
   const target = useMemo(() => new THREE.Object3D(), []);

@@ -1,26 +1,28 @@
-def _pine(name, H, tiers, R, green, slim=1.0, seg=6):
+def _pine(name, H, tiers, R, green, slim=1.0, seg=7):
+    """Chunky New England toy conifer: snow caps + rim skirts, readable at phone distance."""
     a = Asset(name)
-    trunk_h = H * 0.16
-    a.cyl((0, 0, 0), 0.22 * R / 2.2, 0.16 * R / 2.2, trunk_h + 0.6, 5, "timber-dark", caps=False)
+    trunk_h = H * 0.14
+    a.cyl((0, 0, 0), 0.26 * R / 2.2, 0.18 * R / 2.2, trunk_h + 0.55, 6, "timber-dark", caps=False)
     z = trunk_h
     span = (H - trunk_h) / (tiers * 0.72 + 0.28)
     for i in range(tiers):
-        r = R * (1 - i / (tiers + 0.6)) * slim
-        h = span * (1.05 - 0.06 * i)
-        rot = (0, 0, i * 30)
+        r = R * (1 - i / (tiers + 0.55)) * slim
+        h = span * (1.08 - 0.05 * i)
+        rot = (0, 0, i * 28)
         a.cyl((0, 0, z), r, 0.0, h, seg, green, rot=rot)
-        sz = z + h * 0.42
-        a.cyl((0, 0, sz), r * 0.62, 0.0, h * 0.58 + 0.02, seg, "snow", rot=(0, 0, i * 30 + 30))
+        sz = z + h * 0.4
+        a.cyl((0, 0, sz), r * 0.64, 0.0, h * 0.6 + 0.02, seg, "snow", rot=(0, 0, i * 28 + 28))
         # snow skirt on tier rim
-        a.cyl((0, 0, z - 0.02), r * 1.04, r * 0.86, h * 0.14, seg, "snow", rot=rot, caps=False)
+        a.cyl((0, 0, z - 0.02), r * 1.06, r * 0.88, h * 0.16, seg, "snow", rot=rot, caps=False)
         z += span * 0.72
     return a.finish()
 
 def b_pines():
-    return [_pine("pine-a", 7.0, 3, 2.3, "pine"),
-            _pine("pine-b", 10.5, 4, 2.4, "pine-dark", slim=0.85, seg=5),
-            _pine("pine-c", 8.5, 3, 2.9, "pine", seg=5),
-            _pine("pine-d", 6.2, 2, 3.1, "pine", slim=1.05, seg=5)]
+    # Wide crowns + snow for ICR-style dense toy forest (valley beauty).
+    return [_pine("pine-a", 7.2, 3, 2.85, "pine"),
+            _pine("pine-b", 10.8, 4, 2.65, "pine-dark", slim=0.9, seg=6),
+            _pine("pine-c", 8.6, 3, 3.55, "pine", seg=7),
+            _pine("pine-d", 6.0, 2, 3.6, "pine", slim=1.1, seg=7)]
 
 def b_lamp():
     a = Asset("lamp-post")
