@@ -49,6 +49,12 @@ export const KIT_ASSETS = [
   // Kit v1.1: full-tier meshes kept for regression; village composes base + annexes.
   "lodge-tier-2",
   "lodge-tier-3",
+  "lodge-tier-1-chalet70s",
+  "lodge-annex-2-chalet70s",
+  "lodge-annex-3-chalet70s",
+  "cafe-chalet70s",
+  "ski-shop-chalet70s",
+  "warming-hut-chalet70s",
   "a-frame-lodge",
   "ticket-booth",
   "patrol-hut",

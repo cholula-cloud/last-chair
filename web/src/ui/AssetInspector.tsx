@@ -11,8 +11,10 @@ import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { DAY_START_MIN, LIFT_LABELS, SNOW_LABELS } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
+import { normalizeStyleId, type BuildingStyleId } from "@/game/styles";
 import { LodgeUpgradeControl } from "./LodgeUpgradeControl";
 import { LodgeAnnexPanel } from "./LodgeAnnexPanel";
+import { StylePicker } from "./StylePicker";
 import { Sheet } from "./kit/Sheet";
 
 function assetDetails(state: GameState, target: AssetTarget): {
@@ -123,6 +125,8 @@ export function AssetInspector({ target, onClose }: {
   onClose: () => void;
 }) {
   const state = useGameStore();
+  const setLodgeStyle = useGameStore((s) => s.setLodgeStyle);
+  const setAssetStyle = useGameStore((s) => s.setAssetStyle);
   const details = assetDetails(state, target);
   const [draft, setDraft] = useState(() => details?.name ?? "");
   const [saved, setSaved] = useState(false);
@@ -187,9 +191,21 @@ export function AssetInspector({ target, onClose }: {
       )}
       {target.kind === "lodge" && (
         <div className="mt-3 space-y-0">
+          <StylePicker
+            value={normalizeStyleId(state.lodgeStyleId)}
+            onChange={(styleId: BuildingStyleId) => setLodgeStyle(styleId)}
+            label="Lodge look"
+          />
           <LodgeAnnexPanel onCloseInspector={onClose} />
           <LodgeUpgradeControl variant="inspector" className="mt-3" />
         </div>
+      )}
+      {target.kind === "venue" && (
+        <StylePicker
+          value={normalizeStyleId(state.assets[target.index].styleId)}
+          onChange={(styleId: BuildingStyleId) => setAssetStyle(target.index, styleId)}
+          label="Building look"
+        />
       )}
     </Sheet>
   );

@@ -32,6 +32,7 @@ import {
 import { clearingCells, clearingQuote, trailExposure, type ClearingCell } from "./clearing";
 import { gunCoverage, gunPlacementReason, groomCoverage, GUN_COST, MAX_GUNS, type GunPlacementReason } from "./guns";
 import { OFF_LEASE_MESSAGE } from "./lease";
+import { isKnownStyleId, normalizeStyleId } from "./styles";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
@@ -895,7 +896,10 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     const { bottom, top } = liftLineOf(lift);
     return [bottom, top];
   });
-  const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, { terminals });
+  const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, {
+    terminals,
+    defaultStyleId: state.lodgeStyleId,
+  });
   if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash for the deposit. Close out the day, then check your balance." };
   return preview;
 }
@@ -999,6 +1003,23 @@ export function moveAsset(state: GameState, index: number, at: XZ): GameState {
   if (!check.ok) return state;
   return { ...state, assets: state.assets.map((asset, i) => i === index
     ? { ...check.placement, purchase: asset.purchase, styleId: asset.styleId, ...(asset.name ? { name: asset.name } : {}) } : asset) };
+}
+
+/** Cosmetic only — same footprint and sim numbers. */
+export function setLodgeStyle(state: GameState, styleId: string): GameState {
+  if (!isKnownStyleId(styleId)) return state;
+  const lodgeStyleId = normalizeStyleId(styleId);
+  return lodgeStyleId === state.lodgeStyleId ? state : { ...state, lodgeStyleId };
+}
+
+export function setAssetStyle(state: GameState, index: number, styleId: string): GameState {
+  if (!isKnownStyleId(styleId)) return state;
+  const asset = state.assets[index];
+  if (!asset) return state;
+  const nextStyle = normalizeStyleId(styleId);
+  if (nextStyle === asset.styleId) return state;
+  if (venueChangeProblem(state, index)) return state;
+  return { ...state, assets: state.assets.map((a, i) => (i === index ? { ...a, styleId: nextStyle } : a)) };
 }
 
 /** Keep the seeded balance strategy's fixed village coordinates. The player builds on the map. */

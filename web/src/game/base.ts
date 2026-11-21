@@ -190,7 +190,7 @@ export function previewAssetPlacement(
   at: XZ,
   tier: LodgeTier,
   assets: readonly PlacedAsset[],
-  options: { site?: SiteDef; terrain?: Terrain; terminals?: readonly XZ[] } = {},
+  options: { site?: SiteDef; terrain?: Terrain; terminals?: readonly XZ[]; defaultStyleId?: string } = {},
 ): AssetPreview {
   const { site = DUTCH_HILL_SITE, terrain = TERRAIN, terminals = [terrain.base] } = options;
   const asset = ASSET_CATALOG[id];
@@ -236,7 +236,7 @@ export function previewAssetPlacement(
   }
 
   const acres = size.width * size.depth * terrain.horizontalFeetPerUnit ** 2 / 43560;
-  const placement: PlacedAsset = { id, at: { ...position }, styleId: asset.styleId };
+  const placement: PlacedAsset = { id, at: { ...position }, styleId: options.defaultStyleId ?? asset.styleId };
   if (snap) placement.attachPad = snap.index;
   return { ok: true, placement, cost: asset.cost, acres, attached: snap !== undefined };
 }
