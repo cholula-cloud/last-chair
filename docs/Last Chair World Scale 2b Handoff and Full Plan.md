@@ -370,7 +370,7 @@ Mid density can drop to 0.4 per u² if frame rate needs it. Total budget about 1
 - Water: none, because WORLD.md documents no creek or pond. The schema keeps a `water` list for other mountains.
 - Sim tie, with no sim change: one car per guest who has arrived and is not yet gone (state neither pending nor gone); stall = hash of guest id mod 30 with linear probing; extra cars go to the shoulder; cars drop in on arrival and vanish when the guest is gone; guests walk stall, path, lodge, lift. A full lot is visual only.
 - New kit assets (Blender, `tools/blender`, under 1.5k triangles total): pickup, wagon, sedan, birch, sign post, area sign.
-- Each mountain defines its own arrival kind (Tenney: roadside, for example).
+- Each mountain defines its own arrival kind (a later hill such as Evergreen Valley could use roadside parking, for example; Tenney was cut from the career, see STORY.md).
 
 **Part 3 (about 120 lines).**
 1. Speed control 1x, 2x, 3x: session-only speed in `store.ts`; `MountainScene` multiplies the tick by it; a chip in the Hud top bar. Chair rate (2b item 9) already divides by `speed`.
@@ -422,7 +422,7 @@ Gate M3: the P1 script in `docs/TESTING.md` signed by three external players.
 | Milestone | PRs |
 |---|---|
 | M4 / M4b (superseded by MASTER_PLAN v2.5) | M4 code: B6/B7 build UX, P4 polish, F3 Office economics (Stats/Reports charts), 30–33, O4, O5. M4b Blender: 28–29, T1, S1–S3, A1–A5 |
-| M5 career | 34 mountain definitions as data (terrain, scale, site, start state, beats), 35 career map hub, 36 Tenney Mountain NH (colder, steeper, more capital; scale up to 15x), 37 caretaker idle income, 38 ledger |
+| M5 career | 34 mountain definitions as data (terrain, scale, site, start state, beats), 35 career map hub, 36 Mount Tom MA (replaces Tenney, see STORY.md; more capital, night session, guns from day 1; scale up to 15x), 37 caretaker idle income, 38 ledger |
 | M6 sandbox | 39 main menu Story and Sandbox with mountain, money, weather, talent settings, 40 save slots |
 | M7 110% pass | top five improvements after a side-by-side with Ice Coast Revival, PWA install, performance budget pass, accessibility audit |
 

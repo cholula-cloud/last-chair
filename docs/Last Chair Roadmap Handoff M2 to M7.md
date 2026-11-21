@@ -274,7 +274,7 @@ Four viewports: home view shows lot, lodge and lift bottom. On a Saturday over 3
 - Vehicles add at most 3 draw calls and 1.5k triangles of mesh data.
 
 ### Risks and edge cases
-A mid-day reload reassigns stalls in arrival order, so cars may shift once. Site data is static content, so saves are unaffected. Tenney needs the `roadside` kind (no stalls, all overflow).
+A mid-day reload reassigns stalls in arrival order, so cars may shift once. Site data is static content, so saves are unaffected. A later hill that needs roadside parking (see STORY.md §5) would use a `roadside` kind (no stalls, all overflow). Tenney was cut from the career.
 
 ### Out of scope
 A parking cap that turns guests away (later sim PR), road traffic, night lot lights.
@@ -1977,7 +1977,7 @@ Docs at the gate: MASTER_PLAN M3 rows all ☑ and Gate M3 status filled; SIMULAT
 
 ## Limitations
 
-Numbers labelled proposed (weather transition matrix, storm and wind effects, holiday multipliers, upkeep, construction draw, loan terms, bankruptcy rule, eight new talents and several talent constants, Juniper's drift, Riley's reading, beat thresholds, Abominable Snowglomerate reply, score weights and grades, coach timings) are first values chosen to make each mechanic testable; PR 27 tunes them against the harness and three players, and the weather statistics quoted come from a 4,000-season simulation of the proposed chain, not from Vermont records. The plan assumes M2 (PRs 12b to 17 and world scale 2b to 2d) is merged; where M2 did not add something M3 reads (wind sensitivity in PR 15, venue revenue in PR 16, trail clearing in PR 13), the PR says what to do instead. Save version numbers are relative because M2 may bump the version after v8. Line counts are estimates from similar past PRs. The 14-day balance figures used in worked examples are the PR 10b table, measured before the M3 changes. Dutch Hill is the only mountain in M3; the career record is written for M5 to read, and nothing carries into Tenney yet.
+Numbers labelled proposed (weather transition matrix, storm and wind effects, holiday multipliers, upkeep, construction draw, loan terms, bankruptcy rule, eight new talents and several talent constants, Juniper's drift, Riley's reading, beat thresholds, Abominable Snowglomerate reply, score weights and grades, coach timings) are first values chosen to make each mechanic testable; PR 27 tunes them against the harness and three players, and the weather statistics quoted come from a 4,000-season simulation of the proposed chain, not from Vermont records. The plan assumes M2 (PRs 12b to 17 and world scale 2b to 2d) is merged; where M2 did not add something M3 reads (wind sensitivity in PR 15, venue revenue in PR 16, trail clearing in PR 13), the PR says what to do instead. Save version numbers are relative because M2 may bump the version after v8. Line counts are estimates from similar past PRs. The 14-day balance figures used in worked examples are the PR 10b table, measured before the M3 changes. Dutch Hill is the only mountain in M3; the career record is written for M5 to read, and nothing carries into the second hill (Mount Tom) yet.
 
 
 ---
@@ -2171,7 +2171,7 @@ Finish the Blender kit so every lift type and lodge tier the sim can produce has
 Row 15 (lift types final: surface and double chair; any new type such as a triple must exist in `LiftType` first), row 16 (lodge tier 1 exists in sim), 2d (vehicle kit already added there).
 
 ### Player-visible result
-Buying a lodge tier changes the building. A surface lift has a distinct bottom station from a chair. Tenney's base lodge (row 36) has its own 1960s silhouette.
+Buying a lodge tier changes the building. A surface lift has a distinct bottom station from a chair. The second hill's base lodge (row 36, Mount Tom) has its own silhouette; period to confirm.
 
 ### Design
 
@@ -2188,8 +2188,8 @@ New and reworked assets:
 | `lodge-tier-3.glb` | 3,600 | 45 KB | tier 2 plus a second storey and stone chimney |
 | `surface-terminal-bottom.glb` | 350 | 10 KB | low bullwheel shed for T-bar or platter |
 | `surface-terminal-top.glb` | 300 | 9 KB | |
-| `a-frame-lodge.glb` | 2,400 | 30 KB | Tenney base lodge, steep A-frame, 1960s |
-| `platter.glb` | 80 | 4 KB | Tenney's lower-mountain surface lift carrier |
+| `a-frame-lodge.glb` | 2,400 | 30 KB | Second-hill base lodge, steep A-frame, 1960s (written for Tenney, which was cut; style to confirm for Mount Tom) |
+| `platter.glb` | 80 | 4 KB | Second-hill lower-mountain surface lift carrier (written for Tenney) |
 | `lift-tower-derelict.glb` | 228 | 7 KB | rust tint, no sheaves; start-state dressing |
 
 Every file stays far under the 500 KB per-GLB limit; the real budget is tris, because all static pieces are merged per component and village tris count toward the 200k main-pass cap. Lodge tiers are mutually exclusive, so only one is ever drawn.
@@ -2214,7 +2214,7 @@ export type KitEntry = {
 export type KitManifest = { version: 2; units: "meters"; upAxis: "+Y"; front: "+Z"; draco: true; assets: KitEntry[] };
 ```
 
-Loader: `kit.ts` imports `manifest.json` at build time (a JSON import is bundled, so no runtime fetch and no basePath issue), derives `KitAsset` from it, and reads rope and grip heights from it instead of `KIT_ROPE_Y` and `KIT_GRIP_Y`. Preload stays eager for the village, lift and skier assets; Tenney-only assets (`a-frame-lodge`, `platter`) preload only when the active mountain needs them (row 34 gives the mountain id).
+Loader: `kit.ts` imports `manifest.json` at build time (a JSON import is bundled, so no runtime fetch and no basePath issue), derives `KitAsset` from it, and reads rope and grip heights from it instead of `KIT_ROPE_Y` and `KIT_GRIP_Y`. Preload stays eager for the village, lift and skier assets; Second-hill-only assets (`a-frame-lodge`, `platter`, written for Tenney) preload only when the active mountain needs them (row 34 gives the mountain id).
 
 Blender side: add `tools/blender/manifest.py` with `write_manifest(entries)` called at the end of every build script; `export()` in `lib.py` returns size, `tris(ob)` already exists. Copy step stays manual: `cp "$LAST_CHAIR_KIT_ROOT"/glb/* web/public/models/`.
 
@@ -2257,7 +2257,7 @@ About 250 lines of TypeScript plus Blender Python. Cut point: lodge tiers 2 and 
 
 ### Open decisions
 1. Keep `web/public/models/` (recommended) or move to `web/public/assets/` as the roadmap row says.
-2. A-frame for Tenney's lodge: a period guess, not a documented building. Recommended: label it a fictional rebuild per WORLD.md, same as Dutch Hill's lodge.
+2. A-frame for the second hill's lodge (written for Tenney): a period guess, not a documented building. Recommended: label it a fictional rebuild per WORLD.md, same as Dutch Hill's lodge.
 
 ---
 
@@ -2670,7 +2670,7 @@ Define a mountain as one `MountainDef` object (terrain, scale, site, start state
 2b, 2d (`SiteDef` in `game/mountains/dutchHill.site.ts`), row 18 (weather model to receive climate data), row 20 (economy constants), row 23 (beats), row 25 (save versioning policy).
 
 ### Player-visible result
-None. This is the refactor that lets PR 36 add Tenney as data.
+None. This is the refactor that lets PR 36 add Mount Tom as data.
 
 ### Design
 
@@ -2679,12 +2679,12 @@ Today the active mountain is a module singleton: `TERRAIN = createTerrain(DUTCH_
 Shape (`web/src/game/mountains/types.ts`, new):
 
 ```ts
-export type MountainId = "dutch_hill" | "tenney";
+export type MountainId = "dutch_hill" | "mount_tom";
 export type UsState = "VT" | "NH" | "MA" | "ME";
 export type ArchetypeTag =
   | "rural_sticks" | "natural_snow_only" | "weekends_family" | "no_snowmaking_start"
   | "southern_thaw" | "family_ropetow" | "exposed_summit" | "gondola_vintage" | "night_show"
-  | "cold_north" | "big_vertical";                       // last two proposed for Tenney
+  | "cold_north" | "big_vertical";                       // last two proposed for a cold, tall hill (not Mount Tom)
 export type ArrivalKind = "gravel_lot" | "roadside" | "paved_lot";
 
 export type ClimateDef = {
@@ -2799,14 +2799,14 @@ About 600 lines across all steps. Split: 34a types, registry, `mountainId` in st
 Add a New England career map that shows played, current and locked mountains as pins, opens a heritage card for each, and replaces the `mountain2` stub after a winter review.
 
 ### Depends on
-PR 34, row 24 (winter review carry-forward data). Tenney playable only after PR 36; until then its pin shows "Coming next winter".
+PR 34, row 24 (winter review carry-forward data). Mount Tom playable only after PR 36; until then its pin shows "Coming next winter".
 
 ### Player-visible result
-After the winter review, Continue opens a map of Vermont, New Hampshire, Massachusetts and Maine. Dutch Hill has a green flag with its season score. Tenney is the next pin, with a "Start Tenney" button once available. Further pins are grey with the real name and one line of history. Range names (Green Mountains, White Mountains, Berkshires, Taconic Range) sit across the map in italic serif. The map is also reachable from the Menu.
+After the winter review, Continue opens a map of Vermont, New Hampshire, Massachusetts and Maine. Dutch Hill has a green flag with its season score. Mount Tom is the next pin, with a "Start Mount Tom" button once available. Further pins are grey with the real name and one line of history. Range names (Green Mountains, White Mountains, Berkshires, Taconic Range) sit across the map in italic serif. The map is also reachable from the Menu.
 
 ### Design
 
-What exists: `phase: "mountain2"` in `GamePhase`, rendered by `WinterReviewSheet.tsx` as a stub ("Tenney isn't playable yet..."), with "Replay Dutch Hill winter".
+What exists: `phase: "mountain2"` in `GamePhase`, rendered by `WinterReviewSheet.tsx` as a stub ("Tenney isn't open yet...", to be replaced by the next-hill call, STORY.md rows N3 and N9), with "Replay Dutch Hill winter".
 
 Career state (game, pure):
 
@@ -2821,22 +2821,24 @@ export type CareerState = {
   records: Partial<Record<MountainId, HillRecord>>;
   /** Order is the roster order in MOUNTAIN_ORDER. */
 };
-export const MOUNTAIN_ORDER: MountainId[]; // dutch_hill, tenney, then locked-only entries
+export const MOUNTAIN_ORDER: MountainId[]; // dutch_hill, mount_tom, then locked-only entries
 export function pinStatus(c: CareerState, id: MountainId): "played" | "current" | "next" | "locked";
 export function startMountain(state: GameState, id: MountainId): GameState; // new season on that hill
 ```
 
-Locked-only entries (no `MountainDef` yet) are a lighter type: `{ id, name, town, state, map, oneLine, sourceUrl }`, held in `game/mountains/roster.ts`. Proposed pins from WORLD.md Part 3, coordinates approximate to two decimals, to verify before ship:
+Locked-only entries (no `MountainDef` yet) are a lighter type: `{ id, name, town, state, map, oneLine, sourceUrl }`, held in `game/mountains/roster.ts`. Proposed pins from the STORY.md and WORLD.md Part 3 roster (Tenney and Crotched West were cut, STORY.md D1, proposed, pending owner), coordinates approximate to two decimals, to verify before ship:
 
 | Mountain | Town | lat, lon (approx.) | One line (draft, verify against NELSAP) |
 |---|---|---|---|
 | Dutch Hill | Heartwellville, VT | 42.80, -72.93 | Skied 1944 to 1985 on natural snow; lodge gone in 1990 |
-| Tenney Mountain | Plymouth, NH | 43.74, -71.78 | 1,400 ft of vertical, opened 1960, closed and reopened more than once |
-| Maple Valley | Dummerston, VT | 42.94, -72.62 | Family hill on Route 30 with a long closure |
+| Mount Tom | Holyoke, MA | to look up before ship | 680 ft of vertical, lit and snowmade on every trail, 1962 to 1998 (verify against NELSAP) |
+| Maple Valley | Dummerston, VT | 42.94, -72.62 | Dummerston, Windham County. Family hill on Route 30, closed since 2000 (verify) |
 | Mount Whittier | West Ossipee, NH | 43.82, -71.21 | Remembered for its gondola |
-| Hogback Mountain | Marlboro, VT | 42.86, -72.81 | Steep, windy hill on Route 9 |
+| Hogback Mountain | Marlboro, VT | 42.86, -72.81 | Lore-only pin, not playable: town-owned conservation land, published vertical smaller than Dutch Hill's (verify) |
 | Brodie Mountain | New Ashford, MA | 42.62, -73.23 | Night skiing and showmanship |
-| Crotched West | Bennington, NH | 43.00, -71.88 | Half of a split ski area |
+| Snow Valley | Winhall, VT | to look up before ship | Hosted the 1983 and 1984 national snowboarding championships (verify) |
+| Enchanted Mountain | near Jackman, ME | to look up before ship | Wind and isolation in far northern Maine, about 1966 to 1974 (verify) |
+| Evergreen Valley | Stoneham, ME | to look up before ship | Federal land lease, 1972 to 1982 (verify) |
 
 Map art: an SVG of the four states' outlines, simplified from US Census cartographic boundary files (public domain), at most 30 KB, in `web/public/map/new-england.svg` or inlined as a React component (inlining avoids a fetch and basePath handling; recommended). Projection: equirectangular with a cos(44 deg) longitude factor, a pure function `project(lat, lon, box)` in `ui/careerMap.ts`. Pins are buttons at least 44x44 px with a visible label; the map pans with one finger and pinch-zooms between 1x and 3x (CSS transform on an SVG group; no three.js). Range labels are SVG text in a serif italic at 12 to 14 px, `ink-soft`, rotated along the range. Font: see open decisions.
 
@@ -2865,12 +2867,12 @@ WORLD.md rules: heritage cards state documented facts with sources; the player's
 
 ### Tests
 - `career.test.ts`: pin status for each case; `startMountain` resets day, guests, lifts to the new mountain's start state and keeps founder and talents per MASTER_PLAN (talents persist across career? confirm with row 24's carry-forward); records update after a review.
-- `careerMap.test.ts`: `project` puts Dutch Hill south-west of Tenney; all pins inside the SVG box.
+- `careerMap.test.ts`: `project` puts Dutch Hill south-west of Mount Tom; all pins inside the SVG box.
 - Save: a v-old save in `"mountain2"` loads into `"career_map"`.
 - Visual: map at the four viewports, list view, heritage card.
 
 ### Verification
-Standard viewports; 375x667 must show all pins without overlap at 1x or let the list view cover it. VoiceOver on iPhone: list view reads each pin as "Tenney Mountain, New Hampshire, next, button".
+Standard viewports; 375x667 must show all pins without overlap at 1x or let the list view cover it. VoiceOver on iPhone: list view reads each pin as "Mount Tom, Massachusetts, next, button".
 
 ### Acceptance criteria
 - `"mountain2"` gone from code; old saves load.
@@ -2882,7 +2884,7 @@ Standard viewports; 375x667 must show all pins without overlap at 1x or let the 
 Facts in one-liners can be wrong; treat the table above as draft and verify each line against its NELSAP page before merge. Map SVG size; keep under 30 KB after simplification.
 
 ### Out of scope
-Maine pins, more than one playable mountain beyond Tenney, travel animations.
+Maine pins, more than one playable mountain beyond Mount Tom, travel animations.
 
 ### Docs to update
 WORLD.md Part 3 "Map UI" and roster table (coordinates, verified lines); MASTER_PLAN section 5 screen map ("Career hub").
@@ -2896,18 +2898,20 @@ About 380 lines. Cut point: list view first (it is the accessible version), pan 
 
 ---
 
-## PR 36: Tenney Mountain, NH (Act II)
+## PR 36: Mount Tom, MA (Act II; replaces Tenney)
+
+> **Superseded roster (STORY.md D1, proposed, pending owner).** Tenney reopened in 2018 and operates today, so it is cut from the career. Row 36 is now **Mount Tom, Holyoke, MA**: 680 ft, a warm valley hill that thaws often, a **night session** as a building plus a snow & service tile option, snow guns from day 1, $25,000 start cash, the local voice Lou Carvalho, and surprises MT1 to MT3 (STORY.md §3.4, §5.3, §5.4). The Goal and Player-visible result below are rewritten for Mount Tom. The **Design** subsection (scale table, terrain, rules, camera, site, start state, climate, economy, beats) is the original Tenney work, kept as a template for how to derive a hill; its numbers describe a cold, steep, 1,400 ft hill and must be re-derived for Mount Tom before the row starts. The acceptance properties and test names below were renamed but written for a harder, colder hill; rewrite them against STORY.md §5.5 first.
 
 ### Goal
-Add Tenney Mountain as the second playable `MountainDef`: colder, steeper, more capital, a roadside arrival area, and measurably harder than Dutch Hill in the balance harness.
+Add Mount Tom as the second playable `MountainDef`: a warm valley hill with guns from day 1 and a night session, more capital than Dutch Hill, and measurably harder than Dutch Hill in the balance harness.
 
 ### Depends on
 PRs 34 and 35; rows 15 (wind sensitivity per lift type), 18 (climate weights), 20 (economy and fail-soft), 22 and 23 (founders and beats engine); 2c and 2d (forest tiers and site rendering read data).
 
 ### Player-visible result
-"Start Tenney" opens a bigger, steeper hill in central New Hampshire. Cars line the access road shoulder instead of a gravel lot. The summit chair line exists but is derelict; repairing it is the first big decision. Cold days keep snow better, but wind holds close the summit lift some mornings. Guests pay more and expect more. A Dutch Hill strategy that worked does not carry over unchanged.
+"Start Mount Tom" opens a bigger hill in Holyoke, Massachusetts, with lights, guns from day 1 and a warm valley that thaws often. Lou Carvalho, the electrician who wired the old lights, is the local voice. Connecticut plates arrive when the north runs dry. Guests pay more and expect more. A Dutch Hill strategy that worked does not carry over unchanged.
 
-### Design
+### Design (Tenney-era reference, numbers superseded)
 
 Facts used (NELSAP Tenney page, last updated January 2015): Plymouth, NH; operated from 1960; closed and reopened under several owners in the 1990s and 2000s, listed closed after 2010; 1,400 ft vertical; summit double chair (Stadeli, later Borvig chairs), Eclipse triple (Borvig), Hornet double (Stadeli), a platter on the lower trails; snowmaking pond proposed. Current status after 2015 is not on that page and must be checked before writing any heritage or radio copy.
 
@@ -2962,37 +2966,37 @@ Beats (Act II, copy drafts only; thresholds are data): first summit ride, a cold
 
 Harder, defined as balance properties over the harness (`balance.ts`, 28 days, 6 seeds in CI, 40 in the report):
 
-1. Adaptive on Tenney ends with a lower end-cash ratio (end / start) than adaptive on Dutch Hill, and lower mean satisfaction by at least 5 points.
-2. At least three of the nine fixed fare-and-snow combinations go below $0 at some point on Tenney (passive play fails).
-3. A Tenney-specific strategy (repair the summit chair by day 5, Balanced, High on wind or thaw mornings) beats adaptive on the combined cash and satisfaction score, so a better plan exists and is not the Dutch Hill plan.
-4. No fixed combination is best on both cash and satisfaction (the existing property 1 holds on Tenney).
+1. Adaptive on Mount Tom ends with a lower end-cash ratio (end / start) than adaptive on Dutch Hill, and lower mean satisfaction by at least 5 points.
+2. At least three of the nine fixed fare-and-snow combinations go below $0 at some point on Mount Tom (passive play fails).
+3. A Mount Tom-specific strategy (repair the summit chair by day 5, Balanced, High on wind or thaw mornings) beats adaptive on the combined cash and satisfaction score, so a better plan exists and is not the Dutch Hill plan.
+4. No fixed combination is best on both cash and satisfaction (the existing property 1 holds on Mount Tom).
 
 `runSeason` gains a `mountainId` argument; strategies gain `repairDerelict` as an action. Tuning order if a property fails: economy multipliers first, `expectationBonus` second, climate weights last.
 
 ### Files
-- `web/src/game/mountains/tenney.ts`, `tenney.site.ts` (new)
+- `web/src/game/mountains/mountTom.ts`, `mountTom.site.ts` (new)
 - `web/src/game/mountains/index.ts` (from 34): register
 - `web/src/game/rules.ts` (exists): `repairLift(state, index)`; derelict lifts closed and not drawn as running
-- `web/src/game/balance.ts`, `balance.test.ts`, `balance.report.test.ts` (exist): mountain argument, Tenney properties
+- `web/src/game/balance.ts`, `balance.test.ts`, `balance.report.test.ts` (exist): mountain argument, Mount Tom properties
 - `web/src/render/Lift.tsx` (exists): derelict towers (`lift-tower-derelict`)
 - `web/src/ui/BuildSheet.tsx` (exists): "Repair summit chair, $9,000" row with reason when unaffordable
 - `web/src/game/content.ts` (exists): Act II beat copy
 
 ### Tests
-- `tenney.test.ts`: mean world grade in 0.35 to 0.5 and above Dutch Hill's; summit chair line passes `checkLiftLine` with the overrides; default platter valid; site stalls fit the road length.
+- `mountTom.test.ts`: mean world grade in 0.35 to 0.5 and above Dutch Hill's; summit chair line passes `checkLiftLine` with the overrides; default platter valid; site stalls fit the road length.
 - `rules.test.ts`: repair deducts cost once, opens the lift, refuses when short of cash with a reason.
 - `balance.test.ts`: the four properties above on 6 seeds.
-- New characterization snapshot `tenney.characterization.test.ts.snap` (a second safety net, created in this PR; Dutch Hill's snapshot unchanged).
-- Visual: Tenney home view, roadside arrival, derelict chair, wind hold morning at the four viewports.
+- New characterization snapshot `mountTom.characterization.test.ts.snap` (a second safety net, created in this PR; Dutch Hill's snapshot unchanged).
+- Visual: Mount Tom home view, roadside arrival, derelict chair, wind hold morning at the four viewports.
 
 ### Verification
-Standard viewports, plus performance at 844x390 on Chromium 4x throttle: Tenney within the same triangle and draw-call budget as Dutch Hill. Real iPhone if available: frame rate at home view and fully zoomed out.
+Standard viewports, plus performance at 844x390 on Chromium 4x throttle: Mount Tom within the same triangle and draw-call budget as Dutch Hill. Real iPhone if available: frame rate at home view and fully zoomed out.
 
 ### Acceptance criteria
-- Tenney playable from the career map through a 28-day winter to its review.
+- Mount Tom playable from the career map through a 28-day winter to its review.
 - Four balance properties pass; numbers pasted into SIMULATION_SPEC.
-- Dutch Hill snapshot unchanged; Tenney snapshot added.
-- Main pass at most 200k triangles and 40 draw calls at Tenney's home view and maximum zoom-out.
+- Dutch Hill snapshot unchanged; Mount Tom snapshot added.
+- Main pass at most 200k triangles and 40 draw calls at Mount Tom's home view and maximum zoom-out.
 
 ### Risks
 Harness strategies are Dutch Hill shaped; property 3 needs a new strategy, which can bias the result. The 1.4x exaggeration and the 4,230 ft run are assumptions. Wind and weather depend on rows 15 and 18 existing as designed.
@@ -3001,7 +3005,7 @@ Harness strategies are Dutch Hill shaped; property 3 needs a new strategy, which
 Triple chair as a lift type, snowmaking pond as water rendering (keep a placeholder), Maple Valley and later mountains.
 
 ### Docs to update
-WORLD.md Part 3 roster row and a Tenney heritage card draft with sources; SIMULATION_SPEC Balance (Tenney table) and Economy (per-mountain values); MASTER_PLAN row 36; ART_DIRECTION scale notes.
+WORLD.md Part 3 roster row and a Mount Tom heritage card draft with sources; SIMULATION_SPEC Balance (Mount Tom table) and Economy (per-mountain values); MASTER_PLAN row 36; ART_DIRECTION scale notes.
 
 ### Size
 About 450 lines including data. Split: 36a terrain, site, start state, repair rule, render (about 280); 36b climate, economy, beats, balance properties (about 200).
@@ -3021,7 +3025,7 @@ Pay the player a small daily income from each mountain they have left, computed 
 PRs 34 to 36; row 20 (economy and loan). WORLD.md lists "The Caretaker (per hill): off-screen manager, idle income sim on departed mountains".
 
 ### Player-visible result
-On Tenney, the night recap shows "Dutch Hill caretaker +$140" with a "Why?" that says "Reputation 72, 2 lifts, café: about 31 skiers a day at Balanced". The career map shows each departed hill's caretaker line.
+On Mount Tom, the night recap shows "Dutch Hill caretaker +$140" with a "Why?" that says "Reputation 72, 2 lifts, café: about 31 skiers a day at Balanced". The career map shows each departed hill's caretaker line.
 
 ### Design
 
@@ -3041,7 +3045,7 @@ export type CaretakerLine = { mountainId: MountainId; net: number; guests: numbe
 
 Deterministic, no RNG draw (so the active hill's RNG sequence and its snapshot do not change). Reputation of a departed hill decays 0.5 per game day toward 40, so neglect shows. Credited at Sleep as one recap line per hill; included in the Ledger (PR 38) as its own row.
 
-Proposed target: about 6% to 10% of the active hill's net per day, never enough to cover a bad Tenney season alone. Check with the harness: property "a Tenney passive strategy still goes negative with Dutch Hill's caretaker income at reputation 80".
+Proposed target: about 6% to 10% of the active hill's net per day, never enough to cover a bad Mount Tom season alone. Check with the harness: property "a Mount Tom passive strategy still goes negative with Dutch Hill's caretaker income at reputation 80".
 
 ### Files
 - `web/src/game/caretaker.ts` (new)
@@ -3052,7 +3056,7 @@ Proposed target: about 6% to 10% of the active hill's net per day, never enough 
 ### Tests
 - `caretaker.test.ts`: zero for no records; monotone in reputation; weekend higher; never negative; decay toward 40.
 - Harness property above.
-- Dutch Hill snapshot unchanged (no records on a first-hill season); Tenney snapshot changes only in cash lines, by exactly the caretaker sums (paste the diff).
+- Dutch Hill snapshot unchanged (no records on a first-hill season); Mount Tom snapshot changes only in cash lines, by exactly the caretaker sums (paste the diff).
 
 ### Verification
 Standard viewports for the recap line and "Why?" text.
@@ -3063,7 +3067,7 @@ Standard viewports for the recap line and "Why?" text.
 - Harness property passes.
 
 ### Risks
-Any extra cash eases Tenney; the property guards it.
+Any extra cash eases Mount Tom; the property guards it.
 
 ### Out of scope
 Managing departed hills, caretaker hiring, events on departed hills.
@@ -3165,7 +3169,7 @@ Settings and their effects:
 
 | Setting | Options | Effect |
 |---|---|---|
-| Mountain | Dutch Hill template, Tenney (once played in Story or always, see open decisions), Blank hill | `mountainId`; Blank is a generic 1,200 ft New England hill `MountainDef` with no beats and no heritage (WORLD.md Part 3 "Sandbox") |
+| Mountain | Dutch Hill template, Mount Tom (once played in Story or always, see open decisions), Blank hill | `mountainId`; Blank is a generic 1,200 ft New England hill `MountainDef` with no beats and no heritage (WORLD.md Part 3 "Sandbox") |
 | Money | Normal, Comfortable, Unlimited | start cash × 1, × 3; Unlimited: costs still posted to the Ledger, cash shown as "Unlimited", never blocks |
 | Weather | Live random, Fixed sunny, Storm week | row 18 model; Fixed: every day `clear`; Storm week: a 7-day cycle of snow, snow, clear, thaw, thaw, clear, snow |
 | Talents | Crew order, All learned, Pick each night | All: `talentsOwned` = full list at start; Pick: night sheet shows a third tile "Crew learns tonight" with the next three |
@@ -3219,7 +3223,7 @@ MASTER_PLAN section 3 Modes and "Sandbox settings"; SIMULATION_SPEC new "Modes" 
 About 380 lines. Cut point: "Pick each night" talents move to a follow-up.
 
 ### Open decisions
-1. Tenney in Sandbox before it is reached in Story: available from the start (recommended, Sandbox is for trying things) or only after Story reaches it.
+1. Mount Tom in Sandbox before it is reached in Story: available from the start (recommended, Sandbox is for trying things) or only after Story reaches it.
 
 ---
 
@@ -3424,7 +3428,7 @@ That is one call under the cap with four lifts. Merge all lifts into one body an
 
 Method:
 1. Add a dev-only overlay behind `?perf=1` (stripped from production by `process.env.NODE_ENV`): fps over 5 s, frame time p95, triangles, calls, geometries, textures, JS heap where available.
-2. Automated: `phone-check.mjs` (part 3) in Chromium with CDP `Emulation.setCPUThrottlingRate` 4 at 844x390, home view and zoomed out, Dutch Hill and Tenney; fail under 30 fps, over 200k triangles, over 40 calls. WebKit in Playwright has no CPU throttle; use it for correctness only.
+2. Automated: `phone-check.mjs` (part 3) in Chromium with CDP `Emulation.setCPUThrottlingRate` 4 at 844x390, home view and zoomed out, Dutch Hill and Mount Tom; fail under 30 fps, over 200k triangles, over 40 calls. WebKit in Playwright has no CPU throttle; use it for correctness only.
 3. Device: iPhone 12 or 13 class (mid in 2026), Safari, connected to a Mac; Safari Web Inspector, Timelines, JavaScript and Rendering frames; record 30 s of a busy Saturday at 1x and 3x speed. Low Power Mode on for one run (caps at 30 fps on iOS).
 4. Record numbers in `docs/TESTING.md` sign-off log with device, iOS version and build SHA.
 
@@ -3571,7 +3575,7 @@ Add a test (`web/src/game/layering.test.ts`) that reads every file under `src/ga
 
 ## Limitations
 
-Rows 28 to 40 depend on M1 to M3 work that is not on `main` yet (rows 12b to 27, world scale 2b to part 3); file and field names taken from those plans are planned names, and every PR must confirm them before coding. Proposed numbers (lighting values, groom strengths, Tenney's H = 10 and V = 5.5, its 4,230 ft horizontal run, climate weights, economy multipliers, caretaker formula, boarder shares, audio sizes, bundle budgets, the draw-call table) are design starting points, labelled "proposed", to be tuned on screen and in the balance harness. Tenney facts come from the NELSAP page last updated January 2015; its later status, the access road name and all pin coordinates and one-liners are unverified. Draw-call and triangle figures are estimates until measured on a device. The bundle measurement comes from an `out/` build of unknown date. iOS behaviour notes (audio start on gesture, audio session, storage eviction and separation, downloads in standalone mode) reflect Safari as of 2026 and need a real-device check in each PR that relies on them.
+Rows 28 to 40 depend on M1 to M3 work that is not on `main` yet (rows 12b to 27, world scale 2b to part 3); file and field names taken from those plans are planned names, and every PR must confirm them before coding. Proposed numbers (lighting values, groom strengths, the Tenney-era H = 10 and V = 5.5 and 4,230 ft horizontal run in the PR 36 reference design (superseded by Mount Tom), climate weights, economy multipliers, caretaker formula, boarder shares, audio sizes, bundle budgets, the draw-call table) are design starting points, labelled "proposed", to be tuned on screen and in the balance harness. Tenney facts (PR 36 reference design only; Tenney is cut from the career) come from the NELSAP page last updated January 2015; its later status, the access road name and all pin coordinates and one-liners are unverified. Draw-call and triangle figures are estimates until measured on a device. The bundle measurement comes from an `out/` build of unknown date. iOS behaviour notes (audio start on gesture, audio session, storage eviction and separation, downloads in standalone mode) reflect Safari as of 2026 and need a real-device check in each PR that relies on them.
 
 ### P1 — Family Pack and Race Kid
 
