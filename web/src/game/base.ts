@@ -28,7 +28,8 @@ type Asset = {
 
 export const ATTACH_BONUS = 0.05;
 export const MAX_BASE_ASSETS = 12;
-export const DEFAULT_STYLE = "1950s-timber";
+export type BuildingStyleId = "1950s-timber" | "chalet70s";
+export const DEFAULT_STYLE: BuildingStyleId = "1950s-timber";
 export const CHAIR_TIER = 2;
 export const ASSET_CATALOG: Record<AssetId, Asset> = {
   warming_hut: {

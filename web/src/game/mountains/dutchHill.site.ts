@@ -1,4 +1,8 @@
 import type { SiteDef } from "../site";
+import type { BuildingStyleId } from "../base";
+
+/** Default building look for Dutch Hill (1950s timber base kit). */
+export const DUTCH_HILL_BUILDING_STYLE: BuildingStyleId = "1950s-timber";
 
 /** Dutch Hill base area layout at H=6 world scale (see world scale 2b / 2d handoff). */
 export const DUTCH_HILL_SITE: SiteDef = {

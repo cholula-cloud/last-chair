@@ -21,7 +21,9 @@ import {
   placeKit,
   useKit,
 } from "./kit";
-import { HOUSES, LODGE, ROAD_Z, SNOWCAT_POS } from "./layout";
+import { HOUSES, LODGE, MOUNTAIN_BUILDING_STYLE, ROAD_Z, SNOWCAT_POS } from "./layout";
+import { lodgeStructureModelNames, normalizeStyleId, resolveStyledModel } from "./kitStyle";
+import { useSettings } from "@/ui/settingsStore";
 import { OVERLAY_DIM } from "./terrainOverlay";
 
 /** Lamp posts along the road and around the base, with soft light pools. */
@@ -68,11 +70,8 @@ export const LODGE_BASE_KIT = "base-lodge" as const satisfies KitAsset;
 export const LODGE_ANNEX_KITS = ["lodge-annex-2", "lodge-annex-3"] as const satisfies readonly KitAsset[];
 
 /** Structural lodge pieces drawn at the lodge anchor for the current sim tier. */
-export function lodgeStructureKits(tier: LodgeTier): readonly KitAsset[] {
-  const kits: KitAsset[] = [LODGE_BASE_KIT];
-  if (tier >= 2) kits.push(LODGE_ANNEX_KITS[0]);
-  if (tier >= 3) kits.push(LODGE_ANNEX_KITS[1]);
-  return kits;
+export function lodgeStructureKits(tier: LodgeTier, villageStyle = MOUNTAIN_BUILDING_STYLE): readonly KitAsset[] {
+  return lodgeStructureModelNames(tier, villageStyle);
 }
 
 /** Kit assets the village merge loop must register (prevents tier lodge skip). */
@@ -86,11 +85,15 @@ export const VILLAGE_SCENE_KITS = [
   "lamp-post",
 ] as const satisfies readonly KitAsset[];
 
-export function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTier): Placement[] {
+export function villagePlacements(
+  assets: readonly PlacedAsset[],
+  tier: LodgeTier,
+  villageStyle = MOUNTAIN_BUILDING_STYLE,
+): Placement[] {
   const B = METERS_TO_WORLD;
   const P = METERS_TO_WORLD * LIFT_TOY_SCALE;
   const lodgeAnchor = { x: LODGE.x, z: LODGE.z + 0.05, yaw: 0, scale: B };
-  const list: Placement[] = lodgeStructureKits(tier).map((name, index) => ({
+  const list: Placement[] = lodgeStructureKits(tier, villageStyle).map((name, index) => ({
     name,
     ...lodgeAnchor,
     ...(index === 0 ? { asset: { kind: "lodge" } as const } : {}),
@@ -100,14 +103,15 @@ export function villagePlacements(assets: readonly PlacedAsset[], tier: LodgeTie
     ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   );
   for (const [index, asset] of assets.entries()) {
-    const name = ASSET_MODELS[asset.id];
-    if (!name) continue;
+    const base = ASSET_MODELS[asset.id];
+    if (!base) continue;
     const attached = asset.attachPad !== undefined;
+    const name = resolveStyledModel(base, villageStyle);
     list.push({
-      name: attached ? "warming-hut" : name,
+      name,
       ...asset.at,
       yaw: asset.attachPad === 1 ? Math.PI : 0,
-      scale: B * (attached ? 1.15 : 1.05),
+      scale: B * (attached ? 1.1 : 1.05),
       asset: { kind: "venue", index },
     });
   }
@@ -172,13 +176,21 @@ export function Village() {
   const tier = useGameStore((s) => s.lodgeTier);
   const construction = useGameStore((s) => s.lodgeUpgrade !== null);
 
+  const villageStyle = useSettings((s) => s.buildingStyle ?? MOUNTAIN_BUILDING_STYLE);
+  const style = normalizeStyleId(villageStyle);
   const lodgeKit = useKit(LODGE_BASE_KIT);
   const lodgeAnnex2Kit = useKit(LODGE_ANNEX_KITS[0]);
   const lodgeAnnex3Kit = useKit(LODGE_ANNEX_KITS[1]);
+  const lodgeChalet1 = useKit("lodge-tier-1-chalet70s");
+  const lodgeChalet2 = useKit("lodge-tier-2-chalet70s");
+  const lodgeChalet3 = useKit("lodge-tier-3-chalet70s");
   const houseKit = useKit("clapboard-house");
   const cafeKit = useKit("cafe");
+  const cafeChaletKit = useKit("cafe-chalet70s");
   const shopKit = useKit("ski-shop");
+  const shopChaletKit = useKit("ski-shop-chalet70s");
   const hutKit = useKit("warming-hut");
+  const hutChaletKit = useKit("warming-hut-chalet70s");
   const catKit = useKit("snowcat");
   const cat = bakeKit(catKit);
   const catRef = useRef<THREE.Group>(null);
@@ -200,16 +212,22 @@ export function Village() {
       [LODGE_BASE_KIT]: lodgeKit,
       [LODGE_ANNEX_KITS[0]]: lodgeAnnex2Kit,
       [LODGE_ANNEX_KITS[1]]: lodgeAnnex3Kit,
+      "lodge-tier-1-chalet70s": lodgeChalet1,
+      "lodge-tier-2-chalet70s": lodgeChalet2,
+      "lodge-tier-3-chalet70s": lodgeChalet3,
       "clapboard-house": houseKit,
       cafe: cafeKit,
+      "cafe-chalet70s": cafeChaletKit,
       "ski-shop": shopKit,
+      "ski-shop-chalet70s": shopChaletKit,
       "warming-hut": hutKit,
+      "warming-hut-chalet70s": hutChaletKit,
       "lamp-post": lampKit,
     };
     const bodies: THREE.BufferGeometry[] = [];
     const glows: THREE.BufferGeometry[] = [];
     const pickMeshes: { placement: Placement; geometry: THREE.BufferGeometry; y: number }[] = [];
-    for (const p of villagePlacements(assets, tier)) {
+    for (const p of villagePlacements(assets, tier, style)) {
       const scene = scenes[p.name];
       if (!scene) continue;
       const kit = bakeKit(scene);
@@ -222,7 +240,26 @@ export function Village() {
     if (additions.length > 0) bodies.push(merge(additions));
 
     return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
-  }, [assets, tier, construction, lodgeKit, lodgeAnnex2Kit, lodgeAnnex3Kit, houseKit, cafeKit, shopKit, hutKit, lampKit]);
+  }, [
+    assets,
+    tier,
+    style,
+    construction,
+    lodgeKit,
+    lodgeAnnex2Kit,
+    lodgeAnnex3Kit,
+    lodgeChalet1,
+    lodgeChalet2,
+    lodgeChalet3,
+    houseKit,
+    cafeKit,
+    cafeChaletKit,
+    shopKit,
+    shopChaletKit,
+    hutKit,
+    hutChaletKit,
+    lampKit,
+  ]);
 
   useEffect(
     () => () => {

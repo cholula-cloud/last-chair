@@ -9,6 +9,7 @@ import { TERRAIN } from "@/game/terrain";
 import { merge, type Part } from "./geo";
 import { SITE } from "./layout";
 import type { StallSlot } from "./parking";
+import { buildFootpathSurface } from "./footpathSurface";
 import { buildParkingSurface } from "./parkingSurface";
 import { PALETTE } from "./palette";
 import { useStallMap } from "./useStallMap";
@@ -62,6 +63,16 @@ function GravelLot({ tier }: { tier: LodgeTier }) {
   );
 }
 
+function LodgeFootpath() {
+  const geometry = useMemo(() => buildFootpathSurface(SITE, TERRAIN), []);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <mesh geometry={geometry} receiveShadow userData={{ asset: { kind: "footpath" } }}>
+      <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+    </mesh>
+  );
+}
+
 function CarInstances({ kind, list }: { kind: 0 | 1 | 2; list: CarSpot[] }) {
   const geo = useMemo(() => carGeo(kind), [kind]);
   const ref = useRef<THREE.InstancedMesh>(null);
@@ -106,6 +117,7 @@ export function ArrivalArea({ guests, dayIndex }: { guests: Guest[]; dayIndex: n
   return (
     <group>
       <GravelLot tier={tier} />
+      <LodgeFootpath />
       <CarInstances kind={0} list={cars} />
       <CarInstances kind={1} list={cars} />
       <CarInstances kind={2} list={cars} />
