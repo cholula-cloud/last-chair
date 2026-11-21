@@ -16,12 +16,18 @@ if _DIR not in sys.path:
     sys.path.insert(0, _DIR)
 
 import lib  # noqa: E402
-from props import b_pines  # noqa: E402
+
+# props.py is written for `from lib import *` (Asset, etc.).
+_ns = {"__name__": "props"}
+exec("from lib import *\n" + open(os.path.join(_DIR, "props.py"), encoding="utf-8").read(), _ns)
+b_pines = _ns["b_pines"]
 
 
 def build_all(out=None, export_glb=False, render=False, rows_path=None):
     if out:
         lib.GLB = out
+        lib.ROOT = os.path.dirname(out.rstrip("/"))
+        lib.REN = os.path.join(lib.ROOT, "renders")
         os.makedirs(out, exist_ok=True)
     if render:
         os.makedirs(lib.REN, exist_ok=True)

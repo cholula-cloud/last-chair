@@ -214,12 +214,12 @@
     {
       "name": "pine-a",
       "file": "pine-a.glb",
-      "tris": 106,
-      "sizeBytes": 4316,
-      "heightMeters": 6.85,
+      "tris": 126,
+      "sizeBytes": 4580,
+      "heightMeters": 7.17,
       "footprintMeters": [
-        4.14,
-        4.78
+        5.89,
+        5.74
       ],
       "tags": [
         "tree"
@@ -228,12 +228,12 @@
     {
       "name": "pine-b",
       "file": "pine-b.glb",
-      "tris": 114,
-      "sizeBytes": 4420,
-      "heightMeters": 10.16,
+      "tris": 140,
+      "sizeBytes": 4764,
+      "heightMeters": 10.61,
       "footprintMeters": [
-        4.04,
-        3.84
+        4.38,
+        5.06
       ],
       "tags": [
         "tree"
@@ -242,12 +242,26 @@
     {
       "name": "pine-c",
       "file": "pine-c.glb",
-      "tris": 88,
-      "sizeBytes": 4088,
-      "heightMeters": 8.32,
+      "tris": 126,
+      "sizeBytes": 4572,
+      "heightMeters": 8.56,
       "footprintMeters": [
-        5.74,
-        5.46
+        7.34,
+        7.15
+      ],
+      "tags": [
+        "tree"
+      ]
+    },
+    {
+      "name": "pine-d",
+      "file": "pine-d.glb",
+      "tris": 88,
+      "sizeBytes": 4052,
+      "heightMeters": 6.11,
+      "footprintMeters": [
+        8.18,
+        7.98
       ],
       "tags": [
         "tree"

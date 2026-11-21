@@ -17,6 +17,8 @@ export const PALETTE = {
   rock: "#5d5650",
   earth: "#7a6850",
   pineDeep: "#1f4a3d",
+  /** Soft green wash under forest snow (terrain vertex tint). */
+  forestFloor: "#2a4f42",
   birchCrown: "#c4a24a",
   trimWhite: "#f0ebe2",
   pineCool: "#356b5e",
@@ -52,7 +54,8 @@ export const PALETTE = {
   skin: "#f1c7a3",
 
   skyTop: "#8fb6e3",
-  skyHorizon: "#e9e7e6",
+  /** Day horizon: slight pine cool so fog reads as a wooded valley. */
+  skyHorizon: "#dfe6e2",
   ridgeNear: "#7f93ad",
   ridgeMid: "#a3b2c8",
   ridgeFar: "#c3ccdb",
@@ -68,8 +71,8 @@ export const PALETTE = {
   sunNight: "#9db4ff",
   hemiSkyDay: "#b4c6f2",
   hemiSkyDusk: "#c9b8d8",
-  hemiGroundDay: "#e2d3bf",
-  hemiGroundDusk: "#e8cdb0",
+  hemiGroundDay: "#d5d8c8",
+  hemiGroundDusk: "#e0d4b8",
   hemiSkyNight: "#3b5188",
   hemiGroundNight: "#1a2236",
 } as const;
