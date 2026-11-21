@@ -76,6 +76,13 @@ const _pine = new THREE.Color(PALETTE.pine);
 const _pineTip = new THREE.Color(PALETTE.pineTip);
 const _vc = new THREE.Color();
 
+function colorDist(a: THREE.Color, b: THREE.Color): number {
+  const dr = a.r - b.r;
+  const dg = a.g - b.g;
+  const db = a.b - b.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
 /** Kit pines ship with heavy snow caps; nudge baked vertex colours greener at runtime. */
 export function greenerKitTreeColors(geo: THREE.BufferGeometry): void {
   const attr = geo.getAttribute("color");
@@ -83,7 +90,7 @@ export function greenerKitTreeColors(geo: THREE.BufferGeometry): void {
   for (let i = 0; i < attr.count; i++) {
     _vc.fromBufferAttribute(attr, i);
     const lum = _vc.r * 0.299 + _vc.g * 0.587 + _vc.b * 0.114;
-    if (_vc.distanceTo(_snow) < 0.42 || lum > 0.82) {
+    if (colorDist(_vc, _snow) < 0.42 || lum > 0.82) {
       _vc.lerp(_pineTip, 0.72).lerp(_snow, 0.1);
     } else {
       _vc.lerp(_pine, 0.22);
