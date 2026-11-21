@@ -1,5 +1,5 @@
 /**
- * Row 33 mobile juice screenshots (home + night recap cash count).
+ * Row 33 mobile juice screenshots (home + night recap).
  * Usage: PLAY_URL=http://127.0.0.1:3000 node scripts/screenshots-juice33.mjs
  * Output: /opt/cursor/artifacts/390x844-juice-*.png
  */
@@ -68,8 +68,7 @@ try {
 
   await page.getByRole("button", { name: "Close hill" }).tap({ force: true });
   await page.getByRole("heading", { name: /Closing recap|Night recap/i }).waitFor({ timeout: 45000 });
-  await page.waitForTimeout(700);
-  await shot(page, "night-cash-count");
+  await shot(page, "night-recap");
 } finally {
   await browser.close();
 }
