@@ -434,10 +434,15 @@ def c_cafe():
     a.box((cx, y1 - 0.4, F + 2.55), (x1 - x0 + 0.55, 0.12, 0.34), OCH)
     for sx, face in ((-1, '-X'), (1, '+X')):
         side_window(a, (sx * W / 2, -0.6, 1.9), 1.2, 1.2, face)
-    # patio with a bistro table in front of the door
-    a.box((1.9, fy - 1.1, 0.08), (2.6, 2.2, 0.16), STONED)
-    a.cyl((1.6, fy - 1.9, 0), 0.06, 0.06, 0.9, 5, BAT)
-    a.cyl((1.6, fy - 1.9, 0.9), 0.4, 0.4, 0.06, 8, ORG)
+    # patio pad, railing, two bistro tables by the door
+    px, py, pw, pd = 1.5, fy - 1.2, 2.8, 2.2
+    a.box((px, py, 0.08), (pw, pd, 0.16), STONED, bevel=0.05)
+    for sx in (-1, 1):
+        a.box((px + sx * (pw / 2 + 0.04), py, 0.48), (0.1, pd + 0.12, 0.9), BAT)
+    a.box((px, py - pd / 2 - 0.05, 0.48), (pw + 0.18, 0.1, 0.9), BAT)
+    for tx, ty in ((px - 0.55, py + 0.4), (px + 0.55, py + 0.4)):
+        a.cyl((tx, ty, 0), 0.06, 0.06, 0.88, 5, BAT)
+        a.cyl((tx, ty, 0.88), 0.38, 0.38, 0.06, 8, ORG)
     # blade sign by the door
     a.box((W / 2 - 0.4, fy - 0.45, 3.0), (0.08, 0.9, 0.1), BAT)
     a.box((W / 2 - 0.4, fy - 0.55, 2.55), (0.1, 0.8, 0.7), OCH)

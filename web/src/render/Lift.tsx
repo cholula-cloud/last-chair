@@ -83,13 +83,17 @@ function cableGeometry(line: LiftLine, radius = CABLE_RADIUS): THREE.BufferGeome
 const S = METERS_TO_WORLD * LIFT_TOY_SCALE;
 
 /** Kit towers and terminals placed along the line; returns body + window glow. */
-function useLiftStructure(line: LiftLine, cableRadius: number) {
+function useLiftStructure(line: LiftLine, type: LiftType, cableRadius: number) {
   const tower = bakeKit(useKit("lift-tower"));
-  const bottom = bakeKit(useKit("lift-terminal-bottom"));
-  const top = bakeKit(useKit("lift-terminal-top"));
+  const surface = type === "surface";
+  const bottomName = surface ? "surface-terminal-bottom" : "lift-terminal-bottom";
+  const topName = surface ? "surface-terminal-top" : "lift-terminal-top";
+  const ropeY = surface ? KIT_ROPE_Y.surfaceTerminal : KIT_ROPE_Y.chairTerminal;
+  const bottom = bakeKit(useKit(bottomName));
+  const top = bakeKit(useKit(topName));
   const cables = useMemo(() => cableGeometry(line, cableRadius), [line, cableRadius]);
   const built = useMemo(() => {
-    const towers = liftTowers(line);
+    const towers = liftTowers(line, type);
     const { yaw } = liftFrame(line);
     const body: THREE.BufferGeometry[] = [cables.clone()];
     const glow: THREE.BufferGeometry[] = [];
@@ -97,8 +101,7 @@ function useLiftStructure(line: LiftLine, cableRadius: number) {
       const last = towers.length - 1;
       if (i === 0 || i === last) {
         const kit = i === 0 ? bottom : top;
-        // Uniform scale; liftTowers puts the terminal rope at LIFT_TERMINAL_H.
-        const sy = (t.top - 0.03 - t.ground) / (KIT_ROPE_Y.terminal * S);
+        const sy = (t.top - 0.03 - t.ground) / (ropeY * S);
         const y = t.ground - 0.02;
         body.push(placeKit(kit.body, t.x, y, t.z, yaw, [S, S * sy, S]));
         if (kit.glow) glow.push(placeKit(kit.glow, t.x, y, t.z, yaw, [S, S * sy, S]));
@@ -109,7 +112,7 @@ function useLiftStructure(line: LiftLine, cableRadius: number) {
       }
     });
     return { body: mergePlaced(body), glow: glow.length ? mergePlaced(glow) : null };
-  }, [line, cables, tower, bottom, top]);
+  }, [line, type, cables, tower, bottom, top, ropeY]);
   useEffect(() => () => cables.dispose(), [cables]);
   useEffect(
     () => () => {
@@ -148,11 +151,11 @@ export function Lift({
   type?: LiftType;
 }) {
   const invalidGhost = preview && previewInvalid;
-  const structure = useLiftStructure(line, preview ? ghostCableRadius(previewInvalid) : CABLE_RADIUS);
+  const structure = useLiftStructure(line, type, preview ? ghostCableRadius(previewInvalid) : CABLE_RADIUS);
   // A soft red halo around an invalid ghost's cable, so it shows on dimmed land.
   const halo = useMemo(() => (invalidGhost ? cableGeometry(line, INVALID_HALO_RADIUS) : null), [line, invalidGhost]);
   useEffect(() => () => halo?.dispose(), [halo]);
-  const towers = useMemo(() => liftTowers(line), [line]);
+  const towers = useMemo(() => liftTowers(line, type), [line, type]);
   const frame = useMemo(() => liftFrame(line), [line]);
   const carrierGeo = useCarrierGeometry(type);
   const carriers = useRef<THREE.InstancedMesh>(null);
