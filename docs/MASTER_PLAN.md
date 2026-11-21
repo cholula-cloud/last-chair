@@ -156,7 +156,7 @@ An upgrade does not add seats or a café inside the lodge. It gates what you may
 | Cost | Free, on day 1 | $3,500 | $9,000 |
 | Car park (visual) | 30 stalls | 50 | 80 |
 | Attach pads | 0 | 1 | 2 |
-| Opens to build | Surface lift, trails, warming hut, café, shop | Double chair, snow guns, rentals, ski school desk, tubing, basic decor | Bar and après, restaurant, ice rink, events, premium decor |
+| Opens to build | Surface lift, trails, warming hut, café, ski shop, ticket booth | Double chair, snow guns, rental shop, ski school desk, tubing, patrol hut, maintenance garage, basic decor | Après bar, Waffle Haus, ice rink, events, premium decor |
 | New revenue | Day tickets, café, shop | Rentals, lessons, tubing | Bar and restaurant, events |
 | Look | Small A-frame, plain | Wings, bigger porch, signage | Full timber lodge, lit windows, flags |
 
@@ -188,8 +188,8 @@ All buildable things (venues, activities, decor, infrastructure) are rows in one
 
 | Category | Examples | Guest reason to exist |
 |---|---|---|
-| Hospitality | Warming hut, café, bar, restaurant | Refuel, warm up, après |
-| Services | Shop, rentals, ski school, lockers | First-Timers need rentals and lessons |
+| Hospitality | Warming hut, café, Waffle Haus, après bar | Refuel, warm up, brunch, après |
+| Services | Ski shop (retail), rental shop (equipment), ski school, ticket booth, patrol hut | First-Timers need rentals and lessons |
 | Activities | Tubing, ice rink, sleigh rides | Families and teens come for them |
 | Decor | Fire pit, string lights, signs | Arrival mood, identity |
 | Infrastructure | Snow guns, groomer garage | Snow quality and coverage |

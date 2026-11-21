@@ -1,10 +1,13 @@
 """Building kit additions: lodge tiers 2 and 3, A-frame lodge, ticket booth, patrol hut, maintenance garage.
 Metres, Blender +Z up, front = -Y. Run in Blender:
   sys.path.insert(0, "<repo>/tools/blender"); import buildings2; buildings2.build_all(out)
+
+Tier annexes use lodge_tier_layout (camera-facing -Y / ±X massing).
 """
 import os
 import lib
 from lib import *
+import lodge_tier_layout as layout
 
 _ns = {}
 exec("from lib import *\n" + open(os.path.join(os.path.dirname(__file__), "buildings.py")).read(), _ns)
@@ -15,6 +18,8 @@ PALETTE["garage-grey"] = ("#6f7a84", 0.7)
 PALETTE.setdefault("sign-green", ("#0b6b3a", 0.6))
 PALETTE.setdefault("sign-white", ("#f4f7fb", 0.6))
 PALETTE.setdefault("sign-yellow", ("#f6c700", 0.6))
+PALETTE.setdefault("syrup-amber", ("#c4782a", 0.7))
+PALETTE.setdefault("waffle-cream", ("#f0e0c0", 0.8))
 
 
 def _deck(a, x0, x1, y0, y1, z, rail=True):
@@ -32,130 +37,13 @@ def _deck(a, x0, x1, y0, y1, z, rail=True):
 
 
 def _tier2(a, W, D, H, F):
-    """Timber rear wing with its own gable and a side deck."""
-    wx0, wx1 = -3.0, 5.0
-    wy0, wy1 = 2.0, 10.6
-    wh = 4.2
-    cx, cy = (wx0 + wx1) / 2, (wy0 + wy1) / 2
-    ww, wl = wx1 - wx0, wy1 - wy0
-    a.box((cx, cy, F / 2), (ww + 0.2, wl + 0.2, F), "stone-grey")
-    a.box((cx, cy, F + (wh - F) / 2), (ww, wl, wh - F), "timber-brown")
-    for x in (wx0, wx1):
-        a.box((x, wy1, F + (wh - F) / 2), (0.3, 0.3, wh - F), "trim-white")
-    for z in (1.6, 2.7):
-        a.box((cx, cy, z), (ww + 0.08, wl + 0.08, 0.1), "timber-dark")
-    a.gable_end((cx, cy, wh), wl + 0.6, ww, 2.8, "timber-brown", rz=90)
-    a.gable_roof((cx, cy, wh), wl + 0.6, ww, 2.8, "slate-roof", rz=90, thick=0.22, overhang=0.5,
-                 snow_thick=0.4, snow_over=0.12, snow_bevel=0.12)
-    # windows: +X side facing the deck, rear end
-    for y in (5.0, 8.0):
-        a.window((wx1, y, 2.3), 1.4, 1.5, '+X')
-    for y in (4.6, 8.0):
-        a.window((wx0, y, 2.3), 1.2, 1.4, '-X', mullion=False)
-    a.window((cx, wy1, 2.3), 1.6, 1.5, '+Y')
-    a.window((cx, wy1, 5.0), 0.9, 1.0, '+Y', mullion=False)
-    # side deck with steps and a ski rack
-    _deck(a, wx1 + 0.1, wx1 + 3.8, 3.4, wy1 - 0.4, F)
-    for i in range(2):
-        a.box((wx1 + 3.8 + 0.35 + i * 0.35, 6.0, F - 0.25 - i * 0.22), (0.4, 2.2, 0.2), "timber-brown")
-    a.box((wx1 + 2.4, wy1 - 1.0, F + 0.6), (2.2, 0.12, 0.12), "steel-dark")
-    for x in (wx1 + 1.4, wx1 + 3.4):
-        a.box((x, wy1 - 1.0, F + 0.35), (0.1, 0.1, 0.7), "steel-dark")
-    for i, x in enumerate((2.0, 2.6)):
-        a.box((wx1 + x - 0.0, wy1 - 1.25, F + 1.0), (0.1, 0.1, 1.5), "ski", rot=(-8, 0, 0))
-    a.box((wx1 + 2.4, wy1 - 1.0, F + 1.7), (2.4, 0.3, 0.16), "snow", bevel=0.06)
-    # lantern
-    a.box((wx1 + 0.02, 3.8, F + 2.4), (0.2, 0.26, 0.38), "lamp-glow")
-    a.box((0, cy + wl / 2 + 0.2, 0.25), (3.0, 1.2, 0.5), "snow", bevel=0.18)
-
-
-def _tier3_main_grand(a, W, D, H, F):
-    """Grand-lodge read on the main block (composited with base-lodge at tier 3)."""
-    fy = -D / 2
-    # stone terrace across the front porch
-    a.box((0, fy - 2.6, F - 0.08), (11.2, 5.6, 0.28), "stone-grey")
-    a.box((0, fy - 2.15, F + 0.12), (10.6, 4.8, 0.14), "trim-white")
-    # wider gabled portico over the entry
-    for x in (-2.4, 2.4):
-        a.box((x, fy - 1.05, F + 1.45), (0.32, 0.32, 3.35), "trim-white")
-    a.box((0, fy - 0.85, F + 3.55), (5.8, 3.4, 0.24), "trim-white")
-    a.gable_end((0, fy - 0.85, F + 3.65), 3.4, 5.8, 1.9, "barn-red", rz=90)
-    a.gable_roof((0, fy - 0.85, F + 3.65), 3.4, 5.8, 1.9, "slate-roof", rz=90, thick=0.18,
-                 overhang=0.35, snow_thick=0.3, snow_over=0.1, snow_bevel=0.1)
-    a.box((0, fy - 1.05, F + 2.75), (2.4, 0.12, 0.85), "cream-sign")
-    a.box((0, fy - 1.12, F + 2.65), (1.8, 0.06, 0.45), "navy")
-    for x in (-1.8, 1.8):
-        a.box((x, fy - 0.55, F + 2.1), (0.28, 0.28, 0.42), "lamp-glow")
-    # lodge banners flanking the approach
-    for x in (-5.6, 5.6):
-        a.box((x, fy - 2.9, F + 0.15), (0.18, 0.18, 4.6), "timber-brown")
-        a.box((x + 0.55 * (1 if x > 0 else -1), fy - 2.65, F + 3.7), (1.1, 0.08, 1.65), "navy")
-        a.box((x + 0.55 * (1 if x > 0 else -1), fy - 2.65, F + 3.72), (1.0, 0.04, 1.55), "trim-white")
-    # wider upper gallery across the great-room windows
-    gz = 4.85
-    a.box((0, fy - 0.35, gz - 0.12), (9.8, 1.6, 0.22), "timber-brown")
-    for bx in (-4.2, -1.4, 1.4, 4.2):
-        a.box((bx, fy - 0.35, gz - 0.45), (0.2, 0.2, 0.85), "trim-white")
-    for bx in (-3.5, 0.0, 3.5):
-        a.box((bx, fy - 0.48, gz + 0.62), (1.8, 0.1, 0.1), "timber-brown")
-        a.box((bx, fy - 0.48, gz + 0.68), (1.85, 0.14, 0.08), "snow")
-        a.box((bx, fy - 0.48, gz + 0.78), (0.14, 0.14, 0.14), "lamp-glow")
-    # après fire pits on the grand terrace
-    for fx in (-3.6, 3.6):
-        a.box((fx, fy - 2.35, F + 0.06), (1.1, 1.1, 0.2), "stone-dark")
-        a.box((fx, fy - 2.35, F + 0.28), (0.68, 0.68, 0.16), "lamp-glow")
-        a.box((fx, fy - 2.35, F + 0.46), (0.32, 0.32, 0.1), "lamp-glow")
+    """Camera-facing tier-2: forward bay, deck, flank ski rack, modest side wing."""
+    layout.tier2_front_bay(a, layout.timber_mats(), W, D, F)
 
 
 def _tier3_delta(a, W, D, H, F):
-    """Tier-3-only addition: grand dining wing, ridge cupola, main-lodge polish."""
-    _tier3_main_grand(a, W, D, H, F)
-    wcx, wcy = -8.2, -0.6
-    wl, wd = 5.1, 6.4
-    z0, z1 = 3.6, 7.1
-    a.box((wcx, wcy, (z0 + z1) / 2), (wl, wd, z1 - z0), "barn-red")
-    for sy in (-1, 1):
-        a.box((wcx - wl / 2, wcy + sy * wd / 2, (z0 + z1) / 2), (0.32, 0.32, z1 - z0), "trim-white")
-    a.box((wcx, wcy, z0), (wl + 0.12, wd + 0.12, 0.24), "trim-white")
-    for z in (4.6, 5.8):
-        a.box((wcx, wcy, z), (wl + 0.06, wd + 0.06, 0.12), "timber-dark")
-    rise = 3.1
-    cx2, len2 = wcx + 0.75, wl + 2.4
-    a.gable_end((cx2, wcy, z1), len2, wd, rise, "barn-red")
-    a.gable_roof((cx2, wcy, z1), len2, wd, rise, "slate-roof", thick=0.24, overhang=0.6,
-                 snow_thick=0.45, snow_over=0.14, snow_bevel=0.13)
-    fy = wcy - wd / 2
-    for x in (wcx - 1.35, wcx, wcx + 1.35):
-        a.window((x, fy, 5.2), 1.15, 1.5, '-Y')
-        a.window((x, fy, 6.7), 0.95, 1.2, '-Y', mullion=False)
-    a.window((wcx - wl / 2, wcy - 1.7, 5.5), 1.05, 1.4, '-X')
-    a.window((wcx - wl / 2, wcy + 1.5, 6.2), 0.9, 1.1, '-X', mullion=False)
-    # upper gallery on the dining wing
-    bz = F + 3.0
-    gx0, gx1 = wcx - 1.8, wcx + 1.8
-    a.box(((gx0 + gx1) / 2, fy - 0.55, bz - 0.1), (gx1 - gx0, 1.2, 0.2), "timber-brown")
-    for gx in (gx0, gx1):
-        a.box((gx, fy - 0.55, bz + 0.45), (0.18, 0.18, 1.0), "trim-white")
-    for gx in (wcx - 0.9, wcx + 0.9):
-        a.box((gx, fy - 0.62, bz + 1.02), (0.85, 0.1, 0.1), "timber-brown")
-    # second stone stack on the dining wing end
-    sx, sy = wcx - wl / 2 - 0.95, wcy + 1.5
-    a.box((sx, sy, 2.0), (1.95, 2.05, 3.8), "stone-grey")
-    a.box((sx, sy, 8.0), (1.55, 1.65, 8.2), "stone-grey")
-    a.box((sx, sy, 12.25), (1.85, 1.85, 0.32), "stone-dark")
-    a.box((sx, sy, 12.58), (1.65, 1.65, 0.3), "snow", bevel=0.1)
-    for z in (5.2, 9.0, 11.5):
-        a.box((sx, sy, z), (1.6, 1.65, 0.18), "stone-dark")
-    # grand ridge cupola (lantern room)
-    cz = H + 6.85
-    a.box((0, 0.35, cz + 0.65), (2.05, 2.05, 1.45), "trim-white")
-    for face, (x, y) in {'-Y': (0, -0.75), '+Y': (0, 1.15), '-X': (-0.95, 0.2), '+X': (0.95, 0.2)}.items():
-        a.window((x, y, cz + 0.75), 0.85, 0.75, face, sill=False, mullion=False, frame="trim-white")
-    a.box((0, 0.35, cz + 1.55), (0.9, 0.9, 0.65), "lamp-glow")
-    a.cyl((0, 0.35, cz + 1.35), 1.55, 0.0, 1.25, 4, "slate-roof", rot=(0, 0, 45))
-    a.cyl((0, 0.35, cz + 1.95), 0.62, 0.0, 0.65, 4, "snow", rot=(0, 0, 45))
-    a.box((0, 0.35, cz + 2.35), (0.12, 0.12, 1.1), "steel-dark")
-    a.sphere((0, 0.35, cz + 2.95), 0.22, "snow")
+    """Tier-3-only: portico, gallery, banners, cupola, fire pits, flank dining tower."""
+    layout.tier3_front_grand(a, layout.timber_mats(), W, D, H, F)
 
 
 def _tier3(a, W, D, H, F):
@@ -165,7 +53,7 @@ def _tier3(a, W, D, H, F):
 
 
 def _lodge_dims():
-    return 12.0, 9.0, 6.4, 0.7
+    return layout.LODGE_W, layout.LODGE_D, layout.LODGE_H, layout.LODGE_F
 
 
 def b_lodge_annex_2():
@@ -332,7 +220,20 @@ def b_garage():
     return a.finish()
 
 
-BUILDERS = [b_lodge_annex_2, b_lodge_annex_3, b_lodge2, b_lodge3, b_aframe, b_ticket, b_patrol, b_garage]
+# Venue builders from buildings.py (re-export for build_all)
+b_cafe = _ns["b_cafe"]
+b_shop = _ns["b_shop"]
+b_hut = _ns["b_hut"]
+b_rental_shop = _ns["b_rental_shop"]
+b_waffle_haus = _ns["b_waffle_haus"]
+b_ski_school = _ns["b_ski_school"]
+
+
+BUILDERS = [
+    b_lodge_annex_2, b_lodge_annex_3, b_lodge2, b_lodge3, b_aframe,
+    b_ticket, b_patrol, b_garage,
+    b_cafe, b_shop, b_hut, b_rental_shop, b_waffle_haus, b_ski_school,
+]
 
 
 def build_all(out=None, export_glb=True):

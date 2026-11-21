@@ -17,6 +17,10 @@ export type AssetId =
   | "tubing_hill"
   | "ice_rink"
   | "apres_bar"
+  | "waffle_haus"
+  | "ticket_booth"
+  | "patrol_hut"
+  | "maintenance_garage"
   | "fire_pit"
   | "string_lights"
   | "bench"
@@ -43,7 +47,7 @@ type Asset = {
 
 export const ATTACH_BONUS = 0.05;
 export const MAX_BASE_ASSETS = 12;
-export type BuildingStyleId = "1950s-timber" | "chalet70s";
+export type BuildingStyleId = "1950s-timber" | "chalet70s" | "aframe60s" | "adirondack" | "sugarhouse";
 export const DEFAULT_STYLE: BuildingStyleId = "1950s-timber";
 export const CHAIR_TIER = 2;
 export const ASSET_CATALOG: Record<AssetId, Asset> = {
@@ -58,12 +62,12 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     revenuePerUse: 9, visitMinutes: 20, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   shop: {
-    label: BUILDING_LABELS.shop, category: "services", footprint: { width: 0.8, depth: 0.6 },
+    label: "Ski shop", category: "services", footprint: { width: 0.8, depth: 0.6 },
     cost: BUILDING_COSTS.shop, upkeep: 25, effect: {},
     revenuePerUse: 5, visitMinutes: 0, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   rentals: {
-    label: "Rentals", category: "services", footprint: { width: 0.8, depth: 0.6 },
+    label: "Rental shop", category: "services", footprint: { width: 0.8, depth: 0.6 },
     cost: 1000, upkeep: 20, effect: { seats: 6, hillValue: 1 },
     revenuePerUse: 12, visitMinutes: 5, opensAtTier: 2, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
@@ -72,10 +76,25 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     cost: 1400, upkeep: 25, effect: { seats: 8, hillValue: 2 },
     revenuePerUse: 18, visitMinutes: 25, opensAtTier: 2, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
+  ticket_booth: {
+    label: "Ticket booth", category: "services", footprint: { width: 0.55, depth: 0.45 },
+    cost: 400, upkeep: 8, effect: { arrivalMood: 0.015 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 1, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
   snow_guns: {
     label: "Snow gun", category: "infrastructure", footprint: { width: 0.25, depth: 0.25 },
     cost: 250, upkeep: 60, effect: {},
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  patrol_hut: {
+    label: "Patrol hut", category: "services", footprint: { width: 0.85, depth: 0.7 },
+    cost: 1600, upkeep: 20, effect: { arrivalMood: 0.02, hillValue: 2 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  maintenance_garage: {
+    label: "Maintenance garage", category: "infrastructure", footprint: { width: 1.5, depth: 1.1 },
+    cost: 2200, upkeep: 35, effect: { hillValue: 1 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   tubing_hill: {
     label: "Tubing hill", category: "activity", footprint: { width: 1.4, depth: 1.1 },
@@ -91,6 +110,11 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     label: "Après bar", category: "hospitality", footprint: { width: 1.5, depth: 1.2 },
     cost: 6200, upkeep: 55, effect: { seats: 24, arrivalMood: 0.05, hillValue: 6 },
     revenuePerUse: 14, visitMinutes: 25, opensAtTier: 3, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
+  },
+  waffle_haus: {
+    label: "Waffle Haus", category: "hospitality", footprint: { width: 0.95, depth: 0.75 },
+    cost: 3200, upkeep: 45, effect: { seats: 16, arrivalMood: 0.045, hillValue: 4 },
+    revenuePerUse: 11, visitMinutes: 20, opensAtTier: 3, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   fire_pit: {
     label: "Fire pit", category: "decor", footprint: { width: 0.7, depth: 0.7 },

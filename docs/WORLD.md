@@ -63,7 +63,7 @@ Real arc (public record):
 | Start state | Tier 1 lodge. The player places the first surface lift and paints its descent before opening. |
 | Archetypes | `rural_sticks`, `natural_snow_only`, `weekends_family`, `no_snowmaking_start` |
 | Weather | Southern VT snow belt — good winters **or** 1970s-style drought arcs |
-| Arrival | Gravel lot off Route 100, 30 stalls, shoulder overflow (visual; no cap) |
+| Arrival | Gravel lot off Route 100, 30/50/80 stalls by lodge tier (visual parking only; does not cap arrivals) |
 
 Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**, not claiming USFS lease.
 

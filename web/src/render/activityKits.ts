@@ -5,6 +5,7 @@ export function kitForAsset(id: AssetId): string | undefined {
     tubing_hill: "tubing-hut",
     ice_rink: "ice-rink",
     apres_bar: "apres-bar",
+    waffle_haus: "waffle-haus",
     fire_pit: "fire-pit",
     string_lights: "string-lights",
     bench: "bench",
@@ -13,9 +14,12 @@ export function kitForAsset(id: AssetId): string | undefined {
     direction_sign: "direction-sign",
     cafe: "cafe",
     shop: "ski-shop",
+    rentals: "rental-shop",
     warming_hut: "warming-hut",
-    rentals: "ski-shop",
-    ski_school: "warming-hut",
+    ski_school: "ski-school-desk",
+    ticket_booth: "ticket-booth",
+    patrol_hut: "patrol-hut",
+    maintenance_garage: "maintenance-garage",
   };
   return map[id];
 }

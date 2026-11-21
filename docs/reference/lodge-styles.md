@@ -1,29 +1,49 @@
 # Lodge style reference (Blender)
 
-Two cosmetic families ship for the Dutch Hill lodge and base venues:
+Cosmetic families for the Dutch Hill lodge and base venues. Styles never change sim numbers.
 
-| Style id | Kit name | Look |
-|----------|----------|------|
-| `1950s-timber` | `timber50s` | Barn-red walls, white trim, slate roof, timber deck |
-| `chalet70s` | S2 pack | Dark cedar, steep gable glazing, ochre trim |
+| Style id | Manifest suffix | Look |
+|----------|-----------------|------|
+| `1950s-timber` | _(default, no suffix)_ | Barn-red walls, white trim, slate roof, timber deck |
+| `chalet70s` | `chalet70s` | Dark cedar, steep gable glazing, ochre trim |
+| `aframe60s` | `aframe60s` | Steep prism lodge, full front glazing, 1960s summit look |
+| `adirondack` | `adirondack` | Log + fieldstone, wide eaves, rustic luxury |
+| `sugarhouse` | `sugarhouse` | Horizontal clapboard bands, maple-amber trim, roof cupola |
 
-Tier upgrades stack annex GLBs (`base-lodge` + `lodge-annex-2/3`, or the `*-chalet70s` counterparts). **Tier 3** annex layers add the second-storey **-X dining wing uplift** (not only trim), a grand stone approach, porte-cochère / portico, après fire pits, upper galleries with string lights, banner poles, and a ridge cupola or lookout—on both `lodge-annex-3` and `lodge-annex-3-chalet70s`. Full-shell `lodge-tier-3*` meshes match that look for asset review.
+## Camera-facing tier massing
 
-Blender EEVEE review renders (same pipeline as `tools/blender/lib.py` `render_asset`):
+Default phone view is elevated southwest. Blender **front = −Y** (glTF **+Z**).
 
-![timber vs chalet tiers](lodge-tier-style-compare.png)
+Shared layout lives in [`tools/blender/lodge_tier_layout.py`](../../tools/blender/lodge_tier_layout.py):
 
-**Tier 3 grand lodge** (post upscale pass):
+| Tier | Player-facing read |
+|------|--------------------|
+| **2** | Forward two-story gabled bay on −Y, wider deck + stairs, flank ski rack, modest ±X wing |
+| **3** | Portico / porte-cochère on −Y, front gallery, banner poles, ridge cupola, fire pits on approach, flank dining tower |
 
-![timber grand lodge](lodge-tier-3-grand-timber50s.png)
+**Do not** grow primary upgrade mass on **+Y (rear)** — that reads as “behind” the lodge from the game camera.
 
-![chalet grand lodge](lodge-tier-3-grand-chalet70s.png)
+Tier upgrades stack annex GLBs (`base-lodge` / `lodge-tier-1-{style}` + `lodge-annex-2/3` or styled counterparts). Full-shell `lodge-tier-2*` / `lodge-tier-3*` meshes match for asset review.
 
-![timber50s kit](lodge-timbers50s-grid.png)
+## Base venues per theme
 
-![chalet70s kit](lodge-chalet70s-grid.png)
+Each pack exports: `cafe`, `ski-shop`, `rental-shop`, `warming-hut`, `waffle-haus` (+ styleOf keys).
 
-Regenerate headless renders (requires Blender 4+):
+| Venue | Sim id | Role |
+|-------|--------|------|
+| Ski shop | `shop` | Retail apparel / display boards |
+| Rental shop | `rentals` | Boot wall, counter, returns — **separate GLB** |
+| Warming hut | `warming_hut` | Tier 1 refuel shelter |
+| Waffle Haus | `waffle_haus` | Tier 3 brunch / hospitality |
+| Ski school desk | `ski_school` | Lessons desk GLB (`ski-school-desk`) |
+
+## Unlock
+
+- `1950s-timber`: always
+- `chalet70s`: Lodge Tier ≥ 2 or winter review
+- `aframe60s` / `adirondack` / `sugarhouse`: Lodge Tier ≥ 3 or winter review
+
+## Renders
 
 ```bash
 blender --background --factory-startup --python tools/blender/render_lodge_styles.py

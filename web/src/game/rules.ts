@@ -321,7 +321,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
   let schoolBusPosted = state.dayStats.schoolBusPosted ?? 0;
   let intradayRevenue = Boolean(state.dayStats.intradayRevenue);
   const seats = state.assets.reduce((sum, asset) =>
-    sum + ((asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar")
+    sum + ((asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar" || asset.id === "waffle_haus")
       ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
   const exposure = state.weather === "thaw" && clockMin + addMin >= THAW_START_MIN
     ? exposureFor(state)
@@ -366,13 +366,13 @@ export function tick(state: GameState, deltaMs: number): GameState {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
-      if (asset?.id === "cafe" || asset?.id === "warming_hut" || asset?.id === "apres_bar") occupiedSeats += 1;
+      if (asset?.id === "cafe" || asset?.id === "warming_hut" || asset?.id === "apres_bar" || asset?.id === "waffle_haus") occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
         const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         cash += rate;
         intradayRevenue = true;
-        if (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar") {
+        if (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar" || asset.id === "waffle_haus") {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");

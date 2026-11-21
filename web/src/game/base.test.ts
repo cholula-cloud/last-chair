@@ -26,7 +26,7 @@ describe("lodge progression", () => {
     const firstSleep = advanceLodgeUpgrade({ toTier: 2, nightsRemaining: 2 });
     expect(firstSleep).toEqual({ toTier: 2, nightsRemaining: 1 });
     expect(advanceLodgeUpgrade(firstSleep!)).toBeNull();
-    expect(lodgeTierUnlocks(2)).toEqual(expect.arrayContaining(["Double chair", "Rentals", "Ski school desk"]));
+    expect(lodgeTierUnlocks(2)).toEqual(expect.arrayContaining(["Double chair", "Rental shop", "Ski school desk"]));
   });
 
   it("migrates existing venues in place and folds old lodge purchases into the fixed site", () => {
