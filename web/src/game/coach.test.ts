@@ -71,37 +71,24 @@ describe("coach tips", () => {
 
 describe("contextual problem guidance", () => {
   const neutral = { queue: 0, snow: 0, runs: 0, arrivalMood: 0, value: 0 };
-  const guideFacts = (avgWaitMin: number) => ({
-    avgWaitMin,
-    dispatched: 20,
-    snowQuality: 0.5,
-    snowLabel: "Good cover",
-    farePrice: 48,
-    hillValue: 50,
-    runsPerGuest: 4,
-    turnedAway: 0,
-    arrivalMood: 0.7,
-  });
   it.each([
     ["queue", "slope", "Money"], ["snow", "conditions", "Desk"], ["value", "conditions", "Money"],
     ["runs", "slope", "Crew"], ["arrivalMood", "slope", "Crew"],
   ])("matches %s to an available layer and Office section", (issue, layer, tab) => {
-    const avgWait = issue === "queue" ? 8 : 2;
     expect(problemGuide({
       arrivals: 20,
       breakdown: { ...neutral, [issue]: -10 },
       cashDelta: 12,
-      facts: guideFacts(avgWait),
     })).toMatchObject({ layer, tab });
   });
   it("uses the same measured demand as the Guests want line", () => {
-    const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30, facts: guideFacts(2) };
+    const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30 };
     expect(problemGuide(recap, "seats")).toMatchObject({ layer: "slope", tab: "Crew", text: expect.stringMatching(/lodge/) });
-    expect(problemGuide(recap, "green")?.text).toMatch(/green trail/);
+    expect(problemGuide(recap, "green")?.text).toMatch(/gentle descent/);
     expect(problemGuide(recap, "snow")).toMatchObject({ layer: "conditions", tab: "Desk" });
   });
   it("offers a real cash shortfall and stays silent on a quiet profitable day", () => {
-    expect(problemGuide({ arrivals: 0, breakdown: neutral, cashDelta: -40, facts: guideFacts(0) })?.tab).toBe("Money");
-    expect(problemGuide({ arrivals: 5, breakdown: neutral, cashDelta: 40, facts: guideFacts(2) })).toBeNull();
+    expect(problemGuide({ arrivals: 0, breakdown: neutral, cashDelta: -40 })?.tab).toBe("Money");
+    expect(problemGuide({ arrivals: 5, breakdown: neutral, cashDelta: 40 })).toBeNull();
   });
 });

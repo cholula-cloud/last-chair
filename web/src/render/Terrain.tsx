@@ -11,7 +11,7 @@ import type { LiftLine } from "@/game/descent";
 import type { SnowPreset } from "@/game/types";
 import { TERRAIN, fbm } from "@/game/terrain";
 import { forestMask } from "./forest";
-import { distanceOutsideLease } from "@/game/lease";
+import { distanceOutsideLease, onLease } from "@/game/lease";
 import { outsideWeight, patchLeaseDim } from "./leaseDim";
 import { patchOverlay } from "./terrainOverlay";
 import { realGradeFactor } from "@/game/trails";
@@ -47,8 +47,11 @@ function shapeKey(points: readonly unknown[] | undefined): number {
 }
 
 const CANOPY = new THREE.Color(PALETTE.pineDeep);
+const FOREST_FLOOR = new THREE.Color(PALETTE.forestFloor);
 /** Distance outside the lease over which the canopy tint reaches full strength. */
 const CANOPY_BAND = 12;
+/** Soft forest wash on lease snow (keeps trail corridors readable). */
+const LEASE_CANOPY = 0.22;
 
 const C = {
   snow: new THREE.Color(PALETTE.snow),
@@ -96,15 +99,21 @@ function paint(
     c.lerp(C.warm, Math.max(0, Math.min(0.6, (sun - 0.72) * 2.4)));
     c.lerp(C.old, Math.max(0, 0.75 - q) * 0.7);
 
+    const forested = canGrow(x, z);
     const steep = 1 - ny + fbm(x * 1.7, z * 1.7) * 0.12;
-    c.lerp(C.rock, smoothstep(0.38, 0.55, steep) * 0.7);
+    // Soften rock on wooded slopes so the floor reads as snow under canopy.
+    c.lerp(C.rock, smoothstep(0.38, 0.55, steep) * (forested ? 0.35 : 0.7));
 
     const n = fbm(x * 0.9 + 3.1, z * 0.9 - 7.7);
     const bareDepth = (thin - 0.45) * 1.6 - 0.42 - y * 0.1 + n * 0.7;
     const road = Math.abs(z - ROAD_Z) < 0.5 ? 0.25 : 0;
     c.lerp(C.earth, smoothstep(0, 0.18, bareDepth - road) * 0.9);
-    if (canGrow(x, z)) {
-      c.lerp(CANOPY, 0.5 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
+    if (forested) {
+      if (onLease({ x, z })) {
+        c.lerp(FOREST_FLOOR, LEASE_CANOPY);
+      } else {
+        c.lerp(CANOPY, 0.55 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
+      }
     }
 
     col.setXYZ(i, c.r, c.g, c.b);

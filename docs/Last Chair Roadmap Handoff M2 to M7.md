@@ -16,7 +16,11 @@ The [master plan](./MASTER_PLAN.md) defines the game and milestone order. This d
 
 "PR 12" or "row 28" means a row in the MASTER_PLAN roadmap, not a GitHub pull request number. The two sets collide (GitHub PR 28 removed Vercel; roadmap row 28 is guest models). Use the row in branch names and titles, for example `claude/row28-guest-models`.
 
-## Where things stand (updated 2026-11-19)
+## Where things stand (updated 2026-11-21)
+
+**M4b Batch 1** and kit forest are on `main` (MASTER_PLAN v2.13). Row **26** ships as `web/src/game/coach.ts` (toggle tips + `problemGuide`), not the anchored CoachCard flow in the PR 26 section below — treat that section as an alternate spec until replaced.
+
+## Where things stood (2026-11-19)
 
 - The starting point for the M2 finish work was `main` through #54. It included two-tap lift placement, the trail graph (13a to 13c, save v10), the restored 3D scene (#48), the smoothed trail ribbon (#49), and the convex Dutch Hill crest (#50).
 - The M2 release integrates the remaining builder features, lodge tiers, venue visits, lift operations, and snow and clearing rules. The automated gates pass on the integrated version. First-time player sign-off remains open.
@@ -1756,7 +1760,9 @@ Open decisions:
 
 ## PR 26: Coached first winter
 
-**Goal:** the chosen founder walks a new player from placing the first lift and trail to the first Sleep in ten short, skippable tips anchored to real controls, without pausing the day.
+**As built on `main` (2026-11-21):** [MASTER_PLAN](./MASTER_PLAN.md) row 26 — `COACH_TIPS` (Settings toggle), seen ids on the save, and `problemGuide` linking recap problems to a map layer + Office tab ([#149](https://github.com/cholula-cloud/last-chair/pull/149)). The spec below (founder speech card + `data-coach` anchors) is **not** implemented.
+
+**Goal (original spec):** the chosen founder walks a new player from placing the first lift and trail to the first Sleep in ten short, skippable tips anchored to real controls, without pausing the day.
 
 **First-winter PR 2** delivers the operator’s first operating decision under L-E and row 26. The later radio and choice PRs build on it. Use the existing founder and speed controls.
 
