@@ -233,7 +233,17 @@ def info(ob):
 # ---------- rendering ----------
 def setup_render(res=800):
     sc = bpy.context.scene
-    sc.render.engine = 'BLENDER_EEVEE'
+    # Prefer Eevee; headless VMs without GPU fall back to Cycles CPU.
+    for eng in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE", "CYCLES"):
+        try:
+            sc.render.engine = eng
+            break
+        except Exception:
+            continue
+    if sc.render.engine == "CYCLES":
+        sc.cycles.device = "CPU"
+        sc.cycles.samples = 24
+        sc.cycles.use_denoising = False
     sc.render.resolution_x = res; sc.render.resolution_y = res
     sc.render.film_transparent = False
     sc.view_settings.view_transform = 'Standard'
