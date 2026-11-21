@@ -19,7 +19,8 @@ def _pine(name, H, tiers, R, green, slim=1.0, seg=6):
 def b_pines():
     return [_pine("pine-a", 7.0, 3, 2.3, "pine"),
             _pine("pine-b", 10.5, 4, 2.4, "pine-dark", slim=0.85, seg=5),
-            _pine("pine-c", 8.5, 3, 2.9, "pine", seg=5)]
+            _pine("pine-c", 8.5, 3, 2.9, "pine", seg=5),
+            _pine("pine-d", 6.2, 2, 3.1, "pine", slim=1.05, seg=5)]
 
 def b_lamp():
     a = Asset("lamp-post")

@@ -90,7 +90,7 @@ Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Sc
 | `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture (crisper when `groomVisible`); green/red translucent preview in build mode. |
 | `TrailSign.tsx` | **Placeholder (M3):** canvas texture on a billboard plane + box post at each trail entrance; stacks near lift tops. **Target (M4b row T1):** Blender `trail-sign-*` kit; names and conditions also on the **Trails** map layer (M4 row O5). |
 | `Lift.tsx` | Merged towers, crossarms, bull wheels, up/return cables and two terminal huts; instanced moving T-bars or chairs; translucent green/red ghost for the build preview. |
-| `Trees.tsx` | Three tiered conifer variants with a snow cap on every tier, instanced (up to 480 each), cleared along trails, lift lines, the base and the road. |
+| `Trees.tsx` | Four procedural pine silhouettes (kit a–d) plus birch, trunk and snow-capped tiers, small/medium/large scale band, per-variant instancing on the lease; far ring uses matched billboards (one draw call). Cleared along trails, lifts, base and road. |
 | `Lodge.tsx` | Base village: red clapboard lodge with steep snowy gable, stone chimney, deck and warm windows; café and shop when built; parked cars; lamp posts with additive light pools that glow at dusk and night. |
 | `Guests.tsx` | Instanced toy skiers (legs, skis, poles, face, tinted jacket and beanie); T-bar or chair attached to riders; amber ring and marker for the followed guest. |
 | `SnowGuns.tsx` | Tower guns with a yellow fan housing and an animated plume when running. |

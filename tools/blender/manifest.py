@@ -19,7 +19,7 @@ LEGACY_TAGS = {
     "carrier": ["t-bar", "chair-double"],
     "guest": ["skier", "skier-kid", "skier-coat", "boarder", "boarder-kid"],
     "vehicle": ["snowcat", "sedan", "wagon", "pickup"],
-    "tree": ["pine-a", "pine-b", "pine-c", "birch"],
+    "tree": ["pine-a", "pine-b", "pine-c", "pine-d", "birch"],
     "prop": ["snow-gun", "lamp-post"],
     "sign": ["sign-post", "area-sign"],
 }

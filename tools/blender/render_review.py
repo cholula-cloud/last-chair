@@ -77,6 +77,12 @@ for name in KEY_ASSETS:
     else:
         print(f"skip missing asset: {name}")
 
+for name in ("pine-a", "pine-b", "pine-c", "pine-d"):
+    if bpy.data.objects.get(name):
+        lib.render_asset(name, res=700)
+    else:
+        print(f"skip missing asset: {name}")
+
 # Tier-3 timber vs chalet side-by-side
 cam = lib.setup_render(1200)
 for c in bpy.data.collections:
