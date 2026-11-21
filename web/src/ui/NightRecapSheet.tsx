@@ -446,7 +446,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
       <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
         {night.crewPoints > 0 ? (
           <p>
-            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Pick a skill in Office Crew, or sleep to auto-unlock.
+            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Spend them in Office → Crew before you sleep.
           </p>
         ) : nextTalent ? (
           <p>

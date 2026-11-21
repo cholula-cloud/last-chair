@@ -3,7 +3,7 @@ import { createBuiltHill } from "./__fixtures__/built-hill";
 import { CREW_TALENTS, talentDescription } from "./content";
 import { operatingCosts } from "./economy";
 import { liftCapacityPerHour } from "./lifts";
-import { acknowledgeBeat, openNight, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
+import { acknowledgeBeat, openNight, pickCrewTalent, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
 import { freshTrail } from "./snow";
@@ -20,28 +20,28 @@ const overnight = (talentsOwned: string[], weather: WeatherKind = "clear") => ap
 }).trails[0];
 
 describe("crew order and operations", () => {
-  it("learns all twenty in fixed order and explains missing facilities", () => {
+  it("earns crew points nightly instead of auto-learning talents", () => {
     expect(new Set(CREW_TALENTS.map(talent => talent.id)).size).toBe(20);
     let state = { ...hill, cash: 100_000 };
-    for (const talent of CREW_TALENTS) {
+    for (let i = 0; i < 5; i++) {
       state = sleep(acknowledgeBeat(openNight(state)));
-      expect(state.crewPoints).toBe(0);
-      expect(state.talentsOwned.at(-1)).toBe(talent.id);
+      expect(state.crewPoints).toBe(i + 1);
+      expect(state.talentsOwned).toEqual([]);
     }
-    expect(state.dayIndex).toBe(21);
-    while (state.phase === "day") state = sleep(acknowledgeBeat(openNight(state)));
-    expect(state.phase).toBe("winter_review");
-    expect(state.talentsOwned).toEqual(CREW_TALENTS.map(talent => talent.id));
-    expect(talentDescription("Fast Wind Checks", state)).toContain("Needs a chairlift");
+    state = pickCrewTalent(state, "rope_tow");
+    expect(state.crewPoints).toBe(4);
+    expect(state.talentsOwned).toEqual(["rope_tow"]);
+    expect(talentDescription("Fast Wind Checks", { ...state, lodgeTier: 2 })).toContain("Needs a chairlift");
   });
-  it("resumes the fixed learning order after loading an earlier sequence", () => {
+  it("keeps unspent crew points after loading a save", () => {
     const owned = ["rope_tow", "trail_guns", "house_band", "groom_pass"];
-    const saved = toPersisted({ ...hill, talentsOwned: owned });
+    const saved = toPersisted({ ...hill, talentsOwned: owned, crewPoints: 2 });
     const loaded = migrate(JSON.parse(JSON.stringify(saved)), SAVE_VERSION);
     expect(loaded.reset).toBe(false);
     expect(loaded.state.talentsOwned).toEqual(owned);
     const morning = sleep(acknowledgeBeat(openNight({ ...hill, ...loaded.state, crewPoints: 0 })));
-    expect(morning.talentsOwned).toEqual([...owned, "ticket_booth"]);
+    expect(morning.talentsOwned).toEqual(owned);
+    expect(morning.crewPoints).toBe(1);
   });
   it("rope tow saves $40 per open surface lift", () => {
     expect(operatingCosts(withTalent("rope_tow")).liftOps).toBe(operatingCosts(hill).liftOps - 40);

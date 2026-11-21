@@ -80,7 +80,7 @@ export function TalentTreePanel() {
           </span>
         </p>
         <p className="text-xs font-bold leading-snug text-ink-soft">
-          Earn 1 point each night. Unlock skills below, or sleep to auto-unlock the next skill.
+          Earn 1 point each night you sleep, plus 1 when a lodge upgrade opens. Spend points to unlock skills below.
         </p>
       </div>
 

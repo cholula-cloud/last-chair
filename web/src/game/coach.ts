@@ -87,7 +87,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "crew",
-    text: "You earn 1 crew point each night. Spend it in Office Crew, or sleep to auto-unlock.",
+    text: "You earn 1 crew point each night. Spend it in Office → Crew to unlock a skill.",
     when: (c) => c.phase === "night" && c.dayIndex >= 2,
   },
   {
