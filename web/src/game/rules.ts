@@ -1217,6 +1217,16 @@ export function decideGroomerDown(state: GameState, decision: GroomerDownDecisio
   });
 }
 
+/** Test and season harness: clear decision beats (decline / guns-only) or acknowledge radio beats before sleep. */
+export function resolveNightBeat(state: GameState): GameState {
+  if (state.phase !== "night" || !state.nightRecap) return state;
+  if (state.pendingBeat === "school_bus") return decideSchoolContract(state, "declined");
+  if (state.pendingBeat === "summit_link") return replyToSummitLink(state, "declined");
+  if (state.pendingBeat === "groomer_down") return decideGroomerDown(state, "go_without");
+  if (state.pendingBeat && !state.beatAcknowledged) return acknowledgeBeat(state);
+  return state;
+}
+
 export function summitLinkOfferOpen(state: GameState): boolean {
   return state.phase === "night" && state.nightRecap !== null && state.dayIndex < state.seasonLength &&
     state.pendingBeat === "summit_link" && state.summitLinkDecision === null;

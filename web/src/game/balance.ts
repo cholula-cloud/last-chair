@@ -1,8 +1,8 @@
 import { canTakeSummitLinkEquity } from "./founders";
 import {
   acknowledgeBeat,
-  decideGroomerDown,
   decideSchoolContract,
+  resolveNightBeat,
   replyToSummitLink,
   beginLodgeUpgrade,
   buyBuilding,
@@ -301,11 +301,7 @@ function applyBuild(state: GameState, action: BuildAction): GameState {
 function firstFrozenPressureDay(halfway: GameState): number | null {
   let state = spendCrewPoints(sleep(setPendingSnow(setPendingFare(halfway, halfway.fare), halfway.snow)));
   while (state.phase === "day") {
-    let night = skipToClose(state);
-    if (night.pendingBeat === "school_bus") night = decideSchoolContract(night, "declined");
-    else if (night.pendingBeat === "summit_link") night = replyToSummitLink(night, "declined");
-    else if (night.pendingBeat === "groomer_down") night = decideGroomerDown(night, "go_without");
-    else night = acknowledgeBeat(night);
+    let night = resolveNightBeat(skipToClose(state));
     const recap = night.nightRecap!;
     night = setPendingSnow(setPendingFare(night, halfway.fare), halfway.snow);
     if (morningCash(night) < 0 || recap.cashDelta < dailyCosts(night).snowNight ||
@@ -358,13 +354,11 @@ export function runSeason(
     if (state.pendingBeat === "school_bus") {
       schoolOffers++;
       state = decideSchoolContract(state, options.school ?? "declined");
-    } else if (state.pendingBeat === "groomer_down") {
-      state = decideGroomerDown(state, "go_without");
     } else if (state.pendingBeat === "summit_link") {
       vivianOffers++;
       const reply = !canTakeSummitLinkEquity({ founderId }) ? "declined" : options.summitLink ?? "declined";
       state = replyToSummitLink(state, reply);
-    } else state = acknowledgeBeat(state);
+    } else state = resolveNightBeat(state);
     recap = state.nightRecap as NightRecap;
     if (recap.facts.schoolBus) schoolVisits.push(recap.facts.schoolBus);
     const { dayStats } = state;

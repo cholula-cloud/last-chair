@@ -3,7 +3,7 @@ import { createBuiltHill } from "./__fixtures__/built-hill";
 import { CREW_TALENTS, talentDescription } from "./content";
 import { operatingCosts } from "./economy";
 import { liftCapacityPerHour } from "./lifts";
-import { acknowledgeBeat, openNight, pickCrewTalent, pickFounder, previewOvernight, satisfactionContext, sleep } from "./rules";
+import { openNight, pickCrewTalent, pickFounder, previewOvernight, resolveNightBeat, satisfactionContext, sleep } from "./rules";
 import { canUnlockTalent } from "./talentProgress";
 import { expectedHillValue, guestTerms } from "./satisfaction";
 import { applyOvernight, makeGuest, meanArrivals, tickGuests } from "./sim";
@@ -25,7 +25,7 @@ describe("crew order and operations", () => {
     expect(new Set(CREW_TALENTS.map(talent => talent.id)).size).toBe(20);
     let state = { ...hill, cash: 100_000 };
     for (let i = 0; i < 5; i++) {
-      state = sleep(acknowledgeBeat(openNight(state)));
+      state = sleep(resolveNightBeat(openNight(state)));
       expect(state.crewPoints).toBe(i + 1);
       expect(state.talentsOwned).toEqual([]);
     }
@@ -43,7 +43,7 @@ describe("crew order and operations", () => {
     const loaded = migrate(JSON.parse(JSON.stringify(saved)), SAVE_VERSION);
     expect(loaded.reset).toBe(false);
     expect(loaded.state.talentsOwned).toEqual(owned);
-    const morning = sleep(acknowledgeBeat(openNight({ ...hill, ...loaded.state, crewPoints: 0 })));
+    const morning = sleep(resolveNightBeat(openNight({ ...hill, ...loaded.state, crewPoints: 0 })));
     expect(morning.talentsOwned).toEqual(owned);
     expect(morning.crewPoints).toBe(1);
   });
@@ -123,7 +123,7 @@ describe("crew order and operations", () => {
     expect(at(LIFT_CLOSE_MIN + 10, ["night_lights"])).toBe("depart");
   });
   it("groomer rebuild lowers the preview and actual service charge", () => {
-    const state = acknowledgeBeat(openNight(withTalent("groomer_rebuild")));
+    const state = resolveNightBeat(openNight(withTalent("groomer_rebuild")));
     for (const [snow, cost] of [["mid", 120], ["high", 300]] as const) {
       expect(previewOvernight(state, snow).cost).toBe(cost);
       expect(sleep({ ...state, pendingSnow: snow }).lastDay?.snowNightCost).toBe(cost);
