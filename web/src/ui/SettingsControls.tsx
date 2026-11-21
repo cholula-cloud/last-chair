@@ -3,7 +3,7 @@
 import { useId } from "react";
 import { cycleReduceMotion, reduceMotionLabel } from "@/ui/motion";
 import type { BuildingStyleId } from "@/game/base";
-import { BUILDING_STYLES } from "@/render/kitStyle";
+import { styleOptions } from "@/game/styles";
 import { SPEEDS, useSettings } from "@/ui/settingsStore";
 import { useSpeed } from "@/ui/speed";
 
@@ -65,7 +65,7 @@ export function SettingsControls() {
       <div role="group" aria-labelledby={styleId} className="flex flex-col gap-2">
         <span id={styleId} className="font-extrabold">Village buildings</span>
         <div className="flex flex-col gap-2">
-          {(Object.keys(BUILDING_STYLES) as BuildingStyleId[]).map((id) => (
+          {styleOptions().map(({ id, label }) => (
             <button
               key={id}
               type="button"
@@ -73,7 +73,7 @@ export function SettingsControls() {
               onClick={() => set({ buildingStyle: id })}
               className={`${BTN_SM} text-left`}
             >
-              {BUILDING_STYLES[id].label}
+              {label}
             </button>
           ))}
         </div>
