@@ -7,7 +7,7 @@ Two cosmetic families ship for the Dutch Hill lodge and base venues:
 | `1950s-timber` | `timber50s` | Barn-red walls, white trim, slate roof, timber deck |
 | `chalet70s` | S2 pack | Dark cedar, steep gable glazing, ochre trim |
 
-Tier upgrades stack annex GLBs (`base-lodge` + `lodge-annex-2/3`, or the `*-chalet70s` counterparts). **Tier 3** adds a grand dining wing upper storey, stone entry terrace, widened galleries, lanterns/string lights, ridge cupola, and banner poles—on both `lodge-annex-3` and `lodge-annex-3-chalet70s`. Full-shell `lodge-tier-3*` meshes match that look for asset review.
+Tier upgrades stack annex GLBs (`base-lodge` + `lodge-annex-2/3`, or the `*-chalet70s` counterparts). **Tier 3** annex layers add the second-storey **-X dining wing uplift** (not only trim), a grand stone approach, porte-cochère / portico, après fire pits, upper galleries with string lights, banner poles, and a ridge cupola or lookout—on both `lodge-annex-3` and `lodge-annex-3-chalet70s`. Full-shell `lodge-tier-3*` meshes match that look for asset review.
 
 Blender EEVEE review renders (same pipeline as `tools/blender/lib.py` `render_asset`):
 

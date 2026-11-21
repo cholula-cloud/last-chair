@@ -1,5 +1,5 @@
 import { DEFAULT_STYLE } from "./base";
-import { styledKitName } from "@/render/modelManifest";
+import { styledKitName } from "./kitManifest";
 
 export type BuildingStyleId = typeof BUILDING_STYLES[number]["id"];
 

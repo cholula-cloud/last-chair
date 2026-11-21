@@ -177,6 +177,66 @@ def side_window(a, c, w, h, face):
 
 
 # ---------- lodge ----------
+def _chalet_wing_dims(W):
+    wx0, wx1, wy, wd = -W / 2 + 0.2, -W / 2 - 4.6, -0.6, 6.4
+    wcx, wl = (wx0 + wx1) / 2, wx0 - wx1
+    return wx0, wx1, wy, wd, wcx, wl
+
+
+def _chalet_dining_wing_tier3_trim(a, wcx, wx1, wy, wd, wh, F):
+    """Balcony, chimney, and glazed cross gable on the dining wing (tier 3)."""
+    bz = F + 2.8
+    a.box((wx1 - 0.7, wy, bz - 0.12), (1.4, 4.4, 0.24), BAT)
+    rail(a, wx1 - 1.35, wx1 - 1.35, wy - 2.2, wy + 2.2, bz, posts=False, balusters=0.55)
+    for sy in (-1, 1):
+        rail(a, wx1, wx1 - 1.35, wy + sy * 2.2, wy + sy * 2.2, bz, posts=False)
+    for lx in (-1.8, 0.0, 1.8):
+        a.box((wx1 - 0.75 + lx, wy - 0.62, bz + 1.05), (0.16, 0.16, 0.16), "lamp-glow")
+    chimney(a, wx1 - 0.9, wy + 2.35, 3.6, 1.4, 12.2, footing=(1.8, 1.9, 3.6))
+    gy = wy - wd / 2
+    a.box((wcx, gy + 0.9, (3.4 + wh) / 2), (3.0, 1.8, wh - 3.4), WALL)
+    roof(a, (wcx, gy + 1.05, wh), 2.4, 3.0, 2.6, rz=90, ov=0.5, thick=0.22, snow=0.4, short=0.35,
+         ends=(-1,), board=0.24)
+    glaze(a, (wcx, gy, 0), '-Y', -1.1, 1.1, 3.55, wh + 2.6 - 0.4, 2.6 / 1.5, mull=(0,),
+          transoms=(wh,))
+
+
+def _chalet_dining_wing(a, W, F, wh, tier3=False):
+    """Dining wing on -X; two storeys when wh is 6.35."""
+    wx0, wx1, wy, wd, wcx, wl = _chalet_wing_dims(W)
+    wrise, wov = 4.4, 0.95
+    wk = wrise / (wd / 2)
+    a.box((wcx, wy, F / 2), (wl, wd + 0.2, F), STONE)
+    a.box((wcx, wy, F + (wh - F) / 2), (wl, wd, wh - F), WALL)
+    roof(a, (wcx - 0.3, wy, wh), wl + 0.6, wd, wrise, ov=wov, thick=0.28, snow=0.48, short=0.5, ends=(-1,))
+    glaze(a, (wx1, wy, 0), '-X', -1.8, 1.8, F + 0.15, wh + wrise - 0.6, wk,
+          mull=(-0.9, 0, 0.9), transoms=(F + 2.4,) + ((F + 5.0,) if tier3 else ()))
+    for x in (wcx - 1.2, wcx + 1.2):
+        side_window(a, (x, wy - wd / 2, 1.85), 1.5, 1.4, '-Y')
+        if tier3:
+            side_window(a, (x, wy - wd / 2, 4.85), 1.5, 1.4, '-Y')
+    battens(a, (wcx,), wy - wd / 2 - 0.04, F, wh)
+    if tier3:
+        _chalet_dining_wing_tier3_trim(a, wcx, wx1, wy, wd, wh, F)
+
+
+def _chalet_dining_wing_tier3_uplift(a, W, F):
+    """Second storey + raised roof on the tier-1 wing footprint (annex layer)."""
+    wx0, wx1, wy, wd, wcx, wl = _chalet_wing_dims(W)
+    wh_lo, wh_hi = 3.4, 6.35
+    wrise, wov = 4.4, 0.95
+    wk = wrise / (wd / 2)
+    a.box((wcx, wy, (wh_lo + wh_hi) / 2), (wl, wd, wh_hi - wh_lo), WALL)
+    a.box((wcx, wy, wh_lo), (wl + 0.08, wd + 0.08, 0.16), BAT)
+    roof(a, (wcx - 0.3, wy, wh_hi), wl + 0.6, wd, wrise, ov=wov, thick=0.28, snow=0.48, short=0.5, ends=(-1,))
+    glaze(a, (wx1, wy, 0), '-X', -1.8, 1.8, wh_lo - 0.05, wh_hi + wrise - 0.6, wk,
+          mull=(-0.9, 0, 0.9), transoms=(F + 2.4, F + 5.0))
+    for x in (wcx - 1.2, wcx + 1.2):
+        side_window(a, (x, wy - wd / 2, 4.85), 1.5, 1.4, '-Y')
+    battens(a, (wcx,), wy - wd / 2 - 0.04, wh_lo, wh_hi)
+    _chalet_dining_wing_tier3_trim(a, wcx, wx1, wy, wd, wh_hi, F)
+
+
 def _lodge(name, tier):
     a = Asset(name)
     W, D, H, F = 12.0, 9.0, 4.6, 0.7
@@ -217,35 +277,9 @@ def _lodge(name, tier):
     side_window(a, (0, D / 2, H + 2.6), 1.6, 2.0, '+Y')
     # fieldstone chimney on +X, piercing the eave
     chimney(a, W / 2 + 0.75, 1.2, 3.0, 1.6, 14.2, footing=(2.0, 2.2, 3.0))
-    # dining wing on -X (two storeys at tier 3)
-    wx0, wx1, wy, wd = -W / 2 + 0.2, -W / 2 - 4.6, -0.6, 6.4
-    wcx, wl = (wx0 + wx1) / 2, wx0 - wx1
     wh = 6.35 if tier >= 3 else 3.4
-    wrise, wov = 4.4, 0.95
-    wk = wrise / (wd / 2)
-    a.box((wcx, wy, F / 2), (wl, wd + 0.2, F), STONE)
-    a.box((wcx, wy, F + (wh - F) / 2), (wl, wd, wh - F), WALL)
-    roof(a, (wcx - 0.3, wy, wh), wl + 0.6, wd, wrise, ov=wov, thick=0.28, snow=0.48, short=0.5, ends=(-1,))
-    glaze(a, (wx1, wy, 0), '-X', -1.8, 1.8, F + 0.15, wh + wrise - 0.6, wk,
-          mull=(-0.9, 0, 0.9), transoms=(F + 2.4,) + ((F + 5.0,) if tier >= 3 else ()))
-    for x in (wcx - 1.2, wcx + 1.2):
-        side_window(a, (x, wy - wd / 2, 1.85), 1.5, 1.4, '-Y')
-    battens(a, (wcx,), wy - wd / 2 - 0.04, F, wh)
+    _chalet_dining_wing(a, W, F, wh, tier3=(tier >= 3))
     if tier >= 3:
-        # upper balcony on the wing gable and a second fieldstone stack
-        bz = F + 2.8
-        a.box((wx1 - 0.7, wy, bz - 0.12), (1.4, 4.4, 0.24), BAT)
-        rail(a, wx1 - 1.35, wx1 - 1.35, wy - 2.2, wy + 2.2, bz, posts=False, balusters=0.55)
-        for sy in (-1, 1):
-            rail(a, wx1, wx1 - 1.35, wy + sy * 2.2, wy + sy * 2.2, bz, posts=False)
-        chimney(a, wx1 - 0.9, wy + 2.35, 3.6, 1.4, 12.2, footing=(1.8, 1.9, 3.6))
-        # glazed cross gable on the wing front
-        gy = wy - wd / 2
-        a.box((wcx, gy + 0.9, (3.4 + wh) / 2), (3.0, 1.8, wh - 3.4), WALL)
-        roof(a, (wcx, gy + 1.0, wh), 2.4, 3.0, 2.6, rz=90, ov=0.5, thick=0.22, snow=0.4, short=0.35,
-             ends=(-1,), board=0.24)
-        glaze(a, (wcx, gy, 0), '-Y', -1.1, 1.1, 3.55, wh + 2.6 - 0.4, 2.6 / 1.5, mull=(0,),
-              transoms=(wh,))
         _lookout(a, H + rise)
     if tier >= 2:
         _wing(a, F)
@@ -303,43 +337,40 @@ def _wing(a, F):
 def _chalet_tier3_main_grand(a, W, D, H, F, rise):
     """Grand chalet polish on the main block (tier-3 annex layer)."""
     fy = -D / 2
-    deck(a, -5.4, 5.4, fy - 3.1, fy - 0.15, F - 0.05)
-    a.box((0, fy - 3.35, F - 0.05), (10.8, 3.8, 0.22), STONE)
+    deck(a, -5.8, 5.8, fy - 3.45, fy - 0.15, F - 0.05)
+    a.box((0, fy - 3.75, F - 0.05), (11.6, 4.2, 0.22), STONE)
+    # après fire bowls on the approach terrace
+    for fx in (-3.2, 3.2):
+        a.box((fx, fy - 2.65, F + 0.08), (1.15, 1.15, 0.22), STONED)
+        a.box((fx, fy - 2.65, F + 0.32), (0.72, 0.72, 0.18), "lamp-glow")
+        a.box((fx, fy - 2.65, F + 0.52), (0.38, 0.38, 0.12), "lamp-glow")
+    # porte-cochère over the entry
+    for x in (-2.6, 2.6):
+        a.box((x, fy - 1.15, F + 1.55), (0.28, 0.28, 3.55), BAT)
+    roof(a, (0, fy - 0.95, F + 3.75), 3.6, 6.2, 1.75, rz=90, ov=0.45, thick=0.2, snow=0.32, short=0.38, ends=(-1, 1))
+    a.box((0, fy - 1.2, F + 3.05), (2.8, 0.1, 0.72), OCH)
+    a.box((0, fy - 1.28, F + 2.92), (2.2, 0.06, 0.52), "window-glow")
     bz = F + 4.05
     a.box((0, fy - 0.35, bz - 0.12), (9.6, 1.75, 0.26), BAT)
     rail(a, -4.8, 4.8, fy - 0.35, fy - 0.35, bz, posts=False, balusters=0.5)
     for sx in (-1, 1):
         rail(a, sx * 4.8, sx * 4.8, fy - 0.35, fy - 1.55, bz, posts=False)
-    # warm string lights along the balcony
     for lx in (-4.2, -2.1, 0.0, 2.1, 4.2):
         a.box((lx, fy - 0.48, bz + 1.08), (0.16, 0.16, 0.16), "lamp-glow")
+    for lx in (-3.5, 0.0, 3.5):
+        a.box((lx, fy - 0.55, bz + 0.58), (1.6, 0.08, 0.08), BAT)
+        a.box((lx, fy - 0.55, bz + 0.64), (1.65, 0.1, 0.07), "lamp-glow")
     for x in (-5.5, 5.5):
-        a.box((x, fy - 2.85, F + 0.2), (0.2, 0.2, 4.8), BAT)
-        a.box((x + 0.5 * (1 if x > 0 else -1), fy - 2.55, F + 3.85), (1.0, 0.08, 1.55), ORG)
+        a.box((x, fy - 3.05, F + 0.2), (0.2, 0.2, 4.8), BAT)
+        a.box((x + 0.5 * (1 if x > 0 else -1), fy - 2.75, F + 3.95), (1.1, 0.08, 1.65), ORG)
     a.box((0, fy - 1.05, F + 2.85), (2.6, 0.12, 0.75), OCH)
 
 
 def _chalet_wing3_delta(a, F, H, rise):
-    """Chalet tier-3 annex: grand dining wing, cross gable, ridge lookout."""
+    """Chalet tier-3 annex: resort front polish, wing uplift, ridge lookout."""
     W, D = 12.0, 9.0
     _chalet_tier3_main_grand(a, W, D, H, F, rise)
-    wy, wd, wh = -0.6, 6.6, 6.35
-    wx0, wx1 = -W / 2 + 0.2, -W / 2 - 4.6
-    wcx = (wx0 + wx1) / 2
-    bz = F + 3.05
-    a.box((wx1 - 0.75, wy, bz - 0.12), (1.55, 4.8, 0.26), BAT)
-    rail(a, wx1 - 1.45, wx1 - 1.45, wy - 2.35, wy + 2.35, bz, posts=False, balusters=0.5)
-    for sy in (-1, 1):
-        rail(a, wx1, wx1 - 1.45, wy + sy * 2.35, wy + sy * 2.35, bz, posts=False)
-    for lx in (-1.8, 0.0, 1.8):
-        a.box((wx1 - 0.75 + lx, wy - 0.62, bz + 1.05), (0.16, 0.16, 0.16), "lamp-glow")
-    chimney(a, wx1 - 0.95, wy + 2.45, 3.7, 1.55, 12.8, footing=(2.0, 2.05, 3.8))
-    gy = wy - wd / 2
-    a.box((wcx, gy + 0.95, (3.55 + wh) / 2), (3.2, 1.95, wh - 3.55), WALL)
-    roof(a, (wcx, gy + 1.05, wh), 2.55, 3.15, 2.85, rz=90, ov=0.55, thick=0.24, snow=0.45, short=0.38,
-         ends=(-1,), board=0.26)
-    glaze(a, (wcx, gy, 0), '-Y', -1.2, 1.2, 3.65, wh + 2.75 - 0.45, 2.85 / 1.58, mull=(-0.55, 0.55),
-          transoms=(wh - 0.2, wh + 1.4))
+    _chalet_dining_wing_tier3_uplift(a, W, F)
     _lookout(a, H + rise)
 
 

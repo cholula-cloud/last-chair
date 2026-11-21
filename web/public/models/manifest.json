@@ -271,7 +271,7 @@
       "name": "lodge-tier-3",
       "file": "lodge-tier-3.glb",
       "tris": 4232,
-      "sizeBytes": 244404,
+      "sizeBytes": 250232,
       "heightMeters": 17.87,
       "footprintMeters": [
         22.38,
@@ -883,7 +883,7 @@
       "name": "lodge-tier-3-chalet70s",
       "file": "lodge-tier-3-chalet70s.glb",
       "tris": 3408,
-      "sizeBytes": 196852,
+      "sizeBytes": 201392,
       "heightMeters": 16.65,
       "footprintMeters": [
         22.1,
@@ -961,7 +961,7 @@
       "name": "lodge-annex-3",
       "file": "lodge-annex-3.glb",
       "tris": 1432,
-      "sizeBytes": 89008,
+      "sizeBytes": 95184,
       "heightMeters": 17.87,
       "footprintMeters": [
         19.38,
@@ -991,7 +991,7 @@
       "name": "lodge-annex-3-chalet70s",
       "file": "lodge-annex-3-chalet70s.glb",
       "tris": 1399,
-      "sizeBytes": 85084,
+      "sizeBytes": 123716,
       "heightMeters": 18.15,
       "footprintMeters": [
         19.73,

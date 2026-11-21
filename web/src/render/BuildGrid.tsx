@@ -228,6 +228,7 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
     phase: state.phase,
     dayIndex: state.dayIndex,
     lodgeTier: state.lodgeTier,
+    lodgeStyleId: state.lodgeStyleId,
   } : null));
   const dots = useMemo(() => {
     if (!mode) return [];
