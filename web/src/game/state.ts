@@ -3,6 +3,7 @@ import { DEFAULT_STYLE } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { mountainDefaultStyle } from "./styles";
 import { calendarForSeason, MOUNTAIN_CALENDARS, operatingDayIndex, type MountainId } from "./calendar";
+import type { CaretakerLedgerEntry, HomecomingNote } from "./caretaker";
 import {
   defaultCareerHills,
   ensureCareerHills,
@@ -147,6 +148,13 @@ export type PersistedState = {
   vivianVisit: SloaneVisitFacts | null;
   clubBooking: ClubBooking | null;
   groomerDown: GroomerDown | null;
+  nightLights: boolean;
+  nightSessionOn: boolean;
+  orchardParcel: "unbid" | "pending" | "owned" | "whiterock";
+  inspectorNotice: { day: number; liftIndex: number; decision: "pending" | "repaired" | "closed" } | null;
+  homecomingNotes: HomecomingNote[];
+  caretakerLedger: CaretakerLedgerEntry[];
+  forestEpilogue: boolean;
   /** Coach tips the player has already seen this winter (see coach.ts). */
   tipsSeen: string[];
   pendingBeat: StoryBeatId | null;
@@ -255,6 +263,13 @@ export function createInitialState(
     vivianVisit: null,
     clubBooking: null,
     groomerDown: null,
+    nightLights: false,
+    nightSessionOn: false,
+    orchardParcel: "unbid",
+    inspectorNotice: null,
+    homecomingNotes: [],
+    caretakerLedger: [],
+    forestEpilogue: false,
     tipsSeen: [],
     pendingBeat: null,
     beatAcknowledged: true,
@@ -324,6 +339,13 @@ export function toPersisted(state: PersistedState): PersistedState {
     vivianVisit: state.vivianVisit ?? null,
     clubBooking: state.clubBooking ?? null,
     groomerDown: state.groomerDown ?? null,
+    nightLights: state.nightLights ?? false,
+    nightSessionOn: state.nightSessionOn ?? false,
+    orchardParcel: state.orchardParcel ?? "unbid",
+    inspectorNotice: state.inspectorNotice ?? null,
+    homecomingNotes: state.homecomingNotes ?? [],
+    caretakerLedger: state.caretakerLedger ?? [],
+    forestEpilogue: state.forestEpilogue ?? false,
     tipsSeen: state.tipsSeen,
     pendingBeat: state.pendingBeat,
     beatAcknowledged: state.beatAcknowledged,
@@ -370,4 +392,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;

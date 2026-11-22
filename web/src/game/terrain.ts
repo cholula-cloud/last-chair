@@ -1,5 +1,8 @@
 import { smooth, smoothstep } from "./math";
+import type { MountainId } from "./calendar";
 import { DUTCH_HILL } from "./mountains/dutchHill";
+import { MOUNT_TOM } from "./mountains/mountTom";
+import { MAPLE_VALLEY } from "./mountains/mapleValley";
 
 // Terrain is one analytic heightfield shared by the sim and the renderer.
 // Units: x and z are world units; height is world units; grade is rise over
@@ -341,3 +344,16 @@ export function createTerrain(def: TerrainDef, scale: MountainScale = def.scale 
 }
 
 export const TERRAIN: Terrain = createTerrain(DUTCH_HILL);
+
+const TERRAIN_CACHE: Partial<Record<MountainId, Terrain>> = {
+  dutch_hill: TERRAIN,
+};
+
+export function terrainForMountain(id: MountainId): Terrain {
+  const cached = TERRAIN_CACHE[id];
+  if (cached) return cached;
+  const def = id === "mount_tom" ? MOUNT_TOM : id === "maple_valley" ? MAPLE_VALLEY : DUTCH_HILL;
+  const built = createTerrain(def);
+  TERRAIN_CACHE[id] = built;
+  return built;
+}

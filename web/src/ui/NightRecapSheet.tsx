@@ -17,12 +17,13 @@ import { nextTalentName, type NightRecap } from "@/game/sim";
 import { pickableTalents, CREW_RUSH_COST } from "@/game/talentProgress";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
+import { CLUB_BUS_DISCOUNT, CLUB_BUS_SKIERS, GROOMER_REPAIR_COST, SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { NIGHT_LIGHTS_COST, NIGHT_SESSION_UPKEEP, mountTomNightNet } from "@/game/mountains/mountTom";
 import {
-  CLUB_BUS_DISCOUNT,
-  CLUB_BUS_SKIERS,
-  GROOMER_REPAIR_COST,
-  SUMMIT_LINK_PAYMENT,
-} from "@/game/summitLink";
+  INSPECTOR_REPAIR_COST,
+  ORCHARD_PARCEL_COST,
+  mapleValleyRadioNote,
+} from "@/game/mountains/mapleValley";
 import { useSettings } from "@/ui/settingsStore";
 import { surpriseRadio } from "@/game/surprises";
 import { WHY_BASE, GUEST_MEASURE_LABELS, delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "@/game/why";
@@ -368,8 +369,11 @@ function Choices({
     detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
     note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
   }));
+  const installNightLights = useGameStore((s) => s.installNightLights);
+  const setNightSession = useGameStore((s) => s.setNightSession);
   const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
   const chosen = previews[pendingSnow];
+  const tomProjection = mountTomNightNet(Math.round(skiers(pendingFare)));
   return (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading aside="Tomorrow’s public ticket">Fare</SectionHeading>
@@ -393,6 +397,42 @@ function Choices({
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
         {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Service is free tonight."}
       </p>
+      {night.mountainId === "mount_tom" && (
+        <div className="mt-3 border-t border-snow-2 pt-2.5 space-y-1.5">
+          {!night.nightLights ? (
+            <>
+              <button
+                type="button"
+                disabled={night.cash < NIGHT_LIGHTS_COST}
+                onClick={installNightLights}
+                className="key key-solid press min-h-11 w-full px-3 text-sm font-extrabold [--key-fill:var(--sign-yellow)] [--lift:3px]"
+              >
+                Wire ridge floodlights ({formatMoney(NIGHT_LIGHTS_COST)})
+              </button>
+              <p className="text-[0.82rem] font-bold text-ink-soft">
+                Turns on Mount Tom Night Sessions (+evening pass revenue, {formatMoney(NIGHT_SESSION_UPKEEP)}/night power).
+              </p>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setNightSession(!night.nightSessionOn)}
+                className={`key press min-h-11 w-full px-3 text-sm font-extrabold [--lift:3px] ${
+                  night.nightSessionOn ? "key-solid [--key-fill:var(--sign-yellow)]" : ""
+                }`}
+              >
+                Night session: {night.nightSessionOn ? "ON" : "OFF"}
+              </button>
+              <p className="text-[0.82rem] font-bold text-ink-soft">
+                {night.nightSessionOn
+                  ? `Range lights lit tonight (est. ${formatMoney(tomProjection.net, { signed: true })} net on ~${skiers(pendingFare)} skiers).`
+                  : "Range lights off tonight ($0 power upkeep)."}
+              </p>
+            </>
+          )}
+        </div>
+      )}
       <div className="mt-3 border-t border-snow-2 pt-1">
         <Forecast state={night} ahead={1} />
         <Forecast state={night} ahead={2} />
@@ -408,6 +448,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
   const decideClubBooking = useGameStore((s) => s.decideClubBooking);
   const decideGroomerDown = useGameStore((s) => s.decideGroomerDown);
+  const decideOrchardParcel = useGameStore((s) => s.decideOrchardParcel);
+  const decideInspectorNotice = useGameStore((s) => s.decideInspectorNotice);
   const tipsOn = useSettings(s => s.tips);
   const guideSeen = useGameStore(s => s.tipsSeen.includes(PROBLEM_GUIDE_ID));
   const markTipSeen = useGameStore(s => s.markTipSeen);
@@ -439,6 +481,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const showGroomerOffer = Boolean(
     night.groomerDown?.active && night.groomerDown.decision === "pending" && night.groomerDown.day === dayIndex,
   );
+  const showOrchardOffer = night.mountainId === "maple_valley" && night.orchardParcel === "pending";
+  const showInspectorOffer = night.mountainId === "maple_valley" && night.inspectorNotice?.decision === "pending";
   const showBusSummary = Boolean(night.nightRecap?.facts.schoolBus);
   const surpriseCopy =
     !pendingBeat &&
@@ -456,6 +500,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
     !summitLinkOffer &&
     !showClubOffer &&
     !showGroomerOffer &&
+    !showOrchardOffer &&
+    !showInspectorOffer &&
     (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
@@ -524,7 +570,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               {!summitLinkOffer && showSchoolOffer && "Give Hank an answer on the school bus before you turn in."}
               {!summitLinkOffer && !showSchoolOffer && showClubOffer && "Answer the Bennington Ski Club before you turn in."}
               {!summitLinkOffer && !showSchoolOffer && !showClubOffer && showGroomerOffer && "Tell Frank whether to borrow the town machine tonight."}
-              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && "Read the radio message, then tap Got it."}
+              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && showOrchardOffer && "Answer Rosa on the Maple Valley orchard parcel."}
+              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && showInspectorOffer && "Answer the Vermont tramway inspector before turning in."}
+              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && "Read the radio message, then tap Got it."}
             </p>
           )}
           {planNight && (
@@ -716,7 +764,60 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             </p>
           );
         })()}
-        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showBusSummary &&
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && showOrchardOffer && (() => {
+          const copy = mapleValleyRadioNote("orchard_bid", night.operatorName ?? null);
+          const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+          return (
+            <RadioCard
+              title={copy.title}
+              from="Rosa Merrill, Dummerston"
+              action={
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={night.cash < ORCHARD_PARCEL_COST}
+                    className={`${btnClass} [--key-fill:var(--sign-yellow)]`}
+                    onClick={() => decideOrchardParcel("buy")}
+                  >
+                    Buy parcel ({formatMoney(ORCHARD_PARCEL_COST)})
+                  </button>
+                  <button type="button" className={btnClass} onClick={() => decideOrchardParcel("decline")}>
+                    Let Whiterock bid
+                  </button>
+                </div>
+              }
+            >
+              {copy.radio}
+            </RadioCard>
+          );
+        })()}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && showInspectorOffer && (() => {
+          const copy = mapleValleyRadioNote("inspectors_tuesday", night.operatorName ?? null);
+          const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+          return (
+            <RadioCard
+              title={copy.title}
+              from="Vermont Tramway Division"
+              action={
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    className={`${btnClass} [--key-fill:var(--sign-yellow)]`}
+                    onClick={() => decideInspectorNotice("repaired")}
+                  >
+                    Fix bearing ({formatMoney(INSPECTOR_REPAIR_COST)})
+                  </button>
+                  <button type="button" className={btnClass} onClick={() => decideInspectorNotice("closed")}>
+                    Hold lift 1 day ($0)
+                  </button>
+                </div>
+              }
+            >
+              {copy.radio}
+            </RadioCard>
+          );
+        })()}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && !showBusSummary &&
           radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
@@ -733,7 +834,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             {tidy(beat.radio)}
           </RadioCard>
         )}
-        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showBusSummary &&
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && !showBusSummary &&
           radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
       </div>
     </Sheet>

@@ -22,7 +22,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a **6-weekend winter (42 civil days, 18 Fri–Sun operating days)** while Act II+ hills (Mount Tom, Maple Valley) run **7 weekends (49 civil days, 21 Fri–Sun operating days)**; Mon–Thu simulate in the background. Construction is paid **100% upfront** (40/30/30 installments removed). Players can remain independent, take Sloane’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
+M2, M4 (code + N0–N8 Story Mode MVP), and M5 (rows 34–38 + N9–N11, playable Dutch Hill, Mount Tom, and Maple Valley) are shipped on `main`. Dutch Hill runs a **6-weekend winter (42 civil days, 18 Fri–Sun operating days)** while Act II+ hills (Mount Tom, Maple Valley) run **7 weekends (49 civil days, 21 Fri–Sun operating days)**; Mon–Thu simulate in the background. Construction is paid **100% upfront** (40/30/30 installments removed). Players can move across Dutch Hill, Mount Tom, and Maple Valley via The Call + Office Atlas, earn town-match seed bonuses, run off-screen Caretaker winters with Whiterock buyout pressure and Ledger entries, and hit Lost Hills / The Forest epilogues on foreclosure. The active queue moves to M4b batch 2 / M7 (hills 4–8 after guest scaling N12). The [P1 protocol](./TESTING.md) is available for device playtesting.
 
 **Built and merged**
 
@@ -310,7 +310,7 @@ Lodge card    → tier, what the next tier opens, Upgrade (also opens by tapping
 Guests sheet  → list + Follow (no tiny 3D picking on phone)
 Night recap   → recap + fare + snow/service tiles + Continue
 Layers strip  → Slope · Snow depth · Snow-making · Conditions (§12)
-Office        → full-screen, pauses the day: Desk · Money · Stats · Reports · Crew. Money and Stats are the CFO view (ledger plus charts from `dayHistory`); Atlas joins in M5 (§12).
+Office        → full-screen, pauses the day: Desk · Money · Stats · Reports · Crew · Atlas (§12).
 ```
 
 **Touch:** one-finger pan on the overview; pinch zoom; two-finger orbit and tilt; tap select; double-tap focus; recenter on the map tool rail. Build mode is an explicit toggle. Inside it, one finger paints or drags lift endpoints and two fingers **always** move the camera (trail painting edge-pans near screen edges). The placement panel can **minimize** so only summary stats and Cancel/Review stay on screen.
@@ -549,30 +549,30 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 
 | # | Status | PR |
 |---|---|---|
-| 34 | ☐ | Mountain definitions as data (terrain, start state, lodge position and start tier, archetype tags, beats) |
-| 35 | ☐ | Atlas tab, also called F5: the career map (New England pins, locked hills with one-line history, heritage cards) and the live trail map of your own hill |
-| 36 | ☐ | Mount Tom, MA (Act II, replaces Tenney; locked (owner approved 2026-11-22), STORY.md D1): night session as a building plus a snow & service tile option, guns from day 1, more capital; Whiterock competes for the same guests |
-| 37 | ☐ | Caretaker income from departed hills, built on a coarse off-screen hill sim |
-| 38 | ☐ | Ledger, fuller statements: income statement, balance and caretaker lines on top of the F2 Money tab |
+| 34 | ☑ | Mountain roster & definitions as data (`mountains/roster.ts`, `mountTom.ts`, `mapleValley.ts`, `terrainForMountain`) |
+| 35 | ☑ | Atlas tab (`OfficeAtlas.tsx`): New England SVG map (pine/Whiterock/slate pin status, Hogback lore pin, Heritage Cards) |
+| 36 | ☑ | Mount Tom, MA (Act II, replaces Tenney; locked STORY.md D1): night session wire & toggle in Snow & Service, guns from Lodge Tier 1, $25,000 seed capital |
+| 37 | ☑ | Caretaker income & off-screen winter sim (`caretaker.ts`), Homecoming dispatches & Whiterock bids below rep 45 |
+| 38 | ☑ | Caretaker ledger lines on top of the F2 Money tab |
 
 ### N track: Story Mode narrative
 
-Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-class work (code, copy and 2D stills, no Blender). N9 and N10 sit with M5. N11 to N18 sit with M7, or earlier if the owner wants the hills before polish. Rows 34, 35, 37 and 38 above keep their scope and gain the story content listed in STORY.md §9. Rows that depend on an owner decision (D1 to D6 in STORY.md §10) are **locked (owner approved 2026-11-22)**.
+Story Mode only (see §4 and [STORY.md](./STORY.md) §8). Rows N0 to N11 are shipped on `main`; N12 to N18 sit with M7 (hills 4–8 after guest scaling). Rows 34, 35, 37 and 38 above include the story content listed in STORY.md §8. Rows that depend on an owner decision (D1 to D6 in STORY.md §7) are **locked (owner approved 2026-11-22)**.
 
 | # | Milestone | Status | PR | Accomplishes | Save / sim |
 |---|---|---|---|---|---|
-| N0 | M4 | ☑ | STORY.md and roster docs | STORY.md v2.0 locked (D1–D6, Whiterock, CAL-1 pacing); WORLD.md & MASTER_PLAN.md aligned | Docs only |
-| N1 | M4 | ☐ | Cold open v2 | Six cards (two new stills, two rewritten), punch-card flip and title drop, optional name on the lease (D3), one ElevenLabs take for cards 3 to 6 on free credits (D6), captions fallback | **Save:** `operatorName` |
-| N2 | M4 | ☐ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Sloane, Al and Grammy Dot lines, "the operator" fallback | Copy only |
-| N3 | M4 | ☐ | The last chair | First-ride toast, final-day last chair toast and camera ease, punch-card line in the winter review; Tenney card replaced by a placeholder call card until N9 | None |
-| N4 | M4 | ☐ | Surprise scheduler | One radio item a night with priority, weekly caps, quiet days, midpoint window; existing three surprises move onto it | **Sim:** re-baseline snapshot |
-| N5 | M4 | ☐ | Dutch Hill surprise pack | DH2 copy, DH4, DH5, DH9, DH10, DH11, DH12 branch | **Save:** `SurpriseKind` enum. **Sim:** snow-day mix override |
-| N6 | M4 | ☐ | Sloane skis Dutch Hill | DH6 visitor guest with stored facts, offer copy quotes them, offer gate at reputation 50 with a $3,000 variant at 40 to 49 | **Save:** `vivianVisit`. **Sim:** harness rerun |
-| N7 | M4 | ☐ | Decision surprises | DH7 club bus and DH8 groomer down, with cards, recap results and review memory lines | **Save:** `clubBooking`, `groomerDown`. **Sim** |
-| N8 | M4 | ☐ | Last Saturday | DH13 set piece: preview, arrival bonus, torchlight decoration, Grammy Dot cameo | **Sim:** small arrival term |
-| N9 | M5 | ☐ | The call | Next-hill call from a measured result, Maris's threat line, town match from winter score, branching from Act II | Reads `winterRecord` |
-| N10 | M5 | ☐ | Lost hills (D4) | Bankrupt later hill turns pass or forest; career continues; Forest epilogue when none remain | **Save:** status transitions |
-| N11 | M7 | ☐ | Maple Valley, VT | District school program, tubing, orchard parcel bid, inspector's Tuesday (needs lift wear in the sim) | Sim |
+| N0 | M4 | ☑ | STORY.md and roster docs | STORY.md v2.1 locked (D1–D6, Whiterock, CAL-1 pacing, 6-wknd DH / 7-wknd Act II+); WORLD.md & MASTER_PLAN.md aligned | Docs only |
+| N1 | M4 | ☑ | Cold open v2 | Six cards, punch-card flip and "LAST CHAIR" reveal, optional name on the lease (D3), captions fallback | **Save:** `operatorName` (`SAVE_VERSION = 15`) |
+| N2 | M4 | ☑ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Sloane, Hank Pelletier, Frank and Grammy Dot copy, "the operator" fallback | Copy & helpers |
+| N3 | M4 | ☑ | The last chair | First-ride toast, final-day 15:45 toast and camera ease, punch-card outcome line in winter review, Mount Tom preview | UI & `winterMemory` |
+| N4 | M4 | ☑ | Surprise scheduler | One radio item a night with priority (`decision=4`, `last_saturday=3`, `reversal=2`), weekly caps, quiet days, midpoint window | **Sim:** re-baselined snapshot |
+| N5 | M4 | ☑ | Dutch Hill surprise pack | DH2 `$6` copy, DH4 `thaw_ice`, DH5 `snow_day`, DH9 `january_thaw`, DH10 `dot_call`, DH11 `skin_tracks`, DH12 `dry_week` branch | **Save:** `SurpriseKind` enum |
+| N6 | M4 | ☑ | Sloane skis Dutch Hill | DH6 `sloane-scout` visitor guest with stored facts, offer copy quotes them, offer gate at rep 40 ($3k) / 50+ ($6k), Tom Keene 2-day early call | **Save:** `vivianVisit` (`SAVE_VERSION = 16`) |
+| N7 | M4 | ☑ | Decision surprises | DH7 Bennington club bus (`-$10` discount) and DH8 Frank's groomer track (`$250` borrow or skip grooming), with cards, recap results and review lines | **Save:** `clubBooking`, `groomerDown` |
+| N8 | M4 | ☑ | Last Saturday | DH13 set piece: holiday mix shift, rep-scaled arrival bonus, Grammy Dot cameo when rep ≥ 60 | **Sim:** `last_saturday` |
+| N9 | M5 | ☑ | The call | Next-hill call (Lou Carvalho & Rosa Merrill) from measured results, Maris's threat line, town match (+10%/+20%), branching from Act II | **Save:** `careerHills` (`SAVE_VERSION = 17`) |
+| N10 | M5 | ☑ | Lost hills (D4) | Bankrupt later hill turns Whiterock blue or forest slate; surviving career continues; Forest epilogue when 0 remain | **Save:** `forestEpilogue` (`SAVE_VERSION = 18`) |
+| N11 | M5 | ☑ | Maple Valley, VT | District school program (recurring Fridays), tubing Saturday bonus, orchard parcel bid, Inspector's Tuesday | **Save:** `orchardParcel`, `inspectorNotice` |
 | N12 | M7 | ☐ | Guest scaling | One agent stands for several skiers so hills 4 to 8 keep 20 to 30 agents on iPhone; recap and "Why?" stay exact | **Sim** |
 | N13 | M7 | ☐ | Snow Valley, VT | Rider persona, shared guest pool with a fictional pass resort, SV1 to SV3 | Sim |
 | N14 | M7 | ☐ | Enchanted Mountain, ME | Wind-dominant weather, road closure days, EM1 and EM2, Sloane backstory | Sim |

@@ -69,6 +69,18 @@ export function Money({ s }: { s: GameState }) {
           <LedgerRow label={cashLabel} value={formatMoney(morningCash(s))} highlight />
         </Section>
 
+        {s.caretakerLedger && s.caretakerLedger.length > 0 && (
+          <Section title="Caretaker ledger">
+            {s.caretakerLedger.slice(-6).reverse().map((entry, idx) => (
+              <LedgerRow
+                key={`${entry.mountainId}-${idx}`}
+                label={`${entry.hillName} (${entry.caretakerAlly}, rep ${entry.reputation})`}
+                value={formatMoney(entry.cashDelta, { signed: true })}
+              />
+            ))}
+          </Section>
+        )}
+
         {upcoming && (
           <Section title="Tomorrow's fare outlook">
             <LedgerRow label="Reputation" value={String(s.reputation)} />

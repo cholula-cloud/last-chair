@@ -207,7 +207,7 @@ Thresholds are unchanged from PR 11 and calibrated on three reference tops (`REF
 
 ### Terrain (PR 11)
 
-One heightfield serves the sim and the renderer (`game/terrain.ts`, pure TypeScript). A mountain is a `TerrainDef` (data, `game/mountains/dutchHill.ts`); `createTerrain(def)` returns a `Terrain` and `TERRAIN` is Dutch Hill. Height is analytic (no baked grid), so a query at any x, z is exact and deterministic.
+One heightfield serves the sim and the renderer (`game/terrain.ts`, pure TypeScript). Mountains are `TerrainDef` records (`game/mountains/dutchHill.ts`, `mountTom.ts`, `mapleValley.ts`); `createTerrain(def)` returns a `Terrain`, `TERRAIN` defaults to Dutch Hill, and `terrainForMountain(id)` resolves each playable hill cleanly. Height is analytic (no baked grid), so a query at any x, z is exact and deterministic.
 
 | Member | Meaning |
 |--------|---------|
@@ -387,12 +387,12 @@ The first eligible outstanding beat appears at closing. A delayed beat can appea
 | Saturday | Saturday with at least 22 arrivals |
 | School bus | Tier 2 lodge, installed ski school and a completed pupil lesson. Accept to book six pupils for the next eligible school day, or decline. |
 | Dry week | Three or more days without snowfall and snow depth below 0.35 |
-| Whiterock | Reputation of at least 55 from day 18 through the penultimate night. Acceptance pays $6,000 and limits fares. |
-| Winter review | The final night settles the winter. Three consecutive mornings with negative cash trigger early review. |
+| Whiterock | Reputation ≥ 40 from Week 4 (`day 22` on 42d Dutch Hill, `day 29` on 49d Act II+, `-2` with Tom Keene) through penultimate night. Acceptance pays $3,000 (rep 40–49) or $6,000 (rep 50+) and caps fares at Balanced. |
+| Winter review | The final night settles the winter. Three consecutive mornings with negative cash trigger early review (replays Dutch Hill on first loss, turns later hills Whiterock blue or forest slate with surviving career continuation or The Forest epilogue when 0 remain). |
 
 ---
 
-## Save format (M3 v8)
+## Save format (currently `SAVE_VERSION = 18`)
 
 Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
 

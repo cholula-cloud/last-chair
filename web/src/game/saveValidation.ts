@@ -148,6 +148,26 @@ const careerHillRecord = shape({
   whiterockBidOpen: optional(boolean),
 });
 
+const homecomingNote = shape({
+  mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
+  hillName: string,
+  caretakerAlly: string,
+  wintersRun: index,
+  cashDelta: number,
+  reputation: number,
+  whiterockBidOpen: boolean,
+  headline: string,
+});
+
+const caretakerLedgerEntry = shape({
+  day: index,
+  mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
+  hillName: string,
+  caretakerAlly: string,
+  cashDelta: number,
+  reputation: number,
+});
+
 const winterRecord = shape({
   completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
   days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
@@ -204,6 +224,13 @@ const fields: Record<keyof PersistedState, Check> = {
   vivianVisit: optional(nullable(shape({ day: index, avgWaitMin: number, avgSnow: number, boughtCocoa: boolean }))),
   clubBooking: optional(nullable(shape({ decision: oneOf("pending", "accepted", "declined"), day: index, skiersArrived: nullable(index) }))),
   groomerDown: optional(nullable(shape({ active: boolean, decision: oneOf("pending", "paid", "skipped"), day: index }))),
+  nightLights: optional(boolean),
+  nightSessionOn: optional(boolean),
+  orchardParcel: optional(oneOf("unbid", "pending", "owned", "whiterock")),
+  inspectorNotice: optional(nullable(shape({ day: index, liftIndex: index, decision: oneOf("pending", "repaired", "closed") }))),
+  homecomingNotes: optional(array(homecomingNote)),
+  caretakerLedger: optional(array(caretakerLedgerEntry)),
+  forestEpilogue: optional(boolean),
   tipsSeen: array(string),
   pendingBeat: nullable(beat),
   beatAcknowledged: boolean,

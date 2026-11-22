@@ -2,7 +2,7 @@
 
 import { founderById } from "@/game/content";
 import { seasonCalendar } from "@/game/calendar";
-import { buildCallOffers, hillById } from "@/game/mountains/roster";
+import { buildCallOffers, ensureCareerHills, hillById } from "@/game/mountains/roster";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
 import { FARE_LABELS, SNOW_LABELS } from "@/game/types";
@@ -46,6 +46,8 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const talentsOwned = useGameStore((s) => s.talentsOwned);
   const finishWinterReview = useGameStore((s) => s.finishWinterReview);
   const startNewSeason = useGameStore((s) => s.startNewSeason);
+  const forestEpilogue = useGameStore((s) => s.forestEpilogue);
+  const resumeSurvivingHill = useGameStore((s) => s.resumeSurvivingHill);
 
   if (phase !== "winter_review" && phase !== "mountain2") return null;
 
@@ -108,29 +110,66 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
     );
   }
 
+  const currentHillName = hillById(mountainId).name;
+  const careerList = ensureCareerHills(careerHills, mountainId);
+  const lostRecord = careerList.find((h) => h.mountainId === mountainId);
+  const survivingHills = careerList.filter((h) => h.status === "caretaker" && hillById(h.mountainId).playable);
+  const hasSurvivingCareer = !solvent && survivingHills.length > 0;
   return (
     <Sheet
       modal
       wide
       z="z-50"
-      title="Winter review"
-      subtitle={`${founder ?? "Dutch Hill"}, ${day} of ${seasonLength} days done`}
+      title={forestEpilogue ? "The Forest" : "Winter review"}
+      subtitle={`${founder ?? currentHillName}, ${day} of ${seasonLength} days done`}
       footer={
-        <PrimaryButton onClick={solvent ? finishWinterReview : startNewSeason}>
-          {solvent ? "Continue to mountain 2" : "Replay Dutch Hill winter"}
-        </PrimaryButton>
+        hasSurvivingCareer ? (
+          <div className="flex flex-col gap-2">
+            {survivingHills.map((surviving) => {
+              const targetHill = hillById(surviving.mountainId);
+              return (
+                <PrimaryButton key={surviving.mountainId} onClick={() => resumeSurvivingHill(surviving.mountainId)}>
+                  Return to {targetHill.name} ({surviving.caretakerAlly ?? targetHill.localContact})
+                </PrimaryButton>
+              );
+            })}
+          </div>
+        ) : (
+          <PrimaryButton onClick={solvent ? finishWinterReview : startNewSeason}>
+            {forestEpilogue
+              ? `Reopen ${currentHillName}`
+              : solvent
+                ? "Continue to next call"
+                : `Replay ${currentHillName} winter`}
+          </PrimaryButton>
+        )
       }
     >
       <div className="md:grid md:grid-cols-2 md:gap-4">
         <div>
-          <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, winter one">
+          <Sign innerClassName="px-4 pb-4 pt-3" tab={currentHillName}>
             <p className="display text-[1.35rem] leading-tight text-white">
-              {bankrupt ? "The bank called. The winter's over." : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
+              {forestEpilogue
+                ? "The chairs stopped across every ridge."
+                : bankrupt
+                  ? "The bank called. The winter's over."
+                  : solvent
+                    ? `${currentHillName} kept the lights on.`
+                    : "The tow ran to closing day. The winter bills outlasted it."}
             </p>
             <p className="mt-1.5 text-sm font-extrabold text-sign-yellow">
-              {punchCardOutcomeLine(outcome, solvent)}
+              {forestEpilogue
+                ? "Hardwoods and fern reclaim the trails until another operator opens the gate."
+                : punchCardOutcomeLine(outcome, solvent)}
             </p>
             {bankrupt && <p className="mt-1 text-sm font-bold text-sign-green-ink">Cash stayed below zero for three mornings in a row.</p>}
+            {hasSurvivingCareer && (
+              <p className="mt-1 text-sm font-bold text-sign-green-ink">
+                {lostRecord?.status === "whiterock"
+                  ? `${currentHillName} passed to Whiterock on the Atlas. Your remaining hills are still turning.`
+                  : `${currentHillName} closed back to forest on the Atlas. Your remaining hills are still turning.`}
+              </p>
+            )}
             <div className="sign-rule my-3" aria-hidden="true" />
             <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 md:grid-cols-2">
               <StatTile onSign label="Cash" value={formatMoney(cash)} />

@@ -445,10 +445,10 @@ describe("readyStoryBeat", () => {
     expect(readyStoryBeat({ ...at, snowDepth: 0.35 })).toBeNull();
   });
 
-  it("summit_link requires reputation 55 from day 18 through the penultimate day", () => {
-    const eligible = { ...quiet, reputation: 55, dayIndex: 18 };
+  it("summit_link requires reputation 40 from day 18 through the penultimate day", () => {
+    const eligible = { ...quiet, reputation: 40, dayIndex: 18 };
     expect(readyStoryBeat(eligible)).toBe("summit_link");
-    expect(readyStoryBeat({ ...eligible, reputation: 54 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, reputation: 39 })).toBeNull();
     expect(readyStoryBeat({ ...eligible, dayIndex: 17 })).toBeNull();
     expect(readyStoryBeat({ ...eligible, dayIndex: 27 })).toBe("summit_link");
     expect(readyStoryBeat({ ...eligible, dayIndex: 28 })).toBeNull();

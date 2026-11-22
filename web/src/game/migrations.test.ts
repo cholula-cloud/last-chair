@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(17);
+    expect(SAVE_VERSION).toBe(18);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -101,6 +101,21 @@ describe("M3 schema migration", () => {
     expect(result.reset).toBe(false);
     expect(result.state.careerHills).toHaveLength(8);
     expect(result.state.careerHills[0]).toMatchObject({ mountainId: "dutch_hill", status: "open" });
+  });
+
+  it("adds Mount Tom, Maple Valley, and caretaker defaults when upgrading from schema 17", () => {
+    const base = toPersisted(createInitialState(7));
+    const v17 = { ...base };
+    delete (v17 as { nightLights?: unknown }).nightLights;
+    delete (v17 as { orchardParcel?: unknown }).orchardParcel;
+    delete (v17 as { homecomingNotes?: unknown }).homecomingNotes;
+    delete (v17 as { caretakerLedger?: unknown }).caretakerLedger;
+    const result = migrate(v17, 17);
+    expect(result.reset).toBe(false);
+    expect(result.state.nightLights).toBe(false);
+    expect(result.state.orchardParcel).toBe("unbid");
+    expect(result.state.homecomingNotes).toEqual([]);
+    expect(result.state.caretakerLedger).toEqual([]);
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

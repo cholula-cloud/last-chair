@@ -2,7 +2,20 @@ import { TALENT } from "./talents";
 import { liftName } from "./assetNames";
 import { winterRecord } from "./winterMemory";
 import type { MountainId } from "./calendar";
-import { ensureCareerHills, hillById, localContactFor, townMatchCash } from "./mountains/roster";
+import { ensureCareerHills, hillById, localContactFor, townMatchCash, type CareerHillRecord } from "./mountains/roster";
+import { mountTomNightNet, NIGHT_LIGHTS_COST } from "./mountains/mountTom";
+import {
+  INSPECTOR_REPAIR_COST,
+  ORCHARD_PARCEL_COST,
+  TUBING_SATURDAY_BONUS,
+} from "./mountains/mapleValley";
+import {
+  resolveLostHill,
+  simulateCaretakerWinter,
+  whiterockBuyoutOffer,
+  type CaretakerLedgerEntry,
+  type HomecomingNote,
+} from "./caretaker";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
   canRepayLoan, constructionDraw, dailyCosts, loanOffered,
@@ -112,7 +125,7 @@ import {
   type RouteOption,
   type TrailRun,
 } from "./trails";
-import { TERRAIN, type Terrain, type XZ } from "./terrain";
+import { TERRAIN, terrainForMountain, type Terrain, type XZ } from "./terrain";
 import {
   MS_PER_GAME_MINUTE,
   liftCost,
@@ -310,20 +323,72 @@ export function openNight(state: GameState): GameState {
   const groomerDown = canTriggerGroomer
     ? { active: true, decision: "pending" as const, day: settled.dayIndex }
     : settled.groomerDown;
+  const canOfferOrchard =
+    settled.mountainId === "maple_valley" &&
+    settled.orchardParcel === "unbid" &&
+    openDay >= 7 &&
+    !beatIsDecision &&
+    !surprise &&
+    !canOfferClub &&
+    !canTriggerGroomer;
+  const orchardParcel = canOfferOrchard ? ("pending" as const) : settled.orchardParcel;
+  const canTriggerInspector =
+    settled.mountainId === "maple_valley" &&
+    settled.inspectorNotice === null &&
+    openDay >= 5 &&
+    settled.lifts.length > 0 &&
+    !beatIsDecision &&
+    !surprise &&
+    !canOfferClub &&
+    !canTriggerGroomer &&
+    !canOfferOrchard;
+  const inspectorNotice = canTriggerInspector
+    ? { day: settled.dayIndex, liftIndex: 0, decision: "pending" as const }
+    : settled.inspectorNotice;
+  const nightSessionNet =
+    settled.mountainId === "mount_tom" && settled.nightLights && settled.nightSessionOn
+      ? mountTomNightNet(recap.arrivals).net
+      : 0;
+  const tubingBonus =
+    settled.mountainId === "maple_valley" &&
+    weekdayForDay(calendar, settled.dayIndex) === "Sat" &&
+    settled.assets.some((asset) => asset.id === "tubing_hill") &&
+    recap.arrivals > 0
+      ? TUBING_SATURDAY_BONUS
+      : 0;
+  const extraHillCash = nightSessionNet + tubingBonus;
+  const adjustedRecap = extraHillCash !== 0
+    ? { ...recap, cashDelta: recap.cashDelta + extraHillCash }
+    : recap;
+  const nextSchoolContract = (() => {
+    if (!(invited && settled.schoolContract?.decision === "accepted")) return settled.schoolContract;
+    const nextRecurringDay = settled.mountainId === "maple_valley"
+      ? settled.dayIndex + 7
+      : null;
+    if (nextRecurringDay !== null && nextRecurringDay <= settled.seasonLength) {
+      return { decision: "accepted" as const, day: nextRecurringDay, pupilsTaught: taught };
+    }
+    return { ...settled.schoolContract, pupilsTaught: taught };
+  })();
   const pendingBeat =
-    candidateBeat && !beatIsDecision && (canOfferClub || canTriggerGroomer || (surprise && surprisePriority(surprise.kind) > 1))
+    candidateBeat &&
+    !beatIsDecision &&
+    (canOfferClub || canTriggerGroomer || canOfferOrchard || canTriggerInspector || (surprise && surprisePriority(surprise.kind) > 1))
       ? null
       : candidateBeat;
   return {
     ...settled,
+    cash: settled.cash + extraHillCash,
     phase: "night",
     paused: true,
-    nightRecap: recap,
+    nightRecap: adjustedRecap,
     surprise: null,
     surpriseLog: surprise ? [...settled.surpriseLog, surprise] : settled.surpriseLog,
     vivianVisit,
     clubBooking,
     groomerDown,
+    orchardParcel,
+    inspectorNotice,
     pendingFare: settled.fare,
     pendingSnow: settled.snow,
     reputation: reputationAfterBeat(
@@ -332,9 +397,7 @@ export function openNight(state: GameState): GameState {
     pendingBeat,
     beatAcknowledged: pendingBeat == null,
     schoolProgramProven,
-    schoolContract: invited && settled.schoolContract?.decision === "accepted"
-      ? { ...settled.schoolContract, pupilsTaught: taught }
-      : settled.schoolContract,
+    schoolContract: nextSchoolContract,
     dayStats: settled.dayStats,
   };
 }
@@ -1120,12 +1183,14 @@ function gunReasonCopy(reason: GunPlacementReason | null): string | null {
   return reason ? GUN_REASON_COPY[reason] : null;
 }
 
-export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns">, at: XZ) {
+export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "guns"> & { mountainId?: MountainId }, at: XZ) {
   const point = roundXZ(at);
+  const mountainId = state.mountainId ?? "dutch_hill";
+  const requiredTier = mountainId === "mount_tom" ? 1 : 2;
   const reason = state.phase !== "day" ? "Building happens during the day. Wait for morning."
     : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
-    : state.lodgeTier < 2 ? "Snow guns need Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Wallet says no. Close out the day, then check your balance." : null);
+    : state.lodgeTier < requiredTier ? `Snow guns need Lodge Tier ${requiredTier}.`
+    : gunReasonCopy(gunPlacementReason(point, state.guns, terrainForMountain(mountainId))) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Wallet says no. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,
@@ -1242,6 +1307,90 @@ export function decideGroomerDown(state: GameState, decision: "paid" | "skipped"
       ? state.surpriseLog
       : [...state.surpriseLog, entry],
   };
+}
+
+export function installNightLights(state: GameState): GameState {
+  if (state.mountainId !== "mount_tom" || state.nightLights || state.cash < NIGHT_LIGHTS_COST) return state;
+  return {
+    ...state,
+    cash: state.cash - NIGHT_LIGHTS_COST,
+    constructionSpent: state.constructionSpent + NIGHT_LIGHTS_COST,
+    nightLights: true,
+    nightSessionOn: true,
+  };
+}
+
+export function setNightSession(state: GameState, on: boolean): GameState {
+  if (state.mountainId !== "mount_tom" || !state.nightLights || state.nightSessionOn === on) return state;
+  return { ...state, nightSessionOn: on };
+}
+
+export function decideOrchardParcel(state: GameState, decision: "buy" | "decline"): GameState {
+  if (state.phase !== "night" || state.mountainId !== "maple_valley" || state.orchardParcel !== "pending") return state;
+  if (decision === "buy") {
+    if (state.cash < ORCHARD_PARCEL_COST) return state;
+    return {
+      ...state,
+      cash: state.cash - ORCHARD_PARCEL_COST,
+      constructionSpent: state.constructionSpent + ORCHARD_PARCEL_COST,
+      reputation: Math.min(100, state.reputation + 4),
+      orchardParcel: "owned",
+    };
+  }
+  return { ...state, orchardParcel: "whiterock" };
+}
+
+export function decideInspectorNotice(state: GameState, decision: "repaired" | "closed"): GameState {
+  if (
+    state.phase !== "night" ||
+    state.mountainId !== "maple_valley" ||
+    state.inspectorNotice?.decision !== "pending"
+  ) {
+    return state;
+  }
+  if (decision === "repaired") {
+    return {
+      ...state,
+      cash: state.cash - INSPECTOR_REPAIR_COST,
+      inspectorNotice: { ...state.inspectorNotice, decision: "repaired" },
+    };
+  }
+  return {
+    ...state,
+    reputation: Math.max(0, state.reputation - 2),
+    inspectorNotice: { ...state.inspectorNotice, decision: "closed" },
+  };
+}
+
+export function decideWhiterockCaretakerBid(
+  state: GameState,
+  mountainId: MountainId,
+  decision: "sell" | "keep",
+): GameState {
+  const careerHills = ensureCareerHills(state.careerHills, state.mountainId);
+  const target = careerHills.find((entry) => entry.mountainId === mountainId && entry.whiterockBidOpen);
+  if (!target) return state;
+  const offer = decision === "sell" ? whiterockBuyoutOffer(mountainId) : 0;
+  return {
+    ...state,
+    cash: state.cash + offer,
+    careerHills: careerHills.map((entry) =>
+      entry.mountainId === mountainId
+        ? {
+            ...entry,
+            status: decision === "sell" ? ("whiterock" as const) : entry.status,
+            whiterockBidOpen: false,
+          }
+        : entry,
+    ),
+    homecomingNotes: state.homecomingNotes.map((note) =>
+      note.mountainId === mountainId ? { ...note, whiterockBidOpen: false } : note,
+    ),
+  };
+}
+
+export function dismissHomecomingNotes(state: GameState): GameState {
+  return state.homecomingNotes.length ? { ...state, homecomingNotes: [] } : state;
 }
 
 export function summitLinkOfferOpen(state: GameState): boolean {
@@ -1408,6 +1557,8 @@ export function sleep(state: GameState): GameState {
     summitLinkOfferOpen(state) ||
     state.clubBooking?.decision === "pending" ||
     (state.groomerDown?.active && state.groomerDown.decision === "pending") ||
+    state.orchardParcel === "pending" ||
+    state.inspectorNotice?.decision === "pending" ||
     (state.pendingBeat && !state.beatAcknowledged)
   ) {
     return state;
@@ -1460,7 +1611,7 @@ export function sleep(state: GameState): GameState {
     carry = advanced.state;
     if (advanced.summary) weekdayDigest = formatWeekdayDigest(cal, advanced.summary);
     if (carry.debtMornings >= BANKRUPTCY_MORNINGS) {
-      const review: GameState = {
+      const review = applyLostHillOnBankrupt({
         ...carry,
         phase: "winter_review",
         outcome: "bankrupt",
@@ -1474,7 +1625,7 @@ export function sleep(state: GameState): GameState {
         talentToast: null,
         beatLog: carry.beatLog,
         completedBeats: carry.completedBeats,
-      };
+      });
       const record = winterRecord(review);
       return { ...review, lastWinter: record, career: [...review.career, record] };
     }
@@ -1482,7 +1633,7 @@ export function sleep(state: GameState): GameState {
   const openDay = carry.dayIndex + 1;
   const seasonOver = bankrupt || openDay > state.seasonLength;
   if (seasonOver) {
-    const review: GameState = {
+    const rawReview: GameState = {
       ...carry,
       phase: "winter_review",
       outcome: bankrupt ? "bankrupt" : "finished",
@@ -1499,6 +1650,7 @@ export function sleep(state: GameState): GameState {
         ? state.completedBeats
         : [...state.completedBeats, "winter_review"],
     };
+    const review = bankrupt ? applyLostHillOnBankrupt(rawReview) : rawReview;
     const record = winterRecord(review);
     return { ...review, lastWinter: record, career: [...review.career, record] };
   }
@@ -1626,19 +1778,65 @@ export function sleep(state: GameState): GameState {
   };
 }
 
+function applyLostHillOnBankrupt(review: GameState): GameState {
+  const hills = ensureCareerHills(review.careerHills, review.mountainId);
+  const hasOtherActive = hills.some(
+    (h) => h.mountainId !== review.mountainId && h.status === "caretaker",
+  );
+  if (review.mountainId === "dutch_hill" && !hasOtherActive && review.career.length === 0) {
+    return { ...review, careerHills: hills, forestEpilogue: false };
+  }
+  const sloaneInterested = review.vivianVisit !== null || review.summitLinkDecision === "accepted";
+  const lost = resolveLostHill(hills, review.mountainId, sloaneInterested);
+  return {
+    ...review,
+    careerHills: lost.careerHills,
+    forestEpilogue: lost.forestEpilogue,
+  };
+}
+
+function runCaretakerOffscreenWinters(
+  hills: readonly CareerHillRecord[],
+  seed: number,
+  day: number,
+): {
+  careerHills: CareerHillRecord[];
+  netCashDelta: number;
+  notes: HomecomingNote[];
+  ledger: CaretakerLedgerEntry[];
+} {
+  let netCashDelta = 0;
+  const notes: HomecomingNote[] = [];
+  const ledger: CaretakerLedgerEntry[] = [];
+  const careerHills = hills.map((record, i) => {
+    if (record.status !== "caretaker") return record;
+    const result = simulateCaretakerWinter(record, (seed + (i + 1) * 7919) >>> 0, day);
+    netCashDelta += result.cashDelta;
+    notes.push(result.note);
+    ledger.push(result.ledger);
+    return result.record;
+  });
+  return { careerHills, netCashDelta, notes, ledger };
+}
+
 export function finishWinterReview(state: GameState): GameState {
   if (state.phase !== "winter_review" || state.outcome !== "finished" || liquidNetWorth(state) < 0) return state;
   return { ...state, phase: "mountain2" };
 }
 
 export function startNewSeason(state: GameState): GameState {
-  const careerHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) =>
+  const baseHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) =>
     entry.mountainId === state.mountainId ? { ...entry, status: "open" as const } : entry,
   );
-  const fresh = {
-    ...createInitialState(state.rngState, state.mountainId),
+  const offscreen = runCaretakerOffscreenWinters(baseHills, state.rngState, state.dayIndex);
+  const base = createInitialState(state.rngState, state.mountainId);
+  const fresh: GameState = {
+    ...base,
+    cash: base.cash + offscreen.netCashDelta,
     operatorName: state.operatorName ?? null,
-    careerHills,
+    careerHills: offscreen.careerHills,
+    homecomingNotes: offscreen.notes,
+    caretakerLedger: [...(state.caretakerLedger ?? []), ...offscreen.ledger],
   };
   const next = pickFounder(fresh, state.founderId ?? "elena");
   // The store merges the rule result, so explicitly clear a name from the old hill.
@@ -1660,7 +1858,7 @@ export function startNextHill(
   const alreadyRecorded = Boolean(state.lastWinter || state.outcome === "playing");
   const record = state.lastWinter ?? winterRecord(state);
   const winterScore = record.score?.total ?? 0;
-  const nextCareerHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) => {
+  const preparedHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) => {
     if (entry.mountainId === state.mountainId) {
       return {
         ...entry,
@@ -1676,12 +1874,25 @@ export function startNextHill(
     }
     return entry;
   });
+  const offscreen = runCaretakerOffscreenWinters(
+    preparedHills.map((entry) =>
+      entry.mountainId === state.mountainId ? { ...entry, status: "open" as const } : entry,
+    ),
+    state.rngState,
+    state.dayIndex,
+  );
+  // Restore departed hill as "caretaker" (its winter just closed manually; other prior caretaker hills simulated).
+  const nextCareerHills = offscreen.careerHills.map((entry) =>
+    entry.mountainId === state.mountainId ? preparedHills.find((p) => p.mountainId === entry.mountainId)! : entry,
+  );
   const base = createInitialState(state.rngState, targetMountainId);
   const fresh: GameState = {
     ...base,
-    cash: townMatchCash(targetMountainId, winterScore),
+    cash: townMatchCash(targetMountainId, winterScore) + offscreen.netCashDelta,
     operatorName: state.operatorName ?? null,
     careerHills: nextCareerHills,
+    homecomingNotes: offscreen.notes,
+    caretakerLedger: [...(state.caretakerLedger ?? []), ...offscreen.ledger],
     morningHeadline: `${target.name} awaits. Build an opening lift and trail to open in ${target.town}.`,
   };
   const next = pickFounder(fresh, state.founderId ?? "elena");
@@ -1690,6 +1901,43 @@ export function startNextHill(
     ...next,
     career: alreadyRecorded ? state.career : [...state.career, record],
     lastWinter: record,
+  };
+}
+
+export function resumeSurvivingHill(state: GameState, targetMountainId: MountainId): GameState {
+  const target = hillById(targetMountainId);
+  const hills = ensureCareerHills(state.careerHills, state.mountainId);
+  const entry = hills.find((h) => h.mountainId === targetMountainId);
+  if (
+    state.phase !== "winter_review" ||
+    state.outcome !== "bankrupt" ||
+    !target.playable ||
+    !entry ||
+    entry.status !== "caretaker"
+  ) {
+    return state;
+  }
+  const flipped = hills.map((h) =>
+    h.mountainId === targetMountainId ? { ...h, status: "open" as const } : h,
+  );
+  const offscreen = runCaretakerOffscreenWinters(flipped, state.rngState, state.dayIndex);
+  const base = createInitialState(state.rngState, targetMountainId);
+  const fresh: GameState = {
+    ...base,
+    cash: Math.max(5000, Math.round(target.startingCash * 0.5) + offscreen.netCashDelta),
+    operatorName: state.operatorName ?? null,
+    careerHills: offscreen.careerHills,
+    homecomingNotes: offscreen.notes,
+    caretakerLedger: [...(state.caretakerLedger ?? []), ...offscreen.ledger],
+    forestEpilogue: false,
+    morningHeadline: `Back at ${target.name} with ${entry.caretakerAlly ?? target.localContact}. Time to rebuild.`,
+  };
+  const next = pickFounder(fresh, state.founderId ?? "elena");
+  if (state.lodgeName !== undefined) next.lodgeName = undefined;
+  return {
+    ...next,
+    career: state.career,
+    ...(state.lastWinter && { lastWinter: state.lastWinter }),
   };
 }
 

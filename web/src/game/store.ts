@@ -69,11 +69,18 @@ type GameActions = {
   decideSchoolContract: (decision: SchoolContractDecision) => void;
   decideClubBooking: (decision: "accepted" | "declined") => void;
   decideGroomerDown: (decision: "paid" | "skipped") => void;
+  installNightLights: () => void;
+  setNightSession: (on: boolean) => void;
+  decideOrchardParcel: (decision: "buy" | "decline") => void;
+  decideInspectorNotice: (decision: "repaired" | "closed") => void;
+  decideWhiterockCaretakerBid: (mountainId: MountainId, decision: "sell" | "keep") => void;
+  dismissHomecomingNotes: () => void;
   markTipSeen: (id: string) => void;
   resetTips: () => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
   startNextHill: (targetMountainId: MountainId, caretakerAlly?: string | null) => void;
+  resumeSurvivingHill: (targetMountainId: MountainId) => void;
   nextTalentHint: () => string | null;
   dismissSaveNotice: () => void;
   guestLens: "off" | "mood";
@@ -305,9 +312,16 @@ export const useGameStore = create<GameStore>()(
         decideSchoolContract: action("decideSchoolContract"),
         decideClubBooking: action("decideClubBooking"),
         decideGroomerDown: action("decideGroomerDown"),
+        installNightLights: command("installNightLights"),
+        setNightSession: action("setNightSession"),
+        decideOrchardParcel: action("decideOrchardParcel"),
+        decideInspectorNotice: action("decideInspectorNotice"),
+        decideWhiterockCaretakerBid: action("decideWhiterockCaretakerBid"),
+        dismissHomecomingNotes: command("dismissHomecomingNotes"),
         finishWinterReview: command("finishWinterReview"),
         startNewSeason: command("startNewSeason"),
         startNextHill: action("startNextHill"),
+        resumeSurvivingHill: action("resumeSurvivingHill"),
         nextTalentHint: () => rules.nextTalentHint(get()),
         guestLens: "off",
         setGuestLens: (guestLens) => set({ guestLens }),
