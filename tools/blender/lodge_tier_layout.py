@@ -217,19 +217,49 @@ def build_tier3_shell(a, mats):
 
     _chimney(a, Wu / 2 + 0.6, uy + 1.2, Hb + Hu + rise_u + 1.0, stone, snow)
 
-    # Plaza + shallow flush canopy (awning, not a second house)
-    a.box((0, fy - 3.4, F - 0.1), (Wb + 1.2, 6.6, 0.26), stone)
-    a.box((0, fy - 3.1, F + 0.02), (Wb + 0.4, 5.6, 0.1), "stone-dark")
+    # Plaza with railings + long grand central canopy
+    px0, px1 = -(Wb + 1.0) / 2, (Wb + 1.0) / 2
+    py_in, py_out = fy - 0.15, fy - 6.8
+    a.box((0, (py_in + py_out) / 2, F - 0.1), (Wb + 1.2, py_in - py_out, 0.26), stone)
+    a.box((0, (py_in + py_out) / 2 + 0.1, F + 0.02), (Wb + 0.4, py_in - py_out - 0.5, 0.1), "stone-dark")
     for i in range(3):
-        a.box((0, fy - 6.5 - i * 0.38, F - 0.2 - i * 0.14), (4.8, 0.4, 0.15), stone)
-    # posts + flat snow canopy
-    for x in (-2.4, 2.4):
-        a.box((x, fy - 1.7, F + 1.7), (0.3, 0.3, 3.3), trim)
-        a.box((x, fy - 1.7, F + 0.25), (0.5, 0.5, 0.35), stone)
-    a.box((0, fy - 1.5, F + 3.55), (6.2, 2.6, 0.18), timber)
-    a.box((0, fy - 1.5, F + 3.72), (6.6, 3.0, 0.28), snow, bevel=0.08)
-    a.box((0, fy - 1.65, F + 3.15), (3.0, 0.1, 0.7), "cream-sign")
-    a.box((0, fy - 1.7, F + 3.1), (2.4, 0.05, 0.35), "navy")
+        a.box((0, py_out - 0.35 - i * 0.38, F - 0.2 - i * 0.14), (5.0, 0.4, 0.15), stone)
+    # plaza rails (gap at stair)
+    rh = F + 1.05
+    for x in (px0, px1):
+        a.box((x, (py_in + py_out) / 2, F + 0.55), (0.16, 0.16, 1.05), timber)
+        a.box((x, py_out, F + 0.55), (0.16, 0.16, 1.05), timber)
+        a.box((x, py_in, F + 0.55), (0.16, 0.16, 1.05), timber)
+        a.box((x, (py_in + py_out) / 2, rh), (0.14, py_in - py_out, 0.1), timber)
+        a.box((x, (py_in + py_out) / 2, rh + 0.08), (0.16, py_in - py_out + 0.04, 0.07), snow)
+    for xa, xb in ((px0, -2.4), (2.4, px1)):
+        cxr = (xa + xb) / 2
+        L = xb - xa
+        a.box((cxr, py_out, rh), (L, 0.12, 0.1), timber)
+        a.box((cxr, py_out, rh + 0.08), (L + 0.04, 0.14, 0.07), snow)
+        a.box((xa, py_out, F + 0.55), (0.14, 0.14, 1.05), timber)
+        a.box((xb, py_out, F + 0.55), (0.14, 0.14, 1.05), timber)
+    # mid posts along front rail segments
+    for x in (-8.5, -5.5, 5.5, 8.5):
+        a.box((x, py_out, F + 0.55), (0.14, 0.14, 1.05), timber)
+
+    # Grand central canopy — long projection toward the plaza edge, six posts
+    cy = (fy - 0.4 + py_out + 0.6) / 2   # span from near facade to near plaza edge
+    depth = (fy - 0.4) - (py_out + 0.6)
+    for x in (-5.0, -2.5, 0.0, 2.5, 5.0):
+        a.box((x, cy - depth * 0.28, F + 2.0), (0.36, 0.36, 3.9), trim)
+        a.box((x, cy - depth * 0.28, F + 0.3), (0.58, 0.58, 0.42), stone)
+    for x in (-5.0, 5.0):
+        a.box((x, fy - 0.4, F + 2.0), (0.32, 0.32, 3.9), trim)
+        a.box((x, fy - 0.4, F + 0.3), (0.5, 0.5, 0.38), stone)
+    # deck + fascia + snow (wide + deep)
+    a.box((0, cy, F + 4.1), (12.5, depth + 0.4, 0.24), timber)
+    a.box((0, cy, F + 3.95), (11.6, 0.28, 0.4), timber_d)
+    a.box((-5.8, cy, F + 3.95), (0.28, depth, 0.4), timber_d)
+    a.box((5.8, cy, F + 3.95), (0.28, depth, 0.4), timber_d)
+    a.box((0, cy, F + 4.32), (13.2, depth + 0.8, 0.36), snow, bevel=0.1)
+    a.box((0, fy - 1.1, F + 3.55), (4.6, 0.12, 0.9), "cream-sign")
+    a.box((0, fy - 1.15, F + 3.5), (3.8, 0.05, 0.45), "navy")
 
 
 def build_coherent_lodge(a, mats, tier=2):
@@ -258,17 +288,29 @@ def tier2_front_bay(a, mats, W=LODGE_W, D=LODGE_D, F=LODGE_F, include_deck=True)
 
 
 def tier3_front_grand(a, mats, W=LODGE_W, D=LODGE_D, H=LODGE_H, F=LODGE_F):
-    """Annex/theme delta: plaza, shallow canopy, cupola — no bolted mini-house."""
+    """Annex/theme delta: railed plaza, long grand canopy, cupola."""
     wall, trim, roof, timber, timber_d, stone, snow, ski, steel, glow = mats
     fy = front_y(D)
-    a.box((0, fy - 3.0, F - 0.1), (W + 5.5, 5.8, 0.24), stone)
-    a.box((0, fy - 2.7, F + 0.02), (W + 4.5, 5.0, 0.1), "stone-dark")
+    px0, px1 = -(W + 5.0) / 2, (W + 5.0) / 2
+    py_in, py_out = fy - 0.1, fy - 5.6
+    a.box((0, (py_in + py_out) / 2, F - 0.1), (W + 5.5, py_in - py_out, 0.24), stone)
+    a.box((0, (py_in + py_out) / 2 + 0.1, F + 0.02), (W + 4.5, py_in - py_out - 0.4, 0.1), "stone-dark")
     for i in range(3):
-        a.box((0, fy - 5.8 - i * 0.36, F - 0.2 - i * 0.13), (4.4, 0.38, 0.15), stone)
-    for x in (-2.2, 2.2):
-        a.box((x, fy - 1.5, F + 1.6), (0.28, 0.28, 3.1), trim)
-    a.box((0, fy - 1.3, F + 3.35), (5.6, 2.3, 0.16), timber)
-    a.box((0, fy - 1.3, F + 3.5), (6.0, 2.7, 0.26), snow, bevel=0.08)
+        a.box((0, py_out - 0.32 - i * 0.36, F - 0.2 - i * 0.13), (4.6, 0.38, 0.15), stone)
+    rh = F + 1.0
+    for x in (px0, px1):
+        a.box((x, (py_in + py_out) / 2, rh), (0.14, py_in - py_out, 0.1), timber)
+        a.box((x, (py_in + py_out) / 2, rh + 0.08), (0.16, py_in - py_out + 0.04, 0.07), snow)
+        a.box((x, py_out, F + 0.5), (0.14, 0.14, 1.0), timber)
+    for xa, xb in ((px0, -2.2), (2.2, px1)):
+        cxr = (xa + xb) / 2
+        a.box((cxr, py_out, rh), (xb - xa, 0.12, 0.1), timber)
+        a.box((cxr, py_out, rh + 0.08), (xb - xa + 0.04, 0.14, 0.07), snow)
+    cy = fy - 2.8
+    for x in (-3.6, -1.3, 1.3, 3.6):
+        a.box((x, cy, F + 1.7), (0.3, 0.3, 3.3), trim)
+    a.box((0, cy, F + 3.55), (9.0, 4.4, 0.18), timber)
+    a.box((0, cy, F + 3.72), (9.5, 4.8, 0.28), snow, bevel=0.08)
     cz = H + 7.0
     a.box((0, 0, cz + 0.65), (2.4, 2.4, 1.4), trim)
     for face, (x, y) in {

@@ -20,7 +20,7 @@ Shared layout lives in [`tools/blender/lodge_tier_layout.py`](../../tools/blende
 |------|--------------------|
 | **1** | Compact barn-red lodge (keep as-is) |
 | **2** | One wide New England clapboard mass: ground glass bank, centered gable cluster, lap bands, deck |
-| **3** | Stepped resort: wide glass base → setback upper → dormers + cupola; plaza + shallow canopy |
+| **3** | Stepped resort: wide glass base → setback upper → dormers + cupola; railed plaza + long grand canopy |
 
 **Do not** grow primary upgrade mass on **+Y (rear)** — that reads as “behind” the lodge from the game camera.
 
