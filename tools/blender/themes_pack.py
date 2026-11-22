@@ -114,25 +114,21 @@ def make_lodge(style, tier):
     t = THEMES[style]
     name = f"lodge-tier-{tier}-{style}"
     a = Asset(name)
+    # Tier 2/3: dedicated coherent shells (same window-bank language as timber).
+    if tier >= 2:
+        layout.build_coherent_lodge(a, _mats(t), tier=tier)
+        return a.finish()
     W, D, H, F = layout.LODGE_W, layout.LODGE_D, 5.2 if style != "aframe60s" else 4.0, layout.LODGE_F
     rise = _gabled_shell(a, W, D, H, F, t)
     fy = -D / 2
     _front_glaze(a, fy, H, F, rise if not t.get("prism") else rise * 0.5, t)
-    # Tier 2+ layout owns the approach deck — skip base deck clutter.
-    if tier < 2:
-        _deck_front(a, fy, F, t)
+    _deck_front(a, fy, F, t)
     cx = W / 2 + 0.7
     a.box((cx, 1.0, 2.0), (1.6, 1.8, 3.5), t["stone"])
     a.box((cx, 1.0, 8.0), (1.3, 1.4, 8.0), t["stone"])
     a.box((cx, 1.0, 12.2), (1.5, 1.5, 0.3), t["stone_d"])
     a.box((cx, 1.0, 12.5), (1.3, 1.3, 0.28), "snow", bevel=0.1)
-    if tier >= 2:
-        layout.tier2_front_bay(a, _mats(t), W, D, F, include_deck=(tier < 3))
-    if tier >= 3:
-        layout.tier3_front_grand(a, _mats(t), W, D, H, F)
-        # Layout ridge lantern covers Tier 3; theme cupola only on T1/T2 sugarhouse.
-    else:
-        _cupola(a, H, rise if not t.get("prism") else 6.0, t)
+    _cupola(a, H, rise if not t.get("prism") else 6.0, t)
     return a.finish()
 
 

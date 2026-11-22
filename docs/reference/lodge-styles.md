@@ -18,12 +18,13 @@ Shared layout lives in [`tools/blender/lodge_tier_layout.py`](../../tools/blende
 
 | Tier | Player-facing read |
 |------|--------------------|
-| **2** | Wide two-story −Y pavilion (replaces base porch), one front balcony under F2 windows, approach deck, +X guest wing, −X dining uplift |
-| **3** | Stone plaza + shallow porte-cochère, setback crown, ridge lantern, twin flank towers (±X) with aligned window grids |
+| **1** | Compact barn-red lodge (keep as-is) |
+| **2** | Dedicated wider/taller shell: one 4-bay window bank, ribbon balcony, +X guest wing, −X dining wing — shared floor bands |
+| **3** | Dedicated grand shell: 5-bay × 3-story bank, shallow entry canopy, symmetric ±X wings, cupola, stone plaza |
 
 **Do not** grow primary upgrade mass on **+Y (rear)** — that reads as “behind” the lodge from the game camera.
 
-Tier extras **replace** the Tier‑1 porch/deck (no stacked fronts). Full-shell `lodge-tier-2*` / `lodge-tier-3*` are what the game draws; annex GLBs keep the delta-only pieces for review.
+Timber Tier 2/3 are **dedicated coherent shells** (not Tier‑1 + bolted extras). Theme packs still extend their base shells with shared layout helpers. Annex GLBs remain delta-only for review.
 
 ## Base venues per theme
 

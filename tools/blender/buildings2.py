@@ -36,46 +36,36 @@ def _deck(a, x0, x1, y0, y1, z, rail=True):
         a.box((bx, by, z + 1.15), (sx + (0.06 if sx > 0.2 else 0.0), sy + (0.06 if sy > 0.2 else 0.0), 0.09), "snow")
 
 
-def _tier2(a, W, D, H, F, include_deck=True):
-    """Camera-facing tier-2: wide pavilion, wrap balcony, guest wing, dining uplift."""
-    layout.tier2_front_bay(a, layout.timber_mats(), W, D, F, include_deck=include_deck)
-
-
-def _tier3_delta(a, W, D, H, F):
-    """Tier-3-only: porte-cochère, crown, ridge lantern, flank towers, stone plaza."""
-    layout.tier3_front_grand(a, layout.timber_mats(), W, D, H, F)
-
-
-def _tier3(a, W, D, H, F):
-    """Tier 2 massing (no timber deck) plus tier-3 plaza / towers."""
-    _tier2(a, W, D, H, F, include_deck=False)
-    _tier3_delta(a, W, D, H, F)
-
-
 def _lodge_dims():
     return layout.LODGE_W, layout.LODGE_D, layout.LODGE_H, layout.LODGE_F
 
 
 def b_lodge_annex_2():
+    """Delta-only piece for review (wing + balcony language)."""
     a = Asset("lodge-annex-2")
-    W, D, H, F = _lodge_dims()
-    _tier2(a, W, D, H, F)
+    layout.tier2_front_bay(a, layout.timber_mats(), include_deck=True)
     return a.finish()
 
 
 def b_lodge_annex_3():
+    """Delta-only piece for review (plaza / canopy / wings / cupola)."""
     a = Asset("lodge-annex-3")
-    W, D, H, F = _lodge_dims()
-    _tier3_delta(a, W, D, H, F)
+    layout.tier3_front_grand(a, layout.timber_mats())
     return a.finish()
 
 
 def b_lodge2():
-    return b_lodge("lodge-tier-2", _tier2)
+    """Dedicated coherent Tier-2 shell — not base lodge + bolted extras."""
+    a = Asset("lodge-tier-2")
+    layout.build_coherent_lodge(a, layout.timber_mats(), tier=2)
+    return a.finish()
 
 
 def b_lodge3():
-    return b_lodge("lodge-tier-3", _tier3)
+    """Dedicated coherent Tier-3 shell — one facade, window banks, cupola."""
+    a = Asset("lodge-tier-3")
+    layout.build_coherent_lodge(a, layout.timber_mats(), tier=3)
+    return a.finish()
 
 
 def b_aframe():
