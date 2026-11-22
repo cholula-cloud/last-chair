@@ -1,7 +1,7 @@
 # Last Chair — world, story and cast
 
 **Version:** 1.1 · **Updated:** 2026-11-21  
-Merged from the former Act I, characters, mountains and lore docs. Game plan and priorities: [MASTER_PLAN.md](./MASTER_PLAN.md). The full Story Mode narrative (the player, Nan, the intro, the surprise catalog, the roster, endings) lives in [STORY.md](./STORY.md), which wins on Story Mode narrative; this file keeps the lore pantry, the cast reference and the respect line. Items STORY.md marks proposed, pending owner are marked the same way here. Numbers behind founders and beat gates: [SIMULATION_SPEC.md](./SIMULATION_SPEC.md).
+Merged from the former Act I, characters, mountains and lore docs. Game plan and priorities: [MASTER_PLAN.md](./MASTER_PLAN.md). The full Story Mode narrative (the player, Nan, the intro, the surprise catalog, the roster, endings) lives in [STORY.md](./STORY.md), which wins on Story Mode narrative; this file keeps the lore pantry, the cast reference and the respect line. Items STORY.md marks locked (owner approved 2026-11-22) are marked the same way here. Numbers behind founders and beat gates: [SIMULATION_SPEC.md](./SIMULATION_SPEC.md).
 
 **Rule:** characters and story exist to teach systems and anchor emotion. When story and sim disagree, the sim wins and the story adapts.
 
@@ -21,7 +21,7 @@ Merged from the former Act I, characters, mountains and lore docs. Game plan and
 
 **Story Mode structure (player effort):** daily ski sim → nightly fare + snow/service (+ rare story reply) → metric-gated radio beats → winter review (real peak name). Tone: hopeful operator; **dignified** history (NELSAP, DHASH). No fourth mandatory nightly control in Act I; heritage optional; radio can be off.
 
-**World:** New England Ice Coast. You start on Dutch Hill — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**. **Abominable Snowglomerate Pass** (fictional) = consolidation pressure. Career continues to [Part 3](#part-3-career-mountains); copy pantry: [Part 4](#part-4-lore-pantry).
+**World:** New England Ice Coast. You start on Dutch Hill — a **closed** area on Route 100, lodge gone, lifts scrapped or seized, forest reclaiming **Dutch Meadows**. **Whiterock Pass** (fictional) = consolidation pressure. Career continues to [Part 3](#part-3-career-mountains); copy pantry: [Part 4](#part-4-lore-pantry).
 
 ---
 
@@ -39,7 +39,7 @@ Real arc (public record):
 
 **Player fantasy:** You buy the **note on a dead lift line** — not a fantasy name, a **real ghost** — and try to run **one more winter** before the forest takes the meadows back.
 
-**Who you are** (STORY.md §2): a Readsboro kid who spent ten winters on a snowmaking crew up north (the Snowglomerate past is **proposed, pending owner**). Your grandmother Nan (fiction) sold tickets at Dutch Hill for thirty winters and kept the last punch card from 1984–85 with one ride left on it. That card is the title: every winter ends with the last chair and the card gets punched.
+**Who you are** (STORY.md §2): a Readsboro kid who spent ten winters on a snowmaking crew up north (the Whiterock past is **locked (owner approved 2026-11-22)**). Your grandmother Nan (fiction) sold tickets at Dutch Hill for thirty winters and kept the last punch card from 1984–85 with one ride left on it. That card is the title: every winter ends with the last chair and the card gets punched.
 
 ---
 
@@ -77,8 +77,8 @@ Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**,
 | 2 | **Saturday** | Plates from **Bennington**, **Williamstown**, **Brattleboro** |
 | 3 | **School bus** | Readsboro / Wilmington corridor. A proven ski school can invite six pupils for a weekday. |
 | 4 | **Dry week** | No guns—**wait for cold** or close trails (ICR lesson) |
-| 5 | **Abominable Snowglomerate** | Vivian offers $6,000 in return for a fare cap. Riley must decline. |
-| 6 | **Winter review** | A solvent finish brings a phone call from the next town, tied to something your winter measured. The first call comes from **Mount Tom, MA** (proposed, pending owner; STORY.md §6). Maris reports that Abominable Snowglomerate holds an option on the land. |
+| 5 | **Whiterock** | Vivian offers $6,000 in return for a fare cap. Riley must decline. |
+| 6 | **Winter review** | A solvent finish brings a phone call from the next town, tied to something your winter measured. The first call comes from **Mount Tom, MA** (locked (owner approved 2026-11-22); STORY.md §6). Maris reports that Whiterock holds an option on the land. |
 
 ---
 
@@ -114,7 +114,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 - **Background:** Community banker who lost the last loan.
 - **Bonus:** Borrow at 7% for the winter.
 - **Constraint:** On a thaw day, guests lose 3 welcome points if at least three of the last seven days were thaws.
-- **Story:** Abominable Snowglomerate calls him first, which creates tension on buyout offers. His version of each Vivian offer arrives a night early. Wrote small-hill loans for thirty years.
+- **Story:** Whiterock calls him first, which creates tension on buyout offers. His version of each Vivian offer arrives a night early. Wrote small-hill loans for thirty years.
 
 #### 3. **Riley Otis — *The Rigger***
 
@@ -154,7 +154,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 | **Nan** | Your grandmother (fiction); sold tickets at Dutch Hill for thirty winters; keeps the last punch card | Reputation, heritage, the last chair ritual. Text only, radio call-ins once or twice a winter, never voiced |
 | **Chief Dana Holt** | Patrol captain | Wind holds, safety, lift inspections, snow-day crowd control |
 | **Superintendent Al Waters** | School district; was your fourth-grade principal | Bus days, lesson seats; the reference that brings Maple Valley's call |
-| **Vivian Cho** | Abominable Snowglomerate regional rep; skis your hill as a guest before she offers; appears every winter | Buyouts, poaching, race sponsorship, the coast offer (STORY.md §4.3) |
+| **Vivian Cho** | Whiterock regional rep; skis your hill as a guest before she offers; appears every winter | Buyouts, poaching, race sponsorship, the coast offer (STORY.md §4.3) |
 | **Frank Oka** | Garage & diesel | Groomer/snowmaking reliability events |
 | **Hill locals** (one per later hill) | Lou Carvalho (Mount Tom), Rosa Merrill (Maple Valley), Kip Lavoie (Snow Valley), Gilles Fortin (Enchanted), Ada Whitcomb (Evergreen Valley), Mae Donnelly (Brodie), Walt Gagnon (Mount Whittier); all fiction | Each owns that hill's new mechanic and becomes its **caretaker** when you move on: a named ally who runs the departed hill on the coarse off-screen sim for income (STORY.md §5.4, §6.3) |
 
@@ -196,7 +196,7 @@ In **Sandbox** (optional **ICR Complex** later), player may pick talents manuall
 
 - New England **specific, not parody**—no excessive “wicked” tone.
 - Humor from **operations** (corduroy, lift tickets, chowder), not from mocking guests.
-- Abominable Snowglomerate speaks corporate-plain; locals speak concrete (*“the T-bar sounded like a coffee grinder”*).
+- Whiterock speaks corporate-plain; locals speak concrete (*“the T-bar sounded like a coffee grinder”*).
 - Player-facing copy follows the Voice section of [ART_DIRECTION.md](ART_DIRECTION.md#voice) (wry Vermont local); that section is the authority if this file disagrees.
 
 ---
@@ -225,7 +225,7 @@ Same design contract as the reference genre leader: **lost and struggling New En
 - State ski history societies, local newspapers, area obituaries  
 - USGS / town names for geography only  
 
-**We invent:** your foreclosure timeline, Abominable Snowglomerate, fictional locals, exact dollar amounts, and “what you built last winter.”
+**We invent:** your foreclosure timeline, Whiterock, fictional locals, exact dollar amounts, and “what you built last winter.”
 
 ---
 
@@ -240,11 +240,11 @@ Same design contract as the reference genre leader: **lost and struggling New En
 
 ---
 
-### Career progression (v1 roster, proposed, pending owner)
+### Career progression (v1 roster, locked (owner approved 2026-11-22))
 
 Order follows the reference pattern: **warmer / smaller / more indebted → colder / steeper / more capital**. Dutch Hill is the smallest hill on the list by vertical and by every other measure. Full per-hill design, difficulty table, caretakers and surprise catalog: [STORY.md §5](./STORY.md#5-mountain-roster-and-progression). Heights and lift history are **approximate** for design. Figures marked † disagree between sources; **verify before shipping** any of them in player copy.
 
-The roster below replaces the v0 list. Tenney, Crotched West and Hogback are removed from the career (STORY.md decision D1, **proposed, pending owner**); the reasons follow the table.
+The roster below replaces the v0 list. Tenney, Crotched West and Hogback are removed from the career (STORY.md decision D1, **locked (owner approved 2026-11-22)**); the reasons follow the table.
 
 | Act | Mountain | State | Design role | Real-history hook (public) |
 |-----|----------|-------|-------------|----------------------------|
@@ -299,7 +299,7 @@ Terrain archetype tags (for sim): `southern_thaw`, `family_ropetow`, `exposed_su
 
 ### Implementation order
 
-Ship **Dutch Hill only** through the MVP (M3 in [MASTER_PLAN](./MASTER_PLAN.md#9-roadmap)); Mount Tom (replacing Tenney, row 36) and caretaker follow in M5, with the remaining hills in M7 or later (STORY.md D5, proposed, pending owner). Update the roster table when locking elevation, lift type, and opening scenario per peak.
+Ship **Dutch Hill only** through the MVP (M3 in [MASTER_PLAN](./MASTER_PLAN.md#9-roadmap)); Mount Tom (replacing Tenney, row 36) and caretaker follow in M5, with the remaining hills in M7 or later (STORY.md D5, locked (owner approved 2026-11-22)). Update the roster table when locking elevation, lift type, and opening scenario per peak.
 
 ---
 
@@ -365,7 +365,7 @@ Hundreds of NE areas operated rope tows and T-bars after WWII; consolidation, in
 
 Boston’s industrial age built **Lowell / Lawrence** mills; **James B. Francis** (Lowell Hydraulic Experiments) is a real New England engineering hero. ICR’s “Lifer” founder nods to **craft engineers** who keep lifts alive.
 
-**Our founder parallel:** **Riley Otis — The Rigger** — overnight repairs, no sellout to Abominable Snowglomerate.
+**Our founder parallel:** **Riley Otis — The Rigger** — overnight repairs, no sellout to Whiterock.
 
 **Lore:** “The headgate doesn’t care about your feelings” — **mill race mentality** applied to lift maintenance.
 
@@ -388,7 +388,7 @@ NE skiing is **forested**, not alpine bowls. Clearing runs was **literal logging
 
 Real history: **Ikon / Epic / Indy** reshaped pass economics; locals debate **skiing as subscription**.
 
-**Fictional Abominable Snowglomerate** stands in for consolidation pressure—**do not** use Epic/Vail trademarks in UI.
+**Fictional Whiterock** stands in for consolidation pressure—**do not** use Epic/Vail trademarks in UI.
 
 **Lore lines:**
 
@@ -452,7 +452,7 @@ Use for **founder flavor**:
 |-------|-----------|
 | **Maris Shaw** | Concord NH radio veteran; pronounces Worcester wrong on purpose |
 | Call-ins | Real town names near active mountain |
-| Abominable Snowglomerate rep | Boston office, skis twice a season |
+| Whiterock rep | Boston office, skis twice a season |
 | Patrol chief | References **4437** culture without hero worship |
 
 **Boston vs Albany media markets:** eastern MA hills “live or die on the Pike”; western MA / VT on **I-91**.
@@ -471,7 +471,7 @@ Beat table and ship notes live in **[Part 1](#part-1-dutch-hill-act-i)** — do 
 - **Alpenwald** across-the-street development failure — optional economic B-text.  
 - **1990 lodge burn** — mention only with dignity (fire dept training).  
 - Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.  
-- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; Abominable Snowglomerate map-dot pressure; Nan’s punch card; winter review → the call from Mount Tom.
+- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; Whiterock map-dot pressure; Nan’s punch card; winter review → the call from Mount Tom.
 
 ---
 
