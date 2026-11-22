@@ -74,13 +74,16 @@ export function buildParkingSurface(
       const center = Math.abs(z - first.center.z);
       const aisle = 1 - clamp01((center - 0.15) / 0.2);
       const entry = entrance && z > first.center.z ? clamp01((0.58 - Math.abs(x - entrance.x)) / 0.18) : 0;
-      const walkway = footpath && z < first.center.z ? clamp01((0.45 - Math.abs(x - footpath.x)) / 0.15) : 0;
+      const walkway = footpath && z < first.center.z ? clamp01((0.58 - Math.abs(x - footpath.x)) / 0.18) : 0;
+      const pathBerm = footpath && z < first.center.z
+        ? clamp01((Math.abs(x - footpath.x) - 0.3) / 0.14) * (1 - walkway * 0.85)
+        : 0;
       const snowCover = 1 - Math.max(entry, walkway);
       const edgeBand = 1 - clamp01(edge / 0.24);
       const pebbles = Math.sin(x * 37.8 + z * 19.3) * Math.cos(z * 30.7 - x * 18.1);
       tint.copy(GRAVEL).lerp(TRACK, aisle * 0.76).multiplyScalar(1 + pebbles * 0.065)
-        .lerp(SNOWBANK, edgeBand * snowCover);
-      return 0.038 + Math.sin(Math.PI * edgeBand) * snowCover * 0.085;
+        .lerp(SNOWBANK, edgeBand * snowCover + pathBerm * 0.38);
+      return 0.038 + Math.sin(Math.PI * edgeBand) * snowCover * 0.085 - walkway * 0.016;
     });
 
   for (const { x, z } of expandedStallCenters(site, tier)) {
