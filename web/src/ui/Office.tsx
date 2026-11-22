@@ -254,7 +254,7 @@ export function Reports({ s }: { s: GameState }) {
               <p className="text-sm font-bold">{schoolMemory(w.school)}</p>
               {w.summitLink && (
                 <p className="text-sm font-bold">
-                  {w.summitLink === "accepted" ? "You took Vivian's offer." : "You turned down Vivian's offer."}
+                  {w.summitLink === "accepted" ? "You took Sloane's Whiterock offer." : "You turned down Sloane's Whiterock offer."}
                 </p>
               )}
             </details>

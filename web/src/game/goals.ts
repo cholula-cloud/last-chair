@@ -33,7 +33,7 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
   const contract = state.schoolContract;
   if (contract || state.schoolEligible) {
     let status: GoalChip["status"] = "To do";
-    let explainer = "Watch Route 100 Radio for Al Waters to call about the Readsboro school bus.";
+    let explainer = "Watch Route 100 Radio for Hank Pelletier to call about the Readsboro school bus.";
     if (contract?.decision === "declined") {
       status = "Declined";
       explainer = "You passed on the Readsboro school visit.";

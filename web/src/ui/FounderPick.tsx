@@ -71,7 +71,10 @@ export function FounderPick() {
                 <span className="text-[0.85rem] font-extrabold text-sign-green">
                   {f.title}
                 </span>
-                <span className="mt-1 space-y-1 text-[0.85rem] font-bold leading-snug">
+                <span className="mt-1 text-[0.8rem] font-bold leading-snug text-ink-soft">
+                  {f.relationship}
+                </span>
+                <span className="mt-1.5 space-y-1 text-[0.85rem] font-bold leading-snug">
                   <span className="block text-sign-green">
                     <span aria-hidden="true">+ </span>
                     <span className="sr-only">Benefit: </span>

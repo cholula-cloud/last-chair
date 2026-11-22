@@ -43,7 +43,7 @@ export function SchoolContractCard({ night }: { night: GameState }) {
         </div>
       }
     >
-      {storyBeatCopy("school_bus")?.radio}{" "}
+      {storyBeatCopy("school_bus", night.operatorName ?? null)?.radio}{" "}
       {SCHOOL_BUS_PUPILS} kids arrive {weekday} {date} at 9 AM ({formatMoney(SCHOOL_BUS_FARE)} tickets). Watch your lift line and try to get every kid through a lesson.
     </RadioCard>
   );

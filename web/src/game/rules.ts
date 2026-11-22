@@ -37,7 +37,7 @@ import { isKnownStyleId, isStyleUnlocked, normalizeStyleId } from "./styles";
 import { previewPaintedTrail, STANDARD_BRUSH_WIDTH, type PaintStroke } from "./paintedTrail";
 import { hasTrailDependents } from "./trailNetwork";
 import { canDemolish, canTakeSummitLinkEquity, clearingCostFor, reputationDriftFor, warmWeekPenalty } from "./founders";
-import { FOUNDERS, founderById } from "./content";
+import { FOUNDERS, founderById, sanitizeOperatorName } from "./content";
 import { CREW_RUSH_COST, pickTalent as applyTalentPick, type TalentId } from "./talentProgress";
 
 /** Bonus crew point when a lodge upgrade finishes (Tier 2 or 3 opening). */
@@ -1068,6 +1068,12 @@ export function placeGun(state: GameState, at: XZ): GameState {
     : state;
 }
 
+export function setOperatorName(state: GameState, rawName: string | null): GameState {
+  const operatorName = rawName ? sanitizeOperatorName(rawName) : null;
+  if (operatorName === state.operatorName) return state;
+  return { ...state, operatorName };
+}
+
 export function pickFounder(state: GameState, id: FounderId): GameState {
   if (!FOUNDERS.some((f) => f.id === id)) return state;
   const rng = createRng(state.rngState);
@@ -1481,7 +1487,8 @@ export function finishWinterReview(state: GameState): GameState {
 }
 
 export function startNewSeason(state: GameState): GameState {
-  const next = pickFounder(createInitialState(state.rngState), state.founderId ?? "elena");
+  const fresh = { ...createInitialState(state.rngState), operatorName: state.operatorName ?? null };
+  const next = pickFounder(fresh, state.founderId ?? "elena");
   // The store merges the rule result, so explicitly clear a name from the old hill.
   if (state.lodgeName !== undefined) next.lodgeName = undefined;
   if (state.lastWinter || state.outcome === "playing") {

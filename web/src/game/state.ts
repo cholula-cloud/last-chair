@@ -119,6 +119,7 @@ export type PersistedState = {
   pendingSnow: SnowPreset;
   buildMode: boolean;
   founderId: FounderId | null;
+  operatorName: string | null;
   buildings: BuildingId[];
   lodgeTier: LodgeTier;
   lodgeStyleId: string;
@@ -221,6 +222,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     pendingSnow: "mid",
     buildMode: false,
     founderId: null,
+    operatorName: null,
     buildings: [],
     lodgeTier: DUTCH_HILL_SITE.buildings.lodge.startingTier,
     lodgeStyleId: mountainDefaultStyle(mountainId),
@@ -284,6 +286,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     pendingSnow: state.pendingSnow,
     buildMode: state.buildMode,
     founderId: state.founderId,
+    operatorName: state.operatorName ?? null,
     buildings: state.buildings,
     lodgeTier: state.lodgeTier,
     lodgeStyleId: state.lodgeStyleId,
@@ -346,4 +349,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;

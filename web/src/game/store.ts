@@ -8,7 +8,7 @@ import type { AssetTarget } from "./assetNames";
 import type { PaintStroke } from "./paintedTrail";
 import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
-import { STORY_BEATS } from "./content";
+import { formatOperatorText, STORY_BEATS } from "./content";
 import { applyRule, newReplay, type Replay, type RuleName, type RuleArgs } from "./replay";
 import * as rules from "./rules";
 import {
@@ -62,6 +62,7 @@ type GameActions = {
   undoTrail: () => void;
   buyBuilding: (id: BuildingId) => void;
   pickFounder: (id: FounderId) => void;
+  setOperatorName: (name: string | null) => void;
   acknowledgeBeat: () => void;
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
@@ -294,6 +295,7 @@ export const useGameStore = create<GameStore>()(
         undoTrail: command("undoTrail"),
         buyBuilding: action("buyBuilding"),
         pickFounder: action("pickFounder"),
+        setOperatorName: action("setOperatorName"),
         acknowledgeBeat: command("acknowledgeBeat"),
         replyToSummitLink: action("replyToSummitLink"),
         decideSchoolContract: action("decideSchoolContract"),
@@ -319,7 +321,8 @@ export const useGameStore = create<GameStore>()(
 
 if (typeof document !== "undefined" && typeof window !== "undefined") installSaveFlush(document, window);
 
-export function storyBeatCopy(id: StoryBeatId | null) {
+export function storyBeatCopy(id: StoryBeatId | null, operatorName: string | null = null) {
   if (!id) return null;
-  return STORY_BEATS.find((b) => b.id === id) ?? null;
+  const beat = STORY_BEATS.find((b) => b.id === id);
+  return beat ? { ...beat, radio: formatOperatorText(beat.radio, operatorName) } : null;
 }

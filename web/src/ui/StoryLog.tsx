@@ -2,7 +2,7 @@
 
 import { seasonCalendar } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
-import { STORY_BEATS, WINTER_GOAL } from "@/game/content";
+import { formatOperatorText, STORY_BEATS, WINTER_GOAL } from "@/game/content";
 import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
 import { liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -24,20 +24,25 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
   const schoolOffer = useGameStore(s => s.pendingBeat === "school_bus");
   const school = useGameStore(s => s.schoolContract);
   const deal = useGameStore(s => s.summitLinkDecision);
+  const operatorName = useGameStore(s => s.operatorName ?? null);
   const muted = useSettings(s => s.muted);
   const radio = useSettings(s => s.radioEnabled);
   const set = useSettings(s => s.set);
   const entries = [
     ...beats.map(({ day, id }) => {
       const beat = STORY_BEATS.find(beat => beat.id === id)!;
-      return { day, title: beat.title, text: day === null ? "Maris was on the air, but nobody wrote down the day." : beat.radio };
+      return {
+        day,
+        title: beat.title,
+        text: day === null ? "Maris was on the air, but nobody wrote down the day." : formatOperatorText(beat.radio, operatorName),
+      };
     }),
     ...days.flatMap(day => day.lodgeOpening ? [{
       day: day.day, title: `Lodge Tier ${day.lodgeOpening}`,
       text: lodgeOpeningRadio(day.lodgeOpening),
     }] : []),
     ...moments.map(entry => {
-      const copy = surpriseRadio(entry);
+      const copy = surpriseRadio(entry, operatorName);
       return { day: entry.dayIndex, title: copy.title, text: copy.radio };
     }),
   ].sort((a, b) => (a.day ?? 0) - (b.day ?? 0));
@@ -72,6 +77,6 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
     </article>)}
     {school && <p className="text-sm font-bold">{playing && school.decision === "accepted" && school.pupilsTaught === null
       ? `The Readsboro bus is booked for day ${school.day}.` : schoolMemory(school)}</p>}
-    {deal && <p className="text-sm font-bold">{deal === "accepted" ? `Vivian paid ${formatMoney(SUMMIT_LINK_PAYMENT)}. Tickets top out at Balanced this winter.` : "You turned down Vivian's offer. Dutch Hill sets its own fares."}</p>}
+    {deal && <p className="text-sm font-bold">{deal === "accepted" ? `Sloane wired ${formatMoney(SUMMIT_LINK_PAYMENT)}. Tickets top out at Balanced this winter.` : "You turned down Sloane's Whiterock offer. Dutch Hill sets its own fares."}</p>}
   </div>;
 }

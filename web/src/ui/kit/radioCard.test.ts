@@ -14,9 +14,9 @@ describe("RadioCard speaker", () => {
   });
 
   it("names a different speaker visibly and for screen readers, and keeps the aria-label", () => {
-    const html = render("Vivian Cho, Summit Pass Corp");
-    expect(html).toContain("Vivian Cho, Summit Pass Corp");
-    expect(html).toContain("School bus offer. Vivian Cho, Summit Pass Corp says: </span>");
+    const html = render("Sloane Prescott, Whiterock");
+    expect(html).toContain("Sloane Prescott, Whiterock");
+    expect(html).toContain("School bus offer. Sloane Prescott, Whiterock says: </span>");
     expect(html).toContain('aria-label="Route 100 Radio: School bus offer"');
     expect(html).not.toContain("Maris on Route 100 Radio");
   });

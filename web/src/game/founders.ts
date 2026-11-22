@@ -6,7 +6,7 @@ import type { DayWeather, FounderDef, FounderId, WeatherKind } from "./types";
  * founder id (null before the pick) and returns the neutral value for no founder.
  */
 
-export function founderMods(id: string | null): Omit<FounderDef, "id" | "name" | "title" | "bonus" | "constraint"> {
+export function founderMods(id: string | null): Omit<FounderDef, "id" | "name" | "title" | "relationship" | "bonus" | "constraint"> {
   return founderById(id) ?? NO_FOUNDER_MODS;
 }
 

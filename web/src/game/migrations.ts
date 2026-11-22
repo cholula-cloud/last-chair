@@ -183,6 +183,14 @@ export const MIGRATIONS: readonly Migration[] = [
       };
     },
   },
+  {
+    to: 15,
+    note: "Add optional operatorName for Cold Open v2 lease signing",
+    up: (s) => ({
+      ...s,
+      operatorName: typeof s.operatorName === "string" ? s.operatorName : null,
+    }),
+  },
 ];
 
 type MigrationResult =

@@ -125,8 +125,8 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
             {summitLink && (
               <p>
                 {summitLink === "accepted"
-                  ? `Summit Pass Corp wired ${formatMoney(SUMMIT_LINK_PAYMENT)} to Dutch Hill. Tickets stayed capped at Balanced through closing day.`
-                  : "You turned down Summit Pass Corp. Dutch Hill set its own ticket prices through closing day."}
+                  ? `Whiterock wired ${formatMoney(SUMMIT_LINK_PAYMENT)} to Dutch Hill. Tickets stayed capped at Balanced through closing day.`
+                  : "You turned down Whiterock. Dutch Hill set its own ticket prices through closing day."}
               </p>
             )}
           </section>
