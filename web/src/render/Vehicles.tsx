@@ -67,8 +67,8 @@ function LodgeFootpath() {
   const geometry = useMemo(() => buildFootpathSurface(SITE, TERRAIN), []);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <mesh geometry={geometry} receiveShadow renderOrder={2} userData={{ asset: { kind: "footpath" } }}>
-      <meshLambertMaterial vertexColors polygonOffset polygonOffsetFactor={-3} {...OVERLAY_DIM} />
+    <mesh geometry={geometry} receiveShadow userData={{ asset: { kind: "footpath" } }}>
+      <meshLambertMaterial vertexColors polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-1} {...OVERLAY_DIM} />
     </mesh>
   );
 }

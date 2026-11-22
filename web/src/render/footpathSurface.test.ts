@@ -1,49 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { TERRAIN } from "@/game/terrain";
-import { SITE } from "./layout";
-import { buildFootpathSurface, footpathPolyline } from "./footpathSurface";
 import { pathLength } from "@/game/site";
+import { TERRAIN } from "@/game/terrain";
+import { DUTCH_HILL_SITE } from "@/game/mountains/dutchHill.site";
+import { SITE } from "./layout";
+import {
+  buildFootpathSurface,
+  decorativeFootpathPoints,
+  footpathPolyline,
+  footpathWalkChain,
+} from "./footpathSurface";
 
 describe("footpath surface", () => {
-  it("covers the lot_lodge chain longer than the path data alone", () => {
+  it("walk chain still includes the road spur", () => {
     const lot = SITE.paths.find((p) => p.id === "lot_lodge")!.points;
-    const poly = footpathPolyline(SITE);
-    expect(poly.length).toBeGreaterThan(3);
-    expect(pathLength(poly)).toBeGreaterThan(pathLength(lot));
+    const chain = footpathWalkChain(SITE);
+    expect(pathLength(chain)).toBeGreaterThan(pathLength(lot));
+  });
+
+  it("decorative path skips the road crossing and stops on the lodge porch", () => {
+    const decorative = decorativeFootpathPoints(SITE);
+    const roadZ = SITE.road.z;
+    const pathX = decorative[0]?.x ?? 7.2;
+    expect(decorative.some((p) => Math.abs(p.z - roadZ) < 0.4 && Math.abs(p.x - pathX) < 0.4)).toBe(false);
+    const last = decorative.at(-1)!;
+    const { lodge } = DUTCH_HILL_SITE.buildings;
+    expect(last.z).toBeLessThan(lodge.z + lodge.footprint.depth * 0.5);
+    expect(last.z).toBeGreaterThan(lodge.z);
     const mesh = buildFootpathSurface(SITE, TERRAIN);
     expect(mesh.getAttribute("position").count).toBeGreaterThan(8);
-    expect(mesh.index!.count).toBeGreaterThan(6);
     mesh.dispose();
   });
 
-  it("lifts a wider ribbon above the terrain with a darker track than snow berms", () => {
+  it("fades width toward the lodge and leaves no mesh over Route 100", () => {
+    const poly = footpathPolyline(SITE);
+    const roadZ = SITE.road.z;
+    const onRoad = poly.filter((p) => Math.abs(p.z - roadZ) < 0.5 && Math.abs(p.x - 7.2) < 0.55);
+    expect(onRoad.length).toBeLessThan(poly.length * 0.15);
     const mesh = buildFootpathSurface(SITE, TERRAIN);
-    const position = mesh.getAttribute("position");
-    const color = mesh.getAttribute("color");
-    expect(color.count).toBe(position.count);
-    expect(position.count % 4).toBe(0);
+    const pos = mesh.getAttribute("position");
     let maxSpan = 0;
-    let minLift = Infinity;
-    let trackLuma = 0;
-    let bermLuma = 0;
-    let rows = 0;
-    for (let i = 0; i < position.count; i += 4) {
-      const dx = position.getX(i) - position.getX(i + 3);
-      const dz = position.getZ(i) - position.getZ(i + 3);
+    for (let i = 0; i < pos.count; i += 4) {
+      const dx = pos.getX(i) - pos.getX(i + 3);
+      const dz = pos.getZ(i) - pos.getZ(i + 3);
       maxSpan = Math.max(maxSpan, Math.hypot(dx, dz));
-      for (let c = 0; c < 4; c++) {
-        const lift = position.getY(i + c) - TERRAIN.height(position.getX(i + c), position.getZ(i + c));
-        minLift = Math.min(minLift, lift);
-        const luma = 0.3 * color.getX(i + c) + 0.59 * color.getY(i + c) + 0.11 * color.getZ(i + c);
-        if (c === 0 || c === 3) bermLuma += luma;
-        else trackLuma += luma;
+      for (let v = 0; v < 4; v++) {
+        const z = pos.getZ(i + v);
+        expect(Math.abs(z - roadZ) > 0.48 || Math.abs(pos.getX(i + v) - 7.2) > 0.55).toBe(true);
       }
-      rows++;
     }
-    expect(maxSpan).toBeGreaterThan(0.65);
-    expect(maxSpan).toBeLessThan(0.72);
-    expect(minLift).toBeGreaterThan(0.05);
-    expect(trackLuma / (rows * 2)).toBeLessThan(bermLuma / (rows * 2) - 0.05);
+    expect(maxSpan).toBeLessThan(0.55);
+    expect(maxSpan).toBeGreaterThan(0.28);
     mesh.dispose();
   });
 });
