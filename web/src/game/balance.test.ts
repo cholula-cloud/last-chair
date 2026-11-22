@@ -104,7 +104,8 @@ describe("balance properties", () => {
 
   it("a passive Balanced / Mid season preserves capital while Adaptive earns more", () => {
     const end = sum("balanced/mid").endCash;
-    expect(end).toBeGreaterThan(START_CASH * 0.75);
+    // DH8 groomer-down (harness: guns-only) can shave one passive season by a few hundred dollars.
+    expect(end).toBeGreaterThan(START_CASH * 0.795);
     expect(sum("adaptive").endCash).toBeGreaterThan(end);
   });
 
