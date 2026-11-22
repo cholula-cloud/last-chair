@@ -1,6 +1,8 @@
 "use client";
 
 import { founderById } from "@/game/content";
+import { seasonCalendar } from "@/game/calendar";
+import { buildCallOffers, hillById } from "@/game/mountains/roster";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
 import { FARE_LABELS, SNOW_LABELS } from "@/game/types";
@@ -26,9 +28,16 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const score = useGameStore(s => s.lastWinter?.score);
   const school = useGameStore((s) => s.schoolContract);
   const summitLink = useGameStore((s) => s.summitLinkDecision);
+  const mountainId = useGameStore((s) => s.mountainId);
+  const dayHistory = useGameStore((s) => s.dayHistory);
+  const lastDay = useGameStore((s) => s.lastDay);
+  const schoolContract = useGameStore((s) => s.schoolContract);
+  const lastWinter = useGameStore((s) => s.lastWinter);
+  const careerHills = useGameStore((s) => s.careerHills);
   const vivianVisit = useGameStore((s) => s.vivianVisit);
   const clubBooking = useGameStore((s) => s.clubBooking);
   const groomerDown = useGameStore((s) => s.groomerDown);
+  const startNextHill = useGameStore((s) => s.startNextHill);
   const summitReceipt = days.findLast((d) => d.summitLink?.reply === "accepted")?.summitLink?.receipt ?? SUMMIT_LINK_PAYMENT;
   const reputation = useGameStore((s) => s.reputation);
   const lodgeTier = useGameStore((s) => s.lodgeTier);
@@ -41,25 +50,59 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   if (phase !== "winter_review" && phase !== "mountain2") return null;
 
   if (phase === "mountain2") {
+    const currentHill = hillById(mountainId);
+    const offers = buildCallOffers({
+      mountainId,
+      calendar: seasonCalendar({ mountainId, seasonLength }),
+      seasonDays: days,
+      dayHistory,
+      lastDay,
+      schoolContract,
+      lastWinter,
+      careerHills,
+    });
     return (
       <Sheet
         modal
         z="z-50"
-        title="Mount Tom, MA"
-        subtitle="Next lost hill on the map"
+        title="The next call"
+        subtitle="Whiterock holds options on neighboring ridges until April"
         footer={
           <PrimaryButton onClick={startNewSeason}>
-            Replay Dutch Hill winter
+            Stay another winter at {currentHill.name}
           </PrimaryButton>
         }
       >
-        <div className="panel space-y-2 px-4 py-3.5">
-          <p className="text-[1rem] font-bold leading-snug">
-            Lou Carvalho from Holyoke called about Mount Tom&apos;s range lights. Whiterock holds an option on the ridge until April.
-          </p>
-          <p className="text-sm font-bold text-ink-soft">
-            The career Atlas and Mount Tom arrive in the career update. Dutch Hill stays saved on this device.
-          </p>
+        <div className="space-y-3">
+          {offers.map((offer) => (
+            <article key={offer.mountainId} className="panel space-y-2 px-4 py-3.5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <h3 className="display text-[1.25rem] leading-tight">{offer.hillName}</h3>
+                  <p className="text-sm font-bold text-ink-soft">
+                    {offer.townLabel} ({offer.caller}, {offer.callerRole})
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-extrabold">{formatMoney(offer.startingCash)} seed cash</p>
+                  {offer.bonusActive && (
+                    <span className="chip inline-block px-2 py-0.5 text-xs font-extrabold">
+                      Town match +{offer.bonusPct}%
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-[0.95rem] font-bold leading-snug">{offer.pitch}</p>
+              <p className="text-sm font-bold text-ink-soft">{offer.whiterockWarning}</p>
+              <button
+                type="button"
+                onClick={() => startNextHill(offer.mountainId)}
+                className="key key-solid press flex min-h-11 w-full items-center justify-center px-3 text-[0.95rem] font-extrabold [--key-fill:var(--sign-yellow)] [--lift:4px]"
+              >
+                Take the wheel at {offer.hillName}
+              </button>
+            </article>
+          ))}
         </div>
       </Sheet>
     );

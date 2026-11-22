@@ -137,6 +137,17 @@ const seasonDay = shape({
 });
 const broadcast = shape({ id: beat, day: nullable(index) });
 const moment = shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index });
+const careerHillRecord = shape({
+  mountainId: oneOf(...Object.keys(MOUNTAIN_CALENDARS)),
+  status: oneOf("unopened", "open", "caretaker", "whiterock", "forest"),
+  caretakerAlly: nullable(string),
+  wintersRun: index,
+  lastCashDelta: number,
+  lastReputation: nullable(number),
+  bestScore: nullable(number),
+  whiterockBidOpen: optional(boolean),
+});
+
 const winterRecord = shape({
   completedDays: optional(index), goalMet: optional(boolean), reputation: optional(number),
   days: optional(array(seasonDay)), broadcasts: optional(array(broadcast)), talents: optional(array(string)),
@@ -215,6 +226,7 @@ const fields: Record<keyof PersistedState, Check> = {
   seasonDays: array(seasonDay),
   beatLog: array(broadcast),
   career: array(winterRecord),
+  careerHills: optional(array(careerHillRecord)),
   surprise: optional(nullable(shape({ dayIndex: index, kind: surpriseKind, guestIds: array(string) }))),
   surpriseLog: optional(array(shape({ dayIndex: index, kind: surpriseKind, affectedGuests: index }))),
   lastDay: nullable(shape({

@@ -1,6 +1,8 @@
 import { TALENT } from "./talents";
 import { liftName } from "./assetNames";
 import { winterRecord } from "./winterMemory";
+import type { MountainId } from "./calendar";
+import { ensureCareerHills, hillById, localContactFor, townMatchCash } from "./mountains/roster";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
   canRepayLoan, constructionDraw, dailyCosts, loanOffered,
@@ -1630,7 +1632,14 @@ export function finishWinterReview(state: GameState): GameState {
 }
 
 export function startNewSeason(state: GameState): GameState {
-  const fresh = { ...createInitialState(state.rngState), operatorName: state.operatorName ?? null };
+  const careerHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) =>
+    entry.mountainId === state.mountainId ? { ...entry, status: "open" as const } : entry,
+  );
+  const fresh = {
+    ...createInitialState(state.rngState, state.mountainId),
+    operatorName: state.operatorName ?? null,
+    careerHills,
+  };
   const next = pickFounder(fresh, state.founderId ?? "elena");
   // The store merges the rule result, so explicitly clear a name from the old hill.
   if (state.lodgeName !== undefined) next.lodgeName = undefined;
@@ -1639,6 +1648,49 @@ export function startNewSeason(state: GameState): GameState {
   }
   const record = winterRecord(state);
   return { ...next, career: [...state.career, record], lastWinter: record };
+}
+
+export function startNextHill(
+  state: GameState,
+  targetMountainId: MountainId,
+  caretakerAlly?: string | null,
+): GameState {
+  const target = hillById(targetMountainId);
+  if (!target.playable || state.outcome === "bankrupt" || targetMountainId === state.mountainId) return state;
+  const alreadyRecorded = Boolean(state.lastWinter || state.outcome === "playing");
+  const record = state.lastWinter ?? winterRecord(state);
+  const winterScore = record.score?.total ?? 0;
+  const nextCareerHills = ensureCareerHills(state.careerHills, state.mountainId).map((entry) => {
+    if (entry.mountainId === state.mountainId) {
+      return {
+        ...entry,
+        status: "caretaker" as const,
+        caretakerAlly: caretakerAlly ?? entry.caretakerAlly ?? localContactFor(state.mountainId),
+        wintersRun: entry.wintersRun + 1,
+        lastReputation: state.reputation,
+        bestScore: entry.bestScore !== null ? Math.max(entry.bestScore, winterScore) : winterScore,
+      };
+    }
+    if (entry.mountainId === targetMountainId) {
+      return { ...entry, status: "open" as const };
+    }
+    return entry;
+  });
+  const base = createInitialState(state.rngState, targetMountainId);
+  const fresh: GameState = {
+    ...base,
+    cash: townMatchCash(targetMountainId, winterScore),
+    operatorName: state.operatorName ?? null,
+    careerHills: nextCareerHills,
+    morningHeadline: `${target.name} awaits. Build an opening lift and trail to open in ${target.town}.`,
+  };
+  const next = pickFounder(fresh, state.founderId ?? "elena");
+  if (state.lodgeName !== undefined) next.lodgeName = undefined;
+  return {
+    ...next,
+    career: alreadyRecorded ? state.career : [...state.career, record],
+    lastWinter: record,
+  };
 }
 
 export function nextTalentHint(state: GameState): string | null {

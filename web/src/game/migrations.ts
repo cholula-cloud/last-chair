@@ -1,4 +1,5 @@
 import { DEFAULT_STYLE, LODGE_TIERS, type LodgeTier } from "./base";
+import { ensureCareerHills, type CareerHillRecord } from "./mountains/roster";
 import { normalizeStyleId } from "./styles";
 import { createInitialState, SAVE_VERSION, toPersisted, type PersistedState } from "./state";
 import { winterRecord } from "./winterMemory";
@@ -199,6 +200,17 @@ export const MIGRATIONS: readonly Migration[] = [
       vivianVisit: s.vivianVisit ?? null,
       clubBooking: s.clubBooking ?? null,
       groomerDown: s.groomerDown ?? null,
+    }),
+  },
+  {
+    to: 17,
+    note: "Add New England career hill roster and statuses",
+    up: (s) => ({
+      ...s,
+      careerHills: ensureCareerHills(
+        s.careerHills as readonly CareerHillRecord[] | undefined,
+        (s.mountainId as MountainId | undefined) ?? "dutch_hill",
+      ),
     }),
   },
 ];

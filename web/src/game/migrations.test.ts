@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(16);
+    expect(SAVE_VERSION).toBe(17);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -91,6 +91,16 @@ describe("M3 schema migration", () => {
     expect(result.state.vivianVisit).toBeNull();
     expect(result.state.clubBooking).toBeNull();
     expect(result.state.groomerDown).toBeNull();
+  });
+
+  it("adds default careerHills roster when upgrading from schema 16", () => {
+    const base = toPersisted(createInitialState(7));
+    const v16 = { ...base };
+    delete (v16 as { careerHills?: unknown }).careerHills;
+    const result = migrate(v16, 16);
+    expect(result.reset).toBe(false);
+    expect(result.state.careerHills).toHaveLength(8);
+    expect(result.state.careerHills[0]).toMatchObject({ mountainId: "dutch_hill", status: "open" });
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

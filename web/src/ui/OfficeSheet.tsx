@@ -2,10 +2,12 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { dayLabel, seasonCalendar } from "@/game/calendar";
+import { hillById } from "@/game/mountains/roster";
 import { readActiveSlot } from "@/game/saveSlots";
 import { useGameStore } from "@/game/store";
 import { closeOffice, OFFICE_TABS, setOfficeTab, useOffice, type OfficeTabId } from "@/ui/officeStore";
 import { Money, Stats, Reports, Crew } from "./Office";
+import { AtlasTab } from "@/ui/OfficeAtlas";
 import { ReplayNotes } from "./ReplayNotes";
 import { DeskTab } from "@/ui/OfficeDesk";
 import { SettingsControls } from "@/ui/SettingsControls";
@@ -29,6 +31,8 @@ function TabPanel({ tab }: { tab: OfficeTabId }) {
       return <Reports s={state} />;
     case "Crew":
       return <Crew s={state} />;
+    case "Atlas":
+      return <AtlasTab />;
   }
 }
 
@@ -76,6 +80,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
   const tab = useOffice((s) => s.tab);
   const phase = useGameStore((s) => s.phase);
   const dayIndex = useGameStore((s) => s.dayIndex);
+  const mountainId = useGameStore((s) => s.mountainId);
   const seasonLength = useGameStore((s) => s.seasonLength);
   const cal = useGameStore((s) => seasonCalendar(s));
   const [panel, setPanel] = useState<Panel>("tabs");
@@ -121,7 +126,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
       <header className="border-b-[3px] border-ink px-3 pb-2 pt-[max(0.6rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
         <div className="flex flex-wrap items-center gap-2">
           <h2 id={titleId} ref={headingRef} tabIndex={-1} className="display min-w-[5rem] flex-1 text-[1.45rem] sm:text-[1.7rem] leading-none outline-none">
-            Dutch Hill Office
+            {hillById(mountainId).name} Office
           </h2>
           <button
             type="button"
