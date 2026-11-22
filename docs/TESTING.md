@@ -34,6 +34,8 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 Season logic and balance stay in Vitest; browser CI proves WebGL, touch targets, sheets, and save reload. A failed nightly WebKit leg (especially 844×390 landscape) is often a runner flake—rerun the workflow before treating it as a product bug. Artifacts upload on failure only.
 
+**CI queueing:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs **one CI workflow at a time** for the whole repo so several cloud agents pushing different branches at once do not stack six heavy Vitest jobs on shared runners (that pattern looks like hung `npm test` for 10–30 minutes). If CI feels stuck, check Actions for a queued run ahead of yours before debugging tests.
+
 ### M4 screenshot scripts (Playwright, static export)
 
 Serve a fresh `npm run build` export (`npx serve@latest out -p 3010` from `web/`), set `PLAY_URL=http://127.0.0.1:3010`, then:

@@ -8,9 +8,10 @@ on:
 permissions:
   contents: read
 
+# One CI run at a time repo-wide so agent/PR storms do not stack 6+ heavy Vitest jobs.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
   paths:
@@ -34,6 +35,9 @@ jobs:
   fast:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      CI: "true"
+      NODE_OPTIONS: --max-old-space-size=4096
     defaults:
       run:
         working-directory: web
@@ -52,6 +56,9 @@ jobs:
   slow:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      CI: "true"
+      NODE_OPTIONS: --max-old-space-size=4096
     defaults:
       run:
         working-directory: web
