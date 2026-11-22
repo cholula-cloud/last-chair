@@ -25,18 +25,21 @@ import {
   useKit,
 } from "./kit";
 import { useVillageKitScenes, type VillageKitName } from "./useVillageKits";
-import { HOUSES, LODGE, ROAD_Z, SNOWCAT_POS } from "./layout";
+import { footpathLampPosts } from "./footpathSurface";
+import { HOUSES, LODGE, ROAD_Z, SITE, SNOWCAT_POS } from "./layout";
 import { OVERLAY_DIM } from "./terrainOverlay";
 
-/** Lamp posts along the road and around the base, with soft light pools. */
-const LAMPS: [number, number][] = [
-  [-7.2, ROAD_Z - 3.3],
-  [6.0, ROAD_Z - 3.3],
-  [18.0, ROAD_Z - 3.3],
-  [30.0, ROAD_Z - 3.3],
-  [6.9, LODGE.z + 2.1],
-  [18.3, LODGE.z + 0.9],
-];
+/** Route 100 edge lights plus evenly spaced posts along the lot→lodge walk. */
+function baseLampPosts(): [number, number][] {
+  const z = ROAD_Z - 3.3;
+  const { xFrom, xTo } = SITE.road;
+  const span = xTo - xFrom;
+  const roadXs = [0.12, 0.38, 0.64, 0.88].map((f) => xFrom + span * f);
+  return [
+    ...roadXs.map((x) => [x, z] as [number, number]),
+    ...footpathLampPosts(SITE).map((p) => [p.x, p.z] as [number, number]),
+  ];
+}
 const LODGE_GROUND = TERRAIN.height(LODGE.x, LODGE.z);
 const TIMBER = "#704133";
 const TRIM = "#e6d8be";
@@ -141,7 +144,7 @@ export function villagePlacements(
   }));
   list.push(
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
-    ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
+    ...baseLampPosts().map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   );
   for (const [index, asset] of assets.entries()) {
     if (asset.id === "direction_sign") continue;
@@ -275,11 +278,13 @@ export function Village() {
   const tex = useMemo(() => lightPoolTexture(), []);
   useEffect(() => () => tex?.dispose(), [tex]);
 
+  const lamps = useMemo(() => baseLampPosts(), []);
+
   useEffect(() => {
     const m = pools.current;
     if (!m) return;
     const d = new THREE.Object3D();
-    LAMPS.forEach(([x, z], i) => {
+    lamps.forEach(([x, z], i) => {
       d.position.set(x, TERRAIN.height(x, z) + 0.035, z);
       d.rotation.set(-Math.PI / 2, 0, 0);
       d.scale.setScalar(1);
@@ -290,9 +295,9 @@ export function Village() {
     d.position.set(LODGE.x, TERRAIN.height(LODGE.x, LODGE.z + 0.9) + 0.035, LODGE.z + 0.95);
     d.scale.set(1.8, 1.2, 1);
     d.updateMatrix();
-    m.setMatrixAt(LAMPS.length, d.matrix);
+    m.setMatrixAt(lamps.length, d.matrix);
     m.instanceMatrix.needsUpdate = true;
-  }, []);
+  }, [lamps]);
 
   useFrame(({ clock }) => {
     if (catRef.current) {
@@ -330,7 +335,7 @@ export function Village() {
         <mesh key={`${p.name}-${p.x}-${p.z}`} position={[p.x, y, p.z]} rotation-y={p.yaw} scale={p.scale}
           geometry={geometry} visible={false} dispose={null} userData={{ asset: p.asset }} />
       ))}
-      <instancedMesh ref={pools} args={[undefined, undefined, LAMPS.length + 1]} renderOrder={3}>
+      <instancedMesh ref={pools} args={[undefined, undefined, Math.max(1, lamps.length + 1)]} renderOrder={3}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial
           ref={poolMat}

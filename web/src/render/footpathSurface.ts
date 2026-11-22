@@ -2,13 +2,14 @@ import * as THREE from "three";
 import type { SiteDef } from "@/game/site";
 import type { Terrain, XZ } from "@/game/terrain";
 import { PALETTE } from "./palette";
-import { smoothPath } from "./trail";
+import { pathSampler, smoothPath } from "./trail";
 
 const GRAVEL = new THREE.Color("#98938b");
 const TRACK = new THREE.Color("#87827a");
 const SNOW_EDGE = new THREE.Color(PALETTE.snowShade);
 
-const HALF_WIDTH = 0.24;
+/** Full width ≈ 0.34 world u — compact guest walk, not a road. */
+const HALF_WIDTH = 0.17;
 const BERM_FRAC = 0.24;
 const LIFT = 0.042;
 const ROAD_HALF = 0.52;
@@ -108,6 +109,30 @@ export function footpathPolyline(site: SiteDef): XZ[] {
 }
 
 /** Full lot-to-lodge chain including road spur (walk polyline length). */
+const LAMP_ALONG = [0.17, 0.36, 0.55, 0.76] as const;
+const LAMP_OFFSET = 0.34;
+
+/** Lamp posts just off the walk, evenly spaced (skips the Route 100 band). */
+export function footpathLampPosts(site: SiteDef): XZ[] {
+  const path = footpathPolyline(site);
+  if (path.length < 2) return [];
+  const sample = pathSampler(path);
+  const roadZ = site.road.z;
+  const posts: XZ[] = [];
+  for (const t of LAMP_ALONG) {
+    const here = sample(t);
+    const lead = sample(Math.min(1, t + 0.012));
+    const dx = lead.x - here.x;
+    const dz = lead.z - here.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const x = here.x + (-dz / len) * LAMP_OFFSET;
+    const z = here.z + (dx / len) * LAMP_OFFSET;
+    if (Math.abs(z - roadZ) < ROAD_HALF * 0.85) continue;
+    posts.push({ x, z });
+  }
+  return posts;
+}
+
 export function footpathWalkChain(site: SiteDef): XZ[] {
   const lot = site.paths.find((path) => path.id === "lot_lodge")?.points ?? [];
   const spur = site.road.spur;
