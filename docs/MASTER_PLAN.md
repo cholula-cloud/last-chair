@@ -49,7 +49,7 @@ The M3 roadmap below includes the November 19 expansion. **M4 (code)** is comple
 
 ## 1. What the game is
 
-**Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **Abominable Snowglomerate**, tries to buy up the same coast.
+**Last Chair** is a cozy 3D ski-hill tycoon for the browser, designed for iPhone and iPad Safari first. You reopen **Dutch Hill**, a real ski area in Heartwellville, Vermont that ran from 1944 to 1985, and try to run one more winter before the forest takes the meadows back. Win, and the career moves north to other real lost New England hills while a consolidating megapass, **Whiterock**, tries to buy up the same coast.
 
 **One sentence:** reopen a lost New England mountain, build it with your thumb, grow your lodge, watch tiny skiers have their day, make two or three choices each night, and keep the hill running.
 
@@ -90,19 +90,19 @@ A winter is **28 days** and ends in a **winter review**. The loop is about **dia
 
 Story Mode is the product. It is the career from Dutch Hill onward, played in the Simple ruleset (you build and set two nightly levers; the crew runs operations). This section is a short summary. The full story lives in [STORY.md](./STORY.md), which wins on narrative: the player, the intro, the cast, the surprise catalog, the mountain roster, the next-hill hook and the endings.
 
-Items marked **proposed, pending owner** here and in STORY.md (D1 to D6 there) are not decided. Each has a recommended default in STORY.md §10.
+Items marked **locked (owner approved 2026-11-22)** here and in STORY.md (D1 to D6 there) are not decided. Each has a recommended default in STORY.md §10.
 
 ### Premise
 
 The Ice Coast is New England's nickname for its hard, freeze-thaw snow. Hundreds of small hills here closed between the 1970s and 2000s: bad winters, rising insurance, and megaresorts that pulled skiers north. You are the person who takes the note on one of those dead lift lines. The town wants the only lit slope in the valley back on.
 
-In STORY.md you are a Readsboro kid who spent ten winters on a snowmaking crew up north, and your grandmother Nan kept the last Dutch Hill punch card with one ride left on it. That card is the game's title: every winter ends with the last chair and the card gets punched. The past at an Abominable Snowglomerate resort is **proposed, pending owner (D2)**.
+In STORY.md you are a Readsboro kid who spent ten winters on a snowmaking crew up north, and your grandmother Nan kept the last Dutch Hill punch card with one ride left on it. That card is the game's title: every winter ends with the last chair and the card gets punched. The past at an Whiterock resort is **locked (owner approved 2026-11-22) (D2)**.
 
 Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Saving it is tycoon fiction; the history on the heritage card is not.
 
 ### The antagonist
 
-**Abominable Snowglomerate Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Vivian Cho**, shows up when your hill starts to matter. Every Abominable Snowglomerate offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
+**Whiterock Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Vivian Cho**, shows up when your hill starts to matter. Every Whiterock offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
 
 ### Arc across the career
 
@@ -111,10 +111,10 @@ Proposed, pending owner (D1, D5): the roster below replaces the earlier list. **
 | Act | Hills | Story question | What changes in play |
 |---|---|---|---|
 | I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian scouts the hill as a guest, then makes one offer in the last third of winter |
-| II | Mount Tom, MA and Maple Valley, VT | Can you win a hill Abominable Snowglomerate also wants? | Night session and guns from day 1 at Mount Tom; a season-long school program, tubing and a land parcel at Maple Valley. Abominable Snowglomerate competes for the same guests; its offers get bigger |
+| II | Mount Tom, MA and Maple Valley, VT | Can you win a hill Whiterock also wants? | Night session and guns from day 1 at Mount Tom; a season-long school program, tubing and a land parcel at Maple Valley. Whiterock competes for the same guests; its offers get bigger |
 | III | Snow Valley, VT, Enchanted Mountain, ME and Evergreen Valley, ME | Can an independent run bigger hills with harder conditions? | Riders and a shared guest pool; wind and road closures; a lease covenant measured each winter |
 | IV | Brodie, MA and Mount Whittier, NH (finale) | Can the independents hold together? | Night skiing and events at scale; a gondola with two bases. Caretaker income from earlier hills funds the push |
-| Ending | | Who owns the Ice Coast? | Vivian's coast offer at Mount Whittier. Branches on your choices and on the Atlas dots: a co-op of independent hills, a sale to Abominable Snowglomerate, going alone, or the forest (proposed) |
+| Ending | | Who owns the Ice Coast? | Vivian's coast offer at Mount Whittier. Branches on your choices and on the Atlas dots: a co-op of independent hills, a sale to Whiterock, going alone, or the forest (proposed) |
 
 Full roster, per-hill design, difficulty table and endings: [STORY.md](./STORY.md#5-mountain-roster-and-progression). Lore and the respect line: [WORLD.md Part 3](./WORLD.md#part-3-career-mountains).
 
@@ -129,7 +129,7 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 | **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
 | **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
 | **Readsboro school visit** | Once Tier 2 and a ski school are available, accept or decline one weekday visit for six pupils at a discounted fare. Track booked, delivered and missed lessons separately. The optional goal is credited only for lessons actually delivered |
-| **Abominable Snowglomerate offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect. STORY.md proposes a scouting visit before the offer and a smaller $3,000 offer at reputation 40 to 49, so every player meets her (row N6) |
+| **Whiterock offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect. STORY.md proposes a scouting visit before the offer and a smaller $3,000 offer at reputation 40 to 49, so every player meets her (row N6) |
 | **Named crew** (Frank, Dana, Elena) | Their biases explain the fixed talent order, so a talent arriving reads as a person learning, not a menu |
 | **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Vivian results when present, and the operator's choices and measured results. Records a career result for later use by the map |
 | **Caretaker** | Hills you leave keep running off-screen under a named local ally and pay a small income that funds the next hill. Vivian bids on departed hills that slip. The Atlas map, with yours, the pass and the forest as dot colors, decides the ending (STORY.md §6) |
@@ -201,14 +201,14 @@ Every asset is a revenue line or a mood term in the Ledger, never filler. The Bu
 
 | | **Story Mode** (v1 product) | **Sandbox** (M6) | **Capitalist Mode** (M8, after v1) |
 |---|---|---|---|
-| Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat Abominable Snowglomerate |
+| Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat Whiterock |
 | Ruleset | Simple: build + fare + snow & service | Simple, with optional manual ops later | Simple at each hill, plus a company layer |
 | Economy | Real pressure | Normal / Comfortable / Unlimited | Real pressure, shared market, banks, stock market |
-| Story | The §2 story: Nan, the cast, radio beats, the Abominable Snowglomerate arc, endings | Off | The rival's moves are the story |
+| Story | The §2 story: Nan, the cast, radio beats, the Whiterock arc, endings | Off | The rival's moves are the story |
 | Win | Finish the career | None | Selectable goals (below) |
 | Save | Local now, cloud later | Local slots | Local slot |
 
-The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode does not use the player's history, Nan, the Story cast, beats, surprises or endings; it may reuse the career hills and the rival company, and its Abominable Snowglomerate is an AI company with no named rep. No Story save carries into Capitalist Mode. The boundary is in [STORY.md §6.4](./STORY.md#64-boundary-with-capitalist-mode).
+The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode does not use the player's history, Nan, the Story cast, beats, surprises or endings; it may reuse the career hills and the rival company, and its Whiterock is an AI company with no named rep. No Story save carries into Capitalist Mode. The boundary is in [STORY.md §6.4](./STORY.md#64-boundary-with-capitalist-mode).
 
 **Sandbox settings (M6):** mountain (blank, Dutch Hill template, imported layout later), money (Normal / Comfortable / Unlimited), weather (live random, fixed sunny, storm week), story off, talents (all, crew order, manual), lodge tier (any). The lodge is present on a blank mountain too. New build tools are tried in Sandbox before Story balance.
 
@@ -216,13 +216,13 @@ The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode
 
 Capitalist Mode is a sandboxy company game on the same New England map, in the spirit of a business tycoon, with the difference that you keep the detail of running each mountain. It starts after Story Mode's MVP (Gate M3), the career map and the Ledger (M5). Scope is New England only. Everything here is proposed and gets cut down in row 41 before building.
 
-You start with one small hill (a Dutch Hill-style hill: Tier 1 lodge, modest cash) and freedom to grow. Abominable Snowglomerate, our Ikon and Epic stand-in, is a deterministic AI company with its own seeded sim, so every match can be replayed and balanced in the harness.
+You start with one small hill (a Dutch Hill-style hill: Tier 1 lodge, modest cash) and freedom to grow. Whiterock, our Ikon and Epic stand-in, is a deterministic AI company with its own seeded sim, so every match can be replayed and balanced in the harness.
 
 - **Hills.** Buy hills from the career map's lost hills plus fictional operating hills (no real brands). Each owned hill runs the Story sim with its own lodge, tier and styles. One hill is on screen; the others run in a coarse off-screen sim, shared with the Caretaker (row 37).
-- **Hiring.** You cannot set two nightly levers on five hills. Managers do it: a general manager per hill runs the fare and snow levers to a policy you set, within a budget. Company roles add a snow boss (snow quality per dollar), ops chief (lift reliability), food and beverage manager (venue revenue) and marketing lead (arrivals and reputation). Skill and wage vary; Abominable Snowglomerate can poach them. Story Mode keeps the named crew, so pillar 5 holds in both modes.
+- **Hiring.** You cannot set two nightly levers on five hills. Managers do it: a general manager per hill runs the fare and snow levers to a policy you set, within a budget. Company roles add a snow boss (snow quality per dollar), ops chief (lift reliability), food and beverage manager (venue revenue) and marketing lead (arrivals and reputation). Skill and wage vary; Whiterock can poach them. Story Mode keeps the named crew, so pillar 5 holds in both modes.
 - **Banks.** Loans priced by cash flow and collateral, where the collateral is a hill. Missing payments costs the hill.
 - **Passes and tickets.** Set a season pass and a day ticket for your network (passes open at Tier 3). Guests choose between networks by price, distance, snow and how crowded each hill felt last visit.
-- **Moves and counter-moves.** Abominable Snowglomerate undercuts your pass, poaches a manager, sponsors a race, or bids on a hill you want. You answer at night, as in Story Mode.
+- **Moves and counter-moves.** Whiterock undercuts your pass, poaches a manager, sponsors a race, or bids on a hill you want. You answer at night, as in Story Mode.
 - **Stock market.** Late game: take the company public. Valuation follows earnings, the raise dilutes your control, and quarterly targets and shareholder pressure follow.
 - **Goals (selectable).** Largest share of New England skier-days after N winters; take the company public and survive two more winters; own N hills. Going broke or losing your last hill ends the game.
 
@@ -275,7 +275,7 @@ ICR's lessons from its patches and player reviews still apply: keep the day unin
 
 **Why: guests ask.** Every build should answer something the player can see. Long lines call for a lift, crowded beginner terrain for a green trail, a full lodge for a café. In M3 the night recap names the top unmet demand in one sentence ("Guests want"). Map pins can follow in M4.
 
-**What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that Abominable Snowglomerate also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
+**What it costs: land.** In M5 a mountain can offer one or two parcels beyond the lease. On Dutch Hill: the North Ridge parcel (about $15,000) opens a longer lift line, and the Meadow parcel belongs to a land trust that Whiterock also bids on. Parcels give late-winter cash a use and tie the land itself to the story.
 
 **The goal is always on screen.** A strip under the date shows the remaining days and progress toward finishing solvent. Show Readsboro as an optional goal once the offer is relevant.
 
@@ -396,7 +396,7 @@ Status: ☐ not started · ◐ in progress · ☑ merged. Per-row specs: the han
 | **M5** Career | Mount Tom (proposed, replaces Tenney), the career map, caretaker, ledger | Winter 2 on a second hill plays and is harder |
 | **M6** Sandbox | Free-build mode and save slots | Sandbox hill saves and reloads |
 | **M7** 110% pass | Polish the best ideas after a side-by-side with ICR | Owner sign-off |
-| **M8** Capitalist Mode | A company across New England against Abominable Snowglomerate | A match plays to a winner in the harness and on a phone |
+| **M8** Capitalist Mode | A company across New England against Whiterock | A match plays to a winner in the harness and on a phone |
 
 ### M0: Clean foundation ☑
 
@@ -509,7 +509,7 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | C1a | ☑ | Voice and copy, part 1 | Voice guide in ART_DIRECTION (wry Vermont local, instructions first, one joke per screen) and a rewrite of HUD, build and placement, map layers, coach, title and setup strings, plus build and placement error messages. Copy only. |
-| C1b | ☑ | Voice and copy, part 2 | Same voice applied to the Office, night recap, radio, story log, winter review and the Abominable Snowglomerate and school cards. Radio and cast lines keep their character voices. Maris, Vivian, Dana, Elena, Frank and Riley each speak in the cast-table voice; middle dots and em dashes are gone from player-facing copy. Copy only. |
+| C1b | ☑ | Voice and copy, part 2 | Same voice applied to the Office, night recap, radio, story log, winter review and the Whiterock and school cards. Radio and cast lines keep their character voices. Maris, Vivian, Dana, Elena, Frank and Riley each speak in the cast-table voice; middle dots and em dashes are gone from player-facing copy. Copy only. |
 | B6 | ☑ | Build grid and lift placement guide | A single readable guide during lift placement: anchor ring, snap feedback, and a grid that matches asset/gun placement (cell size, contrast, lease alignment). Lift mode must show useful guidance (L-A intentionally hid the dot grid; replace it with something that does not fight the cable ghost). Overview and venue modes keep a consistent dot field. |
 | B7 | ☑ | Trail paint context and freer endpoints | While painting, **all confirmed trails** stay visible (full or high-opacity ribbons; draft on top). Reduce automatic connector logic that pulls the end to `terrain.base` or reuses another trail's suffix when the player did not intend it (`paintedTrail.ts` `atBase`, prefix/suffix merge). Player-authored endpoints win unless the sim requires a lift top or a valid ski path to base. |
 | P4 | ☑ | M4 polish pass | Cross-cutting pass on **game design** (flows, coach gaps, copy), **engineering** (layering violations, perf hotspots, test gaps), and **UI** (thumb zone, sheet density, HUD clarity). **Priority:** Office economic UX — Money scanability, Stats chart legibility at 375 px, Reports archive vs season calendar hierarchy, chart table fallback under reduced motion. Outcome: a short punch list closed inside M4 or ticketed explicitly. Owner playtest notes drive priority. **Closed in P4:** scaled remote trail-end threshold, guests walking along trail polylines, unified mood words via `moodLabels`. **Still open:** B6 lift-top guide ~7 ms per settled bottom on desktop; occasional WebKit flakes on the **nightly** E2E matrix (rerun). **HUD clutter** addressed in PR #102 (separate row below). |
@@ -551,17 +551,17 @@ Everything in M4b is authored in **`tools/blender/`**, exported Draco to **`web/
 |---|---|---|
 | 34 | ☐ | Mountain definitions as data (terrain, start state, lodge position and start tier, archetype tags, beats) |
 | 35 | ☐ | Atlas tab, also called F5: the career map (New England pins, locked hills with one-line history, heritage cards) and the live trail map of your own hill |
-| 36 | ☐ | Mount Tom, MA (Act II, replaces Tenney; proposed, pending owner, STORY.md D1): night session as a building plus a snow & service tile option, guns from day 1, more capital; Abominable Snowglomerate competes for the same guests |
+| 36 | ☐ | Mount Tom, MA (Act II, replaces Tenney; locked (owner approved 2026-11-22), STORY.md D1): night session as a building plus a snow & service tile option, guns from day 1, more capital; Whiterock competes for the same guests |
 | 37 | ☐ | Caretaker income from departed hills, built on a coarse off-screen hill sim |
 | 38 | ☐ | Ledger, fuller statements: income statement, balance and caretaker lines on top of the F2 Money tab |
 
 ### N track: Story Mode narrative
 
-Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-class work (code, copy and 2D stills, no Blender). N9 and N10 sit with M5. N11 to N18 sit with M7, or earlier if the owner wants the hills before polish. Rows 34, 35, 37 and 38 above keep their scope and gain the story content listed in STORY.md §9. Rows that depend on an owner decision (D1 to D6 in STORY.md §10) are **proposed, pending owner**.
+Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-class work (code, copy and 2D stills, no Blender). N9 and N10 sit with M5. N11 to N18 sit with M7, or earlier if the owner wants the hills before polish. Rows 34, 35, 37 and 38 above keep their scope and gain the story content listed in STORY.md §9. Rows that depend on an owner decision (D1 to D6 in STORY.md §10) are **locked (owner approved 2026-11-22)**.
 
 | # | Milestone | Status | PR | Accomplishes | Save / sim |
 |---|---|---|---|---|---|
-| N0 | M4 | ☐ | STORY.md and roster docs | STORY.md lands; WORLD.md Part 3 roster replaced; MASTER_PLAN §2 arc table and row 36 updated | Docs only |
+| N0 | M4 | ☑ | STORY.md and roster docs | STORY.md v2.0 locked (D1–D6, Whiterock, CAL-1 pacing); WORLD.md & MASTER_PLAN.md aligned | Docs only |
 | N1 | M4 | ☐ | Cold open v2 | Six cards (two new stills, two rewritten), punch-card flip and title drop, optional name on the lease (D3), one ElevenLabs take for cards 3 to 6 on free credits (D6), captions fallback | **Save:** `operatorName` |
 | N2 | M4 | ☐ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Vivian, Al and Nan lines, "the operator" fallback | Copy only |
 | N3 | M4 | ☐ | The last chair | First-ride toast, final-day last chair toast and camera ease, punch-card line in the winter review; Tenney card replaced by a placeholder call card until N9 | None |
@@ -590,7 +590,7 @@ Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-c
 
 ### M7: 110% pass
 
-Play one ICR winter and one Last Chair winter side by side, list friction, tune defaults before adding systems. Candidate list: named regulars with bios, radio serial, Abominable Snowglomerate arc branches and the co-op ending, tomorrow cards on the recap, scenarios (7-day ice storm), shareable season card and trail-map poster (from the Atlas trail map), a scrapbook of auto-snapped moments, a guest book of named regulars, golden-hour light and snowfall. Also: performance budget pass, accessibility audit.
+Play one ICR winter and one Last Chair winter side by side, list friction, tune defaults before adding systems. Candidate list: named regulars with bios, radio serial, Whiterock arc branches and the co-op ending, tomorrow cards on the recap, scenarios (7-day ice storm), shareable season card and trail-map poster (from the Atlas trail map), a scrapbook of auto-snapped moments, a guest book of named regulars, golden-hour light and snowfall. Also: performance budget pass, accessibility audit.
 
 ### M8: Capitalist Mode (after v1)
 
@@ -603,7 +603,7 @@ Design first, then build. Every row is proposed and gets a handoff section befor
 | 43 | ☐ | Hiring: managers per hill and company roles, wages, policy-driven nightly levers |
 | 44 | ☐ | Banks: loans, collateral, default |
 | 45 | ☐ | Hill acquisition on the career map (bids from both sides) |
-| 46 | ☐ | Abominable Snowglomerate AI: deterministic policy for pricing, bidding, poaching and counter-moves, tested in the harness |
+| 46 | ☐ | Whiterock AI: deterministic policy for pricing, bidding, poaching and counter-moves, tested in the harness |
 | 47 | ☐ | Season pass vs day ticket pricing and guest choice between networks |
 | 48 | ☐ | Stock market and IPO; end-of-match review |
 
@@ -631,7 +631,7 @@ These November 19 observations explain why Q1–Q10 were added. The roadmap belo
 2. **The biggest unknown is still open.** The M2 gate asks whether a new player builds a lift and paints a trail in three minutes. No person has run it. Every phone check uses Playwright Chromium at phone sizes; no iPhone or iPad Safari run is recorded. Touch painting, edge auto-pan (Safari's left-edge swipe goes back), pinch zoom, the collapsing address bar and WebGL memory limits show up only there.
 3. **~~The coach comes last.~~ Retired 2026-11-21.** Row 26 ships contextual tips and `problemGuide` ([#149](https://github.com/cholula-cloud/last-chair/pull/149)). The handoff’s anchored founder **CoachCard** spec is still unbuilt; human opening sign-off (Q1) remains open.
 4. **The hill may look empty.** A day has 12 to 48 guests, at most 24 meshes are drawn on iPhone, and the mountain fills the screen (B1). Pillar 3 promises tiny skiers having their day. This has not been checked on a device.
-5. **Days 8 to 28 have no designed shape.** The winter has six beats, one Abominable Snowglomerate offer and weather. "Keep the game from going easy once a hill is solved" is a lesson in §5 with no row behind it.
+5. **Days 8 to 28 have no designed shape.** The winter has six beats, one Whiterock offer and weather. "Keep the game from going easy once a hill is solved" is a lesson in §5 with no row behind it.
 6. **Budgets have no gate.** §6 lists frame, mesh and file budgets and no test measures frame time, load time or bundle size. The performance pass sits in M7. The blank scene from #39 to #48 lasted nine PRs; the phone-check canvas sample now catches that class and does not catch slowness.
 7. **Settings and accessibility are thin.** Settings holds voice volume, captions, reduced motion and default speed. It has no sound or music volume, text size, graphics quality or colour-blind aid. The accessibility audit is in M7.
 8. **PWA install shipped in row Q2 (PR #81).** Add to Home Screen removes Safari's toolbar and its edge gestures, which matters for a game played by painting and dragging. The manifest, icons and meta tags are in `web/`; the real-device install check sits in Q1.
@@ -657,7 +657,7 @@ These November 19 observations explain why Q1–Q10 were added. The roadmap belo
 | Q3 | ☑ M3, before row 27 | Feel floor: an ambient bed, UI taps, a build thunk and the radio sting; a day tint; confirm and tier-up juice. A thin version of rows 31 to 33 that those rows later finish | A muted run and an unmuted run feel different; sound starts after the first gesture; reduced motion and mute respected |
 | Q4 | ☑ M3 | Ambient life: cheap instanced skiers on trails scaled from the day's guest count, riders on chairs, the snowcat on grooming nights, lodge lights at dusk. Decoration only; no number is drawn from it | The hill looks busy at 24 drawn guests; the sim and the "Why?" numbers are unchanged |
 | Q5 | M3 ☑ | Playtest log: export a replay (seed plus action list) and a "Send notes" button that attaches it | A recorded session replays to the point where the player got stuck |
-| Q6 | ☑ M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Abominable Snowglomerate offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
+| Q6 | ☑ M3, inside the row 23 and 27 specs | Winter arc: design days 8 to 28 as a pressure curve (storm week, holiday surge, the Whiterock offer, the loan decision) with a second goal once the first is met | The 40-seed harness shows no strategy that has solved the hill by day 14 |
 | Q7 | ☑ M3 measurement | Performance gate: Playwright measures load time, bundle size and frame time at phone size; an optional ten-minute device soak | Budgets and pass or fail written in TESTING.md |
 | Q8 | M3 ☑ | Settings and accessibility spec: master, music, effects and voice volume, captions, reduced motion, text size, speed, graphics quality, pattern aids; VoiceOver labels on sheets; a contrast check; the audit runs at the M3 gate, not in M7 | Spec merged into §10; audit logged |
 | Q9 | M3 ☑ | Venue move, sale, purchase undo, protected structures, lift and trail closure confirmations | Rules in SIMULATION_SPEC and regression coverage in buildForgiveness.test.ts |
