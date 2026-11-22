@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { lodgeName } from "@/game/assetNames";
-import { LODGE_TIERS, lodgeTierUnlocks } from "@/game/base";
-import { founderById } from "@/game/content";
 import { TalentTreePanel } from "@/ui/TalentTreePanel";
 import { dailyCosts, morningCash, payoffAmount } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -265,48 +262,12 @@ export function Reports({ s }: { s: GameState }) {
   );
 }
 
-export function Crew({ s }: { s: GameState }) {
-  const founder = founderById(s.founderId);
-  const nextTier = s.lodgeTier === 1 ? 2 : s.lodgeTier === 2 ? 3 : null;
-  const tier = LODGE_TIERS[s.lodgeTier];
+/** Talent tree only — founder and lodge facts live on Desk. */
+export function Crew() {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {founder && (
-          <Section title="Your founder">
-            <p className="text-sm font-extrabold">{founder.name}</p>
-            <p className="text-xs font-bold text-ink-soft">{founder.title}</p>
-            <p className="mt-2 text-sm font-bold text-sign-green">+ {founder.bonus}</p>
-            <p className="mt-1 text-sm font-bold text-barn-deep">- {founder.constraint}</p>
-          </Section>
-        )}
-        <Section title="Base lodge">
-          <p className="text-sm font-extrabold">
-            {lodgeName(s)} (Tier {s.lodgeTier})
-          </p>
-          <LedgerRow label="Daily skier cap" value={`~${tier.maxArrivals}`} />
-          <LedgerRow label="Hospitality seating" value={`×${tier.seatMultiplier}`} />
-          <LedgerRow label="Parking spaces" value={String(tier.stalls)} />
-          <LedgerRow label="Annex pads" value={String(tier.pads)} />
-          {nextTier && (
-            <p className="pt-2 text-xs font-bold leading-snug text-ink-soft">
-              {LODGE_TIERS[nextTier].label} raises the cap to ~{LODGE_TIERS[nextTier].maxArrivals}, scales seated
-              venues ×{LODGE_TIERS[nextTier].seatMultiplier}, and adds {LODGE_TIERS[nextTier].pads - tier.pads} annex
-              pads. Unlocks {lodgeTierUnlocks(nextTier).join(", ")}.
-            </p>
-          )}
-          {s.lodgeUpgrade && (
-            <p className="pt-1 text-sm font-extrabold text-gold">
-              Upgrade in progress: {s.lodgeUpgrade.nightsRemaining}{" "}
-              {s.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} left.
-            </p>
-          )}
-        </Section>
-      </div>
-      <section className="panel space-y-2 p-4">
-        <h3 className="display text-xl">Crew skills</h3>
-        <TalentTreePanel />
-      </section>
-    </div>
+    <section className="panel space-y-3 p-4">
+      <h3 className="display text-xl">Talent tree</h3>
+      <TalentTreePanel />
+    </section>
   );
 }

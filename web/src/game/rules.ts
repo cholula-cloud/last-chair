@@ -1586,8 +1586,8 @@ export function sleep(state: GameState): GameState {
         const gained = morningCrewPoints - state.crewPoints;
         parts.push(
           gained === 1
-            ? "Crew point earned. Open Office → Crew to unlock a skill."
-            : `${gained} crew points earned. Open Office → Crew to unlock skills.`,
+            ? "Crew point earned. Open Office → Talent tree to unlock a skill."
+            : `${gained} crew points earned. Open Office → Talent tree to unlock skills.`,
         );
       }
       if (completedTier) {
