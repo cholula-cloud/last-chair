@@ -1,7 +1,6 @@
 import { lodgeAttachPads } from "./base";
 import { STANDARD_BRUSH_WIDTH } from "./paintedTrail";
 import {
-  acknowledgeBeat,
   beginLodgeUpgrade,
   checkAssetPlacement,
   checkPaint,
@@ -10,7 +9,7 @@ import {
   pickFounder,
   placeAssetAtPad,
   placeLift,
-  replyToSummitLink,
+  resolveNightBeat,
   setPendingFare,
   setPendingSnow,
   skipToClose,
@@ -33,10 +32,9 @@ const EAST_TRAVERSE = [
 ];
 
 export function playGateDay(state: GameState): GameState {
-  const night = skipToClose(state);
-  return night.pendingBeat === "summit_link"
-    ? replyToSummitLink(night, "declined")
-    : acknowledgeBeat(night);
+  // resolveNightBeat declines decision beats (groomer_down, school_bus, summit_link)
+  // so headless gate loops cannot stall the way acknowledgeBeat alone does.
+  return resolveNightBeat(skipToClose(state));
 }
 
 function balancedNight(state: GameState): GameState {

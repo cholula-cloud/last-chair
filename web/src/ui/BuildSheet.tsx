@@ -16,8 +16,7 @@ import { Sheet } from "@/ui/kit/Sheet";
 import { PrimaryButton, SectionHeading } from "@/ui/kit/parts";
 import { TrailsPanel } from "@/ui/TrailsPanel";
 import { LodgeUpgradeControl } from "@/ui/LodgeUpgradeControl";
-
-const SEG_BTN = "seg-btn min-h-10 px-2 text-sm font-extrabold";
+import { SegmentedControl } from "@/ui/kit/SegmentedControl";
 
 type BuildTab = "lifts" | "trails" | "base";
 
@@ -180,18 +179,17 @@ export function BuildSheet({
           : "Paint a trail from the lift's top station down to the base."}
       </p>}
       {!opening && (
-        <div className="seg mb-3 grid grid-cols-3 sm:hidden" role="group" aria-label="Build sections">
-          {(["lifts", "trails", "base"] as const).map((id) => (
-            <button
-              key={id}
-              type="button"
-              className={SEG_BTN}
-              aria-pressed={tab === id}
-              onClick={() => setTab(id)}
-            >
-              {id === "lifts" ? "Lifts" : id === "trails" ? "Trails" : "Base"}
-            </button>
-          ))}
+        <div className="mb-3 sm:hidden">
+          <SegmentedControl
+            ariaLabel="Build sections"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "lifts", label: "Lifts" },
+              { value: "trails", label: "Trails" },
+              { value: "base", label: "Base" },
+            ]}
+          />
         </div>
       )}
       {opening ? (

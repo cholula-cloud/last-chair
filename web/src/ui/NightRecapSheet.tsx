@@ -470,22 +470,34 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
       <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
         {night.crewPoints > 0 ? (
           <p>
-            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Spend them in Office → Crew before you sleep.
+            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Spend them in Office → Talent tree before you sleep.
           </p>
         ) : nextTalent ? (
           <p>
             Sleep to earn 1 crew point. Next skill: {talentDescription(nextTalent, night)}
           </p>
         ) : null}
-        {pickableTalents(night).length > 0 && (
-          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => onOffice("Crew")}>
-            Choose crew skill
-          </button>
-        )}
-        {showRush && (
-          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => rushCrewPoint()}>
-            Rush +1 point ({formatMoney(CREW_RUSH_COST)})
-          </button>
+        {(pickableTalents(night).length > 0 || showRush) && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {pickableTalents(night).length > 0 && (
+              <button
+                type="button"
+                className="key press min-h-11 flex-1 px-3 text-sm font-extrabold"
+                onClick={() => onOffice("Crew")}
+              >
+                Open talent tree
+              </button>
+            )}
+            {showRush && (
+              <button
+                type="button"
+                className="key press min-h-11 flex-1 px-3 text-sm font-extrabold"
+                onClick={() => rushCrewPoint()}
+              >
+                Rush +1 ({formatMoney(CREW_RUSH_COST)})
+              </button>
+            )}
+          </div>
         )}
       </div>
     </>

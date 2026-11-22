@@ -232,6 +232,39 @@ body {
     }
   }
 
+  /* Boolean switch: track + thumb. On state uses sign green. */
+  .switch {
+    position: relative;
+    width: 3.25rem;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: var(--snow-2);
+    box-shadow: 0 3px 0 var(--ink);
+    --lift: 3px;
+  }
+  .switch-on {
+    background: var(--sign-green);
+  }
+  .switch-thumb {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    border: 2px solid var(--ink);
+    background: var(--snow);
+    transform: translateY(-50%);
+    transition: left 140ms var(--ease-out);
+  }
+  .switch-on .switch-thumb {
+    left: calc(100% - 1.35rem - 4px);
+  }
+  .switch:focus-visible {
+    outline: 3px solid var(--sign-yellow);
+    outline-offset: 2px;
+  }
+
   /* Pressable feedback: the key physically goes down 3px on pointer-down and
      springs back on release. Exact properties, never "all". */
   .press {
