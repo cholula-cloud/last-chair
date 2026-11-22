@@ -33,7 +33,7 @@ Contents
 | Stack | Next.js 16, React 19, TypeScript, React Three Fiber, Zustand, Tailwind 4, Vitest, Playwright |
 | Node | 22 (CI) |
 
-Hosting is GitHub Pages only. Vercel was removed in PR 28. A leftover "Vercel Preview Comments" check still appears on PRs; it is a GitHub App integration, not repo config, and can be uninstalled from the repo settings.
+Hosting is GitHub Pages only (`.github/workflows/pages.yml`). PR CI is GitHub Actions only.
 
 ### Pull requests
 
@@ -444,7 +444,7 @@ From `docs/MASTER_PLAN.md` section 5, applied to every PR:
 
 Layering: `web/src/game/` is pure TypeScript and never imports from `render/` or `ui/`, tests included. `render/` reads state and never writes rules. Content is data.
 
-Process used so far: an Opus agent writes the implementation brief, a Sonnet agent builds it on a branch, an Opus agent reviews the diff against the brief, a Sonnet agent applies the review fixes, the author re-runs `npm run check`, opens the PR, and merges with a merge commit after CI is green. Each PR description follows the template: Goal, Changes, Out of scope, Tests, Phone check, Roadmap, plus a Size line when over budget. Memory notes for this project say the same: Opus plans and reviews, Sonnet codes, MASTER_PLAN is the authority, no Vercel.
+Process used so far: an Opus agent writes the implementation brief, a Sonnet agent builds it on a branch, an Opus agent reviews the diff against the brief, a Sonnet agent applies the review fixes, the author re-runs `npm run check`, opens the PR, and merges with a merge commit after CI is green. Each PR description follows the template: Goal, Changes, Out of scope, Tests, Phone check, Roadmap, plus a Size line when over budget. Memory notes for this project say the same: Opus plans and reviews, Sonnet codes, MASTER_PLAN is the authority.
 
 File names: no underscores; use hyphens or spaces. Existing docs use underscores and predate that rule.
 
@@ -463,7 +463,6 @@ GitHub auto-merge is disabled on the repo, so merge by hand after CI is green: `
 | `playtest:p0` | times out at different steps on this machine, also on a clean `main`. Part 3 replaces it with a reliable script |
 | Real touch input | never exercised; every browser check used mouse events |
 | Real device | no iPhone check yet for M1 gate or anything since |
-| Vercel check | "Vercel Preview Comments" still reports on PRs; uninstall the integration |
 | Stale worktrees and branches | `last-chair-ui`, `last-chair-pages`, merged `claude/*` branches |
 | Interim Build sheet | Ridge shows blocked (too close to the default surface lift); Mid is the valid top. 12c replaces the sheet |
 | Docs lag | `docs/MASTER_PLAN.md` row 12-pre exists only on the PR 31 branch; `docs/WORLD.md` and `docs/ART_DIRECTION.md` need the scale, site and arrival edits listed in the 2b to 2d sections |
