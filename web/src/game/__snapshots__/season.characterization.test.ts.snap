@@ -135,6 +135,11 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
         "moments": [
           {
             "affectedGuests": 0,
+            "dayIndex": 7,
+            "kind": "dot_call",
+          },
+          {
+            "affectedGuests": 0,
             "dayIndex": 9,
             "kind": "pie",
           },
@@ -317,6 +322,11 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
         "kind": "pie",
       },
       "moments": [
+        {
+          "affectedGuests": 0,
+          "dayIndex": 7,
+          "kind": "dot_call",
+        },
         {
           "affectedGuests": 0,
           "dayIndex": 9,
@@ -959,8 +969,18 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
         "moments": [
           {
             "affectedGuests": 0,
+            "dayIndex": 7,
+            "kind": "dot_call",
+          },
+          {
+            "affectedGuests": 0,
             "dayIndex": 9,
             "kind": "pie",
+          },
+          {
+            "affectedGuests": 0,
+            "dayIndex": 15,
+            "kind": "january_thaw",
           },
           {
             "affectedGuests": 12,
@@ -1289,8 +1309,18 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
       "moments": [
         {
           "affectedGuests": 0,
+          "dayIndex": 7,
+          "kind": "dot_call",
+        },
+        {
+          "affectedGuests": 0,
           "dayIndex": 9,
           "kind": "pie",
+        },
+        {
+          "affectedGuests": 0,
+          "dayIndex": 15,
+          "kind": "january_thaw",
         },
         {
           "affectedGuests": 12,

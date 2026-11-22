@@ -1,4 +1,4 @@
-import { DAY_1_COLD_READ, formatOperatorText, STORY_BEATS } from "./content";
+import { DAY_1_COLD_READ, dryWeekRadio, formatOperatorText, STORY_BEATS } from "./content";
 import type { GameState } from "./state";
 import { surpriseRadio } from "./surprises";
 
@@ -17,21 +17,29 @@ export function lodgeOpeningRadio(tier: number): string {
  */
 export function latestRadio(
   state: Pick<GameState, "surpriseLog" | "completedBeats" | "dayIndex"> &
-    Partial<Pick<GameState, "pendingBeat" | "seasonDays" | "beatLog" | "operatorName">>,
+    Partial<Pick<GameState, "pendingBeat" | "seasonDays" | "beatLog" | "operatorName" | "fare" | "guns">>,
 ): DeskRadio | null {
   const operatorName = state.operatorName ?? null;
+  const gunsCount = state.guns?.length;
+  const surpriseCtx = state.fare ? { fare: state.fare } : undefined;
   const moment = state.surpriseLog.at(-1);
   const pending = STORY_BEATS.find(b => b.id === state.pendingBeat);
-  if (pending) return { title: pending.title, radio: formatOperatorText(pending.radio, operatorName) };
+  if (pending) {
+    const raw = pending.id === "dry_week" && gunsCount !== undefined ? dryWeekRadio(gunsCount) : pending.radio;
+    return { title: pending.title, radio: formatOperatorText(raw, operatorName) };
+  }
   const lodge = state.seasonDays?.findLast(day => day.lodgeOpening);
   if (lodge && lodge.day >= (moment?.dayIndex ?? 0) && lodge.day >= (state.beatLog?.at(-1)?.day ?? 0)) {
     return { title: "Lodge addition", radio: lodgeOpeningRadio(lodge.lodgeOpening ?? 2) };
   }
-  if (moment && moment.dayIndex >= state.dayIndex - 1) return surpriseRadio(moment, operatorName);
+  if (moment && moment.dayIndex >= state.dayIndex - 1) return surpriseRadio(moment, operatorName, surpriseCtx);
   const beatId = state.completedBeats.at(-1);
   const beat = beatId ? STORY_BEATS.find((b) => b.id === beatId) : undefined;
-  if (beat) return { title: beat.title, radio: formatOperatorText(beat.radio, operatorName) };
-  if (moment) return surpriseRadio(moment, operatorName);
+  if (beat) {
+    const raw = beat.id === "dry_week" && gunsCount !== undefined ? dryWeekRadio(gunsCount) : beat.radio;
+    return { title: beat.title, radio: formatOperatorText(raw, operatorName) };
+  }
+  if (moment) return surpriseRadio(moment, operatorName, surpriseCtx);
   if (state.dayIndex === 1) {
     return { title: "Route 100 morning", radio: formatOperatorText(DAY_1_COLD_READ, operatorName) };
   }

@@ -8,7 +8,7 @@ import type { AssetTarget } from "./assetNames";
 import type { PaintStroke } from "./paintedTrail";
 import type { SchoolContractDecision } from "./schoolContract";
 import { backupKeyFor, migrateLegacySave, readActiveSlot, slotKey } from "./saveSlots";
-import { formatOperatorText, STORY_BEATS } from "./content";
+import { dryWeekRadio, formatOperatorText, STORY_BEATS } from "./content";
 import { applyRule, newReplay, type Replay, type RuleName, type RuleArgs } from "./replay";
 import * as rules from "./rules";
 import {
@@ -321,8 +321,10 @@ export const useGameStore = create<GameStore>()(
 
 if (typeof document !== "undefined" && typeof window !== "undefined") installSaveFlush(document, window);
 
-export function storyBeatCopy(id: StoryBeatId | null, operatorName: string | null = null) {
+export function storyBeatCopy(id: StoryBeatId | null, operatorName: string | null = null, gunsCount?: number) {
   if (!id) return null;
   const beat = STORY_BEATS.find((b) => b.id === id);
-  return beat ? { ...beat, radio: formatOperatorText(beat.radio, operatorName) } : null;
+  if (!beat) return null;
+  const raw = id === "dry_week" && gunsCount !== undefined ? dryWeekRadio(gunsCount) : beat.radio;
+  return { ...beat, radio: formatOperatorText(raw, operatorName) };
 }

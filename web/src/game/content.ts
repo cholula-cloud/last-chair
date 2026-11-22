@@ -139,6 +139,12 @@ export function talentDescription(name: string, state: Pick<import("./state").Ga
   return [`${talent.name} (${talent.crew}).`, talent.effect, need ? `${need}.` : null].filter(Boolean).join(" ");
 }
 
+export function dryWeekRadio(gunsCount: number): string {
+  return gunsCount > 0
+    ? "Dry stretch over the Green Mountains. Snow guns need cold air to bite, so fire 'em when the mercury drops."
+    : "Dry stretch, and no snow guns yet. Hold out for cold air or rope off the lower third before it browns out.";
+}
+
 export const STORY_BEATS: StoryBeatDef[] = [
   {
     id: "first_load",

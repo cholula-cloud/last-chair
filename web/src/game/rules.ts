@@ -92,7 +92,7 @@ import {
 } from "./sim";
 import { createInitialState, type GameState, type LiftSlot } from "./state";
 import { SUMMIT_LINK_PAYMENT, type SummitLinkDecision } from "./summitLink";
-import { arrangeSurprise, resolveSurprise } from "./surprises";
+import { arrangeSurprise, resolveSurprise, surprisePriority } from "./surprises";
 import {
   routeOptions,
   segmentElevationsForPath,
@@ -229,7 +229,7 @@ export function openNight(state: GameState): GameState {
   // The beat's +2 reputation lands here, so the recap and its previews open with final numbers.
   const reputationAfterBeat = (beat: string | null) => Math.min(100, rawReputation + (beat ? BEAT_REPUTATION_BONUS : 0)
     + (TALENT.heritageSign.learned(state.talentsOwned) && weekdayForDay(calendar, state.dayIndex) === "Sun" ? TALENT.heritageSign.reputation : 0));
-  const pendingBeat = readyStoryBeat({
+  const candidateBeat = readyStoryBeat({
     calendar,
     dayIndex: state.dayIndex,
     seasonLength: state.seasonLength,
@@ -245,6 +245,11 @@ export function openNight(state: GameState): GameState {
       (id !== "summit_link" || state.summitLinkDecision !== null)),
   });
   const surprise = resolveSurprise(settled.surprise, settled.guests);
+  const beatIsDecision = candidateBeat === "school_bus" || candidateBeat === "summit_link";
+  const pendingBeat =
+    candidateBeat && !beatIsDecision && surprise && surprisePriority(surprise.kind) > 1
+      ? null
+      : candidateBeat;
   return {
     ...settled,
     phase: "night",
@@ -1438,12 +1443,24 @@ export function sleep(state: GameState): GameState {
     rand,
   });
   const pupils = schoolBusPupils(carry.schoolContract, openDay);
+  const icyLowerSegments = carried.trails.reduce((sum, trail) => {
+    if (!trail.open || !trail.snow.length) return sum;
+    const mid = Math.floor(trail.snow.length / 2);
+    return sum + trail.snow.slice(mid).filter((seg) => seg.quality < 0.45).length;
+  }, 0);
   const { guests, surprise } = arrangeSurprise({
     calendar,
     dayIndex: openDay,
     seasonSeed: state.seasonSeed,
     weather: overnight.weather,
     surpriseLog: state.surpriseLog,
+    weatherDays: state.weatherDays,
+    reputation: state.reputation,
+    talentsOwned: carried.talentsOwned,
+    icyLowerSegments,
+    yesterdayWeather: state.weatherDays[openDay - 2]?.kind,
+    yesterdaySnow: state.pendingSnow,
+    schoolBookedDay: carry.schoolContract?.decision === "accepted" ? carry.schoolContract.day : null,
   }, createInitialGuests(arrivals, rand, guestMixForDay(calendar, nextDay)));
   return {
     ...carried,
