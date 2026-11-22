@@ -3556,9 +3556,6 @@ Fail CI when a budget is exceeded by more than 5%; print the top five chunks.
 ### Test timeouts
 `guestDay`, `balance` and `season.characterization` tests time out at 5 s or 10 s under machine load (2b handoff section 7); `vitest.config.mts` sets no `testTimeout`, so the default 5 s applies, and only `balance.report.test.ts` sets its own. Set `testTimeout: 20_000` in `vitest.config.mts`, and a per-test `{ timeout: 60_000 }` on whole-season tests. Do not raise further; a test that needs more is a performance bug in the sim.
 
-### Remove the Vercel Preview Comments check
-It is a GitHub App installation, not repo config; no repo file references Vercel except the 2b handoff doc. The owner removes it: GitHub, repo Settings, Integrations, GitHub Apps, Vercel, Configure, remove repository access (or uninstall at the account's Applications settings). Agents cannot do this and must not try. Afterwards, confirm a new PR shows only the `check` job, then delete the Vercel paragraph in the 2b doc.
-
 ### Stale worktrees and branches
 On this machine (from `git worktree list`): `last-chair-ui` on `claude/ui-pass-2` and `last-chair-pages` on `claude/github-pages`, both merged; `last-chair-scale` on `claude/docs-2b-handoff`. Local branches include merged `claude/pr5-lift-server` through `claude/pr12a-lift-rules`, `claude/art-pass-2`, `claude/ui-pass-1`, `claude/render-refactor`, `claude/world-scale-2a`; the remote has several more. Plan, each step only after the owner approves the list:
 1. `git worktree remove ../last-chair-ui` and `../last-chair-pages` (refuses if dirty; inspect first).

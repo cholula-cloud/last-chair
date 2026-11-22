@@ -326,7 +326,7 @@ Office        → full-screen, pauses the day: Desk · Money · Stats · Reports
 
 ## 7. How it is built
 
-**Stack:** Next.js 16 (App Router, static export) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Vitest · Playwright scripts. Hosted on **GitHub Pages**, published by `.github/workflows/pages.yml` on every push to `main`: https://cholula-cloud.github.io/last-chair/play/. There is no server and no Vercel.
+**Stack:** Next.js 16 (App Router, static export) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Vitest · Playwright scripts. Hosted on **GitHub Pages**, published by `.github/workflows/pages.yml` on every push to `main`: https://cholula-cloud.github.io/last-chair/play/. There is no server-side runtime (static export only).
 
 ```
 web/src/app/      routes: / (home), /play (game)
