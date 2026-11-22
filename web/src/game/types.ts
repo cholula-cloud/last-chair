@@ -45,6 +45,7 @@ export type StoryBeatId =
   | "saturday"
   | "school_bus"
   | "dry_week"
+  | "groomer_down"
   | "summit_link"
   | "winter_review";
 
@@ -197,8 +198,8 @@ export const SNOW_NIGHT_COST: Record<SnowPreset, number> = {
   high: 350,
 };
 
-export function snowNightCost(preset: SnowPreset, owned: readonly string[]): number {
-  if (TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
+export function snowNightCost(preset: SnowPreset, owned: readonly string[], hasGarage = true): number {
+  if (hasGarage && TALENT.groomerRebuild.learned(owned) && preset !== "minimal") return TALENT.groomerRebuild[preset];
   return SNOW_NIGHT_COST[preset];
 }
 
@@ -237,7 +238,7 @@ export function liftCost(type: LiftType, line: LiftLine, terrain: Terrain = TERR
 export const BUILDING_LABELS: Record<BuildingId, string> = {
   warming_hut: "Warming hut",
   cafe: "Café",
-  shop: "Shop",
+  shop: "Ski shop",
   snow_guns: "Snow guns",
 };
 

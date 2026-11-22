@@ -30,7 +30,7 @@ function TabPanel({ tab }: { tab: OfficeTabId }) {
     case "Reports":
       return <Reports s={state} />;
     case "Crew":
-      return <Crew s={state} />;
+      return <Crew />;
     case "Atlas":
       return <AtlasTab />;
   }
@@ -99,7 +99,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
     if (panel === "tabs") centreTab(stripRef.current, prefersReducedMotion());
   }, [panel, tab]);
 
-  const { weekday, date } = dayLabel(cal, dayIndex);
+  const { weekday } = dayLabel(cal, dayIndex);
   const back = (body: ReactNode, label: string) => (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
@@ -149,8 +149,15 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
             <CloseIcon />
           </button>
         </div>
-        <p className="mt-1.5 text-[0.85rem] font-bold text-ink-soft">
-          Day {dayIndex} of {seasonLength}, {weekday} {date}.{phase === "day" && " The day is paused."}
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.85rem] font-bold text-ink-soft">
+          <span>
+            {weekday} · Day {dayIndex}/{seasonLength}
+          </span>
+          {phase === "day" && (
+            <span className="chip bg-sign-yellow-soft px-2 py-0.5 text-[0.75rem] font-extrabold text-ink">
+              Paused
+            </span>
+          )}
         </p>
       </header>
 
@@ -175,7 +182,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
                 tab === t ? "key-solid [--key-fill:var(--ink)] [--key-ink:#fff]" : ""
               }`}
             >
-              {t}
+              {t === "Crew" ? "Talent tree" : t}
             </button>
           ))}
         </div>
@@ -191,7 +198,7 @@ export function OfficeSheet({ onLeave }: { onLeave: () => void }) {
           {panel === "tabs" && <TabPanel tab={tab} />}
           {panel === "settings" && back(
             <div className="flex flex-col gap-4">
-              <div className="panel p-4"><SettingsControls /></div>
+              <SettingsControls />
               <ReplayNotes />
             </div>,
             "Settings",

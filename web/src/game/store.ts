@@ -56,6 +56,7 @@ type GameActions = {
   setAssetStyle: (index: number, styleId: string) => void;
   moveAsset: (index: number, at: XZ) => void;
   placeAsset: (id: AssetId, at: XZ) => void;
+  placeAssetAtPad: (id: AssetId, padIndex: number) => void;
   pickCrewTalent: (id: import("./talentProgress").TalentId) => void;
   rushCrewPoint: () => void;
   placeGun: (at: XZ) => void;
@@ -68,7 +69,7 @@ type GameActions = {
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
   decideClubBooking: (decision: "accepted" | "declined") => void;
-  decideGroomerDown: (decision: "paid" | "skipped") => void;
+  decideGroomerDown: (decision: import("./groomerDown").GroomerDownDecision) => void;
   installNightLights: () => void;
   setNightSession: (on: boolean) => void;
   decideOrchardParcel: (decision: "buy" | "decline") => void;
@@ -299,6 +300,7 @@ export const useGameStore = create<GameStore>()(
         setAssetStyle: action("setAssetStyle"),
         moveAsset: action("moveAsset"),
         placeAsset: action("placeAsset"),
+        placeAssetAtPad: action("placeAssetAtPad"),
         pickCrewTalent: action("pickCrewTalent"),
         rushCrewPoint: action("rushCrewPoint"),
         placeGun: action("placeGun"),

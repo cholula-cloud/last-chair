@@ -7,6 +7,8 @@ def b_lodge(name="base-lodge", extra=None):
     a = Asset(name)
     W, D, H = 12.0, 9.0, 6.4      # walls x, y, eave height
     F = 0.7                        # foundation height
+    # Tier extras rebuild the approach — skip base porch/deck to avoid stacked clutter.
+    approach = extra is None
     a.box((0, 0, F / 2), (W + 0.3, D + 0.3, F), "stone-grey")
     a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "barn-red")
     # corner trim + floor band
@@ -59,43 +61,42 @@ def b_lodge(name="base-lodge", extra=None):
     for x in (wcx - 1.2, wcx + 1.2):
         a.window((x, -0.6 - wd / 2, 2.05), 1.6, 1.6, '-Y')
     a.window((wx1, -0.6, 2.05), 1.8, 1.6, '-X')
-    # front deck
-    dy0, dy1 = fy - 0.1, fy - 3.4
-    dz = F
-    a.box((0, (dy0 + dy1) / 2, dz - 0.1), (10.4, dy0 - dy1, 0.2), "timber-brown")
-    a.box((0, (dy0 + dy1) / 2, dz / 2 - 0.15), (10.0, dy0 - dy1 - 0.3, dz - 0.3), "timber-dark")
-    # steps
-    for i in range(2):
-        a.box((0, dy1 - 0.35 - i * 0.35, dz - 0.25 - i * 0.22), (2.4, 0.4, 0.2), "timber-brown")
-    # railing
-    rx = 5.1
-    posts = [(-rx, dy1), (-rx, dy0), (rx, dy1), (rx, dy0), (-1.3, dy1), (1.3, dy1), (-3.2, dy1), (3.2, dy1),
-             (-rx, (dy0 + dy1) / 2), (rx, (dy0 + dy1) / 2)]
-    for (x, y) in posts:
-        a.box((x, y, dz + 0.55), (0.18, 0.18, 1.1), "timber-brown")
-    rails = [((-rx + -1.3) / 2, dy1, abs(-1.3 + rx)), ((rx + 1.3) / 2, dy1, abs(rx - 1.3))]
-    for (x, y, L) in rails:
-        a.box((x, y, dz + 1.05), (L + 0.2, 0.14, 0.12), "timber-brown")
-        a.box((x, y, dz + 0.55), (L, 0.08, 0.08), "timber-brown")
-        a.box((x, y, dz + 1.15), (L + 0.2, 0.2, 0.09), "snow")
-    for sx in (-1, 1):
-        L = dy0 - dy1
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.05), (0.14, L, 0.12), "timber-brown")
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 0.55), (0.08, L, 0.08), "timber-brown")
-        a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.15), (0.2, L, 0.09), "snow")
-    # entry porch: small gable on two posts over the door
-    for x in (-1.6, 1.6):
-        a.box((x, fy - 2.0, F + 1.35), (0.24, 0.24, 2.7), "trim-white")
-    a.box((0, fy - 1.0, F + 2.75), (3.6, 2.2, 0.22), "trim-white")
-    a.gable_end((0, fy - 1.0, F + 2.85), 2.2, 3.6, 1.5, "barn-red", rz=90)
-    a.gable_roof((0, fy - 1.0, F + 2.85), 2.4, 3.6, 1.5, "slate-roof", rz=90, thick=0.18,
-                 overhang=0.3, snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
-    # lanterns either side of door
-    for x in (-1.25, 1.25):
-        a.box((x, fy - 0.15, F + 2.3), (0.26, 0.26, 0.38), "lamp-glow")
-    # snow drifts at base corners
-    a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
-    a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
+    if approach:
+        # front deck
+        dy0, dy1 = fy - 0.1, fy - 3.4
+        dz = F
+        a.box((0, (dy0 + dy1) / 2, dz - 0.1), (10.4, dy0 - dy1, 0.2), "timber-brown")
+        a.box((0, (dy0 + dy1) / 2, dz / 2 - 0.15), (10.0, dy0 - dy1 - 0.3, dz - 0.3), "timber-dark")
+        for i in range(2):
+            a.box((0, dy1 - 0.35 - i * 0.35, dz - 0.25 - i * 0.22), (2.4, 0.4, 0.2), "timber-brown")
+        rx = 5.1
+        posts = [(-rx, dy1), (-rx, dy0), (rx, dy1), (rx, dy0), (-1.3, dy1), (1.3, dy1), (-3.2, dy1), (3.2, dy1),
+                 (-rx, (dy0 + dy1) / 2), (rx, (dy0 + dy1) / 2)]
+        for (x, y) in posts:
+            a.box((x, y, dz + 0.55), (0.18, 0.18, 1.1), "timber-brown")
+        rails = [((-rx + -1.3) / 2, dy1, abs(-1.3 + rx)), ((rx + 1.3) / 2, dy1, abs(rx - 1.3))]
+        for (x, y, L) in rails:
+            a.box((x, y, dz + 1.05), (L + 0.2, 0.14, 0.12), "timber-brown")
+            a.box((x, y, dz + 0.55), (L, 0.08, 0.08), "timber-brown")
+            a.box((x, y, dz + 1.15), (L + 0.2, 0.2, 0.09), "snow")
+        for sx in (-1, 1):
+            L = dy0 - dy1
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.05), (0.14, L, 0.12), "timber-brown")
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 0.55), (0.08, L, 0.08), "timber-brown")
+            a.box((sx * rx, (dy0 + dy1) / 2, dz + 1.15), (0.2, L, 0.09), "snow")
+        # entry porch: small gable on two posts over the door
+        for x in (-1.6, 1.6):
+            a.box((x, fy - 2.0, F + 1.35), (0.24, 0.24, 2.7), "trim-white")
+        a.box((0, fy - 1.0, F + 2.75), (3.6, 2.2, 0.22), "trim-white")
+        a.gable_end((0, fy - 1.0, F + 2.85), 2.2, 3.6, 1.5, "barn-red", rz=90)
+        a.gable_roof((0, fy - 1.0, F + 2.85), 2.4, 3.6, 1.5, "slate-roof", rz=90, thick=0.18,
+                     overhang=0.3, snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
+        for x in (-1.25, 1.25):
+            a.box((x, fy - 0.15, F + 2.3), (0.26, 0.26, 0.38), "lamp-glow")
+    # snow drifts — skip when tier extras attach (they collide with wing footings)
+    if approach:
+        a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
+        a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
     if extra:
         extra(a, W, D, H, F)
     return a.finish()
@@ -171,42 +172,48 @@ def b_cafe():
     a.gable_roof((0, 0, H), D, W, rise, "slate-roof", rz=90, thick=0.22, overhang=0.45,
                  snow_thick=0.38, snow_over=0.12, snow_bevel=0.12)
     fy = -D / 2
-    # big glowing shop window + door
     a.window((-1.3, fy, 1.85), 3.0, 1.9, '-Y', sill=True)
     a.box((2.0, fy - 0.05, F + 1.15), (1.4, 0.14, 2.3), "trim-white")
     a.box((2.0, fy - 0.1, F + 1.05), (1.05, 0.12, 2.1), "window-glow")
     a.box((2.0, fy - 0.16, F + 1.05), (0.1, 0.06, 2.1), "trim-white")
     a.window((0, fy, H + 1.3), 1.1, 1.1, '-Y', mullion=True, sill=False)
-    # striped awning sloping down and out from wall
-    n = 7
-    aw = 5.4
-    ang = 20
+    # larger striped awning
+    n, aw, ang = 9, 6.2, 18
     for i in range(n):
-        x = -aw / 2 + aw / n * (i + 0.5) - 0.3
+        x = -aw / 2 + aw / n * (i + 0.5) - 0.2
         m = "awning-red" if i % 2 == 0 else "trim-white"
-        a.box((x, fy - 0.78, 3.06), (aw / n + 0.005, 1.6, 0.08), m, rot=(ang, 0, 0))
-        a.box((x, fy - 1.53, 2.62), (aw / n + 0.005, 0.06, 0.36), m)
-    a.box((-0.3, fy - 0.35, 3.3), (aw, 0.6, 0.1), "snow", rot=(ang, 0, 0), bevel=0.04)
-    # side windows
+        a.box((x, fy - 0.95, 3.1), (aw / n + 0.005, 1.9, 0.08), m, rot=(ang, 0, 0))
+        a.box((x, fy - 1.82, 2.55), (aw / n + 0.005, 0.06, 0.4), m)
+    a.box((-0.2, fy - 0.4, 3.35), (aw, 0.7, 0.1), "snow", rot=(ang, 0, 0), bevel=0.04)
+    # menu board
+    a.box((-3.2, fy - 0.15, 2.4), (0.08, 0.7, 1.0), "cream-sign")
+    a.box((-3.25, fy - 0.2, 2.4), (0.04, 0.55, 0.7), "navy")
     for sx, face in ((-1, '-X'), (1, '+X')):
         a.window((sx * W / 2, -0.6, 2.0), 1.2, 1.2, face)
-    # stove pipe
     a.cyl((-1.8, 1.2, H + 1.5), 0.22, 0.22, 3.2, 6, "steel-dark")
     a.cyl((-1.8, 1.2, H + 4.7), 0.36, 0.36, 0.2, 6, "snow")
-    # outdoor patio in front of the door (+x, guest side)
-    px, py, pw, pd = 1.4, fy - 1.25, 2.7, 2.1
-    a.box((px, py, 0.07), (pw, pd, 0.14), "stone-dark", bevel=0.05)
+    # ~2× patio on -Y with tables and rails
+    px, py, pw, pd = 0.4, fy - 2.4, 6.4, 4.2
+    a.box((px, py, 0.08), (pw, pd, 0.16), "timber-brown", bevel=0.04)
+    a.box((px, py, 0.02), (pw - 0.3, pd - 0.3, 0.08), "stone-dark")
     for sx in (-1, 1):
-        a.box((px + sx * (pw / 2 + 0.04), py, 0.46), (0.1, pd + 0.12, 0.92), "timber-brown")
-    a.box((px, py - pd / 2 - 0.05, 0.46), (pw + 0.16, 0.1, 0.92), "timber-brown")
-    for tx, ty in ((px - 0.55, py + 0.35), (px + 0.55, py + 0.35)):
-        a.cyl((tx, ty, 0), 0.06, 0.06, 0.88, 5, "shutter-black")
-        a.cyl((tx, ty, 0.88), 0.38, 0.38, 0.06, 8, "shutter-black")
-    a.box((W / 2 + 0.05, fy + 0.3, 3.0), (0.1, 0.6, 0.6), "shutter-black")
+        a.box((px + sx * (pw / 2), py, 0.55), (0.12, pd + 0.1, 1.0), "timber-brown")
+    a.box((px, py - pd / 2, 0.55), (pw + 0.2, 0.12, 1.0), "timber-brown")
+    a.box((px, py - pd / 2, 1.1), (pw + 0.25, 0.16, 0.1), "snow")
+    for tx, ty in ((-1.6, py + 0.9), (0.2, py + 0.9), (2.0, py + 0.9),
+                   (-1.6, py - 0.7), (0.2, py - 0.7), (2.0, py - 0.7)):
+        a.cyl((tx, ty, 0.1), 0.05, 0.05, 0.85, 5, "shutter-black")
+        a.cyl((tx, ty, 0.95), 0.42, 0.42, 0.06, 8, "shutter-black")
+        a.box((tx - 0.45, ty, 0.55), (0.35, 0.35, 0.06), "timber-dark")
+    # string-light hooks
+    for lx in (-2.4, 0.0, 2.4):
+        a.box((lx, fy - 0.2, 3.5), (0.08, 0.08, 0.08), "lamp-glow")
     a.box((W / 2 + 0.25, fy + 0.3, 2.6), (0.3, 0.3, 0.4), "lamp-glow")
+    a.box((-W / 2 - 0.4, fy - 0.5, 0.25), (1.2, 1.4, 0.5), "snow", bevel=0.16)
     return a.finish()
 
 def b_shop():
+    """Retail ski shop: apparel window, SKI SHOP sign, display boards — not rentals."""
     a = Asset("ski-shop")
     W, D, H, F = 6.4, 5.2, 3.6, 0.35
     a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), "stone-dark")
@@ -221,21 +228,72 @@ def b_shop():
     a.gable_roof((0, 0, H), D, W, rise, "barn-red", rz=90, thick=0.22, overhang=0.45,
                  snow_thick=0.36, snow_over=0.12, snow_bevel=0.12)
     fy = -D / 2
-    a.window((-1.2, fy, 1.75), 2.4, 1.6, '-Y', frame="cream-sign")
-    a.box((1.9, fy - 0.05, F + 1.15), (1.3, 0.14, 2.3), "cream-sign")
-    a.box((1.9, fy - 0.1, F + 1.05), (1.0, 0.12, 2.1), "shutter-green")
-    a.box((1.9, fy - 0.15, F + 1.45), (0.6, 0.05, 0.8), "window-glow")
-    # blank sign board on gable
-    a.box((0, fy - 0.12, H + 0.95), (3.6, 0.12, 1.1), "shutter-green")
-    a.box((0, fy - 0.2, H + 0.95), (3.3, 0.06, 0.85), "cream-sign")
-    a.box((0, fy - 0.2, H + 1.6), (3.6, 0.3, 0.12), "snow")
-    # skis leaning on wall
-    for i, (x, m) in enumerate(((-3.0, "amber-accent"), (-2.75, "navy"), (3.1, "amber-accent"))):
-        a.box((x, fy - 0.35, 0.95), (0.12, 0.05, 1.8), m, rot=(-10, 0, 0))
-    a.box((0, D / 2, 2.0), (1.0, 0.1, 1.0), "timber-dark")
+    # apparel display window
+    a.window((-1.4, fy, 1.85), 2.8, 1.9, '-Y', frame="cream-sign")
+    # hanging jacket silhouettes in window
+    for jx, jc in ((-2.0, "jacket"), (-1.0, "amber-accent"), (-0.2, "navy")):
+        a.box((jx, fy - 0.08, 2.0), (0.45, 0.08, 0.9), jc)
+    # retail door
+    a.box((2.0, fy - 0.05, F + 1.2), (1.35, 0.14, 2.4), "cream-sign")
+    a.box((2.0, fy - 0.12, F + 1.1), (1.05, 0.1, 2.2), "amber-accent")
+    a.box((2.0, fy - 0.18, F + 1.55), (0.55, 0.05, 0.7), "window-glow")
+    # SKI SHOP gable sign
+    a.box((0, fy - 0.14, H + 1.0), (4.0, 0.14, 1.25), "navy")
+    a.box((0, fy - 0.22, H + 1.0), (3.6, 0.06, 0.95), "cream-sign")
+    a.box((0, fy - 0.22, H + 1.65), (4.0, 0.28, 0.12), "snow")
+    # display skis / boards as merchandising (vertical rack, not rental counter)
+    for i, (x, m) in enumerate(((-3.15, "amber-accent"), (-2.9, "navy"), (-2.65, "ski"),
+                                (3.0, "amber-accent"), (3.25, "jacket"))):
+        a.box((x, fy - 0.4, 1.05), (0.1, 0.06, 1.9), m, rot=(-8, 0, 0))
+    # tuning bench (retail service)
+    a.box((W / 2 + 0.7, fy + 0.6, 0.55), (1.2, 0.55, 0.7), "timber-dark")
+    a.box((W / 2 + 0.7, fy + 0.6, 0.95), (1.3, 0.6, 0.1), "steel")
     for sx, face in ((-1, '-X'), (1, '+X')):
         a.window((sx * W / 2, 0, 2.0), 1.0, 1.1, face, frame="cream-sign", mullion=False, sill=False)
     a.box((W / 2 + 0.4, -1.0, 0.2), (1.4, 1.6, 0.4), "snow", bevel=0.14)
+    return a.finish()
+
+
+def b_rental_shop():
+    """Equipment rental: counter/queue, boot wall, returns corral — distinct from ski-shop."""
+    a = Asset("rental-shop")
+    W, D, H, F = 6.6, 5.6, 3.5, 0.35
+    a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), "stone-grey")
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "clapboard-white")
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.24, 0.24, H - F), "timber-brown")
+    rise = 3.4
+    a.gable_end((0, 0, H), D, W, rise, "clapboard-white", rz=90)
+    a.gable_roof((0, 0, H), D, W, rise, "slate-roof", rz=90, thick=0.22, overhang=0.45,
+                 snow_thick=0.36, snow_over=0.12, snow_bevel=0.12)
+    fy = -D / 2
+    # service counter + queue rail on -Y
+    a.box((0, fy - 0.55, F + 0.55), (4.8, 0.7, 1.0), "timber-brown")
+    a.box((0, fy - 0.55, F + 1.1), (5.0, 0.8, 0.12), "timber-dark")
+    a.box((-2.6, fy - 1.5, 0.45), (0.1, 2.0, 0.9), "steel-dark")
+    a.box((2.6, fy - 1.5, 0.45), (0.1, 2.0, 0.9), "steel-dark")
+    a.box((0, fy - 2.5, 0.45), (5.2, 0.1, 0.9), "steel-dark")
+    # numbered boot wall visible through opening
+    a.box((-1.2, fy - 0.05, 2.3), (2.4, 0.12, 1.8), "window-glow")
+    for row in range(3):
+        for col in range(4):
+            a.box((-1.9 + col * 0.45, fy - 0.12, 1.7 + row * 0.45), (0.28, 0.08, 0.22), "rubber-black")
+    # RENTALS sign
+    a.box((0, fy - 0.14, H + 0.95), (3.8, 0.14, 1.1), "amber-accent")
+    a.box((0, fy - 0.22, H + 0.95), (3.4, 0.06, 0.85), "cream-sign")
+    a.box((0, fy - 0.22, H + 1.55), (3.8, 0.28, 0.12), "snow")
+    # warmer service door
+    a.box((2.2, fy - 0.05, F + 1.15), (1.3, 0.14, 2.3), "trim-white")
+    a.box((2.2, fy - 0.12, F + 1.05), (1.0, 0.1, 2.1), "timber-brown")
+    a.box((2.2, fy - 0.18, F + 1.5), (0.55, 0.05, 0.75), "window-glow")
+    # exterior returns corral
+    a.box((-W / 2 - 1.1, fy - 0.8, 0.35), (1.8, 2.4, 0.7), "timber-dark")
+    for i, m in enumerate(("ski", "navy", "amber-accent", "ski")):
+        a.box((-W / 2 - 1.4 + i * 0.35, fy - 0.5, 0.9), (0.1, 0.08, 1.5), m, rot=(-15, 0, 0))
+    a.box((-W / 2 - 1.1, fy - 0.8, 1.15), (1.9, 2.5, 0.12), "snow", bevel=0.05)
+    a.window((W / 2, 0.2, 2.0), 1.1, 1.1, '+X', mullion=False, sill=False)
+    a.box((W / 2 + 0.35, -1.0, 0.2), (1.2, 1.4, 0.4), "snow", bevel=0.14)
     return a.finish()
 
 def b_hut():
@@ -253,10 +311,80 @@ def b_hut():
     a.box((-0.7, fy - 0.08, 1.15), (1.0, 0.14, 1.9), "timber-dark")
     a.box((-0.7, fy - 0.14, 1.65), (0.5, 0.05, 0.5), "window-glow")
     a.window((0.95, fy - 0.1, 1.5), 0.8, 0.7, '-Y', frame="timber-dark", sill=False, depth=0.3)
+    # porch bench
+    a.box((0.2, fy - 0.7, 0.45), (1.6, 0.45, 0.5), "timber-dark")
+    a.box((0.2, fy - 0.7, 0.75), (1.7, 0.5, 0.1), "timber-brown")
     a.cyl((1.2, 0.6, H + 0.6), 0.16, 0.16, 2.3, 6, "steel-dark")
     a.cyl((1.2, 0.6, H + 2.9), 0.28, 0.28, 0.16, 6, "snow")
+    # steam puff from pipe
+    a.sphere((1.2, 0.6, H + 3.2), 0.22, "snow")
     a.box((-W / 2 - 0.3, 0.5, 0.225), (0.9, 1.6, 0.45), "snow", bevel=0.14)
-    # firewood stack
     a.box((W / 2 + 0.35, 0.2, 0.45), (0.5, 1.6, 0.9), "timber-dark")
     a.box((W / 2 + 0.35, 0.2, 0.95), (0.55, 1.65, 0.12), "snow")
+    a.box((-0.5, fy - 0.15, 2.35), (0.2, 0.2, 0.3), "lamp-glow")
+    return a.finish()
+
+
+def b_waffle_haus():
+    """Tier-3 brunch spot: steep gable, syrup-amber trim, outdoor counter on -Y."""
+    a = Asset("waffle-haus")
+    W, D, H, F = 7.2, 6.2, 3.6, 0.4
+    PALETTE.setdefault("syrup-amber", ("#c4782a", 0.7))
+    PALETTE.setdefault("waffle-cream", ("#f0e0c0", 0.8))
+    a.box((0, 0, F / 2), (W + 0.25, D + 0.25, F), "stone-grey")
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "waffle-cream")
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.28, 0.28, H - F), "syrup-amber")
+    rise = 4.6
+    a.gable_end((0, 0, H), D, W, rise, "waffle-cream", rz=90)
+    a.gable_roof((0, 0, H), D, W, rise, "barn-red", rz=90, thick=0.24, overhang=0.5,
+                 snow_thick=0.4, snow_over=0.14, snow_bevel=0.12)
+    fy = -D / 2
+    a.window((-1.4, fy, 2.0), 2.8, 2.0, '-Y', frame="syrup-amber")
+    a.box((2.1, fy - 0.05, F + 1.2), (1.4, 0.14, 2.4), "syrup-amber")
+    a.box((2.1, fy - 0.12, F + 1.1), (1.05, 0.1, 2.2), "timber-brown")
+    a.box((2.1, fy - 0.18, F + 1.55), (0.55, 0.05, 0.7), "window-glow")
+    # waffle / syrup sign
+    a.box((0, fy - 0.14, H + 1.2), (3.6, 0.14, 1.2), "syrup-amber")
+    a.box((0, fy - 0.22, H + 1.2), (3.2, 0.06, 0.9), "cream-sign")
+    a.box((0, fy - 0.22, H + 1.85), (3.6, 0.28, 0.12), "snow")
+    # outdoor syrup counter patio
+    a.box((0, fy - 2.2, 0.1), (6.0, 3.6, 0.16), "timber-brown")
+    a.box((0, fy - 1.4, 0.7), (4.2, 0.7, 0.9), "syrup-amber")
+    a.box((0, fy - 1.4, 1.2), (4.4, 0.8, 0.12), "cream-sign")
+    for tx in (-1.5, 0.0, 1.5):
+        a.cyl((tx, fy - 2.6, 0.15), 0.05, 0.05, 0.8, 5, "shutter-black")
+        a.cyl((tx, fy - 2.6, 0.95), 0.38, 0.38, 0.06, 8, "shutter-black")
+    a.cyl((-2.0, 1.0, H + 1.2), 0.18, 0.18, 2.8, 6, "steel-dark")
+    a.cyl((-2.0, 1.0, H + 4.0), 0.3, 0.3, 0.18, 6, "snow")
+    a.box((W / 2 + 0.3, fy + 0.2, 2.5), (0.28, 0.28, 0.4), "lamp-glow")
+    a.box((-W / 2 - 0.4, fy - 0.6, 0.25), (1.2, 1.4, 0.5), "snow", bevel=0.16)
+    return a.finish()
+
+
+def b_ski_school():
+    """Small lessons desk — distinct from warming hut and rental shop."""
+    a = Asset("ski-school-desk")
+    W, D, H, F = 5.0, 3.8, 2.8, 0.3
+    a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), "stone-grey")
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "navy")
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.2, 0.2, H - F), "trim-white")
+    rise = 2.4
+    a.gable_end((0, 0, H), D, W, rise, "navy", rz=90)
+    a.gable_roof((0, 0, H), D, W, rise, "slate-roof", rz=90, thick=0.18, overhang=0.35,
+                 snow_thick=0.32, snow_over=0.1, snow_bevel=0.1)
+    fy = -D / 2
+    a.window((-1.0, fy, 1.7), 1.6, 1.2, '-Y', frame="trim-white")
+    a.box((1.4, fy - 0.05, F + 1.05), (1.2, 0.12, 2.1), "trim-white")
+    a.box((1.4, fy - 0.1, F + 0.95), (0.9, 0.1, 1.9), "amber-accent")
+    a.box((0, fy - 0.12, H + 0.85), (2.8, 0.12, 0.7), "amber-accent")
+    a.box((0, fy - 0.18, H + 0.85), (2.4, 0.05, 0.5), "cream-sign")
+    # lesson meeting flag
+    a.box((-W / 2 - 0.3, fy - 0.4, 0.15), (0.12, 0.12, 2.4), "steel-dark")
+    a.box((-W / 2 - 0.05, fy - 0.4, 2.2), (0.7, 0.06, 0.5), "amber-accent")
+    a.box((0.2, fy - 0.8, 0.4), (1.4, 0.5, 0.45), "timber-brown")
+    a.box((W / 2 + 0.3, -0.5, 0.2), (1.0, 1.2, 0.4), "snow", bevel=0.12)
     return a.finish()

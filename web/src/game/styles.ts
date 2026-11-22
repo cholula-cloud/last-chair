@@ -7,6 +7,9 @@ export type BuildingStyleId = typeof BUILDING_STYLES[number]["id"];
 export const BUILDING_STYLES = [
   { id: "1950s-timber", label: "1950s timber", manifestStyle: null as string | null },
   { id: "chalet70s", label: "1970s chalet", manifestStyle: "chalet70s" },
+  { id: "aframe60s", label: "1960s A-frame", manifestStyle: "aframe60s" },
+  { id: "adirondack", label: "Adirondack camp", manifestStyle: "adirondack" },
+  { id: "sugarhouse", label: "Vermont sugarhouse", manifestStyle: "sugarhouse" },
 ] as const;
 
 const STYLE_BY_ID = Object.fromEntries(BUILDING_STYLES.map((style) => [style.id, style])) as Record<
@@ -34,13 +37,17 @@ export function styleOptions(): readonly (typeof BUILDING_STYLES)[number][] {
   return BUILDING_STYLES;
 }
 
-/** S3: chalet unlocks at Village Lodge (tier 2) or after a completed winter review. */
+/** S3: chalet at Tier 2 / winter review; A-frame, Adirondack, sugarhouse at Tier 3 / winter review. */
 export function unlockedBuildingStyles(ctx: {
   lodgeTier: LodgeTier;
   completedBeats: readonly string[];
 }): BuildingStyleId[] {
   const out: BuildingStyleId[] = [DEFAULT_STYLE];
-  if (ctx.lodgeTier >= 2 || ctx.completedBeats.includes("winter_review")) out.push("chalet70s");
+  const winter = ctx.completedBeats.includes("winter_review");
+  if (ctx.lodgeTier >= 2 || winter) out.push("chalet70s");
+  if (ctx.lodgeTier >= 3 || winter) {
+    out.push("aframe60s", "adirondack", "sugarhouse");
+  }
   return out;
 }
 

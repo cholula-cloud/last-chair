@@ -171,6 +171,12 @@ export const STORY_BEATS: StoryBeatDef[] = [
       "Dry stretch parked over the Green Mountains. Snow guns need cold air to bite, so lean on the groomer tonight or hold out for the next clipper.",
   },
   {
+    id: "groomer_down",
+    title: "Groomer threw a track",
+    radio:
+      "Frank from the garage on Route 100. Groomer threw a track on the Windmill side. She'll live, but not tonight. Snow guns still run; the cat stays parked unless you borrow Readsboro's road machine for $250.",
+  },
+  {
     id: "summit_link",
     title: "Whiterock Pass offer",
     radio:

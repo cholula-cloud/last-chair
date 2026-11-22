@@ -57,6 +57,7 @@ type Driver = {
   setPendingSnow(s: "minimal" | "mid" | "high"): void;
   acknowledgeBeat(): void;
   declineSchoolContract(): void;
+  skipGroomerDown(): void;
   declineSummitLink(): void;
   declineClubBooking(): void;
   skipGroomerDown(): void;
@@ -111,6 +112,7 @@ function playSeason(d: Driver) {
     nights.push(summarize(d.view()));
     const pendingBeat = d.view().pendingBeat;
     if (pendingBeat === "school_bus") d.declineSchoolContract();
+    else if (pendingBeat === "groomer_down") d.skipGroomerDown();
     else if (pendingBeat === "summit_link") d.declineSummitLink();
     else if (pendingBeat) d.acknowledgeBeat();
     if (d.view().clubBooking?.decision === "pending") d.declineClubBooking();
@@ -161,9 +163,9 @@ function storeDriver(
     setPendingSnow: (x) => s().setPendingSnow(x),
     acknowledgeBeat: () => s().acknowledgeBeat(),
     declineSchoolContract: () => s().decideSchoolContract("declined"),
+    skipGroomerDown: () => s().decideGroomerDown("go_without"),
     declineSummitLink: () => s().replyToSummitLink("declined"),
     declineClubBooking: () => s().decideClubBooking("declined"),
-    skipGroomerDown: () => s().decideGroomerDown("skipped"),
     sleep: () => s().sleep(),
     finishWinterReview: () => s().finishWinterReview(),
     startNewSeason: () => s().startNewSeason(),
@@ -187,9 +189,9 @@ function pureDriver(seed: number): Driver {
     setPendingSnow: (x) => apply((s) => rules.setPendingSnow(s, x)),
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),
     declineSchoolContract: () => apply((s) => rules.decideSchoolContract(s, "declined")),
+    skipGroomerDown: () => apply((s) => rules.decideGroomerDown(s, "go_without")),
     declineSummitLink: () => apply((s) => rules.replyToSummitLink(s, "declined")),
     declineClubBooking: () => apply((s) => rules.decideClubBooking(s, "declined")),
-    skipGroomerDown: () => apply((s) => rules.decideGroomerDown(s, "skipped")),
     sleep: () => apply(rules.sleep),
     finishWinterReview: () => apply(rules.finishWinterReview),
     startNewSeason: () => apply(rules.startNewSeason),

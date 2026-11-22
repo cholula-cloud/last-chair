@@ -13,7 +13,7 @@ import {
 } from "./calendar";
 import { meanArrivals, readyStoryBeat } from "./sim";
 import { migrate } from "./migrations";
-import { acknowledgeBeat, openNight, pickFounder, sleep, startNewSeason } from "./rules";
+import { openNight, pickFounder, resolveNightBeat, sleep, startNewSeason } from "./rules";
 import { createInitialState, hydrate, toPersisted } from "./state";
 import { advanceClosedDays, simulateClosedDay } from "./closedDays";
 
@@ -46,7 +46,7 @@ describe("Dutch Hill calendar", () => {
 
   it("finishes an in-progress 14-day save and starts a 42-day Dutch Hill winter", () => {
     const state = pickFounder(createBuiltHill(), "elena");
-    const night = acknowledgeBeat(openNight({ ...state, dayIndex: 14, weather: state.weatherDays[13].kind }));
+    const night = resolveNightBeat(openNight({ ...state, dayIndex: 14, weather: state.weatherDays[13].kind }));
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip mountainId for v3 migration fixture
     const { mountainId, ...fields } = toPersisted(night);
     const old = {
@@ -73,7 +73,7 @@ describe("Dutch Hill calendar", () => {
   it("advances Mon–Thu in the background after Sunday sleep", () => {
     let state = pickFounder(createBuiltHill(7, true), "elena");
     state = { ...state, dayIndex: 3, weather: state.weatherDays[2].kind };
-    const night = acknowledgeBeat(openNight(state));
+    const night = resolveNightBeat(openNight(state));
     const after = sleep({ ...night, pendingBeat: null, beatAcknowledged: true });
     expect(after.dayIndex).toBe(8);
     expect(after.operatingDayIndex).toBe(4);

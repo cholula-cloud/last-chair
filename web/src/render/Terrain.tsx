@@ -127,6 +127,7 @@ export function Terrain({
   snowDepth,
   trails,
   groomed,
+  gunCovered,
   snowPreset,
   runsByTrail,
   lines,
@@ -139,6 +140,7 @@ export function Terrain({
   snowDepth: number;
   trails: readonly Trail[];
   groomed?: readonly (boolean[] | undefined)[];
+  gunCovered?: readonly (boolean[] | undefined)[];
   snowPreset: SnowPreset;
   runsByTrail?: readonly number[];
   lines: readonly LiftLine[];
@@ -206,7 +208,7 @@ export function Terrain({
 
   const snowTex = useMemo(() => {
     if (!MOUNTAIN_TRAIL_CONDITIONING) return null;
-    const data = snowTextureBytes(trails, groomed ?? [], snowPreset);
+    const data = snowTextureBytes(trails, groomed ?? [], snowPreset, gunCovered ?? []);
     const tex = new THREE.DataTexture(
       data,
       SNOW_TEX_SEGMENTS,
@@ -218,7 +220,7 @@ export function Terrain({
     tex.minFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
     return tex;
-  }, [trails, groomed, snowPreset]);
+  }, [trails, groomed, gunCovered, snowPreset]);
 
   useLayoutEffect(() => {
     if (!MOUNTAIN_TRAIL_CONDITIONING || !snowTex) return;

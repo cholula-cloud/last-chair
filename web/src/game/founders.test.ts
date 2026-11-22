@@ -4,7 +4,7 @@ import { assetRevenue, placedAssetsFromLegacy } from "./base";
 import { FOUNDERS } from "./content";
 import { REFERENCE_TOPS } from "./descent";
 import { morningCash, operatingCosts } from "./economy";
-import { acknowledgeBeat, decideClubBooking, decideGroomerDown, sleep, arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, skipToClose, takeLoan } from "./rules";
+import { resolveNightBeat, sleep, arrivalMood, canDemolish, checkPlacement, openNight, pickFounder, replyToSummitLink, satisfactionContext, skipToClose, takeLoan } from "./rules";
 import { makeGuest, meanArrivals } from "./sim";
 import { TERRAIN } from "./terrain";
 import type { FounderId, WeatherKind } from "./types";
@@ -31,20 +31,13 @@ describe("founder bonuses and constraints", () => {
   });
   it("Tom pays 7% across the season", () => {
     const state = hill("tom");
-    const clearNightDecisions = (s: ReturnType<typeof openNight>) => {
-      let next = s;
-      if (next.pendingBeat === "summit_link") next = replyToSummitLink(next, "declined");
-      if (next.clubBooking?.decision === "pending") next = decideClubBooking(next, "declined");
-      if (next.groomerDown?.active && next.groomerDown.decision === "pending") next = decideGroomerDown(next, "skipped");
-      return acknowledgeBeat(next);
-    };
-    let night = takeLoan(clearNightDecisions(openNight({ ...state, cash: -5000 })));
+    let night = takeLoan(resolveNightBeat(openNight({ ...state, cash: -5000 })));
     expect(night.loan!.ratePerDay * state.seasonLength).toBeCloseTo(0.07);
     for (let i = 1; i < state.seasonLength; i++) {
       const funded = { ...night, cash: night.cash + 1000 - morningCash(night) };
-      night = clearNightDecisions(openNight(sleep(funded)));
+      night = resolveNightBeat(openNight(sleep(resolveNightBeat(funded))));
     }
-    const review = sleep(night);
+    const review = sleep(resolveNightBeat(night));
     expect(review.phase).toBe("winter_review");
     expect(review.loan!.balance).toBeCloseTo(10_700);
   });

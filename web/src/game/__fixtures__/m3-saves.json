@@ -2802,7 +2802,6 @@
       "pendingSnow": "mid",
       "buildMode": false,
       "founderId": null,
-      "operatorName": null,
       "buildings": [],
       "lodgeTier": 1,
       "lodgeStyleId": "1950s-timber",
@@ -2823,6 +2822,9 @@
       "beatAcknowledged": true,
       "schoolContract": null,
       "schoolProgramProven": false,
+      "groomerDownDecision": null,
+      "groomerDownTonight": false,
+      "seasonGroomFeet": 0,
       "weather": "clear",
       "seasonSeed": 2850762351,
       "weatherDays": [
@@ -2993,6 +2995,34 @@
         {
           "kind": "snow",
           "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "thaw",
+          "wind": "calm"
+        },
+        {
+          "kind": "clear",
+          "wind": "calm"
         }
       ],
       "morningHeadline": "Dutch Hill has a lodge and not much else. Build a lift and paint a trail to open.",
@@ -3000,7 +3030,7 @@
       "reputation": 40,
       "gunsVisible": false,
       "groomVisible": false,
-      "seasonLength": 42,
+      "seasonLength": 49,
       "operatingDayIndex": 1,
       "rngState": 71,
       "nightRecap": null,
@@ -3032,6 +3062,7 @@
   },
   {
     "version": 16,
+    "name": "v16-sloane-club-groomer",
     "state": {
       "mountainId": "dutch_hill",
       "dayHistory": [],
@@ -3084,6 +3115,9 @@
       "beatAcknowledged": true,
       "schoolContract": null,
       "schoolProgramProven": false,
+      "groomerDownDecision": null,
+      "groomerDownTonight": false,
+      "seasonGroomFeet": 0,
       "weather": "clear",
       "seasonSeed": 2492178918,
       "weatherDays": [
@@ -3293,6 +3327,7 @@
   },
   {
     "version": 17,
+    "name": "v17-career-hills",
     "state": {
       "mountainId": "dutch_hill",
       "dayHistory": [],
@@ -3419,6 +3454,9 @@
       "beatAcknowledged": true,
       "schoolContract": null,
       "schoolProgramProven": false,
+      "groomerDownDecision": null,
+      "groomerDownTonight": false,
+      "seasonGroomFeet": 0,
       "weather": "clear",
       "seasonSeed": 2492178918,
       "weatherDays": [
@@ -3628,6 +3666,7 @@
   },
   {
     "version": 18,
+    "name": "v18-career-mechanics-caretaker",
     "state": {
       "mountainId": "dutch_hill",
       "dayHistory": [],
@@ -3761,6 +3800,9 @@
       "beatAcknowledged": true,
       "schoolContract": null,
       "schoolProgramProven": false,
+      "groomerDownDecision": null,
+      "groomerDownTonight": false,
+      "seasonGroomFeet": 0,
       "weather": "clear",
       "seasonSeed": 2492178918,
       "weatherDays": [

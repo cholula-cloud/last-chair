@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
-import { ASSET_CATALOG, CHAIR_TIER, lodgeAttachPads } from "@/game/base";
+import { ASSET_CATALOG, CHAIR_TIER } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
@@ -413,8 +413,15 @@ function SiteBar() {
   const gun = draft.kind === "gun";
   const item = gun ? ASSET_CATALOG.snow_guns : asset ? ASSET_CATALOG[asset] : null;
   if (!item) return null;
+  const padIndex = draft.lodgePad;
   const check = tapPoint
-    ? movingAssetIndex !== undefined ? checkAssetMove(state, movingAssetIndex, tapPoint) : gun ? checkGunPlacement(state, tapPoint) : asset ? checkAssetPlacement(state, asset, tapPoint) : null
+    ? movingAssetIndex !== undefined
+      ? checkAssetMove(state, movingAssetIndex, tapPoint)
+      : gun
+        ? checkGunPlacement(state, tapPoint)
+        : asset
+          ? checkAssetPlacement(state, asset, tapPoint, padIndex !== undefined ? { padIndex } : {})
+          : null
     : null;
   const problem = check && !check.ok ? check.reason : null;
 
@@ -436,10 +443,8 @@ function SiteBar() {
           if (!check?.ok) return;
           if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
           else if (gun) state.placeGun(check.placement.at);
-          else if (asset && draft.lodgePad !== undefined) {
-            const pads = lodgeAttachPads(state.lodgeTier);
-            if (pads[draft.lodgePad]) state.placeAsset(asset, pads[draft.lodgePad]);
-          } else if (asset) state.placeAsset(asset, check.placement.at);
+          else if (asset && draft.lodgePad !== undefined) state.placeAssetAtPad(asset, draft.lodgePad);
+          else if (asset) state.placeAsset(asset, check.placement.at);
           if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
             buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
             finishPlacement();

@@ -29,7 +29,8 @@ const fare = oneOf("cheap", "balanced", "expensive");
 const snow = oneOf("minimal", "mid", "high");
 const weather = oneOf("clear", "snow", "storm", "thaw");
 const liftType = oneOf("surface", "chair");
-const beat = oneOf("first_load", "saturday", "school_bus", "dry_week", "summit_link", "winter_review");
+const beat = oneOf("first_load", "saturday", "school_bus", "dry_week", "groomer_down", "summit_link", "winter_review");
+const groomerDownDecision = oneOf("borrow", "go_without");
 const founder = nullable(oneOf("elena", "tom", "riley", "amira", "juniper", "marco"));
 const summitLinkDecision = oneOf("accepted", "declined");
 const surpriseKind = oneOf(
@@ -236,6 +237,9 @@ const fields: Record<keyof PersistedState, Check> = {
   beatAcknowledged: boolean,
   schoolContract: nullable(schoolContract),
   schoolProgramProven: boolean,
+  groomerDownDecision: nullable(groomerDownDecision),
+  groomerDownTonight: boolean,
+  seasonGroomFeet: number,
   weather,
   seasonSeed: index,
   weatherDays: array(shape({ kind: weather, wind: oneOf("calm", "gusty") })),

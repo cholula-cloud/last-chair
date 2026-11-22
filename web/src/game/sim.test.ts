@@ -191,6 +191,8 @@ describe("applyOvernight", () => {
     buildings: [] as BuildingId[],
     talentsOwned: [] as string[],
     daysWithoutSnow: 0,
+    hasPlacedGuns: false,
+    gunCoverage: undefined as boolean[][] | undefined,
   };
   const run = (snow: SnowPreset, over: Partial<typeof start> = {}) =>
     applyOvernight({ snow, ...start, ...over });
@@ -202,9 +204,9 @@ describe("applyOvernight", () => {
   });
 
   it("snow guns fire on mid and high only", () => {
-    expect(run("mid", { buildings: ["snow_guns"] }).gunsFired).toBe(true);
+    expect(run("mid", { hasPlacedGuns: true, gunCoverage: [[true]] }).gunsFired).toBe(true);
     expect(run("mid").gunsFired).toBe(false);
-    expect(run("minimal", { buildings: ["snow_guns"] }).gunsFired).toBe(false);
+    expect(run("minimal", { hasPlacedGuns: true, gunCoverage: [[true]] }).gunsFired).toBe(false);
   });
 
   it("trail_guns stays dormant without equipment", () => {
@@ -235,7 +237,7 @@ describe("applyOvernight", () => {
   it("snow guns do not affect the scheduled weather", () => {
     const weatherTomorrow = { kind: "thaw", wind: "gusty" } as const;
     expect(run("mid", { weatherTomorrow }).weather).toBe("thaw");
-    expect(run("mid", { weatherTomorrow, buildings: ["snow_guns"] }).weather).toBe("thaw");
+    expect(run("mid", { weatherTomorrow, hasPlacedGuns: true }).weather).toBe("thaw");
   });
 
   it("a snow morning resets daysWithoutSnow and adds depth", () => {
@@ -316,7 +318,7 @@ describe("planArrivals", () => {
     expect(planArrivals({ ...base, founderId: "elena" })).toBe(clear + 2);
   });
 
-  it("keeps a minimum roster of 12 and lets busy weekends exceed 48", () => {
+  it("keeps a minimum roster of 12 and clamps busy weekends to the lodge cap", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     expect(
       planArrivals({
@@ -338,7 +340,25 @@ describe("planArrivals", () => {
         reputation: 100,
         rand: () => 0.99,
       }),
-    ).toBe(62);
+    ).toBe(58);
+  });
+
+  it("raises the arrival cap with lodge tier", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const busy = {
+      ...base,
+      dayIndex: 6,
+      fare: "cheap" as const,
+      weather: "snow" as const,
+      reputation: 100,
+      founderId: "elena" as const,
+      talentsOwned: ["ticket_booth"] as string[],
+      buildings: ["cafe"] as BuildingId[],
+      rand: () => 0.99,
+    };
+    expect(planArrivals({ ...busy, lodgeTier: 1 })).toBe(58);
+    expect(planArrivals({ ...busy, lodgeTier: 3 })).toBeGreaterThan(58);
+    expect(planArrivals({ ...busy, lodgeTier: 3 })).toBeLessThanOrEqual(84);
   });
 });
 
@@ -436,6 +456,21 @@ describe("readyStoryBeat", () => {
   it("school_bus fires only when an offer is available", () => {
     expect(readyStoryBeat({ ...quiet, schoolOfferReady: true })).toBe("school_bus");
     expect(readyStoryBeat({ ...quiet, dayIndex: 2, arrivals: 28 })).toBeNull();
+  });
+
+  it("groomer_down fires in the midpoint window with groom history and recent Mid/High", () => {
+    const mid = 10;
+    const eligible = {
+      ...quiet,
+      seasonLength: 28,
+      dayIndex: mid,
+      seasonGroomFeet: 6000,
+      recentSnowPresets: ["mid", "high", "mid", "high", "minimal"] as const,
+    };
+    expect(readyStoryBeat(eligible)).toBe("groomer_down");
+    expect(readyStoryBeat({ ...eligible, dayIndex: 5 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, seasonGroomFeet: 1000 })).toBeNull();
+    expect(readyStoryBeat({ ...eligible, recentSnowPresets: ["minimal", "minimal", "mid"] })).toBeNull();
   });
 
   it("dry_week fires at 3 dry days and depth under 0.35, not at the edge", () => {

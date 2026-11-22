@@ -86,7 +86,11 @@ export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "
             : DEFAULT_SETTINGS.reduceMotion,
     defaultSpeed: speed,
     buildingStyle:
-      r.buildingStyle === "chalet70s" || r.buildingStyle === "1950s-timber"
+      r.buildingStyle === "chalet70s" ||
+      r.buildingStyle === "1950s-timber" ||
+      r.buildingStyle === "aframe60s" ||
+      r.buildingStyle === "adirondack" ||
+      r.buildingStyle === "sugarhouse"
         ? r.buildingStyle
         : DEFAULT_SETTINGS.buildingStyle,
   };

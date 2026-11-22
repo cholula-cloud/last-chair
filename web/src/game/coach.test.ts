@@ -72,7 +72,7 @@ describe("coach tips", () => {
 describe("contextual problem guidance", () => {
   const neutral = { queue: 0, snow: 0, runs: 0, arrivalMood: 0, value: 0 };
   it.each([
-    ["queue", "slope", "Money"], ["snow", "conditions", "Desk"], ["value", "conditions", "Money"],
+    ["queue", "slope", "Money"], ["snow", "guns", "Desk"], ["value", "conditions", "Money"],
     ["runs", "slope", "Crew"], ["arrivalMood", "slope", "Crew"],
   ])("matches %s to an available layer and Office section", (issue, layer, tab) => {
     expect(problemGuide({
@@ -85,7 +85,7 @@ describe("contextual problem guidance", () => {
     const recap = { arrivals: 8, breakdown: { ...neutral, value: -8 }, cashDelta: 30 };
     expect(problemGuide(recap, "seats")).toMatchObject({ layer: "slope", tab: "Crew", text: expect.stringMatching(/lodge/) });
     expect(problemGuide(recap, "green")?.text).toMatch(/gentle descent/);
-    expect(problemGuide(recap, "snow")).toMatchObject({ layer: "conditions", tab: "Desk" });
+    expect(problemGuide(recap, "snow")).toMatchObject({ layer: "guns", tab: "Desk" });
   });
   it("offers a real cash shortfall and stays silent on a quiet profitable day", () => {
     expect(problemGuide({ arrivals: 0, breakdown: neutral, cashDelta: -40 })?.tab).toBe("Money");

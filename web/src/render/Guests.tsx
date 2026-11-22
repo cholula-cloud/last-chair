@@ -1,7 +1,7 @@
 "use client";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { OrbitControlsImpl } from "./orbitControlsType";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useShallow } from "zustand/react/shallow";
 import * as THREE from "three";

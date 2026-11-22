@@ -253,21 +253,21 @@ def _lodge(name, tier):
     door(a, 0, fy - 0.1, F, w=1.5, h=2.4)
     for x in (-1.3, 1.3):
         a.box((x, fy - 0.3, F + 2.2), (0.26, 0.26, 0.38), "lamp-glow")
-    # balcony across the gable glass
-    bz, by0, by1 = F + 3.4, fy, fy - 1.7
-    a.box((0, (by0 + by1) / 2, bz - 0.12), (8.0, by0 - by1, 0.24), BAT)
-    rail(a, -4.0, 4.0, by1, by1, bz, posts=False, balusters=0.55)
-    for sx in (-1, 1):
-        rail(a, sx * 4.0, sx * 4.0, by0, by1, bz, posts=False)
-        a.box((sx * 3.9, by1 + 0.1, (F + bz) / 2), (0.26, 0.26, bz - F), BAT)
-    # front deck and steps
-    dy0, dy1 = fy - 0.1, fy - 3.4
-    deck(a, -5.2, 5.2, dy1, dy0, F)
-    for i in range(2):
-        a.box((0, dy1 - 0.35 - i * 0.35, F - 0.25 - i * 0.22), (2.4, 0.4, 0.2), BAT)
-    rail(a, -5.1, 5.1, dy1, dy1, F, gap=(-1.3, 1.3))
-    for sx in (-1, 1):
-        rail(a, sx * 5.1, sx * 5.1, dy0, dy1, F)
+    # Tier 2+ rebuilds approach via lodge_tier_layout — skip base balcony/deck clutter.
+    if tier < 2:
+        bz, by0, by1 = F + 3.4, fy, fy - 1.7
+        a.box((0, (by0 + by1) / 2, bz - 0.12), (8.0, by0 - by1, 0.24), BAT)
+        rail(a, -4.0, 4.0, by1, by1, bz, posts=False, balusters=0.55)
+        for sx in (-1, 1):
+            rail(a, sx * 4.0, sx * 4.0, by0, by1, bz, posts=False)
+            a.box((sx * 3.9, by1 + 0.1, (F + bz) / 2), (0.26, 0.26, bz - F), BAT)
+        dy0, dy1 = fy - 0.1, fy - 3.4
+        deck(a, -5.2, 5.2, dy1, dy0, F)
+        for i in range(2):
+            a.box((0, dy1 - 0.35 - i * 0.35, F - 0.25 - i * 0.22), (2.4, 0.4, 0.2), BAT)
+        rail(a, -5.1, 5.1, dy1, dy1, F, gap=(-1.3, 1.3))
+        for sx in (-1, 1):
+            rail(a, sx * 5.1, sx * 5.1, dy0, dy1, F)
     # sides and rear
     for y in (-2.8, 3.4):
         side_window(a, (W / 2, y, 2.4), 1.4, 1.5, '+X')
@@ -279,99 +279,34 @@ def _lodge(name, tier):
     chimney(a, W / 2 + 0.75, 1.2, 3.0, 1.6, 14.2, footing=(2.0, 2.2, 3.0))
     wh = 6.35 if tier >= 3 else 3.4
     _chalet_dining_wing(a, W, F, wh, tier3=(tier >= 3))
-    if tier >= 3:
-        _lookout(a, H + rise)
     if tier >= 2:
-        _wing(a, F)
+        # Tier 3 plaza replaces the timber deck — skip deck when both apply.
+        _wing(a, F, include_deck=(tier < 3))
+    if tier >= 3:
+        _chalet_wing3_delta(a, F, H, rise)
     a.box((-W / 2 - 0.2, D / 2 + 0.2, 0.25), (2.2, 1.4, 0.5), "snow", bevel=0.18)
     a.box((W / 2 + 1.0, -D / 2 + 0.5, 0.25), (1.6, 2.2, 0.5), "snow", bevel=0.18)
     return a.finish()
 
 
-def _lookout(a, ridge):
-    """Tier 3: grand lookout lantern astride the main ridge."""
-    y, z0, z1 = 0.65, ridge - 1.35, ridge + 2.05
-    a.box((0, y, (z0 + z1) / 2), (2.85, 2.85, z1 - z0), WALL)
-    for face, (ox, oy) in {'-Y': (0, -1.05), '+Y': (0, 1.25), '-X': (-1.15, 0.1), '+X': (1.15, 0.1)}.items():
-        a.window((ox, y + oy, ridge + 0.45), 1.05, 1.15, face, frame=OCH, sill=False, mullion=False, depth=0.12)
-    gz = ridge + 1.05
-    a.box((0, y, gz), (2.95, 2.0, 1.45), "window-glow")
-    a.box((0, y, gz), (2.0, 2.95, 1.45), "window-glow")
-    a.box((0, y, ridge + 0.15), (3.1, 3.1, 0.26), OCH)
-    a.box((0, y, z1 + 0.15), (3.25, 3.25, 0.26), OCH)
-    a.cyl((0, y, z1 + 0.35), 2.65, 0.0, 1.65, 4, SHAKE, rot=(0, 0, 45))
-    a.cyl((0, y, z1 + 0.65), 2.05, 0.0, 1.35, 4, "snow", rot=(0, 0, 45))
-    a.box((0, y, z1 + 1.15), (0.14, 0.14, 1.15), BAT)
-    a.sphere((0, y, z1 + 1.75), 0.24, "snow")
+def _chalet_mats():
+    """Material tuple for lodge_tier_layout helpers (chalet palette)."""
+    return (WALL, OCH, SHAKE, BAT, STONED, STONE, "snow", "ski", BAT, "lamp-glow")
 
 
-def _wing(a, F):
-    """Tier 2: rear wing with its own steep glazed gable, and the side deck."""
-    wx0, wx1, wy0, wy1 = -3.0, 5.0, 2.0, 10.6
-    wh, rise, ov = 3.6, 5.4, 1.0
-    cx, cy, ww, wl = (wx0 + wx1) / 2, (wy0 + wy1) / 2, wx1 - wx0, wy1 - wy0
-    a.box((cx, cy, F / 2), (ww + 0.2, wl + 0.2, F), STONE)
-    a.box((cx, cy, F + (wh - F) / 2), (ww, wl, wh - F), WALL)
-    roof(a, (cx, cy, wh), wl + 0.6, ww, rise, rz=90, ov=ov, thick=0.28, snow=0.5, short=0.5, ends=(1,))
-    glaze(a, (cx, wy1, 0), '+Y', -2.4, 2.4, F + 0.15, wh + rise - 0.65, rise / (ww / 2),
-          mull=(-1.2, 0, 1.2), transoms=(F + 2.5,))
-    for y in (5.0, 8.0):
-        side_window(a, (wx1, y, 2.0), 1.4, 1.3, '+X')
-        side_window(a, (wx0, y, 2.0), 1.2, 1.3, '-X')
-    battens(a, (3.6, 6.5, 9.4), wx1 + 0.04, F, wh, face_y=False)
-    # side deck with steps, ochre rails, ski rack
-    x0, x1, y0, y1 = wx1 + 0.1, wx1 + 3.8, 3.4, wy1 - 0.4
-    deck(a, x0, x1, y0, y1, F)
-    rail(a, x1, x1, y0, y1, F, gap=(4.9, 7.1))
-    rail(a, x0, x1, y1, y1, F)
-    rail(a, x0, x1, y0, y0, F)
-    for i in range(2):
-        a.box((x1 + 0.35 + i * 0.35, 6.0, F - 0.25 - i * 0.22), (0.4, 2.2, 0.2), BAT)
-    a.box((x0 + 2.3, y1 - 0.7, F + 0.6), (2.2, 0.12, 0.12), "steel-dark")
-    for i, x in enumerate((1.8, 2.4, 3.0)):
-        a.box((x0 + x, y1 - 0.95, F + 1.0), (0.1, 0.1, 1.5), ("ski", ORG, "ski")[i], rot=(-8, 0, 0))
-    a.box((wx1 + 0.05, 3.8, F + 2.2), (0.2, 0.26, 0.38), "lamp-glow")
-    a.box((0, wy1 + 0.4, 0.25), (3.0, 1.2, 0.5), "snow", bevel=0.18)
+def _wing(a, F, include_deck=True):
+    """Tier 2 annex: camera-facing forward bay (shared layout, chalet materials)."""
+    import lodge_tier_layout as layout
+    layout.tier2_front_bay(
+        a, _chalet_mats(), layout.LODGE_W, layout.LODGE_D, F, include_deck=include_deck
+    )
 
 
-def _chalet_tier3_main_grand(a, W, D, H, F, rise):
-    """Grand chalet polish on the main block (tier-3 annex layer)."""
-    fy = -D / 2
-    deck(a, -5.8, 5.8, fy - 3.45, fy - 0.15, F - 0.05)
-    a.box((0, fy - 3.75, F - 0.05), (11.6, 4.2, 0.22), STONE)
-    # après fire bowls on the approach terrace
-    for fx in (-3.2, 3.2):
-        a.box((fx, fy - 2.65, F + 0.08), (1.15, 1.15, 0.22), STONED)
-        a.box((fx, fy - 2.65, F + 0.32), (0.72, 0.72, 0.18), "lamp-glow")
-        a.box((fx, fy - 2.65, F + 0.52), (0.38, 0.38, 0.12), "lamp-glow")
-    # porte-cochère over the entry
-    for x in (-2.6, 2.6):
-        a.box((x, fy - 1.15, F + 1.55), (0.28, 0.28, 3.55), BAT)
-    roof(a, (0, fy - 0.95, F + 3.75), 3.6, 6.2, 1.75, rz=90, ov=0.45, thick=0.2, snow=0.32, short=0.38, ends=(-1, 1))
-    a.box((0, fy - 1.2, F + 3.05), (2.8, 0.1, 0.72), OCH)
-    a.box((0, fy - 1.28, F + 2.92), (2.2, 0.06, 0.52), "window-glow")
-    bz = F + 4.05
-    a.box((0, fy - 0.35, bz - 0.12), (9.6, 1.75, 0.26), BAT)
-    rail(a, -4.8, 4.8, fy - 0.35, fy - 0.35, bz, posts=False, balusters=0.5)
-    for sx in (-1, 1):
-        rail(a, sx * 4.8, sx * 4.8, fy - 0.35, fy - 1.55, bz, posts=False)
-    for lx in (-4.2, -2.1, 0.0, 2.1, 4.2):
-        a.box((lx, fy - 0.48, bz + 1.08), (0.16, 0.16, 0.16), "lamp-glow")
-    for lx in (-3.5, 0.0, 3.5):
-        a.box((lx, fy - 0.55, bz + 0.58), (1.6, 0.08, 0.08), BAT)
-        a.box((lx, fy - 0.55, bz + 0.64), (1.65, 0.1, 0.07), "lamp-glow")
-    for x in (-5.5, 5.5):
-        a.box((x, fy - 3.05, F + 0.2), (0.2, 0.2, 4.8), BAT)
-        a.box((x + 0.5 * (1 if x > 0 else -1), fy - 2.75, F + 3.95), (1.1, 0.08, 1.65), ORG)
-    a.box((0, fy - 1.05, F + 2.85), (2.6, 0.12, 0.75), OCH)
-
-
-def _chalet_wing3_delta(a, F, H, rise):
-    """Chalet tier-3 annex: resort front polish, wing uplift, ridge lookout."""
-    W, D = 12.0, 9.0
-    _chalet_tier3_main_grand(a, W, D, H, F, rise)
-    _chalet_dining_wing_tier3_uplift(a, W, F)
-    _lookout(a, H + rise)
+def _chalet_wing3_delta(a, F, H, rise=0):
+    """Chalet tier-3 delta: shared front grand massing (ridge lantern lives in layout)."""
+    import lodge_tier_layout as layout
+    W, D = layout.LODGE_W, layout.LODGE_D
+    layout.tier3_front_grand(a, _chalet_mats(), W, D, H, F)
 
 
 def c_lodge_annex_2():
@@ -391,11 +326,17 @@ def c_lodge1():
 
 
 def c_lodge2():
-    return _lodge("lodge-tier-2-" + STYLE, 2)
+    a = Asset("lodge-tier-2-" + STYLE)
+    import lodge_tier_layout as layout
+    layout.build_coherent_lodge(a, _chalet_mats(), tier=2)
+    return a.finish()
 
 
 def c_lodge3():
-    return _lodge("lodge-tier-3-" + STYLE, 3)
+    a = Asset("lodge-tier-3-" + STYLE)
+    import lodge_tier_layout as layout
+    layout.build_coherent_lodge(a, _chalet_mats(), tier=3)
+    return a.finish()
 
 
 # ---------- venues ----------
@@ -495,6 +436,60 @@ def c_hut():
     return a.finish()
 
 
+def c_rental():
+    a = Asset("rental-shop-" + STYLE)
+    W, D, H, F = 6.6, 5.6, 2.9, 0.35
+    rise, ov = 4.2, 0.6
+    k = rise / (W / 2)
+    fy = -D / 2
+    a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), STONE)
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), WALL)
+    roof(a, (0, 0, H), D, W, rise, rz=90, ov=ov, thick=0.24, snow=0.42, short=0.5)
+    glaze(a, (0, fy, 0), '-Y', -2.4, 1.0, F + 0.15, H + rise - 0.5, k, mull=(-1.0,), transoms=(F + 1.8,))
+    door(a, 2.1, fy - 0.04, F, w=1.0, h=2.1)
+    a.box((0, fy - 0.55, F + 0.55), (4.6, 0.65, 0.95), BAT)
+    a.box((0, fy - 0.2, H + 0.95), (3.6, 0.12, 0.9), ORG)
+    a.box((0, fy - 0.27, H + 0.95), (3.2, 0.06, 0.7), "cream-sign")
+    a.box((-W / 2 - 1.0, fy - 0.7, 0.35), (1.6, 2.2, 0.65), BAT)
+    for i, m in enumerate(("ski", ORG, "ski")):
+        a.box((-W / 2 - 1.3 + i * 0.35, fy - 0.4, 0.9), (0.1, 0.08, 1.5), m, rot=(-15, 0, 0))
+    return a.finish()
+
+
+def c_waffle():
+    a = Asset("waffle-haus-" + STYLE)
+    W, D, H, F = 7.2, 6.2, 3.0, 0.4
+    rise, ov = 5.0, 0.7
+    k = rise / (W / 2)
+    fy = -D / 2
+    a.box((0, 0, F / 2), (W + 0.25, D + 0.25, F), STONE)
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), WALL)
+    roof(a, (0, 0, H), D, W, rise, rz=90, ov=ov, thick=0.26, snow=0.46, short=0.55)
+    glaze(a, (0, fy, 0), '-Y', -2.8, 1.0, F + 0.15, H + rise - 0.55, k,
+          mull=(-1.6, -0.4), transoms=(F + 2.0,))
+    door(a, 2.1, fy - 0.04, F, w=1.1, h=2.2)
+    a.box((0, fy - 0.2, H + 1.15), (3.4, 0.12, 1.0), ORG)
+    a.box((0, fy - 0.27, H + 1.15), (3.0, 0.06, 0.75), "cream-sign")
+    a.box((0, fy - 2.1, 0.1), (5.8, 3.4, 0.16), BAT)
+    a.box((0, fy - 1.3, 0.7), (4.0, 0.65, 0.85), ORG)
+    return a.finish()
+
+
+def c_ski_school():
+    a = Asset("ski-school-desk-" + STYLE)
+    W, D, H, F = 5.0, 3.8, 2.4, 0.3
+    rise = 3.2
+    k = rise / (W / 2)
+    fy = -D / 2
+    a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), STONE)
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), WALL)
+    roof(a, (0, 0, H), D, W, rise, rz=90, ov=0.5, thick=0.2, snow=0.38, short=0.35)
+    glaze(a, (0, fy, 0), '-Y', -1.6, 0.6, F + 0.5, H + rise - 0.4, k, mull=(-0.5,))
+    door(a, 1.4, fy - 0.02, F, w=0.95, h=1.9)
+    a.box((0, fy - 0.14, H + 0.8), (2.6, 0.12, 0.65), ORG)
+    return a.finish()
+
+
 VARIANTS = [
     (c_lodge1, "lodge-tier-1", 2300),
     (c_lodge2, "lodge-tier-2", 3200),
@@ -504,6 +499,9 @@ VARIANTS = [
     (c_cafe, "cafe", 1000),
     (c_shop, "ski-shop", 650),
     (c_hut, "warming-hut", 460),
+    (c_rental, "rental-shop", 700),
+    (c_waffle, "waffle-haus", 900),
+    (c_ski_school, "ski-school-desk", 500),
 ]
 BUILDERS = [v[0] for v in VARIANTS]
 

@@ -186,17 +186,25 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   {
     to: 15,
-    note: "Add optional operatorName for Cold Open v2 lease signing",
-    up: (s) => ({
-      ...s,
-      operatorName: typeof s.operatorName === "string" ? s.operatorName : null,
-    }),
+    note: "DH8 groomer-down beat tracking, season groom mileage, and optional operatorName.",
+    up(raw) {
+      const clearTeaser = raw.pendingBeat === "groomer_down";
+      const migrated = {
+        ...raw,
+        groomerDownDecision: raw.groomerDownDecision ?? null,
+        groomerDownTonight: Boolean(raw.groomerDownTonight),
+        seasonGroomFeet: typeof raw.seasonGroomFeet === "number" ? raw.seasonGroomFeet : 0,
+        operatorName: typeof raw.operatorName === "string" ? raw.operatorName : null,
+      };
+      return clearTeaser ? { ...migrated, pendingBeat: null, beatAcknowledged: true } : migrated;
+    },
   },
   {
     to: 16,
     note: "Add Sloane scouting visit, Bennington club bus, and groomer down tracking",
     up: (s) => ({
       ...s,
+      operatorName: typeof s.operatorName === "string" ? s.operatorName : null,
       vivianVisit: s.vivianVisit ?? null,
       clubBooking: s.clubBooking ?? null,
       groomerDown: s.groomerDown ?? null,

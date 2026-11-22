@@ -14,6 +14,7 @@ This file answers four questions: what the game is, what the player does and why
 | [WORLD.md](./WORLD.md) | Dutch Hill, cast, founders, career mountains, story beats, lore pantry |
 | [ART_DIRECTION.md](./ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
 | [TESTING.md](./TESTING.md) | Automated tests, device playtest scripts, sign-off log |
+| [plans/SNOW_SERVICE_REVISION.md](./plans/SNOW_SERVICE_REVISION.md) | Snow guns vs grooming: sim, UX, and build plan (rows SM1–SM4) |
 | [reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md](./reference/ICE_COAST_REVIVAL_GAME_ANALYSIS.md) | How the inspiration works |
 
 The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3 are merged.
@@ -155,7 +156,7 @@ An upgrade does not add seats or a café inside the lodge. It gates what you may
 | Cost | Free, on day 1 | $3,500 | $9,000 |
 | Car park (visual) | 30 stalls | 50 | 80 |
 | Attach pads | 0 | 1 | 2 |
-| Opens to build | Surface lift, trails, warming hut, café, shop | Double chair, snow guns, rentals, ski school desk, tubing, basic decor | Bar and après, restaurant, ice rink, events, premium decor |
+| Opens to build | Surface lift, trails, warming hut, café, ski shop, ticket booth | Double chair, snow guns, rental shop, ski school desk, tubing, patrol hut, maintenance garage, basic decor | Après bar, Waffle Haus, ice rink, events, premium decor |
 | New revenue | Day tickets, café, shop | Rentals, lessons, tubing | Bar and restaurant, events |
 | Look | Small A-frame, plain | Wings, bigger porch, signage | Full timber lodge, lit windows, flags |
 
@@ -187,8 +188,8 @@ All buildable things (venues, activities, decor, infrastructure) are rows in one
 
 | Category | Examples | Guest reason to exist |
 |---|---|---|
-| Hospitality | Warming hut, café, bar, restaurant | Refuel, warm up, après |
-| Services | Shop, rentals, ski school, lockers | First-Timers need rentals and lessons |
+| Hospitality | Warming hut, café, Waffle Haus, après bar | Refuel, warm up, brunch, après |
+| Services | Ski shop (retail), rental shop (equipment), ski school, ticket booth, patrol hut | First-Timers need rentals and lessons |
 | Activities | Tubing, ice rink, sleigh rides | Families and teens come for them |
 | Decor | Fire pit, string lights, signs | Arrival mood, identity |
 | Infrastructure | Snow guns, groomer garage | Snow quality and coverage |
@@ -325,7 +326,7 @@ Office        → full-screen, pauses the day: Desk · Money · Stats · Reports
 
 ## 7. How it is built
 
-**Stack:** Next.js 16 (App Router, static export) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Vitest · Playwright scripts. Hosted on **GitHub Pages**, published by `.github/workflows/pages.yml` on every push to `main`: https://cholula-cloud.github.io/last-chair/play/. There is no server and no Vercel.
+**Stack:** Next.js 16 (App Router, static export) · React 19 · TypeScript · React Three Fiber + drei + three.js · Zustand with localStorage persist · Tailwind 4 · Vitest · Playwright scripts. Hosted on **GitHub Pages**, published by `.github/workflows/pages.yml` on every push to `main`: https://cholula-cloud.github.io/last-chair/play/. There is no server-side runtime (static export only).
 
 ```
 web/src/app/      routes: / (home), /play (game)
@@ -524,7 +525,20 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | F3a | ☑ | Stats tab: money charts | Add **Stats** to `OFFICE_TABS`. Pure series selectors over `dayHistory` (`game/officeSeries.ts`). SVG charts with table fallback: revenue vs operating costs, revenue breakdown (tickets, venues, school bus), morning cash trend, construction cash timeline, loan drawdown and repayment. |
 | F3b | ☑ | Stats ops charts and Reports | Fare elasticity, arrivals, satisfaction and its five terms, wait, snow service spend, satisfaction vs revenue scatter (`officeOpsCharts.tsx`). Reports gains the 28-day **season calendar** (weather and result; tap opens that day's recap) and a ski-area snow-report style trail report (`officeReports.tsx`). Gate: opening Stats after day 7 feels like a CFO dashboard, not a log list (§12). |
 
-Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **M4b Batch 1** (guests, kit, trail signage, styles, activities) is ☑ on `main`; kit forest + valley beauty ([#147](https://github.com/cholula-cloud/last-chair/pull/147)) is ☑ on `main`; **next queue:** **M5** career rows unless owner adds M4b batch 2.
+Suggested order: **C1a, C1b**, **B6, B7**, **HUD (#102)**, **F3a** (with the F2 chart-field check), **F3b**, early **P4** sweep on Office economics, **30 to 33**, then **O4** and **O5**. **Shipped on `main`:** every M4 row above is ☑; [#106](https://github.com/cholula-cloud/last-chair/pull/106) adds layer-dock HUD fixes and **Close hill** on Office Desk; [#105](https://github.com/cholula-cloud/last-chair/pull/105) adds asset inspectors, trail link network, and multi-leg guest routes; [#110](https://github.com/cholula-cloud/last-chair/pull/110) docks a single slope legend above trail placement. **M4b Batch 1** (guests, kit, trail signage, styles, activities) is ☑ on `main`; kit forest + valley beauty ([#147](https://github.com/cholula-cloud/last-chair/pull/147)) is ☑ on `main`; **next queue:** **SM1–SM4** snow service revision ([plan](./plans/SNOW_SERVICE_REVISION.md)), then **M5** career unless owner adds M4b batch 2.
+
+#### SM: Snow service revision (guns vs grooming)
+
+Queued from owner design review (2026-11-21). Full brief: [plans/SNOW_SERVICE_REVISION.md](./plans/SNOW_SERVICE_REVISION.md).
+
+| # | Status | PR | Accomplishes |
+|---|---|---|---|
+| SM1 | ☑ | Snow service UX | Night sheet and coach separate **gun segments** from **groom miles**; gun placement shows pipe + coverage reach rings; thaw-forward copy on night tiles |
+| SM2 | ☑ | Snow service sim | Thaw-favor guns, gusty-wind reach shrink, snow/storm diminishing returns, light man-made quality cap; `hasPlacedGuns` from `guns[]` only; balance harness green |
+| SM3 | ☑ | Gun placement | Looser pipe (0.72) / cap scaled to trail length; placement rings + dynamic max-gun copy |
+| SM4 | ☑ | Snow service feel | Trail conditioning on; gun vs groom terrain tint; thaw morning line; DH8 groomer-down beat |
+
+Suggested order: **SM1**, **SM2** (balance snapshot), **SM3** and **SM4** in either order after SM2.
 
 ### M4b: Blender assets
 

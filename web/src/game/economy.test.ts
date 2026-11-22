@@ -2,15 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
 import { canRepayLoan, constructionDraw, dailyCosts, liquidNetWorth, loanOffered, morningCash, payoffAmount } from "./economy";
 import { migrate } from "./migrations";
-import { acknowledgeBeat, buyBuilding, decideSchoolContract, replyToSummitLink, finishWinterReview, openNight, pickFounder, repayLoan, setPendingSnow, sleep, startNewSeason, takeLoan } from "./rules";
+import { buyBuilding, finishWinterReview, openNight, pickFounder, repayLoan, resolveNightBeat, setPendingSnow, sleep, startNewSeason, takeLoan } from "./rules";
 import { SAVE_VERSION, toPersisted, type GameState } from "./state";
 
 const opened = () => pickFounder(createBuiltHill(42), "elena");
 const close = (state: GameState) => {
   const night = openNight(state);
-  if (night.pendingBeat === "summit_link") return replyToSummitLink(night, "declined");
-  if (night.pendingBeat === "school_bus") return decideSchoolContract(night, "declined");
-  return acknowledgeBeat(night);
+  return resolveNightBeat(night);
 };
 const fund = (night: GameState, cash: number) => ({ ...night, cash: night.cash + cash - morningCash(night) });
 

@@ -269,8 +269,8 @@ Each open `TrailRun` has six segments (`snow[]`) with `depth`, `quality` and `co
 | Preset | Guns | Groom | Quality |
 |--------|------|-------|---------|
 | Minimal | off | none | −0.04 (floor 0.2); depth unchanged |
-| Mid | placed guns add +0.14 depth within reach; groomed segments gain +0.04 | yes | `max(q, 0.6) + 0.03` |
-| High | placed guns add +0.20 depth within reach; groomed segments gain +0.06 | yes | `max(q, 0.75) + 0.06` |
+| Mid | placed guns add +0.14 depth within reach (×1.25 on thaw, ×0.5 on snow/storm; thaw loss halved on gun segments; gusty wind shrinks reach on exposed segments); groomed segments gain +0.04 | yes | `max(q, 0.6) + 0.03` |
+| High | placed guns add +0.20 depth within reach (same weather rules); groomed segments gain +0.06 | yes | `max(q, 0.75) + 0.06` |
 
 `groom_pass` / `corduroy` add +0.07 to the groom target. Quality caps at 0.95. Cost unchanged (+$0 / +$150 / +$350).
 

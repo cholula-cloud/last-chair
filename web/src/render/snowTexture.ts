@@ -17,11 +17,21 @@ export function groomedForTrail(
   return Array(n).fill(true);
 }
 
-/** RGBA float texels: depth, quality, coverage, groomed (0|1). */
+/** Alpha: 1 = groomed, ~0.42 = gun-only, 0 = natural. */
+export const SNOW_TEX_GUN_ALPHA = 0.42;
+
+function segmentConditionAlpha(groomed: boolean, gunCovered: boolean): number {
+  if (groomed) return 1;
+  if (gunCovered) return SNOW_TEX_GUN_ALPHA;
+  return 0;
+}
+
+/** RGBA float texels: depth, quality, coverage, condition alpha. */
 export function snowTextureData(
   trails: readonly Trail[],
   groomed: readonly (boolean[] | undefined)[],
   preset: SnowPreset,
+  gunCovered: readonly (boolean[] | undefined)[] = [],
   width = SNOW_TEX_SEGMENTS,
 ): Float32Array {
   const rows = Math.min(trails.length, SNOW_TEX_TRAILS);
@@ -29,13 +39,15 @@ export function snowTextureData(
   for (let row = 0; row < rows; row++) {
     const trail = trails[row];
     const groom = groomedForTrail(groomed[row], preset, trail.length);
+    const guns = gunCovered[row]?.slice(0, trail.length);
     for (let col = 0; col < width; col++) {
       const seg = trail[Math.min(col, trail.length - 1)];
       const i = (row * width + col) * 4;
+      const ci = Math.min(col, groom.length - 1);
       data[i] = seg.depth;
       data[i + 1] = seg.quality;
       data[i + 2] = seg.coverage;
-      data[i + 3] = groom[Math.min(col, groom.length - 1)] ? 1 : 0;
+      data[i + 3] = segmentConditionAlpha(Boolean(groom[ci]), Boolean(guns?.[ci]));
     }
   }
   return data;
@@ -46,9 +58,10 @@ export function snowTextureBytes(
   trails: readonly Trail[],
   groomed: readonly (boolean[] | undefined)[],
   preset: SnowPreset,
+  gunCovered: readonly (boolean[] | undefined)[] = [],
   width = SNOW_TEX_SEGMENTS,
 ): Uint8Array {
-  const data = snowTextureData(trails, groomed, preset, width);
+  const data = snowTextureData(trails, groomed, preset, gunCovered, width);
   const out = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i++) out[i] = Math.round(Math.max(0, Math.min(1, data[i])) * 255);
   return out;

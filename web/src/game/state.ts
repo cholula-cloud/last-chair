@@ -1,5 +1,4 @@
 import type { WinterRecord } from "./winterMemory";
-import { DEFAULT_STYLE } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { mountainDefaultStyle } from "./styles";
 import { calendarForSeason, MOUNTAIN_CALENDARS, operatingDayIndex, type MountainId } from "./calendar";
@@ -15,6 +14,7 @@ import type { Loan, Payable } from "./economy";
 import type { ClearingCell } from "./clearing";
 import type { SnowGun } from "./guns";
 import type { SchoolContract } from "./schoolContract";
+import type { GroomerDownDecision } from "./groomerDown";
 import { mix32 } from "./rng";
 import { generateSeasonWeather } from "./weather";
 import type { LiftAnchor } from "./descent";
@@ -161,6 +161,12 @@ export type PersistedState = {
   beatAcknowledged: boolean;
   schoolContract: SchoolContract | null;
   schoolProgramProven: boolean;
+  /** DH8: borrow road crew groomer vs run guns-only tonight (cleared after sleep). */
+  groomerDownDecision: GroomerDownDecision | null;
+  /** When true, overnight groom mileage is zero (guns still run). */
+  groomerDownTonight: boolean;
+  /** Cumulative groom feet this winter (for DH8 gate). */
+  seasonGroomFeet: number;
   weather: WeatherKind;
   seasonSeed: number;
   /** One actual weather outcome per day in the current winter. */
@@ -275,6 +281,9 @@ export function createInitialState(
     beatAcknowledged: true,
     schoolContract: null,
     schoolProgramProven: false,
+    groomerDownDecision: null,
+    groomerDownTonight: false,
+    seasonGroomFeet: 0,
     weather: weatherDays[0].kind,
     seasonSeed,
     weatherDays,
@@ -351,6 +360,9 @@ export function toPersisted(state: PersistedState): PersistedState {
     beatAcknowledged: state.beatAcknowledged,
     schoolContract: state.schoolContract,
     schoolProgramProven: state.schoolProgramProven,
+    groomerDownDecision: state.groomerDownDecision,
+    groomerDownTonight: state.groomerDownTonight,
+    seasonGroomFeet: state.seasonGroomFeet,
     weather: state.weather,
     seasonSeed: state.seasonSeed,
     weatherDays: state.weatherDays,

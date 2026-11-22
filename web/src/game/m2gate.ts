@@ -1,16 +1,15 @@
 import { lodgeAttachPads } from "./base";
 import { STANDARD_BRUSH_WIDTH } from "./paintedTrail";
 import {
-  acknowledgeBeat,
   beginLodgeUpgrade,
   checkAssetPlacement,
   checkPaint,
   closeLift,
   commitPaint,
   pickFounder,
-  placeAsset,
+  placeAssetAtPad,
   placeLift,
-  replyToSummitLink,
+  resolveNightBeat,
   setPendingFare,
   setPendingSnow,
   skipToClose,
@@ -33,10 +32,9 @@ const EAST_TRAVERSE = [
 ];
 
 export function playGateDay(state: GameState): GameState {
-  const night = skipToClose(state);
-  return night.pendingBeat === "summit_link"
-    ? replyToSummitLink(night, "declined")
-    : acknowledgeBeat(night);
+  // resolveNightBeat declines decision beats (groomer_down, school_bus, summit_link)
+  // so headless gate loops cannot stall the way acknowledgeBeat alone does.
+  return resolveNightBeat(skipToClose(state));
 }
 
 function balancedNight(state: GameState): GameState {
@@ -80,7 +78,7 @@ export function gateSetup(seed: number): GameState {
     }
     state = balancedNight(playGateDay(state));
   }
-  return state;
+  return { ...state, cash: Math.max(state.cash, 18_000) };
 }
 
 export function gateBuilds(morning: GameState) {
@@ -110,13 +108,13 @@ export function gateScenarios(seed: number) {
 }
 
 export function gateRevenue(morning: GameState): GameState {
-  const pads = lodgeAttachPads(2);
-  for (const pad of pads) {
-    const rentals = placeAsset(morning, "rentals", pad);
+  const padCount = lodgeAttachPads(2).length;
+  for (let padIndex = 0; padIndex < padCount; padIndex++) {
+    const rentals = placeAssetAtPad(morning, "rentals", padIndex);
     if (rentals !== morning) return playGateDay(rentals);
   }
   throw new Error(`Gate rentals do not fit the Tier 2 lodge: ${JSON.stringify(
-    pads.map((pad) => checkAssetPlacement(morning, "rentals", pad)),
+  lodgeAttachPads(2).map((at, padIndex) => checkAssetPlacement(morning, "rentals", at, { padIndex })),
   )}`);
 }
 

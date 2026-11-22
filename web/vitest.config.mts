@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Heavy season sims on shared GHA runners: limit workers to avoid OOM thrash that looks like hangs.
+    maxWorkers: process.env.CI ? 2 : undefined,
+    fileParallelism: process.env.CI ? false : undefined,
   },
 });

@@ -39,7 +39,7 @@ Open http://localhost:3000/play. `/` is the landing page.
 | `npm run playtest:smoke` | Fast Playwright smoke (Chromium 390×844) |
 | `npm run playtest:p0` | Full operating-calendar Playwright winter (18 open days on Dutch Hill, 21 on Act II+) |
 
-CI **`check`** (lint, typecheck, test, m2-gate, build, bundle) runs on every PR. Player-visible changes also run **`e2e-pr`** (one Chromium smoke). Full browser matrix runs **nightly** (`e2e-nightly.yml`).
+CI **`check`** gates on **`fast`** (lint, typecheck, quick Vitest) and **`slow`** (balance or determinism sims, m2-gate, build, bundle) in parallel. Player-visible PRs also run **`e2e-smoke`** (Chromium 390×844, reuses the slow-job build artifact). Full browser matrix runs **nightly** (`e2e-nightly.yml`).
 
 ## Deploy (GitHub Pages)
 

@@ -17,6 +17,10 @@ export type AssetId =
   | "tubing_hill"
   | "ice_rink"
   | "apres_bar"
+  | "waffle_haus"
+  | "ticket_booth"
+  | "patrol_hut"
+  | "maintenance_garage"
   | "fire_pit"
   | "string_lights"
   | "bench"
@@ -43,7 +47,7 @@ type Asset = {
 
 export const ATTACH_BONUS = 0.05;
 export const MAX_BASE_ASSETS = 12;
-export type BuildingStyleId = "1950s-timber" | "chalet70s";
+export type BuildingStyleId = "1950s-timber" | "chalet70s" | "aframe60s" | "adirondack" | "sugarhouse";
 export const DEFAULT_STYLE: BuildingStyleId = "1950s-timber";
 export const CHAIR_TIER = 2;
 export const ASSET_CATALOG: Record<AssetId, Asset> = {
@@ -58,12 +62,12 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     revenuePerUse: 9, visitMinutes: 20, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   shop: {
-    label: BUILDING_LABELS.shop, category: "services", footprint: { width: 0.8, depth: 0.6 },
+    label: "Ski shop", category: "services", footprint: { width: 0.8, depth: 0.6 },
     cost: BUILDING_COSTS.shop, upkeep: 25, effect: {},
     revenuePerUse: 5, visitMinutes: 0, opensAtTier: 1, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
   rentals: {
-    label: "Rentals", category: "services", footprint: { width: 0.8, depth: 0.6 },
+    label: "Rental shop", category: "services", footprint: { width: 0.8, depth: 0.6 },
     cost: 1000, upkeep: 20, effect: { seats: 6, hillValue: 1 },
     revenuePerUse: 12, visitMinutes: 5, opensAtTier: 2, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
@@ -72,10 +76,25 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     cost: 1400, upkeep: 25, effect: { seats: 8, hillValue: 2 },
     revenuePerUse: 18, visitMinutes: 25, opensAtTier: 2, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
+  ticket_booth: {
+    label: "Ticket booth", category: "services", footprint: { width: 0.55, depth: 0.45 },
+    cost: 400, upkeep: 8, effect: { arrivalMood: 0.015 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 1, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
   snow_guns: {
     label: "Snow gun", category: "infrastructure", footprint: { width: 0.25, depth: 0.25 },
     cost: 250, upkeep: 60, effect: {},
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "slope", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  patrol_hut: {
+    label: "Patrol hut", category: "services", footprint: { width: 0.85, depth: 0.7 },
+    cost: 1600, upkeep: 20, effect: { arrivalMood: 0.02, hillValue: 2 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
+  },
+  maintenance_garage: {
+    label: "Maintenance garage", category: "infrastructure", footprint: { width: 1.5, depth: 1.1 },
+    cost: 2200, upkeep: 35, effect: { hillValue: 1 },
+    revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   tubing_hill: {
     label: "Tubing hill", category: "activity", footprint: { width: 1.4, depth: 1.1 },
@@ -92,6 +111,11 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
     cost: 6200, upkeep: 55, effect: { seats: 24, arrivalMood: 0.05, hillValue: 6 },
     revenuePerUse: 14, visitMinutes: 25, opensAtTier: 3, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
   },
+  waffle_haus: {
+    label: "Waffle Haus", category: "hospitality", footprint: { width: 0.95, depth: 0.75 },
+    cost: 3200, upkeep: 45, effect: { seats: 16, arrivalMood: 0.045, hillValue: 4 },
+    revenuePerUse: 11, visitMinutes: 20, opensAtTier: 3, placementZone: "base", attachable: true, styleId: DEFAULT_STYLE,
+  },
   fire_pit: {
     label: "Fire pit", category: "decor", footprint: { width: 0.7, depth: 0.7 },
     cost: 450, upkeep: 5, effect: { arrivalMood: 0.02 },
@@ -99,27 +123,27 @@ export const ASSET_CATALOG: Record<AssetId, Asset> = {
   },
   string_lights: {
     label: "String lights", category: "decor", footprint: { width: 2.4, depth: 0.35 },
-    cost: 320, upkeep: 8, effect: { arrivalMood: 0.015 },
+    cost: 120, upkeep: 2, effect: { arrivalMood: 0.015 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   bench: {
     label: "Bench", category: "decor", footprint: { width: 0.9, depth: 0.55 },
-    cost: 180, upkeep: 2, effect: { arrivalMood: 0.01 },
+    cost: 120, upkeep: 1, effect: { arrivalMood: 0.01 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   ski_rack: {
     label: "Ski rack", category: "decor", footprint: { width: 1.1, depth: 0.5 },
-    cost: 220, upkeep: 3, effect: { arrivalMood: 0.01 },
+    cost: 140, upkeep: 2, effect: { arrivalMood: 0.01 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   picnic_table: {
     label: "Picnic table", category: "decor", footprint: { width: 1.2, depth: 0.9 },
-    cost: 240, upkeep: 3, effect: { arrivalMood: 0.012 },
+    cost: 160, upkeep: 2, effect: { arrivalMood: 0.012 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
   direction_sign: {
     label: "Direction sign", category: "decor", footprint: { width: 0.5, depth: 0.5 },
-    cost: 350, upkeep: 4, effect: { arrivalMood: 0.008 },
+    cost: 180, upkeep: 2, effect: { arrivalMood: 0.008 },
     revenuePerUse: 0, visitMinutes: 0, opensAtTier: 2, placementZone: "base", attachable: false, styleId: DEFAULT_STYLE,
   },
 };
@@ -128,10 +152,30 @@ export const LODGE_FOOTPRINT: Footprint = DUTCH_HILL_SITE.buildings.lodge.footpr
 const TERMINAL_FOOTPRINT: Footprint = { width: 0.9, depth: 0.9 };
 const TERMINAL_CLEARANCE = 0.08;
 export const LODGE_TIERS = {
-  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 0 },
-  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 1 },
-  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 2 },
+  1: { label: "Base Lodge", cost: 0, stalls: 30, pads: 0, maxArrivals: 58, seatMultiplier: 1 },
+  2: { label: "Village Lodge", cost: 3500, stalls: 50, pads: 1, maxArrivals: 70, seatMultiplier: 1.2 },
+  3: { label: "Grand Lodge", cost: 9000, stalls: 80, pads: 2, maxArrivals: 84, seatMultiplier: 1.4 },
 } as const;
+
+/** Hospitality venues guests refuel at when tired or balking in long lines. */
+export const REFUEL_HOSPITALITY_IDS = ["cafe", "warming_hut", "apres_bar", "waffle_haus"] as const satisfies readonly AssetId[];
+
+export function isRefuelHospitality(id: AssetId): boolean {
+  return (REFUEL_HOSPITALITY_IDS as readonly string[]).includes(id);
+}
+
+export function hasPlacedAsset(assets: readonly PlacedAsset[], id: AssetId): boolean {
+  return assets.some((asset) => asset.id === id);
+}
+
+/** Tier 1 uses the base snowcat yard; Tier 2+ needs a maintenance garage for full overnight groom. */
+export function hasMaintenanceGarage(assets: readonly PlacedAsset[], lodgeTier: LodgeTier = 1): boolean {
+  return lodgeTier < 2 || hasPlacedAsset(assets, "maintenance_garage");
+}
+
+export function hasCafeForArrivals(buildings: readonly string[], assets: readonly PlacedAsset[]): boolean {
+  return buildings.includes("cafe") || hasPlacedAsset(assets, "cafe");
+}
 
 export function nextLodgeTier(tier: LodgeTier): 2 | 3 | null {
   if (tier === 1) return 2;
@@ -277,12 +321,21 @@ export function previewSlopeAssetPlacement(
   return { ok: true, placement, cost: asset.cost, acres, attached: false };
 }
 
+export type PreviewAssetPlacementOptions = {
+  site?: SiteDef;
+  terrain?: Terrain;
+  terminals?: readonly XZ[];
+  defaultStyleId?: string;
+  /** Lodge inspector pad attach only; never inferred from map proximity. */
+  padIndex?: number;
+};
+
 export function previewAssetPlacement(
   id: AssetId,
   at: XZ,
   tier: LodgeTier,
   assets: readonly PlacedAsset[],
-  options: { site?: SiteDef; terrain?: Terrain; terminals?: readonly XZ[]; defaultStyleId?: string } = {},
+  options: PreviewAssetPlacementOptions = {},
 ): AssetPreview {
   if (id === "snow_guns") return { ok: false, reason: "Place snow guns from the Snow section." };
   const asset = ASSET_CATALOG[id];
@@ -291,24 +344,29 @@ export function previewAssetPlacement(
   if (!asset || asset.placementZone !== "base") return { ok: false, reason: "That one goes up on the hill, not at the base." };
   if (tier < asset.opensAtTier) return { ok: false, reason: `Needs Lodge Tier ${asset.opensAtTier} first.` };
   if (assets.length >= MAX_BASE_ASSETS) return { ok: false, reason: "The base area’s full. Move or remove something first." };
-  if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) return { ok: false, reason: "Pick a spot in the base area." };
 
-  const padLocations = lodgeAttachPads(tier, site).map((point, index) => ({
-    point, index, distance: Math.hypot(at.x - point.x, at.z - point.z),
-  }));
-  const snap = asset.attachable
-    ? padLocations.filter(({ distance }) => distance <= 0.32).sort((a, b) => a.distance - b.distance)[0]
-    : undefined;
-  const position = snap?.point ?? at;
+  const padIndex = options.padIndex;
+  const lodgeAttach = padIndex !== undefined;
+  if (lodgeAttach) {
+    if (!asset.attachable) return { ok: false, reason: "That venue can't attach inside the lodge." };
+    const pads = lodgeAttachPads(tier, site);
+    if (padIndex < 0 || padIndex >= pads.length) {
+      return { ok: false, reason: "That lodge pad isn't open yet." };
+    }
+    if (assets.some((placed) => placed.attachPad === padIndex)) {
+      return { ok: false, reason: "Another venue already has that lodge pad. Try a different pad." };
+    }
+  } else if (!Number.isFinite(at.x) || !Number.isFinite(at.z)) {
+    return { ok: false, reason: "Pick a spot in the base area." };
+  }
+
+  const position = lodgeAttach ? lodgeAttachPads(tier, site)[padIndex!] : at;
   const size = asset.footprint;
   if (!footprintOnLease(position, size.width, size.depth, terrain)) return { ok: false, reason: OFF_LEASE_MESSAGE };
-  if (snap && assets.some((placed) => placed.attachPad === snap.index)) {
-    return { ok: false, reason: "Another venue already has that lodge pad. Try a different pad." };
-  }
   if (!inBaseZone(position, size, site, terrain)) {
     return { ok: false, reason: "Venues need flat ground. Try a flatter spot near the lodge." };
   }
-  if (!snap) {
+  if (!lodgeAttach) {
     if (overlaps(position, size, site.buildings.lodge, site.buildings.lodge.footprint, 0.1)
       || assets.some((placed) => overlaps(position, size, placed.at, ASSET_CATALOG[placed.id].footprint, 0.08))) {
       return { ok: false, reason: "Too close to another building. Leave some elbow room." };
@@ -331,8 +389,8 @@ export function previewAssetPlacement(
 
   const acres = size.width * size.depth * terrain.horizontalFeetPerUnit ** 2 / 43560;
   const placement: PlacedAsset = { id, at: { ...position }, styleId: options.defaultStyleId ?? asset.styleId };
-  if (snap) placement.attachPad = snap.index;
-  return { ok: true, placement, cost: asset.cost, acres, attached: snap !== undefined };
+  if (lodgeAttach) placement.attachPad = padIndex;
+  return { ok: true, placement, cost: asset.cost, acres, attached: lodgeAttach };
 }
 
 const LEGACY_LOCATIONS = {
@@ -366,6 +424,20 @@ export function assetMultiplier(asset: PlacedAsset): number {
 
 export function assetEffect(asset: PlacedAsset, key: keyof Asset["effect"]): number {
   return (ASSET_CATALOG[asset.id].effect[key] ?? 0) * assetMultiplier(asset);
+}
+
+/** Seat counts scale with lodge tier; mood and hillValue are unchanged. */
+export function scaledAssetEffect(asset: PlacedAsset, lodgeTier: LodgeTier, key: keyof Asset["effect"]): number {
+  const raw = assetEffect(asset, key);
+  if (key !== "seats" || raw <= 0) return raw;
+  return Math.floor(raw * LODGE_TIERS[lodgeTier].seatMultiplier);
+}
+
+export function hospitalitySeats(assets: readonly PlacedAsset[], lodgeTier: LodgeTier): number {
+  return assets.reduce(
+    (sum, asset) => sum + (isRefuelHospitality(asset.id) ? scaledAssetEffect(asset, lodgeTier, "seats") : 0),
+    0,
+  );
 }
 
 export function assetRevenue(asset: PlacedAsset, founder?: import("./types").FounderId | null): number {

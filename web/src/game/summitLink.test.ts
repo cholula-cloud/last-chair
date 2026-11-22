@@ -192,38 +192,42 @@ describe("Abominable Snowglomerate offer", () => {
     expect(CLUB_BUS_DISCOUNT).toBe(10);
   });
 
-  it("triggers Tucker groomer breakdown in midpoint window and skips grooming if repair is declined", () => {
+  it("triggers groomer_down beat after heavy grooming and skips grooming if go_without is chosen", () => {
     const built = pickFounder(createBuiltHill(), "elena");
     const weatherDays = Array.from({ length: 42 }, (_, i) => built.weatherDays[i % built.weatherDays.length]);
-    const dayHistory = [
-      { day: 1, fare: "balanced" as const, snow: "mid" as const, weather: "clear" as const, recap: built.nightRecap!, snowCost: 150, constructionDue: 0, closingCash: 5000 },
-      { day: 2, fare: "balanced" as const, snow: "high" as const, weather: "clear" as const, recap: built.nightRecap!, snowCost: 350, constructionDue: 0, closingCash: 5000 },
+    const seasonDays = [
+      { day: 1, fare: "balanced" as const, snow: "mid" as const, arrivals: 30, satisfaction: 78 },
+      { day: 2, fare: "balanced" as const, snow: "high" as const, arrivals: 30, satisfaction: 78 },
+      { day: 3, fare: "balanced" as const, snow: "high" as const, arrivals: 30, satisfaction: 78 },
     ];
     const openDay15 = openNight({
       ...built,
       seasonLength: 42,
       weatherDays,
-      dayIndex: 15, // operatingDay 7 (in midpoint 7..13)
+      dayIndex: 15,
       weather: weatherDays[14].kind,
-      dayHistory,
+      seasonDays,
+      seasonGroomFeet: 6000,
       guests: [makeGuest({ id: "g3", state: "gone", runs: 3, waitMin: 3, waitCount: 2, snowSum: 2.5 })],
       dayStats: { ...built.dayStats, arrivals: 1, guestsArrived: 1, completedRuns: 3, runsPerGuest: 3, dispatched: 3 },
       completedBeats: ["first_load", "saturday"],
     });
-    expect(openDay15.groomerDown).toEqual({ active: true, decision: "pending", day: 15 });
+    expect(openDay15.pendingBeat).toBe("groomer_down");
     expect(sleep(openDay15)).toBe(openDay15);
 
-    const paid = decideGroomerDown(openDay15, "paid");
-    expect(paid.cash).toBe(openDay15.cash - GROOMER_REPAIR_COST);
-    expect(paid.groomerDown?.decision).toBe("paid");
+    const borrowed = decideGroomerDown(openDay15, "borrow");
+    expect(borrowed.cash).toBe(openDay15.cash - GROOMER_REPAIR_COST);
+    expect(borrowed.groomerDownDecision).toBe("borrow");
+    expect(borrowed.groomerDownTonight).toBe(false);
 
-    const skipped = decideGroomerDown(openDay15, "skipped");
+    const skipped = decideGroomerDown(openDay15, "go_without");
     expect(skipped.cash).toBe(openDay15.cash);
-    const paidSnow = previewOvernight(paid, "high").meanQuality;
+    expect(skipped.groomerDownTonight).toBe(true);
+    const borrowedSnow = previewOvernight(borrowed, "high").meanQuality;
     const skippedSnow = previewOvernight(skipped, "high").meanQuality;
-    expect(skippedSnow).toBeLessThanOrEqual(paidSnow);
+    expect(skippedSnow).toBeLessThanOrEqual(borrowedSnow);
 
     const morningAfterSkip = sleep(skipped);
-    expect(morningAfterSkip.groomerDown?.active).toBe(false);
+    expect(morningAfterSkip.groomerDownTonight).toBe(false);
   });
 });

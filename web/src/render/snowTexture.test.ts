@@ -23,6 +23,14 @@ describe("snowTextureData", () => {
     expect(data.length).toBe(SNOW_TEX_SEGMENTS * SNOW_TEX_TRAILS * 4);
   });
 
+  it("encodes gun-only segments in alpha", () => {
+    const trail = [{ depth: 0.5, quality: 0.5, coverage: 0.8 }];
+    const data = snowTextureData([trail], [[false]], "mid", [[true]]);
+    expect(data[3]).toBeCloseTo(0.42, 2);
+    const groomed = snowTextureData([trail], [[true]], "mid", [[true]]);
+    expect(groomed[3]).toBe(1);
+  });
+
   it("derives groomed from preset when absent", () => {
     expect(groomedForTrail(undefined, "minimal", 6).every((g) => !g)).toBe(true);
     expect(groomedForTrail(undefined, "high", 6).every((g) => g)).toBe(true);

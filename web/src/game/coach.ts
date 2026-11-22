@@ -87,7 +87,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "crew",
-    text: "Earn a crew point each night. Open Office Crew to pick, or sleep to auto-hire in roster order.",
+    text: "Earn a crew point each night. Open the talent tree to pick, or sleep to auto-hire.",
     when: (c) => c.phase === "night" && c.dayIndex >= 2,
   },
   {
@@ -126,20 +126,20 @@ export function problemGuide(
   const issue = demand ?? biggestProblem(recap.breakdown);
   switch (recap.arrivals ? issue : null) {
     case "seats":
-      return { layer: "slope", tab: "Crew", text: "Look for flat ground near the base on Slope, then check Crew for lodge space and venue unlocks." };
+      return { layer: "slope", tab: "Crew", text: "Look for flat ground near the base on Slope, then check the talent tree for lodge space and venue unlocks." };
     case "green":
-      return { layer: "slope", tab: "Crew", text: "Trace another gentle descent on Slope, then check Crew for trail skills." };
+      return { layer: "slope", tab: "Crew", text: "Trace another gentle descent on Slope, then check the talent tree for trail skills." };
     case "lines":
     case "queue":
       return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for what you can afford." };
     case "snow":
-      return { layer: "conditions", tab: "Desk", text: "Look at the cover on Conditions, then check tomorrow’s forecast at the Desk." };
+      return { layer: "guns", tab: "Desk", text: "Check Snow-making for gun reach, then pick Mid or High if thaw is in the forecast." };
     case "runs":
-      return { layer: "slope", tab: "Crew", text: "Hunt for a gentler route on Slope, then check Crew for your next lift or trail unlock." };
+      return { layer: "slope", tab: "Crew", text: "Hunt for a gentler route on Slope, then check the talent tree for your next lift or trail unlock." };
     case "value":
       return { layer: "conditions", tab: "Money", text: "See what the snow offered on Conditions, then compare ticket value and turnout in Money." };
     case "arrivalMood":
-      return { layer: "slope", tab: "Crew", text: "Find a gentle first run on Slope, then check Crew for what your hill has learned." };
+      return { layer: "slope", tab: "Crew", text: "Find a gentle first run on Slope, then check the talent tree for what your hill has learned." };
     default:
       return recap.cashDelta < 0
         ? { layer: "conditions", tab: "Money", text: "Check Conditions before you buy snow service, then see where today’s money went in Money." }

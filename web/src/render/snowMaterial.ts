@@ -7,7 +7,7 @@ import { SNOW_TEX_SEGMENTS, SNOW_TEX_TRAILS } from "./snowTexture";
 const color = (hex: string) => new THREE.Color(hex);
 
 /** When false, corridor condition art defers to the Conditions map overlay (row O3). */
-export const MOUNTAIN_TRAIL_CONDITIONING = false;
+export const MOUNTAIN_TRAIL_CONDITIONING = true;
 
 export const snowUniforms = {
   uSnow: { value: null as THREE.DataTexture | null },
@@ -73,7 +73,9 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
   float depth = seg.r;
   float quality = seg.g;
   float coverage = seg.b;
-  float groomed = seg.a;
+  float condition = seg.a;
+  float groomed = step(0.75, condition);
+  float gunOnly = step(0.12, condition) * (1.0 - groomed);
   float wear = uWear[int(row)];
   float n = snowHash(vSnowWorld.xz * uPatchScale);
   float barePatch = smoothstep(coverage - 0.04, coverage + 0.04, n);
@@ -89,6 +91,7 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
   float stripeMix = stripe * amp * vWeight;
   col = mix(col, mix(uSnowColor0, uSnowColor1, 0.35), stripeMix);
   col = mix(col, uSnowColor0, groomed * depth * 0.12 * vWeight);
+  col = mix(col, mix(uSnowColor0, uSnowColor3, 0.22), gunOnly * depth * 0.4 * vWeight);
   col *= 1.0 - 0.05 * uNight;
   diffuseColor.rgb = mix(diffuseColor.rgb, col, vWeight);
 }

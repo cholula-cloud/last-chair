@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import type { OrbitControlsImpl } from "./orbitControlsType";
 import { limitShift } from "./cameraControls";
 
 const PAN_CODES: Record<string, [number, number]> = {

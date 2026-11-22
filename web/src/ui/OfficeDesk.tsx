@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, type ReactNode } from "react";
+import { lodgeName } from "@/game/assetNames";
 import { needsAttention, type AttentionItem } from "@/game/attention";
+import { LODGE_TIERS } from "@/game/base";
 import { seasonCalendar } from "@/game/calendar";
+import { founderById } from "@/game/content";
 import { dailyCosts, liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { openingStep } from "@/game/rules";
@@ -17,7 +20,7 @@ import { whiterockBuyoutOffer } from "@/game/caretaker";
 import type { WeatherKind } from "@/game/types";
 import { outlookFor } from "@/game/weather";
 import { Forecast } from "@/ui/NightRecapSheet";
-import { closeOffice } from "@/ui/officeStore";
+import { closeOffice, setOfficeTab } from "@/ui/officeStore";
 import { requestFocus } from "@/ui/placementDraft";
 import { CheckIcon, MountainMoonIcon, SnowfallIcon, SunIcon, ThawIcon, WindIcon } from "@/ui/kit/icons";
 import { useOffice } from "@/ui/officeStore";
@@ -94,6 +97,9 @@ export function DeskTab() {
   const decideBid = useGameStore((s) => s.decideWhiterockCaretakerBid);
   const dismissHomecoming = useGameStore((s) => s.dismissHomecomingNotes);
 
+  const founder = founderById(state.founderId);
+  const tier = LODGE_TIERS[state.lodgeTier];
+
   return (
     <div className="grid grid-cols-1 gap-4 pb-2 md:grid-cols-2 md:items-start">
       <div className="flex flex-col gap-0">
@@ -141,6 +147,32 @@ export function DeskTab() {
             </section>
           </>
         )}
+
+        <SectionHeading>Hill &amp; founder</SectionHeading>
+        <section aria-label="Hill and founder" className="panel space-y-2 px-4 py-3">
+          {founder && (
+            <p className="text-sm font-bold leading-snug">
+              <span className="font-extrabold">{founder.name}</span>
+              <span className="text-ink-soft"> · {founder.title}</span>
+            </p>
+          )}
+          <p className="text-sm font-extrabold">
+            {lodgeName(state)} · Tier {state.lodgeTier}
+          </p>
+          <p className="text-xs font-bold leading-snug text-ink-soft">
+            Cap ~{tier.maxArrivals} skiers · Seating ×{tier.seatMultiplier} · {tier.stalls} parking · {tier.pads} pads
+            {state.lodgeUpgrade
+              ? ` · Upgrade: ${state.lodgeUpgrade.nightsRemaining} ${state.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} left`
+              : ""}
+          </p>
+          <button
+            type="button"
+            onClick={() => setOfficeTab("Crew")}
+            className="key press mt-1 min-h-11 w-full px-3 text-sm font-extrabold"
+          >
+            Open talent tree
+          </button>
+        </section>
         <SectionHeading>Today</SectionHeading>
         <section aria-label="Today" className="panel px-4 py-3">
           <p className="chip inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.85rem] font-extrabold">

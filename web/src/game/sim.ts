@@ -4,7 +4,17 @@ import type { OperatingCosts } from "./economy";
 import { calendarForSeason, dayKind, inHolidayWeek, guestMixForDay, type GuestMix, weekdayForDay, type CalendarDef } from "./calendar";
 import { TERRAIN } from "./terrain";
 import { isWindHeld, morningWeatherHeadline, windHoldWindow } from "./weather";
-import { ASSET_CATALOG, assetEffect, type AssetId, type PlacedAsset } from "./base";
+import {
+  ASSET_CATALOG,
+  assetEffect,
+  hasCafeForArrivals,
+  isRefuelHospitality,
+  LODGE_TIERS,
+  REFUEL_HOSPITALITY_IDS,
+  type AssetId,
+  type LodgeTier,
+  type PlacedAsset,
+} from "./base";
 import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
@@ -15,6 +25,7 @@ import {
   summitLinkFirstDay,
   type SummitLinkDecision,
 } from "./summitLink";
+import { GROOMER_DOWN_MIN_SEASON_FT } from "./groomerDown";
 import { runEnergyCost, runSkiMinutes } from "./trails";
 import { pickSkiRoute } from "./trailNetwork";
 import {
@@ -281,7 +292,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
       return reopensLater ? { ...joinLine(guest), joinedQueueAtMin: now } : goHome(guest);
     }
     if ((guest.balks ?? 0) < 2 && liftWaitMin(clock.lifts[index], clock.talentsOwned) > 12) {
-      const stop = visit(guest, ["cafe", "warming_hut", "apres_bar"], true);
+      const stop = visit(guest, [...REFUEL_HOSPITALITY_IDS], true);
       if (stop) return stop;
     }
     return joinLine(guest);
@@ -313,7 +324,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         const returning = {
           ...g,
           ...(asset?.id === "ski_school" ? { schoolLessonCompleted: true } : {}),
-          energy: asset && (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar") && g.visitMinutes !== 15
+          energy: asset && isRefuelHospitality(asset.id) && g.visitMinutes !== 15
             ? Math.min(1, g.energy + 0.35 * (asset.attachPad == null ? 1 : 1.05)) : g.energy,
         };
         return (g.runs === 0 && beginnerService(returning)) || chooseQueue(returning);
@@ -324,7 +335,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
         if (waited > 12 && (g.balks ?? 0) < 2) {
           const next = visit({
             ...g, waitMin: g.waitMin + waited, waitCount: g.waitCount + 1, joinedQueueAtMin: undefined,
-          }, ["cafe", "warming_hut", "apres_bar"], true);
+          }, [...REFUEL_HOSPITALITY_IDS], true);
           if (next) return next;
         }
         return g;
@@ -406,7 +417,7 @@ export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
           ? walkDurationMin(walkToLiftPath(trail?.path, destination), TERRAIN)
           : 0;
         if (!remote && !allHeld && energy < (g.persona === "family_pack" ? 0.65 : 0.4) && !g.refuelled && runs < g.targetRuns && lapEnds + 20 <= closeMin) {
-          const stop = visit({ ...skier, ...done }, ["cafe", "warming_hut", "apres_bar"]);
+          const stop = visit({ ...skier, ...done }, [...REFUEL_HOSPITALITY_IDS]);
           if (stop) return stop;
         }
         const waitForHold = allHeld ? Math.max(0, hold.toMin - now - walkingMin) : 0;
@@ -578,10 +589,12 @@ export function applyOvernight(opts: {
   buildings: BuildingId[];
   talentsOwned: string[];
   daysWithoutSnow: number;
+  hasMaintenanceGarage?: boolean;
 }): OvernightResult {
-  const hasGuns = opts.hasPlacedGuns ?? opts.buildings.includes("snow_guns");
+  const hasGuns = opts.hasPlacedGuns === true;
   const hasTrailGuns = TALENT.trailGuns.learned(opts.talentsOwned);
-  const hasGroom = TALENT.groomPass.learned(opts.talentsOwned);
+  const hasGarage = opts.hasMaintenanceGarage !== false;
+  const hasGroom = hasGarage && TALENT.groomPass.learned(opts.talentsOwned);
 
   const { kind: weather } = opts.weatherTomorrow;
   const night = { snow: opts.snow, weather, hasGuns, hasTrailGuns, hasGroom,
@@ -600,7 +613,7 @@ export function applyOvernight(opts: {
   return {
     trails,
     ...deriveSnow(trails.map((trail, i) => ({ confirmed: opts.openTrails?.[i] !== false, trail }))),
-    cash: opts.cash - snowNightCost(opts.snow, opts.talentsOwned),
+    cash: opts.cash - snowNightCost(opts.snow, opts.talentsOwned, hasGarage),
     groomVisible,
     gunCoverage,
     groomCoverage: opts.groomCoverage,
@@ -660,6 +673,8 @@ export type ArrivalInputs = {
   snowQuality: number;
   weather: WeatherKind;
   buildings: BuildingId[];
+  assets?: readonly PlacedAsset[];
+  lodgeTier?: LodgeTier;
   talentsOwned: string[];
   founderId: FounderId | null;
   /** Word of mouth, 0–100. Defaults to a new hill's. */
@@ -680,12 +695,14 @@ function arrivalCount(opts: ArrivalInputs, noise: number): number {
   if (opts.weather === "storm") base -= TALENT.earlyPlow.learned(opts.talentsOwned) ? TALENT.earlyPlow.stormPenalty : 5;
   if (opts.weather === "thaw") base -= 4;
   if (opts.snowQuality < 0.4) base -= 3;
-  if (opts.buildings.includes("cafe")) base += 1;
+  if (hasCafeForArrivals(opts.buildings, opts.assets ?? [])) base += 1;
   if (TALENT.ticketBooth.learned(opts.talentsOwned) && weekend) base += TALENT.ticketBooth.visitors;
   if (TALENT.schoolDay.learned(opts.talentsOwned) && !weekend) base += TALENT.schoolDay.visitors;
   const founder = founderById(opts.founderId);
   if (founder) base += Math.round(founder.arrivalMoodBonus * 20);
-  return Math.max(12, Math.min(64, base));
+  const tier = opts.lodgeTier ?? 1;
+  const cap = LODGE_TIERS[tier].maxArrivals;
+  return Math.max(12, Math.min(cap, base));
 }
 
 /** Honest next-day arrivals (fare against reputation, weather, buildings, founder). */
@@ -712,6 +729,8 @@ export type BeatCheckInput = {
   reputation: number;
   schoolOfferReady: boolean;
   completedBeats: StoryBeatId[];
+  seasonGroomFeet?: number;
+  recentSnowPresets?: readonly SnowPreset[];
 };
 
 export function readyStoryBeat(input: BeatCheckInput): StoryBeatId | null {
@@ -734,6 +753,16 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
       return input.schoolOfferReady;
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
+    case "groomer_down": {
+      const len = input.seasonLength ?? 28;
+      const midStart = Math.floor(len / 3);
+      const midEnd = Math.ceil((2 * len) / 3);
+      if (input.dayIndex < midStart || input.dayIndex > midEnd) return false;
+      if ((input.seasonGroomFeet ?? 0) < GROOMER_DOWN_MIN_SEASON_FT) return false;
+      const recent = input.recentSnowPresets ?? [];
+      const midHigh = recent.filter((p) => p === "mid" || p === "high").length;
+      return recent.length >= 3 && midHigh >= 3;
+    }
     case "summit_link":
       return input.reputation >= SUMMIT_LINK_MIN_REPUTATION &&
         input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length, input.founderId ?? null) &&

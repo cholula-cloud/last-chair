@@ -5,7 +5,7 @@ import { TALENT } from "@/game/talents";
 import { useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, previewOvernight, schoolContractOfferDay, summitLinkOfferOpen } from "@/game/rules";
+import { expectedArrivals, previewOvernight, schoolContractOfferDay, snowServiceStats, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
@@ -17,7 +17,7 @@ import { nextTalentName, type NightRecap } from "@/game/sim";
 import { pickableTalents, CREW_RUSH_COST } from "@/game/talentProgress";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
-import { CLUB_BUS_DISCOUNT, CLUB_BUS_SKIERS, GROOMER_REPAIR_COST, SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { CLUB_BUS_DISCOUNT, CLUB_BUS_SKIERS, SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { NIGHT_LIGHTS_COST, NIGHT_SESSION_UPKEEP, mountTomNightNet } from "@/game/mountains/mountTom";
 import {
   INSPECTOR_REPAIR_COST,
@@ -59,6 +59,7 @@ import { RadioCard } from "@/ui/kit/RadioCard";
 import { LoanCard } from "@/ui/LoanCard";
 import { SummitLinkCard } from "@/ui/SummitLinkCard";
 import { SchoolContractCard } from "@/ui/SchoolContractCard";
+import { GroomerDownCard } from "@/ui/GroomerDownCard";
 import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
 const WEEKDAY_FULL: Record<string, string> = {
@@ -363,12 +364,21 @@ function Choices({
     SnowPreset,
     ReturnType<typeof previewOvernight>
   >;
-  const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => ({
-    value: v,
-    label: SNOW_LABELS[v],
-    detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
-    note: `~${Math.round(previews[v].meanQuality * 100)}% quality`,
-  }));
+  const tomorrow = night.weatherDays[night.dayIndex];
+  const thawOutlook = (outlookFor(night, 1)?.thaw ?? 0) >= 0.45;
+  const snowOptions: ChoiceOption<SnowPreset>[] = SNOWS.map((v) => {
+    const stats = snowServiceStats(night, v, tomorrow);
+    const crew =
+      v === "minimal"
+        ? "guns and cat off"
+        : `guns on ${stats.gunSegments} seg · cat ${stats.groomFeet.toLocaleString()} ft`;
+    return {
+      value: v,
+      label: SNOW_LABELS[v],
+      detail: previews[v].cost ? `${formatMoney(previews[v].cost)}/night` : "Free",
+      note: `${crew} · ~${Math.round(previews[v].meanQuality * 100)}% quality`,
+    };
+  });
   const installNightLights = useGameStore((s) => s.installNightLights);
   const setNightSession = useGameStore((s) => s.setNightSession);
   const worth = Math.round(expectedHillValue(night.reputation, night.buildings, night.talentsOwned));
@@ -393,6 +403,18 @@ function Choices({
       <p className="mt-2.5 text-[0.85rem] font-bold leading-snug text-ink-soft" aria-live="polite">
         This service should leave the snow at about {Math.round(chosen.meanQuality * 100)}% quality by morning.
         In the most likely weather, that looks like {chosen.label.toLowerCase()}.
+        {pendingSnow !== "minimal" && (
+          <>
+            {" "}
+            {(() => {
+              const s = snowServiceStats(night, pendingSnow, tomorrow);
+              return `Snow guns hit ${s.gunSegments} trail segments; the cat grooms about ${s.groomFeet.toLocaleString()} ft.`;
+            })()}
+          </>
+        )}
+        {thawOutlook && pendingSnow !== "minimal" && night.guns.length > 0 && (
+          <> Thaw is likely tonight: guns hold the base; grooming fixes how it skis.</>
+        )}
       </p>
       <p className="mt-1 text-[0.85rem] font-extrabold tabular-nums" aria-live="polite">
         {chosen.cost ? `The crew charges ${formatMoney(chosen.cost)} when you sleep.` : "Service is free tonight."}
@@ -447,7 +469,6 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
   const decideClubBooking = useGameStore((s) => s.decideClubBooking);
-  const decideGroomerDown = useGameStore((s) => s.decideGroomerDown);
   const decideOrchardParcel = useGameStore((s) => s.decideOrchardParcel);
   const decideInspectorNotice = useGameStore((s) => s.decideInspectorNotice);
   const tipsOn = useSettings(s => s.tips);
@@ -477,10 +498,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
   const showSummitOffer = summitLinkOfferOpen(night);
   const showSchoolOffer = night.pendingBeat === "school_bus" && schoolContractOfferDay(night) !== null;
+  const groomerChoiceNeeded = pendingBeat === "groomer_down" && night.groomerDownDecision === null;
+  const showGroomerOffer = groomerChoiceNeeded;
   const showClubOffer = night.clubBooking?.decision === "pending";
-  const showGroomerOffer = Boolean(
-    night.groomerDown?.active && night.groomerDown.decision === "pending" && night.groomerDown.day === dayIndex,
-  );
   const showOrchardOffer = night.mountainId === "maple_valley" && night.orchardParcel === "pending";
   const showInspectorOffer = night.mountainId === "maple_valley" && night.inspectorNotice?.decision === "pending";
   const showBusSummary = Boolean(night.nightRecap?.facts.schoolBus);
@@ -498,11 +518,11 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const summitLinkOffer = showSummitOffer;
   const canSleep =
     !summitLinkOffer &&
+    !groomerChoiceNeeded &&
     !showClubOffer &&
-    !showGroomerOffer &&
     !showOrchardOffer &&
     !showInspectorOffer &&
-    (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
+    (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus" && pendingBeat !== "groomer_down"));
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
   const guide = tipsOn && !guideSeen ? problemGuide(recap, demand?.key) : null;
@@ -520,22 +540,34 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
       <div className="chip mt-4 space-y-2 px-3.5 py-2.5 text-[0.92rem] font-bold">
         {night.crewPoints > 0 ? (
           <p>
-            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Spend them in Office → Crew before you sleep.
+            {night.crewPoints} crew {night.crewPoints === 1 ? "point" : "points"} ready. Spend them in Office → Talent tree before you sleep.
           </p>
         ) : nextTalent ? (
           <p>
             Sleep to earn 1 crew point. Next skill: {talentDescription(nextTalent, night)}
           </p>
         ) : null}
-        {pickableTalents(night).length > 0 && (
-          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => onOffice("Crew")}>
-            Choose crew skill
-          </button>
-        )}
-        {showRush && (
-          <button type="button" className="key press min-h-11 w-full px-3 text-sm font-extrabold" onClick={() => rushCrewPoint()}>
-            Rush +1 point ({formatMoney(CREW_RUSH_COST)})
-          </button>
+        {(pickableTalents(night).length > 0 || showRush) && (
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {pickableTalents(night).length > 0 && (
+              <button
+                type="button"
+                className="key press min-h-11 flex-1 px-3 text-sm font-extrabold"
+                onClick={() => onOffice("Crew")}
+              >
+                Open talent tree
+              </button>
+            )}
+            {showRush && (
+              <button
+                type="button"
+                className="key press min-h-11 flex-1 px-3 text-sm font-extrabold"
+                onClick={() => rushCrewPoint()}
+              >
+                Rush +1 ({formatMoney(CREW_RUSH_COST)})
+              </button>
+            )}
+          </div>
         )}
       </div>
     </>
@@ -568,11 +600,11 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             >
               {summitLinkOffer && "Answer Sloane before you turn in."}
               {!summitLinkOffer && showSchoolOffer && "Give Hank an answer on the school bus before you turn in."}
-              {!summitLinkOffer && !showSchoolOffer && showClubOffer && "Answer the Bennington Ski Club before you turn in."}
-              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && showGroomerOffer && "Tell Frank whether to borrow the town machine tonight."}
-              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && showOrchardOffer && "Answer Rosa on the Maple Valley orchard parcel."}
-              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && showInspectorOffer && "Answer the Vermont tramway inspector before turning in."}
-              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && "Read the radio message, then tap Got it."}
+              {!summitLinkOffer && !showSchoolOffer && showGroomerOffer && "Tell Frank whether you're borrowing the town cat or running guns only."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && showClubOffer && "Answer the Bennington Ski Club before you turn in."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && showOrchardOffer && "Answer Rosa on the Maple Valley orchard parcel."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && showInspectorOffer && "Answer the Vermont tramway inspector before turning in."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && !showInspectorOffer && "Read the radio message, then tap Got it."}
             </p>
           )}
           {planNight && (
@@ -679,7 +711,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
 
         <SummitLinkCard night={night} />
         {!showSummitOffer && <SchoolContractCard night={night} />}
-        {!showSummitOffer && !showSchoolOffer && night.clubBooking && (() => {
+        {!showSummitOffer && !showSchoolOffer && <GroomerDownCard night={night} />}
+        {!showSummitOffer && !showSchoolOffer && !showGroomerOffer && night.clubBooking && (() => {
           if (night.clubBooking.decision === "pending") {
             const clubDate = dayLabel(seasonCalendar(night), night.clubBooking.day);
             const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
@@ -729,40 +762,6 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             );
           }
           return null;
-        })()}
-        {!showSummitOffer && !showSchoolOffer && !showClubOffer && night.groomerDown && night.groomerDown.day === dayIndex && (() => {
-          if (night.groomerDown.decision === "pending") {
-            const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
-            return (
-              <RadioCard
-                title="Groomer threw a track"
-                from="Frank Oka"
-                action={
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      className={`${btnClass} [--key-fill:var(--sign-yellow)]`}
-                      onClick={() => decideGroomerDown("paid")}
-                    >
-                      Borrow town rig ({formatMoney(GROOMER_REPAIR_COST)})
-                    </button>
-                    <button type="button" className={btnClass} onClick={() => decideGroomerDown("skipped")}>
-                      Skip grooming ($0)
-                    </button>
-                  </div>
-                }
-              >
-                {surpriseRadio({ dayIndex, kind: "groomer_down", affectedGuests: 0 }, night.operatorName ?? null).radio}
-              </RadioCard>
-            );
-          }
-          return (
-            <p className="chip mt-3 px-3 py-2 text-sm font-bold">
-              {night.groomerDown.decision === "paid"
-                ? `Borrowed the town machine (${formatMoney(GROOMER_REPAIR_COST)}). Overnight grooming stays on schedule.`
-                : "Skipped the town borrow tonight. Grooming resumes tomorrow night."}
-            </p>
-          );
         })()}
         {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && showOrchardOffer && (() => {
           const copy = mapleValleyRadioNote("orchard_bid", night.operatorName ?? null);
@@ -818,7 +817,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
           );
         })()}
         {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && !showBusSummary &&
-          radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
+          radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && pendingBeat !== "groomer_down" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={

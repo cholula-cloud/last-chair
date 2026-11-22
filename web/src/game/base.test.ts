@@ -16,7 +16,7 @@ import {
 } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { REFERENCE_TOPS } from "./descent";
-import { checkAssetPlacement, checkPlacement, closeLift, pickFounder, placeAsset, placeLift } from "./rules";
+import { checkAssetPlacement, checkPlacement, closeLift, pickFounder, placeAsset, placeAssetAtPad, placeLift } from "./rules";
 import { TERRAIN } from "./terrain";
 
 describe("lodge progression", () => {
@@ -26,7 +26,7 @@ describe("lodge progression", () => {
     const firstSleep = advanceLodgeUpgrade({ toTier: 2, nightsRemaining: 2 });
     expect(firstSleep).toEqual({ toTier: 2, nightsRemaining: 1 });
     expect(advanceLodgeUpgrade(firstSleep!)).toBeNull();
-    expect(lodgeTierUnlocks(2)).toEqual(expect.arrayContaining(["Double chair", "Rentals", "Ski school desk"]));
+    expect(lodgeTierUnlocks(2)).toEqual(expect.arrayContaining(["Double chair", "Rental shop", "Ski school desk"]));
   });
 
   it("migrates existing venues in place and folds old lodge purchases into the fixed site", () => {
@@ -48,14 +48,19 @@ describe("venue placement", () => {
     expect(previewAssetPlacement("snow_guns", at, 2, assets).ok).toBe(false);
   });
 
-  it("snaps to a free pad and gives exactly a five percent bonus to effects and per-use revenue", () => {
+  it("never proximity-snaps; lodge pad attach requires padIndex and gives exactly +5%", () => {
     const pad = lodgeAttachPads(2)[0];
-    const preview = previewAssetPlacement("cafe", { ...pad, x: pad.x + 0.1 }, 2, assets);
+    const detached = { x: 11.5, z: 15.5 };
+    expect(previewAssetPlacement("cafe", detached, 2, assets)).toMatchObject({ ok: true, attached: false });
+    expect(previewAssetPlacement("cafe", { ...pad, x: pad.x + 0.1 }, 2, assets, { padIndex: 0 })).toMatchObject({
+      ok: true, attached: true, placement: { at: pad, attachPad: 0 },
+    });
+    const preview = previewAssetPlacement("cafe", pad, 2, assets, { padIndex: 0 });
     expect(preview).toMatchObject({ ok: true, attached: true, placement: { at: pad, attachPad: 0 } });
     if (!preview.ok) throw new Error(preview.reason);
     expect(assetRevenue(preview.placement)).toBeCloseTo(9.45, 8);
     expect(assetEffect(preview.placement, "hillValue")).toBeCloseTo(3.15, 8);
-    expect(previewAssetPlacement("shop", pad, 2, [...assets, preview.placement])).toEqual({
+    expect(previewAssetPlacement("shop", pad, 2, [...assets, preview.placement], { padIndex: 0 })).toEqual({
       ok: false,
       reason: "Another venue already has that lodge pad. Try a different pad.",
     });
@@ -67,7 +72,7 @@ describe("venue placement", () => {
     const wings: PlacedAsset[] = [];
     for (const [index, pad] of lodgeAttachPads(3).entries()) {
       const id = index === 0 ? "cafe" : "shop";
-      const preview = previewAssetPlacement(id, pad, 3, wings);
+      const preview = previewAssetPlacement(id, pad, 3, wings, { padIndex: index });
       expect(preview).toMatchObject({
         ok: true, attached: true, placement: { attachPad: index },
       });
@@ -75,6 +80,16 @@ describe("venue placement", () => {
       wings.push(preview.placement);
     }
     expect(lodgeAttachPads(3)).toHaveLength(2);
+  });
+
+  it("placeAssetAtPad sets attachPad only through the pad inspector flow", () => {
+    const state = { ...pickFounder(createBuiltHill(3), "elena"), lodgeTier: 2 as const, cash: 5000 };
+    const pad = lodgeAttachPads(2)[0];
+    const built = placeAssetAtPad(state, "cafe", 0);
+    expect(built).not.toBe(state);
+    expect(built.assets.at(-1)).toMatchObject({ id: "cafe", at: pad, attachPad: 0 });
+    const detached = placeAsset(built, "shop", { x: 11.5, z: 15.5 });
+    expect(detached.assets.at(-1)?.attachPad).toBeUndefined();
   });
 
   it("protects the lodge, parking lot and approach path from detached buildings", () => {

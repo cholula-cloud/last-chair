@@ -4,6 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { type AssetId, type LodgeTier, type PlacedAsset } from "@/game/base";
+import { hasMaintenanceGarage } from "@/game/base";
 import { groomCoverage } from "@/game/guns";
 import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
@@ -24,18 +25,21 @@ import {
   useKit,
 } from "./kit";
 import { useVillageKitScenes, type VillageKitName } from "./useVillageKits";
-import { HOUSES, LODGE, ROAD_Z, SNOWCAT_POS } from "./layout";
+import { footpathLampPosts } from "./footpathSurface";
+import { HOUSES, LODGE, ROAD_Z, SITE, SNOWCAT_POS } from "./layout";
 import { OVERLAY_DIM } from "./terrainOverlay";
 
-/** Lamp posts along the road and around the base, with soft light pools. */
-const LAMPS: [number, number][] = [
-  [-7.2, ROAD_Z - 3.3],
-  [6.0, ROAD_Z - 3.3],
-  [18.0, ROAD_Z - 3.3],
-  [30.0, ROAD_Z - 3.3],
-  [6.9, LODGE.z + 2.1],
-  [18.3, LODGE.z + 0.9],
-];
+/** Route 100 edge lights plus evenly spaced posts along the lot→lodge walk. */
+function baseLampPosts(): [number, number][] {
+  const z = ROAD_Z - 3.3;
+  const { xFrom, xTo } = SITE.road;
+  const span = xTo - xFrom;
+  const roadXs = [0.12, 0.38, 0.64, 0.88].map((f) => xFrom + span * f);
+  return [
+    ...roadXs.map((x) => [x, z] as [number, number]),
+    ...footpathLampPosts(SITE).map((p) => [p.x, p.z] as [number, number]),
+  ];
+}
 const LODGE_GROUND = TERRAIN.height(LODGE.x, LODGE.z);
 const TIMBER = "#704133";
 const TRIM = "#e6d8be";
@@ -43,8 +47,12 @@ const ASSET_MODELS: Partial<Record<AssetId, KitAsset>> = {
   cafe: "cafe",
   shop: "ski-shop",
   warming_hut: "warming-hut",
-  rentals: "ski-shop",
-  ski_school: "warming-hut",
+  rentals: "rental-shop",
+  ski_school: "ski-school-desk",
+  waffle_haus: "waffle-haus",
+  ticket_booth: "ticket-booth",
+  patrol_hut: "patrol-hut",
+  maintenance_garage: "maintenance-garage",
 };
 
 /** Soft amber radial gradient used for the lamp light pools. */
@@ -68,30 +76,50 @@ function lightPoolTexture(): THREE.CanvasTexture | null {
 type Placement = { name: VillageKitName; x: number; z: number; yaw: number; scale: number; asset?: AssetMarker };
 
 export const LODGE_BASE_KIT = "base-lodge" as const satisfies KitAsset;
-export const LODGE_ANNEX_KITS = ["lodge-annex-2", "lodge-annex-3"] as const satisfies readonly KitAsset[];
+export const LODGE_TIER_SHELL_KITS = ["lodge-tier-2", "lodge-tier-3"] as const satisfies readonly KitAsset[];
+
+/** One full-shell lodge GLB per sim tier at the lodge anchor. */
+export function lodgeTierKit(tier: LodgeTier, lodgeStyleId: string): VillageKitName {
+  if (tier === 1) return resolveLodgeCoreKit(lodgeStyleId) as VillageKitName;
+  const styleOf = tier === 2 ? "lodge-tier-2" : "lodge-tier-3";
+  return resolveStyledKit(styleOf, lodgeStyleId) as VillageKitName;
+}
 
 /** Structural lodge pieces drawn at the lodge anchor for the current sim tier. */
 export function lodgeStructureKits(tier: LodgeTier, lodgeStyleId: string): readonly VillageKitName[] {
-  const kits: VillageKitName[] = [resolveLodgeCoreKit(lodgeStyleId) as VillageKitName];
-  if (tier >= 2) kits.push(resolveStyledKit("lodge-annex-2", lodgeStyleId) as VillageKitName);
-  if (tier >= 3) kits.push(resolveStyledKit("lodge-annex-3", lodgeStyleId) as VillageKitName);
-  return kits;
+  return [lodgeTierKit(tier, lodgeStyleId)];
 }
 
 /** Kit assets the village merge loop must register (prevents tier lodge skip). */
 export const VILLAGE_SCENE_KITS = [
   LODGE_BASE_KIT,
-  ...LODGE_ANNEX_KITS,
+  ...LODGE_TIER_SHELL_KITS,
   "lodge-tier-1-chalet70s",
-  "lodge-annex-2-chalet70s",
-  "lodge-annex-3-chalet70s",
+  "lodge-tier-2-chalet70s",
+  "lodge-tier-3-chalet70s",
+  "lodge-tier-1-aframe60s",
+  "lodge-tier-2-aframe60s",
+  "lodge-tier-3-aframe60s",
+  "lodge-tier-1-adirondack",
+  "lodge-tier-2-adirondack",
+  "lodge-tier-3-adirondack",
+  "lodge-tier-1-sugarhouse",
+  "lodge-tier-2-sugarhouse",
+  "lodge-tier-3-sugarhouse",
   "clapboard-house",
   "cafe",
   "cafe-chalet70s",
   "ski-shop",
   "ski-shop-chalet70s",
+  "rental-shop",
+  "rental-shop-chalet70s",
   "warming-hut",
   "warming-hut-chalet70s",
+  "waffle-haus",
+  "ski-school-desk",
+  "ticket-booth",
+  "patrol-hut",
+  "maintenance-garage",
   "lamp-post",
   "tubing-hut",
   "ice-rink",
@@ -116,17 +144,16 @@ export function villagePlacements(
   }));
   list.push(
     ...HOUSES.map((h) => ({ name: "clapboard-house" as const, ...h, scale: B })),
-    ...LAMPS.map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
+    ...baseLampPosts().map(([x, z]) => ({ name: "lamp-post" as const, x, z, yaw: 0, scale: P })),
   );
   for (const [index, asset] of assets.entries()) {
     if (asset.id === "direction_sign") continue;
     const base = ASSET_MODELS[asset.id] ?? kitForAsset(asset.id);
     if (!base) continue;
     const attached = asset.attachPad !== undefined;
-    const kitBase = attached ? "warming-hut" : base;
     const name = (ASSET_MODELS[asset.id]
-      ? resolveVenueKit(kitBase, asset.styleId)
-      : kitBase) as VillageKitName;
+      ? resolveVenueKit(base, asset.styleId)
+      : base) as VillageKitName;
     list.push({
       name,
       ...asset.at,
@@ -205,7 +232,13 @@ export function Village() {
   const night = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength ? s : null);
   const groom = useMemo(() => {
     if (!night || night.pendingSnow === "minimal") return null;
-    const coverage = groomCoverage(night.trails, night.dayStats.runsByTrail, night.pendingSnow, night.talentsOwned);
+    const coverage = groomCoverage(
+      night.trails,
+      night.dayStats.runsByTrail,
+      night.pendingSnow,
+      night.talentsOwned,
+      hasMaintenanceGarage(night.assets, night.lodgeTier),
+    );
     const index = coverage.findIndex(row => row.some(Boolean));
     if (index < 0) return null;
     const first = coverage[index].indexOf(true) / coverage[index].length;
@@ -245,11 +278,13 @@ export function Village() {
   const tex = useMemo(() => lightPoolTexture(), []);
   useEffect(() => () => tex?.dispose(), [tex]);
 
+  const lamps = useMemo(() => baseLampPosts(), []);
+
   useEffect(() => {
     const m = pools.current;
     if (!m) return;
     const d = new THREE.Object3D();
-    LAMPS.forEach(([x, z], i) => {
+    lamps.forEach(([x, z], i) => {
       d.position.set(x, TERRAIN.height(x, z) + 0.035, z);
       d.rotation.set(-Math.PI / 2, 0, 0);
       d.scale.setScalar(1);
@@ -260,9 +295,9 @@ export function Village() {
     d.position.set(LODGE.x, TERRAIN.height(LODGE.x, LODGE.z + 0.9) + 0.035, LODGE.z + 0.95);
     d.scale.set(1.8, 1.2, 1);
     d.updateMatrix();
-    m.setMatrixAt(LAMPS.length, d.matrix);
+    m.setMatrixAt(lamps.length, d.matrix);
     m.instanceMatrix.needsUpdate = true;
-  }, []);
+  }, [lamps]);
 
   useFrame(({ clock }) => {
     if (catRef.current) {
@@ -300,7 +335,7 @@ export function Village() {
         <mesh key={`${p.name}-${p.x}-${p.z}`} position={[p.x, y, p.z]} rotation-y={p.yaw} scale={p.scale}
           geometry={geometry} visible={false} dispose={null} userData={{ asset: p.asset }} />
       ))}
-      <instancedMesh ref={pools} args={[undefined, undefined, LAMPS.length + 1]} renderOrder={3}>
+      <instancedMesh ref={pools} args={[undefined, undefined, Math.max(1, lamps.length + 1)]} renderOrder={3}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial
           ref={poolMat}
