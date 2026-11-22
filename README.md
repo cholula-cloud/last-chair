@@ -9,6 +9,7 @@ A cozy 3D ski-hill tycoon for the browser, built for iPhone and iPad Safari firs
 | Doc | What it is |
 |---|---|
 | [docs/MASTER_PLAN.md](./docs/MASTER_PLAN.md) | **Start here.** Game plan and design: story, modes, build experience, roadmap, how we work |
+| [docs/STORY.md](./docs/STORY.md) | **Story Mode bible.** Player backstory, Cold Open, cast, surprise catalog, New England roster, and N track |
 | [docs/SIMULATION_SPEC.md](./docs/SIMULATION_SPEC.md) | Numbers and formulas, with implemented-vs-spec status |
 | [docs/WORLD.md](./docs/WORLD.md) | Dutch Hill, cast, founders, career mountains, lore |
 | [docs/ART_DIRECTION.md](./docs/ART_DIRECTION.md) | Look, palette, scene layout, asset pipeline |
@@ -36,7 +37,7 @@ Open http://localhost:3000/play. `/` is the landing page.
 | `npm test` | Vitest unit tests (`npm run test:watch` to watch) |
 | `npm run check` | Lint, typecheck, test, build, stopping at the first failure |
 | `npm run playtest:smoke` | Fast Playwright smoke (Chromium 390×844) |
-| `npm run playtest:p0` | Full operating-calendar Playwright winter (21 open days) |
+| `npm run playtest:p0` | Full operating-calendar Playwright winter (18 open days on Dutch Hill, 21 on Act II+) |
 
 CI **`check`** (lint, typecheck, test, m2-gate, build, bundle) runs on every PR. Player-visible changes also run **`e2e-pr`** (one Chromium smoke). Full browser matrix runs **nightly** (`e2e-nightly.yml`).
 
