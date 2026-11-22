@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(15);
+    expect(SAVE_VERSION).toBe(16);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -78,6 +78,19 @@ describe("M3 schema migration", () => {
     expect(result.reset).toBe(false);
     expect(result.state.lodgeStyleId).toBe("1950s-timber");
     expect(result.state.assets[0].styleId).toBe("1950s-timber");
+  });
+
+  it("adds vivianVisit, clubBooking, and groomerDown defaults when upgrading from schema 15", () => {
+    const base = toPersisted(createInitialState(7));
+    const v15 = { ...base };
+    delete (v15 as { vivianVisit?: unknown }).vivianVisit;
+    delete (v15 as { clubBooking?: unknown }).clubBooking;
+    delete (v15 as { groomerDown?: unknown }).groomerDown;
+    const result = migrate(v15, 15);
+    expect(result.reset).toBe(false);
+    expect(result.state.vivianVisit).toBeNull();
+    expect(result.state.clubBooking).toBeNull();
+    expect(result.state.groomerDown).toBeNull();
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

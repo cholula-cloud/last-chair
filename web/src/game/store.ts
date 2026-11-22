@@ -66,6 +66,8 @@ type GameActions = {
   acknowledgeBeat: () => void;
   replyToSummitLink: (reply: SummitLinkDecision) => void;
   decideSchoolContract: (decision: SchoolContractDecision) => void;
+  decideClubBooking: (decision: "accepted" | "declined") => void;
+  decideGroomerDown: (decision: "paid" | "skipped") => void;
   markTipSeen: (id: string) => void;
   resetTips: () => void;
   finishWinterReview: () => void;
@@ -299,6 +301,8 @@ export const useGameStore = create<GameStore>()(
         acknowledgeBeat: command("acknowledgeBeat"),
         replyToSummitLink: action("replyToSummitLink"),
         decideSchoolContract: action("decideSchoolContract"),
+        decideClubBooking: action("decideClubBooking"),
+        decideGroomerDown: action("decideGroomerDown"),
         finishWinterReview: command("finishWinterReview"),
         startNewSeason: command("startNewSeason"),
         nextTalentHint: () => rules.nextTalentHint(get()),

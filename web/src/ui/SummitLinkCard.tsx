@@ -4,11 +4,10 @@ import { formatMoney } from "@/game/format";
 import { summitLinkOfferOpen } from "@/game/rules";
 import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
-import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import { summitLinkOfferPayment } from "@/game/summitLink";
 import { FARE_PRICES } from "@/game/types";
 import { RadioCard } from "@/ui/kit/RadioCard";
 
-const payment = formatMoney(SUMMIT_LINK_PAYMENT);
 const maxFare = formatMoney(FARE_PRICES.balanced);
 
 export function SummitLinkCard({ night }: { night: GameState }) {
@@ -23,6 +22,14 @@ export function SummitLinkCard({ night }: { night: GameState }) {
     );
   }
   if (!summitLinkOfferOpen(night)) return null;
+  const offerPayment = formatMoney(summitLinkOfferPayment(night.reputation));
+  const visit = night.vivianVisit;
+  const scoutLine = visit
+    ? ` Our scout clocked ${Math.round(visit.avgWaitMin)}-min lift lines and ${Math.round(visit.avgSnow * 100)}% cover on Day ${visit.day}.`
+    : "";
+  const tomLine = night.founderId === "tom"
+    ? " Tom's contacts pushed the offer across early."
+    : "";
 
   const blocked = !canTakeSummitLinkEquity(night);
   const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
@@ -45,7 +52,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
               aria-describedby={blocked ? "summitlink-founder-lock" : undefined}
               onClick={() => useGameStore.getState().replyToSummitLink("accepted")}
             >
-              Take {payment} (cap tickets)
+              Take {offerPayment} (cap tickets)
             </button>
             <button
               type="button"
@@ -59,7 +66,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
       }
     >
       {formatOperatorText(
-        `{name}, we can wire ${payment} to Dutch Hill tonight. In exchange, your lift tickets stay capped at Balanced (${maxFare}) for the rest of the winter.`,
+        `{name}, we can wire ${offerPayment} to Dutch Hill tonight.${scoutLine}${tomLine} In exchange, your lift tickets stay capped at Balanced (${maxFare}) for the rest of the winter.`,
         night.operatorName ?? null,
       )}
     </RadioCard>

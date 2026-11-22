@@ -188,5 +188,31 @@ describe("Route 100 surprises", () => {
     expect(surpriseRadio({ dayIndex: 8, kind: "former_regulars", affectedGuests: 3 }, null, { fare: "cheap" }).radio).toContain("six dollars");
     expect(dryWeekRadio(0)).toContain("no snow guns yet");
     expect(dryWeekRadio(1)).toContain("Snow guns need cold air");
+
+    // DH6 Whiterock scout visit in Week 2-3 weekend when rep >= 40
+    const scout = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 9, // Week 2 Sat
+      seasonSeed: mix32(7),
+      weather: "clear",
+      reputation: 45,
+      hasSloaneVisit: false,
+      surpriseLog: [],
+    }, guests);
+    expect(scout.surprise?.kind).toBe("sloane_visit");
+    expect(scout.guests.some((g) => g.id === "sloane-scout" && g.label === "Visitor in a very clean jacket")).toBe(true);
+
+    // DH13 Last Saturday set piece + Grammy Dot cameo when rep >= 60
+    const lastSat = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 37, // Week 6 Sat (openDay 17 of 18)
+      seasonSeed: mix32(7),
+      weather: "clear",
+      reputation: 64,
+      surpriseLog: [],
+    }, guests);
+    expect(lastSat.surprise?.kind).toBe("last_saturday");
+    expect(lastSat.guests.some((g) => g.id.startsWith("lastsat-"))).toBe(true);
+    expect(surpriseRadio({ dayIndex: 37, kind: "last_saturday", affectedGuests: 6 }, null, { reputation: 64 }).radio).toContain("Grammy Dot");
   });
 });

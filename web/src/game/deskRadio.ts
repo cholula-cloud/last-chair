@@ -17,11 +17,15 @@ export function lodgeOpeningRadio(tier: number): string {
  */
 export function latestRadio(
   state: Pick<GameState, "surpriseLog" | "completedBeats" | "dayIndex"> &
-    Partial<Pick<GameState, "pendingBeat" | "seasonDays" | "beatLog" | "operatorName" | "fare" | "guns">>,
+    Partial<Pick<GameState, "pendingBeat" | "seasonDays" | "beatLog" | "operatorName" | "fare" | "guns" | "vivianVisit" | "reputation">>,
 ): DeskRadio | null {
   const operatorName = state.operatorName ?? null;
   const gunsCount = state.guns?.length;
-  const surpriseCtx = state.fare ? { fare: state.fare } : undefined;
+  const surpriseCtx = {
+    ...(state.fare ? { fare: state.fare } : {}),
+    ...(state.vivianVisit !== undefined ? { vivianVisit: state.vivianVisit } : {}),
+    ...(state.reputation !== undefined ? { reputation: state.reputation } : {}),
+  };
   const moment = state.surpriseLog.at(-1);
   const pending = STORY_BEATS.find(b => b.id === state.pendingBeat);
   if (pending) {

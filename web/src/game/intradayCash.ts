@@ -4,6 +4,7 @@ import type { GameState } from "./state";
 import type { DayStats, Guest } from "./types";
 import { FARE_PRICES } from "./types";
 import { SCHOOL_BUS_FARE } from "./schoolContract";
+import { CLUB_BUS_DISCOUNT } from "./summitLink";
 
 /** Base ticket share posted when a public guest arrives (see SIMULATION_SPEC revenue formula). */
 export function ticketBaseAmount(fare: GameState["fare"]): number {
@@ -12,6 +13,7 @@ export function ticketBaseAmount(fare: GameState["fare"]): number {
 
 export function ticketBaseOnArrival(guest: Guest, fare: GameState["fare"]): number {
   if (guest.schoolPupil) return SCHOOL_BUS_FARE;
+  if (guest.id.startsWith("club-")) return Math.max(4, ticketBaseAmount(fare) - Math.round(CLUB_BUS_DISCOUNT / 2));
   return ticketBaseAmount(fare);
 }
 
@@ -25,9 +27,10 @@ export function ticketSatisfactionBonus(
   satisfaction: number,
   stats: Pick<DayStats, "arrivals" | "ticketBasePosted" | "schoolBusPosted">,
   schoolArrived: number,
+  clubArrived = 0,
 ): number {
   const publicArrivals = Math.max(0, stats.arrivals - schoolArrived);
-  const ticketTotal = computeDayRevenue(fare, satisfaction, publicArrivals);
+  const ticketTotal = Math.max(0, computeDayRevenue(fare, satisfaction, publicArrivals) - clubArrived * CLUB_BUS_DISCOUNT);
   const basePosted = stats.ticketBasePosted ?? 0;
   return Math.round(ticketTotal - basePosted);
 }
@@ -84,9 +87,10 @@ export type TodaySales = {
 export function todaySales(state: GameState, liveSatisfaction: number): TodaySales {
   const stats = state.dayStats;
   const schoolArrived = state.guests.filter((g) => g.schoolPupil && g.state !== "pending").length;
+  const clubArrived = state.guests.filter((g) => g.id.startsWith("club-") && g.state !== "pending").length;
   const ticketBonusEstimate = Math.max(
     0,
-    ticketSatisfactionBonus(state.fare, liveSatisfaction, { ...stats, arrivals: stats.arrivals }, schoolArrived),
+    ticketSatisfactionBonus(state.fare, liveSatisfaction, { ...stats, arrivals: stats.arrivals }, schoolArrived, clubArrived),
   );
   const venues = venueRevenueTotal(stats);
   const schoolBus = stats.schoolBusPosted ?? 0;
@@ -113,13 +117,14 @@ export function settleOperatingDay(
   state: GameState,
   satisfaction: number,
   schoolArrived: number,
+  clubArrived = 0,
 ): GameState {
   const stats = state.dayStats;
   const costs = operatingCostTotal(state);
 
   if (!stats.intradayRevenue) {
     const publicArrivals = Math.max(0, stats.arrivals - schoolArrived);
-    const ticketTotal = computeDayRevenue(state.fare, satisfaction, publicArrivals);
+    const ticketTotal = Math.max(0, computeDayRevenue(state.fare, satisfaction, publicArrivals) - clubArrived * CLUB_BUS_DISCOUNT);
     const venues = venueRevenueTotal(stats);
     const school = schoolArrived * SCHOOL_BUS_FARE;
     const net = Math.round(ticketTotal + venues + school - costs);
@@ -130,7 +135,7 @@ export function settleOperatingDay(
     };
   }
 
-  const bonus = ticketSatisfactionBonus(state.fare, satisfaction, stats, schoolArrived);
+  const bonus = ticketSatisfactionBonus(state.fare, satisfaction, stats, schoolArrived, clubArrived);
   return {
     ...state,
     cash: state.cash + bonus - costs,

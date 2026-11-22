@@ -41,6 +41,10 @@ const surpriseKind = oneOf(
   "january_thaw",
   "dot_call",
   "skin_tracks",
+  "sloane_visit",
+  "club_bus",
+  "groomer_down",
+  "last_saturday",
 );
 const assetId: Check = (value) => typeof value === "string" && Object.hasOwn(ASSET_CATALOG, value);
 const revenue: Check = (value) => record(value) && Object.entries(value).every(([key, amount]) => assetId(key) && number(amount));
@@ -104,6 +108,7 @@ const loan = shape({
 const recap = shape({
   ...numbers("arrivals", "satisfaction", "cashDelta", "loanReceived", "loanRepaid"), problem: string,
   summitLinkReply: optional(summitLinkDecision),
+  summitLinkPayment: optional(number),
   costs: nullable(operatingCosts), revenue: nullable(number),
   breakdown: shape(numbers("arrivalMood", "queue", "snow", "value", "runs")),
   facts: shape({
@@ -185,6 +190,9 @@ const fields: Record<keyof PersistedState, Check> = {
   crewRushDay: index,
   completedBeats: array(beat),
   summitLinkDecision: nullable(summitLinkDecision),
+  vivianVisit: optional(nullable(shape({ day: index, avgWaitMin: number, avgSnow: number, boughtCocoa: boolean }))),
+  clubBooking: optional(nullable(shape({ decision: oneOf("pending", "accepted", "declined"), day: index, skiersArrived: nullable(index) }))),
+  groomerDown: optional(nullable(shape({ active: boolean, decision: oneOf("pending", "paid", "skipped"), day: index }))),
   tipsSeen: array(string),
   pendingBeat: nullable(beat),
   beatAcknowledged: boolean,

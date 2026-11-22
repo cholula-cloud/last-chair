@@ -58,6 +58,8 @@ type Driver = {
   acknowledgeBeat(): void;
   declineSchoolContract(): void;
   declineSummitLink(): void;
+  declineClubBooking(): void;
+  skipGroomerDown(): void;
   sleep(): void;
   finishWinterReview(): void;
   startNewSeason(): void;
@@ -111,6 +113,8 @@ function playSeason(d: Driver) {
     if (pendingBeat === "school_bus") d.declineSchoolContract();
     else if (pendingBeat === "summit_link") d.declineSummitLink();
     else if (pendingBeat) d.acknowledgeBeat();
+    if (d.view().clubBooking?.decision === "pending") d.declineClubBooking();
+    if (d.view().groomerDown?.active && d.view().groomerDown?.decision === "pending") d.skipGroomerDown();
     d.sleep();
   }
   d.finishWinterReview();
@@ -158,6 +162,8 @@ function storeDriver(
     acknowledgeBeat: () => s().acknowledgeBeat(),
     declineSchoolContract: () => s().decideSchoolContract("declined"),
     declineSummitLink: () => s().replyToSummitLink("declined"),
+    declineClubBooking: () => s().decideClubBooking("declined"),
+    skipGroomerDown: () => s().decideGroomerDown("skipped"),
     sleep: () => s().sleep(),
     finishWinterReview: () => s().finishWinterReview(),
     startNewSeason: () => s().startNewSeason(),
@@ -182,6 +188,8 @@ function pureDriver(seed: number): Driver {
     acknowledgeBeat: () => apply(rules.acknowledgeBeat),
     declineSchoolContract: () => apply((s) => rules.decideSchoolContract(s, "declined")),
     declineSummitLink: () => apply((s) => rules.replyToSummitLink(s, "declined")),
+    declineClubBooking: () => apply((s) => rules.decideClubBooking(s, "declined")),
+    skipGroomerDown: () => apply((s) => rules.decideGroomerDown(s, "skipped")),
     sleep: () => apply(rules.sleep),
     finishWinterReview: () => apply(rules.finishWinterReview),
     startNewSeason: () => apply(rules.startNewSeason),

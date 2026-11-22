@@ -9,7 +9,12 @@ import { CREW_TALENTS, STORY_BEATS, founderById } from "./content";
 import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
-import { SUMMIT_LINK_MIN_REPUTATION, summitLinkFirstDay, type SummitLinkDecision } from "./summitLink";
+import {
+  CLUB_BUS_DISCOUNT,
+  SUMMIT_LINK_MIN_REPUTATION,
+  summitLinkFirstDay,
+  type SummitLinkDecision,
+} from "./summitLink";
 import { runEnergyCost, runSkiMinutes } from "./trails";
 import { pickSkiRoute } from "./trailNetwork";
 import {
@@ -168,6 +173,18 @@ export function schoolBusGuests(day: number, pupils: number): Guest[] {
     state: "pending",
     arriveAtMin: SCHOOL_BUS_ARRIVAL_MIN,
     stateSinceMin: SCHOOL_BUS_ARRIVAL_MIN,
+  }));
+}
+
+export function clubBusGuests(day: number, count: number): Guest[] {
+  return Array.from({ length: count }, (_, i) => makeGuest({
+    id: `club-${day}-${i}`,
+    label: `Bennington skier ${i + 1}`,
+    persona: i % 4 === 0 ? "race_kid" : "regular",
+    state: "pending",
+    arriveAtMin: 9 * 60 + 25,
+    stateSinceMin: 9 * 60 + 25,
+    mood: 0.72,
   }));
 }
 
@@ -458,6 +475,7 @@ export type NightRecap = {
   loanReceived: number;
   loanRepaid: number;
   summitLinkReply?: SummitLinkDecision;
+  summitLinkPayment?: number;
   problem: string;
   facts: RecapFacts;
 };
@@ -475,9 +493,14 @@ export function buildNightRecap(opts: {
   costs: OperatingCosts;
   busiestLift?: RecapFacts["busiestLift"];
   schoolBus?: RecapFacts["schoolBus"];
+  clubArrived?: number;
 }): NightRecap {
-  const { stats, fare, day, schoolBus } = opts;
-  const revenue = computeDayRevenue(fare, day.score, stats.arrivals - (schoolBus?.arrived ?? 0))
+  const { stats, fare, day, schoolBus, clubArrived = 0 } = opts;
+  const ticketTotal = Math.max(
+    0,
+    computeDayRevenue(fare, day.score, stats.arrivals - (schoolBus?.arrived ?? 0)) - clubArrived * CLUB_BUS_DISCOUNT,
+  );
+  const revenue = ticketTotal
     + (schoolBus?.ticketRevenue ?? 0)
     + Object.values(stats.venueRevenue ?? {}).reduce((sum, amount) => sum + amount, 0);
   const { costs } = opts;
@@ -679,6 +702,7 @@ export function meanArrivals(opts: ArrivalInputs): number {
 export type BeatCheckInput = {
   calendar?: CalendarDef;
   seasonLength?: number;
+  founderId?: FounderId | null;
   dayIndex: number;
   liftsOpen: number;
   completedRuns: number;
@@ -712,7 +736,7 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
     case "summit_link":
       return input.reputation >= SUMMIT_LINK_MIN_REPUTATION &&
-        input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length) &&
+        input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length, input.founderId ?? null) &&
         input.dayIndex < (input.seasonLength ?? calendar.length);
     default:
       return false;

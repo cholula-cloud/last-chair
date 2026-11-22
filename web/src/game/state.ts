@@ -15,7 +15,7 @@ import type { XZ } from "./terrain";
 import { START_DEPTH, START_QUALITY } from "./snow";
 import type { TrailRun } from "./trails";
 import { DAY_START_MIN, emptyDayStats, type NightRecap } from "./sim";
-import type { SummitLinkDecision } from "./summitLink";
+import type { ClubBooking, GroomerDown, SloaneVisitFacts, SummitLinkDecision } from "./summitLink";
 import type { GuestObservation } from "./why";
 import type { SurpriseEntry, SurprisePlan } from "./surprises";
 import type {
@@ -138,6 +138,9 @@ export type PersistedState = {
   crewRushDay: number;
   completedBeats: StoryBeatId[];
   summitLinkDecision: SummitLinkDecision | null;
+  vivianVisit: SloaneVisitFacts | null;
+  clubBooking: ClubBooking | null;
+  groomerDown: GroomerDown | null;
   /** Coach tips the player has already seen this winter (see coach.ts). */
   tipsSeen: string[];
   pendingBeat: StoryBeatId | null;
@@ -238,6 +241,9 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     crewRushDay: 0,
     completedBeats: [],
     summitLinkDecision: null,
+    vivianVisit: null,
+    clubBooking: null,
+    groomerDown: null,
     tipsSeen: [],
     pendingBeat: null,
     beatAcknowledged: true,
@@ -303,6 +309,9 @@ export function toPersisted(state: PersistedState): PersistedState {
     crewRushDay: state.crewRushDay,
     completedBeats: state.completedBeats,
     summitLinkDecision: state.summitLinkDecision,
+    vivianVisit: state.vivianVisit ?? null,
+    clubBooking: state.clubBooking ?? null,
+    groomerDown: state.groomerDown ?? null,
     tipsSeen: state.tipsSeen,
     pendingBeat: state.pendingBeat,
     beatAcknowledged: state.beatAcknowledged,
@@ -349,4 +358,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
