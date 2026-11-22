@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
-import { DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
+import { DUTCH_HILL_CALENDAR, DUTCH_HILL_CALENDAR_LEGACY } from "./calendar";
+import { dryWeekRadio } from "./content";
 import { migrate } from "./migrations";
 import { acknowledgeBeat, pickFounder, skipToClose, sleep, tick } from "./rules";
 import { createRng, mix32 } from "./rng";
 import { createInitialGuests } from "./sim";
 import { SAVE_VERSION, toPersisted, type GameState } from "./state";
-import { arrangeSurprise, surpriseRadio, type SurpriseKind } from "./surprises";
-import { MS_PER_GAME_MINUTE, type WeatherKind } from "./types";
+import { arrangeSurprise, resolveSurprise, surpriseRadio, type SurpriseKind } from "./surprises";
+import { MS_PER_GAME_MINUTE, type DayWeather, type WeatherKind } from "./types";
 
 const calendar = DUTCH_HILL_CALENDAR_LEGACY;
 const guests = createInitialGuests(24, createRng(42).next);
@@ -101,5 +102,91 @@ describe("Route 100 surprises", () => {
     const { surprise, surpriseLog, ...old } = toPersisted(createBuiltHill());
     expect({ surprise, surpriseLog }).toEqual({ surprise: null, surpriseLog: [] });
     expect(migrate(old, SAVE_VERSION)).toMatchObject({ reset: false, state: { surprise: null, surpriseLog: [] } });
+  });
+
+  it("enforces weekly and threat pacing caps and skips school bus day", () => {
+    const log = [
+      { dayIndex: 2, kind: "pie" as const, affectedGuests: 0 },
+      { dayIndex: 3, kind: "road_delay" as const, affectedGuests: 2 },
+    ];
+    expect(arrangeSurprise({ calendar, dayIndex: 4, seasonSeed: mix32(seedFor("pie")), weather: "clear", surpriseLog: log }, guests).surprise).toBeNull();
+    expect(arrangeSurprise({ calendar, dayIndex: 5, seasonSeed: mix32(seedFor("road_delay")), weather: "clear", surpriseLog: [log[1]] }, guests).surprise).toBeNull();
+    expect(arrangeSurprise({ calendar, dayIndex: 2, seasonSeed: mix32(seedFor("pie")), weather: "clear", surpriseLog: [], schoolBookedDay: 2 }, guests).surprise).toBeNull();
+  });
+
+  it("triggers DH4 thaw_ice, DH5 snow_day on quiet Friday, DH9 january_thaw, DH10 dot_call, DH11 skin_tracks, and DH12 dry_week branch", () => {
+    // DH4: clear day after thaw with >=2 icy lower segments
+    const thawIce = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 9, // Sat
+      seasonSeed: mix32(7),
+      weather: "clear",
+      yesterdayWeather: "thaw",
+      icyLowerSegments: 2,
+      surpriseLog: [],
+    }, guests);
+    expect(thawIce.surprise?.kind).toBe("thaw_ice");
+    expect(resolveSurprise(thawIce.surprise, guests)).toEqual({ dayIndex: 9, kind: "thaw_ice", affectedGuests: 0 });
+
+    // DH5: Snow day on non-holiday Friday storm with holiday guest mix
+    let snowDaySeed = -1;
+    for (let s = 0; s < 500; s++) {
+      const res = arrangeSurprise({
+        calendar: DUTCH_HILL_CALENDAR,
+        dayIndex: 8, // Fri week 2
+        seasonSeed: mix32(s),
+        weather: "storm",
+        surpriseLog: [],
+      }, guests);
+      if (res.surprise?.kind === "snow_day") {
+        snowDaySeed = s;
+        expect(res.guests.length).toBeGreaterThan(guests.length);
+        break;
+      }
+    }
+    expect(snowDaySeed).toBeGreaterThanOrEqual(0);
+
+    // DH9: January thaw ahead
+    const weatherDays: DayWeather[] = Array.from({ length: 42 }, (_, i) => ({
+      kind: i === 8 || i === 9 ? "thaw" : "clear",
+      wind: "calm",
+    }));
+    const janThaw = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 8,
+      seasonSeed: mix32(7),
+      weather: "clear",
+      weatherDays,
+      surpriseLog: [],
+    }, guests);
+    expect(janThaw.surprise?.kind).toBe("january_thaw");
+
+    // DH10: Grammy Dot calls in on Sunday when rep >= 60
+    const dot = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 10, // Sun
+      seasonSeed: mix32(7),
+      weather: "clear",
+      reputation: 62,
+      surpriseLog: [],
+    }, guests);
+    expect(dot.surprise?.kind).toBe("dot_call");
+
+    // DH11: Skin tracks after storm with minimal service
+    const skin = arrangeSurprise({
+      calendar: DUTCH_HILL_CALENDAR,
+      dayIndex: 9,
+      seasonSeed: mix32(7),
+      weather: "clear",
+      yesterdayWeather: "storm",
+      yesterdaySnow: "minimal",
+      surpriseLog: [],
+    }, guests);
+    expect(skin.surprise?.kind).toBe("skin_tracks");
+
+    // DH2 cheap fare flavor & DH12 guns branch
+    expect(surpriseRadio({ dayIndex: 8, kind: "former_regulars", affectedGuests: 3 }, null, { fare: "cheap" }).radio).toContain("six dollars");
+    expect(dryWeekRadio(0)).toContain("no snow guns yet");
+    expect(dryWeekRadio(1)).toContain("Snow guns need cold air");
   });
 });

@@ -424,9 +424,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const planNight = !finalNight;
   const { weekday, date } = dayLabel(seasonCalendar(night), dayIndex);
   const nextTalent = nextTalentName(night.talentsOwned);
-  const beat = storyBeatCopy(pendingBeat, night.operatorName ?? null);
+  const beat = storyBeatCopy(pendingBeat, night.operatorName ?? null, night.guns.length);
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
-  const surpriseCopy = surprise && surpriseRadio(surprise, night.operatorName ?? null);
+  const surpriseCopy = !pendingBeat && surprise ? surpriseRadio(surprise, night.operatorName ?? null, { fare: night.fare }) : null;
   const summitLinkOffer = summitLinkOfferOpen(night);
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;

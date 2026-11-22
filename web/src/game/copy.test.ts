@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CREW_TALENTS, STORY_BEATS } from "./content";
+import { CREW_TALENTS, dryWeekRadio, STORY_BEATS } from "./content";
 import { latestRadio, lodgeOpeningRadio } from "./deskRadio";
 import { formatMoney } from "./format";
 import { surpriseRadio, type SurpriseKind } from "./surprises";
@@ -7,7 +7,16 @@ import { SNOW_NIGHT_COST } from "./types";
 import { TALENT } from "./talents";
 
 const EMOJI = /\p{Extended_Pictographic}/u;
-const KINDS: SurpriseKind[] = ["pie", "former_regulars", "road_delay"];
+const KINDS: SurpriseKind[] = [
+  "pie",
+  "former_regulars",
+  "road_delay",
+  "thaw_ice",
+  "snow_day",
+  "january_thaw",
+  "dot_call",
+  "skin_tracks",
+];
 
 function lint(text: string) {
   expect(text).not.toMatch(/—|·/);
@@ -18,9 +27,13 @@ function lint(text: string) {
 describe("player-facing copy", () => {
   it("keeps story beats, talents, surprises and lodge lines clean and short", () => {
     for (const beat of STORY_BEATS) lint(beat.radio);
+    lint(dryWeekRadio(0));
+    lint(dryWeekRadio(2));
     for (const talent of CREW_TALENTS) lint(talent.effect);
     for (const kind of KINDS) {
-      for (const affectedGuests of [1, 4]) lint(surpriseRadio({ dayIndex: 3, kind, affectedGuests }).radio);
+      for (const affectedGuests of [1, 4]) {
+        lint(surpriseRadio({ dayIndex: 3, kind, affectedGuests }, "Sam", { fare: "cheap" }).radio);
+      }
     }
     lint(lodgeOpeningRadio(2));
     lint(lodgeOpeningRadio(3));

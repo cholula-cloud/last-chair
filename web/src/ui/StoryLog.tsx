@@ -2,7 +2,7 @@
 
 import { seasonCalendar } from "@/game/calendar";
 import { operatingGoalText } from "@/game/winterArc";
-import { formatOperatorText, STORY_BEATS, WINTER_GOAL } from "@/game/content";
+import { dryWeekRadio, formatOperatorText, STORY_BEATS, WINTER_GOAL } from "@/game/content";
 import { SCHOOL_BUS_PUPILS } from "@/game/schoolContract";
 import { liquidNetWorth } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -25,16 +25,19 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
   const school = useGameStore(s => s.schoolContract);
   const deal = useGameStore(s => s.summitLinkDecision);
   const operatorName = useGameStore(s => s.operatorName ?? null);
+  const gunsCount = useGameStore(s => s.guns.length);
+  const fare = useGameStore(s => s.fare);
   const muted = useSettings(s => s.muted);
   const radio = useSettings(s => s.radioEnabled);
   const set = useSettings(s => s.set);
   const entries = [
     ...beats.map(({ day, id }) => {
       const beat = STORY_BEATS.find(beat => beat.id === id)!;
+      const raw = beat.id === "dry_week" ? dryWeekRadio(gunsCount) : beat.radio;
       return {
         day,
         title: beat.title,
-        text: day === null ? "Maris was on the air, but nobody wrote down the day." : formatOperatorText(beat.radio, operatorName),
+        text: day === null ? "Maris was on the air, but nobody wrote down the day." : formatOperatorText(raw, operatorName),
       };
     }),
     ...days.flatMap(day => day.lodgeOpening ? [{
@@ -42,7 +45,7 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
       text: lodgeOpeningRadio(day.lodgeOpening),
     }] : []),
     ...moments.map(entry => {
-      const copy = surpriseRadio(entry, operatorName);
+      const copy = surpriseRadio(entry, operatorName, { fare });
       return { day: entry.dayIndex, title: copy.title, text: copy.radio };
     }),
   ].sort((a, b) => (a.day ?? 0) - (b.day ?? 0));

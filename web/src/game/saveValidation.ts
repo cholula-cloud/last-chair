@@ -32,7 +32,16 @@ const liftType = oneOf("surface", "chair");
 const beat = oneOf("first_load", "saturday", "school_bus", "dry_week", "summit_link", "winter_review");
 const founder = nullable(oneOf("elena", "tom", "riley", "amira", "juniper", "marco"));
 const summitLinkDecision = oneOf("accepted", "declined");
-const surpriseKind = oneOf("pie", "former_regulars", "road_delay");
+const surpriseKind = oneOf(
+  "pie",
+  "former_regulars",
+  "road_delay",
+  "thaw_ice",
+  "snow_day",
+  "january_thaw",
+  "dot_call",
+  "skin_tracks",
+);
 const assetId: Check = (value) => typeof value === "string" && Object.hasOwn(ASSET_CATALOG, value);
 const revenue: Check = (value) => record(value) && Object.entries(value).every(([key, amount]) => assetId(key) && number(amount));
 
