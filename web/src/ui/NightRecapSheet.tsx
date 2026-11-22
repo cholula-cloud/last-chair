@@ -53,6 +53,7 @@ import { RadioCard } from "@/ui/kit/RadioCard";
 import { LoanCard } from "@/ui/LoanCard";
 import { SummitLinkCard } from "@/ui/SummitLinkCard";
 import { SchoolContractCard } from "@/ui/SchoolContractCard";
+import { GroomerDownCard } from "@/ui/GroomerDownCard";
 import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
 const WEEKDAY_FULL: Record<string, string> = {
@@ -449,7 +450,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
   const surpriseCopy = surprise && surpriseRadio(surprise);
   const summitLinkOffer = summitLinkOfferOpen(night);
-  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
+  const groomerChoiceNeeded = pendingBeat === "groomer_down" && night.groomerDownDecision === null;
+  const canSleep = !summitLinkOffer && !groomerChoiceNeeded &&
+    (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus" && pendingBeat !== "groomer_down"));
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
   const guide = tipsOn && !guideSeen ? problemGuide(recap, demand?.key) : null;
@@ -516,7 +519,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               {summitLinkOffer && "Answer Vivian before you turn in."}
               {!summitLinkOffer && (pendingBeat === "school_bus"
                 ? "Give Al an answer on the school bus before you turn in."
-                : "Read the radio message, then tap Got it.")}
+                : pendingBeat === "groomer_down"
+                  ? "Tell Frank whether you're borrowing the town cat or running guns only."
+                  : "Read the radio message, then tap Got it.")}
             </p>
           )}
           {planNight && (
@@ -623,7 +628,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
 
         <SummitLinkCard night={night} />
         <SchoolContractCard night={night} />
-        {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
+        <GroomerDownCard night={night} />
+        {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && pendingBeat !== "groomer_down" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={

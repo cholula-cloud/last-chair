@@ -20,6 +20,7 @@ import { PERSONAS, drawPersona, personaShare, skiMinutes } from "./personas";
 import { chooseLift, lapOverheadForLift, liftLoadingClosesAt, liftWaitMin } from "./lifts";
 import { SCHOOL_BUS_ARRIVAL_MIN } from "./schoolContract";
 import { SUMMIT_LINK_MIN_REPUTATION, summitLinkFirstDay, type SummitLinkDecision } from "./summitLink";
+import { GROOMER_DOWN_MIN_SEASON_FT } from "./groomerDown";
 import { runEnergyCost, runSkiMinutes } from "./trails";
 import { pickSkiRoute } from "./trailNetwork";
 import {
@@ -704,6 +705,8 @@ export type BeatCheckInput = {
   reputation: number;
   schoolOfferReady: boolean;
   completedBeats: StoryBeatId[];
+  seasonGroomFeet?: number;
+  recentSnowPresets?: readonly SnowPreset[];
 };
 
 export function readyStoryBeat(input: BeatCheckInput): StoryBeatId | null {
@@ -726,6 +729,16 @@ function beatGateMet(id: StoryBeatId, input: BeatCheckInput): boolean {
       return input.schoolOfferReady;
     case "dry_week":
       return input.daysWithoutSnow >= 3 && input.snowDepth < 0.35;
+    case "groomer_down": {
+      const len = input.seasonLength ?? 28;
+      const midStart = Math.floor(len / 3);
+      const midEnd = Math.ceil((2 * len) / 3);
+      if (input.dayIndex < midStart || input.dayIndex > midEnd) return false;
+      if ((input.seasonGroomFeet ?? 0) < GROOMER_DOWN_MIN_SEASON_FT) return false;
+      const recent = input.recentSnowPresets ?? [];
+      const midHigh = recent.filter((p) => p === "mid" || p === "high").length;
+      return recent.length >= 3 && midHigh >= 3;
+    }
     case "summit_link":
       return input.reputation >= SUMMIT_LINK_MIN_REPUTATION &&
         input.dayIndex >= summitLinkFirstDay(input.seasonLength ?? calendar.length) &&

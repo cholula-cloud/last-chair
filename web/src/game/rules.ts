@@ -75,6 +75,7 @@ import {
 } from "./lifts";
 import { createRng } from "./rng";
 import { nextSchoolBusDay, schoolBusPupils, SCHOOL_BUS_FARE, type SchoolContractDecision } from "./schoolContract";
+import { GROOMER_BORROW_COST, type GroomerDownDecision } from "./groomerDown";
 import {
   THAW_START_MIN,
   averageTrail,
@@ -254,6 +255,8 @@ export function openNight(state: GameState): GameState {
     daysWithoutSnow: state.daysWithoutSnow,
     reputation: rawReputation,
     schoolOfferReady: schoolContractOfferDay({ ...state, schoolProgramProven }) !== null,
+    seasonGroomFeet: settled.seasonGroomFeet,
+    recentSnowPresets: settled.seasonDays.slice(-5).map((d) => d.snow),
     completedBeats: state.completedBeats.filter((id) =>
       (id !== "school_bus" || state.schoolContract !== null) &&
       (id !== "summit_link" || state.summitLinkDecision !== null)),
@@ -1146,7 +1149,9 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
 }
 
 export function acknowledgeBeat(state: GameState): GameState {
-  if (state.pendingBeat === "school_bus" || summitLinkOfferOpen(state)) return state;
+  if (state.pendingBeat === "school_bus" || state.pendingBeat === "groomer_down" || summitLinkOfferOpen(state)) {
+    return state;
+  }
   return completeBeat(state);
 }
 
@@ -1181,6 +1186,47 @@ export function decideSchoolContract(state: GameState, decision: SchoolContractD
   });
 }
 
+export function groomerSkipsTonight(state: GameState): boolean {
+  return state.groomerDownTonight;
+}
+
+function emptyGroomCoverage(trails: GameState["trails"]): boolean[][] {
+  return trails.map((trail) => trail.snow.map(() => false));
+}
+
+function thawGunHoldLine(
+  weatherKind: WeatherKind,
+  snow: SnowPreset,
+  gunCoverage: readonly boolean[][] | undefined,
+  hasGuns: boolean,
+): string {
+  if (weatherKind !== "thaw" || snow === "minimal" || !hasGuns || !gunCoverage) return "";
+  const segments = gunCoverage.reduce((n, row) => n + row.filter(Boolean).length, 0);
+  if (segments < 1) return "";
+  return "Night crew held snow on the lower trails where it thawed.";
+}
+
+export function decideGroomerDown(state: GameState, decision: GroomerDownDecision): GameState {
+  if (state.phase !== "night" || state.pendingBeat !== "groomer_down") return state;
+  if (decision === "borrow" && state.cash < GROOMER_BORROW_COST) return state;
+  return completeBeat({
+    ...state,
+    cash: decision === "borrow" ? state.cash - GROOMER_BORROW_COST : state.cash,
+    groomerDownDecision: decision,
+    groomerDownTonight: decision === "go_without",
+  });
+}
+
+/** Test and season harness: clear decision beats (decline / guns-only) or acknowledge radio beats before sleep. */
+export function resolveNightBeat(state: GameState): GameState {
+  if (state.phase !== "night" || !state.nightRecap) return state;
+  if (state.pendingBeat === "school_bus") return decideSchoolContract(state, "declined");
+  if (state.pendingBeat === "summit_link") return replyToSummitLink(state, "declined");
+  if (state.pendingBeat === "groomer_down") return decideGroomerDown(state, "go_without");
+  if (state.pendingBeat && !state.beatAcknowledged) return acknowledgeBeat(state);
+  return state;
+}
+
 export function summitLinkOfferOpen(state: GameState): boolean {
   return state.phase === "night" && state.nightRecap !== null && state.dayIndex < state.seasonLength &&
     state.pendingBeat === "summit_link" && state.summitLinkDecision === null;
@@ -1210,13 +1256,17 @@ function nightFor(
   state = closeLiftsNow(state, closing);
   const exposure = exposureFor(state);
   const hasGarage = hasMaintenanceGarage(state.assets, state.lodgeTier);
+  const skipGroom = groomerSkipsTonight(state);
+  const groomCov = skipGroom
+    ? emptyGroomCoverage(state.trails)
+    : groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasGarage);
   const overnight = applyOvernight({
     snow,
     cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
     gunCoverage: gunCoverageForTrails(state.trails, state.guns, state.talentsOwned, weatherTomorrow.wind, exposure),
-    groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasGarage),
+    groomCoverage: groomCov,
     exposure,
     hasPlacedGuns: state.guns.length > 0,
     hasMaintenanceGarage: hasGarage,
@@ -1258,7 +1308,9 @@ export function snowServiceStats(
   const exposure = exposureFor(state);
   return {
     gunSegments: gunSegmentsTonight(state.trails, state.guns, snow, state.talentsOwned, weatherTomorrow.wind, exposure),
-    groomFeet: groomedFeet(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasMaintenanceGarage(state.assets, state.lodgeTier)),
+    groomFeet: groomerSkipsTonight(state)
+      ? 0
+      : groomedFeet(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasMaintenanceGarage(state.assets, state.lodgeTier)),
   };
 }
 
@@ -1348,6 +1400,7 @@ export function repayLoan(state: GameState, amount?: number): GameState {
 export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
   if (summitLinkOfferOpen(state) || (state.pendingBeat && !state.beatAcknowledged)) return state;
+  if (state.pendingBeat === "groomer_down" && state.groomerDownDecision === null) return state;
 
   const cal = seasonCalendar(state);
   const recap = state.nightRecap;
@@ -1440,6 +1493,18 @@ export function sleep(state: GameState): GameState {
   }
 
   const { overnight, talentsOwned, crewPoints: earnedCrewPoints } = nightFor(carry, carry.pendingSnow);
+  const groomFeetTonight = groomerSkipsTonight(carry)
+    ? 0
+    : groomedFeet(carry.trails, carry.dayStats.runsByTrail, carry.pendingSnow, carry.talentsOwned);
+  const thawLine = thawGunHoldLine(
+    overnight.weather,
+    carry.pendingSnow,
+    overnight.gunCoverage,
+    carry.guns.length > 0,
+  );
+  const morningHeadline = thawLine
+    ? `${overnight.morningHeadline} ${thawLine}`
+    : overnight.morningHeadline;
   const morningCrewPoints = earnedCrewPoints + (completedTier ? LODGE_UPGRADE_CREW_POINT : 0);
   const carried: GameState = {
     ...carry,
@@ -1469,10 +1534,13 @@ export function sleep(state: GameState): GameState {
     groomVisible: overnight.groomVisible,
     weather: overnight.weather,
     morningHeadline: completedTier
-      ? `Route 100 Radio: Lodge Tier ${completedTier} is open. ${overnight.morningHeadline}`
+      ? `Route 100 Radio: Lodge Tier ${completedTier} is open. ${morningHeadline}`
       : weekdayDigest
-        ? `${weekdayDigest} ${overnight.morningHeadline}`
-        : overnight.morningHeadline,
+        ? `${weekdayDigest} ${morningHeadline}`
+        : morningHeadline,
+    seasonGroomFeet: carry.seasonGroomFeet + groomFeetTonight,
+    groomerDownTonight: false,
+    groomerDownDecision: null,
     daysWithoutSnow: overnight.daysWithoutSnow,
     talentsOwned,
     crewPoints: morningCrewPoints,

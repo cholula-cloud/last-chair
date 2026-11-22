@@ -43,6 +43,7 @@ export const replayRules = {
   acknowledgeBeat: rules.acknowledgeBeat,
   replyToSummitLink: rules.replyToSummitLink,
   decideSchoolContract: rules.decideSchoolContract,
+  decideGroomerDown: rules.decideGroomerDown,
   finishWinterReview: rules.finishWinterReview,
   startNewSeason: rules.startNewSeason,
 };

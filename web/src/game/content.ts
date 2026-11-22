@@ -141,6 +141,12 @@ export const STORY_BEATS: StoryBeatDef[] = [
       "Dry stretch in the forecast, folks. Snow guns need cold air to help, so bump up overnight grooming or hold out for the next cold snap.",
   },
   {
+    id: "groomer_down",
+    title: "Groomer threw a track",
+    radio:
+      "Frank from the garage on Route 100. Groomer threw a track on the Windmill side. She'll live, but not tonight. Snow guns still run; the cat stays parked unless you borrow Readsboro's road machine for $250.",
+  },
+  {
     id: "summit_link",
     title: "Corporate pass offer",
     radio:

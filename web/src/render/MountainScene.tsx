@@ -127,6 +127,7 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
         snowDepth={snowDepth}
         trails={trailSnow}
         groomed={trailRuns.map((t) => t.groomed)}
+        gunCovered={trailRuns.map((t) => t.gunCovered)}
         snowPreset={snowPreset}
         runsByTrail={runsByTrail}
         paths={trailRuns.map((t) => t.open ? t.path : [])}
