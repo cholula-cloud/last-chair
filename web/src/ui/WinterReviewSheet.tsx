@@ -5,7 +5,7 @@ import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
 import { FARE_LABELS, SNOW_LABELS } from "@/game/types";
 import { StoryEntries } from "@/ui/StoryLog";
-import { schoolMemory } from "@/game/winterMemory";
+import { punchCardOutcomeLine, schoolMemory } from "@/game/winterMemory";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { Sheet } from "@/ui/kit/Sheet";
@@ -14,7 +14,8 @@ import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
 export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const phase = useGameStore((s) => s.phase);
-  const bankrupt = useGameStore((s) => s.outcome === "bankrupt");
+  const outcome = useGameStore((s) => s.outcome);
+  const bankrupt = outcome === "bankrupt";
   const founder = useGameStore(s => founderById(s.founderId)?.name);
   const day = useGameStore(s => s.dayIndex);
   const seasonLength = useGameStore(s => s.seasonLength);
@@ -40,18 +41,20 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
       <Sheet
         modal
         z="z-50"
-        title="Tenney Mountain, NH"
-        subtitle="The next lost hill on the map"
+        title="Mount Tom, MA"
+        subtitle="Next lost hill on the map"
         footer={
           <PrimaryButton onClick={startNewSeason}>
             Replay Dutch Hill winter
           </PrimaryButton>
         }
       >
-        <div className="panel px-4 py-3.5">
+        <div className="panel space-y-2 px-4 py-3.5">
           <p className="text-[1rem] font-bold leading-snug">
-            Tenney isn&apos;t open yet. The career map and caretaker income come in a later
-            build. Dutch Hill stays saved on this device, so nothing is lost.
+            Lou Carvalho from Holyoke called about Mount Tom&apos;s range lights. Whiterock holds an option on the ridge until April.
+          </p>
+          <p className="text-sm font-bold text-ink-soft">
+            The career Atlas and Mount Tom arrive in the career update. Dutch Hill stays saved on this device.
           </p>
         </div>
       </Sheet>
@@ -76,6 +79,9 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
           <Sign innerClassName="px-4 pb-4 pt-3" tab="Dutch Hill, winter one">
             <p className="display text-[1.35rem] leading-tight text-white">
               {bankrupt ? "The bank called. The winter's over." : solvent ? "Dutch Hill kept the lights on." : "The tow ran to closing day. The winter bills outlasted it."}
+            </p>
+            <p className="mt-1.5 text-sm font-extrabold text-sign-yellow">
+              {punchCardOutcomeLine(outcome, solvent)}
             </p>
             {bankrupt && <p className="mt-1 text-sm font-bold text-sign-green-ink">Cash stayed below zero for three mornings in a row.</p>}
             <div className="sign-rule my-3" aria-hidden="true" />

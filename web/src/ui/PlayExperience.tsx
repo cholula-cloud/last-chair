@@ -29,7 +29,9 @@ import { FounderPick } from "@/ui/FounderPick";
 import { CoachTip } from "@/ui/CoachTip";
 import { ConfirmPop } from "@/ui/ConfirmPop";
 import { GuestsSheet } from "@/ui/GuestsSheet";
-import { useCameraUi, requestRecenter } from "@/ui/cameraUi";
+import { useCameraUi, requestFocusPoint, requestRecenter } from "@/ui/cameraUi";
+import { usePop } from "@/ui/feel";
+import { FIRST_RIDE_TOAST, LAST_CHAIR_MIN, LAST_CHAIR_TOAST, isFinalOperatingDay } from "@/game/winterMemory";
 import {
   ActionBar,
   BottomChromeRestoreButton,
@@ -172,6 +174,27 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
 
   const mood = useGameStore((s) => Math.round(liveSatisfaction(s)));
   const moodPulse = useMoodPulseTracker(mood, clockMin);
+  const dispatched = useGameStore((s) => s.dayStats.dispatched ?? 0);
+  const seasonSeed = useGameStore((s) => s.seasonSeed);
+  const firstRideSeasonRef = useRef<number | null>(null);
+  const lastChairSeasonRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (phase !== "day" || operatingDayIndex !== 1 || dispatched < 1) return;
+    if (firstRideSeasonRef.current === seasonSeed) return;
+    firstRideSeasonRef.current = seasonSeed;
+    usePop.getState().fire(FIRST_RIDE_TOAST);
+  }, [phase, operatingDayIndex, dispatched, seasonSeed]);
+
+  useEffect(() => {
+    if (phase !== "day" || clockMin < LAST_CHAIR_MIN) return;
+    if (!isFinalOperatingDay({ mountainId, seasonLength, dayIndex })) return;
+    if (lastChairSeasonRef.current === seasonSeed) return;
+    lastChairSeasonRef.current = seasonSeed;
+    usePop.getState().fire(LAST_CHAIR_TOAST);
+    const primary = lifts.find((l) => l.confirmed);
+    if (primary) requestFocusPoint(primary.anchor.x, primary.anchor.z);
+  }, [phase, clockMin, mountainId, seasonLength, dayIndex, seasonSeed, lifts]);
 
   useEffect(() => useGameStore.subscribe((next, prev) => {
     if (prev.phase === "day" && next.phase !== "day") {

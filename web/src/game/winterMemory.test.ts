@@ -4,7 +4,7 @@ import { createBuiltHill } from "./__fixtures__/built-hill";
 import { migrate } from "./migrations";
 import { SAVE_VERSION, toPersisted } from "./state";
 import { acknowledgeBeat, finishWinterReview, pickFounder, skipToClose, sleep, startNewSeason } from "./rules";
-import { schoolMemory, winterScore, winterRecord } from "./winterMemory";
+import { FIRST_RIDE_TOAST, LAST_CHAIR_TOAST, isFinalOperatingDay, punchCardOutcomeLine, schoolMemory, winterScore, winterRecord } from "./winterMemory";
 
 describe("Dutch Hill winter review", () => {
   it("remembers the commitment separately from the lessons actually taught", () => {
@@ -103,4 +103,13 @@ describe("Dutch Hill winter review", () => {
     expect(result.state.career[0].score).toEqual(score);
   });
 
+  it("tracks the Last Chair bookend across final day and outcomes", () => {
+    expect(isFinalOperatingDay({ mountainId: "dutch_hill", seasonLength: 42, dayIndex: 37 })).toBe(false);
+    expect(isFinalOperatingDay({ mountainId: "dutch_hill", seasonLength: 42, dayIndex: 38 })).toBe(true);
+    expect(punchCardOutcomeLine("finished", true)).toBe("Grammy Dot's card: punched.");
+    expect(punchCardOutcomeLine("finished", false)).toContain("Punched.");
+    expect(punchCardOutcomeLine("bankrupt", false)).toContain("one ride on it");
+    expect(FIRST_RIDE_TOAST).not.toMatch(/[—–·]/);
+    expect(LAST_CHAIR_TOAST).not.toMatch(/[—–·]/);
+  });
 });

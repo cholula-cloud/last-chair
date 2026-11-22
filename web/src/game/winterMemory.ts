@@ -1,7 +1,24 @@
+import { operatingDayIndex, operatingSeasonLength, seasonCalendar } from "./calendar";
 import { liquidNetWorth, payoffAmount } from "./economy";
 import type { GameState } from "./state";
 
 import { SCHOOL_BUS_PUPILS, type SchoolContract } from "./schoolContract";
+
+export const FIRST_RIDE_TOAST = "First ride since 1985. Grammy Dot's card stays in your pocket till closing day.";
+export const LAST_CHAIR_TOAST = "Last chair. That one's yours.";
+export const LAST_CHAIR_MIN = 15 * 60 + 45;
+
+export function isFinalOperatingDay(state: Pick<GameState, "mountainId" | "seasonLength" | "dayIndex">): boolean {
+  const cal = seasonCalendar(state);
+  return operatingDayIndex(cal, state.dayIndex) === operatingSeasonLength(cal);
+}
+
+export function punchCardOutcomeLine(outcome: "playing" | "finished" | "bankrupt", solvent: boolean): string {
+  if (outcome === "bankrupt") return "Grammy Dot's card still has one ride on it. Keep it.";
+  return solvent
+    ? "Grammy Dot's card: punched."
+    : "Punched. The bills outlasted the snow, but you rode it.";
+}
 
 export function schoolMemory(contract: SchoolContract | null): string {
   if (!contract) return "No Readsboro school visit this winter. Hank Pelletier never called.";
