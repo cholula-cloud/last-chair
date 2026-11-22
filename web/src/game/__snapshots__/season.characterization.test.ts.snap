@@ -356,7 +356,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     "schoolContract": null,
     "schoolProgramProven": false,
     "seasonDays": [],
-    "seasonLength": 49,
+    "seasonLength": 42,
     "seasonSeed": 3766997704,
     "selectedLiftType": "surface",
     "snow": "mid",
@@ -489,7 +489,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 23,
       "beats": "",
-      "cash": 8952,
+      "cash": 6132,
       "cashDelta": -263,
       "dayIndex": 1,
       "lodgeTier": 1,
@@ -505,7 +505,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 21,
       "beats": "first_load",
-      "cash": 6764,
+      "cash": 4634,
       "cashDelta": -148,
       "dayIndex": 2,
       "lodgeTier": 1,
@@ -521,7 +521,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 17,
       "beats": "first_load",
-      "cash": 4434,
+      "cash": 4074,
       "cashDelta": -210,
       "dayIndex": 3,
       "lodgeTier": 2,
@@ -537,7 +537,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 35,
       "beats": "first_load",
-      "cash": 2659,
+      "cash": 1159,
       "cashDelta": -116,
       "dayIndex": 4,
       "lodgeTier": 2,
@@ -553,7 +553,7 @@ exports[`season characterization > legacy formula weather and attendance 1`] = `
     {
       "arrivals": 21,
       "beats": "first_load",
-      "cash": 1264,
+      "cash": 514,
       "cashDelta": -495,
       "dayIndex": 5,
       "lodgeTier": 2,
@@ -1330,7 +1330,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     "schoolContract": null,
     "schoolProgramProven": false,
     "seasonDays": [],
-    "seasonLength": 49,
+    "seasonLength": 42,
     "seasonSeed": 3873125151,
     "selectedLiftType": "surface",
     "snow": "mid",
@@ -1513,41 +1513,13 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
         "kind": "snow",
         "wind": "calm",
       },
-      {
-        "kind": "thaw",
-        "wind": "calm",
-      },
-      {
-        "kind": "thaw",
-        "wind": "gusty",
-      },
-      {
-        "kind": "thaw",
-        "wind": "calm",
-      },
-      {
-        "kind": "storm",
-        "wind": "calm",
-      },
-      {
-        "kind": "clear",
-        "wind": "calm",
-      },
-      {
-        "kind": "thaw",
-        "wind": "calm",
-      },
-      {
-        "kind": "clear",
-        "wind": "calm",
-      },
     ],
   },
   "nights": [
     {
       "arrivals": 27,
       "beats": "",
-      "cash": 8956,
+      "cash": 6136,
       "cashDelta": -259,
       "dayIndex": 1,
       "lodgeTier": 1,
@@ -1563,7 +1535,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 29,
       "beats": "first_load",
-      "cash": 7096,
+      "cash": 4966,
       "cashDelta": 180,
       "dayIndex": 2,
       "lodgeTier": 1,
@@ -1579,7 +1551,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 25,
       "beats": "first_load",
-      "cash": 5414,
+      "cash": 5054,
       "cashDelta": 438,
       "dayIndex": 3,
       "lodgeTier": 2,
@@ -1595,7 +1567,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 32,
       "beats": "first_load",
-      "cash": 3576,
+      "cash": 2076,
       "cashDelta": -179,
       "dayIndex": 4,
       "lodgeTier": 2,
@@ -1611,7 +1583,7 @@ exports[`season characterization > store path with mocked Math.random 1`] = `
     {
       "arrivals": 36,
       "beats": "first_load",
-      "cash": 3224,
+      "cash": 2474,
       "cashDelta": 548,
       "dayIndex": 5,
       "lodgeTier": 2,

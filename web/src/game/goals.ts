@@ -54,8 +54,8 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "solvent", label: "Finish solvent",
     status: settled ? (met ? "Done" : "Missed") : (solvent ? "On track" : "At risk"),
     explainer: settled
-      ? (met ? "Finished in the black with all loans and construction covered." : state.outcome === "bankrupt" ? "The bank called your loan before winter ended." : "Closing cash fell short of your loan and unpaid construction.")
-      : (solvent ? "Cash covers your loan and unpaid construction bills." : "Loan and construction bills exceed cash right now. Build ticket revenue."),
+      ? (met ? "Finished in the black with all winter bills and loans covered." : state.outcome === "bankrupt" ? "The bank called your loan before winter ended." : "Closing cash fell short of your winter loan.")
+      : (solvent ? "Cash covers your winter loan and open bills." : "Loan balance exceeds cash right now. Build ticket revenue."),
   });
   return chips;
 }

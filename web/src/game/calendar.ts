@@ -20,8 +20,19 @@ export const DUTCH_HILL_CALENDAR_LEGACY: CalendarDef = {
   holidayWeeks: [{ from: 20, to: 28, label: "February vacation week" }],
 };
 
-/** Act I default: Fri–Sun open, Mon–Thu background; civil 26 Dec–mid Feb (7 weeks). */
+/** Act I default: 6 Fri-Sun weekends (18 playable days / 42 civil days), Mon-Thu background. */
 export const DUTCH_HILL_CALENDAR: CalendarDef = {
+  length: 42,
+  startWeekday: 4,
+  startDate: { month: 12, day: 26 },
+  startYear: 2025,
+  openWeekdays: [4, 5, 6],
+  holidays: [{ day: 25, label: "MLK Day" }],
+  holidayWeeks: [{ from: 35, to: 42, label: "Midwinter vacation week" }],
+};
+
+/** Act II+ default: 7 Fri-Sun weekends (21 playable days / 49 civil days). */
+export const ACT2_CALENDAR: CalendarDef = {
   length: 49,
   startWeekday: 4,
   startDate: { month: 12, day: 26 },

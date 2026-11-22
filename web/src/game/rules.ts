@@ -3,7 +3,7 @@ import { liftName } from "./assetNames";
 import { winterRecord } from "./winterMemory";
 import {
   BANKRUPTCY_MORNINGS, LOAN_TERMS,
-  canRepayLoan, constructionDraw, constructionPayables, dailyCosts, loanOffered,
+  canRepayLoan, constructionDraw, dailyCosts, loanOffered,
   liquidNetWorth, morningCash, operatingCosts, payoffAmount, winterLoanRate, type Payable,
 } from "./economy";
 import {
@@ -749,7 +749,7 @@ export function checkPaint(state: GameState, strokes: readonly PaintStroke[], gl
       guest.skiRoute?.legs.some((leg) => leg.trailIndex === preview.trailIndex)));
   const reason = preview.reason ?? (inUse ? "Wait for skiers to finish using this trail."
     : state.phase !== "day" ? "Building happens during the day. Wait for morning."
-    : state.cash < cost ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
+    : state.cash < cost ? "Wallet says no. Close out the day, then check your balance." : null);
   return { ...preview, cost, reason, cleared, name, glade: isGlade };
 }
 
@@ -879,12 +879,13 @@ export function undoTrail(state: GameState): GameState {
   };
 }
 
-function purchaseConstruction(state: GameState, total: number, what: Payable["what"], liftIndex?: number) {
+function purchaseConstruction(state: GameState, total: number, ..._legacy: [Payable["what"]?, number?]) {
+  void _legacy;
   const { deposit } = constructionDraw(total);
   return {
     cash: state.cash - deposit,
     constructionSpent: state.constructionSpent + deposit,
-    payables: [...state.payables, ...constructionPayables(total, state.dayIndex, what, liftIndex)],
+    payables: state.payables,
   };
 }
 
@@ -903,7 +904,7 @@ export function checkAssetPlacement(state: SitePlacementState & Pick<GameState, 
     terminals,
     defaultStyleId: state.lodgeStyleId,
   });
-  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Not enough cash for the deposit. Close out the day, then check your balance." };
+  if (preview.ok && constructionDraw(preview.cost).deposit > state.cash) return { ok: false as const, reason: "Wallet says no. Close out the day, then check your balance." };
   return preview;
 }
 
@@ -959,8 +960,8 @@ export function assetRemovalQuote(state: GameState, index: number) {
       state.schoolContract.day >= state.dayIndex && state.assets.filter(a => a.id === asset.id).length === 1) {
     reason = "The Readsboro kids are coming. Keep the school open until they’ve visited.";
   }
-  if (!reason && !undo && (purchase ? state.dayIndex < purchase.day + 2 : state.payables.some(p => p.what === asset.id))) {
-    reason = "Pay off the construction installments before you tear this down.";
+  if (!reason && !undo && state.payables.some(p => p.what === asset.id)) {
+    reason = "Pay off legacy construction installments before you tear this down.";
   }
   const refund = purchase ? (undo ? constructionDraw(purchase.price).deposit : Math.floor(purchase.price / 2)) : 0;
   return { undo, refund, reason };
@@ -972,14 +973,6 @@ export function removeAsset(state: GameState, index: number): GameState {
   const asset = state.assets[index];
   const assets = state.assets.filter((_, i) => i !== index);
   const payables = [...state.payables];
-  if (undo && asset.purchase) {
-    // Two identical venues bought today have interchangeable installments. Remove exactly one pair.
-    for (const draw of constructionPayables(asset.purchase.price, state.dayIndex, asset.id)) {
-      const i = payables.findIndex(p => p.what === draw.what && p.amount === draw.amount && p.dueDay === draw.dueDay);
-      if (i < 0) return state;
-      payables.splice(i, 1);
-    }
-  }
   const buildings = state.buildings.filter(id => id !== asset.id || assets.some(a => a.id === id));
   return { ...state, assets, buildings, payables, cash: state.cash + refund,
     constructionSpent: undo ? state.constructionSpent - refund : state.constructionSpent,
@@ -1060,7 +1053,7 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
   const reason = state.phase !== "day" ? "Building happens during the day. Wait for morning."
     : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
     : state.lodgeTier < 2 ? "Snow guns need Lodge Tier 2."
-    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Not enough cash for the deposit. Close out the day, then check your balance." : null);
+    : gunReasonCopy(gunPlacementReason(point, state.guns)) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Wallet says no. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
   return {
     ok: true as const, cost: GUN_COST, acres: 0, attached: false,

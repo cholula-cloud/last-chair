@@ -6,7 +6,6 @@ import { liftName, venueName } from "@/game/assetNames";
 import { ASSET_CATALOG, LODGE_TIERS, type AssetId, type LodgeTier } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
-import { constructionDraw } from "@/game/economy";
 import { assetRemovalQuote, liftClosureProblem, openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
@@ -66,7 +65,7 @@ function AssetGrid({ ids, tier, onBuild }: { ids: AssetId[]; tier: LodgeTier; on
             <small className="block">
               {locked
                 ? `Opens at ${LODGE_TIERS[asset.opensAtTier as LodgeTier].label}`
-                : `${formatMoney(constructionDraw(asset.cost).deposit)} now`}
+                : formatMoney(asset.cost)}
             </small>
           </button>
         );
@@ -110,9 +109,6 @@ export function BuildSheet({
   const liftsPanel = (
     <div className="panel px-3.5 pb-4 pt-3.5">
       <SectionHeading>Lifts</SectionHeading>
-      <p className="chip mb-2 mt-1 w-fit px-2 py-1 text-xs font-extrabold [--lift:2px]">
-        Payment plan: 40% down today, 30% for the next two nights.
-      </p>
       <div className="grid grid-cols-2 gap-2">
         {(["surface", "chair"] as const).map((type: LiftType) => (
           <button key={type} type="button" className="key press min-h-14 p-2 text-left font-extrabold"
@@ -129,7 +125,7 @@ export function BuildSheet({
       </PrimaryButton>
       {reviewLift !== null && lifts[reviewLift] && <BuildImpactCard title={`Close ${liftName(lifts[reviewLift], reviewLift)}?`}
         facts={[{ label: "Routes", value: "All trails on this lift close with it." },
-          { label: "Refund", value: "$0. Any payments still owed stay owed." },
+          { label: "Refund", value: "$0." },
           { label: "Timing", value: "Close it now if the hill hasn't opened. Otherwise it closes overnight." }]}
         problem={closeProblem} confirmLabel="Confirm closure" onCancel={() => setReviewLift(null)}
         onConfirm={() => { closeLift(reviewLift); setReviewLift(null); }} />}
@@ -158,7 +154,7 @@ export function BuildSheet({
       <SectionHeading>Snow</SectionHeading>
       <button type="button" className="key press min-h-11 px-3 font-extrabold"
         disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
-        Snow gun, {tier < 2 ? "Lodge Tier 2" : `${formatMoney(constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit)} now`}
+        Snow gun, {tier < 2 ? "Lodge Tier 2" : formatMoney(ASSET_CATALOG.snow_guns.cost)}
       </button>
     </div>
   );

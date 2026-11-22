@@ -5,7 +5,7 @@ import type {
   StoryBeatDef,
 } from "./types";
 
-export const WINTER_GOAL = "Finish the winter in the black—enough cash to cover your loan and any unpaid construction.";
+export const WINTER_GOAL = "Finish the winter in the black, with enough cash to cover any winter bank loan.";
 
 /** What a hill with no founder modifier does. */
 export const NO_FOUNDER_MODS = {

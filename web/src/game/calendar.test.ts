@@ -34,9 +34,9 @@ describe("Dutch Hill calendar", () => {
     expect(dayLabel(legacy, 28).date).toBe("22 Feb");
   });
 
-  it("opens Fri–Sun on the operating calendar", () => {
-    expect(DUTCH_HILL_CALENDAR.length).toBe(49);
-    expect(operatingSeasonLength(DUTCH_HILL_CALENDAR)).toBe(21);
+  it("opens Fri–Sun for 6 weekends (18 operating days / 42 civil days) on Dutch Hill", () => {
+    expect(DUTCH_HILL_CALENDAR.length).toBe(42);
+    expect(operatingSeasonLength(DUTCH_HILL_CALENDAR)).toBe(18);
     expect(dayLabel(DUTCH_HILL_CALENDAR, 1)).toMatchObject({ weekday: "Fri", date: "26 Dec" });
     expect(isOperatingDay(DUTCH_HILL_CALENDAR, 1)).toBe(true);
     expect(isOperatingDay(DUTCH_HILL_CALENDAR, 2)).toBe(true);
@@ -44,7 +44,7 @@ describe("Dutch Hill calendar", () => {
     expect(closedDaysBeforeNextOpen(DUTCH_HILL_CALENDAR, 3)).toEqual([4, 5, 6, 7]);
   });
 
-  it("finishes an in-progress 14-day save and starts a 49-day winter", () => {
+  it("finishes an in-progress 14-day save and starts a 42-day Dutch Hill winter", () => {
     const state = pickFounder(createBuiltHill(), "elena");
     const night = acknowledgeBeat(openNight({ ...state, dayIndex: 14, weather: state.weatherDays[13].kind }));
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip mountainId for v3 migration fixture
@@ -61,12 +61,12 @@ describe("Dutch Hill calendar", () => {
     const review = sleep(hydrate(result.state, createInitialState()));
     expect(review).toMatchObject({ phase: "winter_review", dayIndex: 14 });
     const next = startNewSeason(review);
-    expect(next).toMatchObject({ phase: "day", dayIndex: 1, seasonLength: 49, operatingDayIndex: 1 });
-    expect(next.weatherDays).toHaveLength(49);
+    expect(next).toMatchObject({ phase: "day", dayIndex: 1, seasonLength: 42, operatingDayIndex: 1 });
+    expect(next.weatherDays).toHaveLength(42);
   });
 
   it("reads the configured length when creating a winter", () => {
-    expect(createInitialState().seasonLength).toBe(49);
+    expect(createInitialState().seasonLength).toBe(42);
     expect(calendarForSeason("dutch_hill", 28).length).toBe(28);
   });
 

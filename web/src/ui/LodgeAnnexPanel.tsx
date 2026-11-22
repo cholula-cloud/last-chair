@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { ASSET_CATALOG, ATTACH_BONUS, LODGE_TIERS, lodgeAttachPads, type AssetId, type LodgeTier } from "@/game/base";
-import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
 import { venueName } from "@/game/assetNames";
@@ -86,7 +85,7 @@ export function LodgeAnnexPanel({ onCloseInspector }: { onCloseInspector: () => 
                             <span className="block text-[0.65rem] font-bold opacity-80">
                               {locked
                                 ? `Needs ${LODGE_TIERS[spec.opensAtTier as LodgeTier].label}`
-                                : formatMoney(constructionDraw(spec.cost).deposit)}
+                                : formatMoney(spec.cost)}
                             </span>
                           </button>
                         );

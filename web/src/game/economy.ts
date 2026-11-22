@@ -35,19 +35,13 @@ export type Loan = {
 export type OperatingCosts = { fixed: number; vacationStaffing?: number; founder: number; liftOps: number; upkeep: number };
 export type CostLines = OperatingCosts & { snowNight: number; draws: number; interest: number; constructionSpent: number };
 
+/** All construction is paid 100% upfront; legacy installment helpers keep zero follow-up draws. */
 export function constructionDraw(total: number) {
-  const deposit = Math.round(total * 0.4);
-  const first = Math.round(total * 0.3);
-  return { deposit, first, second: total - deposit - first };
+  return { deposit: total, first: 0, second: 0 };
 }
 
-export function constructionPayables(total: number, day: number, what: Payable["what"], liftIndex?: number): Payable[] {
-  const { first, second } = constructionDraw(total);
-  const entry = { what, ...(liftIndex === undefined ? {} : { liftIndex }) };
-  return [
-    { ...entry, amount: first, dueDay: day },
-    { ...entry, amount: second, dueDay: day + 1 },
-  ].filter(({ amount }) => amount > 0);
+export function constructionPayables(): Payable[] {
+  return [];
 }
 
 export function operatingCosts(state: GameState): OperatingCosts {

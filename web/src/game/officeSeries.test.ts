@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBuiltHill } from "./__fixtures__/built-hill";
-import { constructionPayables, LOAN_TERMS, morningCash, payoffAmount } from "./economy";
+import { LOAN_TERMS, morningCash, payoffAmount } from "./economy";
 import {
   bestDayBy,
   cashTrendSeries,
@@ -69,12 +69,15 @@ describe("officeSeries money selectors", () => {
     }
   });
 
-  it("combines settled construction installments and upcoming payables", () => {
+  it("combines settled construction spending and legacy upcoming payables", () => {
     const base = runDays(2);
     const withPayables: GameState = {
       ...base,
       dayHistory: base.dayHistory.map((d, i) => (i === 1 ? { ...d, constructionDue: 600 } : d)),
-      payables: constructionPayables(2000, 3, "cafe"),
+      payables: [
+        { what: "cafe", amount: 600, dueDay: 3 },
+        { what: "cafe", amount: 600, dueDay: 4 },
+      ],
     };
     const timeline = constructionSeries(withPayables);
     expect(timeline.totalPaid).toBe(600);

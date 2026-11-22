@@ -28,37 +28,34 @@ describe("construction payments", () => {
     expect(dailyCosts({ ...hill, dayIndex: 20 }).fixed - dailyCosts({ ...hill, dayIndex: 19 }).fixed).toBe(550);
   });
 
-  it("charges $480 up front and two $360 installments for a day-two café", () => {
+  it("charges $1,200 upfront with zero installments for a day-two café", () => {
     const day2 = sleep(close(opened()));
     const built = buyBuilding(day2, "cafe");
-    expect(built.cash).toBe(day2.cash - 480);
-    expect(built.payables).toEqual([
-      { what: "cafe", amount: 360, dueDay: 2 },
-      { what: "cafe", amount: 360, dueDay: 3 },
-    ]);
+    expect(built.cash).toBe(day2.cash - 1200);
+    expect(built.payables).toEqual([]);
     const night2 = close(built);
-    expect(dailyCosts(night2)).toMatchObject({ constructionSpent: 480, draws: 360 });
+    expect(dailyCosts(night2)).toMatchObject({ constructionSpent: 1200, draws: 0 });
     const resumed = migrate(JSON.parse(JSON.stringify(toPersisted(night2))), SAVE_VERSION);
     expect(resumed.reset).toBe(false);
     const day3 = sleep({ ...night2, ...resumed.state });
     expect(day3.cash).toBe(morningCash(night2));
-    expect(day3.payables).toHaveLength(1);
+    expect(day3.payables).toEqual([]);
     const night3 = close(day3);
-    expect(dailyCosts(night3)).toMatchObject({ constructionSpent: 0, draws: 360 });
+    expect(dailyCosts(night3)).toMatchObject({ constructionSpent: 0, draws: 0 });
     const day4 = sleep(night3);
     expect(day4.cash).toBe(morningCash(night3));
     expect(day4.payables).toEqual([]);
   });
 
-  it("keeps a final-night draw and deducts later obligations from net worth", () => {
+  it("settles a final-night upfront build cleanly with zero lingering payables", () => {
     const base = opened();
     const last = { ...base, dayIndex: base.seasonLength, weather: base.weatherDays.at(-1)!.kind };
     const night = close(buyBuilding(last, "cafe"));
     const review = sleep(night);
     expect(review).toMatchObject({ outcome: "finished", cash: morningCash(night) });
-    expect(dailyCosts(night)).toMatchObject({ draws: 360, snowNight: 0 });
-    expect(review.payables).toHaveLength(1);
-    expect(liquidNetWorth(review)).toBe(review.cash - 360);
+    expect(dailyCosts(night)).toMatchObject({ draws: 0, snowNight: 0 });
+    expect(review.payables).toEqual([]);
+    expect(liquidNetWorth(review)).toBe(review.cash);
   });
 });
 

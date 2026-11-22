@@ -9,11 +9,11 @@ const started = () => ({ ...pickFounder(createBuiltHill(99), "elena"), lodgeTier
 const pad = lodgeAttachPads(2)[0];
 
 describe("venue forgiveness", () => {
-  it("undoes only one of two identical deposits and pairs of installments", () => {
+  it("undoes only one of two identical upfront purchases", () => {
     const first = buyBuilding(started(), "cafe");
     const both = placeAsset(first, "cafe", pad);
     expect(both.assets).toHaveLength(first.assets.length + 1);
-    expect(assetRemovalQuote(both, 1)).toEqual({ undo: true, refund: 480, reason: null });
+    expect(assetRemovalQuote(both, 1)).toEqual({ undo: true, refund: 1200, reason: null });
     const undone = removeAsset(both, 1);
     expect(undone.cash).toBe(first.cash);
     expect(undone.payables).toEqual(first.payables);
@@ -48,15 +48,13 @@ describe("venue forgiveness", () => {
     expect(removeAsset(booked, 1)).toBe(booked);
   });
 
-  it("permits resale only after the last installment, and returns half the original price", () => {
+  it("permits resale right away once paid upfront, and returns half the original price", () => {
     const built = buyBuilding(started(), "cafe");
-    const financed = { ...built, dayIndex: 2 };
-    expect(removeAsset(financed, 1)).toBe(financed);
-    const paid = { ...built, dayIndex: 3, payables: [] };
-    expect(assetRemovalQuote(paid, 1)).toEqual({ undo: false, refund: ASSET_CATALOG.cafe.cost / 2, reason: null });
-    const sold = removeAsset(paid, 1);
+    const nextDay = { ...built, dayIndex: 2 };
+    expect(assetRemovalQuote(nextDay, 1)).toEqual({ undo: false, refund: ASSET_CATALOG.cafe.cost / 2, reason: null });
+    const sold = removeAsset(nextDay, 1);
     expect(sold.buildings).not.toContain("cafe");
-    expect(sold.cash - paid.cash).toBe(600);
+    expect(sold.cash - nextDay.cash).toBe(600);
     expect(removeAsset(sold, 1)).toBe(sold);
   });
 });
