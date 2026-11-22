@@ -495,8 +495,10 @@ export function skipToClose(state: GameState): GameState {
   if (state.phase !== "day" || openingStep(state)) return state;
   const STEP_MIN = 4;
   let s: GameState = { ...state, paused: false };
-  while (s.phase === "day") {
+  for (let guard = 0; s.phase === "day" && guard < 2000; guard++) {
+    const before = s.clockMin;
     s = tick(s, STEP_MIN * MS_PER_GAME_MINUTE);
+    if (s.phase === "day" && s.clockMin === before) break;
   }
   return s;
 }
