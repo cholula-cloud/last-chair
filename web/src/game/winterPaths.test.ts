@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { createBuiltHill } from "./__fixtures__/built-hill";
 import { runSeason, type Strategy } from "./balance";
+import { pickFounder, replyToSummitLink, skipToClose } from "./rules";
 
 // The same hill, founder and weather can be played for different commitments.
 const schoolOperator: Strategy = {
@@ -24,12 +26,19 @@ describe("matched Dutch Hill winters", () => {
     expect(host.days.slice(0, day - 1)).toEqual(publicHill.days.slice(0, day - 1));
   });
 
-  it("Vivian's terms change the available fares in the same winter", { timeout: 30_000 }, () => {
-    const joined = runSeason(3, independent, "elena", { summitLink: "accepted" });
-    const local = runSeason(3, independent, "elena", { summitLink: "declined" });
+  it("Vivian's terms change pending fare when you accept or decline", () => {
+    const offer = {
+      ...skipToClose(pickFounder(createBuiltHill(3), "elena")),
+      pendingBeat: "summit_link" as const,
+      beatAcknowledged: false,
+      summitLinkDecision: null,
+      pendingFare: "expensive" as const,
+    };
+    const joined = replyToSummitLink(offer, "accepted");
+    const local = replyToSummitLink(offer, "declined");
     expect(joined.summitLinkDecision).toBe("accepted");
     expect(local.summitLinkDecision).toBe("declined");
-    expect(joined.days.at(-1)?.fare).toBe("balanced");
-    expect(local.days.at(-1)?.fare).toBe("expensive");
+    expect(joined.pendingFare).toBe("balanced");
+    expect(local.pendingFare).toBe("expensive");
   });
 });

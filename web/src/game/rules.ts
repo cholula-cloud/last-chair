@@ -21,6 +21,10 @@ import {
   assetRevenue,
   assetEffect,
   advanceLodgeUpgrade,
+  hasCafeForArrivals,
+  hasMaintenanceGarage,
+  hospitalitySeats,
+  isRefuelHospitality,
   lodgeAttachPads,
   LODGE_TIERS,
   nextLodgeTier,
@@ -183,7 +187,8 @@ export function satisfactionContext(
     snowPenaltyScale: TALENT.firstAidHut.learned(owned) ? TALENT.firstAidHut.penaltyScale : 1,
     arrivalMood: Math.min(0.95, arrivalMood(state.assets ? [] : state.buildings, state.founderId, state.weather) + (band ? TALENT.houseBand.mood : 0) - warmWeekPenalty(state) +
       (state.assets ?? []).reduce((sum, asset) => sum + assetEffect(asset, "arrivalMood"), 0)),
-    venueValue: (TALENT.cafeShift.learned(owned) && state.buildings.includes("cafe") ? TALENT.cafeShift.value : 0) + (state.assets
+    venueValue: (TALENT.cafeShift.learned(owned) && hasCafeForArrivals(state.buildings, state.assets ?? [])
+      ? TALENT.cafeShift.value : 0) + (state.assets
       ? state.assets.reduce((sum, asset) => sum + assetEffect(asset, "hillValue"), 0)
       : venueValue(state.buildings)),
     snowExpectation: SAT.SNOW_EXPECTED + (founder?.snowExpectationPenalty ?? 0),
@@ -320,9 +325,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
   let ticketBasePosted = state.dayStats.ticketBasePosted ?? 0;
   let schoolBusPosted = state.dayStats.schoolBusPosted ?? 0;
   let intradayRevenue = Boolean(state.dayStats.intradayRevenue);
-  const seats = state.assets.reduce((sum, asset) =>
-    sum + ((asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar" || asset.id === "waffle_haus")
-      ? Math.floor(assetEffect(asset, "seats")) : 0), 0);
+  const seats = hospitalitySeats(state.assets, state.lodgeTier);
   const exposure = state.weather === "thaw" && clockMin + addMin >= THAW_START_MIN
     ? exposureFor(state)
     : [];
@@ -366,13 +369,13 @@ export function tick(state: GameState, deltaMs: number): GameState {
       const was = guests[i];
       completedRuns += g.runs - was.runs;
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
-      if (asset?.id === "cafe" || asset?.id === "warming_hut" || asset?.id === "apres_bar" || asset?.id === "waffle_haus") occupiedSeats += 1;
+      if (asset && isRefuelHospitality(asset.id)) occupiedSeats += 1;
       if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
         const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         cash += rate;
         intradayRevenue = true;
-        if (asset.id === "cafe" || asset.id === "warming_hut" || asset.id === "apres_bar" || asset.id === "waffle_haus") {
+        if (isRefuelHospitality(asset.id)) {
           if ((g.balks ?? 0) > (was.balks ?? 0)) balked += 1;
           else refuels += 1;
           const shop = state.assets.find((item) => item.id === "shop");
@@ -1122,6 +1125,8 @@ export function pickFounder(state: GameState, id: FounderId): GameState {
     snowQuality: state.snowQuality,
     weather: state.weather,
     buildings: state.buildings,
+    assets: state.assets,
+    lodgeTier: state.lodgeTier,
     talentsOwned: [],
     founderId: id,
     rand,
@@ -1204,15 +1209,17 @@ function nightFor(
   const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
   state = closeLiftsNow(state, closing);
   const exposure = exposureFor(state);
+  const hasGarage = hasMaintenanceGarage(state.assets, state.lodgeTier);
   const overnight = applyOvernight({
     snow,
     cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
     gunCoverage: gunCoverageForTrails(state.trails, state.guns, state.talentsOwned, weatherTomorrow.wind, exposure),
-    groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
+    groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasGarage),
     exposure,
     hasPlacedGuns: state.guns.length > 0,
+    hasMaintenanceGarage: hasGarage,
     trailElevations: state.trails.map((t) => t.elevations),
     weatherTomorrow,
     buildings: state.buildings,
@@ -1251,7 +1258,7 @@ export function snowServiceStats(
   const exposure = exposureFor(state);
   return {
     gunSegments: gunSegmentsTonight(state.trails, state.guns, snow, state.talentsOwned, weatherTomorrow.wind, exposure),
-    groomFeet: groomedFeet(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
+    groomFeet: groomedFeet(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned, hasMaintenanceGarage(state.assets, state.lodgeTier)),
   };
 }
 
@@ -1274,7 +1281,7 @@ export function previewOvernight(state: GameState, snow: SnowPreset): OvernightP
     tone: reading.tone,
     meanQuality: outlook ? WEATHER_KINDS.reduce((sum, kind) =>
       sum + outlook[kind] * results[kind].overnight.snowQuality, 0) : overnight.snowQuality,
-    cost: snowNightCost(snow, state.talentsOwned),
+    cost: snowNightCost(snow, state.talentsOwned, hasMaintenanceGarage(state.assets, state.lodgeTier)),
     weather,
     outlook,
     results,
@@ -1296,6 +1303,8 @@ export function expectedArrivals(
     snowQuality: results[weather].overnight.snowQuality,
     weather,
     buildings: state.buildings,
+    assets: state.assets,
+    lodgeTier: state.lodgeTier,
     talentsOwned: results[weather].talentsOwned,
     founderId: state.founderId,
     reputation: state.reputation,
@@ -1482,6 +1491,8 @@ export function sleep(state: GameState): GameState {
     snowQuality: overnight.snowQuality,
     weather: overnight.weather,
     buildings: state.buildings,
+    assets: carried.assets,
+    lodgeTier: carried.lodgeTier,
     talentsOwned: carried.talentsOwned,
     founderId: state.founderId,
     reputation: state.reputation,

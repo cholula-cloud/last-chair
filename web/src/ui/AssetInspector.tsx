@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { assetIsPresent, cleanAssetName, liftName, lodgeName, MAX_ASSET_NAME_LENGTH, venueName, type AssetTarget } from "@/game/assetNames";
-import { ASSET_CATALOG, assetEffect, assetRevenue, LODGE_TIERS } from "@/game/base";
+import { ASSET_CATALOG, assetEffect, assetRevenue, isRefuelHospitality, LODGE_TIERS, scaledAssetEffect } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { gunCoverage } from "@/game/guns";
 import { isLiftOperational, liftCapacityPerHour, liftLoadingClosesAt, liftWaitMin, rideMinutesForLift } from "@/game/lifts";
@@ -31,7 +31,12 @@ function assetDetails(state: GameState, target: AssetTarget): {
       const details = {
         name: lodgeName(state),
         type: `Lodge tier ${state.lodgeTier}`,
-        facts: [["Parking spaces", tier.stalls], ["Attached venues", `${attached} / ${tier.pads}`]] as [string, string | number][],
+        facts: [
+          ["Daily skier cap", `~${tier.maxArrivals}`],
+          ["Hospitality seating", `×${tier.seatMultiplier} at seated venues`],
+          ["Parking spaces", tier.stalls],
+          ["Attached venues", `${attached} / ${tier.pads}`],
+        ] as [string, string | number][],
       };
       if (state.lodgeUpgrade) {
         const { toTier, nightsRemaining } = state.lodgeUpgrade;
@@ -42,7 +47,9 @@ function assetDetails(state: GameState, target: AssetTarget): {
     case "venue": {
       const venue = state.assets[index];
       const spec = ASSET_CATALOG[venue.id];
-      const seats = Math.floor(assetEffect(venue, "seats"));
+      const seats = isRefuelHospitality(venue.id)
+        ? scaledAssetEffect(venue, state.lodgeTier, "seats")
+        : Math.floor(assetEffect(venue, "seats"));
       const inside = state.guests.filter((guest) => guest.state === "refuel" && guest.venueIndex === index).length;
       return {
         name: venueName(venue),

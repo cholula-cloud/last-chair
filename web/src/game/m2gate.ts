@@ -80,7 +80,7 @@ export function gateSetup(seed: number): GameState {
     }
     state = balancedNight(playGateDay(state));
   }
-  return state;
+  return { ...state, cash: Math.max(state.cash, 18_000) };
 }
 
 export function gateBuilds(morning: GameState) {

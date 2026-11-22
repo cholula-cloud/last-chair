@@ -28,7 +28,7 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
     id: "lodge",
     label: "Lodge Tier 2",
     status: lodge ? "Done" : settled ? "Missed" : "To do",
-    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is open.` : settled ? "Winter ended at Lodge Tier 1." : "Upgrade to Tier 2 in Build to unlock chairlifts, ski school, and more parking.",
+    explainer: lodge ? `Lodge Tier ${state.lodgeTier} is open.` : settled ? "Winter ended at Lodge Tier 1." : "Upgrade to Tier 2 in Build to unlock chairlifts, ski school, and a higher daily skier cap.",
   }];
   const contract = state.schoolContract;
   if (contract || state.schoolEligible) {

@@ -6,6 +6,7 @@ import { founderById } from "./content";
 import { operatingSettledAtClose } from "./intradayCash";
 import { isLiftOperational } from "./lifts";
 import type { GameState } from "./state";
+import { hasMaintenanceGarage } from "./base";
 import { DAILY_FIXED_COST, LIFT_OPS_COST, snowNightCost } from "./types";
 
 export const LOW_CASH = 1500;
@@ -69,7 +70,9 @@ export function operatingCosts(state: GameState): OperatingCosts {
 export function dailyCosts(state: GameState): CostLines {
   return {
     ...(state.nightRecap?.costs ?? operatingCosts(state)),
-    snowNight: state.dayIndex < state.seasonLength ? snowNightCost(state.pendingSnow, state.talentsOwned) : 0,
+    snowNight: state.dayIndex < state.seasonLength
+      ? snowNightCost(state.pendingSnow, state.talentsOwned, hasMaintenanceGarage(state.assets, state.lodgeTier))
+      : 0,
     draws: state.payables.reduce((sum, item) => sum + (item.dueDay <= state.dayIndex ? item.amount : 0), 0),
     interest: state.loan ? state.loan.principal * state.loan.ratePerDay : 0,
     constructionSpent: state.constructionSpent,

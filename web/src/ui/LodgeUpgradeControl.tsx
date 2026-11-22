@@ -28,8 +28,9 @@ export function LodgeUpgradeControl({
   if (!construction && (!next || !payment)) return null;
 
   const wrap = variant === "inspector" ? (className ?? "mt-3") : "mt-2";
-  const stallGain = next ? LODGE_TIERS[next].stalls - LODGE_TIERS[tier].stalls : 0;
   const padGain = next ? LODGE_TIERS[next].pads - LODGE_TIERS[tier].pads : 0;
+  const arrivalGain = next ? LODGE_TIERS[next].maxArrivals - LODGE_TIERS[tier].maxArrivals : 0;
+  const seatScale = next ? `×${LODGE_TIERS[next].seatMultiplier}` : "";
 
   return (
     <div className={wrap} data-lodge-upgrade data-variant={variant}>
@@ -51,6 +52,8 @@ export function LodgeUpgradeControl({
                   value: `${formatMoney(payment.deposit)} now, ${formatMoney(payment.first)} each of the next two nights`,
                 },
                 { label: "Construction", value: "Two nights" },
+                { label: "Daily skier cap", value: `~${LODGE_TIERS[next].maxArrivals}` },
+                { label: "Hospitality seating", value: `All seated venues scale ${seatScale}` },
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
@@ -76,9 +79,10 @@ export function LodgeUpgradeControl({
                 <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
                   {formatMoney(payment.deposit)} now, {formatMoney(payment.first)} x2 nights
                 </span>
-                {(stallGain > 0 || padGain > 0) && (
+                {(arrivalGain > 0 || padGain > 0) && (
                   <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
-                    +{stallGain} parking, +{padGain} annex {padGain === 1 ? "pad" : "pads"}
+                    +{arrivalGain} skiers/day, seats {seatScale}
+                    {padGain > 0 ? `, +${padGain} annex ${padGain === 1 ? "pad" : "pads"}` : ""}
                   </span>
                 )}
                 {unlocks.length > 0 && (

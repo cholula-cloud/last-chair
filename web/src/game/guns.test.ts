@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { GUN_COST, MAX_GUNS_BASE, maxGunsFor, groomCoverage, gunCoverage, gunPlacementReason, migrateLegacyGuns } from "./guns";
+import { GROOM_WITHOUT_GARAGE, GUN_COST, MAX_GUNS_BASE, maxGunsFor, groomCoverage, groomedFeet, gunCoverage, gunPlacementReason, migrateLegacyGuns } from "./guns";
 import { freshTrail } from "./snow";
 import { TERRAIN } from "./terrain";
 
@@ -58,5 +58,15 @@ describe("night grooming", () => {
     ]);
     expect(groomCoverage(trails, [3, 10, 1], "mid", ["groom_pass"])[2]).toEqual(Array(6).fill(true));
     expect(groomCoverage(trails, [3, 10, 1], "minimal").flat()).not.toContain(true);
+  });
+
+  it("runs a partial groom budget without a maintenance garage", () => {
+    const trails = [trail(1450), trail(1000), trail(830)];
+    const full = groomedFeet(trails, [3, 10, 1], "mid", [], true);
+    const partial = groomedFeet(trails, [3, 10, 1], "mid", [], false);
+    expect(partial).toBeGreaterThan(0);
+    expect(partial).toBeLessThan(full);
+    expect(partial / full).toBeGreaterThan(0.3);
+    expect(partial / full).toBeLessThan(GROOM_WITHOUT_GARAGE + 0.05);
   });
 });

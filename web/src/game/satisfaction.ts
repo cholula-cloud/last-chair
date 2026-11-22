@@ -14,7 +14,7 @@ export const SAT = {
   /** Points per minute of pain before the persona weight. */
   QUEUE_PTS: 3.5,
   /** Mean wait per ride that costs nothing in the score and ticket-value loss. */
-  QUEUE_FREE_MIN: 1,
+  QUEUE_FREE_MIN: 5,
   /** Mean wait per ride at or below this is normal; recap and Desk skip queue nags. */
   QUEUE_NAG_MIN: 5,
   /** Pain grows 1:1 up to this mean wait, then at `QUEUE_FAR_SLOPE`. */
