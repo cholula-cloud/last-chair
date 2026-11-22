@@ -45,9 +45,16 @@ export const replayRules = {
   decideSchoolContract: rules.decideSchoolContract,
   decideClubBooking: rules.decideClubBooking,
   decideGroomerDown: rules.decideGroomerDown,
+  installNightLights: rules.installNightLights,
+  setNightSession: rules.setNightSession,
+  decideOrchardParcel: rules.decideOrchardParcel,
+  decideInspectorNotice: rules.decideInspectorNotice,
+  decideWhiterockCaretakerBid: rules.decideWhiterockCaretakerBid,
+  dismissHomecomingNotes: rules.dismissHomecomingNotes,
   finishWinterReview: rules.finishWinterReview,
   startNewSeason: rules.startNewSeason,
   startNextHill: rules.startNextHill,
+  resumeSurvivingHill: rules.resumeSurvivingHill,
 };
 
 export type RuleName = keyof typeof replayRules;

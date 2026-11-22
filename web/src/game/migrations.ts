@@ -213,6 +213,20 @@ export const MIGRATIONS: readonly Migration[] = [
       ),
     }),
   },
+  {
+    to: 18,
+    note: "Add Mount Tom night lights, Maple Valley decisions, and caretaker homecoming state",
+    up: (s) => ({
+      ...s,
+      nightLights: Boolean(s.nightLights),
+      nightSessionOn: Boolean(s.nightSessionOn),
+      orchardParcel: s.orchardParcel ?? "unbid",
+      inspectorNotice: s.inspectorNotice ?? null,
+      homecomingNotes: Array.isArray(s.homecomingNotes) ? s.homecomingNotes : [],
+      caretakerLedger: Array.isArray(s.caretakerLedger) ? s.caretakerLedger : [],
+      forestEpilogue: Boolean(s.forestEpilogue),
+    }),
+  },
 ];
 
 type MigrationResult =

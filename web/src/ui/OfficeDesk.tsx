@@ -13,6 +13,7 @@ import { useSettings } from "./settingsStore";
 import { latestRadio } from "@/game/deskRadio";
 import { goalChips, goalInputs, operatingDaysLeftLine } from "@/game/goals";
 import { useGameStore } from "@/game/store";
+import { whiterockBuyoutOffer } from "@/game/caretaker";
 import type { WeatherKind } from "@/game/types";
 import { outlookFor } from "@/game/weather";
 import { Forecast } from "@/ui/NightRecapSheet";
@@ -89,10 +90,57 @@ export function DeskTab() {
   const chips = goalChips(goalInputs(state));
   const weather = WEATHER[state.weather];
   const hasTomorrow = outlookFor(state, 1) !== null;
+  const openBids = (state.careerHills ?? []).filter((h) => h.whiterockBidOpen);
+  const decideBid = useGameStore((s) => s.decideWhiterockCaretakerBid);
+  const dismissHomecoming = useGameStore((s) => s.dismissHomecomingNotes);
 
   return (
     <div className="grid grid-cols-1 gap-4 pb-2 md:grid-cols-2 md:items-start">
       <div className="flex flex-col gap-0">
+        {(state.homecomingNotes.length > 0 || openBids.length > 0) && (
+          <>
+            <SectionHeading>Homecoming &amp; sister hills</SectionHeading>
+            <section className="panel mb-3 space-y-2.5 p-3.5">
+              {state.homecomingNotes.map((note) => (
+                <p key={note.mountainId} className="text-sm font-bold leading-snug">
+                  {note.headline}
+                </p>
+              ))}
+              {openBids.map((bid) => (
+                <div key={bid.mountainId} className="chip space-y-2 p-2.5">
+                  <p className="text-sm font-extrabold">
+                    Sloane bid {formatMoney(whiterockBuyoutOffer(bid.mountainId))} for {bid.caretakerAlly}&apos;s hill.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => decideBid(bid.mountainId, "keep")}
+                      className="key key-solid press min-h-10 px-2 text-xs font-extrabold [--key-fill:var(--sign-yellow)]"
+                    >
+                      Keep hill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => decideBid(bid.mountainId, "sell")}
+                      className="key press min-h-10 px-2 text-xs font-extrabold"
+                    >
+                      Sell ({formatMoney(whiterockBuyoutOffer(bid.mountainId))})
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {state.homecomingNotes.length > 0 && openBids.length === 0 && (
+                <button
+                  type="button"
+                  onClick={dismissHomecoming}
+                  className="key press min-h-9 px-3 text-xs font-extrabold"
+                >
+                  File dispatches
+                </button>
+              )}
+            </section>
+          </>
+        )}
         <SectionHeading>Today</SectionHeading>
         <section aria-label="Today" className="panel px-4 py-3">
           <p className="chip inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.85rem] font-extrabold">

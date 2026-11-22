@@ -147,7 +147,7 @@ Kinds: **W** warm, **F** funny, **T** threat, **L** lore, **R** reversal, **S** 
 | **DH5** | Snow day | W T | Storm forecast on a non-holiday Friday, seeded 40% | *"Readsboro called off school. Every kid with a Flexible Flyer and a cousin with a Subaru is pointed up the driveway."* Uses holiday guest mix. | Fare, snow tier, capacity |
 | **DH6** | The visitor in a very clean jacket | F, antagonist | Reputation ≥ 40, Sat or Sun in Weeks 2–3 | Guest `"Visitor in a very clean jacket"` (Sloane) skis your hill. Night: *"Black Range Rover with Massachusetts plates. Rode the lift six times, timed the line on her watch, skipped the hot cider. Draw your own conclusions."* | Follow her; fix whatever her "Why?" flags |
 | **DH7** | The Bennington club bus | D | Saturday closed with mean wait ≤ 5 min and satisfaction ≥ 70 | Night card: Bennington Ski Club asks to bring 10 skiers next Saturday at $10 under Balanced. *"Bennington Ski Club wants to charter a bus next Saturday. Ten skiers if you can keep the line under five minutes."* | Accept or decline |
-| **DH8** | Groomer threw a track | T R D | Midpoint window (Week 3), Mid/High service on ≥ 2 of last 4 nights | Frank: *"Groomer threw a track over on the Windmill side, kid. She'll live. Just not tonight."* Tonight grooms nothing at any preset unless you pay $250 to borrow the town road crew's machine. | Pay $250, or skip grooming / lower fare |
+| **DH8** | Groomer threw a track | T R D | Midpoint window (Week 3, seasons ≥ 21d), ≥ 2 Mid/High nights with ≥ 1 High in last 4 | Frank: *"Groomer threw a track over on the Windmill side, kid. She'll live. Just not tonight."* Tonight grooms nothing at any preset unless you pay $250 to borrow the town road crew's machine. | Pay $250, or skip grooming / lower fare |
 | **DH9** | The January thaw | T R | Forecast run of ≥ 2 thaw days starting in/after Week 2 | *"Warm air from Jersey is parked over the Green Mountains for a couple days. Watch the lower meadows before they turn to mashed potatoes."* | Snow tier, close lower trail, fare |
 | **DH10** | Grammy Dot calls in | W L | First Sunday after reputation ≥ 60 (or Heritage Sign learned) | *"Caller on line one, says she's your grandmother. 'Hon, Dutch Meadows always glazed over by the J-bar. Your grandfather had a whole vocabulary for that corner.'"* | None (heritage warmth) |
 | **DH11** | Skin tracks at dawn | L | Morning after a storm that added depth, with Minimal service the night before | *"Skin tracks up the Windmill side before the bullwheel turned. Backcountry folks kept hiking this hill after '85. Nice to see them ride past a lodge with the lights on."* | Groom on powder nights or leave soft |
@@ -274,10 +274,10 @@ Shared/mode-neutral: mountain definitions, Atlas map data, coarse off-screen sim
 ## 8. Roadmap (N track + M5)
 
 - **N0 ☑** Docs finalized (`STORY.md` v2.1, `WORLD.md`, `MASTER_PLAN.md`, `SIMULATION_SPEC.md`).
-- **0b ☐** Upfront 100% construction payments (remove 40/30/30 installments) & 6-weekend Dutch Hill calendar (18 open / 42 civil days).
-- **N1–N2 ☐** Cold open v2 (6 cards, punch-card flip & title drop, optional `operatorName`), founder relationship lines, Day 1 cold read, Whiterock/Sloane/Grammy Dot/Hank Pelletier copy revamp.
-- **N3 ☐** The last chair (Day 1 first-ride toast, final-day 15:45 toast + camera ease, Winter Review punch-card line, Mount Tom call preview).
-- **N4–N5 ☐** Surprise scheduler (Week 1–6/7 pacing, 1 item/night queue, caps) + Dutch Hill surprise pack (DH1–DH5, DH9–DH12).
-- **N6–N8 ☐** Sloane scouting guest (DH6) + measured offer ($6k rep ≥50 / $3k rep 40–49), Bennington club bus (DH7), Groomer threw a track (DH8), Last Saturday (DH13).
-- **34, 35, N9 ☐** Mountain roster data, Office Atlas SVG map + Heritage Cards, Winter Review phone call & town match.
-- **36, 37, 38, N10 ☐** Mount Tom (MA) + Maple Valley (VT) hills & mechanics, Caretaker coarse sim & Homecoming, Ledger lines, Lost hills (D4).
+- **0b ☑** Upfront 100% construction payments (remove 40/30/30 installments) & 6-weekend Dutch Hill calendar (18 open / 42 civil days) + 7-weekend Act II+ calendar (21 open / 49 civil days).
+- **N1–N2 ☑** Cold open v2 (6 cards, punch-card flip & title drop, optional `operatorName`), founder relationship lines, Day 1 cold read, Whiterock/Sloane/Grammy Dot/Hank Pelletier copy revamp.
+- **N3 ☑** The last chair (Day 1 first-ride toast, final-day 15:45 toast + camera ease, Winter Review punch-card line, Mount Tom call preview).
+- **N4–N5 ☑** Surprise scheduler (Week 1–6/7 pacing, 1 item/night queue, caps) + Dutch Hill surprise pack (DH1–DH5, DH9–DH12).
+- **N6–N8 ☑** Sloane scouting guest (DH6) + measured offer ($6k rep ≥50 / $3k rep 40–49), Bennington club bus (DH7), Groomer threw a track (DH8), Last Saturday (DH13).
+- **34, 35, N9 ☑** Mountain roster data (`roster.ts`), Office Atlas SVG map + Heritage Cards (`OfficeAtlas.tsx`), Winter Review phone call & town match.
+- **36, 37, 38, N10, N11 ☑** Mount Tom (MA) + Maple Valley (VT) hills & mechanics (`mountTom.ts`, `mapleValley.ts`), Caretaker coarse sim & Homecoming (`caretaker.ts`), Caretaker Ledger lines, Lost hills (D4) & The Forest epilogue.

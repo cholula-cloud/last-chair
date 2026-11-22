@@ -9,7 +9,7 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 
 | Layer | Tool | Covers | Runs | Status |
 |---|---|---|---|---|
-| Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents | `npm test`, CI on every PR | Set up (PR 2) |
+| Unit | Vitest (added in PR 2) | Pure rules in `web/src/game/`: queues, satisfaction, snow, overnight, arrivals, beats, talents, surprises, roster, caretaker off-screen sim | `npm test`, CI on every PR | Set up (PR 2) |
 | Characterization | Vitest + seeded RNG (PR 3) | Whole-day and whole-season snapshots, so refactors cannot change behavior silently | CI | Set up (PR 3) |
 | Balance harness | Vitest and seeded seasons | Six-seed operating, settlement and story properties. The extended report compares 14 strategies, six founders and paired offer choices over 40 seeds. | Six seeds in `npm test` and CI. From `web/`, run `npm run balance` for the extended report. | Automated |
 | Smoke | Replaced by the Vitest headless season test in `sim.test.ts` (PR 2) | Full season of nights through the real sim functions | `npm test`, CI on every PR | Replaced |

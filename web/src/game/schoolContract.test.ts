@@ -69,7 +69,9 @@ describe("school bus contract", () => {
     const regularDay = sleep({ ...declined, pendingFare: "cheap" });
     expect(busDay.fare).toBe("cheap");
     expect(busDay.rngState).toBe(regularDay.rngState);
-    expect(busDay.guests.filter((guest) => !guest.schoolPupil)).toEqual(regularDay.guests);
+    expect(busDay.guests.filter((guest) => !guest.schoolPupil)).toEqual(
+      regularDay.guests.filter((guest) => !guest.id.startsWith("returning-")),
+    );
 
     const result = skipToClose(busDay);
     const recap = result.nightRecap!;

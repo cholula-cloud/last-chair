@@ -89,6 +89,8 @@ export function BuildSheet({
   const lifts = useGameStore((s) => s.lifts);
   const cash = useGameStore((s) => s.cash);
   const tier = useGameStore((s) => s.lodgeTier);
+  const mountainId = useGameStore((s) => s.mountainId);
+  const snowGunTier = mountainId === "mount_tom" ? 1 : 2;
   const [reviewLift, setReviewLift] = useState<number | null>(null);
   const closeLift = useGameStore((s) => s.closeLift);
   const closeProblem = useGameStore((s) => reviewLift === null ? null : liftClosureProblem(s, reviewLift));
@@ -153,8 +155,8 @@ export function BuildSheet({
       <VenueManagement onStartPlacement={onStartPlacement} />
       <SectionHeading>Snow</SectionHeading>
       <button type="button" className="key press min-h-11 px-3 font-extrabold"
-        disabled={tier < 2} onClick={() => buildAsset("snow_guns")}>
-        Snow gun, {tier < 2 ? "Lodge Tier 2" : formatMoney(ASSET_CATALOG.snow_guns.cost)}
+        disabled={tier < snowGunTier} onClick={() => buildAsset("snow_guns")}>
+        Snow gun, {tier < snowGunTier ? `Lodge Tier ${snowGunTier}` : formatMoney(ASSET_CATALOG.snow_guns.cost)}
       </button>
     </div>
   );
