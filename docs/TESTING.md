@@ -22,14 +22,14 @@ Merged from the former P0 and P1 playtest scripts. PR rules that require these t
 | Phone viewport (legacy) | `npm run playtest:p0` — superseded for viewport sizing by **Phone check**; keep until phone-check is stable on `main` | Full P0 season click-through in Chromium | Local | Exists |
 | Device playtest | Real iPhone / iPad Safari | Feel, readability, touch | Optional M3 follow-up | Scripts below |
 
-`npm run check` (PR 2) runs lint, typecheck, unit tests and build. Hosted **`check`** in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) also runs `m2-gate` and `check:bundle`. Turn on branch protection with the **`check` job required** to block merges on red lint, types, tests, balance or build.
+`npm run check` (PR 2) runs lint, typecheck, unit tests and build. Hosted CI in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) splits Vitest into **`test:ci:fast`** (everything except `balance.test.ts` and `m3Determinism.test.ts`) and **`test:ci:slow`**, runs them in parallel jobs, then **`check`** aggregates `fast` + `slow` for branch protection. Turn on branch protection with the **`check` job required** to block merges on red lint, types, tests, balance or build.
 
 ### GitHub Actions tiers
 
 | Tier | Workflow | When | Jobs | Merge blocker? |
 |---|---|---|---|---|
-| 0 | `ci.yml` → `check` | Every PR and push to `main` | lint, typecheck, Vitest, m2-gate, build, bundle | **Yes** (when branch protection is on) |
-| 1 | `e2e-pr.yml` | PRs that touch `web/src`, `web/public`, `web/app`, or `web/scripts` | One shared production build, then **Chromium 390×844 smoke** | No (signal only) |
+| 0 | `ci.yml` → `fast` + `slow`, then `check` | Every PR and push to `main` | **fast:** lint, typecheck, quick Vitest. **slow:** balance or determinism sims, m2-gate, build, bundle (uploads `web-out`). **check:** both must pass. | **Yes** (`check`, when branch protection is on) |
+| 1 | `ci.yml` → `e2e-smoke` | PRs that touch `web/src`, `web/public`, `web/app`, or `web/scripts` | Chromium 390×844 smoke using the **slow** job build artifact (no second production build) | No (signal only) |
 | 2 | `e2e-nightly.yml` | Daily 09:00 UTC and `workflow_dispatch` | Shared build, then full **P1 matrix** (Chromium + WebKit × four viewports) and **WebKit portrait** phone-check / save recovery / M2 opening | No |
 
 Season logic and balance stay in Vitest; browser CI proves WebGL, touch targets, sheets, and save reload. A failed nightly WebKit leg (especially 844×390 landscape) is often a runner flake—rerun the workflow before treating it as a product bug. Artifacts upload on failure only.
