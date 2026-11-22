@@ -1,7 +1,7 @@
 # Last Chair — world, story and cast
 
 **Version:** 1.1 · **Updated:** 2026-11-21  
-Merged from the former Act I, characters, mountains and lore docs. Game plan and priorities: [MASTER_PLAN.md](./MASTER_PLAN.md). The full Story Mode narrative (the player, Nan, the intro, the surprise catalog, the roster, endings) lives in [STORY.md](./STORY.md), which wins on Story Mode narrative; this file keeps the lore pantry, the cast reference and the respect line. Items STORY.md marks locked (owner approved 2026-11-22) are marked the same way here. Numbers behind founders and beat gates: [SIMULATION_SPEC.md](./SIMULATION_SPEC.md).
+Merged from the former Act I, characters, mountains and lore docs. Game plan and priorities: [MASTER_PLAN.md](./MASTER_PLAN.md). The full Story Mode narrative (the player, Grammy Dot, the intro, the surprise catalog, the roster, endings) lives in [STORY.md](./STORY.md), which wins on Story Mode narrative; this file keeps the lore pantry, the cast reference and the respect line. Items STORY.md marks locked (owner approved 2026-11-22) are marked the same way here. Numbers behind founders and beat gates: [SIMULATION_SPEC.md](./SIMULATION_SPEC.md).
 
 **Rule:** characters and story exist to teach systems and anchor emotion. When story and sim disagree, the sim wins and the story adapts.
 
@@ -39,7 +39,7 @@ Real arc (public record):
 
 **Player fantasy:** You buy the **note on a dead lift line** — not a fantasy name, a **real ghost** — and try to run **one more winter** before the forest takes the meadows back.
 
-**Who you are** (STORY.md §2): a Readsboro kid who spent ten winters on a snowmaking crew up north (the Whiterock past is **locked (owner approved 2026-11-22)**). Your grandmother Nan (fiction) sold tickets at Dutch Hill for thirty winters and kept the last punch card from 1984–85 with one ride left on it. That card is the title: every winter ends with the last chair and the card gets punched.
+**Who you are** (STORY.md §2): a Readsboro kid who spent ten winters on a snowmaking crew up north (the Whiterock past is **locked (owner approved 2026-11-22)**). Your grandmother Grammy Dot (fiction) sold tickets at Dutch Hill for thirty winters and kept the last punch card from 1984–85 with one ride left on it. That card is the title: every winter ends with the last chair and the card gets punched.
 
 ---
 
@@ -77,7 +77,7 @@ Respect real **DHASH** work: in-game “saved the hill” is **tycoon fiction**,
 | 2 | **Saturday** | Plates from **Bennington**, **Williamstown**, **Brattleboro** |
 | 3 | **School bus** | Readsboro / Wilmington corridor. A proven ski school can invite six pupils for a weekday. |
 | 4 | **Dry week** | No guns—**wait for cold** or close trails (ICR lesson) |
-| 5 | **Whiterock** | Vivian offers $6,000 in return for a fare cap. Riley must decline. |
+| 5 | **Whiterock** | Sloane offers $6,000 in return for a fare cap. Riley must decline. |
 | 6 | **Winter review** | A solvent finish brings a phone call from the next town, tied to something your winter measured. The first call comes from **Mount Tom, MA** (locked (owner approved 2026-11-22); STORY.md §6). Maris reports that Whiterock holds an option on the land. |
 
 ---
@@ -114,13 +114,13 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 - **Background:** Community banker who lost the last loan.
 - **Bonus:** Borrow at 7% for the winter.
 - **Constraint:** On a thaw day, guests lose 3 welcome points if at least three of the last seven days were thaws.
-- **Story:** Whiterock calls him first, which creates tension on buyout offers. His version of each Vivian offer arrives a night early. Wrote small-hill loans for thirty years.
+- **Story:** Whiterock calls him first, which creates tension on buyout offers. His version of each Sloane offer arrives a night early. Wrote small-hill loans for thirty years.
 
 #### 3. **Riley Otis — *The Rigger***
 
 - **Background:** Lift mechanic; can keep one marginal lift “limping” safely.
 - **Bonus:** Spend 15% less on lift operations.
-- **Constraint:** Must decline Vivian’s offer.
+- **Constraint:** Must decline Sloane’s offer.
 - **Story:** Rebuilt your first truck and your second one, and will not sell a bolt to the pass. Wind holds belong to Chief Dana Holt.
 
 #### 4. **Dr. Amira Chen — *The Forecast***
@@ -135,7 +135,7 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 - **Background:** Land trust liaison; clearing trees is politically visible.
 - **Bonus:** Gain half a reputation point before rounding on a night with guests.
 - **Constraint:** Lift lines and tree clearing cost 15% more.
-- **Story:** Vermont land-trust politics arc, wired to the Maple Valley parcel bid against Vivian. Runs the land trust meetings and knows which trees the town will miss.
+- **Story:** Vermont land-trust politics arc, wired to the Maple Valley parcel bid against Sloane. Runs the land trust meetings and knows which trees the town will miss.
 
 #### 6. **Marco Russo — *The Showman***
 
@@ -151,10 +151,10 @@ Equivalent to ICR’s six founders: different rules, same career. **One founder 
 | Name | Role | Systems touch |
 |------|------|----------------|
 | **Maris Shaw** | Route 100 Radio host (Concord, NH morning-show veteran, matching ART_DIRECTION) | Story delivery, tutorials, [Part 4](#part-4-lore-pantry) |
-| **Nan** | Your grandmother (fiction); sold tickets at Dutch Hill for thirty winters; keeps the last punch card | Reputation, heritage, the last chair ritual. Text only, radio call-ins once or twice a winter, never voiced |
+| **Grammy Dot** | Your grandmother (fiction); sold tickets at Dutch Hill for thirty winters; keeps the last punch card | Reputation, heritage, the last chair ritual. Text only, radio call-ins once or twice a winter, never voiced |
 | **Chief Dana Holt** | Patrol captain | Wind holds, safety, lift inspections, snow-day crowd control |
-| **Superintendent Al Waters** | School district; was your fourth-grade principal | Bus days, lesson seats; the reference that brings Maple Valley's call |
-| **Vivian Cho** | Whiterock regional rep; skis your hill as a guest before she offers; appears every winter | Buyouts, poaching, race sponsorship, the coast offer (STORY.md §4.3) |
+| **Superintendent Hank Pelletier** | School district; was your fourth-grade principal | Bus days, lesson seats; the reference that brings Maple Valley's call |
+| **Sloane Prescott** | Whiterock regional rep; skis your hill as a guest before she offers; appears every winter | Buyouts, poaching, race sponsorship, the coast offer (STORY.md §4.3) |
 | **Frank Oka** | Garage & diesel | Groomer/snowmaking reliability events |
 | **Hill locals** (one per later hill) | Lou Carvalho (Mount Tom), Rosa Merrill (Maple Valley), Kip Lavoie (Snow Valley), Gilles Fortin (Enchanted), Ada Whitcomb (Evergreen Valley), Mae Donnelly (Brodie), Walt Gagnon (Mount Whittier); all fiction | Each owns that hill's new mechanic and becomes its **caretaker** when you move on: a named ally who runs the departed hill on the coarse off-screen sim for income (STORY.md §5.4, §6.3) |
 
@@ -471,7 +471,7 @@ Beat table and ship notes live in **[Part 1](#part-1-dutch-hill-act-i)** — do 
 - **Alpenwald** across-the-street development failure — optional economic B-text.  
 - **1990 lodge burn** — mention only with dignity (fire dept training).  
 - Trails: **Dutch Meadows**, **Windmill** steep — sign names for level design, not copied layout.  
-- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; Whiterock map-dot pressure; Nan’s punch card; winter review → the call from Mount Tom.
+- Accents: “last adult ticket **$6**”; Route 100 plates; Readsboro/Wilmington bus; no snowmaking opening; Whiterock map-dot pressure; Grammy Dot’s punch card; winter review → the call from Mount Tom.
 
 ---
 

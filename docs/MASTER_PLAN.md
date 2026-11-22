@@ -22,7 +22,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a **49-day civil winter** with **21 Fri–Sun operating days** (Mon–Thu simulate in the background). In-flight 14- and 28-day saves keep the legacy every-day calendar until the player starts a new winter. Players can remain independent, take Vivian’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
+M2 code is complete. Its uncoached first-time-player opening still needs a sign-off. Dutch Hill now runs a **6-weekend winter (42 civil days, 18 Fri–Sun operating days)** while Act II+ hills (Mount Tom, Maple Valley) run **7 weekends (49 civil days, 21 Fri–Sun operating days)**; Mon–Thu simulate in the background. Construction is paid **100% upfront** (40/30/30 installments removed). Players can remain independent, take Sloane’s cash in return for a fare cap, and host the optional Readsboro visit. The owner will playtest on device when ready. The [P1 protocol](./TESTING.md) is available for that session.
 
 **Built and merged**
 
@@ -40,7 +40,7 @@ M2 code is complete. Its uncoached first-time-player opening still needs a sign-
 | Art and UI | Toy-box UI, phone HUD with hide/show chrome and compact conditions (PR #102), Blender GLB kit (lodge, hut, café, shop, lifts, skiers, pines a–d + birch, snowcat, guns, activities/decor), **M4b Batch 1** activities and decor on the hill ([#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#146](https://github.com/cholula-cloud/last-chair/pull/146)), kit-instanced lease forest + valley glue ([#147](https://github.com/cholula-cloud/last-chair/pull/147)), snow shader and day/night lighting (rows 30–31), contextual **coach tips** (row 26, [#149](https://github.com/cholula-cloud/last-chair/pull/149)), `phone-check` and WebKit portrait CI |
 | Inspect and trails | Tap-to-inspect assets with rename-on-save ([#105](https://github.com/cholula-cloud/last-chair/pull/105)); painted trails must reach base or join a continuing route; optional crossing links; per-segment wear and route-aware lift/trail close guards |
 
-The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Vivian’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. PR #80 adds the Office and map layers, new guest types, the twenty crew talents, founder effects, replay exports and the winter score. Career effects on later mountains belong to M5.
+The first-winter decisions, operating tradeoffs, local surprises, Readsboro visit, Sloane’s offer and settlement shipped in [#77](https://github.com/cholula-cloud/last-chair/pull/77). [#78](https://github.com/cholula-cloud/last-chair/pull/78) records automated balance, CI and WebKit evidence. PR #80 adds the Office and map layers, new guest types, the twenty crew talents, founder effects, replay exports and the winter score. Career effects on later mountains belong to M5.
 
 
 The M3 roadmap below includes the November 19 expansion. **M4 (code)** is complete on `main` as of 2026-11-20; **M4b Batch 1** closed on `main` as of 2026-11-21 ([#144](https://github.com/cholula-cloud/last-chair/pull/144)–[#148](https://github.com/cholula-cloud/last-chair/pull/148), forest [#147](https://github.com/cholula-cloud/last-chair/pull/147)). Playtest coach copy aligned in [#149](https://github.com/cholula-cloud/last-chair/pull/149). The **M4 gate** for outside players now depends on optional owner device sign-off (Q1). Device sessions remain at the owner’s request. Next build queue: **M5** career unless the owner adds M4b batch 2.
@@ -96,13 +96,13 @@ Items marked **locked (owner approved 2026-11-22)** here and in STORY.md (D1 to 
 
 The Ice Coast is New England's nickname for its hard, freeze-thaw snow. Hundreds of small hills here closed between the 1970s and 2000s: bad winters, rising insurance, and megaresorts that pulled skiers north. You are the person who takes the note on one of those dead lift lines. The town wants the only lit slope in the valley back on.
 
-In STORY.md you are a Readsboro kid who spent ten winters on a snowmaking crew up north, and your grandmother Nan kept the last Dutch Hill punch card with one ride left on it. That card is the game's title: every winter ends with the last chair and the card gets punched. The past at an Whiterock resort is **locked (owner approved 2026-11-22) (D2)**.
+In STORY.md you are a Readsboro kid who spent ten winters on a snowmaking crew up north, and your grandmother Grammy Dot kept the last Dutch Hill punch card with one ride left on it. That card is the game's title: every winter ends with the last chair and the card gets punched. The past at an Whiterock resort is **locked (owner approved 2026-11-22) (D2)**.
 
 Each hill you reopen is real (credited to NELSAP and, for Dutch Hill, DHASH). Saving it is tycoon fiction; the history on the heritage card is not.
 
 ### The antagonist
 
-**Whiterock Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Vivian Cho**, shows up when your hill starts to matter. Every Whiterock offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
+**Whiterock Pass** is a fictional megapass consolidating the coast, in the role Ikon and Epic play in real life. It is amortizing a gondola. Its regional rep, **Sloane Prescott**, shows up when your hill starts to matter. Every Whiterock offer is a real trade: cash or guaranteed guests now, in exchange for losing control of fare, reputation with locals, or the hill itself.
 
 ### Arc across the career
 
@@ -110,11 +110,11 @@ Proposed, pending owner (D1, D5): the roster below replaces the earlier list. **
 
 | Act | Hills | Story question | What changes in play |
 |---|---|---|---|
-| I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Vivian scouts the hill as a guest, then makes one offer in the last third of winter |
+| I | Dutch Hill, VT | Can this hill run one winter? | Start with a Tier 1 lodge. Build the first lift and trail. Tier 2 unlocks snowmaking. Sloane scouts the hill as a guest, then makes one offer in the last third of winter |
 | II | Mount Tom, MA and Maple Valley, VT | Can you win a hill Whiterock also wants? | Night session and guns from day 1 at Mount Tom; a season-long school program, tubing and a land parcel at Maple Valley. Whiterock competes for the same guests; its offers get bigger |
 | III | Snow Valley, VT, Enchanted Mountain, ME and Evergreen Valley, ME | Can an independent run bigger hills with harder conditions? | Riders and a shared guest pool; wind and road closures; a lease covenant measured each winter |
 | IV | Brodie, MA and Mount Whittier, NH (finale) | Can the independents hold together? | Night skiing and events at scale; a gondola with two bases. Caretaker income from earlier hills funds the push |
-| Ending | | Who owns the Ice Coast? | Vivian's coast offer at Mount Whittier. Branches on your choices and on the Atlas dots: a co-op of independent hills, a sale to Whiterock, going alone, or the forest (proposed) |
+| Ending | | Who owns the Ice Coast? | Sloane's coast offer at Mount Whittier. Branches on your choices and on the Atlas dots: a co-op of independent hills, a sale to Whiterock, going alone, or the forest (proposed) |
 
 Full roster, per-hill design, difficulty table and endings: [STORY.md](./STORY.md#5-mountain-roster-and-progression). Lore and the respect line: [WORLD.md Part 3](./WORLD.md#part-3-career-mountains).
 
@@ -129,10 +129,10 @@ The rule from WORLD.md holds: story exists to teach systems and anchor emotion, 
 | **Lodge tier-ups** | Each upgrade fires a radio line and a visible ribbon on the hill. Tier 2 unlocks the ski school, which the optional Readsboro visit needs |
 | **Route 100 Radio beats** | Nightly story draws on measured events. The handoff defines the three local surprises and the one-per-night queue. A line about yesterday's hill and an offer awaiting a decision each get distinct controls |
 | **Readsboro school visit** | Once Tier 2 and a ski school are available, accept or decline one weekday visit for six pupils at a discounted fare. Track booked, delivered and missed lessons separately. The optional goal is credited only for lessons actually delivered |
-| **Whiterock offer** | Vivian offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect. STORY.md proposes a scouting visit before the offer and a smaller $3,000 offer at reputation 40 to 49, so every player meets her (row N6) |
+| **Whiterock offer** | Sloane offers $6,000 once in Act I for a fare ceiling of Balanced for the remaining winter. Cheap stays available. Riley can decline and sees why accepting is unavailable. The review records the actual reply and effect. STORY.md proposes a scouting visit before the offer and a smaller $3,000 offer at reputation 40 to 49, so every player meets her (row N6) |
 | **Named crew** (Frank, Dana, Elena) | Their biases explain the fixed talent order, so a talent arriving reads as a person learning, not a menu |
-| **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Vivian results when present, and the operator's choices and measured results. Records a career result for later use by the map |
-| **Caretaker** | Hills you leave keep running off-screen under a named local ally and pay a small income that funds the next hill. Vivian bids on departed hills that slip. The Atlas map, with yours, the pass and the forest as dot colors, decides the ending (STORY.md §6) |
+| **Winter review** | Records the settlement and common goal outcome, the actual Readsboro and Sloane results when present, and the operator's choices and measured results. Records a career result for later use by the map |
+| **Caretaker** | Hills you leave keep running off-screen under a named local ally and pay a small income that funds the next hill. Sloane bids on departed hills that slip. The Atlas map, with yours, the pass and the forest as dot colors, decides the ending (STORY.md §6) |
 
 ---
 
@@ -204,11 +204,11 @@ Every asset is a revenue line or a mood term in the Ledger, never filler. The Bu
 | Pitch | Career across real lost hills | Build a fantasy hill, try tools | Build a New England ski company and beat Whiterock |
 | Ruleset | Simple: build + fare + snow & service | Simple, with optional manual ops later | Simple at each hill, plus a company layer |
 | Economy | Real pressure | Normal / Comfortable / Unlimited | Real pressure, shared market, banks, stock market |
-| Story | The §2 story: Nan, the cast, radio beats, the Whiterock arc, endings | Off | The rival's moves are the story |
+| Story | The §2 story: Grammy Dot, the cast, radio beats, the Whiterock arc, endings | Off | The rival's moves are the story |
 | Win | Finish the career | None | Selectable goals (below) |
 | Save | Local now, cloud later | Local slots | Local slot |
 
-The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode does not use the player's history, Nan, the Story cast, beats, surprises or endings; it may reuse the career hills and the rival company, and its Whiterock is an AI company with no named rep. No Story save carries into Capitalist Mode. The boundary is in [STORY.md §6.4](./STORY.md#64-boundary-with-capitalist-mode).
+The §2 story belongs to Story Mode only. Sandbox has story off. Capitalist Mode does not use the player's history, Grammy Dot, the Story cast, beats, surprises or endings; it may reuse the career hills and the rival company, and its Whiterock is an AI company with no named rep. No Story save carries into Capitalist Mode. The boundary is in [STORY.md §6.4](./STORY.md#64-boundary-with-capitalist-mode).
 
 **Sandbox settings (M6):** mountain (blank, Dutch Hill template, imported layout later), money (Normal / Comfortable / Unlimited), weather (live random, fixed sunny, storm week), story off, talents (all, crew order, manual), lodge tier (any). The lodge is present on a blank mountain too. New build tools are tried in Sandbox before Story balance.
 
@@ -448,8 +448,8 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | 18 | ☑ | Weather and attendance | Seeded forecast, storms, thaw runs, chair wind holds and busier typical days |
 | — | ☑ | Buildability and glades | Contextual build grid, tighter lift clearing, tree-preserving glades and walking from remote trail ends (#65). |
 | 19 | ☑ | 28-day calendar | Weekends, holiday weeks; season length as config (legacy map; see CAL-1) |
-| CAL-1 | ☑ | Operating calendar | Fri–Sun playable days; Mon–Thu `advanceClosedDays`; 49 civil / 21 operating; weekday digest; save v11 |
-| 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 40/30/30. One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
+| CAL-1 | ☑ | Operating calendar | Fri–Sun playable days; Mon–Thu `advanceClosedDays`; Dutch Hill 42 civil / 18 operating (6 weekends), Act II+ 49 civil / 21 operating (7 weekends); weekday digest |
+| 20 | ☑ | Economy + fail-soft | Daily fixed costs, lift ops and upkeep. Construction paid 100% upfront (40/30/30 installments removed in PR 0b). One $10,000 winter loan at 8% simple interest. Three consecutive negative mornings end the winter. |
 | L-A | ☑ | Lift tool | One drag from the base to the top. A thin cable ghost at true scale follows the finger on a short spring, snaps to anchor dots, and shows length and cost beside the top terminal. No corridor ribbon and no grid in lift mode |
 | L-B | ☑ | Trail painting you can see | A brush cursor at true width that shows on hover and touch, an opaque ribbon in the difficulty colour, a top-down tilt and edge auto-pan while painting, a compact panel, and an optional steepness grid |
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density kit pines and birch on the lease ([#147](https://github.com/cholula-cloud/last-chair/pull/147)), a sparse far forest (three-plane impostors, one draw call) beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
@@ -458,7 +458,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-F | ☑ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ☑ | Crew talents with real effects | 20 talents in crew order, each with a test |
 | 22 | ☑ | Founders complete | All six modifiers live |
-| 23 | ☑ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Vivian fare-cap offer and a story log. The Office Desk carries the radio feed and tier-up lines. Reports keeps the story log |
+| 23 | ☑ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Sloane fare-cap offer and a story log. The Office Desk carries the radio feed and tier-up lines. Reports keeps the story log |
 | 24 | ☑ | Winter review | Common goal outcome, season score, recorded choices and consequences, lodge tier, talents; carry-forward data |
 | P1 | ☑ | Family Pack and Race Kid personas | Two more guest types with the weights already in SIMULATION_SPEC (queue, snow, value), their venue and trail needs, and mixes by weekday, weekend and holiday. The Readsboro school visit and the rink (A2) depend on them. Re-baselines the characterization snapshot and the balance harness. Replaces the "row 9" tag in the spec |
 | O1 | ☑ | Overlay framework and slope layer | A Layers button on the mountain view, a layer strip, a legend that pairs every colour with a pattern, a tap or hold readout card, buildings and guests dimmed while a layer is on, reduced motion respected. The slope layer covers the whole lease in the same bands that colour a painted trail, with contour lines; it absorbs the steepness grid from L-B (§12) |
@@ -480,12 +480,12 @@ Increments 1–6 shipped together in GitHub PR #77. PR #78 records hosted valida
 | 2 | First operating decision | L-E, 26 | After the opening teaches lift and trail placement, use the first night recap to explain a fare or snow tradeoff based on what the hill measured. Compare the next day with the prior day's actual result when both are available. |
 | 3 | Local surprises | 23 | Report local moments in the night recap and retain their dates and observed results for the winter review. |
 | 4 | Readsboro visit | 23, L-E | Offer one optional weekday of six discounted pupils. Show the cost and the visit result, with goal credit based on lessons served. |
-| 5 | Vivian's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
+| 5 | Sloane's offer | 23, 22 | Grant $6,000 once on acceptance, enforce the Balanced fare ceiling for the rest of winter and expose Riley's restriction before a reply. |
 | 6 | Winter memory | 24, 27 | End with the measured settlement, the same common goal for all paths and a truthful record of choices and outcomes. Check the balance and playtest the whole arc. |
 
 #### Dutch Hill operating calendar (approved 2026-11-20, shipped CAL-1)
 
-Supersedes the **player-facing** shape of “28 playable days in a row.” **Civil time** runs **late December through March** (49 civil days, 21 operating days — numbers in [SIMULATION_SPEC.md](./SIMULATION_SPEC.md)). The day-by-day loop is unchanged on days the hill is open.
+Supersedes the **player-facing** shape of “28 playable days in a row.” **Civil time** runs **6 Fri–Sun weekends on Dutch Hill** (42 civil days, 18 operating days) and **7 Fri–Sun weekends on Mount Tom, Maple Valley, and Act II+ hills** (49 civil days, 21 operating days) — numbers in [SIMULATION_SPEC.md](./SIMULATION_SPEC.md). The day-by-day loop is unchanged on days the hill is open.
 
 | Decision | Choice |
 |---|---|
@@ -509,7 +509,7 @@ M4 follows the M3 gate. It does **not** use Blender. Owner pain from playtesting
 | # | Status | PR | Accomplishes |
 |---|---|---|---|
 | C1a | ☑ | Voice and copy, part 1 | Voice guide in ART_DIRECTION (wry Vermont local, instructions first, one joke per screen) and a rewrite of HUD, build and placement, map layers, coach, title and setup strings, plus build and placement error messages. Copy only. |
-| C1b | ☑ | Voice and copy, part 2 | Same voice applied to the Office, night recap, radio, story log, winter review and the Whiterock and school cards. Radio and cast lines keep their character voices. Maris, Vivian, Dana, Elena, Frank and Riley each speak in the cast-table voice; middle dots and em dashes are gone from player-facing copy. Copy only. |
+| C1b | ☑ | Voice and copy, part 2 | Same voice applied to the Office, night recap, radio, story log, winter review and the Whiterock and school cards. Radio and cast lines keep their character voices. Maris, Sloane, Dana, Elena, Frank and Riley each speak in the cast-table voice; middle dots and em dashes are gone from player-facing copy. Copy only. |
 | B6 | ☑ | Build grid and lift placement guide | A single readable guide during lift placement: anchor ring, snap feedback, and a grid that matches asset/gun placement (cell size, contrast, lease alignment). Lift mode must show useful guidance (L-A intentionally hid the dot grid; replace it with something that does not fight the cable ghost). Overview and venue modes keep a consistent dot field. |
 | B7 | ☑ | Trail paint context and freer endpoints | While painting, **all confirmed trails** stay visible (full or high-opacity ribbons; draft on top). Reduce automatic connector logic that pulls the end to `terrain.base` or reuses another trail's suffix when the player did not intend it (`paintedTrail.ts` `atBase`, prefix/suffix merge). Player-authored endpoints win unless the sim requires a lift top or a valid ski path to base. |
 | P4 | ☑ | M4 polish pass | Cross-cutting pass on **game design** (flows, coach gaps, copy), **engineering** (layering violations, perf hotspots, test gaps), and **UI** (thumb zone, sheet density, HUD clarity). **Priority:** Office economic UX — Money scanability, Stats chart legibility at 375 px, Reports archive vs season calendar hierarchy, chart table fallback under reduced motion. Outcome: a short punch list closed inside M4 or ticketed explicitly. Owner playtest notes drive priority. **Closed in P4:** scaled remote trail-end threshold, guests walking along trail polylines, unified mood words via `moodLabels`. **Still open:** B6 lift-top guide ~7 ms per settled bottom on desktop; occasional WebKit flakes on the **nightly** E2E matrix (rerun). **HUD clutter** addressed in PR #102 (separate row below). |
@@ -563,19 +563,19 @@ Story Mode only (see §4 and [STORY.md](./STORY.md) §9). Rows N0 to N8 are M4-c
 |---|---|---|---|---|---|
 | N0 | M4 | ☑ | STORY.md and roster docs | STORY.md v2.0 locked (D1–D6, Whiterock, CAL-1 pacing); WORLD.md & MASTER_PLAN.md aligned | Docs only |
 | N1 | M4 | ☐ | Cold open v2 | Six cards (two new stills, two rewritten), punch-card flip and title drop, optional name on the lease (D3), one ElevenLabs take for cards 3 to 6 on free credits (D6), captions fallback | **Save:** `operatorName` |
-| N2 | M4 | ☐ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Vivian, Al and Nan lines, "the operator" fallback | Copy only |
+| N2 | M4 | ☐ | Partners and address | Founder relationship lines, day-1 cold read, name substitution in Maris, Sloane, Al and Grammy Dot lines, "the operator" fallback | Copy only |
 | N3 | M4 | ☐ | The last chair | First-ride toast, final-day last chair toast and camera ease, punch-card line in the winter review; Tenney card replaced by a placeholder call card until N9 | None |
 | N4 | M4 | ☐ | Surprise scheduler | One radio item a night with priority, weekly caps, quiet days, midpoint window; existing three surprises move onto it | **Sim:** re-baseline snapshot |
 | N5 | M4 | ☐ | Dutch Hill surprise pack | DH2 copy, DH4, DH5, DH9, DH10, DH11, DH12 branch | **Save:** `SurpriseKind` enum. **Sim:** snow-day mix override |
-| N6 | M4 | ☐ | Vivian skis Dutch Hill | DH6 visitor guest with stored facts, offer copy quotes them, offer gate at reputation 50 with a $3,000 variant at 40 to 49 | **Save:** `vivianVisit`. **Sim:** harness rerun |
+| N6 | M4 | ☐ | Sloane skis Dutch Hill | DH6 visitor guest with stored facts, offer copy quotes them, offer gate at reputation 50 with a $3,000 variant at 40 to 49 | **Save:** `vivianVisit`. **Sim:** harness rerun |
 | N7 | M4 | ☐ | Decision surprises | DH7 club bus and DH8 groomer down, with cards, recap results and review memory lines | **Save:** `clubBooking`, `groomerDown`. **Sim** |
-| N8 | M4 | ☐ | Last Saturday | DH13 set piece: preview, arrival bonus, torchlight decoration, Nan cameo | **Sim:** small arrival term |
+| N8 | M4 | ☐ | Last Saturday | DH13 set piece: preview, arrival bonus, torchlight decoration, Grammy Dot cameo | **Sim:** small arrival term |
 | N9 | M5 | ☐ | The call | Next-hill call from a measured result, Maris's threat line, town match from winter score, branching from Act II | Reads `winterRecord` |
 | N10 | M5 | ☐ | Lost hills (D4) | Bankrupt later hill turns pass or forest; career continues; Forest epilogue when none remain | **Save:** status transitions |
 | N11 | M7 | ☐ | Maple Valley, VT | District school program, tubing, orchard parcel bid, inspector's Tuesday (needs lift wear in the sim) | Sim |
 | N12 | M7 | ☐ | Guest scaling | One agent stands for several skiers so hills 4 to 8 keep 20 to 30 agents on iPhone; recap and "Why?" stay exact | **Sim** |
 | N13 | M7 | ☐ | Snow Valley, VT | Rider persona, shared guest pool with a fictional pass resort, SV1 to SV3 | Sim |
-| N14 | M7 | ☐ | Enchanted Mountain, ME | Wind-dominant weather, road closure days, EM1 and EM2, Vivian backstory | Sim |
+| N14 | M7 | ☐ | Enchanted Mountain, ME | Wind-dominant weather, road closure days, EM1 and EM2, Sloane backstory | Sim |
 | N15 | M7 | ☐ | Evergreen Valley, ME | Lease covenant score, ranger inspection, rival lease bid | **Save**, sim |
 | N16 | M7 | ☐ | Brodie, MA | Night at scale and events (uses A5), Frank poach decision, BR1 | Sim |
 | N17 | M7 | ☐ | Mount Whittier, NH | Gondola lift type, two bases with a shuttle, wind holds on the gondola, MW1, the coast offer | **Sim** |
