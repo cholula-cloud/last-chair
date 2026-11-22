@@ -1,4 +1,5 @@
 import { dayKind, inHolidayWeek, weekdayForDay, type CalendarDef } from "./calendar";
+import { formatOperatorText } from "./content";
 import { PERSONAS } from "./personas";
 import { mix32, STREAM, streamFor } from "./rng";
 import { makeGuest } from "./sim";
@@ -93,24 +94,25 @@ export function resolveSurprise(plan: SurprisePlan | null, guests: readonly Gues
   return { dayIndex: plan.dayIndex, kind: plan.kind, affectedGuests };
 }
 
-export function surpriseRadio(entry: SurpriseEntry): { title: string; radio: string } {
+export function surpriseRadio(entry: SurpriseEntry, operatorName: string | null = null): { title: string; radio: string } {
   const count = entry.affectedGuests;
+  const sub = (text: string) => formatOperatorText(text, operatorName);
   switch (entry.kind) {
     case "pie": return {
       title: "Pie on the counter",
-      radio: "Someone left a fresh maple pie on the lodge counter and drove off without a name. The crew split it after last chair.",
+      radio: sub("Someone left a warm maple cream pie on the lodge counter with a sticky note: 'For the lifties.' The crew split it before the ink dried."),
     };
     case "former_regulars": return {
-      title: "Old regulars return",
-      radio: count === 1
-        ? "One skier who grew up on Dutch Hill found the way back today. Did not even need a trail map."
-        : `${count} skiers who grew up on Dutch Hill found the way back today. None of them needed a trail map.`,
+      title: "Old tracks, new turns",
+      radio: sub(count === 1
+        ? "One skier who learned to wedeln here in '76 pulled in before nine. Didn't even ask for a trail map."
+        : `${count} skiers who learned to wedeln here in '76 pulled in before nine. None of them needed a trail map.`),
     };
     case "road_delay": return {
-      title: "Icy morning on Route 100",
-      radio: count === 1
-        ? "Black ice had Route 100 crawling behind the state plow this morning. One skier rolled in late once the road cleared."
-        : `Black ice had Route 100 crawling behind the state plow this morning. ${count} skiers rolled in once the road cleared.`,
+      title: "Slow going on Route 100",
+      radio: sub(count === 1
+        ? "State plow's creeping behind a milk tanker on Route 100. One skier rolled in late once the salt hit."
+        : `State plow's creeping behind a milk tanker on Route 100. ${count} skiers rolled in late once the salt hit.`),
     };
   }
 }

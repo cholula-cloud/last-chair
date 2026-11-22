@@ -140,6 +140,7 @@ export type FounderDef = {
   id: FounderId;
   name: string;
   title: string;
+  relationship: string;
   bonus: string;
   constraint: string;
   arrivalMoodBonus: number;

@@ -3,7 +3,16 @@ import { latestRadio } from "./deskRadio";
 import { surpriseRadio } from "./surprises";
 
 describe("latestRadio", () => {
-  it("is null before any broadcast", () => {
+  it("shows the Day 1 cold read before any broadcast and substitutes operatorName", () => {
+    const anon = latestRadio({ surpriseLog: [], completedBeats: [], dayIndex: 1 });
+    expect(anon?.title).toBe("Route 100 morning");
+    expect(anon?.radio).toContain("the operator came home");
+
+    const named = latestRadio({ surpriseLog: [], completedBeats: [], dayIndex: 1, operatorName: "Jules" });
+    expect(named?.radio).toContain("Jules came home");
+  });
+
+  it("is null on later days before any broadcast", () => {
     expect(latestRadio({ surpriseLog: [], completedBeats: [], dayIndex: 3 })).toBeNull();
   });
 

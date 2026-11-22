@@ -38,6 +38,7 @@ export const replayRules = {
   beginLodgeUpgrade: rules.beginLodgeUpgrade,
   undoTrail: rules.undoTrail,
   buyBuilding: rules.buyBuilding,
+  setOperatorName: rules.setOperatorName,
   pickFounder: rules.pickFounder,
   acknowledgeBeat: rules.acknowledgeBeat,
   replyToSummitLink: rules.replyToSummitLink,

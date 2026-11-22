@@ -157,6 +157,7 @@ const fields: Record<keyof PersistedState, Check> = {
   pendingSnow: snow,
   buildMode: boolean,
   founderId: founder,
+  operatorName: optional(nullable((value) => typeof value === "string" && value.length <= 24)),
   buildings: array(oneOf("warming_hut", "cafe", "shop", "snow_guns")),
   lodgeTier: oneOf(1, 2, 3),
   lodgeStyleId: string,

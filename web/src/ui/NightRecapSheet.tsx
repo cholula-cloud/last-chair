@@ -258,7 +258,7 @@ function NightMoney({
     { label: "Construction payments tonight", amount: -costs.draws },
     { label: "Loan received tonight", amount: recap.loanReceived },
     { label: "Loan repaid tonight", amount: -recap.loanRepaid },
-    { label: "Summit Pass Corp payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
+    { label: "Whiterock Pass payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
   ];
 
   return (
@@ -349,7 +349,7 @@ function Choices({
       glyph: <PeaksGlyph peaks={(i + 1) as 1 | 2 | 3} />,
       label: FARE_LABELS[v],
       detail: formatMoney(FARE_PRICES[v]),
-      note: locked ? "Summit Pass Corp fare cap" : `~${skiers(v)} skiers`,
+      note: locked ? "Whiterock Pass fare cap" : `~${skiers(v)} skiers`,
       disabled: locked,
     };
   });
@@ -424,9 +424,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const planNight = !finalNight;
   const { weekday, date } = dayLabel(seasonCalendar(night), dayIndex);
   const nextTalent = nextTalentName(night.talentsOwned);
-  const beat = storyBeatCopy(pendingBeat);
+  const beat = storyBeatCopy(pendingBeat, night.operatorName ?? null);
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
-  const surpriseCopy = surprise && surpriseRadio(surprise);
+  const surpriseCopy = surprise && surpriseRadio(surprise, night.operatorName ?? null);
   const summitLinkOffer = summitLinkOfferOpen(night);
   const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
@@ -492,9 +492,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               id="sleep-hint"
               className="mb-2 text-center text-[0.88rem] font-bold text-ink short:mb-1.5"
             >
-              {summitLinkOffer && "Answer Vivian before you turn in."}
+              {summitLinkOffer && "Answer Sloane before you turn in."}
               {!summitLinkOffer && (pendingBeat === "school_bus"
-                ? "Give Al an answer on the school bus before you turn in."
+                ? "Give Hank an answer on the school bus before you turn in."
                 : "Read the radio message, then tap Got it.")}
             </p>
           )}

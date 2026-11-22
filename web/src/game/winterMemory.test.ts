@@ -9,7 +9,7 @@ import { schoolMemory, winterScore, winterRecord } from "./winterMemory";
 describe("Dutch Hill winter review", () => {
   it("remembers the commitment separately from the lessons actually taught", () => {
     expect(schoolMemory(null)).toContain("No Readsboro school visit this winter");
-    expect(schoolMemory({ decision: "declined" })).toContain("Al offered a school day and you passed");
+    expect(schoolMemory({ decision: "declined" })).toContain("Hank offered a school day and you passed");
     const booking = { decision: "accepted", day: 9 } as const;
     expect(schoolMemory({ ...booking, pupilsTaught: null })).toContain("the winter ended before it could pull in");
     expect(schoolMemory({ ...booking, pupilsTaught: 0 })).toContain("no pupil finished a lesson");

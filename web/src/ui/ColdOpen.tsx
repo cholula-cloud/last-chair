@@ -3,26 +3,33 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { audio as sound } from "@/audio/engine";
 import { sliderGain } from "@/audio/mix";
+import { OPERATOR_NAME_MAX, sanitizeOperatorName } from "@/game/content";
+import { useGameStore } from "@/game/store";
 import { useSettings } from "@/ui/settingsStore";
-import { COLD_OPEN_AUDIO, COLD_OPEN_CARDS, cardAtTime, cueOf, silentHoldSeconds } from "@/ui/coldOpenCards";
+import {
+  COLD_OPEN_AUDIO,
+  COLD_OPEN_AUDIO_STOP_SEC,
+  COLD_OPEN_CARDS,
+  cardAtTime,
+  cueOf,
+  silentHoldSeconds,
+} from "@/ui/coldOpenCards";
 
 /** How long the voice clock may stand still before the cards run on timers instead. */
 const STALL_MS = 2000;
 
 /**
- * Four still cards with a voice-over, shown once after New winter and before the founder pick.
- * Captions remain visible when audio is unavailable. The voice starts from the New winter tap; if the browser refuses it,
- * or Voice is off in Settings, the cards run on timers.
+ * Six story cards with Maris Shaw voice-over on cards 1-2, Grammy Dot's punch-card flip on card 3,
+ * and optional lease signing on card 5. Captions remain visible when audio is unavailable.
  */
 export function ColdOpen({ onDone }: { onDone: () => void }) {
-  // The voice is heard when Sound, Voice and both volumes are up. It runs through the voice bus.
   const captions = useSettings(s => s.captions);
   const voiceLevel = useSettings(s => s.voiceOn && !s.muted ? sliderGain(s.masterVolume) * sliderGain(s.voiceVolume) : 0);
   const [index, setIndex] = useState(0);
-  // True while the recording is actually playing; the cards then follow its clock.
+  const [cardFlipped, setCardFlipped] = useState(false);
+  const [leaseDraft, setLeaseDraft] = useState("");
   const [voiceLive, setVoiceLive] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // True when the voice element feeds the voice bus, so the bus sets its level and the element stays at full.
   const routedRef = useRef(false);
   const indexRef = useRef(0);
   const doneRef = useRef(onDone);
@@ -44,7 +51,6 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
     setVoiceLive(false);
   }, []);
 
-  // Start the voice-over. A rejected play() (autoplay blocked) leaves the cards on timers.
   useEffect(() => {
     nextRef.current?.focus();
     if (!sound.voiceAudible()) return;
@@ -73,13 +79,11 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
     };
   }, []);
 
-  // Settings changes made while it plays: muting stops the voice. A routed voice follows its bus on its own.
   useEffect(() => {
     if (!voiceLevel) stopVoice();
     else if (audioRef.current && !routedRef.current) audioRef.current.volume = voiceLevel;
   }, [voiceLevel, stopVoice]);
 
-  // With the voice playing, follow its clock. Only a card change sets state.
   useEffect(() => {
     if (!voiceLive) return;
     let frame = 0;
@@ -89,18 +93,24 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
       const audio = audioRef.current;
       if (audio) {
         const now = performance.now();
+        if (audio.currentTime >= COLD_OPEN_AUDIO_STOP_SEC) {
+          audio.pause();
+          audioRef.current = null;
+          setVoiceLive(false);
+          if (indexRef.current < 2) setIndex(2);
+          return;
+        }
         if (audio.currentTime !== lastTime) {
           lastTime = audio.currentTime;
           movedAt = now;
         } else if (now - movedAt > STALL_MS && !audio.ended) {
-          // The clock is not moving (no audio output, or the tab is throttled): fall back to timers.
           audio.pause();
           audioRef.current = null;
           setVoiceLive(false);
           return;
         }
         const at = cardAtTime(audio.currentTime);
-        if (at > indexRef.current) setIndex(at);
+        if (at > indexRef.current && at <= 2) setIndex(at);
       }
       frame = requestAnimationFrame(follow);
     };
@@ -108,7 +118,6 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
     return () => cancelAnimationFrame(frame);
   }, [voiceLive]);
 
-  // Without the voice, each card holds until the next cue.
   useEffect(() => {
     if (voiceLive) return;
     const hold = silentHoldSeconds(index);
@@ -124,14 +133,30 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
 
   const advance = useCallback(() => {
     const at = indexRef.current;
+    const current = COLD_OPEN_CARDS[at];
+    if (current?.interactive === "punchcard" && !cardFlipped) {
+      setCardFlipped(true);
+      return;
+    }
+    if (current?.interactive === "lease") return;
     if (at >= last) {
       finish();
       return;
     }
     const audio = audioRef.current;
-    if (audio) audio.currentTime = cueOf(at + 1);
+    if (audio) {
+      const nextCue = cueOf(at + 1);
+      if (nextCue >= COLD_OPEN_AUDIO_STOP_SEC) stopVoice();
+      else audio.currentTime = nextCue;
+    }
     setIndex(at + 1);
-  }, [finish, last]);
+  }, [cardFlipped, finish, last, stopVoice]);
+
+  const signLease = useCallback((useDefault: boolean) => {
+    const name = useDefault ? null : sanitizeOperatorName(leaseDraft);
+    useGameStore.getState().setOperatorName(name);
+    setIndex((i) => Math.min(last, i + 1));
+  }, [last, leaseDraft]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -157,7 +182,7 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
           data-active={i === index ? "true" : "false"}
         />
       ))}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-ink via-ink/70 to-transparent" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-ink via-ink/75 to-transparent" aria-hidden="true" />
       <button
         ref={nextRef}
         type="button"
@@ -168,21 +193,107 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
       <button
         type="button"
         onClick={finish}
-        className="key key-sm press absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] min-h-11 px-4 text-[0.95rem] font-extrabold text-ink"
+        className="key key-sm press absolute right-[max(0.75rem,env(safe-area-inset-right))] top-[max(0.75rem,env(safe-area-inset-top))] z-10 min-h-11 px-4 text-[0.95rem] font-extrabold text-ink"
       >
         Skip
       </button>
+
+      {card.interactive === "punchcard" && (
+        <div className="pointer-events-none absolute inset-x-0 top-[14%] flex flex-col items-center px-5">
+          <button
+            type="button"
+            onClick={() => (cardFlipped ? advance() : setCardFlipped(true))}
+            className="panel pointer-events-auto w-full max-w-xs px-5 py-4 text-left text-ink transition-transform active:translate-y-0.5"
+          >
+            <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wider text-ink-soft">
+              <span>Dutch Hill Ski Area</span>
+              <span>1984-85</span>
+            </div>
+            <p className="display mt-1 text-xl text-ink">Season Punch Card</p>
+            <div className="mt-3 grid grid-cols-6 gap-1.5">
+              {Array.from({ length: 12 }, (_, i) => {
+                const unpunched = i === 11;
+                return (
+                  <span
+                    key={i}
+                    className={`flex h-7 items-center justify-center rounded border-2 border-ink text-xs font-extrabold ${
+                      unpunched
+                        ? cardFlipped
+                          ? "bg-sign-yellow text-ink"
+                          : "bg-snow-2 text-ink"
+                        : "bg-ink/15 text-ink-soft line-through"
+                    }`}
+                  >
+                    {unpunched ? (cardFlipped ? "LAST" : "12") : i + 1}
+                  </span>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-xs font-extrabold text-ink-soft">
+              {cardFlipped ? "One ride left on the card. Tap to continue." : "Tap the card to turn it over."}
+            </p>
+          </button>
+          {cardFlipped && (
+            <p className="display mt-5 text-center text-[clamp(2rem,8vw,3.2rem)] tracking-wide text-sign-yellow drop-shadow-[0_4px_0_#1B3A57]">
+              LAST CHAIR
+            </p>
+          )}
+        </div>
+      )}
+
+      {card.interactive === "lease" && (
+        <div className="pointer-events-none absolute inset-x-0 top-[12%] flex justify-center px-5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              signLease(false);
+            }}
+            className="panel pointer-events-auto w-full max-w-sm px-5 py-4 text-ink"
+          >
+            <p className="text-xs font-extrabold uppercase tracking-wider text-ink-soft">Town of Heartwellville, VT</p>
+            <p className="display mt-0.5 text-xl">One-Winter Mountain Lease</p>
+            <label htmlFor="lease-operator-name" className="mt-3 block text-sm font-extrabold">
+              Your name, if you want it on the lease
+            </label>
+            <input
+              id="lease-operator-name"
+              type="text"
+              maxLength={OPERATOR_NAME_MAX}
+              value={leaseDraft}
+              onChange={(e) => setLeaseDraft(e.target.value)}
+              placeholder="Optional (max 24 chars)"
+              className="mt-1.5 min-h-11 w-full rounded-xl border-[3px] border-ink bg-white px-3 text-base font-bold text-ink placeholder:text-ink-soft/70"
+            />
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <button
+                type="submit"
+                className="key key-solid press min-h-11 flex-1 px-4 text-sm font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff]"
+              >
+                Sign it
+              </button>
+              <button
+                type="button"
+                onClick={() => signLease(true)}
+                className="key press min-h-11 px-4 text-sm font-extrabold text-ink"
+              >
+                Just write &apos;the operator&apos;
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))]">
         {(captions || !voiceLive) && <p
           key={card.id}
           role="status"
           aria-live="polite"
-          className="cold-caption display max-w-xl text-center text-[clamp(1.35rem,5.4vw,2rem)] leading-tight"
+          className="cold-caption display max-w-xl text-center text-[clamp(1.25rem,5vw,1.85rem)] leading-tight"
         >
           {card.caption}
         </p>}
         <p className="text-[0.85rem] font-extrabold text-white/80">
-          Card {index + 1} of {COLD_OPEN_CARDS.length}.{index < last ? " Tap or press Space for the next one." : ""}
+          Card {index + 1} of {COLD_OPEN_CARDS.length}.{index < last && !card.interactive ? " Tap or press Right Arrow for the next one." : ""}
         </p>
         {index >= last && (
           <button

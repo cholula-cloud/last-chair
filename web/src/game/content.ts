@@ -7,6 +7,24 @@ import type {
 
 export const WINTER_GOAL = "Finish the winter in the black, with enough cash to cover any winter bank loan.";
 
+export const OPERATOR_NAME_MAX = 24;
+
+/** Sanitize an optional lease name (letters, digits, spaces, apostrophes, hyphens; max 24 chars). */
+export function sanitizeOperatorName(raw: string): string | null {
+  const cleaned = raw.replace(/[^a-zA-Z0-9 '\-]/g, "").replace(/\s+/g, " ").trim().slice(0, OPERATOR_NAME_MAX);
+  if (!cleaned || cleaned.toLowerCase() === "the operator") return null;
+  return cleaned;
+}
+
+/** Substitute `{name}` with the player's lease name or `"the operator"`. */
+export function formatOperatorText(template: string, operatorName: string | null): string {
+  const name = operatorName && operatorName.trim() ? operatorName.trim() : "the operator";
+  return template.replaceAll("{name}", name);
+}
+
+export const DAY_1_COLD_READ =
+  "Morning, Route 100. Word at the general store is {name} came home from up north and signed for Dutch Hill. Lodge lights are on. Lifts aren't. Yet.";
+
 /** What a hill with no founder modifier does. */
 export const NO_FOUNDER_MODS = {
   arrivalMoodBonus: 0,
@@ -31,6 +49,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "elena",
     name: "Elena Vargas",
     title: "The Caretaker",
+    relationship: "Taught your mom to snowplow on Dutch Meadows. Still uses your middle name when the lift line gets sloppy.",
     bonus: "Guests arrive happier and word of mouth brings two extra skiers a day.",
     constraint: "The warming hut stays open all winter and cannot be removed.",
     arrivalMoodBonus: 0.08,
@@ -41,6 +60,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "tom",
     name: "Tom Keene",
     title: "The Refi",
+    relationship: "Wrote small-hill loans for thirty winters. Says this one is either his masterpiece or his excuse to buy a camper.",
     bonus: "Winter bank loans drop from 8% to 7% interest.",
     constraint: "Warm spells with three thaw days in a week hurt guest mood.",
     loanRateDelta: -0.01,
@@ -51,8 +71,9 @@ export const FOUNDERS: FounderDef[] = [
     id: "riley",
     name: "Riley Otis",
     title: "The Rigger",
+    relationship: "Rebuilt your first pickup and your second one. Wouldn't sell a rusted cotter pin to Whiterock.",
     bonus: "Lift operating costs are 15% lower every day.",
-    constraint: "Refuses outside pass-network buyout money later in the winter.",
+    constraint: "Refuses Whiterock buyout money later in the winter.",
     liftOpsDiscount: 0.15,
     noSummitLinkEquity: true,
   },
@@ -61,6 +82,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "amira",
     name: "Amira Chen",
     title: "The Forecast",
+    relationship: "Moved up Route 100 for the quiet. Reads a barometer better than Boston reads the morning news.",
     bonus: "See a two-day weather forecast with higher accuracy.",
     constraint: "Skiers expect 5% better snow quality on your trails.",
     snowExpectationPenalty: 0.05,
@@ -72,6 +94,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "juniper",
     name: "Juniper Hale",
     title: "The Preservationist",
+    relationship: "Runs the land trust meetings with a thermos and a grease pencil. Knows every sugar maple on the ridge.",
     bonus: "Gain steady reputation every night for running a classic hill.",
     constraint: "Lifts and trail clearing cost 15% more to build.",
     reputationDrift: 0.5,
@@ -82,6 +105,7 @@ export const FOUNDERS: FounderDef[] = [
     id: "marco",
     name: "Marco Russo",
     title: "The Showman",
+    relationship: "Threw the best pig roast Wilmington ever saw. Also the only one that needed a town selectboard bylaw afterward.",
     bonus: "Base venues earn 10% more revenue every day.",
     constraint: "Fixed daily operating costs are $80 higher.",
     fixedCostDelta: 80,
@@ -120,37 +144,37 @@ export const STORY_BEATS: StoryBeatDef[] = [
     id: "first_load",
     title: "First uphill load",
     radio:
-      "Morning, Route 100. First paid chair up Dutch Hill since 1985. Readsboro Superintendent Al Waters is already asking if the hill will be ready for a school bus this winter.",
+      "Morning, Route 100. {name} has Dutch Hill turning for the first time since '85, and the bullwheel didn't even eat a mitten. Superintendent Hank Pelletier is already asking if you're ready for a school bus.",
   },
   {
     id: "saturday",
     title: "Saturday crowd",
     radio:
-      "Saturday morning on Route 100, and the lot has plates from Bennington, Williamstown, Brattleboro, and even Worcester. Keep the lift line moving and they will be back next weekend.",
+      "Saturday on Route 100, and the gravel lot has plates from Bennington, Williamstown, Brattleboro, and one brave soul from Wooster. Keep the line moving and they'll bring friends.",
   },
   {
     id: "school_bus",
     title: "Readsboro school bus",
     radio:
-      "Call in from Al Waters at the Readsboro school district. He has six kids and a bus ready for a weekday ski lesson if you can fit them in.",
+      "Call in from Hank Pelletier at Readsboro Elementary. Six kids, twelve tiny skis, and a yellow bus warmed up for a weekday Arlberg lesson if you've got the room.",
   },
   {
     id: "dry_week",
     title: "Dry spell",
     radio:
-      "Dry stretch in the forecast, folks. Snow guns need cold air to help, so bump up overnight grooming or hold out for the next cold snap.",
+      "Dry stretch parked over the Green Mountains. Snow guns need cold air to bite, so lean on the groomer tonight or hold out for the next clipper.",
   },
   {
     id: "summit_link",
-    title: "Corporate pass offer",
+    title: "Whiterock Pass offer",
     radio:
-      "Heads up, Route 100. Vivian Cho from Summit Pass Corp pulled into Dutch Hill in a spotless rental SUV. She wants to put your hill on the mega-pass and pay you cash tonight.",
+      "Heads up, {name}. Sloane Prescott from Whiterock pulled in with a spotless Range Rover and a laminated deck. She wants Dutch Hill on the Whiterock Pass, and she brought a check.",
   },
   {
     id: "winter_review",
     title: "Last chair",
     radio:
-      "That is last chair on Dutch Hill, and that wraps the winter. Maris Shaw here with how the season shook out.",
+      "That's last chair on Dutch Hill, and the bullwheel's quiet for the season. Maris Shaw here with how your winter shook out.",
   },
 ];
 

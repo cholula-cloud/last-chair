@@ -1,4 +1,4 @@
-/** The cold open: four story cards with a voice-over. Pure data and timing; the screen lives in ColdOpen.tsx. */
+/** The cold open: six story cards with voice-over on cards 1-2 and interactive beats on cards 3 and 5. */
 
 export type ColdOpenCard = {
   id: string;
@@ -6,11 +6,15 @@ export type ColdOpenCard = {
   caption: string;
   /** Still image under /story. */
   image: string;
-  /** Second the voice-over starts this line. Found by detecting the pauses in cold-open.mp3. */
+  /** Second the card appears in the timeline. */
   cue: number;
+  /** Optional interactive card mode. */
+  interactive?: "punchcard" | "lease";
 };
 
 export const COLD_OPEN_AUDIO = "/story/cold-open.mp3";
+/** Stop the legacy recording before card 3 until cards 3-6 are re-recorded. */
+export const COLD_OPEN_AUDIO_STOP_SEC = 11.15;
 
 export const COLD_OPEN_CARDS: readonly ColdOpenCard[] = [
   {
@@ -23,22 +27,33 @@ export const COLD_OPEN_CARDS: readonly ColdOpenCard[] = [
     id: "burned",
     caption: "In 1990 the lodge burned. The forest started taking the slope back.",
     image: "/story/card-2.webp",
-    // Silence runs 5.36 to 6.12 seconds; the line starts at 6.12.
     cue: 6.0,
   },
   {
-    id: "town",
-    caption: "Heartwellville wants its hill back. The town has leased it to you, with $12,000 to start.",
-    image: "/story/card-3.webp",
-    // Silence runs 10.48 to 11.30 seconds.
+    id: "shoebox",
+    caption: "Grammy Dot sold tickets here for thirty winters. She kept the last punch card, with one ride left on it.",
+    image: "/story/card-2.webp",
     cue: 11.2,
+    interactive: "punchcard",
+  },
+  {
+    id: "nightcrew",
+    caption: "You made snow up north for ten winters. Then Whiterock bought the mountain and put the night crew on a timer.",
+    image: "/story/card-3.webp",
+    cue: 17.5,
+  },
+  {
+    id: "lease",
+    caption: "Heartwellville will lease you Dutch Hill for one winter. Twelve thousand in the till. Most of it is yours, and the rest came out of Grammy Dot's coffee can.",
+    image: "/story/card-3.webp",
+    cue: 24.0,
+    interactive: "lease",
   },
   {
     id: "pick",
-    caption: "Pick who runs it with you.",
+    caption: "Nobody runs a hill alone. Who is signing with you?",
     image: "/story/card-4.webp",
-    // Silence runs 16.78 to 17.42 seconds.
-    cue: 17.3,
+    cue: 31.0,
   },
 ];
 
@@ -59,11 +74,11 @@ export function cueOf(index: number, cards: readonly ColdOpenCard[] = COLD_OPEN_
 
 /**
  * Seconds a card stays up when the voice-over is silent (muted, blocked or still loading):
- * the gap to the next cue. The last card waits for the player.
+ * the gap to the next cue. Interactive and final cards wait for the player.
  */
 export function silentHoldSeconds(index: number, cards: readonly ColdOpenCard[] = COLD_OPEN_CARDS): number | null {
   const next = cards[index + 1];
   const here = cards[index];
-  if (!next || !here) return null;
+  if (!next || !here || here.interactive) return null;
   return next.cue - here.cue;
 }
