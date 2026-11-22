@@ -83,7 +83,7 @@ function BuildCommitmentsCard({ state }: { state: GameState }) {
       title="Build bills and free cash"
       hero={build.totalScheduled > 0 ? `${formatMoney(build.totalScheduled)} due` : "$0 due"}
       heroTone={heroTone}
-      caption="How much of your cash is already spoken for by 40/30/30 build installments."
+      caption="Build cash paid upfront this winter and any legacy bills still open."
       comparisons={[
         build.shortfall > 0 ? `Shortfall: ${formatMoney(build.shortfall)}` : `Free to spend: ${formatMoney(build.freeCash)}`,
         `Paid this winter: ${formatMoney(build.totalPaid)}`,

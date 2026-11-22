@@ -131,7 +131,7 @@ export function problemGuide(
       return { layer: "slope", tab: "Crew", text: "Trace another gentle descent on Slope, then check Crew for trail skills." };
     case "lines":
     case "queue":
-      return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for a deposit you can afford." };
+      return { layer: "slope", tab: "Money", text: "Scout a lift site on Slope, then check Money for what you can afford." };
     case "snow":
       return { layer: "conditions", tab: "Desk", text: "Look at the cover on Conditions, then check tomorrow’s forecast at the Desk." };
     case "runs":

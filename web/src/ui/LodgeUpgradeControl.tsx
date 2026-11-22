@@ -45,18 +45,15 @@ export function LodgeUpgradeControl({
             <BuildImpactCard
               title={`Upgrade to ${LODGE_TIERS[next].label}`}
               facts={[
-                { label: "Total cost", value: formatMoney(LODGE_TIERS[next].cost) },
-                {
-                  label: "Payment",
-                  value: `${formatMoney(payment.deposit)} now, ${formatMoney(payment.first)} each of the next two nights`,
-                },
+                { label: "Cost", value: formatMoney(LODGE_TIERS[next].cost) },
+                { label: "Payment", value: "Paid upfront" },
                 { label: "Construction", value: "Two nights" },
                 { label: "Attachment pads", value: String(LODGE_TIERS[next].pads) },
                 ...(unlocks.length ? [{ label: "Unlocks", value: unlocks.join(", ") }] : []),
               ]}
               problem={
-                cash < payment.deposit
-                  ? "Wallet says no. Close out the day, then come back with the deposit."
+                cash < LODGE_TIERS[next].cost
+                  ? "Wallet says no. Close out the day, then check your balance."
                   : null
               }
               confirmLabel="Start lodge upgrade"
@@ -74,7 +71,7 @@ export function LodgeUpgradeControl({
               <p className="text-sm font-extrabold">{LODGE_TIERS[next].label}</p>
               <div className="flex flex-wrap gap-1.5">
                 <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
-                  {formatMoney(payment.deposit)} now, {formatMoney(payment.first)} x2 nights
+                  {formatMoney(LODGE_TIERS[next].cost)}
                 </span>
                 {(stallGain > 0 || padGain > 0) && (
                   <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">

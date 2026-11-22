@@ -2,7 +2,6 @@
 
 import { useMemo, type ReactNode } from "react";
 import { ASSET_CATALOG, CHAIR_TIER, lodgeAttachPads } from "@/game/base";
-import { constructionDraw } from "@/game/economy";
 import { formatMoney } from "@/game/format";
 import { chooseLift, liftCapacityPerHour, liftWaitMin } from "@/game/lifts";
 import { BRUSH_WIDTHS } from "@/game/paintedTrail";
@@ -312,12 +311,9 @@ function TrailBar() {
 }
 
 function buildPaymentFacts(total: number) {
-  const { deposit, first, second } = constructionDraw(total);
-  const remaining = first === second ? `${formatMoney(first)} each of the next two nights`
-    : `${formatMoney(first)} tonight, ${formatMoney(second)} tomorrow night`;
   return [
-    { label: "Total cost", value: formatMoney(total) },
-    { label: "Payment", value: `${formatMoney(deposit)} now, ${remaining}` },
+    { label: "Cost", value: formatMoney(total) },
+    { label: "Payment", value: "Paid upfront" },
   ];
 }
 
@@ -351,7 +347,7 @@ function LiftBar() {
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
           { label: "Opens", value: "Once you cut a trail" },
         ]}
-        confirmLabel={`Place for ${formatMoney(constructionDraw(cost).deposit)} now`}
+        confirmLabel={`Place for ${formatMoney(cost)}`}
         problem={problem}
         onCancel={backToDraft}
         onConfirm={() => {

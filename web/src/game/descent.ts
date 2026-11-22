@@ -211,7 +211,7 @@ export function placementReason(
     case "crosses":
       return "That crosses another lift line. Move one end.";
     case "cash":
-      return `Need ${formatMoney(Math.ceil(ctx.need ?? 0))} more for the deposit.`;
+      return `Need ${formatMoney(Math.ceil(ctx.need ?? 0))} more in the till.`;
   }
 }
 

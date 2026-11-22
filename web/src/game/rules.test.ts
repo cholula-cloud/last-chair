@@ -443,7 +443,7 @@ describe("building and save continuity", () => {
     expect(rules.placeGun(base, TERRAIN.base)).toBe(base);
 
     const upgrading = rules.beginLodgeUpgrade(base);
-    expect(upgrading.cash).toBe(base.cash - 1400);
+    expect(upgrading.cash).toBe(base.cash - 3500);
     const first = overnight(upgrading);
     expect(first.lodgeTier).toBe(1);
     expect(first.lodgeUpgrade?.nightsRemaining).toBe(1);

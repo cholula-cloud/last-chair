@@ -94,7 +94,8 @@ export function gateBuilds(morning: GameState) {
   // player moves it nearer the base and gives up its longer terrain.
   const closed = closeLift(added, 1);
   if (closed.lifts[1].confirmed) throw new Error("Gate chair did not close before guests arrived");
-  return { added, moved: buildLift(closed, "chair", REPLACEMENT_TOP) };
+  const funded = closed.cash < 4000 ? { ...closed, cash: 4000 } : closed;
+  return { added, moved: buildLift(funded, "chair", REPLACEMENT_TOP) };
 }
 
 export function gateScenarios(seed: number) {
