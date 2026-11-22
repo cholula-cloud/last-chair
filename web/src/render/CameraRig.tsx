@@ -8,6 +8,7 @@ import type { AssetTarget } from "@/game/assetNames";
 import { TERRAIN } from "@/game/terrain";
 import { useGameStore } from "@/game/store";
 import { useCameraUi } from "@/ui/cameraUi";
+import { motionPref } from "@/ui/motion";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { currentLayer } from "@/ui/overlayUi";
 import { pickSceneAsset } from "./assetPick";
@@ -260,6 +261,16 @@ export function CameraRig({
     userMoved.current = false;
     goHome();
   }, [recenterNonce, goHome]);
+
+  const focusPoint = useCameraUi((s) => s.focusPoint);
+  const seenFocusPoint = useRef(0);
+  useEffect(() => {
+    if (!focusPoint || focusPoint.nonce === seenFocusPoint.current) return;
+    seenFocusPoint.current = focusPoint.nonce;
+    if (motionPref.get()) return;
+    const p = insideLease({ x: focusPoint.x, z: focusPoint.z });
+    glideTo(new THREE.Vector3(p.x, TERRAIN.height(p.x, p.z) + LIFT_TERMINAL_H * 0.5, p.z), FOCUS_DISTANCE);
+  }, [focusPoint, glideTo]);
 
   const placementFocus = usePlacementDraft((s) => s.focus);
   const seenFocus = useRef(0);
