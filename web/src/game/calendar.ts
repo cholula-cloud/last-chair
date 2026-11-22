@@ -42,7 +42,16 @@ export const ACT2_CALENDAR: CalendarDef = {
   holidayWeeks: [{ from: 41, to: 49, label: "February vacation week" }],
 };
 
-export const MOUNTAIN_CALENDARS = { dutch_hill: DUTCH_HILL_CALENDAR };
+export const MOUNTAIN_CALENDARS = {
+  dutch_hill: DUTCH_HILL_CALENDAR,
+  mount_tom: ACT2_CALENDAR,
+  maple_valley: ACT2_CALENDAR,
+  snow_valley: ACT2_CALENDAR,
+  enchanted_mountain: ACT2_CALENDAR,
+  evergreen_valley: ACT2_CALENDAR,
+  brodie: ACT2_CALENDAR,
+  mount_whittier: ACT2_CALENDAR,
+} as const;
 export type MountainId = keyof typeof MOUNTAIN_CALENDARS;
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;

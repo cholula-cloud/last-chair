@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { useGameStore } from "@/game/store";
 
-export const OFFICE_TABS = ["Desk", "Money", "Stats", "Reports", "Crew"] as const;
+export const OFFICE_TABS = ["Desk", "Money", "Stats", "Reports", "Crew", "Atlas"] as const;
 export type OfficeTabId = (typeof OFFICE_TABS)[number];
 
 type OfficeUi = {

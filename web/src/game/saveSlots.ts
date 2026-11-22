@@ -75,7 +75,16 @@ export function migrateLegacySave(storage: KeyValueStorage | null = defaultStora
   }
 }
 
-export const MOUNTAIN_NAMES: Record<MountainId, string> = { dutch_hill: "Dutch Hill" };
+export const MOUNTAIN_NAMES: Record<MountainId, string> = {
+  dutch_hill: "Dutch Hill",
+  mount_tom: "Mount Tom",
+  maple_valley: "Maple Valley",
+  snow_valley: "Snow Valley",
+  enchanted_mountain: "Enchanted Mountain",
+  evergreen_valley: "Evergreen Valley",
+  brodie: "Brodie",
+  mount_whittier: "Mount Whittier",
+};
 
 export function mountainName(id: unknown): string {
   return typeof id === "string" && Object.hasOwn(MOUNTAIN_NAMES, id) ? MOUNTAIN_NAMES[id as MountainId] : "Unknown hill";

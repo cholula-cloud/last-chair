@@ -29,6 +29,7 @@ import type {
   SnowPreset,
   StoryBeatId,
 } from "./types";
+import type { MountainId } from "./calendar";
 
 export type { LiftSlot } from "./state";
 
@@ -72,6 +73,7 @@ type GameActions = {
   resetTips: () => void;
   finishWinterReview: () => void;
   startNewSeason: () => void;
+  startNextHill: (targetMountainId: MountainId, caretakerAlly?: string | null) => void;
   nextTalentHint: () => string | null;
   dismissSaveNotice: () => void;
   guestLens: "off" | "mood";
@@ -305,6 +307,7 @@ export const useGameStore = create<GameStore>()(
         decideGroomerDown: action("decideGroomerDown"),
         finishWinterReview: command("finishWinterReview"),
         startNewSeason: command("startNewSeason"),
+        startNextHill: action("startNextHill"),
         nextTalentHint: () => rules.nextTalentHint(get()),
         guestLens: "off",
         setGuestLens: (guestLens) => set({ guestLens }),

@@ -3,6 +3,12 @@ import { DEFAULT_STYLE } from "./base";
 import { DUTCH_HILL_SITE } from "./mountains/dutchHill.site";
 import { mountainDefaultStyle } from "./styles";
 import { calendarForSeason, MOUNTAIN_CALENDARS, operatingDayIndex, type MountainId } from "./calendar";
+import {
+  defaultCareerHills,
+  ensureCareerHills,
+  hillById,
+  type CareerHillRecord,
+} from "./mountains/roster";
 import type { LodgeTier, LodgeUpgrade, PlacedAsset } from "./base";
 import type { Loan, Payable } from "./economy";
 import type { ClearingCell } from "./clearing";
@@ -173,6 +179,7 @@ export type PersistedState = {
   seasonDays: SeasonDay[];
   beatLog: { id: StoryBeatId; day: number | null }[];
   career: WinterRecord[];
+  careerHills: CareerHillRecord[];
   lastWinter?: WinterRecord;
   dayStats: DayStats;
 };
@@ -186,8 +193,11 @@ export const DEFAULT_SEED = 1;
 
 export const OPENING_HEADLINE = "Dutch Hill has a lodge and not much else. Build a lift and paint a trail to open.";
 
-export function createInitialState(seed: number = DEFAULT_SEED): GameState {
-  const mountainId = "dutch_hill";
+export function createInitialState(
+  seed: number = DEFAULT_SEED,
+  mountainId: MountainId = "dutch_hill",
+): GameState {
+  const hill = hillById(mountainId);
   const seasonLength = MOUNTAIN_CALENDARS[mountainId].length;
   const seasonSeed = mix32(seed);
   const weatherDays = generateSeasonWeather(seasonSeed, seasonLength);
@@ -198,7 +208,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     clockMin: DAY_START_MIN,
     phase: "setup",
     paused: true,
-    cash: 12000,
+    cash: hill.startingCash,
     payables: [],
     loan: null,
     loanTaken: false,
@@ -219,6 +229,7 @@ export function createInitialState(seed: number = DEFAULT_SEED): GameState {
     seasonDays: [],
     beatLog: [],
     career: [],
+    careerHills: defaultCareerHills(mountainId),
     lastDay: null,
     dayStats: emptyDayStats(),
     pendingFare: "balanced",
@@ -270,6 +281,7 @@ export function toPersisted(state: PersistedState): PersistedState {
     seasonDays: state.seasonDays,
     beatLog: state.beatLog,
     career: state.career,
+    careerHills: ensureCareerHills(state.careerHills, state.mountainId),
     dayIndex: state.dayIndex,
     clockMin: state.clockMin,
     phase: state.phase,
@@ -358,4 +370,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;

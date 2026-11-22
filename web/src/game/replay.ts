@@ -47,6 +47,7 @@ export const replayRules = {
   decideGroomerDown: rules.decideGroomerDown,
   finishWinterReview: rules.finishWinterReview,
   startNewSeason: rules.startNewSeason,
+  startNextHill: rules.startNextHill,
 };
 
 export type RuleName = keyof typeof replayRules;
