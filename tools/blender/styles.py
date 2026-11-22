@@ -326,11 +326,17 @@ def c_lodge1():
 
 
 def c_lodge2():
-    return _lodge("lodge-tier-2-" + STYLE, 2)
+    a = Asset("lodge-tier-2-" + STYLE)
+    import lodge_tier_layout as layout
+    layout.build_coherent_lodge(a, _chalet_mats(), tier=2)
+    return a.finish()
 
 
 def c_lodge3():
-    return _lodge("lodge-tier-3-" + STYLE, 3)
+    a = Asset("lodge-tier-3-" + STYLE)
+    import lodge_tier_layout as layout
+    layout.build_coherent_lodge(a, _chalet_mats(), tier=3)
+    return a.finish()
 
 
 # ---------- venues ----------
