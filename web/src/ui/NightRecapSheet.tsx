@@ -5,7 +5,7 @@ import { TALENT } from "@/game/talents";
 import { useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, previewOvernight, summitLinkOfferOpen } from "@/game/rules";
+import { expectedArrivals, previewOvernight, schoolContractOfferDay, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
@@ -17,7 +17,12 @@ import { nextTalentName, type NightRecap } from "@/game/sim";
 import { pickableTalents, CREW_RUSH_COST } from "@/game/talentProgress";
 import { storyBeatCopy, useGameStore } from "@/game/store";
 import type { GameState, LastDay } from "@/game/state";
-import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
+import {
+  CLUB_BUS_DISCOUNT,
+  CLUB_BUS_SKIERS,
+  GROOMER_REPAIR_COST,
+  SUMMIT_LINK_PAYMENT,
+} from "@/game/summitLink";
 import { useSettings } from "@/ui/settingsStore";
 import { surpriseRadio } from "@/game/surprises";
 import { WHY_BASE, GUEST_MEASURE_LABELS, delta, formatGuestObservation, formatPoints, observeGuests, whyLines } from "@/game/why";
@@ -258,7 +263,7 @@ function NightMoney({
     { label: "Construction payments tonight", amount: -costs.draws },
     { label: "Loan received tonight", amount: recap.loanReceived },
     { label: "Loan repaid tonight", amount: -recap.loanRepaid },
-    { label: "Whiterock Pass payment tonight", amount: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0 },
+    { label: "Whiterock Pass payment tonight", amount: recap.summitLinkReply === "accepted" ? (recap.summitLinkPayment ?? SUMMIT_LINK_PAYMENT) : 0 },
   ];
 
   return (
@@ -401,6 +406,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const setPendingFare = useGameStore((s) => s.setPendingFare);
   const setPendingSnow = useGameStore((s) => s.setPendingSnow);
   const acknowledgeBeat = useGameStore((s) => s.acknowledgeBeat);
+  const decideClubBooking = useGameStore((s) => s.decideClubBooking);
+  const decideGroomerDown = useGameStore((s) => s.decideGroomerDown);
   const tipsOn = useSettings(s => s.tips);
   const guideSeen = useGameStore(s => s.tipsSeen.includes(PROBLEM_GUIDE_ID));
   const markTipSeen = useGameStore(s => s.markTipSeen);
@@ -426,9 +433,30 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const nextTalent = nextTalentName(night.talentsOwned);
   const beat = storyBeatCopy(pendingBeat, night.operatorName ?? null, night.guns.length);
   const surprise = night.surpriseLog.find((entry) => entry.dayIndex === dayIndex);
-  const surpriseCopy = !pendingBeat && surprise ? surpriseRadio(surprise, night.operatorName ?? null, { fare: night.fare }) : null;
-  const summitLinkOffer = summitLinkOfferOpen(night);
-  const canSleep = !summitLinkOffer && (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
+  const showSummitOffer = summitLinkOfferOpen(night);
+  const showSchoolOffer = night.pendingBeat === "school_bus" && schoolContractOfferDay(night) !== null;
+  const showClubOffer = night.clubBooking?.decision === "pending";
+  const showGroomerOffer = Boolean(
+    night.groomerDown?.active && night.groomerDown.decision === "pending" && night.groomerDown.day === dayIndex,
+  );
+  const showBusSummary = Boolean(night.nightRecap?.facts.schoolBus);
+  const surpriseCopy =
+    !pendingBeat &&
+    surprise &&
+    surprise.kind !== "club_bus" &&
+    surprise.kind !== "groomer_down"
+      ? surpriseRadio(surprise, night.operatorName ?? null, {
+          fare: night.fare,
+          vivianVisit: night.vivianVisit,
+          reputation: night.reputation,
+        })
+      : null;
+  const summitLinkOffer = showSummitOffer;
+  const canSleep =
+    !summitLinkOffer &&
+    !showClubOffer &&
+    !showGroomerOffer &&
+    (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus"));
   const hasGuests = recap.arrivals > 0;
   const demand = hasGuests ? topGuestDemand(recap, demandContext(night)) : null;
   const guide = tipsOn && !guideSeen ? problemGuide(recap, demand?.key) : null;
@@ -493,9 +521,10 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               className="mb-2 text-center text-[0.88rem] font-bold text-ink short:mb-1.5"
             >
               {summitLinkOffer && "Answer Sloane before you turn in."}
-              {!summitLinkOffer && (pendingBeat === "school_bus"
-                ? "Give Hank an answer on the school bus before you turn in."
-                : "Read the radio message, then tap Got it.")}
+              {!summitLinkOffer && showSchoolOffer && "Give Hank an answer on the school bus before you turn in."}
+              {!summitLinkOffer && !showSchoolOffer && showClubOffer && "Answer the Bennington Ski Club before you turn in."}
+              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && showGroomerOffer && "Tell Frank whether to borrow the town machine tonight."}
+              {!summitLinkOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && "Read the radio message, then tap Got it."}
             </p>
           )}
           {planNight && (
@@ -601,8 +630,94 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
         {hasGuests && <WhyList key={dayIndex} recap={recap} patrol={TALENT.firstAidHut.learned(night.talentsOwned)} />}
 
         <SummitLinkCard night={night} />
-        <SchoolContractCard night={night} />
-        {radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
+        {!showSummitOffer && <SchoolContractCard night={night} />}
+        {!showSummitOffer && !showSchoolOffer && night.clubBooking && (() => {
+          if (night.clubBooking.decision === "pending") {
+            const clubDate = dayLabel(seasonCalendar(night), night.clubBooking.day);
+            const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+            return (
+              <RadioCard
+                title="Bennington Ski Club offer"
+                from="Bennington club secretary"
+                action={
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className={`${btnClass} [--key-fill:var(--sign-yellow)]`}
+                      onClick={() => decideClubBooking("accepted")}
+                    >
+                      Book {CLUB_BUS_SKIERS} skiers
+                    </button>
+                    <button type="button" className={btnClass} onClick={() => decideClubBooking("declined")}>
+                      Decline
+                    </button>
+                  </div>
+                }
+              >
+                Folks in Bennington heard about your zero-wait Saturday. Can they send {CLUB_BUS_SKIERS} club skiers on{" "}
+                {clubDate.weekday} {clubDate.date} for {formatMoney(CLUB_BUS_DISCOUNT)} off tickets?
+              </RadioCard>
+            );
+          }
+          if (night.clubBooking.decision === "accepted" && night.clubBooking.day > dayIndex && !showGroomerOffer) {
+            const clubDate = dayLabel(seasonCalendar(night), night.clubBooking.day);
+            return (
+              <p className="chip mt-3 px-3 py-2 text-sm font-bold">
+                Bennington Ski Club booked for {clubDate.weekday} {clubDate.date} ({CLUB_BUS_SKIERS} skiers at {formatMoney(CLUB_BUS_DISCOUNT)} off).
+              </p>
+            );
+          }
+          if (
+            night.clubBooking.decision === "accepted" &&
+            night.clubBooking.day === dayIndex &&
+            night.clubBooking.skiersArrived !== null &&
+            !showGroomerOffer &&
+            !showBusSummary
+          ) {
+            return (
+              <RadioCard title="Bennington Ski Club" from="Club secretary">
+                {night.clubBooking.skiersArrived} of {CLUB_BUS_SKIERS} Bennington skiers rode Dutch Hill today. Clean lifts keep them coming back.
+              </RadioCard>
+            );
+          }
+          return null;
+        })()}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && night.groomerDown && night.groomerDown.day === dayIndex && (() => {
+          if (night.groomerDown.decision === "pending") {
+            const btnClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+            return (
+              <RadioCard
+                title="Groomer threw a track"
+                from="Frank Oka"
+                action={
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      className={`${btnClass} [--key-fill:var(--sign-yellow)]`}
+                      onClick={() => decideGroomerDown("paid")}
+                    >
+                      Borrow town rig ({formatMoney(GROOMER_REPAIR_COST)})
+                    </button>
+                    <button type="button" className={btnClass} onClick={() => decideGroomerDown("skipped")}>
+                      Skip grooming ($0)
+                    </button>
+                  </div>
+                }
+              >
+                {surpriseRadio({ dayIndex, kind: "groomer_down", affectedGuests: 0 }, night.operatorName ?? null).radio}
+              </RadioCard>
+            );
+          }
+          return (
+            <p className="chip mt-3 px-3 py-2 text-sm font-bold">
+              {night.groomerDown.decision === "paid"
+                ? `Borrowed the town machine (${formatMoney(GROOMER_REPAIR_COST)}). Overnight grooming stays on schedule.`
+                : "Skipped the town borrow tonight. Grooming resumes tomorrow night."}
+            </p>
+          );
+        })()}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showBusSummary &&
+          radio && beat && !beatAcknowledged && pendingBeat !== "school_bus" && !summitLinkOffer && (
           <RadioCard
             title={beat.title}
             action={
@@ -618,7 +733,8 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
             {tidy(beat.radio)}
           </RadioCard>
         )}
-        {radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showBusSummary &&
+          radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
       </div>
     </Sheet>
   );

@@ -4,15 +4,27 @@ import { morningCash } from "./economy";
 import { migrate } from "./migrations";
 import {
   acknowledgeBeat,
+  decideClubBooking,
+  decideGroomerDown,
   openNight,
   pickFounder,
+  previewOvernight,
   replyToSummitLink,
   setPendingFare,
   sleep,
   startNewSeason,
 } from "./rules";
 import { hydrate, SAVE_VERSION, toPersisted } from "./state";
-import { SUMMIT_LINK_FIRST_DAY_LEGACY, SUMMIT_LINK_PAYMENT } from "./summitLink";
+import {
+  CLUB_BUS_DISCOUNT,
+  CLUB_BUS_SKIERS,
+  GROOMER_REPAIR_COST,
+  SUMMIT_LINK_FIRST_DAY_LEGACY,
+  SUMMIT_LINK_PAYMENT,
+  SUMMIT_LINK_REDUCED_PAYMENT,
+  summitLinkFirstDay,
+} from "./summitLink";
+import { makeGuest } from "./sim";
 import type { FounderId } from "./types";
 
 function openingNight(founder: FounderId = "elena") {
@@ -122,5 +134,96 @@ describe("Abominable Snowglomerate offer", () => {
     expect(pending.pendingBeat).toBe("summit_link");
     const accepted = replyToSummitLink(pending, "accepted");
     expect(accepted.completedBeats.filter((id) => id === "summit_link")).toHaveLength(1);
+  });
+
+  it("pays $3,000 when reputation is 40-49 vs $6,000 at 50+, and lets Tom call two days earlier", () => {
+    expect(summitLinkFirstDay(42, "elena")).toBe(22);
+    expect(summitLinkFirstDay(42, "tom")).toBe(20);
+
+    const base = pickFounder(createBuiltHill(), "tom");
+    const midRepNight = openNight({
+      ...base,
+      dayIndex: SUMMIT_LINK_FIRST_DAY_LEGACY - 2,
+      weather: base.weatherDays[SUMMIT_LINK_FIRST_DAY_LEGACY - 3].kind,
+      reputation: 45,
+      completedBeats: ["first_load"],
+    });
+    expect(midRepNight.pendingBeat).toBe("summit_link");
+    const accepted = replyToSummitLink(midRepNight, "accepted");
+    expect(accepted.cash).toBe(midRepNight.cash + SUMMIT_LINK_REDUCED_PAYMENT);
+    expect(accepted.nightRecap?.summitLinkPayment).toBe(SUMMIT_LINK_REDUCED_PAYMENT);
+    const morning = sleep(accepted);
+    expect(morning.seasonDays.at(-1)?.summitLink?.receipt).toBe(SUMMIT_LINK_REDUCED_PAYMENT);
+  });
+
+  it("offers Bennington Ski Club after a zero-wait Saturday and delivers 10 club skiers next Saturday", () => {
+    const built = pickFounder(createBuiltHill(), "elena");
+    const weatherDays = Array.from({ length: 42 }, (_, i) => built.weatherDays[i % built.weatherDays.length]);
+    const satDay9 = openNight({
+      ...built,
+      seasonLength: 42,
+      weatherDays,
+      dayIndex: 9, // Week 2 Saturday
+      weather: weatherDays[8].kind,
+      guests: [makeGuest({ id: "g1", state: "gone", runs: 4, waitMin: 6, waitCount: 3, snowSum: 3.4 })],
+      dayStats: { ...built.dayStats, arrivals: 1, guestsArrived: 1, completedRuns: 4, runsPerGuest: 4, dispatched: 4 },
+      completedBeats: ["first_load", "saturday"],
+    });
+    expect(satDay9.clubBooking).toEqual({ decision: "pending", day: 16, skiersArrived: null });
+    expect(sleep(satDay9)).toBe(satDay9);
+
+    const booked = decideClubBooking(satDay9, "accepted");
+    expect(booked.clubBooking?.decision).toBe("accepted");
+    expect(booked.surpriseLog.some((e) => e.kind === "club_bus")).toBe(true);
+
+    // Jump straight to Friday night Day 15 and sleep into Saturday Day 16.
+    const friNight = openNight({
+      ...booked,
+      phase: "day",
+      dayIndex: 15,
+      weather: weatherDays[14].kind,
+      guests: [makeGuest({ id: "g2", state: "gone", runs: 3, waitMin: 4, waitCount: 2, snowSum: 2.5 })],
+      dayStats: { ...booked.dayStats, arrivals: 1, guestsArrived: 1, completedRuns: 3, runsPerGuest: 3, dispatched: 3 },
+      completedBeats: ["first_load", "saturday"],
+    });
+    const satMorning16 = sleep(friNight);
+    const clubGuests = satMorning16.guests.filter((g) => g.id.startsWith("club-"));
+    expect(clubGuests).toHaveLength(CLUB_BUS_SKIERS);
+    expect(CLUB_BUS_DISCOUNT).toBe(10);
+  });
+
+  it("triggers Tucker groomer breakdown in midpoint window and skips grooming if repair is declined", () => {
+    const built = pickFounder(createBuiltHill(), "elena");
+    const weatherDays = Array.from({ length: 42 }, (_, i) => built.weatherDays[i % built.weatherDays.length]);
+    const dayHistory = [
+      { day: 1, fare: "balanced" as const, snow: "mid" as const, weather: "clear" as const, recap: built.nightRecap!, snowCost: 150, constructionDue: 0, closingCash: 5000 },
+      { day: 2, fare: "balanced" as const, snow: "high" as const, weather: "clear" as const, recap: built.nightRecap!, snowCost: 350, constructionDue: 0, closingCash: 5000 },
+    ];
+    const openDay15 = openNight({
+      ...built,
+      seasonLength: 42,
+      weatherDays,
+      dayIndex: 15, // operatingDay 7 (in midpoint 7..13)
+      weather: weatherDays[14].kind,
+      dayHistory,
+      guests: [makeGuest({ id: "g3", state: "gone", runs: 3, waitMin: 3, waitCount: 2, snowSum: 2.5 })],
+      dayStats: { ...built.dayStats, arrivals: 1, guestsArrived: 1, completedRuns: 3, runsPerGuest: 3, dispatched: 3 },
+      completedBeats: ["first_load", "saturday"],
+    });
+    expect(openDay15.groomerDown).toEqual({ active: true, decision: "pending", day: 15 });
+    expect(sleep(openDay15)).toBe(openDay15);
+
+    const paid = decideGroomerDown(openDay15, "paid");
+    expect(paid.cash).toBe(openDay15.cash - GROOMER_REPAIR_COST);
+    expect(paid.groomerDown?.decision).toBe("paid");
+
+    const skipped = decideGroomerDown(openDay15, "skipped");
+    expect(skipped.cash).toBe(openDay15.cash);
+    const paidSnow = previewOvernight(paid, "high").meanQuality;
+    const skippedSnow = previewOvernight(skipped, "high").meanQuality;
+    expect(skippedSnow).toBeLessThanOrEqual(paidSnow);
+
+    const morningAfterSkip = sleep(skipped);
+    expect(morningAfterSkip.groomerDown?.active).toBe(false);
   });
 });

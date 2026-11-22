@@ -1,6 +1,8 @@
 import { canTakeSummitLinkEquity } from "./founders";
 import {
   acknowledgeBeat,
+  decideClubBooking,
+  decideGroomerDown,
   decideSchoolContract,
   replyToSummitLink,
   beginLodgeUpgrade,
@@ -360,6 +362,12 @@ export function runSeason(
       const reply = !canTakeSummitLinkEquity({ founderId }) ? "declined" : options.summitLink ?? "declined";
       state = replyToSummitLink(state, reply);
     } else state = acknowledgeBeat(state);
+    if (state.clubBooking?.decision === "pending") {
+      state = decideClubBooking(state, "declined");
+    }
+    if (state.groomerDown?.active && state.groomerDown.decision === "pending") {
+      state = decideGroomerDown(state, "skipped");
+    }
     recap = state.nightRecap as NightRecap;
     if (recap.facts.schoolBus) schoolVisits.push(recap.facts.schoolBus);
     const { dayStats } = state;

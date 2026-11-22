@@ -191,6 +191,16 @@ export const MIGRATIONS: readonly Migration[] = [
       operatorName: typeof s.operatorName === "string" ? s.operatorName : null,
     }),
   },
+  {
+    to: 16,
+    note: "Add Sloane scouting visit, Bennington club bus, and groomer down tracking",
+    up: (s) => ({
+      ...s,
+      vivianVisit: s.vivianVisit ?? null,
+      clubBooking: s.clubBooking ?? null,
+      groomerDown: s.groomerDown ?? null,
+    }),
+  },
 ];
 
 type MigrationResult =

@@ -88,11 +88,19 @@ import {
   planArrivals,
   readyStoryBeat,
   schoolBusGuests,
+  clubBusGuests,
   tickGuests,
 } from "./sim";
 import { createInitialState, type GameState, type LiftSlot } from "./state";
-import { SUMMIT_LINK_PAYMENT, type SummitLinkDecision } from "./summitLink";
-import { arrangeSurprise, resolveSurprise, surprisePriority } from "./surprises";
+import {
+  CLUB_BUS_SKIERS,
+  GROOMER_REPAIR_COST,
+  SUMMIT_LINK_PAYMENT,
+  summitLinkOfferPayment,
+  type SloaneVisitFacts,
+  type SummitLinkDecision,
+} from "./summitLink";
+import { arrangeSurprise, resolveSurprise, SLOANE_SCOUT_ID, surprisePriority } from "./surprises";
 import {
   routeOptions,
   segmentElevationsForPath,
@@ -203,10 +211,18 @@ export function openNight(state: GameState): GameState {
   const pupils = invited ? withActivities.guests.filter((guest) => guest.schoolPupil) : [];
   const arrived = pupils.filter((guest) => guest.state !== "pending").length;
   const taught = pupils.filter((guest) => guest.schoolLessonCompleted).length;
+  const clubInvited =
+    withActivities.clubBooking?.decision === "accepted" &&
+    withActivities.clubBooking.day === withActivities.dayIndex
+      ? CLUB_BUS_SKIERS
+      : 0;
+  const clubSkiers = clubInvited
+    ? withActivities.guests.filter((guest) => guest.id.startsWith("club-") && guest.state !== "pending").length
+    : 0;
   const schoolProgramProven = withActivities.schoolProgramProven || (
     withActivities.lodgeTier >= 2 && withActivities.guests.some((guest) => guest.schoolLessonCompleted)
   );
-  const settled = settleOperatingDay({ ...withActivities, dayStats: stats }, day.score, arrived);
+  const settled = settleOperatingDay({ ...withActivities, dayStats: stats }, day.score, arrived, clubSkiers);
   const recap = buildNightRecap({
     stats: { ...settled.dayStats, arrivals: day.guests },
     fare: settled.fare,
@@ -217,6 +233,7 @@ export function openNight(state: GameState): GameState {
     arrivalMood: day.guests ? SAT.ARRIVAL_NEUTRAL + day.breakdown.arrivalMood / SAT.ARRIVAL_PTS : ctx.arrivalMood,
     costs: operatingCosts(settled),
     schoolBus: invited ? { invited, arrived, taught, ticketRevenue: arrived * SCHOOL_BUS_FARE } : undefined,
+    clubArrived: clubSkiers,
     busiestLift: settled.dayStats.byLift.reduce<{ label: string; min: number } | undefined>((busiest, record, i) => {
       const min = record.rides ? record.waitSumMin / record.rides : 0;
       const lift = settled.lifts[i];
@@ -233,6 +250,7 @@ export function openNight(state: GameState): GameState {
     calendar,
     dayIndex: state.dayIndex,
     seasonLength: state.seasonLength,
+    founderId: state.founderId,
     liftsOpen: openLifts,
     completedRuns: state.dayStats.completedRuns,
     arrivals: recap.arrivals,
@@ -246,8 +264,52 @@ export function openNight(state: GameState): GameState {
   });
   const surprise = resolveSurprise(settled.surprise, settled.guests);
   const beatIsDecision = candidateBeat === "school_bus" || candidateBeat === "summit_link";
+  const sloaneGuest = settled.guests.find((guest) => guest.id === SLOANE_SCOUT_ID && guest.state !== "pending");
+  const vivianVisit: SloaneVisitFacts | null = sloaneGuest && !settled.vivianVisit
+    ? {
+        day: settled.dayIndex,
+        avgWaitMin: sloaneGuest.waitCount > 0 ? sloaneGuest.waitMin / sloaneGuest.waitCount : stats.avgQueueMin,
+        avgSnow: sloaneGuest.runs > 0 ? sloaneGuest.snowSum / sloaneGuest.runs : settled.snowQuality,
+        boughtCocoa: Boolean(sloaneGuest.refuelled),
+      }
+    : settled.vivianVisit;
+  const openDay = operatingDayIndex(calendar, settled.dayIndex);
+  const week2OrLater = calendar.openWeekdays?.length ? openDay >= 4 : settled.dayIndex >= 8;
+  const canOfferClub =
+    settled.clubBooking === null &&
+    !beatIsDecision &&
+    !surprise &&
+    week2OrLater &&
+    weekdayForDay(calendar, settled.dayIndex) === "Sat" &&
+    settled.dayIndex + 7 <= settled.seasonLength &&
+    recap.arrivals > 0 &&
+    recap.facts.avgWaitMin <= 5 &&
+    recap.satisfaction >= 70;
+  const clubBooking = clubInvited && settled.clubBooking?.decision === "accepted"
+    ? { ...settled.clubBooking, skiersArrived: clubSkiers }
+    : canOfferClub
+      ? { decision: "pending" as const, day: settled.dayIndex + 7, skiersArrived: null }
+      : settled.clubBooking;
+  const inGroomerWindow = calendar.openWeekdays?.length
+    ? openDay >= 7 && openDay <= 13
+    : settled.dayIndex >= 10 && settled.dayIndex <= 18;
+  const recentHistory = settled.dayHistory.slice(-4);
+  const pushedSnowCount = recentHistory.filter((entry) => entry.snow === "mid" || entry.snow === "high").length;
+  const pushedHigh = recentHistory.some((entry) => entry.snow === "high");
+  const canTriggerGroomer =
+    settled.groomerDown === null &&
+    settled.seasonLength >= 21 &&
+    !beatIsDecision &&
+    !surprise &&
+    !canOfferClub &&
+    inGroomerWindow &&
+    pushedSnowCount >= 2 &&
+    pushedHigh;
+  const groomerDown = canTriggerGroomer
+    ? { active: true, decision: "pending" as const, day: settled.dayIndex }
+    : settled.groomerDown;
   const pendingBeat =
-    candidateBeat && !beatIsDecision && surprise && surprisePriority(surprise.kind) > 1
+    candidateBeat && !beatIsDecision && (canOfferClub || canTriggerGroomer || (surprise && surprisePriority(surprise.kind) > 1))
       ? null
       : candidateBeat;
   return {
@@ -257,6 +319,9 @@ export function openNight(state: GameState): GameState {
     nightRecap: recap,
     surprise: null,
     surpriseLog: surprise ? [...settled.surpriseLog, surprise] : settled.surpriseLog,
+    vivianVisit,
+    clubBooking,
+    groomerDown,
     pendingFare: settled.fare,
     pendingSnow: settled.snow,
     reputation: reputationAfterBeat(
@@ -1145,6 +1210,38 @@ export function decideSchoolContract(state: GameState, decision: SchoolContractD
   });
 }
 
+export function decideClubBooking(state: GameState, decision: "accepted" | "declined"): GameState {
+  if (state.phase !== "night" || state.clubBooking?.decision !== "pending") return state;
+  const entry = { dayIndex: state.dayIndex, kind: "club_bus" as const, affectedGuests: 0 };
+  return {
+    ...state,
+    clubBooking: { ...state.clubBooking, decision },
+    surpriseLog: state.surpriseLog.some((item) => item.kind === "club_bus" && item.dayIndex === state.dayIndex)
+      ? state.surpriseLog
+      : [...state.surpriseLog, entry],
+  };
+}
+
+export function decideGroomerDown(state: GameState, decision: "paid" | "skipped"): GameState {
+  if (
+    state.phase !== "night" ||
+    !state.groomerDown?.active ||
+    state.groomerDown.decision !== "pending" ||
+    state.groomerDown.day !== state.dayIndex
+  ) {
+    return state;
+  }
+  const entry = { dayIndex: state.dayIndex, kind: "groomer_down" as const, affectedGuests: 0 };
+  return {
+    ...state,
+    cash: decision === "paid" ? state.cash - GROOMER_REPAIR_COST : state.cash,
+    groomerDown: { ...state.groomerDown, decision },
+    surpriseLog: state.surpriseLog.some((item) => item.kind === "groomer_down" && item.dayIndex === state.dayIndex)
+      ? state.surpriseLog
+      : [...state.surpriseLog, entry],
+  };
+}
+
 export function summitLinkOfferOpen(state: GameState): boolean {
   return state.phase === "night" && state.nightRecap !== null && state.dayIndex < state.seasonLength &&
     state.pendingBeat === "summit_link" && state.summitLinkDecision === null;
@@ -1155,12 +1252,17 @@ export function replyToSummitLink(state: GameState, reply: SummitLinkDecision): 
   if (reply !== "accepted" && reply !== "declined") return state;
   if (reply === "accepted" && !canTakeSummitLinkEquity(state)) return state;
   const accepted = reply === "accepted";
+  const payment = accepted ? summitLinkOfferPayment(state.reputation) : 0;
   return completeBeat({
     ...state,
-    cash: state.cash + (accepted ? SUMMIT_LINK_PAYMENT : 0),
+    cash: state.cash + payment,
     pendingFare: accepted && state.pendingFare === "expensive" ? "balanced" : state.pendingFare,
     summitLinkDecision: reply,
-    nightRecap: { ...state.nightRecap, summitLinkReply: reply },
+    nightRecap: {
+      ...state.nightRecap,
+      summitLinkReply: reply,
+      ...(accepted ? { summitLinkPayment: payment } : {}),
+    },
   });
 }
 
@@ -1172,13 +1274,16 @@ function nightFor(
 ) {
   const closing = new Set(state.lifts.flatMap((lift, i) => lift.closing ? [i] : []));
   state = closeLiftsNow(state, closing);
+  const groomerFailed = Boolean(state.groomerDown?.active && state.groomerDown.decision !== "paid");
   const overnight = applyOvernight({
     snow,
     cash: state.cash,
     trails: state.trails.map((t) => t.snow),
     openTrails: state.trails.map((t) => t.open),
     gunCoverage: state.trails.map((t) => t.open ? gunCoverage(t, state.guns, state.talentsOwned) : []),
-    groomCoverage: groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
+    groomCoverage: groomerFailed
+      ? state.trails.map((t) => t.snow.map(() => false))
+      : groomCoverage(state.trails, state.dayStats.runsByTrail, snow, state.talentsOwned),
     exposure: exposureFor(state),
     hasPlacedGuns: state.guns.length > 0,
     trailElevations: state.trails.map((t) => t.elevations),
@@ -1258,7 +1363,11 @@ export function expectedArrivals(
   const publicArrivals = outlook
     ? WEATHER_KINDS.reduce((sum, kind) => sum + outlook[kind] * arrivals(kind), 0)
     : arrivals(state.weather);
-  return publicArrivals + schoolBusPupils(state.schoolContract, state.dayIndex + 1);
+  const clubBonus =
+    state.clubBooking?.decision === "accepted" && state.clubBooking.day === state.dayIndex + 1
+      ? CLUB_BUS_SKIERS
+      : 0;
+  return publicArrivals + schoolBusPupils(state.schoolContract, state.dayIndex + 1) + clubBonus;
 }
 
 export function takeLoan(state: GameState): GameState {
@@ -1293,7 +1402,14 @@ export function repayLoan(state: GameState, amount?: number): GameState {
 
 export function sleep(state: GameState): GameState {
   if (state.phase !== "night" || !state.nightRecap) return state;
-  if (summitLinkOfferOpen(state) || (state.pendingBeat && !state.beatAcknowledged)) return state;
+  if (
+    summitLinkOfferOpen(state) ||
+    state.clubBooking?.decision === "pending" ||
+    (state.groomerDown?.active && state.groomerDown.decision === "pending") ||
+    (state.pendingBeat && !state.beatAcknowledged)
+  ) {
+    return state;
+  }
 
   const cal = seasonCalendar(state);
   const recap = state.nightRecap;
@@ -1314,7 +1430,7 @@ export function sleep(state: GameState): GameState {
       arrivals: recap.arrivals, satisfaction: recap.satisfaction, closingReputation: state.reputation, ...(completedTier && { lodgeOpening: completedTier }),
       ...(recap.summitLinkReply && { summitLink: {
         reply: recap.summitLinkReply,
-        receipt: recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0,
+        receipt: recap.summitLinkPayment ?? (recap.summitLinkReply === "accepted" ? SUMMIT_LINK_PAYMENT : 0),
         fareCap: recap.summitLinkReply === "accepted" ? "balanced" : null,
       } }),
       ...(recap.facts.schoolBus && { schoolBus: recap.facts.schoolBus }) }],
@@ -1443,6 +1559,10 @@ export function sleep(state: GameState): GameState {
     rand,
   });
   const pupils = schoolBusPupils(carry.schoolContract, openDay);
+  const clubCount =
+    carry.clubBooking?.decision === "accepted" && carry.clubBooking.day === openDay
+      ? CLUB_BUS_SKIERS
+      : 0;
   const icyLowerSegments = carried.trails.reduce((sum, trail) => {
     if (!trail.open || !trail.snow.length) return sum;
     const mid = Math.floor(trail.snow.length / 2);
@@ -1461,11 +1581,19 @@ export function sleep(state: GameState): GameState {
     yesterdayWeather: state.weatherDays[openDay - 2]?.kind,
     yesterdaySnow: state.pendingSnow,
     schoolBookedDay: carry.schoolContract?.decision === "accepted" ? carry.schoolContract.day : null,
+    clubBookingDay: clubCount ? openDay : null,
+    hasSloaneVisit: carry.vivianVisit !== null,
   }, createInitialGuests(arrivals, rand, guestMixForDay(calendar, nextDay)));
+  const morningGuests = [
+    ...guests,
+    ...(pupils ? schoolBusGuests(openDay, pupils) : []),
+    ...(clubCount ? clubBusGuests(openDay, clubCount) : []),
+  ].sort((a, b) => a.arriveAtMin - b.arriveAtMin);
   return {
     ...carried,
     phase: "day",
     gunsVisible: overnight.gunsFired,
+    groomerDown: carried.groomerDown ? { ...carried.groomerDown, active: false } : null,
     talentToast: (() => {
       const parts: string[] = [];
       if (morningCrewPoints > state.crewPoints) {
@@ -1488,11 +1616,9 @@ export function sleep(state: GameState): GameState {
     dayIndex: openDay,
     operatingDayIndex: operatingDayIndex(calendar, openDay),
     beatAcknowledged: true,
-    guests: pupils
-      ? [...guests, ...schoolBusGuests(openDay, pupils)].sort((a, b) => a.arriveAtMin - b.arriveAtMin)
-      : guests,
+    guests: morningGuests,
     surprise,
-    dayStats: { ...emptyDayStats(), arrivals: guests.length + pupils },
+    dayStats: { ...emptyDayStats(), arrivals: morningGuests.length },
     lifts: resetLiftQueues(carried.lifts),
     rngState: rng.state(),
   };

@@ -16,6 +16,10 @@ const KINDS: SurpriseKind[] = [
   "january_thaw",
   "dot_call",
   "skin_tracks",
+  "sloane_visit",
+  "club_bus",
+  "groomer_down",
+  "last_saturday",
 ];
 
 function lint(text: string) {
@@ -32,7 +36,13 @@ describe("player-facing copy", () => {
     for (const talent of CREW_TALENTS) lint(talent.effect);
     for (const kind of KINDS) {
       for (const affectedGuests of [1, 4]) {
-        lint(surpriseRadio({ dayIndex: 3, kind, affectedGuests }, "Sam", { fare: "cheap" }).radio);
+        lint(
+          surpriseRadio({ dayIndex: 3, kind, affectedGuests }, "Sam", {
+            fare: "cheap",
+            reputation: 65,
+            vivianVisit: { day: 9, avgWaitMin: 3, avgSnow: 0.88, boughtCocoa: true },
+          }).radio,
+        );
       }
     }
     lint(lodgeOpeningRadio(2));

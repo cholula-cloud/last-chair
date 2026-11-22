@@ -26,6 +26,10 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
   const score = useGameStore(s => s.lastWinter?.score);
   const school = useGameStore((s) => s.schoolContract);
   const summitLink = useGameStore((s) => s.summitLinkDecision);
+  const vivianVisit = useGameStore((s) => s.vivianVisit);
+  const clubBooking = useGameStore((s) => s.clubBooking);
+  const groomerDown = useGameStore((s) => s.groomerDown);
+  const summitReceipt = days.findLast((d) => d.summitLink?.reply === "accepted")?.summitLink?.receipt ?? SUMMIT_LINK_PAYMENT;
   const reputation = useGameStore((s) => s.reputation);
   const lodgeTier = useGameStore((s) => s.lodgeTier);
   const loan = useGameStore((s) => s.loan ? payoffAmount(s.loan) : 0);
@@ -131,8 +135,26 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
             {summitLink && (
               <p>
                 {summitLink === "accepted"
-                  ? `Whiterock wired ${formatMoney(SUMMIT_LINK_PAYMENT)} to Dutch Hill. Tickets stayed capped at Balanced through closing day.`
+                  ? `Whiterock wired ${formatMoney(summitReceipt)} to Dutch Hill. Tickets stayed capped at Balanced through closing day.`
                   : "You turned down Whiterock. Dutch Hill set its own ticket prices through closing day."}
+              </p>
+            )}
+            {vivianVisit && (
+              <p>
+                Whiterock scouted Day {vivianVisit.day}: {Math.round(vivianVisit.avgWaitMin)}-min lift lines and{" "}
+                {Math.round(vivianVisit.avgSnow * 100)}% snow cover.
+              </p>
+            )}
+            {clubBooking?.decision === "accepted" && clubBooking.skiersArrived !== null && (
+              <p>
+                Bennington Ski Club brought {clubBooking.skiersArrived} skiers after your zero-wait Saturday.
+              </p>
+            )}
+            {groomerDown && (
+              <p>
+                {groomerDown.decision === "paid"
+                  ? "Repaired the Tucker's blown hydraulic line overnight ($250)."
+                  : "Let the Tucker sit un-repaired one night after the hydraulic line blew."}
               </p>
             )}
           </section>
@@ -168,7 +190,7 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
             </span>
             <p className="text-[1rem] font-bold">
               You earned a career pin for{" "}
-              <strong className="font-extrabold">Tenney Mountain, NH</strong>.
+              <strong className="font-extrabold">Mount Tom, MA</strong>.
             </p>
           </div>}
         </div>

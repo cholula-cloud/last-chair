@@ -24,6 +24,10 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
   const schoolOffer = useGameStore(s => s.pendingBeat === "school_bus");
   const school = useGameStore(s => s.schoolContract);
   const deal = useGameStore(s => s.summitLinkDecision);
+  const vivianVisit = useGameStore(s => s.vivianVisit);
+  const clubBooking = useGameStore(s => s.clubBooking);
+  const groomerDown = useGameStore(s => s.groomerDown);
+  const reputation = useGameStore(s => s.reputation);
   const operatorName = useGameStore(s => s.operatorName ?? null);
   const gunsCount = useGameStore(s => s.guns.length);
   const fare = useGameStore(s => s.fare);
@@ -45,7 +49,7 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
       text: lodgeOpeningRadio(day.lodgeOpening),
     }] : []),
     ...moments.map(entry => {
-      const copy = surpriseRadio(entry, operatorName, { fare });
+      const copy = surpriseRadio(entry, operatorName, { fare, vivianVisit, reputation });
       return { day: entry.dayIndex, title: copy.title, text: copy.radio };
     }),
   ].sort((a, b) => (a.day ?? 0) - (b.day ?? 0));
@@ -80,6 +84,15 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
     </article>)}
     {school && <p className="text-sm font-bold">{playing && school.decision === "accepted" && school.pupilsTaught === null
       ? `The Readsboro bus is booked for day ${school.day}.` : schoolMemory(school)}</p>}
-    {deal && <p className="text-sm font-bold">{deal === "accepted" ? `Sloane wired ${formatMoney(SUMMIT_LINK_PAYMENT)}. Tickets top out at Balanced this winter.` : "You turned down Sloane's Whiterock offer. Dutch Hill sets its own fares."}</p>}
+    {deal && <p className="text-sm font-bold">{deal === "accepted" ? `Sloane wired ${formatMoney(days.findLast(d => d.summitLink?.reply === "accepted")?.summitLink?.receipt ?? SUMMIT_LINK_PAYMENT)}. Tickets top out at Balanced this winter.` : "You turned down Sloane's Whiterock offer. Dutch Hill sets its own fares."}</p>}
+    {vivianVisit && <p className="text-sm font-bold">Whiterock scouted Day {vivianVisit.day}: {Math.round(vivianVisit.avgWaitMin)}-min lift lines and {Math.round(vivianVisit.avgSnow * 100)}% snow cover.</p>}
+    {clubBooking && <p className="text-sm font-bold">{clubBooking.decision === "accepted"
+      ? clubBooking.skiersArrived !== null
+        ? `Bennington Ski Club brought ${clubBooking.skiersArrived} skiers after a zero-wait Saturday.`
+        : `Bennington Ski Club booked for day ${clubBooking.day}.`
+      : "You passed on the Bennington Ski Club group discount."}</p>}
+    {groomerDown && <p className="text-sm font-bold">{groomerDown.decision === "paid"
+      ? "Paid $250 to fix the Tucker's blown hydraulic line overnight."
+      : "Skipped the Tucker hydraulic repair and let tomorrow open un-groomed."}</p>}
   </div>;
 }

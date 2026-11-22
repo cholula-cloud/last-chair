@@ -1,8 +1,21 @@
-import { dayKind, inHolidayWeek, operatingDayIndex, weekdayForDay, type CalendarDef } from "./calendar";
+import {
+  dayKind,
+  inHolidayWeek,
+  operatingDayIndex,
+  operatingSeasonLength,
+  weekdayForDay,
+  type CalendarDef,
+} from "./calendar";
 import { formatOperatorText } from "./content";
 import { drawPersona, PERSONAS } from "./personas";
 import { mix32, STREAM, streamFor } from "./rng";
 import { makeGuest } from "./sim";
+import {
+  CLUB_BUS_DISCOUNT,
+  CLUB_BUS_SKIERS,
+  GROOMER_REPAIR_COST,
+  type SloaneVisitFacts,
+} from "./summitLink";
 import { TALENT } from "./talents";
 import type { DayWeather, FarePreset, Guest, SnowPreset, WeatherKind } from "./types";
 
@@ -14,12 +27,21 @@ export type SurpriseKind =
   | "snow_day"
   | "january_thaw"
   | "dot_call"
-  | "skin_tracks";
+  | "skin_tracks"
+  | "sloane_visit"
+  | "club_bus"
+  | "groomer_down"
+  | "last_saturday";
 
 export const THREAT_SURPRISES: ReadonlySet<SurpriseKind> = new Set([
   "road_delay",
   "thaw_ice",
   "january_thaw",
+]);
+
+export const DECISION_SURPRISES: ReadonlySet<SurpriseKind> = new Set([
+  "club_bus",
+  "groomer_down",
 ]);
 
 export const REVERSAL_SURPRISES: ReadonlySet<SurpriseKind> = new Set([
@@ -33,6 +55,8 @@ const NON_GUEST_SURPRISES: ReadonlySet<SurpriseKind> = new Set([
   "january_thaw",
   "dot_call",
   "skin_tracks",
+  "club_bus",
+  "groomer_down",
 ]);
 
 export type SurprisePlan = {
@@ -49,6 +73,8 @@ export type SurpriseEntry = {
 
 export type SurpriseRadioContext = {
   fare?: FarePreset;
+  vivianVisit?: SloaneVisitFacts | null;
+  reputation?: number;
 };
 
 type SurpriseDay = {
@@ -64,6 +90,8 @@ type SurpriseDay = {
   yesterdayWeather?: WeatherKind;
   yesterdaySnow?: SnowPreset;
   schoolBookedDay?: number | null;
+  clubBookingDay?: number | null;
+  hasSloaneVisit?: boolean;
 };
 
 const PIE_CHANCE = 0.02;
@@ -72,6 +100,7 @@ const ROAD_DELAY_CHANCE = 0.08;
 const SNOW_DAY_CHANCE = 0.40;
 const ROAD_REOPENS_MIN = 10 * 60 + 15;
 const ROAD_DELAY_MIN = 25;
+export const SLOANE_SCOUT_ID = "sloane-scout";
 
 /** Check whether a day sits in a quiet midweek/Friday slot outside holidays. */
 function isQuietWeekday(calendar: CalendarDef, dayIndex: number): boolean {
@@ -85,6 +114,8 @@ function isQuietWeekday(calendar: CalendarDef, dayIndex: number): boolean {
 
 /** Priority score for the 1-radio-item-per-night queue. */
 export function surprisePriority(kind: SurpriseKind): number {
+  if (DECISION_SURPRISES.has(kind)) return 4;
+  if (kind === "last_saturday") return 3;
   return REVERSAL_SURPRISES.has(kind) ? 2 : 0;
 }
 
@@ -103,9 +134,56 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
     yesterdayWeather,
     yesterdaySnow,
     schoolBookedDay,
+    clubBookingDay,
+    hasSloaneVisit = false,
   } = day;
-  if (dayIndex <= 1 || operatingDayIndex(calendar, dayIndex) <= 1) return { guests, surprise: null };
+  const openDay = operatingDayIndex(calendar, dayIndex);
+  if (dayIndex <= 1 || openDay <= 1) return { guests, surprise: null };
   if (schoolBookedDay === dayIndex) return { guests, surprise: null };
+
+  const rng = streamFor(seasonSeed ^ mix32(dayIndex), STREAM.SURPRISE);
+  const pieRoll = rng.next();
+  const regularsRoll = rng.next();
+  const roadRoll = rng.next();
+  const snowDayRoll = rng.next();
+  const unseen = (kind: SurpriseKind) => !surpriseLog.some((entry) => entry.kind === kind);
+  const weekday = weekdayForDay(calendar, dayIndex);
+  const openTotal = operatingSeasonLength(calendar);
+
+  // DH13 Last Saturday set piece: reliable finale crowd with holiday guest mix.
+  if (weekday === "Sat" && openTotal - openDay <= 1 && unseen("last_saturday")) {
+    const shifted = guests.map((guest) => {
+      const persona = drawPersona(rng.next(), "holiday");
+      const [lo, hi] = PERSONAS[persona].targetRuns;
+      return {
+        ...guest,
+        persona,
+        targetRuns: lo + Math.floor(rng.next() * (hi - lo + 1)),
+      };
+    });
+    const bonusCount = 4 + Math.floor(Math.max(0, reputation - 40) / 10);
+    const extras = Array.from({ length: bonusCount }, (_, i) => {
+      const persona = drawPersona(rng.next(), "holiday");
+      const [lo, hi] = PERSONAS[persona].targetRuns;
+      const arriveAtMin = 9 * 60 + 15 + Math.floor(rng.next() * 75);
+      return makeGuest({
+        id: `lastsat-${seasonSeed}-${dayIndex}-${i}`,
+        label: `Last Saturday skier ${i + 1}`,
+        persona,
+        state: "pending",
+        arriveAtMin,
+        stateSinceMin: arriveAtMin,
+        mood: 0.78 + rng.next() * 0.2,
+        targetRuns: lo + Math.floor(rng.next() * (hi - lo + 1)),
+      });
+    });
+    return {
+      guests: [...shifted, ...extras].sort((a, b) => a.arriveAtMin - b.arriveAtMin),
+      surprise: { dayIndex, kind: "last_saturday", guestIds: extras.map((g) => g.id) },
+    };
+  }
+
+  if (clubBookingDay === dayIndex) return { guests, surprise: null };
 
   // Pacing cap: at most 2 surprises in any 7 civil days.
   const recent7 = surpriseLog.filter((entry) => dayIndex - entry.dayIndex < 7).length;
@@ -114,13 +192,6 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
   const threatAllowed = !surpriseLog.some(
     (entry) => THREAT_SURPRISES.has(entry.kind) && dayIndex - entry.dayIndex < 5,
   );
-
-  const rng = streamFor(seasonSeed ^ mix32(dayIndex), STREAM.SURPRISE);
-  const pieRoll = rng.next();
-  const regularsRoll = rng.next();
-  const roadRoll = rng.next();
-  const snowDayRoll = rng.next();
-  const unseen = (kind: SurpriseKind) => !surpriseLog.some((entry) => entry.kind === kind);
 
   if (pieRoll < PIE_CHANCE && unseen("pie")) {
     return { guests, surprise: { dayIndex, kind: "pie", guestIds: [] } };
@@ -183,7 +254,6 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
   }
 
   // DH9 January thaw: forecast run of >= 2 consecutive thaw days starting tomorrow, in/after Week 2.
-  const openDay = operatingDayIndex(calendar, dayIndex);
   const week2Reached = calendar.openWeekdays?.length ? openDay >= 4 : dayIndex >= 8;
   const twoThawsAhead = Boolean(
     weatherDays &&
@@ -206,6 +276,15 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
     return { guests, surprise: { dayIndex, kind: "thaw_ice", guestIds: [] } };
   }
 
+  // DH10 Grammy Dot calls in: first Sunday with rep >= 60 or Heritage Sign learned.
+  if (
+    weekdayForDay(calendar, dayIndex) === "Sun" &&
+    (reputation >= 60 || TALENT.heritageSign.learned(talentsOwned)) &&
+    unseen("dot_call")
+  ) {
+    return { guests, surprise: { dayIndex, kind: "dot_call", guestIds: [] } };
+  }
+
   // DH3 Slow going on Route 100.
   if (threatAllowed && weather !== "thaw" && guests.length >= 2 && roadRoll < ROAD_DELAY_CHANCE && unseen("road_delay")) {
     const delayedCount = Math.max(2, Math.round(guests.length / 4));
@@ -220,15 +299,6 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
     };
   }
 
-  // DH10 Grammy Dot calls in: first Sunday with rep >= 60 or Heritage Sign learned.
-  if (
-    weekdayForDay(calendar, dayIndex) === "Sun" &&
-    (reputation >= 60 || TALENT.heritageSign.learned(talentsOwned)) &&
-    unseen("dot_call")
-  ) {
-    return { guests, surprise: { dayIndex, kind: "dot_call", guestIds: [] } };
-  }
-
   // DH11 Skin tracks at dawn: morning after snow/storm with Minimal overnight service.
   if (
     (yesterdayWeather === "snow" || yesterdayWeather === "storm") &&
@@ -236,6 +306,34 @@ export function arrangeSurprise(day: SurpriseDay, guests: Guest[]): { guests: Gu
     unseen("skin_tracks")
   ) {
     return { guests, surprise: { dayIndex, kind: "skin_tracks", guestIds: [] } };
+  }
+
+  // DH6 Whiterock scout visit: Sat or Sun in Weeks 2-3 once rep >= 40 (below operational/weather beats).
+  const inScoutWindow = calendar.openWeekdays?.length
+    ? openDay >= 4 && openDay <= (openTotal >= 21 ? 15 : 12)
+    : dayIndex >= 8 && dayIndex <= 16;
+  if (
+    inScoutWindow &&
+    (weekday === "Sat" || weekday === "Sun") &&
+    reputation >= 40 &&
+    !hasSloaneVisit &&
+    unseen("sloane_visit")
+  ) {
+    const arriveAtMin = 10 * 60 + 15;
+    const scout = makeGuest({
+      id: SLOANE_SCOUT_ID,
+      label: "Visitor in a very clean jacket",
+      persona: "regular",
+      state: "pending",
+      arriveAtMin,
+      stateSinceMin: arriveAtMin,
+      mood: 0.68,
+      targetRuns: 4,
+    });
+    return {
+      guests: [...guests, scout].sort((a, b) => a.arriveAtMin - b.arriveAtMin),
+      surprise: { dayIndex, kind: "sloane_visit", guestIds: [scout.id] },
+    };
   }
 
   return { guests, surprise: null };
@@ -306,5 +404,34 @@ export function surpriseRadio(
         title: "Skin tracks at dawn",
         radio: sub("Skin tracks up the Windmill side before the bullwheel turned. Folks kept hiking this hill after '85, and now they ride past a lit lodge."),
       };
+    case "sloane_visit": {
+      const visit = context.vivianVisit;
+      const detail = visit
+        ? `Timed a ${Math.round(visit.avgWaitMin)}-minute queue, checked snow at ${Math.round(visit.avgSnow * 100)}%,${visit.boughtCocoa ? " bought cocoa," : ""} and tipped ten dollars.`
+        : "Walked in wearing spotless boots, timed every bullwheel lap, and vanished by two.";
+      return {
+        title: "The stranger with the stopwatch",
+        radio: sub(`Whiterock scout rode four runs today. ${detail} Told {operator} they will be in touch.`),
+      };
+    }
+    case "club_bus":
+      return {
+        title: "Bennington Ski Club wants next Saturday",
+        radio: sub(`Word got down Route 7 about your zero-wait Saturdays. Bennington Ski Club wants to bring ${CLUB_BUS_SKIERS} skiers next Saturday at $${CLUB_BUS_DISCOUNT} off tickets.`),
+      };
+    case "groomer_down":
+      return {
+        title: "Groomer threw a track",
+        radio: sub(`Frank called from the barn: Groomer threw a track over on the Windmill side, kid. She'll live, just not tonight. $${GROOMER_REPAIR_COST} borrows the town machine, or tomorrow opens rough.`),
+      };
+    case "last_saturday": {
+      const dotLine = (context.reputation ?? 0) >= 60
+        ? " Even Grammy Dot rode the chair up with a thermos."
+        : "";
+      return {
+        title: "Last Saturday of winter",
+        radio: sub(`Parking lot filled out to the pines by nine.${dotLine} Half of Readsboro showed up to ski out the winter before the chairs stop.`),
+      };
+    }
   }
 }
