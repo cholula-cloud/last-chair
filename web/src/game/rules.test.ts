@@ -454,9 +454,10 @@ describe("building and save continuity", () => {
     expect(second.crewPoints).toBe(3);
     expect(second.morningHeadline).toContain("Lodge Tier 2");
     expect(rules.placeLift(second, chair).lifts).toHaveLength(2);
-    const guns = rules.placeGun(second, TERRAIN.base);
+    const guns = rules.placeGun({ ...second, buildMode: true }, TERRAIN.base);
     expect(guns.guns).toHaveLength(1);
     expect(guns.cash).toBe(second.cash - constructionDraw(ASSET_CATALOG.snow_guns.cost).deposit);
+    expect(guns.buildMode).toBe(false);
   });
 
   it("rolls back the exact cash and cells of a same-minute trail undo", () => {
