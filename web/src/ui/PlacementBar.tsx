@@ -214,16 +214,16 @@ function TrailBar() {
 
   if (mode === "minimized") {
     const label = preview
-      ? `${draft.brushWidth} ft · ${formatMoney(preview.cost)}`
-      : `${draft.glade ? "Glade" : "Trail"} · ${draft.brushWidth} ft`;
+      ? `${draft.brushWidth} ft, ${formatMoney(preview.cost)}`
+      : `${draft.glade ? "Glade" : "Trail"}, ${draft.brushWidth} ft`;
     return <MinimizedBar summary={label} canReview={canReview} dataTrailPanel="minimized" />;
   }
 
   const prompt = draft.erasing
-    ? "Drag over paint to erase · 2 fingers move map"
+    ? "Drag over paint to erase, 2 fingers move map"
     : draft.strokes.length
       ? null
-      : "Drag from lift top to paint · 2 fingers move map";
+      : "Drag from lift top to paint, 2 fingers move map";
 
   return (
     <div key="full" className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]" data-trail-panel="full">
@@ -362,24 +362,24 @@ function LiftBar() {
   }
 
   if (draft.minimized) {
-    const label = readout ? `${formatMoney(cost)} · ${length}` : LIFT_LABELS[type];
+    const label = readout ? `${formatMoney(cost)}, ${length}` : LIFT_LABELS[type];
     return <MinimizedBar summary={label} canReview={!!readout?.ok} />;
   }
 
   return (
-    <div className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]">
+    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft" aria-live="polite">
             {draft.liftPhase === "bottom"
-              ? "Tap the bottom loading area · 2 fingers move map"
+              ? "Tap the bottom loading area, 2 fingers move map"
               : draft.liftPhase === "top"
-                ? "Tap the top terminal · 2 fingers move map"
-                : "Drag ends to adjust · 2 fingers move map"}
+                ? "Tap the top terminal, 2 fingers move map"
+                : "Drag ends to adjust, 2 fingers move map"}
           </p>
           {readout && (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-[var(--r-chip)] bg-snow-2 px-2 py-1 text-xs font-extrabold tabular-nums">
-              <span className="chip bg-gold px-1.5 py-0.5 text-xs [--lift:2px]">{formatMoney(cost)}</span>
+            <div className="well flex flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1 text-xs font-extrabold tabular-nums">
+              <span className="well-white bg-gold px-1.5 py-0.5 text-xs">{formatMoney(cost)}</span>
               <span>{length}</span>
               <span className="text-ink-soft">{vertical} vert</span>
               <span className="text-ink-soft">{capacity}/hr</span>
@@ -387,19 +387,14 @@ function LiftBar() {
             </div>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <div className="hidden sm:block">
-            <DraftActions canReview={!!readout?.ok} />
-          </div>
-          <MinimizeButton />
-        </div>
+        <MinimizeButton />
       </div>
       {problem && (
         <p className="rounded-[var(--r-chip)] border-2 border-barn-deep bg-snow px-2.5 py-1 text-xs font-extrabold leading-snug text-barn-deep [overflow-wrap:anywhere]">
           {problem}
         </p>
       )}
-      <div className="flex justify-end sm:hidden">
+      <div className="flex justify-end">
         <DraftActions canReview={!!readout?.ok} />
       </div>
     </div>
@@ -455,39 +450,34 @@ function SiteBar() {
   }
 
   if (draft.minimized) {
-    const label = check?.ok ? `${item.label} · ${formatMoney(check.cost)}` : item.label;
+    const label = check?.ok ? `${item.label}, ${formatMoney(check.cost)}` : item.label;
     return <MinimizedBar summary={label} canReview={!!tapPoint} />;
   }
 
   return (
-    <div className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]">
+    <div className="panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft">
             {gun
-              ? "Tap within pipe reach of base or a gun · 2 fingers move map"
+              ? "Tap within pipe reach of base or a gun, 2 fingers move map"
               : draft.lodgePad !== undefined
-                ? `Confirm ${item.label} on lodge pad ${draft.lodgePad + 1} (+5% annex) · 2 fingers move map`
+                ? `Confirm ${item.label} on lodge pad ${draft.lodgePad + 1} (+5% annex), 2 fingers move map`
                 : asset && ASSET_CATALOG[asset].attachable
-                  ? `Tap the lodge, pick a pad, or place in the base area without the bonus · 2 fingers move map`
-                  : `Tap a spot for ${item.label} · 2 fingers move map`}
+                  ? `Tap the lodge, pick a pad, or place in base area, 2 fingers move map`
+                  : `Tap a spot for ${item.label}, 2 fingers move map`}
           </p>
           {check?.ok && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs font-extrabold tabular-nums">
-              <span className="chip bg-gold px-1.5 py-0.5 text-xs [--lift:2px]">{formatMoney(check.cost)}</span>
-              {check.attached && <span className="chip px-1.5 py-0.5 text-xs [--lift:2px]">+5% attached</span>}
+              <span className="well-white bg-gold px-2 py-0.5 text-xs">{formatMoney(check.cost)}</span>
+              {check.attached && <span className="well px-2 py-0.5 text-xs">+5% attached</span>}
             </div>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <div className="hidden sm:block">
-            <DraftActions canReview={!!tapPoint} />
-          </div>
-          <MinimizeButton />
-        </div>
+        <MinimizeButton />
       </div>
       {problem && <p className="text-xs font-extrabold text-barn-deep">{problem}</p>}
-      <div className="flex justify-end sm:hidden">
+      <div className="flex justify-end">
         <DraftActions canReview={!!tapPoint} />
       </div>
     </div>

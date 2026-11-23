@@ -276,10 +276,5 @@ export function Reports({ s }: { s: GameState }) {
 
 /** Talent tree only — founder and lodge facts live on Desk. */
 export function Crew() {
-  return (
-    <section className="panel space-y-3 p-4">
-      <h3 className="display text-xl">Talent tree</h3>
-      <TalentTreePanel />
-    </section>
-  );
+  return <TalentTreePanel />;
 }

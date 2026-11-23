@@ -32,7 +32,8 @@ export function SummitLinkCard({ night }: { night: GameState }) {
     : "";
 
   const blocked = !canTakeSummitLinkEquity(night);
-  const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+  const primaryClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--key-fill:var(--sign-yellow)] [--lift:3px]";
+  const secondaryClass = "key press min-h-12 w-full px-2 text-sm font-extrabold [--lift:3px]";
   return (
     <RadioCard
       title="Whiterock Pass offer"
@@ -47,7 +48,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              className={`${buttonClass} [--key-fill:var(--sign-yellow)]`}
+              className={primaryClass}
               disabled={blocked}
               aria-describedby={blocked ? "summitlink-founder-lock" : undefined}
               onClick={() => useGameStore.getState().replyToSummitLink("accepted")}
@@ -56,7 +57,7 @@ export function SummitLinkCard({ night }: { night: GameState }) {
             </button>
             <button
               type="button"
-              className={buttonClass}
+              className={secondaryClass}
               onClick={() => useGameStore.getState().replyToSummitLink("declined")}
             >
               Stay independent

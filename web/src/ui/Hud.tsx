@@ -17,6 +17,7 @@ import {
   GuestsIcon,
   HomeIcon,
   MoodIcon,
+  MountainMoonIcon,
   OfficeIcon,
   PauseIcon,
   PlayIcon,
@@ -134,14 +135,14 @@ function ClockText({ text }: { text: string }) {
   );
 }
 
-const WEATHER: Record<WeatherKind, { label: string; icon: ReactNode }> = {
-  snow: { label: "Fresh snow", icon: <SnowfallIcon size={20} /> },
-  storm: { label: "Snowstorm", icon: <WindIcon size={20} /> },
-  clear: { label: "Clear skies", icon: <SunIcon size={20} /> },
-  thaw: { label: "Thaw", icon: <ThawIcon size={20} /> },
+export const WEATHER_META: Record<WeatherKind, { label: string; icon: ReactNode }> = {
+  snow: { label: "Fresh snow", icon: <SnowfallIcon size={18} /> },
+  storm: { label: "Snowstorm", icon: <WindIcon size={18} /> },
+  clear: { label: "Clear skies", icon: <SunIcon size={18} /> },
+  thaw: { label: "Thaw", icon: <ThawIcon size={18} /> },
 };
 
-function parseCrewLine(crewLine: string | null) {
+export function parseCrewLine(crewLine: string | null) {
   if (!crewLine) return { main: null as string | null, need: null as string | null, waiting: null as string | null };
   let waiting: string | null = null;
   let rest = crewLine;
@@ -162,8 +163,8 @@ function parseCrewLine(crewLine: string | null) {
 
 export function WindHoldCallout({ shortHold }: { shortHold: boolean }) {
   return (
-    <p role="status" className="chip mt-2 flex w-fit items-center gap-1.5 px-2.5 py-1.5 text-sm font-extrabold">
-      <WindIcon size={18} />
+    <p role="status" className="chip note-in mt-1.5 flex w-fit items-center gap-1.5 bg-sign-yellow-soft px-2.5 py-1 text-xs font-extrabold [--lift:2px]">
+      <WindIcon size={16} />
       Wind’s holding the chair until {shortHold ? "12:15 PM" : "1 PM"}
     </p>
   );
@@ -188,7 +189,7 @@ export function MorningNote({
   onDismiss: () => void;
   onExpand?: () => void;
 }) {
-  const w = WEATHER[weather];
+  const w = WEATHER_META[weather];
   const { main: skill, need, waiting } = parseCrewLine(crewLine);
   return (
     <aside
@@ -220,7 +221,7 @@ export function MorningNote({
         )}
         {need && (
           <p className="mt-0.5">
-            <span className="chip inline-flex max-w-full truncate px-1.5 py-0.5 text-[0.72rem] font-extrabold text-ink-soft">
+            <span className="well inline-flex max-w-full truncate px-1.5 py-0.5 text-[0.72rem] font-extrabold text-ink-soft">
               {need}
             </span>
           </p>
@@ -238,18 +239,23 @@ export function MorningNote({
   );
 }
 
-/** Small navy callout under the play key on the very first morning. */
+/** Slim Route 100 dispatch strip shown on the very first morning before the hill opens. */
 export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
   const instruction = step === "lift" ? "First job: place a lift"
-    : step === "trail" ? "Now paint a trail from the lift down to the base"
-      : "Tap the play key to open the hill";
+    : step === "trail" ? "Paint a trail from the lift down to the base"
+      : "Tap play to open the hill";
   return (
-    <p role="status" className="callout-in pointer-events-none relative ml-2 mt-2.5 w-fit max-w-[calc(100%-0.5rem)] rounded-xl border-[3px] border-ink bg-ink px-3 py-1.5 text-[0.88rem] font-extrabold text-white">
+    <p
+      role="status"
+      className="chip note-in pointer-events-auto flex min-h-11 w-full max-w-[min(27rem,100%)] items-center gap-2 bg-sign-yellow-soft px-2.5 py-1 text-[0.82rem] font-extrabold text-ink [--lift:3px]"
+    >
       <span
-        className="absolute -top-2 left-[1.15rem] size-3 rotate-45 bg-ink"
         aria-hidden="true"
-      />
-      <span className="relative">{instruction}</span>
+        className="flex size-6 shrink-0 rotate-45 items-center justify-center rounded-[5px] border-2 border-ink bg-sign-yellow text-[0.72rem] font-black text-ink"
+      >
+        <span className="-rotate-45 leading-none">!</span>
+      </span>
+      <span className="min-w-0 flex-1 truncate">{instruction}</span>
     </p>
   );
 }
@@ -355,77 +361,88 @@ export function ConditionsBoard({
     <section
       aria-label="Conditions"
       data-conditions-expanded={expanded ? "true" : "false"}
-      className="panel hud-surface pointer-events-auto w-full [--lift:3px]"
+      className="pointer-events-auto relative flex w-full justify-center"
     >
-      <div className="flex items-center">
-        <div
-          className="grid min-w-0 flex-1 grid-cols-3 divide-x-2 divide-snow-2 py-1.5"
-          role={!expanded && onToggleExpand ? "button" : undefined}
-          tabIndex={!expanded && onToggleExpand ? 0 : undefined}
-          onClick={!expanded && onToggleExpand ? onToggleExpand : undefined}
-          onKeyDown={
-            !expanded && onToggleExpand
-              ? (e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onToggleExpand();
-                  }
-                }
-              : undefined
-          }
-        >
-          {items.map((c) => (
-            <div
-              key={c.key === "mood" ? `${c.key}-${moodPulseTick}` : c.key}
-              className={`flex min-w-0 items-center gap-1.5 px-2 ${expanded ? "items-start" : "justify-center sm:justify-start"} ${
-                c.key === "mood" && moodPulseTick > 0 && !reducedMotion ? "mood-pulse-active" : ""
-              }`}
-              aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
-              role="group"
-            >
-              <span className="shrink-0 text-ink">{c.icon}</span>
-              <div className="flex min-w-0 flex-col items-start gap-0.5 leading-none">
-                <div className="flex items-center gap-1">
-                  <span className="display text-[1.02rem] tabular-nums sm:text-[1.08rem]">
-                    {c.value}
-                  </span>
+      {expanded && (
+        <div className="panel popover-in origin-bottom absolute bottom-full left-1/2 mb-2 w-[min(22rem,calc(100vw-1.5rem))] -translate-x-1/2 p-3 [--lift:4px]">
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((c) => (
+              <div key={c.key} className="well-white flex flex-col items-start gap-1 p-2">
+                <div className="flex items-center gap-1 text-xs font-extrabold text-ink-soft">
+                  {c.icon}
+                  <span>{c.label}</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="display text-[1.1rem] tabular-nums text-ink">{c.value}</span>
                   {c.key === "mood" && moodDelta != null && (
                     <span
                       className={`text-[0.7rem] font-extrabold tabular-nums ${
                         moodDelta > 0 ? "text-sign-green" : "text-barn-deep"
-                      } ${reducedMotion ? "note-in" : "callout-in"}`}
+                      }`}
                     >
                       {moodDelta > 0 ? `+${Math.round(moodDelta)}` : Math.round(moodDelta)}
                     </span>
                   )}
-                  {!expanded && (
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block size-2 shrink-0 rounded-full border border-ink ${TONE_DOT[c.tone]}`}
-                    />
-                  )}
                 </div>
-                {expanded && (
-                  <span
-                    className={`max-w-full whitespace-normal break-words rounded-md px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-tight ${TONE_CHIP[c.tone]}`}
-                  >
-                    {c.state}
-                    {c.bare ? null : (
-                      <span className="sr-only">{` ${c.label.toLowerCase()}`}</span>
-                    )}
-                  </span>
-                )}
+                <span className={`rounded-md px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-tight ${TONE_CHIP[c.tone]}`}>
+                  {c.state}
+                </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              className="key key-sm press mt-2 flex min-h-9 w-full items-center justify-center text-xs font-extrabold [--lift:2px]"
+            >
+              Done
+            </button>
+          )}
         </div>
-        {(onToggleExpand || onMinimizeBottom) && (
+      )}
+
+      <div className="chip hud-surface flex min-h-10 max-w-full items-center !rounded-full pl-3 pr-1 [--lift:3px]">
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          aria-expanded={expanded}
+          aria-label="Conditions summary, tap for details"
+          className="flex min-h-10 min-w-0 items-center gap-2 pr-2 text-left text-[0.76rem] font-extrabold tabular-nums sm:gap-2.5 sm:text-[0.8rem]"
+        >
+          {items.map((c, idx) => (
+            <span
+              key={c.key === "mood" ? `${c.key}-${moodPulseTick}` : c.key}
+              className={`inline-flex shrink-0 items-center gap-1 ${
+                idx > 0 ? "border-l-2 border-snow-2 pl-2 sm:pl-2.5" : ""
+              } ${c.key === "mood" && moodPulseTick > 0 && !reducedMotion ? "mood-pulse-active" : ""}`}
+              aria-label={`${c.label} ${c.value}${c.detail ? ` ${c.detail}` : ""}, ${c.state}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block size-2 shrink-0 rounded-full border border-ink ${TONE_DOT[c.tone]}`}
+              />
+              <span className="whitespace-nowrap">
+                {c.key === "snow" ? `${c.value} snow` : c.value}
+              </span>
+              {c.key === "mood" && moodDelta != null && (
+                <span
+                  className={`text-[0.68rem] font-extrabold ${
+                    moodDelta > 0 ? "text-sign-green" : "text-barn-deep"
+                  }`}
+                >
+                  {moodDelta > 0 ? `+${Math.round(moodDelta)}` : Math.round(moodDelta)}
+                </span>
+              )}
+            </span>
+          ))}
+        </button>
+        {onMinimizeBottom && (
           <button
             type="button"
-            onClick={expanded ? onToggleExpand : onMinimizeBottom}
-            aria-expanded={expanded}
-            aria-label={expanded ? "Collapse conditions" : "Minimize hill controls"}
-            className="flex size-10 shrink-0 items-center justify-center border-l-2 border-snow-2 text-ink-soft transition-colors hover:text-ink"
+            onClick={onMinimizeBottom}
+            aria-label="Minimize hill controls"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full border-l-2 border-snow-2 text-ink-soft"
           >
             <ChevronDownIcon size={16} />
           </button>
@@ -558,12 +575,14 @@ export function LiftUndoChip({
   );
 }
 
-/** Thumb-zone action row: Menu (with a confirm step), Build, Guests, and Office. */
+/** Thumb-zone 5-key action row: Menu, Build, Guests, Office, and Close hill. */
 export function ActionBar({
   buildActive,
   onBuild,
   onGuests,
   onOffice,
+  onCloseHill,
+  canCloseHill = true,
   confirmMenu = false,
   onConfirmMenuChange,
   onLeave,
@@ -573,6 +592,8 @@ export function ActionBar({
   onBuild: () => void;
   onGuests: () => void;
   onOffice: () => void;
+  onCloseHill?: () => void;
+  canCloseHill?: boolean;
   confirmMenu?: boolean;
   onConfirmMenuChange?: (open: boolean) => void;
   /** Saves and returns to the title screen. */
@@ -598,47 +619,51 @@ export function ActionBar({
   return (
     <nav
       aria-label="Hill actions"
-      className="pointer-events-auto relative flex w-full gap-1.5 min-[400px]:gap-2"
+      className="pointer-events-auto relative grid w-full grid-cols-5 gap-1.5"
     >
       {confirmMenu && (
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Leave the hill?"
-          className="panel absolute bottom-full left-0 mb-3 flex w-full flex-col gap-2 p-3"
+          className="panel popover-in origin-bottom-left absolute bottom-full left-0 mb-3 flex w-full max-w-xs flex-col gap-2.5 p-3"
         >
-          <button type="button" className="key press min-h-11" onClick={() => { setMenu(false); onStoryLog?.(); }}>
-            Story log
-          </button>
-          <p className="text-[0.88rem] font-bold leading-snug">Head back to the menu? Your winter saves first.</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              autoFocus
-              onClick={() => {
-                setMenu(false);
-                menuRef.current?.focus();
-              }}
-              className="key press h-11 flex-1 text-[0.9rem] font-extrabold [--lift:3px]"
-            >
-              Stay
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" className="key press min-h-11 text-sm font-extrabold [--lift:3px]" onClick={() => { setMenu(false); onStoryLog?.(); }}>
+              Story log
             </button>
             <button
               type="button"
-              onClick={onLeave}
-              className="key key-solid press flex h-11 flex-1 items-center justify-center text-[0.9rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
+              aria-pressed={soundOn}
+              onClick={() => setSettings({ muted: soundOn })}
+              className="key press min-h-11 text-sm font-extrabold [--lift:3px]"
             >
-              Leave
+              Sound {soundOn ? "on" : "off"}
             </button>
           </div>
-          <button
-            type="button"
-            aria-pressed={soundOn}
-            onClick={() => setSettings({ muted: soundOn })}
-            className="key press h-11 text-[0.9rem] font-extrabold [--lift:3px]"
-          >
-            Sound {soundOn ? "on" : "off"}
-          </button>
+          <div className="well p-2.5 space-y-2">
+            <p className="text-[0.85rem] font-bold leading-snug">Head back to the menu? Your winter saves first.</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  setMenu(false);
+                  menuRef.current?.focus();
+                }}
+                className="key press h-11 flex-1 text-[0.9rem] font-extrabold [--lift:3px]"
+              >
+                Stay
+              </button>
+              <button
+                type="button"
+                onClick={onLeave}
+                className="key key-solid press flex h-11 flex-1 items-center justify-center text-[0.9rem] font-extrabold [--key-fill:var(--barn-deep)] [--key-ink:#fff] [--lift:3px]"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
         </div>
       )}
       <button
@@ -647,7 +672,7 @@ export function ActionBar({
         onClick={() => setMenu(!confirmMenu)}
         aria-expanded={confirmMenu}
         aria-haspopup="dialog"
-        className="key press flex h-12 w-12 shrink-0 flex-col items-center justify-center gap-0.5 text-[0.72rem] font-extrabold [--lift:3px] min-[400px]:w-13 sm:h-[52px] sm:w-14 sm:text-[0.8rem] sm:[--lift:4px]"
+        className="key press flex h-[52px] flex-col items-center justify-center gap-0.5 px-1 text-[0.72rem] font-extrabold [--lift:3px] sm:text-[0.78rem] sm:[--lift:4px]"
       >
         <HomeIcon size={18} />
         Menu
@@ -660,6 +685,16 @@ export function ActionBar({
       />
       <BarButton icon={<GuestsIcon size={18} />} label="Guests" onClick={onGuests} />
       <BarButton icon={<OfficeIcon size={18} />} label="Office" onClick={onOffice} barId="office" />
+      <button
+        type="button"
+        onClick={onCloseHill}
+        disabled={!canCloseHill || !onCloseHill}
+        aria-label="Close hill"
+        className="key key-solid press flex h-[52px] flex-col items-center justify-center gap-0.5 px-1 text-[0.72rem] font-extrabold [--key-fill:var(--sign-brown)] [--key-ink:#fff] [--lift:3px] sm:text-[0.78rem] sm:[--lift:4px]"
+      >
+        <MountainMoonIcon size={18} />
+        Close
+      </button>
     </nav>
   );
 }

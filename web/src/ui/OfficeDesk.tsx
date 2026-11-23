@@ -60,7 +60,7 @@ function AttentionList({ items, showFocus }: { items: AttentionItem[]; showFocus
               <span className="text-[0.82rem] font-bold text-ink-soft">Tap to see it on the hill.</span>
             </button>
           ) : (
-            <p className="panel px-3.5 py-2.5 text-[1rem] font-extrabold leading-snug">{item.text}</p>
+            <p className="well-white px-3.5 py-2.5 text-[1rem] font-extrabold leading-snug">{item.text}</p>
           )}
         </li>
       ))}
@@ -113,7 +113,7 @@ export function DeskTab() {
                 </p>
               ))}
               {openBids.map((bid) => (
-                <div key={bid.mountainId} className="chip space-y-2 p-2.5">
+                <div key={bid.mountainId} className="well space-y-2 p-2.5">
                   <p className="text-sm font-extrabold">
                     Sloane bid {formatMoney(whiterockBuyoutOffer(bid.mountainId))} for {bid.caretakerAlly}&apos;s hill.
                   </p>
@@ -121,14 +121,14 @@ export function DeskTab() {
                     <button
                       type="button"
                       onClick={() => decideBid(bid.mountainId, "keep")}
-                      className="key key-solid press min-h-10 px-2 text-xs font-extrabold [--key-fill:var(--sign-yellow)]"
+                      className="key key-solid press min-h-11 px-2 text-xs font-extrabold [--key-fill:var(--sign-yellow)] [--lift:2px]"
                     >
                       Keep hill
                     </button>
                     <button
                       type="button"
                       onClick={() => decideBid(bid.mountainId, "sell")}
-                      className="key press min-h-10 px-2 text-xs font-extrabold"
+                      className="key press min-h-11 px-2 text-xs font-extrabold [--lift:2px]"
                     >
                       Sell ({formatMoney(whiterockBuyoutOffer(bid.mountainId))})
                     </button>
@@ -139,7 +139,7 @@ export function DeskTab() {
                 <button
                   type="button"
                   onClick={dismissHomecoming}
-                  className="key press min-h-9 px-3 text-xs font-extrabold"
+                  className="key press min-h-11 px-3 text-xs font-extrabold [--lift:2px]"
                 >
                   File dispatches
                 </button>
@@ -153,29 +153,29 @@ export function DeskTab() {
           {founder && (
             <p className="text-sm font-bold leading-snug">
               <span className="font-extrabold">{founder.name}</span>
-              <span className="text-ink-soft"> · {founder.title}</span>
+              <span className="text-ink-soft">, {founder.title}</span>
             </p>
           )}
           <p className="text-sm font-extrabold">
-            {lodgeName(state)} · Tier {state.lodgeTier}
+            {lodgeName(state)}, Tier {state.lodgeTier}
           </p>
           <p className="text-xs font-bold leading-snug text-ink-soft">
-            Cap ~{tier.maxArrivals} skiers · Seating ×{tier.seatMultiplier} · {tier.stalls} parking · {tier.pads} pads
+            Cap ~{tier.maxArrivals} skiers, seating ×{tier.seatMultiplier}, {tier.stalls} parking, {tier.pads} pads
             {state.lodgeUpgrade
-              ? ` · Upgrade: ${state.lodgeUpgrade.nightsRemaining} ${state.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} left`
+              ? `, upgrade: ${state.lodgeUpgrade.nightsRemaining} ${state.lodgeUpgrade.nightsRemaining === 1 ? "night" : "nights"} left`
               : ""}
           </p>
           <button
             type="button"
             onClick={() => setOfficeTab("Crew")}
-            className="key press mt-1 min-h-11 w-full px-3 text-sm font-extrabold"
+            className="key press mt-1 min-h-11 w-full px-3 text-sm font-extrabold [--lift:3px]"
           >
             Open talent tree
           </button>
         </section>
         <SectionHeading>Today</SectionHeading>
         <section aria-label="Today" className="panel px-4 py-3">
-          <p className="chip inline-flex items-center gap-1.5 px-2.5 py-1 text-[0.85rem] font-extrabold">
+          <p className="well inline-flex items-center gap-1.5 bg-sky/40 px-2.5 py-1 text-[0.85rem] font-extrabold">
             {weather.icon}
             {weather.label}
           </p>

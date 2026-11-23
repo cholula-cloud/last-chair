@@ -88,7 +88,7 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
                 <div className="text-right">
                   <p className="text-sm font-extrabold">{formatMoney(offer.startingCash)} seed cash</p>
                   {offer.bonusActive && (
-                    <span className="chip inline-block px-2 py-0.5 text-xs font-extrabold">
+                    <span className="well-white bg-sign-yellow-soft inline-block px-2 py-0.5 text-xs font-extrabold">
                       Town match +{offer.bonusPct}%
                     </span>
                   )}
@@ -182,8 +182,8 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
               <StatTile onSign label="Crew talents" value={talentsOwned.length} />
             </div>
           </Sign>
-          <section className="chip mt-4 px-3.5 py-3 font-bold" aria-label="Solvency">
-            <h3 className="font-extrabold">Solvency</h3>
+          <section className="panel mt-4 px-4 py-3 font-bold" aria-label="Solvency">
+            <h3 className="display text-[1.15rem]">Solvency</h3>
             <ul className="mt-2 space-y-1 text-sm">
               <li className="flex justify-between gap-3">
                 <span>Closing cash</span>
@@ -197,7 +197,7 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
                 <span>Unpaid construction</span>
                 <span className="tabular-nums">{formatMoney(construction)}</span>
               </li>
-              <li className="flex justify-between gap-3 border-t border-snow-2 pt-1.5 font-extrabold">
+              <li className="flex justify-between gap-3 border-t-2 border-snow-2 pt-1.5 font-extrabold">
                 <span>Net worth</span>
                 <span className={`tabular-nums ${netWorth >= 0 ? "text-sign-green" : "text-barn-deep"}`}>
                   {formatMoney(netWorth)}
@@ -266,8 +266,8 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
               <StoryEntries compact />
             </details>
           </section>
-          {solvent && <div className="chip mt-4 flex items-center gap-3 px-3.5 py-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-snow-2">
+          {solvent && <div className="panel mt-4 flex items-center gap-3 bg-sign-yellow-soft px-3.5 py-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white">
               <PinIcon size={20} />
             </span>
             <p className="text-[1rem] font-bold">

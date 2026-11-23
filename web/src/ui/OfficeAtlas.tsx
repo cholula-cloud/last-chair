@@ -45,15 +45,15 @@ export function AtlasTab() {
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h3 className="display text-[1.2rem]">New England Lost Hills</h3>
           <div className="flex flex-wrap gap-1.5 text-[0.75rem] font-extrabold">
-            <span className="chip inline-flex items-center gap-1.5 px-2 py-0.5">
+            <span className="well-white inline-flex items-center gap-1.5 px-2 py-0.5">
               <span className="size-2.5 rounded-full border border-ink bg-[#2d6a4f]" />
               Open
             </span>
-            <span className="chip inline-flex items-center gap-1.5 px-2 py-0.5">
+            <span className="well-white inline-flex items-center gap-1.5 px-2 py-0.5">
               <span className="size-2.5 rounded-full border border-ink bg-[#2563eb]" />
               Whiterock
             </span>
-            <span className="chip inline-flex items-center gap-1.5 px-2 py-0.5">
+            <span className="well-white inline-flex items-center gap-1.5 px-2 py-0.5">
               <span className="size-2.5 rounded-full border border-ink bg-[#64748b]" />
               Unopened
             </span>

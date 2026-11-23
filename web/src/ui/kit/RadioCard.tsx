@@ -2,12 +2,12 @@ import { useEffect, type ReactNode } from "react";
 import { LiveMessage } from "./LiveMessage";
 import { radioArrived } from "@/ui/feel";
 
-/** Yellow warning diamond holding a broadcast-waves glyph. */
+/** Compact yellow warning diamond holding a broadcast-waves glyph. */
 function RadioDiamond() {
   return (
     <svg
       viewBox="0 0 54 54"
-      className="pop size-[54px] shrink-0"
+      className="size-[30px] shrink-0"
       aria-hidden="true"
       focusable="false"
     >
@@ -20,13 +20,13 @@ function RadioDiamond() {
         transform="rotate(45 27 27)"
         fill="var(--sign-yellow)"
         stroke="var(--ink)"
-        strokeWidth="3"
+        strokeWidth="3.5"
         strokeLinejoin="round"
       />
       <g
         fill="none"
         stroke="var(--ink)"
-        strokeWidth="2.6"
+        strokeWidth="2.8"
         strokeLinecap="round"
       >
         <circle cx="27" cy="27" r="2.6" fill="var(--ink)" stroke="none" />
@@ -37,9 +37,9 @@ function RadioDiamond() {
   );
 }
 
-const DEFAULT_SPEAKER = "Maris on Route 100 Radio (WVTK 100.7)";
+const DEFAULT_SPEAKER = "Maris on Route 100 Radio";
 
-/** Story beat from Route 100 Radio: a yellow diamond beside a speech bubble. */
+/** Story beat from Route 100 Radio: a full-width broadcast card with integrated WVTK masthead. */
 export function RadioCard({
   title,
   children,
@@ -58,21 +58,27 @@ export function RadioCard({
   return (
     <section
       aria-label={`Route 100 Radio: ${title}`}
-      className="arrive mt-5 flex items-end gap-2"
+      className="arrive panel mt-3 bg-sign-yellow-soft px-4 pb-3.5 pt-3 [--lift:4px]"
     >
-      <div className="mb-1.5">
+      <header className="flex items-center gap-2 border-b-2 border-ink/15 pb-2.5">
         <RadioDiamond />
-      </div>
-      <div className="bubble min-w-0 flex-1 px-4 pb-3.5 pt-3">
-        <p className="text-[0.88rem] font-extrabold leading-tight text-ink-soft">
+        <span className="shrink-0 rounded-md border-2 border-ink bg-sign-yellow px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none text-ink tabular-nums">
+          100.7 WVTK
+        </span>
+        <span className="min-w-0 flex-1 text-[0.8rem] font-extrabold leading-snug text-ink-soft">
           {from}
-        </p>
-        <p className="display mt-1.5 text-[1.2rem] text-ink">{title}</p>
-        <p className="mt-1 text-[1rem] font-bold leading-[1.4] text-ink">
-          <LiveMessage enabled={announce}><span className="sr-only">{from === DEFAULT_SPEAKER ? `${title}. ` : `${title}. ${from} says: `}</span>{children}</LiveMessage>
-        </p>
-        {action && <div className="mt-3">{action}</div>}
-      </div>
+        </span>
+      </header>
+      <p className="display mt-2.5 text-[1.22rem] leading-tight text-ink">{title}</p>
+      <p className="mt-1.5 text-[0.95rem] font-bold leading-relaxed text-ink">
+        <LiveMessage enabled={announce}>
+          <span className="sr-only">
+            {from === DEFAULT_SPEAKER ? `${title}. ` : `${title}. ${from} says: `}
+          </span>
+          {children}
+        </LiveMessage>
+      </p>
+      {action && <div className="mt-3.5">{action}</div>}
     </section>
   );
 }

@@ -263,16 +263,18 @@ export function DeltaChip({
   );
 }
 
-/** Full-width disclosure key (at least 48 px). The chevron flips without animating. */
+/** Full-width disclosure key (at least 48 px). Use `flat` inside panels/sheets to avoid nested drop shadows. */
 export function DisclosureButton({
   open,
   controls,
   onToggle,
+  flat = false,
   children,
 }: {
   open: boolean;
   controls: string;
   onToggle: () => void;
+  flat?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -281,7 +283,7 @@ export function DisclosureButton({
       aria-expanded={open}
       aria-controls={controls}
       onClick={onToggle}
-      className="key press flex min-h-12 w-full items-center justify-between gap-3 px-3.5 text-left text-[1rem] font-extrabold"
+      className={`${flat ? "well-white press-scale" : "key press"} flex min-h-12 w-full items-center justify-between gap-3 px-3.5 text-left text-[0.95rem] font-extrabold`}
     >
       <span>{children}</span>
       <svg
@@ -293,7 +295,7 @@ export function DisclosureButton({
         strokeWidth="2.4"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={open ? "rotate-180" : ""}
+        className={`shrink-0 transition-transform duration-150 ease-out ${open ? "rotate-180" : ""}`}
         aria-hidden="true"
       >
         <path d="M2.5 4.5 6 8l3.5-3.5" />

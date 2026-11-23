@@ -16,11 +16,17 @@ const PlayExperience = dynamic(() => import("@/ui/PlayExperience"), {
   ),
 });
 
+function initialMenuFromUrl(): "main" | "load" | "settings" {
+  if (typeof window === "undefined") return "main";
+  const v = new URLSearchParams(window.location.search).get("view");
+  return v === "load" || v === "settings" ? v : "main";
+}
+
 /** Shows the title screen first. The 3D scene mounts only after the player picks a winter. */
 export default function PlayGate() {
   const [playing, setPlaying] = useState(false);
   const [coldOpen, setColdOpen] = useState(false);
-  const [menu, setMenu] = useState<"main" | "load" | "settings">("main");
+  const [menu, setMenu] = useState<"main" | "load" | "settings">(initialMenuFromUrl);
   useFeel(playing && !coldOpen);
 
   return (<>

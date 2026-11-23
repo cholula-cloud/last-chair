@@ -92,7 +92,7 @@ export function useFeel(playing: boolean): void {
         audio.play("chime");
         const unlocks = lodgeTierUnlocks(s.lodgeTier).slice(0, 3).join(", ");
         const detail = unlocks ? `${unlocks}${lodgeTierUnlocks(s.lodgeTier).length > 3 ? "…" : ""}` : "More pads out front";
-        usePop.getState().fire(`Lodge tier ${s.lodgeTier} — ${detail}`);
+        usePop.getState().fire(`Lodge tier ${s.lodgeTier}, ${detail}`);
       }
     });
 

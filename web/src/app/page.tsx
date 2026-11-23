@@ -1,64 +1,49 @@
 import Link from "next/link";
 
-const FEATURES = [
-  "Start with a lodge at Dutch Hill. Place your first lift and cut a trail for a 28-day Vermont winter.",
-  "Run or pause the day. Follow any skier from car park to lift line to the bottom.",
-  "Grow the lodge, build lifts, paint trails and add places for guests to warm up.",
-  "Each night, set tomorrow’s fare and how hard the crew works the snow, then sleep.",
-  "Choose one of six founders. Your crew learns new skills as the winter goes on.",
-];
-
 export default function Home() {
   return (
-    <div className="relative min-h-[100dvh] overflow-x-hidden bg-sky text-ink">
+    <div className="relative flex min-h-[100svh] flex-col justify-between overflow-x-hidden bg-sky text-ink">
       <Hills />
-      <main className="relative z-10 mx-auto flex max-w-xl flex-col px-4 pb-44 pt-[max(2.5rem,env(safe-area-inset-top))] short:grid short:min-h-[100dvh] short:max-w-none short:grid-cols-2 short:items-center short:gap-8 short:px-[max(2rem,env(safe-area-inset-left))] short:pb-20 short:pt-4">
-        <div className="flex flex-col">
-          <div className="panel relative overflow-hidden !bg-sky px-2 pb-6 pt-14 short:pt-10">
-            <Ridges />
-            <h1 className="title-outline display relative text-center text-[clamp(3rem,16vw,5.2rem)] leading-[0.95] short:text-[3.4rem]">
-              Last Chair
-            </h1>
-          </div>
-          <p className="mx-auto mt-6 max-w-sm text-center text-[1.05rem] font-bold leading-snug short:mt-3">
-            Reopen a lost Vermont ski hill for one more winter. Watch the day,
-            make two choices at night, and see who shows up in the morning.
-          </p>
+      <main className="relative z-10 mx-auto flex w-full max-w-lg flex-1 flex-col items-center justify-center px-5 pb-36 pt-[max(2.5rem,env(safe-area-inset-top))] short:pb-24 short:pt-6">
+        <div className="panel relative w-full overflow-hidden !bg-sky px-4 pb-8 pt-16 short:pb-6 short:pt-12">
+          <Ridges />
+          <h1 className="title-outline display relative text-center text-[clamp(3.2rem,16vw,5.2rem)] leading-[0.95] short:text-[3.4rem]">
+            Last Chair
+          </h1>
+        </div>
+
+        <p className="mt-5 max-w-sm text-center text-[1.08rem] font-extrabold leading-snug text-ink short:mt-3">
+          Reopen a lost Vermont ski hill for one more winter.
+        </p>
+
+        <div className="mt-6 flex w-full max-w-xs flex-col gap-2.5 short:mt-4">
           <Link
             href="/play"
-            className="sign sign-btn press mx-auto mt-6 block w-full max-w-xs short:mt-4"
+            className="sign sign-btn press block w-full"
           >
-            <span className="sign-inner display flex min-h-[46px] items-center justify-center text-[1.5rem]">
+            <span className="sign-inner display flex min-h-[48px] items-center justify-center text-[1.55rem]">
               Play
             </span>
           </Link>
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href="/play?view=load"
+              className="key press flex min-h-11 items-center justify-center px-3 text-sm font-extrabold [--lift:3px]"
+            >
+              Load save
+            </Link>
+            <Link
+              href="/play?view=settings"
+              className="key press flex min-h-11 items-center justify-center px-3 text-sm font-extrabold [--lift:3px]"
+            >
+              Settings
+            </Link>
+          </div>
         </div>
 
-        <section
-          aria-labelledby="in-this-build"
-          className="panel mt-9 px-5 py-4 short:mt-0"
-        >
-          <h2 id="in-this-build" className="display text-[1.4rem]">
-            Your winter at Dutch Hill
-          </h2>
-          <ul className="mt-3 space-y-2.5">
-            {FEATURES.map((f) => (
-              <li
-                key={f}
-                className="flex gap-2.5 text-[0.95rem] font-bold leading-snug"
-              >
-                <span
-                  className="mt-[0.5em] size-2 shrink-0 rotate-45 border-2 border-ink bg-sign-green"
-                  aria-hidden="true"
-                />
-                {f}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 border-t-2 border-snow-2 pt-3 text-[0.85rem] font-bold text-ink-soft">
-            Your winter saves in this browser. Choose Load on the title screen to export a copy.
-          </p>
-        </section>
+        <p className="mt-4 text-center text-xs font-bold text-ink-soft">
+          Saves in this browser. Export backups from Load save.
+        </p>
       </main>
     </div>
   );

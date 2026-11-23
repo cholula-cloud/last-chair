@@ -89,6 +89,7 @@
 html {
   background: var(--ink);
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
   /* No rubber-band pull or pull-to-refresh over the game. Sheets scroll inside themselves (overscroll-contain). */
   overscroll-behavior: none;
 }
@@ -100,8 +101,31 @@ body {
   font-weight: 700;
   line-height: 1.4;
   overscroll-behavior: none;
-  /* No long-press callout or text-selection loupe on HUD and canvas taps. */
+}
+
+/* Native touch ergonomics: zero 300ms tap delay and no accidental selection on controls,
+   while keeping readable story/body copy selectable. */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"],
+.chip,
+.key,
+.seg-btn {
+  user-select: none;
+  -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Prevent iOS Safari auto-zoom when focusing inputs. */
+input,
+textarea,
+select {
+  font-size: 16px;
 }
 
 /* Yellow ring plus a navy ring around it, so focus reads on white, sky and
@@ -113,15 +137,16 @@ body {
 }
 
 @layer components {
-  /* Display face: headings, big numbers and primary button labels only. */
+  /* Display face: headings, big numbers and primary button labels only.
+     Large headings tighten tracking slightly for crisp optical density. */
   .display {
     font-family: var(--font-lilita), var(--font-nunito), sans-serif;
     font-weight: 400;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
     line-height: 1.05;
   }
   .display-lg {
-    letter-spacing: -0.005em;
+    letter-spacing: -0.015em;
   }
 
   /* Flat surfaces: 3px navy outline and a hard offset shadow. --lift is the
@@ -147,6 +172,23 @@ body {
     background: var(--snow);
     color: var(--ink);
     border-radius: var(--r-panel);
+  }
+  /* Calm inner grouping well: flat 2px border with zero drop shadow so sheets
+     never stack nested shadow boxes inside panels. */
+  .well {
+    background: var(--snow-2);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: var(--r-chip);
+  }
+  .well-white {
+    background: var(--snow);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: var(--r-chip);
+  }
+  .row-divider {
+    border-top: 2px solid var(--snow-2);
   }
 
   /* Raised key. The pressed look (selected, disabled) sinks it into the page. */
@@ -384,13 +426,20 @@ body {
     box-shadow: var(--ring);
   }
 
+  .press-scale {
+    transition: transform 130ms var(--ease-out);
+  }
+  .press-scale:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
   /* Sheets: transform-only, interruptible transitions driven by data-state.
-     Enter 360ms on the drawer curve, exit faster at 200ms. */
+     Enter 320ms on the drawer curve, exit faster at 180ms. */
   .sheet {
     /* Same colour as the ridge fill, so the snowy ridgeline and the sheet read as one slope. */
     background: var(--snow-2);
     color: var(--ink);
-    transition: transform 360ms var(--ease-drawer);
+    transition: transform 320ms var(--ease-drawer);
     will-change: transform;
   }
   .sheet[data-state="enter"] {
@@ -398,28 +447,65 @@ body {
   }
   .sheet[data-state="closing"] {
     transform: translateY(100%);
-    transition-duration: 200ms;
+    transition-duration: 180ms;
     transition-timing-function: var(--ease-out);
   }
   .sheet[data-dragging] {
     transition: none;
   }
   .scrim {
-    transition: opacity 240ms var(--ease-out);
+    transition: opacity 200ms var(--ease-out);
   }
   .scrim[data-state="enter"],
   .scrim[data-state="closing"] {
     opacity: 0;
   }
 
+  /* Origin-aware popovers: scale from 0.95 (never 0) with instant response. */
+  .popover-in {
+    transition:
+      opacity 160ms var(--ease-out),
+      transform 160ms var(--ease-out);
+    @starting-style {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+  }
+
+  /* Blur-masked beat crossfade for Cold Open & Night Recap steps. */
+  .beat-swap {
+    animation: beat-swap 210ms var(--ease-out) both;
+  }
+
+  /* 3D punch card flip for Cold Open card 3. */
+  .punch-card-scene {
+    perspective: 900px;
+  }
+  .punch-card-inner {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 420ms var(--ease-out);
+    will-change: transform;
+  }
+  .punch-card-inner[data-flipped="true"] {
+    transform: rotateY(180deg);
+  }
+  .punch-card-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .punch-card-back {
+    transform: rotateY(180deg);
+  }
+
   /* Morning note and first-day callout: small, from their own anchor. */
   .note-in {
     transition:
-      opacity 240ms var(--ease-out),
-      transform 240ms var(--ease-out);
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
     @starting-style {
       opacity: 0;
-      transform: translateY(-8px);
+      transform: translateY(-6px) scale(0.97);
     }
   }
   /* Trail panel swap: the compact bar, minimized bar, and full panel rise in smoothly. */
@@ -440,8 +526,8 @@ body {
   .callout-in {
     transform-origin: 1.75rem top;
     transition:
-      opacity 200ms var(--ease-out),
-      transform 200ms var(--ease-out);
+      opacity 180ms var(--ease-out),
+      transform 180ms var(--ease-out);
     @starting-style {
       opacity: 0;
       transform: scale(0.95);
@@ -449,21 +535,21 @@ body {
   }
   .arrive {
     transition:
-      opacity 280ms var(--ease-out),
-      transform 280ms var(--ease-out);
+      opacity 220ms var(--ease-out),
+      transform 220ms var(--ease-out);
     @starting-style {
       opacity: 0;
-      transform: translateY(8px) scale(0.98);
+      transform: translateY(6px) scale(0.98);
     }
   }
   /* The one bounce: the radio diamond arrives with a small overshoot. */
   .pop {
     transition:
       opacity 160ms var(--ease-out),
-      transform 300ms var(--ease-spring);
+      transform 280ms var(--ease-spring);
     @starting-style {
       opacity: 0;
-      transform: scale(0.9);
+      transform: scale(0.92);
     }
   }
 
@@ -482,17 +568,30 @@ body {
   }
 }
 
+@keyframes beat-swap {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
 @keyframes mood-chip-pulse {
   0%,
   100% {
     transform: scale(1);
   }
   50% {
-    transform: scale(1.08);
+    transform: scale(1.06);
   }
 }
 .mood-pulse-active {
-  animation: mood-chip-pulse 280ms var(--ease-out);
+  animation: mood-chip-pulse 260ms var(--ease-out);
 }
 :root[data-reduce-motion="true"] .mood-pulse-active {
   animation: none;
@@ -505,20 +604,28 @@ body {
   }
   70%,
   100% {
-    transform: scale(1.18);
+    transform: scale(1.16);
     opacity: 0;
   }
 }
 
-/* Recaps, coach tips and radio updates appear immediately in reduced motion. */
+/* Reduced motion: keep brief opacity transitions for comprehension, drop transforms/blur/springs. */
 @media (prefers-reduced-motion: reduce) {
-  .sheet, .scrim, .trail-bar-in, .hud-surface, .note-in, .callout-in, .arrive, .pop {
-    transition: none;
+  .sheet, .scrim {
+    transition: opacity 160ms ease;
+  }
+  .trail-bar-in, .hud-surface, .note-in, .callout-in, .arrive, .pop, .popover-in, .punch-card-inner {
+    transition: opacity 150ms ease;
+  }
+  .beat-swap {
+    animation: none;
   }
   .sheet[data-state="enter"], .sheet[data-state="closing"] {
     transform: none;
+    opacity: 0;
   }
-  .press:active:not(:disabled):not([aria-pressed="true"]) {
+  .press:active:not(:disabled):not([aria-pressed="true"]),
+  .press-scale:active:not(:disabled) {
     transform: none;
   }
   .press {
@@ -530,11 +637,21 @@ body {
   }
 }
 
-:root[data-reduce-motion="true"] :is(.sheet, .scrim, .trail-bar-in, .hud-surface, .note-in, .callout-in, .arrive, .pop) {
-  transition: none;
+:root[data-reduce-motion="true"] :is(.sheet, .scrim) {
+  transition: opacity 160ms ease;
 }
-:root[data-reduce-motion="true"] .sheet:is([data-state="enter"], [data-state="closing"]),
-:root[data-reduce-motion="true"] .press:active:not(:disabled):not([aria-pressed="true"]) {
+:root[data-reduce-motion="true"] :is(.trail-bar-in, .hud-surface, .note-in, .callout-in, .arrive, .pop, .popover-in, .punch-card-inner) {
+  transition: opacity 150ms ease;
+}
+:root[data-reduce-motion="true"] .beat-swap {
+  animation: none;
+}
+:root[data-reduce-motion="true"] .sheet:is([data-state="enter"], [data-state="closing"]) {
+  transform: none;
+  opacity: 0;
+}
+:root[data-reduce-motion="true"] .press:active:not(:disabled):not([aria-pressed="true"]),
+:root[data-reduce-motion="true"] .press-scale:active:not(:disabled) {
   transform: none;
 }
 :root[data-reduce-motion="true"] .press {
@@ -554,36 +671,47 @@ body {
 }
 
 :root[data-text-size="large"] { font-size: 118.75%; }
-/* Cold open: stills cross-fade in 400 ms; reduced motion switches instantly. */
+/* Cold open: stills cross-fade with subtle blur; reduced motion switches via opacity only. */
 .cold-card {
   opacity: 0;
-  transition: opacity 400ms var(--ease-out);
+  transform: scale(0.985);
+  filter: blur(2px);
+  transition:
+    opacity 240ms var(--ease-out),
+    transform 240ms var(--ease-out),
+    filter 240ms var(--ease-out);
 }
 .cold-card[data-active="true"] {
   opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
 }
 .cold-caption {
   text-shadow: 0 2px 10px rgba(8, 14, 22, 0.85);
 }
 @media (prefers-reduced-motion: reduce) {
   .cold-card {
-    transition: none;
+    transform: none;
+    filter: none;
+    transition: opacity 160ms ease;
   }
 }
 :root[data-reduce-motion="true"] .cold-card {
-  transition: none;
+  transform: none;
+  filter: none;
+  transition: opacity 160ms ease;
 }
 
-/* Build and tier-up pop: scale and fade in over 240 ms, hold, fade out. Transform and opacity only. */
+/* Build and tier-up pop: scale and fade in over 220 ms, hold, fade out. Transform and opacity only. */
 .feel-pop {
   animation:
-    feel-pop-in 240ms var(--ease-out) both,
-    feel-pop-out 220ms ease-out 1250ms forwards;
+    feel-pop-in 220ms var(--ease-out) both,
+    feel-pop-out 200ms ease-out 1250ms forwards;
 }
 @keyframes feel-pop-in {
   from {
     opacity: 0;
-    transform: scale(0.86);
+    transform: scale(0.94);
   }
   to {
     opacity: 1;

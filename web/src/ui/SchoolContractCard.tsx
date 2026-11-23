@@ -32,14 +32,15 @@ export function SchoolContractCard({ night }: { night: GameState }) {
     );
   }
 
-  const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+  const primaryClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--key-fill:var(--sign-yellow)] [--lift:3px]";
+  const secondaryClass = "key press min-h-12 w-full px-2 text-sm font-extrabold [--lift:3px]";
   return (
     <RadioCard
       title="School bus offer"
       action={
         <div className="grid grid-cols-2 gap-2">
-          <button type="button" className={`${buttonClass} [--key-fill:var(--sign-yellow)]`} onClick={() => decide("accepted")}>Book the bus</button>
-          <button type="button" className={buttonClass} onClick={() => decide("declined")}>Decline</button>
+          <button type="button" className={primaryClass} onClick={() => decide("accepted")}>Book the bus</button>
+          <button type="button" className={secondaryClass} onClick={() => decide("declined")}>Decline</button>
         </div>
       }
     >

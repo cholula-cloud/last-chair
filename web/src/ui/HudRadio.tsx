@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   liveRadioBroadcast,
   RADIO_BANDS,
@@ -10,7 +10,7 @@ import {
 } from "@/game/radioChannels";
 import { useGameStore } from "@/game/store";
 import { radioDialTurned } from "@/ui/feel";
-import { ChevronDownIcon, ChevronUpIcon } from "@/ui/kit/icons";
+import { ChevronDownIcon, ChevronUpIcon, CloseIcon } from "@/ui/kit/icons";
 import { tidy } from "@/ui/kit/parts";
 import { useSettings } from "@/ui/settingsStore";
 
@@ -34,11 +34,26 @@ function WavesGlyph({ active }: { active: boolean }) {
   );
 }
 
+export type MorningDispatch = {
+  weatherLabel: string;
+  weatherIcon: ReactNode;
+  headline: string;
+  crewLine: string | null;
+  overnightLine: string | null;
+  onDismiss: () => void;
+};
+
 /**
  * Compact daytime radio pill and 3-band tuner popover (WVTK 100.7, WXK-44, WRCK 98.3).
- * Auto-peeks new WVTK dispatches for 6 seconds without stealing focus or pausing the hill.
+ * Auto-peeks new WVTK dispatches or fresh morning weather notes for 6 seconds without covering the hill.
  */
-export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
+export function HudRadio({
+  onOpenLog,
+  morningDispatch = null,
+}: {
+  onOpenLog: () => void;
+  morningDispatch?: MorningDispatch | null;
+}) {
   const state = useGameStore((s) => s);
   const radioEnabled = useSettings((s) => s.radioEnabled);
   const radioBand = useSettings((s) => s.radioBand);
@@ -112,27 +127,64 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
           setOpen((v) => !v);
           setPeeking(false);
         }}
-        className="chip hud-surface press flex min-h-9 w-full items-center gap-2 px-2.5 py-1 text-left text-xs font-extrabold text-ink [--lift:2px]"
+        className="chip hud-surface press flex min-h-11 w-full items-center gap-2 bg-sign-yellow-soft px-2.5 py-1 text-left text-xs font-extrabold text-ink [--lift:3px]"
       >
         <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-md border-2 border-ink px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none ${
+          className={`inline-flex shrink-0 items-center gap-1 rounded-[8px] border-2 border-ink px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none ${
             radioEnabled ? "bg-sign-yellow text-ink" : "bg-snow-2 text-ink-soft"
           }`}
         >
           <WavesGlyph active={radioEnabled} />
           {radioEnabled ? meta.shortLabel : "Radio off"}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[0.78rem] font-bold text-ink">
+        <span className="min-w-0 flex-1 truncate text-[0.8rem] font-extrabold text-ink">
           {radioEnabled ? tidy(broadcast.title) : "Tap to tune WVTK 100.7"}
         </span>
         {open ? (
-          <ChevronUpIcon size={15} className="shrink-0 text-ink-soft" />
+          <ChevronUpIcon size={16} className="shrink-0 text-ink" />
         ) : (
-          <ChevronDownIcon size={15} className="shrink-0 text-ink-soft" />
+          <ChevronDownIcon size={16} className="shrink-0 text-ink" />
         )}
       </button>
 
-      {!open && peeking && radioEnabled && (
+      {!open && morningDispatch && (
+        <aside
+          aria-label="Morning note"
+          className="panel popover-in origin-top mt-1.5 flex items-start gap-2.5 px-3 py-2 text-left [--lift:3px]"
+        >
+          <span
+            aria-hidden="true"
+            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
+          >
+            {morningDispatch.weatherIcon}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.8rem] font-bold leading-snug text-ink">
+              <span className="font-extrabold">{morningDispatch.weatherLabel}.</span> {morningDispatch.headline}
+            </p>
+            {morningDispatch.overnightLine && (
+              <p className="mt-0.5 text-[0.74rem] font-bold tabular-nums text-ink-soft">
+                {morningDispatch.overnightLine}
+              </p>
+            )}
+            {morningDispatch.crewLine && (
+              <p className="mt-0.5 text-[0.78rem] font-extrabold leading-snug text-sign-green">
+                {morningDispatch.crewLine}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={morningDispatch.onDismiss}
+            aria-label="Dismiss morning note"
+            className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
+          >
+            <CloseIcon size={16} />
+          </button>
+        </aside>
+      )}
+
+      {!open && !morningDispatch && peeking && radioEnabled && (
         <div
           role="status"
           aria-live="polite"
@@ -140,9 +192,9 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
             setOpen(true);
             setPeeking(false);
           }}
-          className="panel note-in mt-1.5 cursor-pointer px-3 py-2 text-left"
+          className="panel popover-in origin-top mt-1.5 cursor-pointer bg-sign-yellow-soft px-3 py-2 text-left [--lift:3px]"
         >
-          <p className="text-[0.7rem] font-extrabold uppercase tracking-wide text-ink-soft">
+          <p className="text-[0.72rem] font-extrabold text-sign-brown">
             {broadcast.speaker}
           </p>
           <p className="mt-0.5 line-clamp-2 text-[0.82rem] font-bold leading-snug text-ink">
@@ -155,7 +207,7 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
         <section
           id="hud-radio-tuner"
           aria-label="Route 100 Radio tuner"
-          className="panel note-in mt-1.5 space-y-2.5 p-3"
+          className="panel popover-in origin-top mt-1.5 space-y-2.5 p-3"
         >
           <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Radio stations">
             {RADIO_BANDS.map((id) => {
@@ -168,12 +220,12 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
                   role="radio"
                   aria-checked={selected}
                   onClick={() => selectBand(id)}
-                  className={`key press flex min-h-10 flex-col items-center justify-center px-1.5 py-1 text-center leading-tight [--lift:2px] ${
+                  className={`key press flex min-h-11 flex-col items-center justify-center px-1.5 py-1 text-center leading-tight [--lift:2px] ${
                     selected ? "key-solid [--key-fill:var(--sign-yellow)]" : ""
                   }`}
                 >
-                  <span className="text-[0.72rem] font-extrabold">{station.freq}</span>
-                  <span className="text-[0.65rem] font-bold text-ink-soft">
+                  <span className="text-[0.75rem] font-extrabold">{station.freq}</span>
+                  <span className="text-[0.68rem] font-bold text-ink-soft">
                     {id === "wvtk" ? "Town" : id === "wxk" ? "Weather" : "Whiterock"}
                   </span>
                 </button>
@@ -182,11 +234,11 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
           </div>
 
           {radioEnabled ? (
-            <div className="rounded-lg border-2 border-ink/15 bg-snow-2/70 px-2.5 py-2">
-              <p className="text-[0.72rem] font-extrabold uppercase tracking-wide text-ink-soft">
+            <div className="well px-3 py-2">
+              <p className="text-[0.72rem] font-extrabold text-sign-brown">
                 {broadcast.speaker}
               </p>
-              <p className="display mt-0.5 text-[0.98rem] leading-tight text-ink">
+              <p className="display mt-0.5 text-[1rem] leading-tight text-ink">
                 {tidy(broadcast.title)}
               </p>
               <p className="mt-1 text-[0.84rem] font-bold leading-snug text-ink">
@@ -194,7 +246,7 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
               </p>
             </div>
           ) : (
-            <p className="rounded-lg border-2 border-ink/15 bg-snow-2/70 px-2.5 py-2 text-[0.82rem] font-bold text-ink-soft">
+            <p className="well px-3 py-2 text-[0.82rem] font-bold text-ink-soft">
               Radio is switched off. Pick any band above or turn power back on to hear Route 100.
             </p>
           )}
@@ -204,7 +256,7 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
               type="button"
               aria-pressed={radioEnabled}
               onClick={togglePower}
-              className="key press min-h-9 px-3 text-xs font-extrabold [--lift:2px]"
+              className="key press min-h-11 px-3 text-xs font-extrabold [--lift:2px]"
             >
               Radio: {radioEnabled ? "On" : "Off"}
             </button>
@@ -214,7 +266,7 @@ export function HudRadio({ onOpenLog }: { onOpenLog: () => void }) {
                 setOpen(false);
                 onOpenLog();
               }}
-              className="key press min-h-9 px-3 text-xs font-extrabold [--lift:2px]"
+              className="key press min-h-11 px-3 text-xs font-extrabold [--lift:2px]"
             >
               Story log
             </button>

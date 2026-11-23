@@ -33,9 +33,15 @@ export function SheetTitle({
   );
 }
 
-const EXIT_MS = 200;
+const EXIT_MS = 180;
 const DISMISS_DISTANCE = 110;
 const DISMISS_VELOCITY = 0.11; // px per ms
+const VELOCITY_WINDOW_MS = 90;
+
+/** Apple progressive boundary damping past the top resting position. */
+function rubberband(overshoot: number, dimension: number, constant = 0.55): number {
+  return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+}
 
 /** Jagged snow ridgeline that caps the sheet; stretches with its width. */
 function Ridge() {
@@ -118,12 +124,18 @@ export function Sheet({
 }) {
   const titleId = useId();
   const sheetRef = useRef<HTMLElement>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<number | null>(null);
   const [state, setState] = useState<SheetState>("enter");
 
   useEffect(() => {
     if (focusClose) closeButtonRef.current?.focus({ preventScroll: true });
   }, [focusClose]);
+
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
 
   // data-state fallback for browsers without @starting-style: render off
   // screen, then flip to "open" on the next frame so the transition runs.
@@ -138,8 +150,12 @@ export function Sheet({
 
   const close = useCallback(() => {
     if (!onClose) return;
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
     setState("closing");
-    window.setTimeout(onClose, EXIT_MS);
+    closeTimer.current = window.setTimeout(() => {
+      closeTimer.current = null;
+      onClose();
+    }, EXIT_MS);
   }, [onClose]);
 
   useEffect(() => {
@@ -154,29 +170,61 @@ export function Sheet({
   const drag = useRef<{
     id: number;
     y0: number;
-    t0: number;
+    baseY: number;
     dy: number;
+    samples: Array<{ y: number; t: number }>;
   } | null>(null);
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!onClose || drag.current) return; // ignore extra fingers
     if ((e.target as HTMLElement).closest("button")) return;
+    const el = sheetRef.current;
+    if (!el) return;
+
+    let baseY = 0;
+    if (closeTimer.current !== null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+      baseY = Number.isFinite(matrix.m42) ? Math.max(0, matrix.m42) : 0;
+      setState("open");
+      el.setAttribute("data-state", "open");
+      if (scrimRef.current) scrimRef.current.style.opacity = "";
+    }
+
     e.currentTarget.setPointerCapture(e.pointerId);
+    const now = performance.now();
     drag.current = {
       id: e.pointerId,
       y0: e.clientY,
-      t0: performance.now(),
-      dy: 0,
+      baseY,
+      dy: baseY,
+      samples: [{ y: baseY, t: now }],
     };
-    sheetRef.current?.setAttribute("data-dragging", "");
+    el.setAttribute("data-dragging", "");
+    el.style.transform = `translateY(${baseY}px)`;
   };
   const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
-    if (!d || d.id !== e.pointerId || !sheetRef.current) return;
-    const raw = e.clientY - d.y0;
-    // Damped when pulled upward past the resting position.
-    d.dy = raw >= 0 ? raw : -Math.sqrt(-raw) * 2;
-    sheetRef.current.style.transform = `translateY(${d.dy}px)`;
+    const el = sheetRef.current;
+    if (!d || d.id !== e.pointerId || !el) return;
+    const raw = d.baseY + (e.clientY - d.y0);
+    const height = el.offsetHeight || 420;
+    // Rubber-band softly when pulled upward past resting position.
+    d.dy = raw >= 0 ? raw : -rubberband(-raw, height, 0.25);
+    el.style.transform = `translateY(${d.dy}px)`;
+
+    if (scrimRef.current) {
+      const progress = Math.max(0, Math.min(1, d.dy / Math.max(220, height * 0.8)));
+      scrimRef.current.style.transition = "none";
+      scrimRef.current.style.opacity = String(1 - progress);
+    }
+
+    const now = performance.now();
+    d.samples.push({ y: d.dy, t: now });
+    while (d.samples.length > 2 && now - d.samples[0]!.t > VELOCITY_WINDOW_MS) {
+      d.samples.shift();
+    }
   };
   const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -184,10 +232,28 @@ export function Sheet({
     drag.current = null;
     const el = sheetRef.current;
     if (!el) return;
+
+    const now = performance.now();
+    const oldest = d.samples[0] ?? { y: d.dy, t: now };
+    const dt = Math.max(1, now - oldest.t);
+    const velocity = (d.dy - oldest.y) / dt;
+    const shouldDismiss = d.dy > DISMISS_DISTANCE || (d.dy > 16 && velocity > DISMISS_VELOCITY);
+
     el.removeAttribute("data-dragging");
-    el.style.transform = "";
-    const velocity = d.dy / Math.max(1, performance.now() - d.t0);
-    if (d.dy > DISMISS_DISTANCE || velocity > DISMISS_VELOCITY) close();
+    if (scrimRef.current) {
+      scrimRef.current.style.transition = "";
+      scrimRef.current.style.opacity = "";
+    }
+
+    if (shouldDismiss) {
+      // Flip DOM state before clearing inline transform so exit transition starts from d.dy.
+      el.setAttribute("data-state", "closing");
+      void el.offsetHeight;
+      el.style.transform = "";
+      close();
+    } else {
+      el.style.transform = "";
+    }
   };
 
   return (
@@ -196,6 +262,7 @@ export function Sheet({
     >
       {modal && (
         <div
+          ref={scrimRef}
           data-state={state}
           className="scrim pointer-events-auto absolute inset-0 bg-ink/55"
           aria-hidden="true"
@@ -214,7 +281,7 @@ export function Sheet({
       >
         <Ridge />
         <div
-          className={`select-none ${aside ? "short:col-span-2 md:col-span-2" : ""} ${onClose ? "cursor-grab touch-none" : ""}`}
+          className={`select-none ${aside ? "short:col-span-2 md:col-span-2" : ""} ${onClose ? "cursor-grab touch-pan-x" : ""}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -222,14 +289,14 @@ export function Sheet({
         >
           {onClose && (
             <div
-              className="flex justify-center pt-2.5 short:pt-1.5"
+              className="flex justify-center pt-2 short:pt-1.5"
               aria-hidden="true"
             >
               <span className="h-1.5 w-11 rounded-full bg-ink/35" />
             </div>
           )}
           {(!titleHidden || onClose) && (
-            <header className="flex items-start gap-3 px-4 pb-2 pt-2 sm:px-5 short:pb-1 short:pt-0.5">
+            <header className="flex items-start gap-3 px-4 pb-2 pt-1.5 sm:px-5 short:pb-1 short:pt-0.5">
               <div className="min-w-0 flex-1">
                 {!titleHidden && (
                   <>
@@ -262,7 +329,7 @@ export function Sheet({
           )}
         </div>
         <div
-          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 ${titleHidden && !onClose ? "pt-4 short:pt-0" : ""} ${aside ? "short:contents md:contents" : ""}`}
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5 ${titleHidden && !onClose ? "pt-4 short:pt-0" : ""} ${aside ? "short:contents md:contents" : ""}`}
         >
           {aside ? (
             <>

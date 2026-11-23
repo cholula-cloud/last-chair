@@ -22,13 +22,13 @@ export function LoanCard({ night, onTake, onRepay, repaid }: {
   const principal = formatMoney(LOAN_TERMS.principal);
 
   if (repaid > 0) {
-    return <p role="status" className="chip mt-3 px-3.5 py-3 font-bold">Winter loan paid off in full.</p>;
+    return <p role="status" className="well-white mt-3 px-3.5 py-2.5 text-sm font-bold">Winter loan paid off in full.</p>;
   }
 
   if (loan) {
     const payoff = payoffAmount(loan);
     return (
-      <section className="panel mt-3 px-3.5 py-3" aria-label="Winter loan">
+      <section className="well-white mt-3 px-3.5 py-3" aria-label="Winter loan">
         <p className="text-base font-extrabold">Loan balance: {formatMoney(payoff)}.</p>
         {canRepayLoan(night) ? (
           <button type="button" className={`${ACTION} mt-2`} onClick={onRepay}>

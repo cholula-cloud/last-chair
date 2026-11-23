@@ -14,17 +14,17 @@ import {
   type TalentId,
 } from "@/game/talentProgress";
 import { CREW_ROLES, CREW_TALENTS, type CrewMember } from "@/game/talents";
+import { CheckIcon, LockIcon } from "@/ui/kit/icons";
 import { SegmentedControl } from "@/ui/kit/SegmentedControl";
 import { useReducedMotion } from "@/ui/motion";
 
 const CREW_ORDER: CrewMember[] = ["Frank", "Dana", "Elena"];
 
-const NODE_W = 148;
-const NODE_H = 56;
-const RANK_GAP = 72;
-const ZIG = 44;
-const PAD_X = 24;
-const PAD_Y = 16;
+const CREW_TINT: Record<CrewMember, string> = {
+  Frank: "#0b6b3a",
+  Dana: "#b8302a",
+  Elena: "#2f5f9e",
+};
 
 function blockLabel(
   block: ReturnType<typeof talentBlockReason>,
@@ -34,74 +34,11 @@ function blockLabel(
   if (block === "column") return `Needs ${LODGE_TIERS[CREW_COLUMN_MIN_TIER[talent.crew]].label}`;
   if (block === "lodge") return `Needs ${LODGE_TIERS[tier as 1 | 2 | 3].label}`;
   if (block === "prerequisite") return "Needs skill above";
-  if (block === "points") return "Need a crew point";
+  if (block === "points") return "Need 1 point";
   return "Locked";
 }
 
-function nodeCenter(i: number) {
-  const mid = PAD_X + NODE_W / 2 + ZIG;
-  const ox = (i % 2 === 0 ? -1 : 1) * ZIG;
-  return {
-    x: mid + ox,
-    y: PAD_Y + NODE_H / 2 + i * RANK_GAP,
-  };
-}
-
-function treeSize(count: number) {
-  return {
-    width: PAD_X * 2 + NODE_W + ZIG * 2,
-    height: PAD_Y * 2 + NODE_H + Math.max(0, count - 1) * RANK_GAP,
-  };
-}
-
-function TalentNode({
-  talentId,
-  selected,
-  onSelect,
-  justUnlocked,
-}: {
-  talentId: TalentId;
-  selected: boolean;
-  onSelect: () => void;
-  justUnlocked: boolean;
-}) {
-  const state = useGameStore();
-  const talent = CREW_TALENTS.find((t) => t.id === talentId)!;
-  const owned = state.talentsOwned.includes(talent.id);
-  const open = canUnlockTalent(state, talent.id);
-  const block = talentBlockReason(state, talent.id);
-  const status = owned
-    ? "Active"
-    : open
-      ? "Ready"
-      : blockLabel(block, talent, talentRequiresTier(talent.id));
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      aria-pressed={selected}
-      className={`flex h-full w-full flex-col justify-center rounded-[var(--r-chip)] border-2 border-ink px-2.5 text-left ${
-        owned
-          ? "bg-sign-green text-white"
-          : open
-            ? "bg-white shadow-[0_3px_0_var(--ink)]"
-            : "bg-snow-2 text-ink-soft"
-      } ${selected ? "ring-2 ring-[var(--sign-yellow)] ring-offset-1" : ""} ${
-        justUnlocked ? "arrive" : ""
-      }`}
-    >
-      <span className={`text-[0.8rem] font-extrabold leading-snug ${owned ? "text-white" : "text-ink"}`}>
-        {talent.name}
-      </span>
-      <span className={`mt-0.5 text-[0.65rem] font-bold ${owned ? "text-sign-green-ink" : "text-ink-soft"}`}>
-        {status}
-      </span>
-    </button>
-  );
-}
-
-function TalentDetail({
+function StickyInspectBar({
   talentId,
   onUnlocked,
 }: {
@@ -117,99 +54,47 @@ function TalentDetail({
   const tier = talentRequiresTier(talent.id);
 
   return (
-    <div className="panel space-y-2 px-3 py-2.5">
-      <p className="text-sm font-extrabold leading-snug">{talent.name}</p>
-      <p className="text-xs font-bold leading-snug text-ink-soft">{talent.effect}</p>
-      {owned ? (
-        need ? (
-          <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-gold px-2.5 text-[0.7rem] font-extrabold">
-            {need}
-          </span>
-        ) : (
-          <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-sign-green px-2.5 text-[0.7rem] font-extrabold text-white">
-            Active
-          </span>
-        )
-      ) : open ? (
-        <button
-          type="button"
-          onClick={() => {
-            state.pickCrewTalent(talent.id);
-            onUnlocked(talent.id);
-          }}
-          className="key press flex min-h-11 w-full items-center justify-center px-2 text-sm font-extrabold"
-        >
-          Unlock ({CREW_POINT_COST} pt)
-        </button>
-      ) : (
-        <span className="inline-flex min-h-8 items-center rounded-full border-2 border-ink bg-snow-2 px-2.5 text-[0.7rem] font-extrabold text-ink-soft">
-          {blockLabel(block, talent, tier)}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function ZigzagBranch({
-  crew,
-  selectedId,
-  onSelect,
-  flashId,
-}: {
-  crew: CrewMember;
-  selectedId: TalentId | null;
-  onSelect: (id: TalentId) => void;
-  flashId: TalentId | null;
-}) {
-  const talents = useMemo(() => talentsForCrew(crew), [crew]);
-  const size = treeSize(talents.length);
-  const centers = talents.map((_, i) => nodeCenter(i));
-
-  return (
-    <div className="relative mx-auto" style={{ width: size.width, height: size.height }}>
-      <svg
-        width={size.width}
-        height={size.height}
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
+    <div className="sticky bottom-0 z-10 -mx-4 bg-sky px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
+      <div
+        key={talent.id}
+        className="panel beat-swap space-y-2.5 p-3.5 [--lift:4px]"
       >
-        {centers.slice(1).map((c, i) => {
-          const a = centers[i]!;
-          const midY = (a.y + c.y) / 2;
-          return (
-            <path
-              key={talents[i + 1]!.id}
-              d={`M ${a.x} ${a.y + NODE_H / 2 - 4} C ${a.x} ${midY}, ${c.x} ${midY}, ${c.x} ${c.y - NODE_H / 2 + 4}`}
-              fill="none"
-              stroke="var(--ink)"
-              strokeWidth={3}
-              strokeLinecap="round"
-            />
-          );
-        })}
-      </svg>
-      {talents.map((talent, i) => {
-        const c = centers[i]!;
-        return (
-          <div
-            key={talent.id}
-            className="absolute"
-            style={{
-              left: c.x - NODE_W / 2,
-              top: c.y - NODE_H / 2,
-              width: NODE_W,
-              height: NODE_H,
-            }}
-          >
-            <TalentNode
-              talentId={talent.id}
-              selected={selectedId === talent.id}
-              onSelect={() => onSelect(talent.id)}
-              justUnlocked={flashId === talent.id}
-            />
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="display text-[1.15rem] leading-tight text-ink">{talent.name}</p>
+            <p className="mt-1 text-xs font-bold leading-snug text-ink-soft">{talent.effect}</p>
           </div>
-        );
-      })}
+          {owned && (
+            <span
+              className={`shrink-0 whitespace-nowrap rounded-full border-2 border-ink px-2.5 py-0.5 text-[0.72rem] font-extrabold ${
+                need ? "bg-gold text-ink" : "bg-sign-green text-white"
+              }`}
+            >
+              {need ?? "Active"}
+            </span>
+          )}
+        </div>
+
+        {!owned && open && (
+          <button
+            type="button"
+            onClick={() => {
+              state.pickCrewTalent(talent.id);
+              onUnlocked(talent.id);
+            }}
+            className="key key-solid press flex min-h-11 w-full items-center justify-center px-3 text-sm font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:3px]"
+          >
+            Unlock ({CREW_POINT_COST} pt)
+          </button>
+        )}
+
+        {!owned && !open && (
+          <div className="well inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-extrabold text-ink-soft">
+            <LockIcon size={13} />
+            <span>{blockLabel(block, talent, tier)}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -218,19 +103,26 @@ export function TalentTreePanel() {
   const state = useGameStore();
   const reduceMotion = useReducedMotion();
   const [crew, setCrew] = useState<CrewMember>("Frank");
-  const [selectedId, setSelectedId] = useState<TalentId | null>(null);
+  const [pickedId, setPickedId] = useState<TalentId | null>(null);
   const [flashId, setFlashId] = useState<TalentId | null>(null);
 
+  const talents = useMemo(() => talentsForCrew(crew), [crew]);
+  const activeId = useMemo(() => {
+    if (pickedId && talents.some((t) => t.id === pickedId)) return pickedId;
+    return talents.find((t) => canUnlockTalent(state, t.id))?.id ?? talents[0]!.id;
+  }, [pickedId, talents, state]);
+
   const role = CREW_ROLES[crew];
-  const columnLocked = state.lodgeTier < CREW_COLUMN_MIN_TIER[crew];
+  const columnMinTier = CREW_COLUMN_MIN_TIER[crew];
+  const columnLocked = state.lodgeTier < columnMinTier;
 
   return (
     <section className="space-y-3" aria-label="Talent tree">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="chip bg-gold px-2.5 py-1 text-sm font-extrabold tabular-nums">
+      <div className="flex items-center gap-2.5">
+        <span className="chip shrink-0 whitespace-nowrap bg-gold px-2.5 py-1 text-sm font-extrabold tabular-nums [--lift:2px]">
           {state.crewPoints} {state.crewPoints === 1 ? "point" : "points"}
         </span>
-        <p className="text-xs font-bold leading-snug text-ink-soft">
+        <p className="min-w-0 text-xs font-bold leading-snug text-ink">
           One point most nights. Deepen a track or spread out.
         </p>
       </div>
@@ -240,49 +132,143 @@ export function TalentTreePanel() {
         value={crew}
         onChange={(next) => {
           setCrew(next);
-          setSelectedId(null);
+          setPickedId(null);
         }}
-        options={CREW_ORDER.map((id) => ({ value: id, label: id }))}
+        options={CREW_ORDER.map((id) => {
+          const list = talentsForCrew(id);
+          const ownedCount = list.filter((t) => state.talentsOwned.includes(t.id)).length;
+          return {
+            value: id,
+            label: `${id} (${ownedCount}/${list.length})`,
+          };
+        })}
       />
 
-      <div className="panel space-y-3 p-3">
-        <div className="flex items-start gap-3">
+      <div key={crew} className="panel beat-swap space-y-3 p-3.5">
+        <div className="flex items-center gap-3">
           <div
-            className="flex size-11 shrink-0 items-center justify-center rounded-[var(--r-chip)] border-2 border-ink bg-snow-2 text-lg font-extrabold"
-            aria-hidden
+            className="display flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-ink text-lg text-white"
+            style={{ background: CREW_TINT[crew] }}
+            aria-hidden="true"
           >
             {crew[0]}
           </div>
-          <div className="min-w-0">
-            <h4 className="text-sm font-extrabold text-ink">{crew}</h4>
+          <div className="min-w-0 flex-1">
+            <h4 className="display text-[1.15rem] leading-tight text-ink">{crew}</h4>
             <p className="text-xs font-bold text-ink-soft">{role.role}</p>
-            {columnLocked && (
-              <p className="mt-1 text-xs font-bold text-ink-soft">
-                Opens at {LODGE_TIERS[CREW_COLUMN_MIN_TIER[crew]].label}
-              </p>
-            )}
           </div>
+          {columnLocked && (
+            <span className="well inline-flex items-center gap-1 px-2 py-1 text-[0.72rem] font-extrabold text-ink-soft">
+              <LockIcon size={12} />
+              Tier {columnMinTier}
+            </span>
+          )}
         </div>
 
-        <ZigzagBranch
-          crew={crew}
-          selectedId={selectedId}
-          flashId={reduceMotion ? null : flashId}
-          onSelect={setSelectedId}
-        />
+        {/* Vertical Ski-Run Progression Track */}
+        <ol className="relative space-y-2.5">
+          {talents.map((talent, index) => {
+            const tier = talentRequiresTier(talent.id);
+            const prevTier = index > 0 ? talentRequiresTier(talents[index - 1]!.id) : 1;
+            const showGate = tier > prevTier;
+            const owned = state.talentsOwned.includes(talent.id);
+            const open = canUnlockTalent(state, talent.id);
+            const block = talentBlockReason(state, talent.id);
+            const selected = activeId === talent.id;
+            const justUnlocked = !reduceMotion && flashId === talent.id;
+
+            return (
+              <li key={talent.id} className="space-y-2">
+                {showGate && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <span className="h-[2px] flex-1 bg-snow-2" />
+                    <span className="well inline-flex items-center gap-1 px-2 py-0.5 text-[0.7rem] font-extrabold text-ink-soft">
+                      {state.lodgeTier < tier && <LockIcon size={11} />}
+                      {LODGE_TIERS[tier as 1 | 2 | 3].label}
+                    </span>
+                    <span className="h-[2px] flex-1 bg-snow-2" />
+                  </div>
+                )}
+
+                <div className="relative flex items-stretch gap-2.5">
+                  {/* Track connector line */}
+                  {index < talents.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-[13px] top-8 -bottom-3 w-[3px] bg-ink/25"
+                    />
+                  )}
+                  <span
+                    aria-hidden="true"
+                    className={`relative z-10 mt-3 flex size-7 shrink-0 items-center justify-center rounded-full border-2 border-ink ${
+                      owned
+                        ? "bg-sign-green text-white"
+                        : open
+                          ? "bg-sign-yellow text-ink"
+                          : "bg-snow-2 text-ink-soft"
+                    }`}
+                  >
+                    {owned ? (
+                      <CheckIcon size={14} />
+                    ) : open ? (
+                      <span className="size-2 rounded-full bg-ink" />
+                    ) : (
+                      <LockIcon size={12} />
+                    )}
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => setPickedId(talent.id)}
+                    aria-pressed={selected}
+                    className={`press-scale flex min-h-12 flex-1 items-center justify-between gap-2 rounded-[var(--r-chip)] border-2 border-ink px-3 py-2 text-left transition-colors duration-150 ${
+                      owned
+                        ? "bg-sign-green text-white"
+                        : open
+                          ? "bg-white text-ink shadow-[0_2px_0_var(--ink)]"
+                          : "bg-snow-2 text-ink-soft"
+                    } ${selected ? "ring-2 ring-[var(--sign-yellow)] ring-offset-1" : ""} ${
+                      justUnlocked ? "arrive" : ""
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-[0.88rem] font-extrabold leading-snug">
+                        {talent.name}
+                      </span>
+                      <span
+                        className={`mt-0.5 block line-clamp-1 text-[0.72rem] font-bold ${
+                          owned ? "text-sign-green-ink" : "text-ink-soft"
+                        }`}
+                      >
+                        {talent.effect}
+                      </span>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-md px-1.5 py-0.5 text-[0.68rem] font-extrabold ${
+                        owned
+                          ? "bg-white/20 text-white"
+                          : open
+                            ? "bg-sign-yellow text-ink"
+                            : "text-ink-soft"
+                      }`}
+                    >
+                      {owned ? "Active" : open ? "Ready" : blockLabel(block, talent, tier)}
+                    </span>
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
-      {selectedId ? (
-        <TalentDetail
-          talentId={selectedId}
-          onUnlocked={(id) => {
-            if (!reduceMotion) setFlashId(id);
-            setSelectedId(id);
-          }}
-        />
-      ) : (
-        <p className="text-center text-xs font-bold text-ink-soft">Tap a skill for details.</p>
-      )}
+      <StickyInspectBar
+        talentId={activeId}
+        onUnlocked={(id) => {
+          if (!reduceMotion) setFlashId(id);
+          setPickedId(id);
+        }}
+      />
     </section>
   );
 }

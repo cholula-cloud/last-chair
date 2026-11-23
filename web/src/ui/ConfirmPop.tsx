@@ -19,7 +19,7 @@ export function ConfirmPop() {
   }, [seq, label]);
   if (!label) return null;
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-[max(6.5rem,env(safe-area-inset-bottom))] z-[65] flex justify-center px-4" role="status">
+    <div className="pointer-events-none absolute inset-x-0 bottom-[calc(7.5rem+env(safe-area-inset-bottom))] z-[65] flex justify-center px-4 sm:bottom-[calc(5.25rem+env(safe-area-inset-bottom))]" role="status">
       <p key={seq} className="feel-pop chip bg-sign-green px-4 py-2 text-[1rem] font-extrabold text-white">
         {label}
       </p>

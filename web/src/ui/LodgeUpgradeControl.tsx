@@ -27,7 +27,7 @@ export function LodgeUpgradeControl({
 
   if (!construction && (!next || !payment)) return null;
 
-  const wrap = variant === "inspector" ? (className ?? "mt-3") : "mt-2";
+  const wrap = variant === "inspector" ? (className ?? "mt-3") : "";
   const padGain = next ? LODGE_TIERS[next].pads - LODGE_TIERS[tier].pads : 0;
   const arrivalGain = next ? LODGE_TIERS[next].maxArrivals - LODGE_TIERS[tier].maxArrivals : 0;
   const seatScale = next ? `×${LODGE_TIERS[next].seatMultiplier}` : "";
@@ -35,7 +35,7 @@ export function LodgeUpgradeControl({
   return (
     <div className={wrap} data-lodge-upgrade data-variant={variant}>
       {construction ? (
-        <p role="status" className={variant === "compact" ? "text-sm font-bold" : "font-bold"}>
+        <p role="status" className={variant === "compact" ? "well-white px-3 py-2.5 text-sm font-bold" : "font-bold"}>
           Tier {construction.toTier} underway.{" "}
           {construction.nightsRemaining}{" "}
           {construction.nightsRemaining === 1 ? "night" : "nights"} left.
@@ -70,24 +70,21 @@ export function LodgeUpgradeControl({
               }}
             />
           ) : (
-            <div className="space-y-2">
-              <p className="text-sm font-extrabold">{LODGE_TIERS[next].label}</p>
-              <div className="flex flex-wrap gap-1.5">
-                <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
+            <div className="well-white space-y-2 p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="display text-[1.1rem] text-ink">{LODGE_TIERS[next].label}</p>
+                <span className="well bg-gold px-2 py-0.5 text-xs font-extrabold tabular-nums">
                   {formatMoney(LODGE_TIERS[next].cost)}
                 </span>
-                {(arrivalGain > 0 || padGain > 0) && (
-                  <span className="chip px-2 py-0.5 text-xs font-extrabold [--lift:2px]">
-                    +{arrivalGain} skiers/day, seats {seatScale}
-                    {padGain > 0 ? `, +${padGain} annex ${padGain === 1 ? "pad" : "pads"}` : ""}
-                  </span>
-                )}
-                {unlocks.length > 0 && (
-                  <span className="chip px-2 py-0.5 text-xs font-bold [--lift:2px]">
-                    {unlocks.join(", ")}
-                  </span>
-                )}
               </div>
+              {(arrivalGain > 0 || padGain > 0 || unlocks.length > 0) && (
+                <p className="text-xs font-bold leading-snug text-ink-soft">
+                  {arrivalGain > 0 || padGain > 0
+                    ? `+${arrivalGain} skiers/day, seats ${seatScale}${padGain > 0 ? `, +${padGain} annex ${padGain === 1 ? "pad" : "pads"}` : ""}`
+                    : ""}
+                  {unlocks.length > 0 ? `${arrivalGain > 0 || padGain > 0 ? ". Unlocks " : "Unlocks "}${unlocks.join(", ")}.` : ""}
+                </p>
+              )}
               <PrimaryButton className="min-h-11" onClick={() => setReview(true)}>
                 Review Tier {next} upgrade
               </PrimaryButton>

@@ -9,7 +9,8 @@ export function GroomerDownCard({ night }: { night: GameState }) {
   const decide = useGameStore((state) => state.decideGroomerDown);
   if (night.pendingBeat !== "groomer_down") return null;
 
-  const buttonClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--lift:4px]";
+  const primaryClass = "key key-solid press min-h-12 w-full px-2 text-sm font-extrabold [--key-fill:var(--sign-yellow)] [--lift:3px]";
+  const secondaryClass = "key press min-h-12 w-full px-2 text-sm font-extrabold [--lift:3px]";
   const canBorrow = night.cash >= GROOMER_BORROW_COST;
 
   return (
@@ -20,14 +21,14 @@ export function GroomerDownCard({ night }: { night: GameState }) {
           <button
             type="button"
             disabled={!canBorrow}
-            className={`${buttonClass} [--key-fill:var(--sign-yellow)] disabled:opacity-50`}
+            className={`${primaryClass} disabled:opacity-50`}
             onClick={() => decide("borrow" satisfies GroomerDownDecision)}
           >
             Borrow town cat ({formatMoney(GROOMER_BORROW_COST)})
           </button>
           <button
             type="button"
-            className={buttonClass}
+            className={secondaryClass}
             onClick={() => decide("go_without" satisfies GroomerDownDecision)}
           >
             Guns only tonight

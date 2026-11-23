@@ -185,7 +185,7 @@ export function ReadoutCard() {
         <p className="text-sm font-extrabold">{readout.headline}</p>
         {readout.chips.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {readout.chips.map((chip) => <span key={chip} className="chip px-2 py-0.5 text-xs font-extrabold">{chip}</span>)}
+            {readout.chips.map((chip) => <span key={chip} className="well px-2 py-0.5 text-xs font-extrabold">{chip}</span>)}
           </div>
         )}
       </div>
@@ -247,7 +247,7 @@ export function LayerBottomDock() {
   if (!open) return null;
   return (
     <div
-      className="pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem] md:max-w-[34rem]"
+      className="popover-in origin-bottom pointer-events-auto flex w-full flex-col items-stretch gap-1.5 sm:max-w-[26rem] md:max-w-[34rem]"
       data-layer-dock="true"
     >
       <LayerStrip allowOff className="w-full snap-x snap-mandatory justify-start sm:justify-center" />
@@ -262,7 +262,7 @@ export function LayerBottomDock() {
 export function NightMapDock({ onBack }: { onBack: () => void }) {
   return (
     <div
-      className="pointer-events-auto flex w-full max-w-[26rem] flex-col items-stretch gap-1.5 md:max-w-[34rem]"
+      className="popover-in origin-bottom pointer-events-auto flex w-full max-w-[26rem] flex-col items-stretch gap-1.5 md:max-w-[34rem]"
       data-layer-dock="night"
     >
       <LayerStrip allowOff={false} className="w-full snap-x snap-mandatory justify-start" />

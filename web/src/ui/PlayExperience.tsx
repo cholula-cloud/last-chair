@@ -38,11 +38,12 @@ import {
   ConditionsBoard,
   HudToggleButton,
   LiftUndoChip,
-  MorningNote,
+  parseCrewLine,
   RecenterButton,
   ResumeFollowChip,
   StartCallout,
   TopBar,
+  WEATHER_META,
   WindHoldCallout,
 } from "@/ui/Hud";
 import { useMoodPulseTracker } from "@/ui/motion";
@@ -232,8 +233,6 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [buildOpen, setBuildMode]);
 
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
-  const [noteExpandedDay, setNoteExpandedDay] = useState<number | null>(null);
-  const noteExpanded = noteExpandedDay === dayIndex;
   const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
   const canInspect = phase === "day" && hydrated && !placementActive && !buildOpen && !guestsOpen && !officeOpen && !menuConfirmOpen && !inspectedAsset;
   const [sceneReady, setSceneReady] = useState(false);
@@ -243,6 +242,22 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     phase === "day" && paused && dayIndex === 1 && clockMin <= DAY_START_MIN;
   const showStartHint = hydrated && notStarted;
   const showNote = phase === "day" && !notStarted && noteDismissedDay !== dayIndex;
+  const morningCrew = talentToast ? parseCrewLine(tidy(talentToast)) : null;
+  const morningDispatch = showNote
+    ? {
+        weatherLabel: WEATHER_META[weather].label,
+        weatherIcon: WEATHER_META[weather].icon,
+        headline: tidy(morningHeadline),
+        crewLine: morningCrew?.main
+          ? `${morningCrew.main}${morningCrew.waiting ? ` Waits for ${morningCrew.waiting}` : ""}`
+          : null,
+        overnightLine:
+          dayIndex > 1 && paidForSnow > 0
+            ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
+            : null,
+        onDismiss: () => setNoteDismissedDay(dayIndex),
+      }
+    : null;
 
   // Auto-dismiss only while the hill day clock is running (not paused, not before first play).
   useEffect(() => {
@@ -272,6 +287,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   }, [sceneReady]);
 
   const hudSuppressed = phase === "day" && hudHidden && !placementActive && !buildOpen && !guestsOpen && !officeOpen;
+  const showMapTools = phase === "day" && !placementActive && !hudSuppressed && !buildOpen && !guestsOpen && !officeOpen;
   const activeCoachTip =
     hydrated &&
     phase === "day" &&
@@ -368,46 +384,37 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                 togglePause();
               }}
             />
-            {showStartHint && !placementActive && !hudSuppressed && <StartCallout step={opening} />}
             {chairHeld && !hudSuppressed && <WindHoldCallout shortHold={shortHold} />}
           </div>
           {hydrated && phase === "day" && !placementActive && !hudSuppressed && (
-            <HudRadio onOpenLog={() => openOffice("Reports")} />
-          )}
-          {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && !inspectedAsset && (
-            <CoachTip
-              context={{
-                phase,
-                dayIndex,
-                opening,
-                running: !notStarted,
-                placementActive,
-                buildOpen: false,
-                hasGuestsWant: false,
-              }}
-            />
-          )}
-          {showNote && !placementActive && !hudSuppressed && (
-            <div className={activeCoachTip ? "hidden w-full sm:block" : "w-full"}>
-            <MorningNote
-              weather={weather}
-              headline={tidy(morningHeadline)}
-              crewLine={talentToast ? tidy(talentToast) : null}
-              overnightLine={
-                dayIndex > 1 && paidForSnow > 0
-                  ? `Overnight: ${SNOW_LABELS[snowPreset]} snow & service, ${formatMoney(-paidForSnow)}`
-                  : null
-              }
-              expanded={noteExpanded}
-              onExpand={() => setNoteExpandedDay(dayIndex)}
-              onDismiss={() => setNoteDismissedDay(dayIndex)}
-            />
+            <div className="w-full max-w-[min(27rem,100%)]">
+              {activeCoachTip && !buildOpen && !guestsOpen && !officeOpen && !inspectedAsset ? (
+                <CoachTip
+                  compact
+                  context={{
+                    phase,
+                    dayIndex,
+                    opening,
+                    running: !notStarted,
+                    placementActive,
+                    buildOpen: false,
+                    hasGuestsWant: false,
+                  }}
+                />
+              ) : showStartHint ? (
+                <StartCallout step={opening} />
+              ) : (
+                <HudRadio
+                  onOpenLog={() => openOffice("Reports")}
+                  morningDispatch={morningDispatch}
+                />
+              )}
             </div>
           )}
         </div>
 
         {/* Tablet/landscape horizontal map tools in the top-right corner. */}
-        {phase === "day" && !placementActive && !hudSuppressed && (
+        {showMapTools && (
           <div
             data-map-rail="horizontal"
             className="pointer-events-none hidden shrink-0 items-center gap-1.5 sm:flex"
@@ -417,12 +424,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         )}
       </header>
 
-      {/* Portrait phone right-edge vertical map rail: keeps the bottom uncluttered. */}
-      {phase === "day" && !placementActive && !hudSuppressed && (
+      {/* Portrait phone right-edge vertical map rail: centered away from top & bottom bars. */}
+      {showMapTools && (
         <div
           inert={officeOpen || !!inspectedAsset}
           data-map-rail="vertical"
-          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-[calc(max(0.6rem,env(safe-area-inset-top))+3.5rem)] z-40 flex max-w-[min(100%,12rem)] flex-col items-end gap-1.5 sm:hidden"
+          className="pointer-events-none absolute right-[max(0.6rem,env(safe-area-inset-right))] top-1/2 z-40 flex max-w-[min(100%,12rem)] -translate-y-1/2 flex-col items-end gap-1.5 sm:hidden"
         >
           {mapToolButtons}
         </div>
@@ -502,6 +509,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                   setMenuConfirmOpen(false);
                   openOffice();
                 }}
+                canCloseHill={opening === null}
+                onCloseHill={() => useGameStore.getState().skipToClose()}
                 confirmMenu={menuConfirmOpen}
                 onConfirmMenuChange={setMenuConfirmOpen}
                 onLeave={() => onLeave()}

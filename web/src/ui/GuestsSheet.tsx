@@ -118,7 +118,7 @@ export function GuestsSheet({
                     <p className="truncate text-[1rem] font-extrabold">
                       {g.label}
                     </p>
-                    <span className={`chip shrink-0 px-2 py-0.5 text-[0.72rem] font-extrabold [--lift:2px] ${MOOD_CHIP[tone]}`}>
+                    <span className={`inline-flex shrink-0 items-center rounded-[8px] border-2 border-ink px-2 py-0.5 text-[0.72rem] font-extrabold ${MOOD_CHIP[tone]}`}>
                       {mood}
                     </span>
                   </div>
