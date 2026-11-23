@@ -541,11 +541,18 @@ function SiteBar() {
   const confirmLabel = movingAssetIndex === undefined ? "Build here" : "Move here";
   const commitSite = () => {
     if (!check?.ok) return;
+    const before = useGameStore.getState();
     if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
     else if (gun) state.placeGun(check.placement.at);
     else if (asset && draft.lodgePad !== undefined) state.placeAssetAtPad(asset, draft.lodgePad);
     else if (asset) state.placeAsset(asset, check.placement.at);
-    if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
+    const after = useGameStore.getState();
+    const changed = gun
+      ? after.guns !== before.guns
+      : movingAssetIndex !== undefined
+        ? after.assets !== before.assets
+        : after.cash !== before.cash || after.assets !== before.assets;
+    if (changed) {
       buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
       finishPlacement();
     }
