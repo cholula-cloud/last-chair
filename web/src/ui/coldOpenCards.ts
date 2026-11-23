@@ -2,6 +2,8 @@
 
 export type ColdOpenCard = {
   id: string;
+  /** Optional station or speaker badge shown above the caption. */
+  speaker?: string;
   /** Caption shown over the still when captions are enabled or narration is unavailable. */
   caption: string;
   /** Still image under /story. */
@@ -19,12 +21,14 @@ export const COLD_OPEN_AUDIO_STOP_SEC = 11.15;
 export const COLD_OPEN_CARDS: readonly ColdOpenCard[] = [
   {
     id: "closed",
+    speaker: "WVTK 100.7, Route 100 Radio (Maris Shaw)",
     caption: "Dutch Hill ran from 1944 to 1985. Then the lifts stopped.",
     image: "/story/card-1.webp",
     cue: 0,
   },
   {
     id: "burned",
+    speaker: "WVTK 100.7, Route 100 Radio (Maris Shaw)",
     caption: "In 1990 the lodge burned. The forest started taking the slope back.",
     image: "/story/card-2.webp",
     cue: 6.0,

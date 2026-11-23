@@ -65,6 +65,7 @@ import { finishPlacement, usePlacementDraft } from "@/ui/placementDraft";
 import { tidy } from "@/ui/kit/parts";
 import { CloseIcon, GridIcon } from "@/ui/kit/icons";
 import { NightRecapSheet } from "@/ui/NightRecapSheet";
+import { HudRadio } from "@/ui/HudRadio";
 import { openOffice as enterOffice, useOffice, type OfficeTabId } from "@/ui/officeStore";
 import { OfficeSheet } from "@/ui/OfficeSheet";
 import { WinterReviewSheet } from "@/ui/WinterReviewSheet";
@@ -370,6 +371,9 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
             {showStartHint && !placementActive && !hudSuppressed && <StartCallout step={opening} />}
             {chairHeld && !hudSuppressed && <WindHoldCallout shortHold={shortHold} />}
           </div>
+          {hydrated && phase === "day" && !placementActive && !hudSuppressed && (
+            <HudRadio onOpenLog={() => openOffice("Reports")} />
+          )}
           {hydrated && phase === "day" && !buildOpen && !guestsOpen && !officeOpen && !hudSuppressed && !inspectedAsset && (
             <CoachTip
               context={{

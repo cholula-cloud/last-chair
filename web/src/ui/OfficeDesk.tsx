@@ -228,14 +228,14 @@ export function DeskTab() {
           )}
         </section>
 
-        <SectionHeading>Route 100 Radio</SectionHeading>
+        <SectionHeading>WVTK 100.7, Route 100 Radio</SectionHeading>
         {!radioEnabled ? (
-          <p className="panel px-4 py-3 font-bold">Radio is off. Switch it back on from the Story log under Reports.</p>
+          <p className="panel px-4 py-3 font-bold">Radio is off. Switch it back on from the HUD tuner or Reports.</p>
         ) : radio ? (
           <RadioCard announce={false} title={radio.title}>{tidy(radio.radio)}</RadioCard>
         ) : (
           <p className="panel px-4 py-3 text-[1rem] font-bold">
-            Maris has not been on the air yet. She will have something to say after the first closing.
+            WVTK 100.7 signed on this morning. Story dispatches and town rumors appear here after closing.
           </p>
         )}
 

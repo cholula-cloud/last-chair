@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { applyReduceMotionFromSettings, type ReduceMotionPref } from "@/ui/motion";
 import type { BuildingStyleId } from "@/game/base";
+import type { RadioBandId } from "@/game/radioChannels";
 import { MOUNTAIN_BUILDING_STYLE } from "@/render/layout";
 
 export type GameSpeed = 1 | 2 | 4;
@@ -24,6 +25,7 @@ export type Settings = {
   tips: boolean;
   captions: boolean;
   radioEnabled: boolean;
+  radioBand: RadioBandId;
   reduceMotion: ReduceMotionPref;
   defaultSpeed: GameSpeed;
   /** Village lodge + default new venue look (mountain style when unset). */
@@ -47,6 +49,7 @@ export const DEFAULT_SETTINGS: Settings = {
   patternAids: true,
   captions: true,
   radioEnabled: true,
+  radioBand: "wvtk",
   reduceMotion: "system",
   defaultSpeed: 1,
   buildingStyle: MOUNTAIN_BUILDING_STYLE,
@@ -75,6 +78,10 @@ export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "
     graphicsQuality: r.graphicsQuality === "low" ? "low" : "standard",
     patternAids: typeof r.patternAids === "boolean" ? r.patternAids : DEFAULT_SETTINGS.patternAids,
     radioEnabled: typeof r.radioEnabled === "boolean" ? r.radioEnabled : DEFAULT_SETTINGS.radioEnabled,
+    radioBand:
+      r.radioBand === "wvtk" || r.radioBand === "wxk" || r.radioBand === "whiterock"
+        ? r.radioBand
+        : DEFAULT_SETTINGS.radioBand,
     captions: typeof r.captions === "boolean" ? r.captions : DEFAULT_SETTINGS.captions,
     reduceMotion:
       r.reduceMotion === "system" || r.reduceMotion === "on" || r.reduceMotion === "off"

@@ -36,4 +36,10 @@ describe("cleanSettings", () => {
     const s = cleanSettings({ masterVolume: 900, effectsVolume: -1, ambienceVolume: Number.NaN });
     expect([s.masterVolume, s.effectsVolume, s.musicVolume]).toEqual([100, 0, DEFAULT_SETTINGS.musicVolume]);
   });
+
+  it("validates radioBand and falls back to wvtk", () => {
+    expect(cleanSettings({ radioBand: "wxk" }).radioBand).toBe("wxk");
+    expect(cleanSettings({ radioBand: "whiterock" }).radioBand).toBe("whiterock");
+    expect(cleanSettings({ radioBand: "bogus" }).radioBand).toBe("wvtk");
+  });
 });

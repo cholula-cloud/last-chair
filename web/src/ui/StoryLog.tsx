@@ -78,7 +78,7 @@ export function StoryEntries({ compact = false }: { compact?: boolean }) {
         </div>
       </>
     )}
-    {!entries.length && <p className="text-sm font-bold text-ink-soft">Maris has not said a word yet. The first broadcast comes after the hill opens.</p>}
+    {!entries.length && <p className="text-sm font-bold text-ink-soft">WVTK 100.7 signed on this morning. Story dispatches and town rumors log here after each closing.</p>}
     {entries.map(entry => <article className="border-b border-ink/20 pb-2" key={`${entry.day}-${entry.title}`}>
       <h3 className="font-bold">{entry.day ? `Day ${entry.day}: ` : ""}{entry.title}</h3><p className="text-sm font-bold leading-snug">{entry.text}</p>
     </article>)}

@@ -4,8 +4,8 @@
  * stop on their own.
  */
 
-export type SoundId = "tap" | "thunk" | "sting" | "chime";
-export const SOUND_IDS: readonly SoundId[] = ["tap", "thunk", "sting", "chime"];
+export type SoundId = "tap" | "thunk" | "sting" | "chime" | "dial";
+export const SOUND_IDS: readonly SoundId[] = ["tap", "thunk", "sting", "chime", "dial"];
 
 type Tone = {
   type: OscillatorType;
@@ -100,7 +100,27 @@ function chime(ctx: AudioContext, out: AudioNode, t: number): void {
   }
 }
 
-export const SYNTH: Record<SoundId, (ctx: AudioContext, out: AudioNode, t: number) => void> = { tap, thunk, sting, chime };
+/** Mechanical truck-radio detent click followed by a brief bandpass static squelch. */
+function dial(ctx: AudioContext, out: AudioNode, t: number): void {
+  tone(ctx, out, { type: "triangle", freq: 2400, freqEnd: 900, start: t, attack: 0.002, decay: 0.018, peak: 0.22 });
+  const src = ctx.createBufferSource();
+  const band = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+  src.buffer = noiseBuffer(ctx);
+  band.type = "bandpass";
+  band.frequency.setValueAtTime(1800, t);
+  band.Q.setValueAtTime(2.5, t);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.linearRampToValueAtTime(0.14, t + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+  src.connect(band);
+  band.connect(gain);
+  gain.connect(out);
+  src.start(t);
+  src.stop(t + 0.15);
+}
+
+export const SYNTH: Record<SoundId, (ctx: AudioContext, out: AudioNode, t: number) => void> = { tap, thunk, sting, chime, dial };
 
 export type BedMood = "day" | "night";
 

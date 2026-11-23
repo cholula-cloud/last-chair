@@ -27,6 +27,7 @@ export const EFFECT_MANIFEST_ID: Record<SoundId, string> = {
   thunk: "build-place",
   sting: "radio-sting",
   chime: "cash-in",
+  dial: "radio-dial",
 };
 
 export const BED_MANIFEST_ID: Record<BedMood, string> = {

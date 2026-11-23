@@ -29,6 +29,11 @@ export function radioArrived(): void {
   if (useSettings.getState().radioEnabled) audio.play("sting");
 }
 
+/** Switching radio tuner bands: crisp click and brief static squelch. */
+export function radioDialTurned(): void {
+  audio.play("dial");
+}
+
 function applyMix(): void {
   const prefs = useSettings.getState();
   audio.setMix(mixGains({ ...prefs, soundOn: !prefs.muted, ambienceVolume: prefs.musicVolume }));

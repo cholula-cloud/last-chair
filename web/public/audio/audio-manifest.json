@@ -12,6 +12,7 @@
     {"id": "cash-in", "file": "cash-in.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
     {"id": "sleep", "file": "sleep.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
     {"id": "morning", "file": "morning.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
-    {"id": "radio-sting", "file": "radio-sting.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"}
+    {"id": "radio-sting", "file": "radio-sting.m4a", "bytes": 0, "license": "original", "source": "ElevenLabs sound-generation or original recording", "author": "Last Chair"},
+    {"id": "radio-dial", "file": "radio-dial.m4a", "bytes": 0, "license": "original", "source": "Web Audio procedural synth", "author": "Last Chair"}
   ]
 }

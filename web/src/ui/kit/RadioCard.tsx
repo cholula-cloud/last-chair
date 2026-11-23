@@ -37,7 +37,7 @@ function RadioDiamond() {
   );
 }
 
-const DEFAULT_SPEAKER = "Maris on Route 100 Radio";
+const DEFAULT_SPEAKER = "Maris on Route 100 Radio (WVTK 100.7)";
 
 /** Story beat from Route 100 Radio: a yellow diamond beside a speech bubble. */
 export function RadioCard({

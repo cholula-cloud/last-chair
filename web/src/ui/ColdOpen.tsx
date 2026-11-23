@@ -284,6 +284,11 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
       )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] pr-[max(1.25rem,env(safe-area-inset-right))]">
+        {card.speaker && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-ink bg-sign-yellow px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-ink shadow-sm">
+            {card.speaker}
+          </span>
+        )}
         {(captions || !voiceLive) && <p
           key={card.id}
           role="status"
