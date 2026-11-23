@@ -245,8 +245,10 @@ export function Village() {
     const sample = pathSampler(night.trails[index].path);
     return (t: number) => sample(first + (1 - first) * t);
   }, [night]);
-  const { body, glow, pickMeshes } = useMemo(() => {
-    const bodies: THREE.BufferGeometry[] = [];
+  const { matte, semiGloss, glass, glow, pickMeshes } = useMemo(() => {
+    const mattes: THREE.BufferGeometry[] = [];
+    const glosses: THREE.BufferGeometry[] = [];
+    const glasses: THREE.BufferGeometry[] = [];
     const glows: THREE.BufferGeometry[] = [];
     const pickMeshes: { placement: Placement; geometry: THREE.BufferGeometry; y: number }[] = [];
     for (const p of villagePlacements(assets, tier, lodgeStyleId)) {
@@ -254,25 +256,37 @@ export function Village() {
       if (!scene) continue;
       const kit = bakeKit(scene);
       const y = TERRAIN.height(p.x, p.z) - 0.02;
-      bodies.push(placeKit(kit.body, p.x, y, p.z, p.yaw, p.scale));
+      if (kit.matte.attributes.position) mattes.push(placeKit(kit.matte, p.x, y, p.z, p.yaw, p.scale));
+      if (kit.semiGloss) glosses.push(placeKit(kit.semiGloss, p.x, y, p.z, p.yaw, p.scale));
+      if (kit.glass) glasses.push(placeKit(kit.glass, p.x, y, p.z, p.yaw, p.scale));
       if (kit.glow) glows.push(placeKit(kit.glow, p.x, y, p.z, p.yaw, p.scale));
       if (p.asset) pickMeshes.push({ placement: p, geometry: kit.body, y });
     }
     const additions = [...lodgeDetails(construction), ...venueDetails(assets)];
-    if (additions.length > 0) bodies.push(merge(additions));
+    if (additions.length > 0) mattes.push(merge(additions));
 
-    return { body: mergePlaced(bodies), glow: mergePlaced(glows), pickMeshes };
+    return {
+      matte: mergePlaced(mattes),
+      semiGloss: mergePlaced(glosses),
+      glass: mergePlaced(glasses),
+      glow: mergePlaced(glows),
+      pickMeshes,
+    };
   }, [assets, tier, lodgeStyleId, construction, villageKits]);
 
   useEffect(
     () => () => {
-      body.dispose();
+      matte.dispose();
+      semiGloss.dispose();
+      glass.dispose();
       glow.dispose();
     },
-    [body, glow],
+    [matte, semiGloss, glass, glow],
   );
 
+  const glassMat = useRef<THREE.MeshStandardMaterial>(null);
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
+  const hearthLight = useRef<THREE.PointLight>(null);
   const poolMat = useRef<THREE.MeshBasicMaterial>(null);
   const pools = useRef<THREE.InstancedMesh>(null);
   const tex = useMemo(() => lightPoolTexture(), []);
@@ -315,26 +329,64 @@ export function Village() {
       }
     }
     const k = Math.max(sceneMood.night, sceneMood.dusk * 0.6);
+    if (glassMat.current) {
+      glassMat.current.emissiveIntensity = 0.22 + sceneMood.dusk * 0.63 + sceneMood.night * 1.13;
+    }
     if (glowMat.current) glowMat.current.color.setScalar(sceneMood.glow);
+    if (hearthLight.current) {
+      hearthLight.current.intensity = sceneMood.dusk * 0.85 + sceneMood.night * 1.85;
+    }
     if (poolMat.current) poolMat.current.opacity = 0.05 + k * 0.75;
   });
 
   return (
     <group>
       <group name="snowcat" ref={catRef} scale={METERS_TO_WORLD * 1.25} dispose={null} userData={{ asset: { kind: "snowcat" } }}>
-        <mesh geometry={cat.body} castShadow><meshLambertMaterial vertexColors /></mesh>
+        <mesh geometry={cat.matte} castShadow><meshStandardMaterial vertexColors roughness={0.8} metalness={0.02} /></mesh>
+        {cat.semiGloss && <mesh geometry={cat.semiGloss} castShadow><meshStandardMaterial vertexColors roughness={0.36} metalness={0.25} /></mesh>}
+        {cat.glass && <mesh geometry={cat.glass}><meshStandardMaterial vertexColors roughness={0.2} metalness={0.15} emissive="#ff9f2e" emissiveIntensity={0.45} /></mesh>}
         {cat.glow && <mesh geometry={cat.glow}><meshBasicMaterial vertexColors toneMapped={false} /></mesh>}
       </group>
-      <mesh geometry={body} castShadow receiveShadow>
-        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
-      </mesh>
-      <mesh geometry={glow}>
-        <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
-      </mesh>
+      {matte.attributes.position && (
+        <mesh geometry={matte} castShadow receiveShadow>
+          <meshStandardMaterial vertexColors roughness={0.82} metalness={0.02} {...OVERLAY_DIM} />
+        </mesh>
+      )}
+      {semiGloss.attributes.position && (
+        <mesh geometry={semiGloss} castShadow receiveShadow>
+          <meshStandardMaterial vertexColors roughness={0.36} metalness={0.25} {...OVERLAY_DIM} />
+        </mesh>
+      )}
+      {glass.attributes.position && (
+        <mesh geometry={glass}>
+          <meshStandardMaterial
+            ref={glassMat}
+            vertexColors
+            roughness={0.18}
+            metalness={0.15}
+            emissive="#ff9f2e"
+            emissiveIntensity={0.22}
+            {...OVERLAY_DIM}
+          />
+        </mesh>
+      )}
+      {glow.attributes.position && (
+        <mesh geometry={glow}>
+          <meshBasicMaterial ref={glowMat} vertexColors {...OVERLAY_DIM} toneMapped={false} />
+        </mesh>
+      )}
       {pickMeshes.map(({ placement: p, geometry, y }) => (
         <mesh key={`${p.name}-${p.x}-${p.z}`} position={[p.x, y, p.z]} rotation-y={p.yaw} scale={p.scale}
           geometry={geometry} visible={false} dispose={null} userData={{ asset: p.asset }} />
       ))}
+      <pointLight
+        ref={hearthLight}
+        position={[LODGE.x, LODGE_GROUND + 0.55, LODGE.z + 1.05]}
+        color="#ff9d42"
+        intensity={0}
+        distance={6}
+        decay={2}
+      />
       <instancedMesh ref={pools} args={[undefined, undefined, Math.max(1, lamps.length + 1)]} renderOrder={3}>
         <planeGeometry args={[0.9, 0.9]} />
         <meshBasicMaterial

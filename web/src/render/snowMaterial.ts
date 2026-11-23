@@ -81,18 +81,21 @@ if (vTrail >= 0.0 && vWeight > 0.02) {
   float barePatch = smoothstep(coverage - 0.04, coverage + 0.04, n);
   float awful = smoothstep(0.14, 0.05, coverage) * smoothstep(0.22, 0.08, quality);
   float bare = barePatch * awful;
-  vec3 col = mix(uSnowColor0, uSnowColor3, clamp((0.45 - quality) / 0.35, 0.0, 1.0) * 0.85);
-  col = mix(col, uSnowColor2, clamp(0.75 - quality, 0.0, 1.0) * 0.35);
-  col = mix(col, mix(uSnowColor3, uSnowColor2, 0.55), bare * vWeight * 0.5);
+  // Soften icy/worn trail contrast so trails look skied-in and packed-ice blue rather than smudged grey.
+  vec3 col = mix(uSnowColor0, uSnowColor3, clamp((0.42 - quality) / 0.35, 0.0, 1.0) * 0.52);
+  col = mix(col, uSnowColor2, clamp(0.70 - quality, 0.0, 1.0) * 0.22);
+  col = mix(col, mix(uSnowColor3, uSnowColor2, 0.55), bare * vWeight * 0.36);
   float stripe = 0.5 + 0.5 * sin(vCross / max(uStripePitch, 1e-4) * 6.2831853);
   float edgeFade = smoothstep(0.85, 1.0, abs(vCross) / 6.3);
-  float depthBoost = 0.65 + 0.35 * depth;
+  float depthBoost = 0.72 + 0.28 * depth;
   float amp = uGroomStrength * groomed * quality * depthBoost * (1.0 - wear) * (1.0 - edgeFade);
   float stripeMix = stripe * amp * vWeight;
-  col = mix(col, mix(uSnowColor0, uSnowColor1, 0.35), stripeMix);
-  col = mix(col, uSnowColor0, groomed * depth * 0.12 * vWeight);
-  col = mix(col, mix(uSnowColor0, uSnowColor3, 0.22), gunOnly * depth * 0.4 * vWeight);
-  col *= 1.0 - 0.05 * uNight;
+  col = mix(col, mix(uSnowColor0, uSnowColor1, 0.42), stripeMix);
+  // Subtle sunlit snowbank edge rim framing cleared ski corridors.
+  float edgeRim = exp(-pow((vWeight - 0.28) / 0.16, 2.0)) * 0.22;
+  col = mix(col, uSnowColor0, (groomed * depth * 0.16 + edgeRim) * vWeight);
+  col = mix(col, mix(uSnowColor0, uSnowColor3, 0.2), gunOnly * depth * 0.35 * vWeight);
+  col *= 1.0 - 0.04 * uNight;
   diffuseColor.rgb = mix(diffuseColor.rgb, col, vWeight);
 }
 `;

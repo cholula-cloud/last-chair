@@ -13,34 +13,36 @@ def srgb(h):
     return tuple(((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92 for x in c) + (1.0,)
 
 PALETTE = {
-    "snow": ("#f4f7fb", 0.9),
-    "clapboard-white": ("#ece6da", 0.85),
-    "barn-red": ("#9e2b25", 0.8),
-    "timber-brown": ("#6b4a2f", 0.85),
-    "timber-dark": ("#4a3220", 0.9),
-    "slate-roof": ("#3d4650", 0.75),
-    "shutter-green": ("#1f3b2d", 0.7),
-    "shutter-black": ("#1c1c1c", 0.7),
-    "trim-white": ("#f2eee6", 0.8),
-    "stone-grey": ("#8a8780", 0.95),
-    "stone-dark": ("#5f5c57", 0.95),
-    "brick": ("#8c3b2c", 0.9),
-    "amber-accent": ("#e85d26", 0.6),
-    "navy": ("#0b1628", 0.6),
-    "pine": ("#2d5a4a", 0.9),
-    "pine-dark": ("#21463a", 0.9),
-    "steel": ("#9aa3ab", 0.45),
-    "steel-dark": ("#4b525a", 0.5),
+    "snow": ("#f8fbff", 0.72),
+    "clapboard-white": ("#f2ece1", 0.85),
+    "barn-red": ("#c93b2b", 0.8),
+    "timber-brown": ("#7c5234", 0.85),
+    "timber-dark": ("#4a2e1d", 0.9),
+    "slate-roof": ("#2d3b4e", 0.55),
+    "shutter-green": ("#1f3b2d", 0.6),
+    "shutter-black": ("#1c1c1c", 0.65),
+    "trim-white": ("#f6efe2", 0.78),
+    "stone-grey": ("#87847e", 0.92),
+    "stone-dark": ("#5f5c57", 0.94),
+    "brick": ("#9c3f2e", 0.88),
+    "amber-accent": ("#e85d26", 0.55),
+    "navy": ("#0b1628", 0.55),
+    "pine": ("#1e5e41", 0.88),
+    "pine-dark": ("#194f39", 0.88),
+    "steel": ("#9aa3ab", 0.35),
+    "steel-dark": ("#4b525a", 0.42),
     "rubber-black": ("#202326", 0.8),
-    "cream-sign": ("#efe2c4", 0.8),
-    "glass-dark": ("#1d2a38", 0.25),
+    "cream-sign": ("#f4ebd4", 0.78),
+    "glass-dark": ("#1d2a38", 0.2),
     "skin": ("#e8b48f", 0.7),
     "jacket": ("#e85d26", 0.7),
     "pants": ("#2a3a5a", 0.8),
-    "helmet": ("#f4f7fb", 0.4),
+    "helmet": ("#f4f7fb", 0.35),
     "goggles": ("#f2a33a", 0.2),
-    "ski": ("#1c1c1c", 0.4),
-    "awning-red": ("#c8432b", 0.8),
+    "ski": ("#1c1c1c", 0.35),
+    "awning-red": ("#e0483e", 0.65),
+    "shop-blue": ("#26547c", 0.55),
+    "umbrella-yellow": ("#f6c700", 0.5),
 }
 EMISSIVE = {"window-glow": "#ffb347", "lamp-glow": "#ffc46b"}
 
@@ -159,11 +161,13 @@ class Asset:
             Ms = M0 @ Matrix.Translation(centre2) @ R(rot, 0, 0) @ S(length + 2 * overhang * 0.7 + 2 * snow_over, Ls2, snow_thick)
             v = bmesh.ops.create_cube(self.bm, size=1.0, matrix=Ms)['verts']
             self._tag(v, snow_m, bevel=snow_bevel)
-        # ridge snow roll
-        rz_top = rise + thick / math.cos(ang) + snow_thick * 0.25
+        # Rounded pillowy snow ridge cap sealing the gable peak without boxy seams
+        rz_top = rise + thick / math.cos(ang) + snow_thick * 0.24
         rl = length + 2 * overhang * 0.7 + 2 * snow_over
-        Mr = M0 @ Matrix.Translation((0, 0, rz_top)) @ R(45, 0, 0) @ S(rl, snow_thick * 1.25, snow_thick * 1.25)
-        v = bmesh.ops.create_cube(self.bm, size=1.0, matrix=Mr)['verts']
+        cap_r = max(0.18, snow_thick * 0.65)
+        Mr = M0 @ Matrix.Translation((0, 0, rz_top)) @ R(0, 90, 0)
+        v = bmesh.ops.create_cone(self.bm, cap_ends=True, cap_tris=False, segments=8,
+                                  radius1=cap_r, radius2=cap_r, depth=rl, matrix=Mr)['verts']
         self._tag(v, snow_m)
         return ang
 
@@ -173,24 +177,28 @@ class Asset:
         pts = [(-L, -W, 0), (-L, W, 0), (-L, 0, rise), (L, -W, 0), (L, W, 0), (L, 0, rise)]
         return self.poly(pts, [(0, 2, 1), (3, 4, 5), (0, 3, 5, 2), (1, 2, 5, 4), (0, 1, 4, 3)], m, M)
 
-    def window(self, c, w, h, face='-Y', frame="trim-white", depth=0.12, mullion=True, shutters=None,
+    def window(self, c, w, h, face='-Y', frame="trim-white", depth=0.14, mullion=True, shutters=None,
                sill=True, glow="window-glow"):
-        """Window on wall plane at c (c is point on wall surface). face: -Y,+Y,-X,+X."""
-        x, y, z = c
+        """Recessed architectural window with proud chunky trim and cross mullions."""
         rz = {'-Y': 0, '+Y': 180, '-X': -90, '+X': 90}[face]
         M = Matrix.Translation(Vector(c)) @ R(0, 0, rz)
         def B(lc, s, m):
             Mb = M @ Matrix.Translation(Vector(lc)) @ S(*s)
             v = bmesh.ops.create_cube(self.bm, size=1.0, matrix=Mb)['verts']
             self._tag(v, m)
-        f = 0.12
-        B((0, 0, 0), (w + 2 * f, depth, h + 2 * f), frame)
-        B((0, -depth / 2 - 0.01, 0), (w, 0.04, h), glow)
+        f = 0.14
+        # Outer proud frame rails around the recessed glass
+        B((0, -depth * 0.25, h / 2 + f * 0.5), (w + 2 * f, depth * 0.85, f), frame)
+        B((0, -depth * 0.25, -h / 2 - f * 0.5), (w + 2 * f, depth * 0.85, f), frame)
+        B((-w / 2 - f * 0.5, -depth * 0.25, 0), (f, depth * 0.85, h), frame)
+        B((w / 2 + f * 0.5, -depth * 0.25, 0), (f, depth * 0.85, h), frame)
+        # Recessed glazing pane inside the frame
+        B((0, -depth * 0.15, 0), (w, 0.04, h), glow)
         if mullion:
-            B((0, -depth / 2 - 0.04, 0), (0.07, 0.05, h), frame)
-            B((0, -depth / 2 - 0.04, 0), (w, 0.05, 0.07), frame)
+            B((0, -depth * 0.35, 0), (0.08, 0.06, h), frame)
+            B((0, -depth * 0.35, 0), (w, 0.06, 0.08), frame)
         if sill:
-            B((0, -depth / 2 - 0.05, -h / 2 - f), (w + 0.4, 0.22, 0.1), frame)
+            B((0, -depth * 0.45, -h / 2 - f * 0.9), (w + 0.42, 0.24, 0.12), frame)
         if shutters:
             for sx in (-1, 1):
                 B((sx * (w / 2 + f + 0.04 + w * 0.27), -0.02, 0), (w * 0.5, 0.08, h + 0.2), shutters)

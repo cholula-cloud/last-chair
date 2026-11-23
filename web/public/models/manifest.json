@@ -8,9 +8,9 @@
     {
       "name": "base-lodge",
       "file": "base-lodge.glb",
-      "tris": 1968,
-      "sizeBytes": 116164,
-      "heightMeters": 13.96,
+      "tris": 2556,
+      "sizeBytes": 21888,
+      "heightMeters": 13.85,
       "footprintMeters": [
         19.47,
         14.2
@@ -22,8 +22,8 @@
     {
       "name": "clapboard-house",
       "file": "clapboard-house.glb",
-      "tris": 1408,
-      "sizeBytes": 85704,
+      "tris": 1924,
+      "sizeBytes": 19184,
       "heightMeters": 12.88,
       "footprintMeters": [
         12.75,
@@ -36,11 +36,11 @@
     {
       "name": "cafe",
       "file": "cafe.glb",
-      "tris": 1384,
-      "sizeBytes": 85640,
+      "tris": 1160,
+      "sizeBytes": 20976,
       "heightMeters": 8.72,
       "footprintMeters": [
-        8.68,
+        8.76,
         11.02
       ],
       "tags": [
@@ -50,12 +50,12 @@
     {
       "name": "ski-shop",
       "file": "ski-shop.glb",
-      "tris": 608,
-      "sizeBytes": 42836,
-      "heightMeters": 8.15,
+      "tris": 696,
+      "sizeBytes": 15868,
+      "heightMeters": 7.42,
       "footprintMeters": [
-        8.42,
-        6.2
+        8.83,
+        6.42
       ],
       "tags": [
         "building"
@@ -64,9 +64,9 @@
     {
       "name": "warming-hut",
       "file": "warming-hut.glb",
-      "tris": 512,
-      "sizeBytes": 34260,
-      "heightMeters": 5.94,
+      "tris": 484,
+      "sizeBytes": 9892,
+      "heightMeters": 5.83,
       "footprintMeters": [
         5.44,
         4.57
@@ -214,12 +214,12 @@
     {
       "name": "pine-a",
       "file": "pine-a.glb",
-      "tris": 126,
-      "sizeBytes": 4580,
-      "heightMeters": 7.17,
+      "tris": 60,
+      "sizeBytes": 3684,
+      "heightMeters": 7.62,
       "footprintMeters": [
-        5.89,
-        5.74
+        5.95,
+        5.8
       ],
       "tags": [
         "tree"
@@ -228,12 +228,12 @@
     {
       "name": "pine-b",
       "file": "pine-b.glb",
-      "tris": 140,
-      "sizeBytes": 4764,
-      "heightMeters": 10.61,
+      "tris": 72,
+      "sizeBytes": 3864,
+      "heightMeters": 10.72,
       "footprintMeters": [
-        4.38,
-        5.06
+        5.11,
+        4.98
       ],
       "tags": [
         "tree"
@@ -242,12 +242,12 @@
     {
       "name": "pine-c",
       "file": "pine-c.glb",
-      "tris": 126,
-      "sizeBytes": 4572,
-      "heightMeters": 8.56,
+      "tris": 60,
+      "sizeBytes": 3684,
+      "heightMeters": 8.85,
       "footprintMeters": [
-        7.34,
-        7.15
+        7.12,
+        6.94
       ],
       "tags": [
         "tree"
@@ -256,12 +256,12 @@
     {
       "name": "pine-d",
       "file": "pine-d.glb",
-      "tris": 88,
-      "sizeBytes": 4052,
-      "heightMeters": 6.11,
+      "tris": 60,
+      "sizeBytes": 3692,
+      "heightMeters": 6.38,
       "footprintMeters": [
-        8.18,
-        7.98
+        7.13,
+        6.95
       ],
       "tags": [
         "tree"
@@ -270,11 +270,11 @@
     {
       "name": "lodge-tier-2",
       "file": "lodge-tier-2.glb",
-      "tris": 1712,
-      "sizeBytes": 101112,
+      "tris": 2644,
+      "sizeBytes": 21164,
       "heightMeters": 14.88,
       "footprintMeters": [
-        22.03,
+        26.05,
         17.03
       ],
       "tags": [
@@ -284,8 +284,8 @@
     {
       "name": "lodge-tier-3",
       "file": "lodge-tier-3.glb",
-      "tris": 3164,
-      "sizeBytes": 184036,
+      "tris": 4228,
+      "sizeBytes": 30336,
       "heightMeters": 19.65,
       "footprintMeters": [
         25.2,
@@ -298,9 +298,9 @@
     {
       "name": "a-frame-lodge",
       "file": "a-frame-lodge.glb",
-      "tris": 764,
-      "sizeBytes": 49900,
-      "heightMeters": 12.36,
+      "tris": 780,
+      "sizeBytes": 13596,
+      "heightMeters": 12.21,
       "footprintMeters": [
         16.89,
         15.8
@@ -313,7 +313,7 @@
       "name": "ticket-booth",
       "file": "ticket-booth.glb",
       "tris": 268,
-      "sizeBytes": 21824,
+      "sizeBytes": 10776,
       "heightMeters": 3.93,
       "footprintMeters": [
         4.75,
@@ -326,8 +326,8 @@
     {
       "name": "patrol-hut",
       "file": "patrol-hut.glb",
-      "tris": 524,
-      "sizeBytes": 37488,
+      "tris": 648,
+      "sizeBytes": 13804,
       "heightMeters": 6.42,
       "footprintMeters": [
         8.2,
@@ -340,9 +340,9 @@
     {
       "name": "maintenance-garage",
       "file": "maintenance-garage.glb",
-      "tris": 748,
-      "sizeBytes": 49076,
-      "heightMeters": 8.09,
+      "tris": 836,
+      "sizeBytes": 14872,
+      "heightMeters": 7.99,
       "footprintMeters": [
         15.1,
         9.65
@@ -355,7 +355,7 @@
       "name": "birch",
       "file": "birch.glb",
       "tris": 540,
-      "sizeBytes": 10132,
+      "sizeBytes": 10136,
       "heightMeters": 7.26,
       "footprintMeters": [
         4.79,
@@ -519,8 +519,8 @@
     {
       "name": "surface-terminal-bottom",
       "file": "surface-terminal-bottom.glb",
-      "tris": 328,
-      "sizeBytes": 23356,
+      "tris": 344,
+      "sizeBytes": 9888,
       "heightMeters": 4.0,
       "footprintMeters": [
         8.97,
@@ -536,7 +536,7 @@
       "name": "surface-terminal-top",
       "file": "surface-terminal-top.glb",
       "tris": 216,
-      "sizeBytes": 15416,
+      "sizeBytes": 7176,
       "heightMeters": 3.75,
       "footprintMeters": [
         3.36,
@@ -552,7 +552,7 @@
       "name": "platter",
       "file": "platter.glb",
       "tris": 76,
-      "sizeBytes": 6548,
+      "sizeBytes": 3548,
       "heightMeters": 2.28,
       "footprintMeters": [
         0.4,
@@ -567,7 +567,7 @@
       "name": "lift-tower-derelict",
       "file": "lift-tower-derelict.glb",
       "tris": 184,
-      "sizeBytes": 13820,
+      "sizeBytes": 5960,
       "heightMeters": 7.96,
       "footprintMeters": [
         4.01,
@@ -582,9 +582,9 @@
     {
       "name": "lodge-tier-1",
       "file": "lodge-tier-1.glb",
-      "tris": 1968,
-      "sizeBytes": 116168,
-      "heightMeters": 13.96,
+      "tris": 2556,
+      "sizeBytes": 21892,
+      "heightMeters": 13.85,
       "footprintMeters": [
         19.47,
         14.2
@@ -864,8 +864,8 @@
     {
       "name": "lodge-tier-1-chalet70s",
       "file": "lodge-tier-1-chalet70s.glb",
-      "tris": 1746,
-      "sizeBytes": 104064,
+      "tris": 1998,
+      "sizeBytes": 19784,
       "heightMeters": 14.77,
       "footprintMeters": [
         19.69,
@@ -880,11 +880,11 @@
     {
       "name": "lodge-tier-2-chalet70s",
       "file": "lodge-tier-2-chalet70s.glb",
-      "tris": 1712,
-      "sizeBytes": 101940,
+      "tris": 2644,
+      "sizeBytes": 22060,
       "heightMeters": 14.88,
       "footprintMeters": [
-        22.03,
+        26.05,
         17.03
       ],
       "tags": [
@@ -896,8 +896,8 @@
     {
       "name": "lodge-tier-3-chalet70s",
       "file": "lodge-tier-3-chalet70s.glb",
-      "tris": 3164,
-      "sizeBytes": 183668,
+      "tris": 4228,
+      "sizeBytes": 30444,
       "heightMeters": 19.65,
       "footprintMeters": [
         25.2,
@@ -912,8 +912,8 @@
     {
       "name": "cafe-chalet70s",
       "file": "cafe-chalet70s.glb",
-      "tris": 1007,
-      "sizeBytes": 64332,
+      "tris": 1079,
+      "sizeBytes": 17604,
       "heightMeters": 8.97,
       "footprintMeters": [
         8.64,
@@ -928,8 +928,8 @@
     {
       "name": "ski-shop-chalet70s",
       "file": "ski-shop-chalet70s.glb",
-      "tris": 571,
-      "sizeBytes": 39636,
+      "tris": 643,
+      "sizeBytes": 13628,
       "heightMeters": 8.32,
       "footprintMeters": [
         8.33,
@@ -945,7 +945,7 @@
       "name": "warming-hut-chalet70s",
       "file": "warming-hut-chalet70s.glb",
       "tris": 438,
-      "sizeBytes": 31740,
+      "sizeBytes": 11628,
       "heightMeters": 6.17,
       "footprintMeters": [
         5.47,
@@ -960,9 +960,9 @@
     {
       "name": "lodge-annex-2",
       "file": "lodge-annex-2.glb",
-      "tris": 756,
-      "sizeBytes": 45212,
-      "heightMeters": 6.94,
+      "tris": 1008,
+      "sizeBytes": 8940,
+      "heightMeters": 6.97,
       "footprintMeters": [
         11.76,
         5.02
@@ -974,8 +974,8 @@
     {
       "name": "lodge-annex-3",
       "file": "lodge-annex-3.glb",
-      "tris": 508,
-      "sizeBytes": 35484,
+      "tris": 652,
+      "sizeBytes": 11904,
       "heightMeters": 16.16,
       "footprintMeters": [
         17.5,
@@ -988,9 +988,9 @@
     {
       "name": "lodge-annex-2-chalet70s",
       "file": "lodge-annex-2-chalet70s.glb",
-      "tris": 756,
-      "sizeBytes": 45236,
-      "heightMeters": 6.94,
+      "tris": 1008,
+      "sizeBytes": 8964,
+      "heightMeters": 6.97,
       "footprintMeters": [
         11.76,
         5.02
@@ -1004,8 +1004,8 @@
     {
       "name": "lodge-annex-3-chalet70s",
       "file": "lodge-annex-3-chalet70s.glb",
-      "tris": 508,
-      "sizeBytes": 34752,
+      "tris": 652,
+      "sizeBytes": 11044,
       "heightMeters": 14.37,
       "footprintMeters": [
         17.5,
@@ -1020,9 +1020,9 @@
     {
       "name": "rental-shop",
       "file": "rental-shop.glb",
-      "tris": 664,
-      "sizeBytes": 47020,
-      "heightMeters": 7.62,
+      "tris": 716,
+      "sizeBytes": 17100,
+      "heightMeters": 7.54,
       "footprintMeters": [
         9.6,
         8.59
@@ -1034,12 +1034,12 @@
     {
       "name": "waffle-haus",
       "file": "waffle-haus.glb",
-      "tris": 600,
-      "sizeBytes": 40632,
-      "heightMeters": 9.04,
+      "tris": 436,
+      "sizeBytes": 13152,
+      "heightMeters": 7.96,
       "footprintMeters": [
-        8.96,
-        10.69
+        8.43,
+        9.98
       ],
       "tags": [
         "building",
@@ -1049,9 +1049,9 @@
     {
       "name": "ski-school-desk",
       "file": "ski-school-desk.glb",
-      "tris": 392,
-      "sizeBytes": 29188,
-      "heightMeters": 6.86,
+      "tris": 444,
+      "sizeBytes": 11916,
+      "heightMeters": 6.78,
       "footprintMeters": [
         6.33,
         5.2
@@ -1064,7 +1064,7 @@
       "name": "rental-shop-chalet70s",
       "file": "rental-shop-chalet70s.glb",
       "tris": 411,
-      "sizeBytes": 30704,
+      "sizeBytes": 12524,
       "heightMeters": 7.96,
       "footprintMeters": [
         9.22,
@@ -1080,7 +1080,7 @@
       "name": "waffle-haus-chalet70s",
       "file": "waffle-haus-chalet70s.glb",
       "tris": 387,
-      "sizeBytes": 28592,
+      "sizeBytes": 11320,
       "heightMeters": 8.97,
       "footprintMeters": [
         8.96,
@@ -1096,7 +1096,7 @@
       "name": "ski-school-desk-chalet70s",
       "file": "ski-school-desk-chalet70s.glb",
       "tris": 327,
-      "sizeBytes": 24756,
+      "sizeBytes": 10268,
       "heightMeters": 6.36,
       "footprintMeters": [
         6.45,
@@ -1111,8 +1111,8 @@
     {
       "name": "lodge-tier-1-aframe60s",
       "file": "lodge-tier-1-aframe60s.glb",
-      "tris": 500,
-      "sizeBytes": 35356,
+      "tris": 624,
+      "sizeBytes": 12908,
       "heightMeters": 12.64,
       "footprintMeters": [
         14.4,
@@ -1127,11 +1127,11 @@
     {
       "name": "lodge-tier-2-aframe60s",
       "file": "lodge-tier-2-aframe60s.glb",
-      "tris": 1712,
-      "sizeBytes": 100008,
+      "tris": 2644,
+      "sizeBytes": 20320,
       "heightMeters": 14.88,
       "footprintMeters": [
-        22.03,
+        26.05,
         17.03
       ],
       "tags": [
@@ -1143,8 +1143,8 @@
     {
       "name": "lodge-tier-3-aframe60s",
       "file": "lodge-tier-3-aframe60s.glb",
-      "tris": 3164,
-      "sizeBytes": 183268,
+      "tris": 4228,
+      "sizeBytes": 29436,
       "heightMeters": 19.65,
       "footprintMeters": [
         25.2,
@@ -1159,9 +1159,9 @@
     {
       "name": "lodge-annex-2-aframe60s",
       "file": "lodge-annex-2-aframe60s.glb",
-      "tris": 756,
-      "sizeBytes": 45224,
-      "heightMeters": 6.94,
+      "tris": 1008,
+      "sizeBytes": 8956,
+      "heightMeters": 6.97,
       "footprintMeters": [
         11.76,
         5.02
@@ -1175,8 +1175,8 @@
     {
       "name": "lodge-annex-3-aframe60s",
       "file": "lodge-annex-3-aframe60s.glb",
-      "tris": 508,
-      "sizeBytes": 35504,
+      "tris": 652,
+      "sizeBytes": 11912,
       "heightMeters": 16.16,
       "footprintMeters": [
         17.5,
@@ -1191,9 +1191,9 @@
     {
       "name": "cafe-aframe60s",
       "file": "cafe-aframe60s.glb",
-      "tris": 512,
-      "sizeBytes": 35148,
-      "heightMeters": 7.9,
+      "tris": 568,
+      "sizeBytes": 13724,
+      "heightMeters": 7.82,
       "footprintMeters": [
         8.5,
         10.54
@@ -1207,9 +1207,9 @@
     {
       "name": "ski-shop-aframe60s",
       "file": "ski-shop-aframe60s.glb",
-      "tris": 404,
-      "sizeBytes": 30072,
-      "heightMeters": 7.71,
+      "tris": 456,
+      "sizeBytes": 12184,
+      "heightMeters": 7.62,
       "footprintMeters": [
         7.9,
         6.17
@@ -1223,9 +1223,9 @@
     {
       "name": "rental-shop-aframe60s",
       "file": "rental-shop-aframe60s.glb",
-      "tris": 392,
-      "sizeBytes": 28524,
-      "heightMeters": 7.4,
+      "tris": 444,
+      "sizeBytes": 11204,
+      "heightMeters": 7.31,
       "footprintMeters": [
         9.25,
         7.84
@@ -1239,9 +1239,9 @@
     {
       "name": "warming-hut-aframe60s",
       "file": "warming-hut-aframe60s.glb",
-      "tris": 368,
-      "sizeBytes": 26720,
-      "heightMeters": 5.74,
+      "tris": 420,
+      "sizeBytes": 10232,
+      "heightMeters": 5.65,
       "footprintMeters": [
         5.51,
         4.07
@@ -1255,12 +1255,12 @@
     {
       "name": "waffle-haus-aframe60s",
       "file": "waffle-haus-aframe60s.glb",
-      "tris": 392,
-      "sizeBytes": 28832,
-      "heightMeters": 8.62,
+      "tris": 216,
+      "sizeBytes": 9128,
+      "heightMeters": 7.65,
       "footprintMeters": [
-        8.71,
-        10.24
+        8.7,
+        10.07
       ],
       "tags": [
         "building"
@@ -1271,9 +1271,9 @@
     {
       "name": "ski-school-desk-aframe60s",
       "file": "ski-school-desk-aframe60s.glb",
-      "tris": 368,
-      "sizeBytes": 26692,
-      "heightMeters": 5.79,
+      "tris": 420,
+      "sizeBytes": 10176,
+      "heightMeters": 5.7,
       "footprintMeters": [
         6.5,
         4.67
@@ -1287,8 +1287,8 @@
     {
       "name": "lodge-tier-1-adirondack",
       "file": "lodge-tier-1-adirondack.glb",
-      "tris": 560,
-      "sizeBytes": 38212,
+      "tris": 684,
+      "sizeBytes": 12348,
       "heightMeters": 12.64,
       "footprintMeters": [
         14.81,
@@ -1303,11 +1303,11 @@
     {
       "name": "lodge-tier-2-adirondack",
       "file": "lodge-tier-2-adirondack.glb",
-      "tris": 1712,
-      "sizeBytes": 99956,
+      "tris": 2644,
+      "sizeBytes": 19432,
       "heightMeters": 14.88,
       "footprintMeters": [
-        22.03,
+        26.05,
         17.03
       ],
       "tags": [
@@ -1319,8 +1319,8 @@
     {
       "name": "lodge-tier-3-adirondack",
       "file": "lodge-tier-3-adirondack.glb",
-      "tris": 3164,
-      "sizeBytes": 182128,
+      "tris": 4228,
+      "sizeBytes": 28404,
       "heightMeters": 19.65,
       "footprintMeters": [
         25.2,
@@ -1335,9 +1335,9 @@
     {
       "name": "lodge-annex-2-adirondack",
       "file": "lodge-annex-2-adirondack.glb",
-      "tris": 756,
-      "sizeBytes": 44448,
-      "heightMeters": 6.94,
+      "tris": 1008,
+      "sizeBytes": 8036,
+      "heightMeters": 6.97,
       "footprintMeters": [
         11.76,
         5.02
@@ -1351,8 +1351,8 @@
     {
       "name": "lodge-annex-3-adirondack",
       "file": "lodge-annex-3-adirondack.glb",
-      "tris": 508,
-      "sizeBytes": 34200,
+      "tris": 652,
+      "sizeBytes": 10196,
       "heightMeters": 16.16,
       "footprintMeters": [
         17.5,
@@ -1367,9 +1367,9 @@
     {
       "name": "cafe-adirondack",
       "file": "cafe-adirondack.glb",
-      "tris": 512,
-      "sizeBytes": 34260,
-      "heightMeters": 7.9,
+      "tris": 568,
+      "sizeBytes": 13096,
+      "heightMeters": 7.82,
       "footprintMeters": [
         8.91,
         10.85
@@ -1383,9 +1383,9 @@
     {
       "name": "ski-shop-adirondack",
       "file": "ski-shop-adirondack.glb",
-      "tris": 404,
-      "sizeBytes": 30084,
-      "heightMeters": 7.71,
+      "tris": 456,
+      "sizeBytes": 12188,
+      "heightMeters": 7.62,
       "footprintMeters": [
         8.3,
         6.7
@@ -1399,9 +1399,9 @@
     {
       "name": "rental-shop-adirondack",
       "file": "rental-shop-adirondack.glb",
-      "tris": 392,
-      "sizeBytes": 27724,
-      "heightMeters": 7.4,
+      "tris": 444,
+      "sizeBytes": 9624,
+      "heightMeters": 7.31,
       "footprintMeters": [
         9.36,
         8.15
@@ -1415,9 +1415,9 @@
     {
       "name": "warming-hut-adirondack",
       "file": "warming-hut-adirondack.glb",
-      "tris": 368,
-      "sizeBytes": 26424,
-      "heightMeters": 5.74,
+      "tris": 420,
+      "sizeBytes": 9552,
+      "heightMeters": 5.65,
       "footprintMeters": [
         5.86,
         4.7
@@ -1431,12 +1431,12 @@
     {
       "name": "waffle-haus-adirondack",
       "file": "waffle-haus-adirondack.glb",
-      "tris": 392,
-      "sizeBytes": 27700,
-      "heightMeters": 8.62,
+      "tris": 216,
+      "sizeBytes": 9128,
+      "heightMeters": 7.65,
       "footprintMeters": [
-        9.08,
-        10.55
+        8.7,
+        10.07
       ],
       "tags": [
         "building"
@@ -1447,9 +1447,9 @@
     {
       "name": "ski-school-desk-adirondack",
       "file": "ski-school-desk-adirondack.glb",
-      "tris": 368,
-      "sizeBytes": 26396,
-      "heightMeters": 5.79,
+      "tris": 420,
+      "sizeBytes": 9428,
+      "heightMeters": 5.7,
       "footprintMeters": [
         6.95,
         5.3
@@ -1463,8 +1463,8 @@
     {
       "name": "lodge-tier-1-sugarhouse",
       "file": "lodge-tier-1-sugarhouse.glb",
-      "tris": 656,
-      "sizeBytes": 43436,
+      "tris": 816,
+      "sizeBytes": 13100,
       "heightMeters": 12.64,
       "footprintMeters": [
         14.3,
@@ -1479,11 +1479,11 @@
     {
       "name": "lodge-tier-2-sugarhouse",
       "file": "lodge-tier-2-sugarhouse.glb",
-      "tris": 1712,
-      "sizeBytes": 100816,
+      "tris": 2644,
+      "sizeBytes": 21204,
       "heightMeters": 14.88,
       "footprintMeters": [
-        22.03,
+        26.05,
         17.03
       ],
       "tags": [
@@ -1495,8 +1495,8 @@
     {
       "name": "lodge-tier-3-sugarhouse",
       "file": "lodge-tier-3-sugarhouse.glb",
-      "tris": 3164,
-      "sizeBytes": 184080,
+      "tris": 4228,
+      "sizeBytes": 30404,
       "heightMeters": 19.65,
       "footprintMeters": [
         25.2,
@@ -1511,9 +1511,9 @@
     {
       "name": "lodge-annex-2-sugarhouse",
       "file": "lodge-annex-2-sugarhouse.glb",
-      "tris": 756,
-      "sizeBytes": 45236,
-      "heightMeters": 6.94,
+      "tris": 1008,
+      "sizeBytes": 8960,
+      "heightMeters": 6.97,
       "footprintMeters": [
         11.76,
         5.02
@@ -1527,8 +1527,8 @@
     {
       "name": "lodge-annex-3-sugarhouse",
       "file": "lodge-annex-3-sugarhouse.glb",
-      "tris": 508,
-      "sizeBytes": 35524,
+      "tris": 652,
+      "sizeBytes": 11920,
       "heightMeters": 16.16,
       "footprintMeters": [
         17.5,
@@ -1543,9 +1543,9 @@
     {
       "name": "cafe-sugarhouse",
       "file": "cafe-sugarhouse.glb",
-      "tris": 548,
-      "sizeBytes": 36616,
-      "heightMeters": 7.9,
+      "tris": 604,
+      "sizeBytes": 13864,
+      "heightMeters": 7.82,
       "footprintMeters": [
         8.5,
         10.54
@@ -1559,9 +1559,9 @@
     {
       "name": "ski-shop-sugarhouse",
       "file": "ski-shop-sugarhouse.glb",
-      "tris": 440,
-      "sizeBytes": 31848,
-      "heightMeters": 7.71,
+      "tris": 492,
+      "sizeBytes": 12184,
+      "heightMeters": 7.62,
       "footprintMeters": [
         7.9,
         6.17
@@ -1575,9 +1575,9 @@
     {
       "name": "rental-shop-sugarhouse",
       "file": "rental-shop-sugarhouse.glb",
-      "tris": 428,
-      "sizeBytes": 30008,
-      "heightMeters": 7.4,
+      "tris": 480,
+      "sizeBytes": 10504,
+      "heightMeters": 7.31,
       "footprintMeters": [
         9.25,
         7.84
@@ -1591,9 +1591,9 @@
     {
       "name": "warming-hut-sugarhouse",
       "file": "warming-hut-sugarhouse.glb",
-      "tris": 368,
-      "sizeBytes": 26236,
-      "heightMeters": 5.74,
+      "tris": 420,
+      "sizeBytes": 9352,
+      "heightMeters": 5.65,
       "footprintMeters": [
         5.51,
         4.07
@@ -1607,12 +1607,12 @@
     {
       "name": "waffle-haus-sugarhouse",
       "file": "waffle-haus-sugarhouse.glb",
-      "tris": 428,
-      "sizeBytes": 30040,
-      "heightMeters": 8.62,
+      "tris": 216,
+      "sizeBytes": 9124,
+      "heightMeters": 7.65,
       "footprintMeters": [
-        8.71,
-        10.24
+        8.7,
+        10.07
       ],
       "tags": [
         "building"
@@ -1623,9 +1623,9 @@
     {
       "name": "ski-school-desk-sugarhouse",
       "file": "ski-school-desk-sugarhouse.glb",
-      "tris": 404,
-      "sizeBytes": 28156,
-      "heightMeters": 5.79,
+      "tris": 456,
+      "sizeBytes": 9448,
+      "heightMeters": 5.7,
       "footprintMeters": [
         6.5,
         4.67

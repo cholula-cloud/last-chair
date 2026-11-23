@@ -15,7 +15,7 @@ import { distSqToLiftLine, distSqToPolyline, pathPolyline, trailPolyline } from 
 export type XZ = { x: number; z: number };
 
 export const CHUNK_SIZE = 32;
-export const GRID_SPACING = 0.82;
+export const GRID_SPACING = 0.76;
 
 /** Width of the band at the lease edge where tree density eases from full to far density. */
 export const FADE_BAND = 14;

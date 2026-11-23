@@ -7,6 +7,7 @@ import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import {
   farForest,
+  hash01,
   leaseForest,
   sameForestClearings,
   type ForestClearings,
@@ -37,6 +38,7 @@ const FAR_USE_KIT = false;
 
 type Shared = {
   pines: readonly THREE.BufferGeometry[];
+  birch: THREE.BufferGeometry | null;
   proxy: THREE.BufferGeometry;
   /** When true, geometries are owned by this component and must be disposed. */
   ownsGeo: boolean;
@@ -50,6 +52,7 @@ function writeInstances(
   spots: readonly TreeSpot[],
   size: (spot: TreeSpot) => readonly [number, number],
   tinted: boolean,
+  neutralTint = false,
 ) {
   for (let i = 0; i < spots.length; i++) {
     const p = spots[i];
@@ -60,7 +63,12 @@ function writeInstances(
     dummy.updateMatrix();
     mesh.setMatrixAt(i, dummy.matrix);
     if (tinted) {
-      tint.setRGB(p.tint, p.tint * 0.98, p.tint * 0.96);
+      if (neutralTint) {
+        const k = 0.94 + (p.tint - 0.86) * 0.5;
+        tint.setRGB(k, k, k * 0.98);
+      } else {
+        tint.setRGB(p.tint * 0.97, p.tint * 1.02, p.tint * 0.97);
+      }
       mesh.setColorAt(i, tint);
     }
   }
@@ -75,16 +83,18 @@ function Instances({
   spots,
   size,
   shadowOnly = false,
+  neutralTint = false,
 }: {
   geo: THREE.BufferGeometry;
   spots: readonly TreeSpot[];
   size: (spot: TreeSpot) => readonly [number, number];
   shadowOnly?: boolean;
+  neutralTint?: boolean;
 }) {
   const ref = useRef<THREE.InstancedMesh | null>(null);
   useLayoutEffect(() => {
-    if (ref.current) writeInstances(ref.current, spots, size, !shadowOnly);
-  }, [spots, size, shadowOnly]);
+    if (ref.current) writeInstances(ref.current, spots, size, !shadowOnly, neutralTint);
+  }, [spots, size, shadowOnly, neutralTint]);
   if (!spots.length) return null;
   if (shadowOnly) {
     return (
@@ -95,7 +105,7 @@ function Instances({
   }
   return (
     <instancedMesh ref={ref} args={[geo, undefined, spots.length]} receiveShadow>
-      <meshLambertMaterial vertexColors />
+      <meshStandardMaterial vertexColors roughness={0.78} metalness={0.02} />
     </instancedMesh>
   );
 }
@@ -104,6 +114,8 @@ const pineSize = (p: TreeSpot) => {
   const name = pineKitName(p.variant);
   return [treeWorldWidth(name), treeWorldHeight(name)] as const;
 };
+const BIRCH_SIZE: readonly [number, number] = [treeWorldWidth("birch") * 0.92, treeWorldHeight("birch") * 0.96];
+const birchSize = () => BIRCH_SIZE;
 const proxySize = () => {
   const [w, h] = farTreeWorldSize();
   return [w, h] as const;
@@ -111,17 +123,28 @@ const proxySize = () => {
 const FAR_SIZE = farTreeWorldSize();
 const farSize = () => FAR_SIZE;
 
+function isBirchSpot(p: TreeSpot): boolean {
+  return hash01(p.x, p.z, 19) < 0.09;
+}
+
 function LeaseCellTrees({ cell, shared }: { cell: LeaseCell; shared: Shared }) {
-  const byVariant = useMemo(() => {
-    const buckets: TreeSpot[][] = Array.from({ length: PINE_VARIANTS }, () => []);
-    for (const p of cell.pines) buckets[p.variant]?.push(p);
-    return buckets;
-  }, [cell.pines]);
+  const { buckets, birches } = useMemo(() => {
+    const b: TreeSpot[][] = Array.from({ length: PINE_VARIANTS }, () => []);
+    const bi: TreeSpot[] = [];
+    for (const p of cell.pines) {
+      if (shared.birch && isBirchSpot(p)) bi.push(p);
+      else b[p.variant]?.push(p);
+    }
+    return { buckets: b, birches: bi };
+  }, [cell.pines, shared.birch]);
   return (
     <group>
       {Array.from({ length: PINE_VARIANTS }, (_, v) => (
-        <Instances key={v} geo={shared.pines[v]} spots={byVariant[v]} size={pineSize} />
+        <Instances key={v} geo={shared.pines[v]} spots={buckets[v]} size={pineSize} />
       ))}
+      {shared.birch && (
+        <Instances geo={shared.birch} spots={birches} size={birchSize} neutralTint />
+      )}
       <Instances geo={shared.proxy} spots={cell.pines} size={proxySize} shadowOnly />
     </group>
   );
@@ -136,7 +159,7 @@ function FarTrees({ geo, spots }: { geo: THREE.BufferGeometry; spots: readonly T
     g.setAttribute("aOut", new THREE.InstancedBufferAttribute(weights, 1));
     return g;
   }, [geo, spots]);
-  const material = useMemo(() => patchLeaseDim(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })), []);
+  const material = useMemo(() => patchLeaseDim(new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.82, metalness: 0.02 })), []);
   useEffect(() => () => { far.dispose(); material.dispose(); }, [far, material]);
   const ref = useRef<THREE.InstancedMesh | null>(null);
   useLayoutEffect(() => {
@@ -185,6 +208,7 @@ function TreesKit({ lines, paths }: ForestClearings) {
   const kit = useTreeKit();
   const shared = useMemo<Shared>(() => ({
     pines: kit.pines,
+    birch: kit.birch,
     proxy: kit.proxy,
     ownsGeo: false,
   }), [kit]);
@@ -197,6 +221,7 @@ function TreesLow({ lines, paths }: ForestClearings) {
     const pine = leasePineLow();
     return {
       pines: [pine, pine, pine, pine],
+      birch: null,
       proxy: shadowProxyLow(),
       ownsGeo: true,
     };

@@ -4,10 +4,10 @@ import type { SiteDef } from "@/game/site";
 import { TERRAIN, type Terrain } from "@/game/terrain";
 import { expandedStallCenters } from "./parking";
 
-const GRAVEL = new THREE.Color("#98938b");
-const TRACK = new THREE.Color("#777982");
-const SNOWBANK = new THREE.Color("#dce4ed");
-const STALL_MARK = new THREE.Color("#d4d0c3");
+const GRAVEL = new THREE.Color("#888580");
+const TRACK = new THREE.Color("#696c75");
+const SNOWBANK = new THREE.Color("#f0f6fd");
+const STALL_MARK = new THREE.Color("#f4e49c");
 
 const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 

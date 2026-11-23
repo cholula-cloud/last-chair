@@ -58,7 +58,7 @@ function GravelLot({ tier }: { tier: LodgeTier }) {
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry} receiveShadow userData={{ asset: { kind: "parking" } }}>
-      <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+      <meshStandardMaterial vertexColors roughness={0.88} metalness={0.02} {...OVERLAY_DIM} />
     </mesh>
   );
 }
@@ -68,7 +68,7 @@ function LodgeFootpath() {
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry} receiveShadow userData={{ asset: { kind: "footpath" } }}>
-      <meshLambertMaterial vertexColors polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-1} {...OVERLAY_DIM} />
+      <meshStandardMaterial vertexColors roughness={0.85} metalness={0.02} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-1} {...OVERLAY_DIM} />
     </mesh>
   );
 }
@@ -103,7 +103,7 @@ function CarInstances({ kind, list }: { kind: 0 | 1 | 2; list: CarSpot[] }) {
 
   return (
     <instancedMesh ref={ref} args={[geo, undefined, max]} castShadow receiveShadow>
-      <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+      <meshStandardMaterial vertexColors roughness={0.42} metalness={0.18} {...OVERLAY_DIM} />
     </instancedMesh>
   );
 }

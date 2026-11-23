@@ -62,21 +62,21 @@ Phase 2 and 3 (village/lift kit, lodge tiers, extra silhouettes) map to **M4b** 
 
 ### Extended palette
 
-Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Scene colours live in `web/src/render/palette.ts`.
+Anchors stay navy `#0b1628`, snow `#f8fbff`, amber `#e85d26`, pine `#1e5e41`. Scene colours live in `web/src/render/palette.ts`.
 
 | Role | Hex |
 |------|-----|
-| Shaded snow (hollows) | `#bccbec` |
-| Sun-warm snow | `#fff4e4` |
-| Tired snow | `#c8cfd9` |
-| Rock / bare earth | `#5d5650` / `#7a6850` |
-| Pine variants | `#1f4a3d`, `#2d5a4a`, `#356b5e` |
-| Barn red / clapboard / shutter | `#a8382b` / `#ece6da` / `#24313f` |
-| Roof slate / stone | `#3a4250` / `#8b8682` |
+| Shaded snow (hollows) | `#b9d4f7` |
+| Sun-warm snow | `#fff8eb` |
+| Tired / icy snow | `#d9e3f0` / `#c2d4e8` |
+| Rock / bare earth | `#6b7382` / `#7a6850` |
+| Pine variants | `#194f39`, `#1e5e41`, `#246e4c`, `#348a5e` |
+| Barn red / clapboard / shutter | `#c93b2b` / `#f2ece1` / `#24313f` |
+| Roof slate / stone | `#2d3b4e` / `#87847e` |
 | Window and lamp glow | `#ffc46b` / `#ffb35c` |
-| Lift steel / cable | `#56616e` / `#2b3138` |
-| Sky top / horizon haze | `#8fb6e3` / `#e9e7e6` |
-| Ridges near / mid / far | `#7f93ad` / `#a3b2c8` / `#c3ccdb` |
+| Lift steel / cable | `#56616e` / `#222933` |
+| Sky top / mid / horizon | `#4fa0e8` / `#9ad7f5` / `#dceffc` |
+| Ridges near / mid / far | `#7aa3cf` / `#9abce0` / `#bed7f0` |
 | Night sky / horizon | `#081226` / `#24365a` |
 | Jackets | `#d7263d`, `#f2c014`, `#0fa3a3`, `#f2711c`, `#7b4fc9`, `#2f7de1`, `#e8467c` |
 
@@ -84,21 +84,22 @@ Anchors stay navy `#0b1628`, snow `#f4f7fb`, amber `#e85d26`, pine `#2d5a4a`. Sc
 
 | File | What it draws |
 |------|---------------|
-| `Atmosphere.tsx` | Gradient sky dome, three layered ridge silhouettes, fog, hemisphere fill and the shadow-casting sun (1024 shadow map, ±11 bounds). Lerps to a cool night when `phase === "night"` and warms toward 4 PM. Exposes `sceneMood` for window and lamp glow. |
-| `Terrain.tsx` | Valley heightfield (dense grid in the play area, coarse toward the fog) with vertex colours: blue hollows, warm sun-facing slopes, rock on steep faces, bare earth that spreads from the bottom as `snowDepth` falls. Also the valley road. |
-| `game/terrain.ts` | The heightfield (`TERRAIN.height`) read by the sim and the renderer; Dutch Hill is data in `game/mountains/dutchHill.ts` (flat base apron, meadow, steep face with a rollover, summit dome, side ridges). Render helpers `liftLine.ts`, `trail.ts` and `guestPlacement.ts` hold the lift tower layout, trail curve, tidy queue snake, guest placement and poses. |
-| `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture (crisper when `groomVisible`); green/red translucent preview in build mode. |
-| `TrailSign.tsx` | **Placeholder (M3):** canvas texture on a billboard plane + box post at each trail entrance; stacks near lift tops. **Target (M4b row T1):** Blender `trail-sign-*` kit; names and conditions also on the **Trails** map layer (M4 row O5). |
-| `Lift.tsx` | Merged towers, crossarms, bull wheels, up/return cables and two terminal huts; instanced moving T-bars or chairs; translucent green/red ghost for the build preview. |
-| `Trees.tsx` | Kit-instanced pines (a–d) and birch via `treeKit.ts` (manifest height × toy scale); lowDetail falls back to procedural cones. Far ring: three-plane impostors (one draw call). Terrain canopy wash on lease; ridges tint toward pine. Cleared along trails, lifts, base and road. |
-| `Lodge.tsx` | Base village: red clapboard lodge with steep snowy gable, stone chimney, deck and warm windows; café and shop when built; parked cars; lamp posts with additive light pools that glow at dusk and night. |
-| `Guests.tsx` | Instanced toy skiers (legs, skis, poles, face, tinted jacket and beanie); T-bar or chair attached to riders; amber ring and marker for the followed guest. |
-| `SnowGuns.tsx` | Tower guns with a yellow fan housing and an animated plume when running. |
+| `Atmosphere.tsx` | Three-stop sky dome, layered ridge silhouettes, fog, hemisphere fill and shadow-casting sun (`2048` shadow map on standard detail, `1024` when `lowDetail`, `±18` bounds). Lerps to night when `phase === "night"` and warms toward 4 PM. Exposes `sceneMood` for glass, lamps and hearth light. |
+| `Terrain.tsx` | Valley heightfield with `MeshStandardMaterial` vertex colours (cobalt hollows, warm sun-facing slopes, rock on steep faces, bare earth at low `snowDepth`, canopy wash). Also the Route 100 road with dashed yellow stripe and sculpted snowbanks. |
+| `game/terrain.ts` | The heightfield (`TERRAIN.height`) read by the sim and renderer; Dutch Hill is data in `game/mountains/dutchHill.ts`. |
+| `TrailRibbon.tsx` | Terrain-hugging groomed corridor with a procedural corduroy texture; green/red translucent preview in build mode. |
+| `TrailSign.tsx` | Kit-instanced `trail-sign` / `trail-sign-double` posts at trail entrances. |
+| `Lift.tsx` | Merged PBR towers, crossarms, bullwheels, up/return cables and terminals; instanced carriers; translucent ghost for build preview. |
+| `Trees.tsx` | Kit-instanced chunky 3-tier pines (`pine-a..d`) and ~9% winter birches (`birch`) via `treeKit.ts` (`TREE_TOY_SCALE = 1.6`, `GRID_SPACING = 0.76`); `lowDetail` falls back to cones. Far ring uses crossed billboard impostors. |
+| `Lodge.tsx` | Base village merged into PBR `matte`, `semiGloss`, `glass` (warm reflective by day → hearth glow at dusk/night) and `glow` meshes, plus a dusk/night hearth `PointLight` and lamp pools. |
+| `ChimneySmoke.tsx` | Single `InstancedMesh` of stylized low-poly smoke puffs drifting from the lodge and warming-hut chimneys (pauses when `prefers-reduced-motion` is set). |
+| `Guests.tsx` | Instanced toy skiers (legs, skis, poles, face, tinted jacket and helmet); T-bar or chair attached to riders; amber ring for followed guest. |
+| `SnowGuns.tsx` | PBR tower guns with animated snow plumes when running. |
 | `geo.ts` | Helper that bakes coloured primitives into one merged geometry per prop. |
 
 **Camera:** per-aspect default framing (portrait: wider FOV and farther back; landscape: tighter), elevated 3/4 view from the south-west so the lift and trail cross the screen. Orbit is limited in polar angle, azimuth, distance and pan so the camera stays above the valley; follow mode still lerps the target to the guest and eases home afterwards.
 
-**Performance:** about 22 draw calls in the main pass and about 14 in the shadow pass (counted by mesh, not profiled on device): one merged mesh each for village and lift, three instanced tree meshes, four instanced guest meshes, instanced carriers and plume puffs. Sun is the only shadow caster light. No post-processing. Canvas uses `dpr={[1, 2]}` and Neutral tone mapping.
+**Performance:** merged village/lift PBR buckets plus instanced trees, guests, carriers, chimney puffs and snow plumes. Sun is the only shadow caster light (`2048` standard / `1024` lowDetail). No post-processing. Canvas uses `dpr={[1, 2]}` and `ACESFilmicToneMapping`.
 
 ## UI language: toy box with Route 100 signs (UI pass 2, PR 10c)
 
@@ -217,7 +218,7 @@ Asset kit v1 is in the game (Art pass 2). Seventeen Draco GLBs, 204 KB in total.
 
 Towers stretch vertically so their sheaves meet the span-cleared cable height; terminals keep a uniform scale, with the bullwheel at `LIFT_TERMINAL_H`.
 
-**Materials.** Kit material colours are baked to vertex colours and drawn with one Lambert material per mesh. `snow` is remapped to `PALETTE.snow`. Emissive materials (`window-glow` #ffb347, `lamp-glow` #ffc46b) go to an untonemapped `MeshBasicMaterial` whose brightness rises from 0.62 by day to 1.15 at night, so the amber stays warm under Neutral tone mapping. Skier `jacket` and `helmet` are split out and take per-instance colour; `pants` stays navy.
+**Materials.** Kit material colours are baked to vertex colours and bucketed by `bakeKit()` into PBR `MeshStandardMaterial` pools (`matte` roughness 0.82 for timber/stone/snow, `semiGloss` roughness 0.36 / metalness 0.25 for roofs/steel/skis/awnings, and `glass` for `window-glow` / `glass-dark`, which renders as warm reflective glass by day and blooms into hearth amber via `emissiveIntensity` at dusk and night). `snow` is remapped to `PALETTE.snow`. `lamp-glow` stays in an untonemapped `MeshBasicMaterial` pool (`glow`). Skier `jacket` and `helmet` are split out and take per-instance colour; `pants` stays navy. **Architecture:** `lib.py` seals `gable_roof()` peaks with a rounded cylindrical snow ridge cap and recesses `window()` glazing behind proud mullions; base venues use distinct silhouettes (`cafe` striped awning + yellow patio umbrella, `waffle-haus` steep timber A-frame, `ski-shop` cobalt roof + colorful exterior ski rack, `lodge-tier-2` side dining wing, `lodge-tier-3` stepped cupola + dual stone chimneys).
 
 **Draw cost.** Static kit pieces (village, towers, terminals, guns) are merged per component into one body and one glow mesh. Pines, skiers and carriers are instanced. Trees and skiers cast shadows through cheap proxies on `SHADOW_LAYER` (a 6-triangle cone per tree, a box per skier), which only the sun's shadow camera renders. Distant trees (behind the hill, outside `NEAR_R`) use an 18-triangle stand-in.
 

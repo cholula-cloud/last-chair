@@ -162,29 +162,29 @@ def b_cafe():
     W, D, H, F = 7.0, 6.0, 3.8, 0.35
     a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), "stone-dark")
     a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "sage-green")
-    for i in range(5):
-        a.box((0, 0, F + 0.4 + i * 0.6), (W + 0.06, D + 0.06, 0.07), "sage-green")
+    for i in range(3):
+        a.box((0, 0, F + 0.6 + i * 0.9), (W + 0.06, D + 0.06, 0.07), "sage-green")
     for sx in (-1, 1):
         for sy in (-1, 1):
             a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.24, 0.24, H - F), "trim-white")
     rise = 4.0
     a.gable_end((0, 0, H), D, W, rise, "sage-green", rz=90)
     a.gable_roof((0, 0, H), D, W, rise, "slate-roof", rz=90, thick=0.22, overhang=0.45,
-                 snow_thick=0.38, snow_over=0.12, snow_bevel=0.12)
+                 snow_thick=0.38, snow_over=0.12, snow_bevel=0.0)
     fy = -D / 2
     a.window((-1.3, fy, 1.85), 3.0, 1.9, '-Y', sill=True)
     a.box((2.0, fy - 0.05, F + 1.15), (1.4, 0.14, 2.3), "trim-white")
     a.box((2.0, fy - 0.1, F + 1.05), (1.05, 0.12, 2.1), "window-glow")
     a.box((2.0, fy - 0.16, F + 1.05), (0.1, 0.06, 2.1), "trim-white")
     a.window((0, fy, H + 1.3), 1.1, 1.1, '-Y', mullion=True, sill=False)
-    # larger striped awning
-    n, aw, ang = 9, 6.2, 18
+    # bold toy-box striped awning
+    n, aw, ang = 5, 6.2, 18
     for i in range(n):
         x = -aw / 2 + aw / n * (i + 0.5) - 0.2
         m = "awning-red" if i % 2 == 0 else "trim-white"
         a.box((x, fy - 0.95, 3.1), (aw / n + 0.005, 1.9, 0.08), m, rot=(ang, 0, 0))
         a.box((x, fy - 1.82, 2.55), (aw / n + 0.005, 0.06, 0.4), m)
-    a.box((-0.2, fy - 0.4, 3.35), (aw, 0.7, 0.1), "snow", rot=(ang, 0, 0), bevel=0.04)
+    a.box((-0.2, fy - 0.4, 3.35), (aw, 0.7, 0.1), "snow", rot=(ang, 0, 0))
     # menu board
     a.box((-3.2, fy - 0.15, 2.4), (0.08, 0.7, 1.0), "cream-sign")
     a.box((-3.25, fy - 0.2, 2.4), (0.04, 0.55, 0.7), "navy")
@@ -194,62 +194,63 @@ def b_cafe():
     a.cyl((-1.8, 1.2, H + 4.7), 0.36, 0.36, 0.2, 6, "snow")
     # ~2× patio on -Y with tables and rails
     px, py, pw, pd = 0.4, fy - 2.4, 6.4, 4.2
-    a.box((px, py, 0.08), (pw, pd, 0.16), "timber-brown", bevel=0.04)
+    a.box((px, py, 0.08), (pw, pd, 0.16), "timber-brown")
     a.box((px, py, 0.02), (pw - 0.3, pd - 0.3, 0.08), "stone-dark")
     for sx in (-1, 1):
         a.box((px + sx * (pw / 2), py, 0.55), (0.12, pd + 0.1, 1.0), "timber-brown")
     a.box((px, py - pd / 2, 0.55), (pw + 0.2, 0.12, 1.0), "timber-brown")
     a.box((px, py - pd / 2, 1.1), (pw + 0.25, 0.16, 0.1), "snow")
-    for tx, ty in ((-1.6, py + 0.9), (0.2, py + 0.9), (2.0, py + 0.9),
-                   (-1.6, py - 0.7), (0.2, py - 0.7), (2.0, py - 0.7)):
+    for tx, ty in ((-1.5, py + 0.9), (0.4, py + 0.9), (-1.5, py - 0.7), (0.4, py - 0.7)):
         a.cyl((tx, ty, 0.1), 0.05, 0.05, 0.85, 5, "shutter-black")
-        a.cyl((tx, ty, 0.95), 0.42, 0.42, 0.06, 8, "shutter-black")
+        a.cyl((tx, ty, 0.95), 0.42, 0.42, 0.06, 6, "shutter-black")
         a.box((tx - 0.45, ty, 0.55), (0.35, 0.35, 0.06), "timber-dark")
+    # bright yellow toy-box patio umbrella
+    a.cyl((2.15, py - 0.1, 0.1), 0.06, 0.06, 2.3, 6, "steel")
+    a.cyl((2.15, py - 0.1, 2.35), 1.35, 0.08, 0.65, 6, "umbrella-yellow")
     # string-light hooks
     for lx in (-2.4, 0.0, 2.4):
         a.box((lx, fy - 0.2, 3.5), (0.08, 0.08, 0.08), "lamp-glow")
     a.box((W / 2 + 0.25, fy + 0.3, 2.6), (0.3, 0.3, 0.4), "lamp-glow")
-    a.box((-W / 2 - 0.4, fy - 0.5, 0.25), (1.2, 1.4, 0.5), "snow", bevel=0.16)
+    a.box((-W / 2 - 0.4, fy - 0.5, 0.25), (1.2, 1.4, 0.5), "snow")
     return a.finish()
 
 def b_shop():
-    """Retail ski shop: apparel window, SKI SHOP sign, display boards — not rentals."""
+    """Retail ski shop: cream clapboard, cobalt-blue roof, colorful upright ski rack — distinct from waffle-haus."""
     a = Asset("ski-shop")
-    W, D, H, F = 6.4, 5.2, 3.6, 0.35
+    W, D, H, F = 6.8, 5.2, 3.6, 0.35
     a.box((0, 0, F / 2), (W + 0.2, D + 0.2, F), "stone-dark")
-    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "timber-brown")
-    for x in (-2.4, -1.2, 0, 1.2, 2.4):
-        a.box((x, -D / 2, F + (H - F) / 2), (0.12, 0.1, H - F), "timber-dark")
+    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "clapboard-white")
     for sx in (-1, 1):
         for sy in (-1, 1):
-            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.26, 0.26, H - F), "cream-sign")
-    rise = 3.8
-    a.gable_end((0, 0, H), D, W, rise, "timber-brown", rz=90)
-    a.gable_roof((0, 0, H), D, W, rise, "barn-red", rz=90, thick=0.22, overhang=0.45,
+            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.26, 0.26, H - F), "shop-blue")
+    rise = 3.2
+    a.gable_end((0, 0, H), D, W, rise, "clapboard-white", rz=90)
+    a.gable_roof((0, 0, H), D, W, rise, "shop-blue", rz=90, thick=0.22, overhang=0.48,
                  snow_thick=0.36, snow_over=0.12, snow_bevel=0.12)
     fy = -D / 2
     # apparel display window
-    a.window((-1.4, fy, 1.85), 2.8, 1.9, '-Y', frame="cream-sign")
+    a.window((-1.2, fy, 1.85), 2.8, 1.85, '-Y', frame="shop-blue")
     # hanging jacket silhouettes in window
-    for jx, jc in ((-2.0, "jacket"), (-1.0, "amber-accent"), (-0.2, "navy")):
+    for jx, jc in ((-1.9, "jacket"), (-1.1, "amber-accent"), (-0.3, "navy")):
         a.box((jx, fy - 0.08, 2.0), (0.45, 0.08, 0.9), jc)
     # retail door
-    a.box((2.0, fy - 0.05, F + 1.2), (1.35, 0.14, 2.4), "cream-sign")
+    a.box((2.0, fy - 0.05, F + 1.2), (1.35, 0.14, 2.4), "shop-blue")
     a.box((2.0, fy - 0.12, F + 1.1), (1.05, 0.1, 2.2), "amber-accent")
     a.box((2.0, fy - 0.18, F + 1.55), (0.55, 0.05, 0.7), "window-glow")
     # SKI SHOP gable sign
-    a.box((0, fy - 0.14, H + 1.0), (4.0, 0.14, 1.25), "navy")
-    a.box((0, fy - 0.22, H + 1.0), (3.6, 0.06, 0.95), "cream-sign")
-    a.box((0, fy - 0.22, H + 1.65), (4.0, 0.28, 0.12), "snow")
-    # display skis / boards as merchandising (vertical rack, not rental counter)
-    for i, (x, m) in enumerate(((-3.15, "amber-accent"), (-2.9, "navy"), (-2.65, "ski"),
-                                (3.0, "amber-accent"), (3.25, "jacket"))):
-        a.box((x, fy - 0.4, 1.05), (0.1, 0.06, 1.9), m, rot=(-8, 0, 0))
+    a.box((0, fy - 0.14, H + 0.95), (4.0, 0.14, 1.2), "shop-blue")
+    a.box((0, fy - 0.22, H + 0.95), (3.6, 0.06, 0.9), "cream-sign")
+    a.box((0, fy - 0.22, H + 1.58), (4.0, 0.28, 0.12), "snow")
+    # bright colorful upright ski rack out front
+    a.box((-3.25, fy - 0.55, 0.45), (1.2, 0.22, 0.8), "timber-dark")
+    for x, m in ((-3.65, "awning-red"), (-3.38, "umbrella-yellow"), (-3.12, "shop-blue"), (-2.85, "jacket"),
+                 (3.15, "awning-red"), (3.42, "umbrella-yellow")):
+        a.box((x, fy - 0.55, 1.15), (0.12, 0.06, 2.1), m, rot=(-10, 0, 0))
     # tuning bench (retail service)
     a.box((W / 2 + 0.7, fy + 0.6, 0.55), (1.2, 0.55, 0.7), "timber-dark")
     a.box((W / 2 + 0.7, fy + 0.6, 0.95), (1.3, 0.6, 0.1), "steel")
     for sx, face in ((-1, '-X'), (1, '+X')):
-        a.window((sx * W / 2, 0, 2.0), 1.0, 1.1, face, frame="cream-sign", mullion=False, sill=False)
+        a.window((sx * W / 2, 0, 2.0), 1.0, 1.1, face, frame="shop-blue", mullion=False, sill=False)
     a.box((W / 2 + 0.4, -1.0, 0.2), (1.4, 1.6, 0.4), "snow", bevel=0.14)
     return a.finish()
 
@@ -316,8 +317,6 @@ def b_hut():
     a.box((0.2, fy - 0.7, 0.75), (1.7, 0.5, 0.1), "timber-brown")
     a.cyl((1.2, 0.6, H + 0.6), 0.16, 0.16, 2.3, 6, "steel-dark")
     a.cyl((1.2, 0.6, H + 2.9), 0.28, 0.28, 0.16, 6, "snow")
-    # steam puff from pipe
-    a.sphere((1.2, 0.6, H + 3.2), 0.22, "snow")
     a.box((-W / 2 - 0.3, 0.5, 0.225), (0.9, 1.6, 0.45), "snow", bevel=0.14)
     a.box((W / 2 + 0.35, 0.2, 0.45), (0.5, 1.6, 0.9), "timber-dark")
     a.box((W / 2 + 0.35, 0.2, 0.95), (0.55, 1.65, 0.12), "snow")
@@ -326,40 +325,33 @@ def b_hut():
 
 
 def b_waffle_haus():
-    """Tier-3 brunch spot: steep gable, syrup-amber trim, outdoor counter on -Y."""
+    """Tier-3 brunch spot: unmistakable steep timber A-frame + glowing gable glazing + syrup-gold sign."""
     a = Asset("waffle-haus")
-    W, D, H, F = 7.2, 6.2, 3.6, 0.4
+    W, D, H_base, rise = 6.8, 6.0, 0.65, 6.4
     PALETTE.setdefault("syrup-amber", ("#c4782a", 0.7))
     PALETTE.setdefault("waffle-cream", ("#f0e0c0", 0.8))
-    a.box((0, 0, F / 2), (W + 0.25, D + 0.25, F), "stone-grey")
-    a.box((0, 0, F + (H - F) / 2), (W, D, H - F), "waffle-cream")
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            a.box((sx * W / 2, sy * D / 2, F + (H - F) / 2), (0.28, 0.28, H - F), "syrup-amber")
-    rise = 4.6
-    a.gable_end((0, 0, H), D, W, rise, "waffle-cream", rz=90)
-    a.gable_roof((0, 0, H), D, W, rise, "barn-red", rz=90, thick=0.24, overhang=0.5,
-                 snow_thick=0.4, snow_over=0.14, snow_bevel=0.12)
+    a.box((0, 0, H_base / 2), (W + 0.3, D + 0.3, H_base), "stone-grey")
+    a.prism((0, 0, H_base), D, W, rise, "syrup-amber", rz=90)
+    a.gable_roof((0, 0, H_base), D, W, rise, "timber-dark", rz=90, thick=0.24, overhang=0.55,
+                 snow_thick=0.45, snow_over=0.14, snow_bevel=0.14)
     fy = -D / 2
-    a.window((-1.4, fy, 2.0), 2.8, 2.0, '-Y', frame="syrup-amber")
-    a.box((2.1, fy - 0.05, F + 1.2), (1.4, 0.14, 2.4), "syrup-amber")
-    a.box((2.1, fy - 0.12, F + 1.1), (1.05, 0.1, 2.2), "timber-brown")
-    a.box((2.1, fy - 0.18, F + 1.55), (0.55, 0.05, 0.7), "window-glow")
-    # waffle / syrup sign
-    a.box((0, fy - 0.14, H + 1.2), (3.6, 0.14, 1.2), "syrup-amber")
-    a.box((0, fy - 0.22, H + 1.2), (3.2, 0.06, 0.9), "cream-sign")
-    a.box((0, fy - 0.22, H + 1.85), (3.6, 0.28, 0.12), "snow")
-    # outdoor syrup counter patio
-    a.box((0, fy - 2.2, 0.1), (6.0, 3.6, 0.16), "timber-brown")
-    a.box((0, fy - 1.4, 0.7), (4.2, 0.7, 0.9), "syrup-amber")
-    a.box((0, fy - 1.4, 1.2), (4.4, 0.8, 0.12), "cream-sign")
-    for tx in (-1.5, 0.0, 1.5):
-        a.cyl((tx, fy - 2.6, 0.15), 0.05, 0.05, 0.8, 5, "shutter-black")
-        a.cyl((tx, fy - 2.6, 0.95), 0.38, 0.38, 0.06, 8, "shutter-black")
-    a.cyl((-2.0, 1.0, H + 1.2), 0.18, 0.18, 2.8, 6, "steel-dark")
-    a.cyl((-2.0, 1.0, H + 4.0), 0.3, 0.3, 0.18, 6, "snow")
-    a.box((W / 2 + 0.3, fy + 0.2, 2.5), (0.28, 0.28, 0.4), "lamp-glow")
-    a.box((-W / 2 - 0.4, fy - 0.6, 0.25), (1.2, 1.4, 0.5), "snow", bevel=0.16)
+    # Glowing triangular A-frame front glazing with dark timber mullions
+    a.gable_end((0, fy - 0.08, H_base + 0.35), 0.14, W - 1.3, rise - 1.4, "window-glow", rz=90)
+    a.box((0, fy - 0.16, H_base + 2.4), (0.14, 0.1, 4.2), "timber-dark")
+    a.box((0, fy - 0.16, H_base + 2.1), (3.8, 0.1, 0.14), "timber-dark")
+    # Syrup-gold hanging sign across front gable
+    a.box((0, fy - 0.26, H_base + 3.65), (3.2, 0.14, 0.95), "umbrella-yellow")
+    a.box((0, fy - 0.34, H_base + 3.65), (2.8, 0.06, 0.7), "syrup-amber")
+    # Outdoor waffle counter patio
+    a.box((0, fy - 1.85, 0.12), (5.8, 3.2, 0.2), "timber-brown")
+    a.box((0, fy - 1.2, 0.75), (4.0, 0.7, 0.9), "syrup-amber")
+    a.box((0, fy - 1.2, 1.25), (4.2, 0.8, 0.12), "cream-sign")
+    for tx in (-1.4, 0.0, 1.4):
+        a.cyl((tx, fy - 2.35, 0.18), 0.05, 0.05, 0.78, 5, "shutter-black")
+        a.cyl((tx, fy - 2.35, 0.96), 0.38, 0.38, 0.06, 8, "shutter-black")
+    a.cyl((-1.8, 1.0, H_base + 2.5), 0.18, 0.18, 3.6, 6, "steel-dark")
+    a.cyl((-1.8, 1.0, H_base + 6.1), 0.3, 0.3, 0.18, 6, "snow")
+    a.box((W / 2 - 0.2, fy - 0.3, 2.0), (0.26, 0.26, 0.38), "lamp-glow")
     return a.finish()
 
 

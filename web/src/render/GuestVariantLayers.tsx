@@ -44,13 +44,13 @@ export function GuestVariantLayer({
   return (
     <group name={`guests-${variant}`}>
       <instancedMesh ref={baseRef} args={[kit.body, undefined, max]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+        <meshStandardMaterial vertexColors roughness={0.62} metalness={0.08} {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh ref={jacketRef} args={[kit.split.jacket, undefined, max]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+        <meshStandardMaterial vertexColors roughness={0.55} metalness={0.04} {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh ref={hatRef} args={[kit.split.helmet, undefined, max]} frustumCulled={false}>
-        <meshLambertMaterial vertexColors {...OVERLAY_DIM} />
+        <meshStandardMaterial vertexColors roughness={0.35} metalness={0.08} {...OVERLAY_DIM} />
       </instancedMesh>
       <instancedMesh
         ref={shadowRef}

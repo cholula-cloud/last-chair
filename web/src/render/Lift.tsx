@@ -82,7 +82,7 @@ function cableGeometry(line: LiftLine, radius = CABLE_RADIUS): THREE.BufferGeome
 
 const S = METERS_TO_WORLD * LIFT_TOY_SCALE;
 
-/** Kit towers and terminals placed along the line; returns body + window glow. */
+/** Kit towers and terminals placed along the line; returns matte + semiGloss + glass + glow. */
 function useLiftStructure(line: LiftLine, type: LiftType, cableRadius: number) {
   const tower = bakeKit(useKit("lift-tower"));
   const surface = type === "surface";
@@ -95,7 +95,9 @@ function useLiftStructure(line: LiftLine, type: LiftType, cableRadius: number) {
   const built = useMemo(() => {
     const towers = liftTowers(line, type);
     const { yaw } = liftFrame(line);
-    const body: THREE.BufferGeometry[] = [cables.clone()];
+    const matte: THREE.BufferGeometry[] = [];
+    const semiGloss: THREE.BufferGeometry[] = [cables.clone()];
+    const glass: THREE.BufferGeometry[] = [];
     const glow: THREE.BufferGeometry[] = [];
     towers.forEach((t, i) => {
       const last = towers.length - 1;
@@ -103,20 +105,30 @@ function useLiftStructure(line: LiftLine, type: LiftType, cableRadius: number) {
         const kit = i === 0 ? bottom : top;
         const sy = (t.top - 0.03 - t.ground) / (ropeY * S);
         const y = t.ground - 0.02;
-        body.push(placeKit(kit.body, t.x, y, t.z, yaw, [S, S * sy, S]));
+        if (kit.matte.attributes.position) matte.push(placeKit(kit.matte, t.x, y, t.z, yaw, [S, S * sy, S]));
+        if (kit.semiGloss) semiGloss.push(placeKit(kit.semiGloss, t.x, y, t.z, yaw, [S, S * sy, S]));
+        if (kit.glass) glass.push(placeKit(kit.glass, t.x, y, t.z, yaw, [S, S * sy, S]));
         if (kit.glow) glow.push(placeKit(kit.glow, t.x, y, t.z, yaw, [S, S * sy, S]));
       } else {
         // Stretch only vertically so each tower's sheaves meet the cable.
         const sy = (t.top - 0.03 - (t.ground - 0.03)) / KIT_ROPE_Y.tower;
-        body.push(placeKit(tower.body, t.x, t.ground - 0.03, t.z, yaw, [S, sy, S]));
+        if (tower.matte.attributes.position) matte.push(placeKit(tower.matte, t.x, t.ground - 0.03, t.z, yaw, [S, sy, S]));
+        if (tower.semiGloss) semiGloss.push(placeKit(tower.semiGloss, t.x, t.ground - 0.03, t.z, yaw, [S, sy, S]));
       }
     });
-    return { body: mergePlaced(body), glow: glow.length ? mergePlaced(glow) : null };
+    return {
+      matte: matte.length ? mergePlaced(matte) : null,
+      semiGloss: mergePlaced(semiGloss),
+      glass: glass.length ? mergePlaced(glass) : null,
+      glow: glow.length ? mergePlaced(glow) : null,
+    };
   }, [line, type, cables, tower, bottom, top, ropeY]);
   useEffect(() => () => cables.dispose(), [cables]);
   useEffect(
     () => () => {
-      built.body.dispose();
+      built.matte?.dispose();
+      built.semiGloss.dispose();
+      built.glass?.dispose();
       built.glow?.dispose();
     },
     [built],
@@ -160,6 +172,7 @@ export function Lift({
   const carrierGeo = useCarrierGeometry(type);
   const carriers = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
+  const glassMat = useRef<THREE.MeshStandardMaterial>(null);
   const glowMat = useRef<THREE.MeshBasicMaterial>(null);
   const lampMat = useRef<THREE.MeshBasicMaterial>(null);
   const lamps = useMemo(() => {
@@ -207,6 +220,9 @@ export function Lift({
       mesh.setMatrixAt(i, dummy.matrix);
     }
     mesh.instanceMatrix.needsUpdate = true;
+    if (glassMat.current) {
+      glassMat.current.emissiveIntensity = 0.22 + sceneMood.dusk * 0.63 + sceneMood.night * 1.13;
+    }
     if (glowMat.current) glowMat.current.color.setScalar(sceneMood.glow);
     if (lampMat.current) {
       const k = Math.max(sceneMood.night, sceneMood.dusk * 0.5);
@@ -232,6 +248,23 @@ export function Lift({
           )}
         </mesh>
       )}
+      {structure.glass && (
+        <mesh geometry={structure.glass}>
+          {preview ? (
+            <meshBasicMaterial color={ghostColor} transparent opacity={0.55} depthWrite={false} />
+          ) : (
+            <meshStandardMaterial
+              ref={glassMat}
+              vertexColors
+              roughness={0.18}
+              metalness={0.15}
+              emissive="#ff9f2e"
+              emissiveIntensity={0.22}
+              {...OVERLAY_DIM}
+            />
+          )}
+        </mesh>
+      )}
       {!preview && lamps && (
         <mesh geometry={lamps} renderOrder={5}>
           <meshBasicMaterial
@@ -245,7 +278,21 @@ export function Lift({
           />
         </mesh>
       )}
-      <mesh geometry={structure.body} castShadow={!preview} receiveShadow={!preview}>
+      {structure.matte && (
+        <mesh geometry={structure.matte} castShadow={!preview} receiveShadow={!preview}>
+          {preview ? (
+            <meshBasicMaterial
+              color={ghostColor}
+              transparent
+              opacity={invalidGhost ? 0.85 : 0.55}
+              depthWrite={false}
+            />
+          ) : (
+            <meshStandardMaterial vertexColors roughness={0.8} metalness={0.02} {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
+          )}
+        </mesh>
+      )}
+      <mesh geometry={structure.semiGloss} castShadow={!preview} receiveShadow={!preview}>
         {preview ? (
           <meshBasicMaterial
             color={ghostColor}
@@ -254,7 +301,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
+          <meshStandardMaterial vertexColors roughness={0.35} metalness={0.35} {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
         )}
       </mesh>
       <instancedMesh
@@ -271,7 +318,7 @@ export function Lift({
             depthWrite={false}
           />
         ) : (
-          <meshLambertMaterial vertexColors {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
+          <meshStandardMaterial vertexColors roughness={0.38} metalness={0.25} {...OVERLAY_DIM} color={closing ? "#e8b46a" : "white"} />
         )}
       </instancedMesh>
     </group>

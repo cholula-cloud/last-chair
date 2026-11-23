@@ -178,15 +178,26 @@ def make_venue(style, kind):
     a.box((0, fy - 0.2, H + 0.9), (2.9, 0.06, 0.7), "cream-sign")
     if kind == "cafe":
         a.box((0.2, fy - 2.2, 0.08), (5.8, 3.8, 0.14), t["bat"])
-        for tx in (-1.4, 0.2, 1.8):
+        for tx in (-1.4, 0.2):
             a.cyl((tx, fy - 2.5, 0.12), 0.05, 0.05, 0.8, 5, "shutter-black")
             a.cyl((tx, fy - 2.5, 0.92), 0.38, 0.38, 0.06, 8, "shutter-black")
+        a.cyl((2.0, fy - 2.4, 0.12), 0.06, 0.06, 2.2, 6, "steel")
+        a.cyl((2.0, fy - 2.4, 2.25), 1.3, 0.08, 0.6, 8, "umbrella-yellow")
     if kind == "rental-shop":
         a.box((0, fy - 0.5, F + 0.5), (4.4, 0.6, 0.9), t["bat"])
         a.box((-W / 2 - 1.0, fy - 0.7, 0.35), (1.6, 2.2, 0.65), t["bat"])
     if kind == "waffle-haus":
-        a.box((0, fy - 2.0, 0.1), (5.6, 3.2, 0.14), t["bat"])
-        a.box((0, fy - 1.3, 0.7), (3.8, 0.6, 0.8), t["accent"])
+        a = Asset(f"{kind}-{style}")
+        a.box((0, 0, 0.32), (W + 0.25, D + 0.25, 0.64), t["stone"])
+        a.prism((0, 0, 0.64), D, W, 6.2, t["wall"], rz=90)
+        a.gable_roof((0, 0, 0.64), D, W, 6.2, t["roof"], rz=90, thick=0.22, overhang=0.5,
+                     snow_thick=0.42, snow_over=0.12, snow_bevel=0.12)
+        a.gable_end((0, fy - 0.08, 0.95), 0.12, W - 1.3, 4.9, "window-glow", rz=90)
+        a.box((0, fy - 0.16, 3.0), (0.14, 0.1, 4.0), t["bat"])
+        a.box((0, fy - 0.26, 4.2), (3.0, 0.12, 0.9), "umbrella-yellow")
+        a.box((0, fy - 1.8, 0.1), (5.6, 3.2, 0.16), t["bat"])
+        a.box((0, fy - 1.2, 0.7), (3.8, 0.6, 0.8), t["accent"])
+        return a.finish()
     if kind == "ski-shop":
         for x, m in ((-3.0, "amber-accent"), (-2.7, "navy"), (3.0, "jacket")):
             a.box((x, fy - 0.35, 1.0), (0.1, 0.06, 1.8), m, rot=(-10, 0, 0))

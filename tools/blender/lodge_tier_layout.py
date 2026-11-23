@@ -147,6 +147,18 @@ def build_tier2_shell(a, mats):
     _simple_deck(a, -9.0, 9.0, fy - 0.05, fy - 4.2, F, timber, timber_d, snow)
     _chimney(a, W / 2 - 1.1, 1.8, H + rise + 0.5, stone, snow)
 
+    # Distinct hearth dining wing on -X so Tier 2 reads immediately larger than Tier 1
+    wx0, wx1, wd, wh = -W / 2 + 0.2, -W / 2 - 4.2, 6.8, 4.2
+    wcx, wl = (wx0 + wx1) / 2, wx0 - wx1
+    a.box((wcx, -0.4, F / 2), (wl + 0.2, wd + 0.2, F), stone)
+    a.box((wcx, -0.4, F + (wh - F) / 2), (wl, wd, wh - F), wall)
+    _corners(a, wcx, -0.4, wl / 2, wd / 2, F, wh, trim)
+    a.gable_end((wcx - 0.2, -0.4, wh), wl + 0.4, wd, 2.8, wall)
+    a.gable_roof((wcx - 0.2, -0.4, wh), wl + 0.4, wd, 2.8, roof, thick=0.22, overhang=0.45,
+                 snow_thick=0.38, snow_over=0.12, snow_bevel=0.12)
+    a.window((wcx, -0.4 - wd / 2, 2.3), 2.2, 1.7, '-Y', frame=trim)
+    a.window((wx1, -0.4, 2.3), 1.8, 1.6, '-X', frame=trim)
+
 
 # ---------- Tier 3: stepped New England resort ----------
 
@@ -216,6 +228,7 @@ def build_tier3_shell(a, mats):
     a.sphere((0, uy, cz + 3.05), 0.2, snow)
 
     _chimney(a, Wu / 2 + 0.6, uy + 1.2, Hb + Hu + rise_u + 1.0, stone, snow)
+    _chimney(a, -Wu / 2 - 0.6, uy + 1.2, Hb + Hu + rise_u * 0.72, stone, snow)
 
     # Plaza with railings + long grand central canopy
     px0, px1 = -(Wb + 1.0) / 2, (Wb + 1.0) / 2

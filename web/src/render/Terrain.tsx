@@ -233,7 +233,7 @@ export function Terrain({
   }, [snowTex, trails.length, snowPreset, runsByTrail]);
 
   const material = useMemo(() => {
-    const base = new THREE.MeshLambertMaterial({ vertexColors: true });
+    const base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.68, metalness: 0.02 });
     const withSnow = MOUNTAIN_TRAIL_CONDITIONING ? patchSnowMaterial(base) : base;
     return patchOverlay(patchLeaseDim(withSnow));
   }, []);
@@ -249,29 +249,72 @@ export function Terrain({
   );
 }
 
-/** Ploughed valley road with a dark centre line, across the front of the base. */
+/** Ploughed valley road with dashed yellow centreline and sculpted snowbanks. */
 export function Road() {
   const geometry = useMemo(() => {
     const { xFrom, xTo } = SITE.road;
-    const segs = 90;
+    const segs = 120;
     const pos: number[] = [];
+    const col: number[] = [];
     const idx: number[] = [];
-    const w = 0.38;
+
+    const roadCol = new THREE.Color(PALETTE.road);
+    const stripeCol = new THREE.Color(PALETTE.yellow);
+    const bankTop = new THREE.Color(PALETTE.snow);
+    const bankEdge = new THREE.Color(PALETTE.snowShade).lerp(bankTop, 0.72);
+
+    // Cross-section offsets (z-offset, y-lift, color)
+    const w = 0.44;
+    const profile: { dz: number; dy: number; c: THREE.Color }[] = [
+      { dz: -(w + 0.42), dy: 0.0, c: bankEdge },
+      { dz: -(w + 0.2), dy: 0.09, c: bankTop },
+      { dz: -w, dy: 0.025, c: roadCol },
+      { dz: -0.05, dy: 0.025, c: roadCol },
+      { dz: 0.05, dy: 0.025, c: roadCol },
+      { dz: w, dy: 0.025, c: roadCol },
+      { dz: w + 0.2, dy: 0.09, c: bankTop },
+      { dz: w + 0.42, dy: 0.0, c: bankEdge },
+    ];
+    const stride = profile.length;
+
     for (let i = 0; i <= segs; i++) {
       const x = xFrom + (i / segs) * (xTo - xFrom);
       const z = ROAD_Z + Math.sin(x * 0.18) * 0.25;
-      for (const s of [-1, 0, 1]) {
-        const zz = z + s * w;
-        pos.push(x, TERRAIN.height(x, zz) + 0.025, zz);
+      for (const p of profile) {
+        const zz = z + p.dz;
+        pos.push(x, TERRAIN.height(x, zz) + p.dy, zz);
+        col.push(p.c.r, p.c.g, p.c.b);
       }
       if (i < segs) {
-        const a = i * 3;
-        idx.push(a, a + 1, a + 3, a + 1, a + 4, a + 3);
-        idx.push(a + 1, a + 2, a + 4, a + 2, a + 5, a + 4);
+        const a = i * stride;
+        for (let k = 0; k < stride - 1; k++) {
+          idx.push(a + k, a + k + 1, a + stride + k);
+          idx.push(a + k + 1, a + stride + k + 1, a + stride + k);
+        }
       }
     }
+
+    // Crisp dashed yellow center dashes along the road
+    for (let i = 0; i < segs; i += 2) {
+      const x0 = xFrom + (i / segs) * (xTo - xFrom);
+      const x1 = xFrom + ((i + 1) / segs) * (xTo - xFrom);
+      const z0 = ROAD_Z + Math.sin(x0 * 0.18) * 0.25;
+      const z1 = ROAD_Z + Math.sin(x1 * 0.18) * 0.25;
+      const base = pos.length / 3;
+      const sw = 0.032;
+      pos.push(
+        x0, TERRAIN.height(x0, z0) + 0.032, z0 - sw,
+        x0, TERRAIN.height(x0, z0) + 0.032, z0 + sw,
+        x1, TERRAIN.height(x1, z1) + 0.032, z1 - sw,
+        x1, TERRAIN.height(x1, z1) + 0.032, z1 + sw,
+      );
+      for (let k = 0; k < 4; k++) col.push(stripeCol.r, stripeCol.g, stripeCol.b);
+      idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+    }
+
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
     g.setIndex(idx);
     g.computeVertexNormals();
     return g;
@@ -279,8 +322,10 @@ export function Road() {
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <mesh geometry={geometry} receiveShadow>
-      <meshLambertMaterial
-        color={PALETTE.road}
+      <meshStandardMaterial
+        vertexColors
+        roughness={0.84}
+        metalness={0.02}
         polygonOffset
         polygonOffsetFactor={-2}
       />
