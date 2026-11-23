@@ -370,12 +370,12 @@ async function upgrade(page, cdp, engine) {
   assert.equal(state.lodgeUpgrade?.toTier, 2);
   assert.equal(state.lodgeUpgrade?.nightsRemaining, 2);
   await click(page, "Close build sheet");
-  await click(page, "Game speed 1x, tap to change");
-  await click(page, "Game speed 2x, tap to change");
+  await click(page, "Game speed: calm, tap to change");
+  await click(page, "Game speed: normal, tap to change");
 
   await closeHill(page);
   await sleep(page);
-  assert(await button(page, "Game speed 4x, tap to change").isVisible(), "Morning should keep the selected speed");
+  assert(await button(page, "Game speed: fast, tap to change").isVisible(), "Morning should keep the selected speed");
   state = (await save(page)).state;
   assert.equal(state.lodgeTier, 1);
   assert.equal(state.lodgeUpgrade?.nightsRemaining, 1);

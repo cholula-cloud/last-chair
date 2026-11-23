@@ -66,7 +66,8 @@ try {
   await buildOpening(page, cdp);
 
   await tap("Resume day");
-  await page.getByLabel("Close hill", { exact: true }).tap();
+  await tap("Office");
+  await tap("Close hill");
   await heading("Closing recap", page).waitFor();
   await shot("night1-recap.png");
   await resolveRadio(page);
@@ -79,7 +80,7 @@ try {
 
   await resumeIfPaused();
   await tap("Office");
-  await page.getByLabel("Close hill", { exact: true }).tap();
+  await tap("Close hill");
   await page.getByRole("button", { name: /Sleep until morning|Finish the winter/ }).waitFor({ timeout: 120_000 });
   await openTodaysResults(page);
   await heading("Closing recap", page).waitFor();

@@ -1,8 +1,8 @@
 import { DAY_1_COLD_READ, formatOperatorText } from "./content";
-import { latestRadio } from "./deskRadio";
+import { lodgeOpeningRadio } from "./deskRadio";
 import { hillById } from "./mountains/roster";
 import type { GameState } from "./state";
-import { SLOANE_SCOUT_ID } from "./surprises";
+import { SLOANE_SCOUT_ID, surpriseRadio } from "./surprises";
 import type { WeatherKind } from "./types";
 import { isWindHeld, outlookFor, weatherForDay } from "./weather";
 
@@ -138,6 +138,19 @@ function wvtkBroadcast(state: GameState): RadioBroadcast {
     !state.completedBeats.includes("first_load") &&
     state.dayStats.completedRuns > 0
   ) {
+    if (state.clockMin >= 780) {
+      return {
+        id: "day1-afternoon",
+        band: "wvtk",
+        callSign: meta.callSign,
+        speaker: meta.speaker,
+        title: "First afternoon runs",
+        body: formatOperatorText(
+          `Afternoon laps rolling smoothly on ${hillName} under {name}. ${state.dayStats.completedRuns} runs logged on reopening day.`,
+          name,
+        ),
+      };
+    }
     return {
       id: "first-tracks-live",
       band: "wvtk",
@@ -149,17 +162,6 @@ function wvtkBroadcast(state: GameState): RadioBroadcast {
         name,
       ),
       urgent: true,
-    };
-  }
-
-  if (state.mountainId === "mount_tom" && state.nightLights && state.nightSessionOn && state.clockMin >= 840) {
-    return {
-      id: "mount-tom-lights",
-      band: "wvtk",
-      callSign: meta.callSign,
-      speaker: meta.speaker,
-      title: "Ridge lights warming up",
-      body: "Holyoke folks can already see the Mount Tom floodlights flickering on above the river. Night session crowd is rolling in.",
     };
   }
 
@@ -175,29 +177,160 @@ function wvtkBroadcast(state: GameState): RadioBroadcast {
     };
   }
 
-  const latest = latestRadio(state);
-  if (latest) {
+  const todaySurprise = state.surpriseLog.findLast((entry) => entry.dayIndex === state.dayIndex);
+  if (todaySurprise) {
+    const note = surpriseRadio(todaySurprise, name, {
+      fare: state.fare,
+      vivianVisit: state.vivianVisit,
+      reputation: state.reputation,
+    });
     return {
-      id: `desk-${latest.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      id: `surprise-${todaySurprise.kind}`,
       band: "wvtk",
       callSign: meta.callSign,
       speaker: meta.speaker,
-      title: latest.title,
-      body: latest.radio,
+      title: note.title,
+      body: note.radio,
     };
   }
 
-  return {
-    id: `morning-${state.dayIndex}`,
-    band: "wvtk",
-    callSign: meta.callSign,
-    speaker: meta.speaker,
-    title: `${hillName} check-in`,
-    body: formatOperatorText(
-      `Morning from WVTK 100.7. Gravel lot is open at ${hillName} and {name} has the lodge coffee hot.`,
-      name,
-    ),
-  };
+  const todayLodge = state.seasonDays?.findLast((day) => day.day === state.dayIndex && day.lodgeOpening);
+  if (todayLodge) {
+    return {
+      id: `lodge-tier-${todayLodge.lodgeOpening}`,
+      band: "wvtk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: "Lodge addition",
+      body: lodgeOpeningRadio(todayLodge.lodgeOpening ?? 2),
+    };
+  }
+
+  if (state.mountainId === "mount_tom" && state.nightLights && state.nightSessionOn && state.clockMin >= 840) {
+    return {
+      id: "mount-tom-lights",
+      band: "wvtk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: "Ridge lights warming up",
+      body: "Holyoke folks can already see the Mount Tom floodlights flickering on above the river. Night session crowd is rolling in.",
+    };
+  }
+
+  if (onHillCount >= 18 && state.clockMin >= 660 && state.clockMin < 810) {
+    return {
+      id: "midday-crowd",
+      band: "wvtk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: "Busy gravel lot",
+      body: formatOperatorText(
+        `Full car rows over at ${hillName} at lunchtime under {name}. Word of good cover is traveling down Route 100.`,
+        name,
+      ),
+    };
+  }
+
+  if (
+    state.dayStats.completedRuns >= 8 &&
+    currentAvgWaitMin(state) < 2.5 &&
+    state.clockMin >= 720 &&
+    state.clockMin < 870
+  ) {
+    return {
+      id: "fast-laps",
+      band: "wvtk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: `Fast laps on ${hillName}`,
+      body: formatOperatorText(
+        `{name} has the bullwheel humming smoothly today with ${state.dayStats.completedRuns} runs logged and short lift lines.`,
+        name,
+      ),
+    };
+  }
+
+  if (state.clockMin >= 900) {
+    return {
+      id: `last-chair-${state.dayIndex}`,
+      band: "wvtk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: "Heading toward last chair",
+      body: state.dayStats.dispatched > 0
+        ? `Final hour on ${hillName} with ${state.dayStats.dispatched} skiers out on the hill before 4 PM closing bell.`
+        : `Quiet final hour at ${hillName} as shadows stretch across the lower meadow.`,
+    };
+  }
+
+  const qualPct = Math.round(state.snowQuality * 100);
+  const openTrails = state.trails.filter((t) => t.open).length;
+  const slot = state.clockMin < 660 ? "morning" : state.clockMin < 840 ? "midday" : "afternoon";
+  const pick = (state.dayIndex + (slot === "midday" ? 1 : slot === "afternoon" ? 2 : 0)) % 3;
+
+  if (slot === "morning") {
+    const mornings = [
+      {
+        title: `${hillName} check-in`,
+        body: formatOperatorText(
+          `Morning from WVTK 100.7. Gravel lot is open at ${hillName} and {name} has the lodge coffee hot.`,
+          name,
+        ),
+      },
+      {
+        title: "First chairs rolling",
+        body: `Early patrol sweep looks clean on ${hillName} with ${openTrails} open ${openTrails === 1 ? "trail" : "trails"} and ${qualPct}% snow quality.`,
+      },
+      {
+        title: "Morning Route 100",
+        body: `Crisp start in the valley. Ticket shack is open at ${hillName} for anyone chasing first corduroy.`,
+      },
+    ];
+    const item = mornings[pick]!;
+    return { id: `morning-${pick}-${state.dayIndex}`, band: "wvtk", callSign: meta.callSign, speaker: meta.speaker, ...item };
+  }
+
+  if (slot === "midday") {
+    const middays = [
+      {
+        title: "Midday hill check",
+        body: `Noon check from ${hillName}: ${openTrails} open ${openTrails === 1 ? "trail" : "trails"} holding at ${qualPct}% snow quality.`,
+      },
+      {
+        title: "General store word",
+        body: formatOperatorText(
+          `Folks at the general store say {name} keeps the lift ramps tidy and the runs worth the drive.`,
+          name,
+        ),
+      },
+      {
+        title: "Lodge lunch hour",
+        body: `Warm cocoa and hot soup inside the ${hillName} lodge while the midday sun softens the upper pitch.`,
+      },
+    ];
+    const item = middays[pick]!;
+    return { id: `midday-${pick}-${state.dayIndex}`, band: "wvtk", callSign: meta.callSign, speaker: meta.speaker, ...item };
+  }
+
+  const afternoons = [
+    {
+      title: "Afternoon valley light",
+      body: `Long afternoon shadows creeping across ${hillName}, snow holding at ${qualPct}% for late-day cruisers.`,
+    },
+    {
+      title: "Late-day turns",
+      body: formatOperatorText(
+        `Plenty of elbow room on the hill this afternoon under {name} before the 4 PM closing sign goes out.`,
+        name,
+      ),
+    },
+    {
+      title: "Down-valley check",
+      body: `Roads along Route 100 are clear for the drive home once the chairs clear at ${hillName}.`,
+    },
+  ];
+  const item = afternoons[pick]!;
+  return { id: `afternoon-${pick}-${state.dayIndex}`, band: "wvtk", callSign: meta.callSign, speaker: meta.speaker, ...item };
 }
 
 function wxkBroadcast(state: GameState): RadioBroadcast {
@@ -231,6 +364,17 @@ function wxkBroadcast(state: GameState): RadioBroadcast {
     };
   }
 
+  if (state.clockMin < 750) {
+    return {
+      id: `wxk-morning-${state.dayIndex}`,
+      band: "wxk",
+      callSign: meta.callSign,
+      speaker: meta.speaker,
+      title: "Morning surface read",
+      body: `Current conditions: ${WEATHER_LABELS[state.weather]}, ${depthPct}% base depth and ${qualPct}% snow quality across the hill.`,
+    };
+  }
+
   if (outlook) {
     const topKind = (Object.keys(outlook) as WeatherKind[]).reduce((best, kind) =>
       outlook[kind] > outlook[best] ? kind : best,
@@ -242,7 +386,7 @@ function wxkBroadcast(state: GameState): RadioBroadcast {
       callSign: meta.callSign,
       speaker: meta.speaker,
       title: "Green Mountain forecast",
-      body: `Current conditions: ${WEATHER_LABELS[state.weather]}, ${qualPct}% snow quality. Tomorrow favors ${WEATHER_LABELS[topKind]} at ${odds}%.`,
+      body: `Afternoon conditions: ${WEATHER_LABELS[state.weather]}, ${qualPct}% snow quality. Tomorrow favors ${WEATHER_LABELS[topKind]} at ${odds}%.`,
     };
   }
 
@@ -271,6 +415,16 @@ const WHITEROCK_SPOTS: readonly { id: string; title: string; body: string }[] = 
     id: "wr-app",
     title: "Download the Whiterock app",
     body: "Unlock Surge Tier Platinum at Whiterock Alpine. Skip the local coffee can and pay with one convenient seasonal subscription.",
+  },
+  {
+    id: "wr-gondola",
+    title: "Heated gondola pods",
+    body: "Whiterock Alpine's heated eight-passenger pods feature Wi-Fi and ambient mountain playlists for every vertical foot.",
+  },
+  {
+    id: "wr-valet",
+    title: "Reserve concrete stall 402",
+    body: "Book slope-side valet parking forty-eight hours ahead on the Whiterock Pass portal. Walk-up skiers may shuttle from Lot G.",
   },
 ];
 
@@ -323,7 +477,7 @@ function whiterockBroadcast(state: GameState): RadioBroadcast {
     };
   }
 
-  const spot = WHITEROCK_SPOTS[(Math.max(1, state.dayIndex) - 1) % WHITEROCK_SPOTS.length];
+  const spot = WHITEROCK_SPOTS[(Math.max(1, state.dayIndex) + (state.clockMin >= 750 ? 1 : 0)) % WHITEROCK_SPOTS.length];
   return {
     id: spot.id,
     band: "whiterock",

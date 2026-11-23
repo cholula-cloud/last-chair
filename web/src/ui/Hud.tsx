@@ -25,6 +25,7 @@ import {
   RecenterIcon,
   SnowIcon,
   SnowfallIcon,
+  SpeedIcon,
   SunIcon,
   ThawIcon,
   WarningDiamondIcon,
@@ -102,10 +103,10 @@ export function TopBar({
       <button
         type="button"
         onClick={cycleSpeed}
-        aria-label={`Game speed ${speed}x, tap to change`}
-        className="chip press flex size-11 shrink-0 items-center justify-center text-[0.9rem] font-extrabold tabular-nums sm:size-12 sm:text-[0.95rem]"
+        aria-label={`Game speed: ${speed}, tap to change`}
+        className="chip press flex size-11 shrink-0 items-center justify-center sm:size-12"
       >
-        {speed}×
+        <SpeedIcon tier={speed === "calm" ? 1 : speed === "normal" ? 2 : 3} size={20} />
       </button>
       <span
         className={`chip display flex h-11 min-w-[4.7rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2 text-[1.12rem] tabular-nums sm:h-12 sm:min-w-[5.5rem] sm:px-3 sm:text-[1.28rem] ${
@@ -689,7 +690,7 @@ export function ActionBar({
         type="button"
         onClick={onCloseHill}
         disabled={!canCloseHill || !onCloseHill}
-        aria-label="Close hill"
+        aria-label="Close for the night"
         className="key key-solid press flex h-[52px] flex-col items-center justify-center gap-0.5 px-1 text-[0.72rem] font-extrabold [--key-fill:var(--sign-brown)] [--key-ink:#fff] [--lift:3px] sm:text-[0.78rem] sm:[--lift:4px]"
       >
         <MountainMoonIcon size={18} />

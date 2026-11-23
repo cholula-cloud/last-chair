@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { create } from "zustand";
 import {
   liveRadioBroadcast,
   RADIO_BANDS,
@@ -10,15 +11,53 @@ import {
 } from "@/game/radioChannels";
 import { useGameStore } from "@/game/store";
 import { radioDialTurned } from "@/ui/feel";
-import { ChevronDownIcon, ChevronUpIcon, CloseIcon } from "@/ui/kit/icons";
+import { CloseIcon } from "@/ui/kit/icons";
 import { tidy } from "@/ui/kit/parts";
+import { useReducedMotion } from "@/ui/motion";
 import { useSettings } from "@/ui/settingsStore";
 
 const PEEK_MS = 6000;
+const TAP_SLOP_PX = 6;
+const DISMISS_DRAG_PX = 28;
+const DISMISS_VELOCITY = 0.35;
+
+/** Session-wide tracking so switching HUD overlays never re-peeks the same dispatch. */
+const useRadioUi = create<{
+  seenKeys: Record<string, true>;
+  unreadKey: string | null;
+  peekingKey: string | null;
+  pendingPeekKey: string | null;
+  recordKey: (key: string, defer: boolean) => void;
+  promotePendingPeek: () => void;
+  expirePeek: () => void;
+  clearUnread: () => void;
+}>((set) => ({
+  seenKeys: {},
+  unreadKey: null,
+  peekingKey: null,
+  pendingPeekKey: null,
+  recordKey: (key, defer) =>
+    set((s) =>
+      s.seenKeys[key]
+        ? s
+        : {
+            seenKeys: { ...s.seenKeys, [key]: true },
+            unreadKey: key,
+            peekingKey: defer ? null : key,
+            pendingPeekKey: defer ? key : null,
+          },
+    ),
+  promotePendingPeek: () =>
+    set((s) =>
+      s.pendingPeekKey ? { peekingKey: s.pendingPeekKey, pendingPeekKey: null } : s,
+    ),
+  expirePeek: () => set({ peekingKey: null }),
+  clearUnread: () => set({ unreadKey: null, peekingKey: null, pendingPeekKey: null }),
+}));
 
 function WavesGlyph({ active }: { active: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className="size-4 shrink-0" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" className="size-5 shrink-0" aria-hidden="true" focusable="false">
       <circle cx="12" cy="12" r="2.2" fill="currentColor" />
       <g
         fill="none"
@@ -44,8 +83,8 @@ export type MorningDispatch = {
 };
 
 /**
- * Compact daytime radio pill and 3-band tuner popover (WVTK 100.7, WXK-44, WRCK 98.3).
- * Auto-peeks new WVTK dispatches or fresh morning weather notes for 6 seconds without covering the hill.
+ * Compact 44px Radio toggle anchored under the Play button, with a transient 6s peek toast for
+ * newly arriving dispatches and a full 3-band tuner popover on tap.
  */
 export function HudRadio({
   onOpenLog,
@@ -58,29 +97,47 @@ export function HudRadio({
   const radioEnabled = useSettings((s) => s.radioEnabled);
   const radioBand = useSettings((s) => s.radioBand);
   const setSettings = useSettings((s) => s.set);
+  const reduceMotion = useReducedMotion();
 
   const [open, setOpen] = useState(false);
-  const [peeking, setPeeking] = useState(false);
-  const lastPeekKey = useRef<string | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const toastRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ startY: number; startAt: number; dragging: boolean; offset: number } | null>(null);
+
+  const unreadKey = useRadioUi((s) => s.unreadKey);
+  const peekingKey = useRadioUi((s) => s.peekingKey);
+  const pendingPeekKey = useRadioUi((s) => s.pendingPeekKey);
+  const recordKey = useRadioUi((s) => s.recordKey);
+  const promotePendingPeek = useRadioUi((s) => s.promotePendingPeek);
+  const expirePeek = useRadioUi((s) => s.expirePeek);
+  const clearUnread = useRadioUi((s) => s.clearUnread);
 
   const broadcast = liveRadioBroadcast(state, radioBand);
   const wvtkLive = radioBand === "wvtk" ? broadcast : liveRadioBroadcast(state, "wvtk");
   const wvtkKey = radioDispatchKey(wvtkLive, state.dayIndex);
   const meta = STATION_META[radioBand];
 
-  // Auto-peek new WVTK dispatches (including Day 1 Cold Read) when radio is on.
+  // Record each new dispatch key once; defer peeking if MorningNote or tuner is already open.
   useEffect(() => {
     if (!radioEnabled || radioBand !== "wvtk") return;
-    if (lastPeekKey.current === wvtkKey) return;
-    lastPeekKey.current = wvtkKey;
-    const startTimer = window.setTimeout(() => setPeeking(true), 0);
-    const timer = window.setTimeout(() => setPeeking(false), PEEK_MS);
-    return () => {
-      window.clearTimeout(startTimer);
-      window.clearTimeout(timer);
-    };
-  }, [radioEnabled, radioBand, wvtkKey]);
+    const defer = Boolean(morningDispatch) || open;
+    const id = window.setTimeout(() => recordKey(wvtkKey, defer), 0);
+    return () => window.clearTimeout(id);
+  }, [radioEnabled, radioBand, wvtkKey, morningDispatch, open, recordKey]);
+
+  // Once MorningNote is dismissed, surface any deferred dispatch toast cleanly.
+  useEffect(() => {
+    if (!radioEnabled || radioBand !== "wvtk" || morningDispatch || open || !pendingPeekKey) return;
+    const id = window.setTimeout(() => promotePendingPeek(), 120);
+    return () => window.clearTimeout(id);
+  }, [radioEnabled, radioBand, morningDispatch, open, pendingPeekKey, promotePendingPeek]);
+
+  // Auto-hide the peek toast after 6 seconds.
+  useEffect(() => {
+    if (!peekingKey || open || morningDispatch || !radioEnabled) return;
+    const timer = window.setTimeout(() => expirePeek(), PEEK_MS);
+    return () => window.clearTimeout(timer);
+  }, [peekingKey, open, morningDispatch, radioEnabled, expirePeek]);
 
   // Close the tuner popover on Escape or outside click.
   useEffect(() => {
@@ -104,110 +161,190 @@ export function HudRadio({
   const selectBand = (next: RadioBandId) => {
     radioDialTurned();
     setSettings({ radioBand: next, radioEnabled: true });
-    setPeeking(false);
+    clearUnread();
   };
 
   const togglePower = () => {
     radioDialTurned();
     setSettings({ radioEnabled: !radioEnabled });
-    setPeeking(false);
+    clearUnread();
+  };
+
+  const showToast = !open && !morningDispatch && !!peekingKey && radioEnabled;
+  const showUnreadDot = !open && !showToast && !!unreadKey && radioEnabled;
+
+  const resetToastStyle = (animate: boolean) => {
+    const el = toastRef.current;
+    if (!el) return;
+    el.style.transition = animate && !reduceMotion ? "transform 200ms var(--ease-out), opacity 180ms var(--ease-out)" : "";
+    el.style.transform = "";
+    el.style.opacity = "";
+  };
+
+  const onToastPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    dragRef.current = { startY: e.clientY, startAt: performance.now(), dragging: false, offset: 0 };
+    if (!reduceMotion) e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onToastPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const el = toastRef.current;
+    if (!drag || !el || reduceMotion) return;
+    const dy = e.clientY - drag.startY;
+    if (!drag.dragging && Math.abs(dy) >= TAP_SLOP_PX) drag.dragging = true;
+    if (!drag.dragging) return;
+    const offset = dy < 0 ? dy : dy * 0.25;
+    drag.offset = offset;
+    el.style.transition = "none";
+    el.style.transform = `translateY(${offset}px)`;
+    el.style.opacity = dy < 0 ? String(Math.max(0.2, 1 + dy / 90)) : "1";
+  };
+
+  const onToastPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag) return;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    const dt = Math.max(16, performance.now() - drag.startAt);
+    const velocity = -drag.offset / dt;
+    if (drag.dragging && (-drag.offset >= DISMISS_DRAG_PX || velocity >= DISMISS_VELOCITY)) {
+      clearUnread();
+      return;
+    }
+    resetToastStyle(true);
+    if (!drag.dragging) {
+      setOpen(true);
+      clearUnread();
+    }
   };
 
   return (
     <div
       ref={wrapRef}
       data-hud-radio="true"
-      className="pointer-events-auto relative w-full max-w-[min(27rem,100%)]"
+      className="pointer-events-none relative w-full max-w-[min(27rem,100%)]"
     >
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls="hud-radio-tuner"
-        onClick={() => {
-          setOpen((v) => !v);
-          setPeeking(false);
-        }}
-        className="chip hud-surface press flex min-h-11 w-full items-center gap-2 bg-sign-yellow-soft px-2.5 py-1 text-left text-xs font-extrabold text-ink [--lift:3px]"
-      >
-        <span
-          className={`inline-flex shrink-0 items-center gap-1 rounded-[8px] border-2 border-ink px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none ${
-            radioEnabled ? "bg-sign-yellow text-ink" : "bg-snow-2 text-ink-soft"
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="hud-radio-tuner"
+          aria-label={
+            radioEnabled
+              ? `${meta.shortLabel}: ${tidy(broadcast.title)}${showUnreadDot ? " (new dispatch)" : ""}`
+              : "Radio off, tap to tune WVTK 100.7"
+          }
+          onClick={() => {
+            const next = !open;
+            setOpen(next);
+            if (next) clearUnread();
+          }}
+          className={`key key-sm press pointer-events-auto relative flex size-11 shrink-0 items-center justify-center [--lift:3px] ${
+            open || showToast
+              ? "bg-sign-yellow text-ink"
+              : radioEnabled
+                ? "bg-sign-yellow-soft text-ink"
+                : "bg-snow-2 text-ink-soft"
           }`}
         >
           <WavesGlyph active={radioEnabled} />
-          {radioEnabled ? meta.shortLabel : "Radio off"}
-        </span>
-        <span className="min-w-0 flex-1 truncate text-[0.8rem] font-extrabold text-ink">
-          {radioEnabled ? tidy(broadcast.title) : "Tap to tune WVTK 100.7"}
-        </span>
-        {open ? (
-          <ChevronUpIcon size={16} className="shrink-0 text-ink" />
-        ) : (
-          <ChevronDownIcon size={16} className="shrink-0 text-ink" />
+          {showUnreadDot && (
+            <span
+              aria-hidden="true"
+              className={`absolute -right-1 -top-1 size-3 rounded-full border-2 border-ink ${
+                wvtkLive.urgent ? "bg-barn-deep" : "bg-sign-yellow"
+              }`}
+            />
+          )}
+        </button>
+
+        {!open && morningDispatch && (
+          <aside
+            aria-label="Morning note"
+            className="panel popover-in pointer-events-auto flex min-w-0 flex-1 origin-top-left items-start gap-2.5 px-3 py-2 text-left [--lift:3px]"
+          >
+            <span
+              aria-hidden="true"
+              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
+            >
+              {morningDispatch.weatherIcon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[0.8rem] font-bold leading-snug text-ink">
+                <span className="font-extrabold">{morningDispatch.weatherLabel}.</span> {morningDispatch.headline}
+              </p>
+              {morningDispatch.overnightLine && (
+                <p className="mt-0.5 text-[0.74rem] font-bold tabular-nums text-ink-soft">
+                  {morningDispatch.overnightLine}
+                </p>
+              )}
+              {morningDispatch.crewLine && (
+                <p className="mt-0.5 text-[0.78rem] font-extrabold leading-snug text-sign-green">
+                  {morningDispatch.crewLine}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={morningDispatch.onDismiss}
+              aria-label="Dismiss morning note"
+              className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
+            >
+              <CloseIcon size={16} />
+            </button>
+          </aside>
         )}
-      </button>
 
-      {!open && morningDispatch && (
-        <aside
-          aria-label="Morning note"
-          className="panel popover-in origin-top mt-1.5 flex items-start gap-2.5 px-3 py-2 text-left [--lift:3px]"
-        >
-          <span
-            aria-hidden="true"
-            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
+        {showToast && (
+          <div
+            ref={toastRef}
+            role="status"
+            aria-live="polite"
+            onPointerDown={onToastPointerDown}
+            onPointerMove={onToastPointerMove}
+            onPointerUp={onToastPointerUp}
+            onPointerCancel={() => {
+              dragRef.current = null;
+              resetToastStyle(true);
+            }}
+            className="panel popover-in pointer-events-auto flex min-w-0 flex-1 origin-top-left cursor-pointer touch-pan-x items-start gap-2 bg-sign-yellow-soft px-3 py-2 text-left [--lift:3px]"
           >
-            {morningDispatch.weatherIcon}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[0.8rem] font-bold leading-snug text-ink">
-              <span className="font-extrabold">{morningDispatch.weatherLabel}.</span> {morningDispatch.headline}
-            </p>
-            {morningDispatch.overnightLine && (
-              <p className="mt-0.5 text-[0.74rem] font-bold tabular-nums text-ink-soft">
-                {morningDispatch.overnightLine}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 rounded-md border-2 border-ink bg-sign-yellow px-1.5 py-0.5 text-[0.65rem] font-extrabold leading-none text-ink">
+                  {meta.shortLabel}
+                </span>
+                <p className="min-w-0 truncate text-[0.8rem] font-extrabold text-ink">
+                  {tidy(broadcast.title)}
+                </p>
+              </div>
+              <p className="mt-1 line-clamp-2 text-[0.78rem] font-bold leading-snug text-ink-soft">
+                {tidy(broadcast.body)}
               </p>
-            )}
-            {morningDispatch.crewLine && (
-              <p className="mt-0.5 text-[0.78rem] font-extrabold leading-snug text-sign-green">
-                {morningDispatch.crewLine}
-              </p>
-            )}
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                clearUnread();
+              }}
+              aria-label="Dismiss radio dispatch"
+              className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
+            >
+              <CloseIcon size={15} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={morningDispatch.onDismiss}
-            aria-label="Dismiss morning note"
-            className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
-          >
-            <CloseIcon size={16} />
-          </button>
-        </aside>
-      )}
-
-      {!open && !morningDispatch && peeking && radioEnabled && (
-        <div
-          role="status"
-          aria-live="polite"
-          onClick={() => {
-            setOpen(true);
-            setPeeking(false);
-          }}
-          className="panel popover-in origin-top mt-1.5 cursor-pointer bg-sign-yellow-soft px-3 py-2 text-left [--lift:3px]"
-        >
-          <p className="text-[0.72rem] font-extrabold text-sign-brown">
-            {broadcast.speaker}
-          </p>
-          <p className="mt-0.5 line-clamp-2 text-[0.82rem] font-bold leading-snug text-ink">
-            {tidy(broadcast.body)}
-          </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {open && (
         <section
           id="hud-radio-tuner"
           aria-label="Route 100 Radio tuner"
-          className="panel popover-in origin-top mt-1.5 space-y-2.5 p-3"
+          className="panel popover-in pointer-events-auto mt-1.5 max-w-[calc(100%-3.5rem)] origin-top-left space-y-2.5 p-3 sm:max-w-none"
         >
           <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Radio stations">
             {RADIO_BANDS.map((id) => {

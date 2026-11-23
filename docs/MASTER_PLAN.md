@@ -318,7 +318,7 @@ Office        → full-screen, pauses the day: Desk · Money · Stats · Reports
 
 **Performance budgets:** 20–30 simulated guests on iPhone (40 on iPad); ≤24 drawn guest meshes on iPhone; instanced trees; 30 fps acceptable on a mid iPhone; heightfield ≤2K; GLB <500 KB each, with styles sharing meshes and swapping palettes where they can. A cap on placed buildings per base area is set in row 16a (proposed 12 on iPhone). Pause the clock and flush the save when the page is hidden. Never assume 60 Hz. Audio only after a user gesture (see ART_DIRECTION Audio direction). No component in `web/src/render/` passes a positive `useFrame` priority unless it calls `gl.render` itself (that bug blanked the scene from #39 to #48).
 
-**Speed.** A standard day runs for two minutes at 1×. Players can choose 2× or 4× once the opening tips finish or are skipped. Speed carries overnight.
+**Speed.** A standard day runs for six minutes at Calm (`>`), two minutes at Normal (`>>`), or thirty seconds at Fast (`>>>`). Players can cycle speeds from the HUD button or set a default in Settings; speed resets to the chosen default each new session.
 
 **Difficulty:** every crisis has one visible fix (queue → capacity or trail; thaw → snow tier or guns; empty café → seats; wanted item locked → lodge tier). The closing recap offers a one-time winter loan when projected morning cash falls below zero before the final night. Three consecutive negative mornings end the winter and open the winter review.
 
@@ -456,7 +456,7 @@ M3 starts every player with a fresh winter and its own save key. Row 25 provides
 | L-C | ☑ | The lease and a continuous world | A lease polygon per mountain (`lease` in the terrain def) that lifts, painted trails, base assets and snow guns all check, with "Outside the Dutch Hill lease. Build inside the dashed line." The camera target stays on the lease outline plus 3 units. Build modes show a dashed survey line and dim the land outside. The forest is fixed in world space: full-density kit pines and birch on the lease ([#147](https://github.com/cholula-cloud/last-chair/pull/147)), a sparse far forest (three-plane impostors, one draw call) beyond it, tapering across a 14-unit band. The build grid is faint dots on valid lease cells |
 | L-D | ☑ | Title screen and save slots (Story half of rows 39 and 40, from M6; PR #71) | Continue, New winter, Load (three slots, export and import), Settings (voice volume, captions, reduced motion, default speed), Credits. Autosave on build actions and phase changes, on tab hide, and at most every 10 seconds during the day |
 | L-E | ☑ | Cold open and goal card | Four still cards with a Maris Shaw voice-over and captions. Name the common solvency goal, show the optional Readsboro goal once relevant, and make the player's first operating decision legible (see the first-winter sequence below). A "Guests want" line in the night recap |
-| L-F | ☑ | Day length and copy | A day takes about two minutes at 1×; speeds 1×, 2× and 4× persist overnight. Every player-facing string meets the copy style in ART_DIRECTION.md |
+| L-F | ☑ | Day length and copy | A day takes six minutes at Calm (`>`), two minutes at Normal (`>>`), or thirty seconds at Fast (`>>>`). Every player-facing string meets the copy style in ART_DIRECTION.md |
 | 21 | ☑ | Crew talents with real effects | 20 talents in crew order, each with a test |
 | 22 | ☑ | Founders complete | All six modifiers live |
 | 23 | ☑ | Route 100 Radio and Act I choices | Three measured local surprises, one optional Readsboro visit, one Sloane fare-cap offer and a story log. The Office Desk carries the radio feed and tier-up lines. Reports keeps the story log |
@@ -627,7 +627,7 @@ Design first, then build. Every row is proposed and gets a handoff section befor
 
 Settings persist on the device across winter slots. Master volume scales music, effects and voice independently. Sound mutes every channel while preserving the saved levels. Voice and captions have independent switches. The cold open keeps its captions visible whenever the narration cannot play. Radio and coach tips can also be turned off.
 
-Large text changes the root text size from 16 to 19 CSS pixels. Low graphics limits rendering to one device pixel per CSS pixel and disables shadows. Players can select a default speed of 1×, 2× or 4×. Reduced motion follows the device preference or the in-game switch, removes sheet animation and keeps the viewing angle steady when following guests.
+Large text changes the root text size from 16 to 19 CSS pixels. Low graphics limits rendering to one device pixel per CSS pixel and disables shadows. Players can select a default speed of Calm, Normal, or Fast. Reduced motion follows the device preference or the in-game switch, removes sheet animation and keeps the viewing angle steady when following guests.
 
 Controls need an accessible name and a touch target at least 44 by 44 CSS pixels. Sheets expose a dialog name for VoiceOver. Satisfaction and goal states use words or symbols alongside colour. Map layers use patterns and labels, with a Pattern aids switch for extra contrast. Check normal text against a 4.5:1 contrast threshold in the day and night palettes. The M3 audit runs the palette tests and the small-phone Settings, captions, keyboard and dialog checks in [TESTING.md](./TESTING.md).
 

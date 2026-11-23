@@ -19,7 +19,13 @@ export const useSpeed = create<{
   reset: () => set({ speed: useSettings.getState().defaultSpeed }),
 }));
 
+export const SPEED_FACTORS: Record<GameSpeed, number> = {
+  calm: 1 / 3,
+  normal: 1,
+  fast: 4,
+};
+
 /** Game clock delta passed to `tick`, clamped for background-tab returns. */
 export function scaledTickMs(deltaSec: number, speed: GameSpeed): number {
-  return Math.min(deltaSec, 0.1) * 1000 * speed;
+  return Math.min(deltaSec, 0.1) * 1000 * SPEED_FACTORS[speed];
 }

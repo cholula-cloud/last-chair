@@ -70,7 +70,7 @@ try {
   await enterGame(page);
   await heading(/Dutch Hill, winter 1/).waitFor();
   await screenshot("founder-pick.png");
-  await tap(/Elena Vargas/i);
+  await tap("Sign lease with Elena Vargas");
 
   const dayOne = page.getByText(/^Open 1\/\d+$/);
   await dayOne.waitFor();

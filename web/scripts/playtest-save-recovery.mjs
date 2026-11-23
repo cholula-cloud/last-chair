@@ -32,7 +32,7 @@ try {
   await newWinter.tap();
   // New winter opens the cold open first.
   await page.getByRole("button", { name: "Skip", exact: true }).tap();
-  const founder = page.getByRole("button", { name: /Elena Vargas/ });
+  const founder = page.getByRole("button", { name: "Sign lease with Elena Vargas" });
   await founder.waitFor({ timeout: 20000 });
   assert.deepEqual(await page.evaluate(() => ["last-chair-v1", "last-chair-v1-backup", "unrelated-preference"]
     .map((key) => localStorage.getItem(key))), [null, null, "kept"]);

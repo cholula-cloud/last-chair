@@ -7,8 +7,8 @@ import type { BuildingStyleId } from "@/game/base";
 import type { RadioBandId } from "@/game/radioChannels";
 import { MOUNTAIN_BUILDING_STYLE } from "@/render/layout";
 
-export type GameSpeed = 1 | 2 | 4;
-export const SPEEDS: readonly GameSpeed[] = [1, 2, 4];
+export type GameSpeed = "calm" | "normal" | "fast";
+export const SPEEDS: readonly GameSpeed[] = ["calm", "normal", "fast"];
 
 export const SETTINGS_KEY = "last-chair-settings";
 
@@ -51,7 +51,7 @@ export const DEFAULT_SETTINGS: Settings = {
   radioEnabled: true,
   radioBand: "wvtk",
   reduceMotion: "system",
-  defaultSpeed: 1,
+  defaultSpeed: "calm",
   buildingStyle: MOUNTAIN_BUILDING_STYLE,
 };
 
@@ -64,7 +64,14 @@ export function cleanSettings(raw: Partial<Record<keyof Settings | "soundOn" | "
       ? Math.min(100, Math.max(0, Math.round(value)))
       : DEFAULT_SETTINGS[key];
   }
-  const preferredSpeed = r.defaultSpeed === 3 ? 4 : r.defaultSpeed;
+  const preferredSpeed =
+    r.defaultSpeed === 1
+      ? "calm"
+      : r.defaultSpeed === 2
+        ? "normal"
+        : r.defaultSpeed === 3 || r.defaultSpeed === 4
+          ? "fast"
+          : r.defaultSpeed;
   const speed = SPEEDS.find((s) => s === preferredSpeed) ?? DEFAULT_SETTINGS.defaultSpeed;
   return {
     masterVolume: volume("masterVolume"),

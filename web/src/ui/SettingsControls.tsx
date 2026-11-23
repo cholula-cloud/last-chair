@@ -5,7 +5,8 @@ import { styleOptions } from "@/game/styles";
 import { SegmentedControl } from "@/ui/kit/SegmentedControl";
 import { StyleControl } from "@/ui/kit/StyleControl";
 import { SwitchRow } from "@/ui/kit/SwitchRow";
-import { SPEEDS, useSettings } from "@/ui/settingsStore";
+import { SpeedIcon } from "@/ui/kit/icons";
+import { SPEEDS, useSettings, type GameSpeed } from "@/ui/settingsStore";
 import { useSpeed } from "@/ui/speed";
 
 function SettingsGroup({
@@ -134,13 +135,16 @@ export function SettingsControls() {
           </span>
           <SegmentedControl
             ariaLabel="Default speed"
-            value={String(defaultSpeed)}
+            value={defaultSpeed}
             onChange={(next) => {
-              const speed = Number(next) as (typeof SPEEDS)[number];
-              set({ defaultSpeed: speed });
+              set({ defaultSpeed: next as GameSpeed });
               useSpeed.getState().reset();
             }}
-            options={SPEEDS.map((s) => ({ value: String(s), label: `${s}×` }))}
+            options={SPEEDS.map((s) => ({
+              value: s,
+              label: s === "calm" ? "Calm" : s === "normal" ? "Normal" : "Fast",
+              icon: <SpeedIcon tier={s === "calm" ? 1 : s === "normal" ? 2 : 3} size={15} />,
+            }))}
           />
         </div>
       </SettingsGroup>

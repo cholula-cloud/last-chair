@@ -26,6 +26,10 @@ Project UI rules for **Last Chair**, complementing [docs/ART_DIRECTION.md](./doc
   Why: wrapping a single leftover item onto row 2 breaks symmetry and wastes vertical space on mobile.
   <!-- 2026-11-22: "tomorrow's forecase looks weird with the rwo lines.. lets fix that.." + "everything should fit well within iphone and ipad" -->
 
+- **Day HUD ambient dispatches (`HudRadio`) collapse to a compact `44px` key anchored below Play when idle, peeking a transient `6s` swipe-up/X-dismissible toast only on genuinely new intraday events and sharing one top row with `MorningNote` instead of stacking permanent full-width banners over the mountain.**
+  Why: a permanent top banner blocks the hill view and goes stale when no fresh event has occurred.
+  <!-- 2026-11-23: "the radio is in the way; it needs to toggle down or be able to be hidden or only pop up for a bit... it also doesnt always change info or repreats lots of info" -->
+
 ## Motion
 
 ## Interaction

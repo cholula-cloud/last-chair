@@ -100,4 +100,36 @@ describe("3-band radio channels", () => {
     const b = liveRadioBroadcast(state, "wvtk");
     expect(radioDispatchKey(b, state.dayIndex)).toBe("wvtk:day1-cold-read:1");
   });
+
+  it("evolves intraday across morning, midday, and closing hour instead of repeating old night beats", () => {
+    const base = {
+      ...pickFounder(createBuiltHill(7), "elena"),
+      dayIndex: 3,
+      completedBeats: ["first_load" as const],
+    };
+    const morning = liveRadioBroadcast({ ...base, clockMin: 560 }, "wvtk");
+    const midday = liveRadioBroadcast(
+      {
+        ...base,
+        clockMin: 750,
+        dayStats: { ...base.dayStats, completedRuns: 10, dispatched: 10, waitSumMin: 15 },
+      },
+      "wvtk",
+    );
+    const closing = liveRadioBroadcast({ ...base, clockMin: 915, dayStats: { ...base.dayStats, dispatched: 18 } }, "wvtk");
+
+    expect(morning.id).not.toContain("first-uphill-load");
+    expect(midday.id).toBe("fast-laps");
+    expect(closing.id).toBe("last-chair-3");
+    expect(new Set([morning.id, midday.id, closing.id]).size).toBe(3);
+
+    const wxkAm = liveRadioBroadcast({ ...base, weather: "clear", clockMin: 580 }, "wxk");
+    const wxkPm = liveRadioBroadcast({ ...base, weather: "clear", clockMin: 780 }, "wxk");
+    expect(wxkAm.id).not.toBe(wxkPm.id);
+
+    for (const b of [morning, midday, closing, wxkAm, wxkPm]) {
+      lintCopy(b.title);
+      lintCopy(b.body);
+    }
+  });
 });

@@ -46,6 +46,25 @@ export const PlayIcon = (p: P) => (
   </Icon>
 );
 
+export const SpeedIcon = ({ tier, ...p }: P & { tier: 1 | 2 | 3 }) => (
+  <Icon {...p}>
+    {tier === 1 && <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none" />}
+    {tier === 2 && (
+      <>
+        <path d="M4 6.5v11l8.5-5.5z" fill="currentColor" stroke="none" />
+        <path d="M11.5 6.5v11L20 12z" fill="currentColor" stroke="none" />
+      </>
+    )}
+    {tier === 3 && (
+      <>
+        <path d="M2 7v10l7-5z" fill="currentColor" stroke="none" />
+        <path d="M8.5 7v10l7-5z" fill="currentColor" stroke="none" />
+        <path d="M15 7v10l7-5z" fill="currentColor" stroke="none" />
+      </>
+    )}
+  </Icon>
+);
+
 export const PauseIcon = (p: P) => (
   <Icon {...p}>
     <rect

@@ -70,7 +70,7 @@ async function startPlay(page) {
   // New winter opens the cold open first.
   await page.getByRole("button", { name: "Skip", exact: true }).click({ timeout: 30_000 });
   await page.getByRole("heading", { name: /Dutch Hill/i }).waitFor({ timeout: 30_000 });
-  await page.getByRole("button", { name: /Elena Vargas/i }).click();
+  await page.getByRole("button", { name: "Sign lease with Elena Vargas" }).click();
   await waitSceneReady(page);
   await page.getByText(/Open 1\/\d+/).waitFor({ timeout: 15_000 });
 }
@@ -302,9 +302,9 @@ async function runViewport(engine, launch, vp) {
     await page.getByRole("complementary", { name: "Tip" }).getByText(/Tap the base area, then tap uphill/i).waitFor({ timeout: 5000 });
     await shot(page, engine, tag, "placement-bar");
 
-    await page.getByLabel("Game speed 1x, tap to change").click();
-    await page.getByLabel("Game speed 2x, tap to change").waitFor();
-    await shot(page, engine, tag, "speed-2x");
+    await page.getByLabel("Game speed: calm, tap to change").click();
+    await page.getByLabel("Game speed: normal, tap to change").waitFor();
+    await shot(page, engine, tag, "speed-normal");
 
     if (process.env.PHONE_CHECK_SOAK === "1") {
       await page.getByRole("button", { name: /cancel/i }).first().click();

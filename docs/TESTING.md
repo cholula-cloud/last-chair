@@ -62,7 +62,7 @@ Also: `screenshots:snow30`, `screenshots:p4`, `screenshots:b6`, `screenshots:b7`
 | 2 | Read top HUD | Day, time, cash visible without zoom |
 | 3 | Read the ops strip | Queue, snow %, mood hint visible in the compact strip; tap to expand full status chips if needed |
 | 4 | **Guests** → **Follow** one guest | List works; camera follows |
-| 5 | **Build** → **Place on the hill** → tap a blocked spot then a valid top → **Place** (use **Lift’s in. Undo for $N.** before resuming) | Placement bar shows reason text; length and vertical in **ft** after a top tap; place only when valid and affordable; undo refunds until the clock moves. Two fingers pan the map at all times (no **Move map** toggle). **Minimize** on the placement bar should leave a slim Tools summary with **Cancel** and **Review** |
+| 5 | **Build** → **Place lift** → tap a blocked spot then a valid top → **Place** (use **Lift’s in. Undo for $N.** before resuming) | Placement bar shows reason text; length and vertical in **ft** after a top tap; place only when valid and affordable; undo refunds until the clock moves. Two fingers pan the map at all times (plus **Pan** toggle during trail paint). **Minimize** on the placement bar should leave a slim Tools summary with **Cancel**, **Details**, and the primary build action |
 | 6 | **Office → Close hill** on Desk (or wait until 4 PM) | Night sheet opens |
 | 7 | Change **Fare** and **Snow & service** | Full-width tiles, no pinch to read |
 | 8 | **Sleep** | Morning; snow look changes with tier |

@@ -26,8 +26,8 @@ it("takes one ride to reach the summit and runs at the selected clock speed", ()
     const minutes = scaledTickMs(0.05, speed) / MS_PER_GAME_MINUTE;
     return carrierLoopPhase(DAY_START_MIN + minutes, rideMin);
   };
-  expect(phase(2)).toBeCloseTo(2 * phase(1));
-  expect(phase(4)).toBeCloseTo(4 * phase(1));
+  expect(phase("normal")).toBeCloseTo(3 * phase("calm"));
+  expect(phase("fast")).toBeCloseTo(12 * phase("calm"));
 });
 
 describe("lift cable clearance", () => {

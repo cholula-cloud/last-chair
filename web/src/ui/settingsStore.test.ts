@@ -3,12 +3,15 @@ import { DEFAULT_SETTINGS, cleanSettings } from "./settingsStore";
 
 describe("cleanSettings", () => {
   it("keeps valid values", () => {
-    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: "on" as const, defaultSpeed: 4 as const, buildingStyle: "chalet70s" as const };
+    const s = { muted: true, masterVolume: 50, effectsVolume: 10, musicVolume: 0, graphicsQuality: "low", textSize: "large", patternAids: false, tips: false, voiceOn: false, radioEnabled: false, voiceVolume: 35, captions: false, reduceMotion: "on" as const, defaultSpeed: "fast" as const, buildingStyle: "chalet70s" as const };
     expect(cleanSettings(s)).toEqual({ ...DEFAULT_SETTINGS, ...s });
   });
 
-  it("preserves the fastest setting from older winters", () => {
-    expect(cleanSettings({ defaultSpeed: 3 }).defaultSpeed).toBe(4);
+  it("migrates numeric speeds from older winters", () => {
+    expect(cleanSettings({ defaultSpeed: 1 }).defaultSpeed).toBe("calm");
+    expect(cleanSettings({ defaultSpeed: 2 }).defaultSpeed).toBe("normal");
+    expect(cleanSettings({ defaultSpeed: 3 }).defaultSpeed).toBe("fast");
+    expect(cleanSettings({ defaultSpeed: 4 }).defaultSpeed).toBe("fast");
   });
 
   it("falls back to defaults and clamps out-of-range values", () => {
