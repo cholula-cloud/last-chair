@@ -232,6 +232,12 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
     if (buildOpen) setBuildMode(true);
   }, [buildOpen, setBuildMode]);
 
+  // Saves can persist buildMode if placement was interrupted; the draft itself is session-only.
+  useEffect(() => {
+    if (!hydrated || placementActive) return;
+    if (useGameStore.getState().buildMode) setBuildMode(false);
+  }, [hydrated, placementActive, setBuildMode]);
+
   const [noteDismissedDay, setNoteDismissedDay] = useState<number | null>(null);
   const [menuConfirmOpen, setMenuConfirmOpen] = useState(false);
   const canInspect = phase === "day" && hydrated && !placementActive && !buildOpen && !guestsOpen && !officeOpen && !menuConfirmOpen && !inspectedAsset;

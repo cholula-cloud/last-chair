@@ -60,7 +60,7 @@ try {
   await page.goto(`${base}/play/`, { waitUntil: "domcontentloaded" });
   await enterGame(page);
   await heading(/Dutch Hill, winter 1/, page).waitFor();
-  await tap(/Elena Vargas/i);
+  await tap("Sign lease with Elena Vargas");
   await page.getByText(/^Open 1\/\d+$/).waitFor();
   await shot("day1-hud.png");
   await buildOpening(page, cdp);

@@ -1227,7 +1227,12 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
 export function placeGun(state: GameState, at: XZ): GameState {
   const preview = checkGunPlacement(state, at);
   return preview.ok
-    ? { ...state, ...purchaseConstruction(state, preview.cost, "snow_guns"), guns: [...state.guns, preview.placement] }
+    ? {
+        ...state,
+        ...purchaseConstruction(state, preview.cost, "snow_guns"),
+        guns: [...state.guns, preview.placement],
+        buildMode: false,
+      }
     : state;
 }
 

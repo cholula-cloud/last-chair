@@ -308,7 +308,7 @@ export async function buildOpening(page, cdp) {
 
 async function opening(page, cdp, engine) {
   await openPlay(page);
-  await click(page, /Elena Vargas/);
+  await click(page, "Sign lease with Elena Vargas");
   await page.getByText(/Day 1\/\d+/).waitFor();
   const scriptedSeconds = await buildOpening(page, cdp);
   await screenshot(page, engine, "opening");

@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useShallow } from "zustand/react/shallow";
 import { PIPE_REACH_DESIGN } from "@/game/guns";
 import { gunRadius } from "@/game/mapLayers";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -42,7 +43,7 @@ function GroundRing({ at, radius, color, opacity }: { at: XZ; radius: number; co
 
 /** Pipe reach from each anchor and snow radius at the cursor while placing a gun. */
 export function GunPlacementGuide() {
-  const { tapPoint, review } = usePlacementDraft((d) => ({ tapPoint: d.tapPoint, review: d.review }));
+  const { tapPoint, review } = usePlacementDraft(useShallow((d) => ({ tapPoint: d.tapPoint, review: d.review })));
   const guns = useGameStore((s) => s.guns);
   const talentsOwned = useGameStore((s) => s.talentsOwned);
   const anchors = useMemo(() => [TERRAIN.base, ...guns.map((g) => g.at)], [guns]);
