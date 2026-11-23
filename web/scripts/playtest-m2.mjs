@@ -316,8 +316,7 @@ async function opening(page, cdp, engine) {
 }
 
 async function closeHill(page) {
-  await click(page, "Office");
-  await click(page, "Close hill");
+  await press(page.getByLabel("Close hill", { exact: true }));
   await page.getByRole("heading", { name: "Closing recap" }).waitFor({ timeout: 15000 });
   const state = (await save(page)).state;
   assert.equal(state.phase, "night");
