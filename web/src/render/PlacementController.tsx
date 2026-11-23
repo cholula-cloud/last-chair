@@ -25,6 +25,8 @@ import { useReducedMotion } from "./useReducedMotion";
 const PAN_TAU = 0.12;
 /** How often the canvas and panel rectangles are re-measured while a stroke is down. */
 const LAYOUT_MS = 200;
+/** Screen pixels a touch must move before counting as a drag rather than tap micro-jitter. */
+const TAP_SLOP_PX = 6;
 
 /** A single pointer builds. A second pointer cancels the draft gesture and hands the map to the camera. */
 export function PlacementController() {
@@ -41,6 +43,8 @@ export function PlacementController() {
     let offset: XZ = { x: 0, z: 0 };
     let moved = false;
     let blocked = false;
+    let downX = 0;
+    let downY = 0;
 
     // Stroke points wait here and reach the store at most once per animation frame.
     const pending: XZ[] = [];
@@ -205,6 +209,8 @@ export function PlacementController() {
         return;
       }
       moved = false;
+      downX = event.clientX;
+      downY = event.clientY;
       gesture = { top: draft.top, bottom: draft.bottom, tapPoint: draft.tapPoint, snapped: draft.snapped };
       dom.setPointerCapture(event.pointerId);
       moveDraft(event, true);
@@ -213,8 +219,11 @@ export function PlacementController() {
 
     const onMove = (event: PointerEvent) => {
       if (pointers.has(event.pointerId) && !blocked) {
-        moved = true;
-        moveDraft(event);
+        if (!moved && Math.hypot(event.clientX - downX, event.clientY - downY) >= TAP_SLOP_PX) {
+          moved = true;
+        }
+        const kind = usePlacementDraft.getState().kind;
+        if (kind === "trail" || moved) moveDraft(event);
       } else if (pointers.size === 0 && event.pointerType !== "touch") {
         const draft = usePlacementDraft.getState();
         if (draft.kind !== "trail" || draft.review) return;
@@ -250,7 +259,7 @@ export function PlacementController() {
             activeStroke: null,
             ...(stroke && stroke.points.length > 1 ? { strokes: [...draft.strokes, stroke], redo: [] } : {}),
           });
-        } else if (draft.kind === "lift" && !moved && draft.liftPhase === "bottom" && draft.bottom) {
+        } else if (draft.kind === "lift" && draft.liftPhase === "bottom" && draft.bottom) {
           usePlacementDraft.setState({ liftPhase: "top" });
         }
       }

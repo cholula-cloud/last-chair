@@ -52,7 +52,8 @@ async function withDeadline(promise, label, ms) {
 async function confirmDraft(page, kind, action) {
   const draft = page.locator('[data-placement-kind="' + kind + '"]');
   try {
-    await press(draft.getByRole("button", { name: "Review", exact: true }));
+    const review = draft.getByRole("button", { name: "Review", exact: true });
+    if ((await review.count()) > 0) await press(review);
     await press(draft.getByRole("button", { name: action }));
   } catch (error) {
     const status = await draft.innerText({ timeout: 1000 }).catch(() => "Draft disappeared");

@@ -18,7 +18,7 @@ export const GRID_STYLE = {
   /** Reads at about 1.8:1 against snow (#f4f7fb) at 390 wide; the HUD sits above it. */
   valid: { color: "#36a975", opacity: 0.62 },
   /** Lease cells that cannot take the item: a faint dot so the lease keeps its shape. */
-  blocked: { color: "#566a7c", opacity: 0.32 },
+  blocked: { color: "#566a7c", opacity: 0.22 },
   neutral: { color: "#5d7a8a", opacity: 0.72 },
   /** Overview grid only: stronger dots so the lease reads on snow at phone DPR. */
   overviewNeutral: { color: "#4a6f82", opacity: 0.82 },
@@ -30,8 +30,8 @@ export const GRID_STYLE = {
   reach: { color: "#36a975", opacity: 0.5 },
   reachSnapped: { color: "#36a975", opacity: 0.2 },
   /** Lease grid lines while building. */
-  line: { color: "#5d7a8a", opacity: 0.28 },
-  trailLine: { color: "#6a8a9a", opacity: 0.36 },
+  line: { color: "#5d7a8a", opacity: 0.18 },
+  trailLine: { color: "#6a8a9a", opacity: 0.22 },
   /** Grid dots closer than this many cells to the cable or a pad are hidden. */
   cableClearCells: 1,
 } as const;

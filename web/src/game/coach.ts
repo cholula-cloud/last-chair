@@ -47,7 +47,7 @@ export const COACH_TIPS: readonly CoachTip[] = [
   },
   {
     id: "review",
-    text: "Tap Review to see what it costs, then tap Place when you’re happy.",
+    text: "Check the live cost or tap info for details, then place when you’re happy.",
     when: (c) => c.phase === "day" && c.placementActive,
   },
   {

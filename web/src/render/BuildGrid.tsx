@@ -94,10 +94,16 @@ function GridLines({ variant = "field" }: { variant?: "field" | "trail" }) {
     const z0 = Math.floor(zMin / step) * step;
     const z1 = Math.ceil(zMax / step) * step;
     for (let x = x0; x <= x1 + 1e-6; x += step) {
-      points.push(x, yAt(x, z0), z0, x, yAt(x, z1), z1);
+      for (let z = z0; z < z1 - 1e-6; z += step) {
+        const zNext = Math.min(z + step, z1);
+        points.push(x, yAt(x, z), z, x, yAt(x, zNext), zNext);
+      }
     }
     for (let z = z0; z <= z1 + 1e-6; z += step) {
-      points.push(x0, yAt(x0, z), z, x1, yAt(x1, z), z);
+      for (let x = x0; x < x1 - 1e-6; x += step) {
+        const xNext = Math.min(x + step, x1);
+        points.push(x, yAt(x, z), z, xNext, yAt(xNext, z), z);
+      }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));

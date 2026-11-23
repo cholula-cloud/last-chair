@@ -22,9 +22,12 @@ import { buildConfirmed } from "@/ui/feel";
 import { liftReadout } from "@/ui/liftGesture";
 import { placementReason } from "@/game/descent";
 import {
+  BrushIcon,
   ChevronDownIcon,
   DifficultyIcon,
   EraseIcon,
+  InfoIcon,
+  MoveMapIcon,
   RedoIcon,
   SlidersIcon,
   UndoIcon,
@@ -34,11 +37,18 @@ import {
 } from "@/ui/placementDraft";
 
 const DIFFICULTY_WORDS: Record<TrailDifficulty, string> = { green: "Green", blue: "Blue", black: "Black" };
-const cancelBtnClass = "key key-sm press flex h-9 min-h-9 items-center justify-center px-3 text-xs font-extrabold [--lift:2px]";
-const reviewBtnClass = "key key-sm key-solid press flex h-9 min-h-9 items-center justify-center px-3.5 text-xs font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:2px]";
+const DIFFICULTY_PILL: Record<TrailDifficulty, string> = {
+  green: "bg-sign-green text-white",
+  blue: "bg-[#2f5f9e] text-white",
+  black: "bg-ink text-white",
+};
+const cancelBtnClass = "key key-sm press flex h-10 min-h-10 items-center justify-center px-2.5 text-xs font-extrabold [--lift:2px]";
+const infoBtnClass = "key key-sm press flex size-10 min-h-10 shrink-0 items-center justify-center text-ink [--lift:2px]";
+const confirmBtnClass = "key key-sm key-solid press flex h-10 min-h-10 items-center justify-center whitespace-nowrap px-3 text-xs font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:2px]";
 const acres = (area: number) => `${area.toFixed(2)} acres`;
-const segBtnClass = "seg-btn flex min-h-9 items-center justify-center whitespace-nowrap px-2 text-xs font-extrabold tabular-nums";
-const toolBtnClass = "seg-btn flex min-h-9 items-center justify-center gap-1 px-2 text-[0.72rem] font-extrabold leading-none";
+const segBtnClass = "seg-btn flex min-h-10 items-center justify-center whitespace-nowrap px-2 text-xs font-extrabold tabular-nums";
+const modeBtnClass = "seg-btn flex min-h-10 items-center justify-center gap-1 whitespace-nowrap px-1.5 text-[0.72rem] font-extrabold leading-none";
+const iconBtnClass = "key key-sm press flex size-9 shrink-0 items-center justify-center text-ink [--lift:2px]";
 const feet = (length: number) => `${Math.round(length).toLocaleString()} ft`;
 
 /** Estimate the wait the current queues would offer an approaching guest of each skill. */
@@ -53,17 +63,37 @@ function queueImpact(before: GameState, after: GameState): string {
   return `${Math.abs(delta).toFixed(1)} min ${delta < 0 ? "shorter" : "longer"} wait at current queues`;
 }
 
-function DraftActions({ canReview }: { canReview: boolean }) {
+function DraftActions({
+  canDetails,
+  canConfirm,
+  confirmLabel,
+  onConfirm,
+}: {
+  canDetails: boolean;
+  canConfirm: boolean;
+  confirmLabel: string;
+  onConfirm: () => void;
+}) {
   return (
     <div className="flex shrink-0 items-center gap-1.5">
       <button type="button" className={cancelBtnClass} onClick={cancelPlacement}>Cancel</button>
       <button
         type="button"
-        className={reviewBtnClass}
-        disabled={!canReview}
+        aria-label="Inspect build details"
+        title="Details"
+        className={infoBtnClass}
+        disabled={!canDetails}
         onClick={() => usePlacementDraft.setState({ review: true })}
       >
-        Review
+        <InfoIcon size={16} />
+      </button>
+      <button
+        type="button"
+        className={confirmBtnClass}
+        disabled={!canConfirm}
+        onClick={onConfirm}
+      >
+        {confirmLabel}
       </button>
     </div>
   );
@@ -76,7 +106,7 @@ function MinimizeButton() {
       onClick={() => usePlacementDraft.setState({ minimized: true })}
       aria-label="Minimize build controls"
       title="Minimize controls"
-      className="key key-sm press flex size-8 shrink-0 items-center justify-center text-ink [--lift:2px]"
+      className={iconBtnClass}
     >
       <ChevronDownIcon size={16} />
     </button>
@@ -85,11 +115,17 @@ function MinimizeButton() {
 
 function MinimizedBar({
   summary,
-  canReview,
+  canDetails,
+  canConfirm,
+  confirmLabel,
+  onConfirm,
   dataTrailPanel,
 }: {
   summary: ReactNode;
-  canReview: boolean;
+  canDetails: boolean;
+  canConfirm: boolean;
+  confirmLabel: string;
+  onConfirm: () => void;
   dataTrailPanel?: "minimized";
 }) {
   return (
@@ -103,12 +139,17 @@ function MinimizedBar({
         type="button"
         onClick={() => usePlacementDraft.setState({ minimized: false })}
         aria-label="Expand build controls"
-        className="key key-sm press flex h-9 min-h-9 min-w-0 items-center gap-1.5 px-2.5 text-xs font-extrabold [--lift:2px]"
+        className="key key-sm press flex h-10 min-h-10 min-w-0 items-center gap-1.5 px-2.5 text-xs font-extrabold [--lift:2px]"
       >
         <SlidersIcon size={15} className="shrink-0" />
         <span className="truncate tabular-nums">{summary}</span>
       </button>
-      <DraftActions canReview={canReview} />
+      <DraftActions
+        canDetails={canDetails}
+        canConfirm={canConfirm}
+        confirmLabel={confirmLabel}
+        onConfirm={onConfirm}
+      />
     </div>
   );
 }
@@ -137,7 +178,31 @@ function TrailBar() {
   const guests = preview ? Object.values(PERSONAS)
     .filter(({ id }) => !isOverSkill(id, preview.difficulty))
     .map(({ label }) => label).join(", ") : "";
-  const canReview = draft.strokes.length > 0 && !draft.activeStroke;
+  const canDetails = draft.strokes.length > 0 && !draft.activeStroke;
+  const canConfirm = canDetails && !!preview && !preview.reason;
+  const confirmLabel = preview?.deleteTrail
+    ? "Close trail"
+    : preview?.trailIndex !== null && preview?.trailIndex !== undefined
+      ? "Apply changes"
+      : preview?.glade
+        ? "Mark glade"
+        : "Cut trail";
+  const commitTrail = () => {
+    if (!preview || preview.reason) return;
+    state.commitPaint(strokes, draft.glade, draft.connectCrossings);
+    if (useGameStore.getState().trails !== state.trails) {
+      buildConfirmed(
+        preview.deleteTrail
+          ? "Trail closed."
+          : preview.trailIndex !== null
+            ? "Trail reworked."
+            : preview.glade
+              ? "Glade marked. The trees stay."
+              : "That’s a trail. Somebody’s going to love it.",
+      );
+      finishPlacement();
+    }
+  };
   const mode = trailPanelMode(draft);
 
   if (mode === "review" && preview) {
@@ -148,7 +213,7 @@ function TrailBar() {
           { label: "Trail", value: preview.name },
           { label: preview.deleteTrail ? "Refund" : "Cost", value: formatMoney(preview.cost) },
           ...(preview.deleteTrail ? [{ label: "Effect", value: "Closes this route. The cleared land stays cleared." }] : []),
-          { label: "Difficulty", value: preview.difficulty },
+          { label: "Difficulty", value: DIFFICULTY_WORDS[preview.difficulty] },
           { label: "Length", value: feet(preview.lengthFt) },
           { label: "Vertical", value: feet(preview.verticalFt) },
           { label: "Area", value: acres(preview.acres) },
@@ -157,38 +222,30 @@ function TrailBar() {
           ...(preview.links?.crossings?.length ? [{ label: "Trail junctions", value: String(preview.links.crossings.length) }] : []),
           ...(preview.walkBack ? [{ label: "Walk back", value: walkBackNote(preview.walkBack) }] : []),
           { label: "Who can ski", value: guests || "Nobody yet" },
-          { label: "Lodge tier", value: "1" },
           ...(!preview.reason ? [{ label: "Queue estimate", value: queueImpact(state, commitPaint(state, strokes, draft.glade, draft.connectCrossings)) }] : []),
         ]}
-        confirmLabel={preview.deleteTrail ? "Close trail" : preview.trailIndex !== null ? "Apply changes" : preview.glade ? "Mark glade" : "Cut trail"}
+        confirmLabel={confirmLabel}
         problem={preview.reason}
         onCancel={backToDraft}
-        onConfirm={() => {
-          state.commitPaint(strokes, draft.glade, draft.connectCrossings);
-          if (useGameStore.getState().trails !== state.trails) {
-            buildConfirmed(preview.deleteTrail ? "Trail closed." : preview.trailIndex !== null ? "Trail reworked." : preview.glade ? "Glade marked. The trees stay." : "That’s a trail. Somebody’s going to love it.");
-            finishPlacement();
-          }
-        }}
+        onConfirm={commitTrail}
       />
     );
   }
 
   const stats = preview && (
     <div
-      className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-[var(--r-chip)] bg-snow-2 px-2 py-1 text-xs font-extrabold tabular-nums"
+      className="well flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-1 text-xs font-extrabold tabular-nums"
       aria-live={draft.activeStroke ? "off" : "polite"}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-        <span className="inline-flex items-center gap-1 text-ink">
-          <DifficultyIcon difficulty={preview.difficulty} size={13} />
+        <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[0.7rem] font-extrabold ${DIFFICULTY_PILL[preview.difficulty]}`}>
+          <DifficultyIcon difficulty={preview.difficulty} size={11} />
           {DIFFICULTY_WORDS[preview.difficulty]}
         </span>
-        <span className="text-ink-soft">{feet(preview.lengthFt)}</span>
-        <span className="text-ink-soft">{feet(preview.verticalFt)} vert</span>
-        <span className="hidden text-ink-soft sm:inline">{acres(preview.acres)}</span>
+        <span className="text-ink">{feet(preview.lengthFt)}</span>
+        <span className="hidden text-ink-soft sm:inline">{feet(preview.verticalFt)} vert</span>
       </div>
-      <span className="chip shrink-0 bg-gold px-1.5 py-0.5 text-xs font-extrabold tabular-nums [--lift:2px]">
+      <span className="well-white bg-gold px-1.5 py-0.5 text-xs font-extrabold tabular-nums">
         {formatMoney(preview.cost)}
       </span>
     </div>
@@ -203,7 +260,7 @@ function TrailBar() {
 
   if (mode === "compact") {
     return (
-      <div key="compact" className="panel trail-bar-in space-y-1 px-2 py-1 sm:px-2.5 sm:py-1.5 [--lift:3px]" data-trail-panel="compact">
+      <div key="compact" className="panel trail-bar-in space-y-1 px-2.5 py-1.5 [--lift:3px]" data-trail-panel="compact">
         <div className="flex items-center gap-2">
           {stats ?? <p className="text-xs font-extrabold text-ink-soft">Lift your finger to finish the stroke.</p>}
         </div>
@@ -214,97 +271,143 @@ function TrailBar() {
 
   if (mode === "minimized") {
     const label = preview
-      ? `${draft.brushWidth} ft, ${formatMoney(preview.cost)}`
+      ? `${DIFFICULTY_WORDS[preview.difficulty]} ${feet(preview.lengthFt)}, ${formatMoney(preview.cost)}`
       : `${draft.glade ? "Glade" : "Trail"}, ${draft.brushWidth} ft`;
-    return <MinimizedBar summary={label} canReview={canReview} dataTrailPanel="minimized" />;
+    return (
+      <MinimizedBar
+        summary={label}
+        canDetails={canDetails}
+        canConfirm={canConfirm}
+        confirmLabel={confirmLabel}
+        onConfirm={commitTrail}
+        dataTrailPanel="minimized"
+      />
+    );
   }
 
-  const prompt = draft.erasing
-    ? "Drag over paint to erase, 2 fingers move map"
-    : draft.strokes.length
-      ? null
-      : "Drag from lift top to paint, 2 fingers move map";
+  const prompt = draft.moveCamera
+    ? "Pan: drag to move map"
+    : draft.erasing
+      ? "Erase: drag over paint"
+      : draft.strokes.length
+        ? null
+        : "Drag from lift top to paint";
+
+  const paintTool = draft.moveCamera ? "pan" : draft.erasing ? "erase" : "draw";
 
   return (
-    <div key="full" className="panel trail-bar-in space-y-1 px-2 py-1.5 sm:space-y-1.5 sm:px-2.5 sm:py-2 [--lift:3px]" data-trail-panel="full">
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+    <div
+      key="full"
+      className={`panel trail-bar-in space-y-1.5 px-2.5 py-2 [--lift:3px] ${
+        paintTool === "erase" ? "border-barn-deep" : ""
+      }`}
+      data-trail-panel="full"
+    >
+      <div className="flex items-center justify-between gap-1.5">
         <div className={`min-w-0 flex-1 ${problem ? "short:hidden" : ""}`}>
           {stats ?? <p className="truncate px-0.5 text-xs font-extrabold text-ink-soft">{prompt}</p>}
         </div>
-        {/* On short screens, keep the continuation ring exposed by sharing the stats row. */}
-        {problem && <div className="order-last w-full min-w-0 short:order-none short:w-auto short:flex-1">{problem}</div>}
-        <MinimizeButton />
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            className={iconBtnClass}
+            disabled={!draft.strokes.length}
+            aria-label="Undo"
+            title="Undo"
+            onClick={undoStroke}
+          >
+            <UndoIcon size={15} />
+          </button>
+          <button
+            type="button"
+            className={iconBtnClass}
+            disabled={!draft.redo.length}
+            aria-label="Redo"
+            title="Redo"
+            onClick={redoStroke}
+          >
+            <RedoIcon size={15} />
+          </button>
+          <MinimizeButton />
+        </div>
       </div>
-      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-stretch gap-1.5">
-          <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
-            <button
-              type="button"
-              className={segBtnClass}
-              aria-pressed={!draft.glade}
-              onClick={() => usePlacementDraft.setState({ glade: false })}
-            >
-              Cleared
-            </button>
-            <button
-              type="button"
-              className={segBtnClass}
-              aria-pressed={draft.glade}
-              title="Glade keeps trees"
-              onClick={() => usePlacementDraft.setState({ glade: true })}
-            >
-              Glade
-            </button>
-          </div>
-          <div className="seg grid min-w-0 flex-1 grid-cols-4 gap-0.5 sm:flex-none" role="group" aria-label="Brush width">
-            {BRUSH_WIDTHS.map((width) => (
-              <button
-                key={width}
-                type="button"
-                aria-pressed={draft.brushWidth === width}
-                aria-label={`${width} ft wide`}
-                className={`${segBtnClass} px-1.5 text-[0.68rem]`}
-                onClick={() => usePlacementDraft.setState({ brushWidth: width })}
-              >
-                {width}ft
-              </button>
-            ))}
-          </div>
+
+      {problem}
+
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="seg grid min-w-0 flex-1 grid-cols-3 gap-0.5" role="group" aria-label="Paint tools">
+          <button
+            type="button"
+            className={modeBtnClass}
+            aria-pressed={paintTool === "draw"}
+            onClick={() => usePlacementDraft.setState({ erasing: false, moveCamera: false })}
+          >
+            <BrushIcon size={13} />
+            <span>Draw</span>
+          </button>
+          <button
+            type="button"
+            className={modeBtnClass}
+            aria-pressed={paintTool === "erase"}
+            data-tone="bad"
+            onClick={() => usePlacementDraft.setState({ erasing: true, moveCamera: false })}
+          >
+            <EraseIcon size={13} />
+            <span>Erase</span>
+          </button>
+          <button
+            type="button"
+            className={modeBtnClass}
+            aria-pressed={paintTool === "pan"}
+            onClick={() => usePlacementDraft.setState({ moveCamera: true })}
+          >
+            <MoveMapIcon size={13} />
+            <span>Pan</span>
+          </button>
         </div>
 
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="seg grid grid-cols-3 gap-0.5" role="group" aria-label="Paint tools">
-            <button
-              type="button"
-              className={toolBtnClass}
-              aria-pressed={draft.erasing}
-              data-tone="bad"
-              onClick={() => usePlacementDraft.setState({ erasing: !draft.erasing })}
-            >
-              <EraseIcon size={14} />
-              <span>Erase</span>
-            </button>
-            <button
-              type="button"
-              className={toolBtnClass}
-              disabled={!draft.strokes.length}
-              onClick={undoStroke}
-            >
-              <UndoIcon size={14} />
-              <span className="sr-only">Undo</span>
-            </button>
-            <button
-              type="button"
-              className={toolBtnClass}
-              disabled={!draft.redo.length}
-              onClick={redoStroke}
-            >
-              <RedoIcon size={14} />
-              <span className="sr-only">Redo</span>
-            </button>
-          </div>
-          <DraftActions canReview={canReview} />
+        <div className="seg grid shrink-0 grid-cols-2 gap-0.5" role="group" aria-label="Trail type">
+          <button
+            type="button"
+            className={segBtnClass}
+            aria-pressed={!draft.glade}
+            onClick={() => usePlacementDraft.setState({ glade: false })}
+          >
+            Cleared
+          </button>
+          <button
+            type="button"
+            className={segBtnClass}
+            aria-pressed={draft.glade}
+            title="Glade keeps trees"
+            onClick={() => usePlacementDraft.setState({ glade: true })}
+          >
+            Glade
+          </button>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="seg grid min-w-0 flex-1 grid-cols-4 gap-0.5" role="group" aria-label="Brush width">
+          {BRUSH_WIDTHS.map((width) => (
+            <button
+              key={width}
+              type="button"
+              aria-pressed={draft.brushWidth === width}
+              aria-label={`${width} ft wide`}
+              className={`${segBtnClass} px-1 text-[0.72rem]`}
+              onClick={() => usePlacementDraft.setState({ brushWidth: width })}
+            >
+              {width}&apos;
+            </button>
+          ))}
+        </div>
+        <DraftActions
+          canDetails={canDetails}
+          canConfirm={canConfirm}
+          confirmLabel={confirmLabel}
+          onConfirm={commitTrail}
+        />
       </div>
     </div>
   );
@@ -333,6 +436,15 @@ function LiftBar() {
   const vertical = readout ? feet(readout.verticalFt) : null;
   const capacity = readout?.skiersPerHour ?? liftCapacityPerHour(type, state.talentsOwned);
   const ride = readout?.rideMin ?? null;
+  const confirmLabel = readout ? `Place for ${formatMoney(cost)}` : "Place lift";
+  const commitLift = () => {
+    if (!line || !readout?.ok) return;
+    state.placeLift({ type, ...line });
+    if (useGameStore.getState().lifts !== state.lifts) {
+      buildConfirmed("Lift’s in. Now give it a trail.");
+      finishPlacement();
+    }
+  };
 
   if (draft.review && line && readout) {
     return (
@@ -347,23 +459,25 @@ function LiftBar() {
           { label: "Lodge tier", value: type === "chair" ? String(CHAIR_TIER) : "1" },
           { label: "Opens", value: "Once you cut a trail" },
         ]}
-        confirmLabel={`Place for ${formatMoney(cost)}`}
+        confirmLabel={confirmLabel}
         problem={problem}
         onCancel={backToDraft}
-        onConfirm={() => {
-          state.placeLift({ type, ...line });
-          if (useGameStore.getState().lifts !== state.lifts) {
-            buildConfirmed("Lift’s in. Now give it a trail.");
-            finishPlacement();
-          }
-        }}
+        onConfirm={commitLift}
       />
     );
   }
 
   if (draft.minimized) {
     const label = readout ? `${formatMoney(cost)}, ${length}` : LIFT_LABELS[type];
-    return <MinimizedBar summary={label} canReview={!!readout?.ok} />;
+    return (
+      <MinimizedBar
+        summary={label}
+        canDetails={!!line && !!readout}
+        canConfirm={!!readout?.ok}
+        confirmLabel={confirmLabel}
+        onConfirm={commitLift}
+      />
+    );
   }
 
   return (
@@ -395,7 +509,12 @@ function LiftBar() {
         </p>
       )}
       <div className="flex justify-end">
-        <DraftActions canReview={!!readout?.ok} />
+        <DraftActions
+          canDetails={!!line && !!readout}
+          canConfirm={!!readout?.ok}
+          confirmLabel={confirmLabel}
+          onConfirm={commitLift}
+        />
       </div>
     </div>
   );
@@ -419,6 +538,18 @@ function SiteBar() {
           : null
     : null;
   const problem = check && !check.ok ? check.reason : null;
+  const confirmLabel = movingAssetIndex === undefined ? "Build here" : "Move here";
+  const commitSite = () => {
+    if (!check?.ok) return;
+    if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
+    else if (gun) state.placeGun(check.placement.at);
+    else if (asset && draft.lodgePad !== undefined) state.placeAssetAtPad(asset, draft.lodgePad);
+    else if (asset) state.placeAsset(asset, check.placement.at);
+    if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
+      buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
+      finishPlacement();
+    }
+  };
 
   if (draft.review) {
     return (
@@ -431,27 +562,25 @@ function SiteBar() {
           ...(check?.ok ? [{ label: "Area", value: acres(check.acres) }] : []),
           ...(check?.ok && check.attached ? [{ label: "Lodge pad", value: "+5% attached" }] : []),
         ]}
-        confirmLabel={movingAssetIndex === undefined ? "Build here" : "Move here"}
+        confirmLabel={confirmLabel}
         problem={tapPoint ? problem : "Tap a spot on the hill first."}
         onCancel={backToDraft}
-        onConfirm={() => {
-          if (!check?.ok) return;
-          if (movingAssetIndex !== undefined) state.moveAsset(movingAssetIndex, check.placement.at);
-          else if (gun) state.placeGun(check.placement.at);
-          else if (asset && draft.lodgePad !== undefined) state.placeAssetAtPad(asset, draft.lodgePad);
-          else if (asset) state.placeAsset(asset, check.placement.at);
-          if (useGameStore.getState().cash !== state.cash || useGameStore.getState().assets !== state.assets) {
-            buildConfirmed(movingAssetIndex === undefined ? `${item.label} is going up.` : `${item.label} moved.`);
-            finishPlacement();
-          }
-        }}
+        onConfirm={commitSite}
       />
     );
   }
 
   if (draft.minimized) {
     const label = check?.ok ? `${item.label}, ${formatMoney(check.cost)}` : item.label;
-    return <MinimizedBar summary={label} canReview={!!tapPoint} />;
+    return (
+      <MinimizedBar
+        summary={label}
+        canDetails={!!tapPoint}
+        canConfirm={!!check?.ok}
+        confirmLabel={confirmLabel}
+        onConfirm={commitSite}
+      />
+    );
   }
 
   return (
@@ -460,12 +589,12 @@ function SiteBar() {
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-xs font-extrabold text-ink-soft">
             {gun
-              ? "Tap within pipe reach of base or a gun, 2 fingers move map"
+              ? "Tap a green dot within pipe reach, 2 fingers move map"
               : draft.lodgePad !== undefined
-                ? `Confirm ${item.label} on lodge pad ${draft.lodgePad + 1} (+5% annex), 2 fingers move map`
+                ? `Confirm ${item.label} on lodge pad ${draft.lodgePad + 1} (+5% annex)`
                 : asset && ASSET_CATALOG[asset].attachable
-                  ? `Tap the lodge, pick a pad, or place in base area, 2 fingers move map`
-                  : `Tap a spot for ${item.label}, 2 fingers move map`}
+                  ? "Tap a green dot or lodge pad, 2 fingers move map"
+                  : `Tap a green dot for ${item.label}, 2 fingers move map`}
           </p>
           {check?.ok && (
             <div className="flex flex-wrap items-center gap-1.5 text-xs font-extrabold tabular-nums">
@@ -476,9 +605,18 @@ function SiteBar() {
         </div>
         <MinimizeButton />
       </div>
-      {problem && <p className="text-xs font-extrabold text-barn-deep">{problem}</p>}
+      {problem && (
+        <p className="rounded-[var(--r-chip)] border-2 border-barn-deep bg-snow px-2.5 py-1 text-xs font-extrabold leading-snug text-barn-deep">
+          {problem}
+        </p>
+      )}
       <div className="flex justify-end">
-        <DraftActions canReview={!!tapPoint} />
+        <DraftActions
+          canDetails={!!tapPoint}
+          canConfirm={!!check?.ok}
+          confirmLabel={confirmLabel}
+          onConfirm={commitSite}
+        />
       </div>
     </div>
   );
@@ -489,16 +627,14 @@ export function PlacementBar() {
   const kind = usePlacementDraft((s) => s.kind);
   const minimized = usePlacementDraft((s) => s.minimized);
   const review = usePlacementDraft((s) => s.review);
-  const showPlacementColors = usePlacementDraft((s) => s.kind !== "trail" && s.kind !== "lift" && !s.minimized && !s.review);
   if (!active) return null;
   const widthClass = review
     ? "max-w-[440px] sm:max-w-[28rem] md:max-w-[34rem]"
     : minimized
-      ? "max-w-[340px] sm:max-w-[28rem] md:max-w-[34rem]"
+      ? "max-w-[360px] sm:max-w-[28rem] md:max-w-[34rem]"
       : "max-w-[420px] sm:max-w-[28rem] md:max-w-[34rem] short:max-w-[520px]";
   return (
     <div className={`pointer-events-auto max-h-[65dvh] w-full overflow-y-auto px-0.5 sm:px-1 ${widthClass}`} data-placement-kind={kind}>
-      {showPlacementColors && <p className="key mb-1 px-2 py-0.5 text-[0.72rem] font-extrabold [--lift:2px]">Green means go. Red means find another spot.</p>}
       {kind === "trail" ? <TrailBar /> : kind === "lift" ? <LiftBar /> : <SiteBar />}
     </div>
   );

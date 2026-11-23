@@ -114,6 +114,10 @@ export function pointerLiftMove(
   canvasHeight: number,
   pressing: boolean,
 ): { grab: LiftGrab; offset: XZ } {
+  if (draft.liftPhase === "bottom") {
+    usePlacementDraft.setState({ bottom: liftBottomAt(raw), tapPoint: raw });
+    return { grab: "bottom", offset: { x: 0, z: 0 } };
+  }
   if (draft.liftPhase !== "adjust") return { grab, offset };
   const y = TERRAIN.height(raw.x, raw.z);
   const radius = snapRadiusAtHit(camera, { ...raw, y }, canvasHeight);
