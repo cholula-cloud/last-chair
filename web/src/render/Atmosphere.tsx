@@ -28,11 +28,14 @@ const SKY_VERT = /* glsl */ `
 `;
 const SKY_FRAG = /* glsl */ `
   uniform vec3 topColor;
+  uniform vec3 midColor;
   uniform vec3 horizonColor;
   varying vec3 vDir;
   void main() {
-    float h = smoothstep(-0.02, 0.55, vDir.y);
-    gl_FragColor = vec4(mix(horizonColor, topColor, pow(h, 0.7)), 1.0);
+    float h = clamp(vDir.y, 0.0, 1.0);
+    vec3 col = mix(horizonColor, midColor, smoothstep(0.0, 0.25, h));
+    col = mix(col, topColor, smoothstep(0.18, 0.68, h));
+    gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
 `;
@@ -95,13 +98,15 @@ const RIDGES = [
   { radius: 320, base: 21, amp: 24, seed: 23.1, color: PALETTE.ridgeNear, treeLine: 0.38 },
 ];
 
-const SHADOW_TEXEL = 28 / 1024;
+const SHADOW_HALF = 18;
 
 /**
  * Sky, fog, ridges, sun and hemisphere light. Re-reads the game clock, phase
  * and weather from the store each frame, so it never re-renders on a tick.
  */
-export function Atmosphere() {
+export function Atmosphere({ lowDetail = false }: { lowDetail?: boolean }) {
+  const shadowSize = lowDetail ? 1024 : 2048;
+  const shadowTexel = (SHADOW_HALF * 2) / shadowSize;
   const reduced = useReducedMotion();
   const fog = useRef<THREE.Fog>(null);
   const sun = useRef<THREE.DirectionalLight>(null);
@@ -116,6 +121,7 @@ export function Atmosphere() {
   const hemiSkyColor = useMemo(() => new THREE.Color(), []);
   const hemiGroundColor = useMemo(() => new THREE.Color(), []);
   const skyTopColor = useMemo(() => new THREE.Color(), []);
+  const skyMidColor = useMemo(() => new THREE.Color(PALETTE.skyMid), []);
   const skyHorizonColor = useMemo(() => new THREE.Color(), []);
   const nightHorizon = useMemo(() => new THREE.Color(PALETTE.nightHorizon), []);
 
@@ -124,6 +130,7 @@ export function Atmosphere() {
       new THREE.ShaderMaterial({
         uniforms: {
           topColor: { value: skyTopColor.clone() },
+          midColor: { value: skyMidColor.clone() },
           horizonColor: { value: skyHorizonColor.clone() },
         },
         vertexShader: SKY_VERT,
@@ -132,7 +139,7 @@ export function Atmosphere() {
         depthWrite: false,
         fog: false,
       }),
-    [skyHorizonColor, skyTopColor],
+    [skyHorizonColor, skyMidColor, skyTopColor],
   );
   const ridgeGeos = useMemo(
     () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color, r.treeLine)),
@@ -167,11 +174,13 @@ export function Atmosphere() {
     tintColor.setRGB(1 + (tintNow.r - 1) * tintAmount, 1 + (tintNow.g - 1) * tintAmount, 1 + (tintNow.b - 1) * tintAmount);
 
     const top = sky.uniforms.topColor.value as THREE.Color;
+    const mid = sky.uniforms.midColor.value as THREE.Color;
     const hor = sky.uniforms.horizonColor.value as THREE.Color;
     skyTopColor.set(rig.skyTop);
     skyHorizonColor.set(rig.skyHorizon);
     top.copy(skyTopColor);
     hor.copy(skyHorizonColor).multiply(tintColor);
+    mid.copy(top).lerp(hor, 0.48);
     if (fog.current) {
       fog.current.color.copy(hor);
       fog.current.near = rig.fogNear;
@@ -195,8 +204,8 @@ export function Atmosphere() {
       m.color.copy(WHITE).lerp(nightHorizon, n * 0.85);
     });
 
-    const tx = Math.round(sceneCameraTarget.x / SHADOW_TEXEL) * SHADOW_TEXEL;
-    const tz = Math.round(sceneCameraTarget.z / SHADOW_TEXEL) * SHADOW_TEXEL;
+    const tx = Math.round(sceneCameraTarget.x / shadowTexel) * shadowTexel;
+    const tz = Math.round(sceneCameraTarget.z / shadowTexel) * shadowTexel;
     target.position.set(tx, 0, tz);
     if (sun.current) {
       const [dx, dy, dz] = rig.sunDir;
@@ -226,17 +235,17 @@ export function Atmosphere() {
       <directionalLight
         ref={sun}
         target={target}
-        intensity={2.5}
+        intensity={2.6}
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-14}
-        shadow-camera-right={14}
-        shadow-camera-top={14}
-        shadow-camera-bottom={-14}
+        shadow-mapSize={[shadowSize, shadowSize]}
+        shadow-camera-left={-SHADOW_HALF}
+        shadow-camera-right={SHADOW_HALF}
+        shadow-camera-top={SHADOW_HALF}
+        shadow-camera-bottom={-SHADOW_HALF}
         shadow-camera-near={8}
-        shadow-camera-far={80}
-        shadow-bias={-0.0004}
-        shadow-normalBias={0.035}
+        shadow-camera-far={84}
+        shadow-bias={-0.00035}
+        shadow-normalBias={0.038}
       />
     </>
   );

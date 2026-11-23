@@ -6,7 +6,7 @@ import { TALENT } from "@/game/talents";
 import { closeNightLayer, openNightLayer, useLayers } from "./mapLayerStore";
 import { LAYERS, type MapLayer } from "@/game/mapLayers";
 import { Canvas } from "@react-three/fiber";
-import { NeutralToneMapping } from "three";
+import { ACESFilmicToneMapping } from "three";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { assetIsPresent, type AssetTarget } from "@/game/assetNames";
 import { formatMoney } from "@/game/format";
@@ -358,7 +358,7 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
         gl={{
           antialias: window.devicePixelRatio < 2,
           powerPreference: "high-performance",
-          toneMapping: NeutralToneMapping,
+          toneMapping: ACESFilmicToneMapping,
         }}
       >
         <ToneMappingSync />

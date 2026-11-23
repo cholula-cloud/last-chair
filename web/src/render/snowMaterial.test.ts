@@ -7,8 +7,8 @@ describe("patchSnowMaterial", () => {
     expect(MOUNTAIN_TRAIL_CONDITIONING).toBe(true);
   });
 
-  it("injects snow shader chunks when conditioning is on", () => {
-    const mat = patchSnowMaterial(new THREE.MeshLambertMaterial({ vertexColors: true }));
+  it("injects snow shader chunks into MeshStandardMaterial when conditioning is on", () => {
+    const mat = patchSnowMaterial(new THREE.MeshStandardMaterial({ vertexColors: true }));
     let source = "";
     const shader = {
       uniforms: {},

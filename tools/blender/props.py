@@ -1,27 +1,29 @@
 def _pine(name, H, tiers, R, green, slim=1.0, seg=7):
-    """Chunky New England toy conifer: snow caps + rim skirts, readable at phone distance."""
+    """Lush New England toy-box conifer: overlapping chunky tiers + soft snow-capped crown."""
     a = Asset(name)
-    trunk_h = H * 0.14
-    a.cyl((0, 0, 0), 0.26 * R / 2.2, 0.18 * R / 2.2, trunk_h + 0.55, 6, "timber-dark", caps=False)
+    trunk_h = H * 0.16
+    a.cyl((0, 0, 0), 0.28 * R / 2.2, 0.18 * R / 2.2, trunk_h + 0.6, 6, "timber-dark", caps=False)
     z = trunk_h
-    span = (H - trunk_h) / (tiers * 0.72 + 0.28)
+    span = (H - trunk_h) / (tiers * 0.64 + 0.36)
     for i in range(tiers):
-        r = R * (1 - i / (tiers + 0.55)) * slim
-        h = span * (1.08 - 0.05 * i)
-        rot = (0, 0, i * 28)
+        r = R * (1 - i / (tiers + 0.65)) * slim
+        h = span * (1.16 - 0.04 * i)
+        rot = (0, 0, i * 26)
         a.cyl((0, 0, z), r, 0.0, h, seg, green, rot=rot)
-        sz = z + h * 0.4
-        # light tip only — most foliage stays green (runtime also tints GLBs)
-        a.cyl((0, 0, sz), r * 0.45, 0.0, h * 0.32 + 0.02, seg, "snow", rot=(0, 0, i * 28 + 28))
-        z += span * 0.72
+        z += span * 0.64
+    # Single clean snow cap draping the crown tip (no harsh geometric mid-tier stripes).
+    crown_r = R * (1 - (tiers - 1) / (tiers + 0.65)) * slim * 0.88
+    crown_h = span * 0.68
+    crown_z = H - crown_h + 0.04
+    a.cyl((0, 0, crown_z), crown_r, 0.0, crown_h, seg, "snow", rot=(0, 0, (tiers - 1) * 26))
     return a.finish()
 
 def b_pines():
-    # Wide crowns + snow for ICR-style dense toy forest (valley beauty).
-    return [_pine("pine-a", 7.2, 3, 2.85, "pine"),
-            _pine("pine-b", 10.8, 4, 2.65, "pine-dark", slim=0.9, seg=6),
-            _pine("pine-c", 8.6, 3, 3.55, "pine", seg=7),
-            _pine("pine-d", 6.0, 2, 3.6, "pine", slim=1.1, seg=7)]
+    # Chunky, overlapping toy-box crowns for dense timber framing ski corridors.
+    return [_pine("pine-a", 7.4, 3, 3.05, "pine"),
+            _pine("pine-b", 10.6, 4, 2.85, "pine-dark", slim=0.92, seg=7),
+            _pine("pine-c", 8.6, 3, 3.65, "pine", seg=7),
+            _pine("pine-d", 6.2, 3, 3.45, "pine-dark", slim=1.06, seg=7)]
 
 def b_lamp():
     a = Asset("lamp-post")

@@ -70,12 +70,19 @@ export function useKit(name: KitAsset): THREE.Object3D {
 }
 
 /**
- * A kit asset flattened for cheap drawing: everything vertex-coloured in one
- * `body` geometry, emissive window/lamp glass in `glow`, and any materials
- * named in `split` kept apart (white) so they can take a per-instance colour.
+ * A kit asset flattened for cheap drawing:
+ * - `body`: all non-glow/non-glass geometry (kept for backward compatibility & picking)
+ * - `matte`: matte architectural / wood / snow / stone parts (roughness ~0.82)
+ * - `semiGloss`: roofs, painted metal, skis, helmets, awnings (roughness ~0.36, metalness ~0.25)
+ * - `glass`: window glazing (`window-glow`, `glass-dark`), warm reflective by day → hearth glow at dusk/night
+ * - `glow`: unlit lamps/fire (`lamp-glow`)
+ * - `split`: materials kept separate (white) for per-instance tinting
  */
 export type BakedKit = {
   body: THREE.BufferGeometry;
+  matte: THREE.BufferGeometry;
+  semiGloss: THREE.BufferGeometry | null;
+  glass: THREE.BufferGeometry | null;
   glow: THREE.BufferGeometry | null;
   split: Record<string, THREE.BufferGeometry>;
 };
@@ -84,6 +91,29 @@ export type BakedKit = {
 const COLOR_OVERRIDES: Record<string, string> = {
   snow: PALETTE.snow,
 };
+
+const SEMI_GLOSS_MATS = new Set([
+  "slate-roof",
+  "shutter-green",
+  "shutter-black",
+  "steel",
+  "steel-dark",
+  "ski",
+  "helmet",
+  "goggles",
+  "awning-red",
+  "amber-accent",
+  "ochre-trim",
+  "burnt-orange",
+  "navy",
+  "cedar-shake",
+  "shop-blue",
+  "umbrella-yellow",
+]);
+
+const GLASS_MATS = new Set(["window-glow", "glass-dark"]);
+const DAY_GLASS_COLOR = new THREE.Color("#a8865c");
+const DARK_GLASS_COLOR = new THREE.Color("#25374a");
 
 const cache = new WeakMap<THREE.Object3D, Map<string, BakedKit>>();
 
@@ -130,8 +160,10 @@ export function bakeKit(scene: THREE.Object3D, split: readonly string[] = []): B
   if (hit) return hit;
 
   scene.updateMatrixWorld(true);
-  const body: THREE.BufferGeometry[] = [];
-  const glow: THREE.BufferGeometry[] = [];
+  const matteList: THREE.BufferGeometry[] = [];
+  const semiGlossList: THREE.BufferGeometry[] = [];
+  const glassList: THREE.BufferGeometry[] = [];
+  const glowList: THREE.BufferGeometry[] = [];
   const parts: Record<string, THREE.BufferGeometry[]> = {};
   const white = new THREE.Color(1, 1, 1);
   scene.traverse((o) => {
@@ -141,16 +173,30 @@ export function bakeKit(scene: THREE.Object3D, split: readonly string[] = []): B
     const name = m.name ?? "";
     if (split.includes(name)) {
       (parts[name] ??= []).push(prepare(mesh.geometry, mesh.matrixWorld, white));
+    } else if (GLASS_MATS.has(name)) {
+      const glassCol = name === "glass-dark" ? DARK_GLASS_COLOR : DAY_GLASS_COLOR;
+      glassList.push(prepare(mesh.geometry, mesh.matrixWorld, glassCol));
     } else if (isGlow(m)) {
-      glow.push(prepare(mesh.geometry, mesh.matrixWorld, m.emissive.clone()));
+      glowList.push(prepare(mesh.geometry, mesh.matrixWorld, m.emissive.clone()));
     } else {
       const c = COLOR_OVERRIDES[name] ? new THREE.Color(COLOR_OVERRIDES[name]) : m.color.clone();
-      body.push(prepare(mesh.geometry, mesh.matrixWorld, c));
+      const target = SEMI_GLOSS_MATS.has(name) ? semiGlossList : matteList;
+      target.push(prepare(mesh.geometry, mesh.matrixWorld, c));
     }
   });
+  const matteMerged = mergeAll(matteList);
+  const matte = matteMerged ?? new THREE.BufferGeometry();
+  const semiGloss = mergeAll(semiGlossList);
+  const bodyParts: THREE.BufferGeometry[] = [];
+  if (matteMerged) bodyParts.push(matteMerged.clone());
+  if (semiGloss) bodyParts.push(semiGloss.clone());
+  const body = mergeAll(bodyParts) ?? new THREE.BufferGeometry();
   const baked: BakedKit = {
-    body: mergeAll(body) ?? new THREE.BufferGeometry(),
-    glow: mergeAll(glow),
+    body,
+    matte,
+    semiGloss,
+    glass: mergeAll(glassList),
+    glow: mergeAll(glowList),
     split: Object.fromEntries(
       Object.entries(parts).map(([k, v]) => [k, mergeAll(v) ?? new THREE.BufferGeometry()]),
     ),

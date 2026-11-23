@@ -22,6 +22,7 @@ import { scaledTickMs, useSpeed } from "@/ui/speed";
 
 import { Atmosphere } from "./Atmosphere";
 import { BuildScenePreview } from "./BuildScenePreview";
+import { ChimneySmoke } from "./ChimneySmoke";
 import { homeAzimuth } from "./cameraFraming";
 import { MAX_DISTANCE, MIN_DISTANCE } from "./cameraControls";
 import { Guests } from "./Guests";
@@ -120,7 +121,7 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
   return (
     <>
       <RenderStats />
-      <Atmosphere />
+      <Atmosphere lowDetail={lowDetail} />
       <Terrain
         lowDetail={lowDetail}
         snowQuality={terrainSnow}
@@ -141,6 +142,7 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
       <BuildGrid />
       <Suspense fallback={null}>
         <Village />
+        <ChimneySmoke />
         <DirectionSigns />
         <TubingHillDressing />
         <RinkSkaters />

@@ -35,6 +35,7 @@ export function patchLeaseDim<T extends THREE.Material>(material: T): T {
       .replace("#include <common>", "#include <common>\nuniform float uLeaseDim;\nuniform float uLeaseDimAmount;\nuniform float uLeaseDimGrey;\nvarying float vOut;")
       .replace("#include <color_fragment>", "#include <color_fragment>\nfloat leaseK = uLeaseDim * vOut;\ndiffuseColor.rgb *= 1.0 - uLeaseDimAmount * leaseK;\ndiffuseColor.rgb = mix(diffuseColor.rgb, vec3(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114))), uLeaseDimGrey * leaseK);");
   };
-  material.customProgramCacheKey = () => "leaseDim";
+  const prevKey = material.customProgramCacheKey?.bind(material) ?? (() => "");
+  material.customProgramCacheKey = () => `${prevKey()}+leaseDim`;
   return material;
 }
