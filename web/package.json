@@ -22,6 +22,7 @@
     "playtest:layers": "node scripts/playtest-layers.mjs",
     "playtest:coach": "node scripts/playtest-coach.mjs",
     "playtest:m2": "node scripts/playtest-m2.mjs",
+    "playtest:snow-gun": "node scripts/playtest-snow-gun.mjs",
     "playwright:install": "playwright install chromium",
     "phone-check": "node scripts/phone-check.mjs",
     "screenshots:b6": "node scripts/screenshots-b6.mjs",
