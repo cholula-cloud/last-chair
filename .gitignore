@@ -1,0 +1,5 @@
+# Local agent/skill configs and lockfiles
+.agent/
+.agents/
+.claude/
+skills-lock.json
