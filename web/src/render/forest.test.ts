@@ -66,9 +66,22 @@ describe("clearings", () => {
     expect(forested(home.x, home.z, clearings)).toBe(false);
   });
 
-  it("clears the road only where the road runs", () => {
+  it("clears the road across the full terrain width and feathers the summit instead of cutting a circle", () => {
+    expect(forested(-120, 24, { lines: [], paths: [] })).toBe(false);
     expect(forested(0, 24, { lines: [], paths: [] })).toBe(false);
-    expect(forested(80, 24, { lines: [], paths: [] })).toBe(true);
+    expect(forested(80, 24, { lines: [], paths: [] })).toBe(false);
+    expect(forested(80, 18, { lines: [], paths: [] })).toBe(true);
+
+    // Confirm summit neighborhood is naturally wooded rather than a flat bald disc.
+    const summitX = TERRAIN.def.summit.x * TERRAIN.scale.horizontal;
+    const summitZ = TERRAIN.def.summit.z * TERRAIN.scale.horizontal;
+    let summitTrees = 0;
+    for (const dx of [-1.2, -0.4, 0.4, 1.2]) {
+      for (const dz of [-1.2, -0.4, 0.4, 1.2]) {
+        if (forested(summitX + dx, summitZ + dz, { lines: [], paths: [] })) summitTrees++;
+      }
+    }
+    expect(summitTrees).toBeGreaterThan(8);
   });
 
   it("invalidates the lease forest when a lift or starter path changes", () => {

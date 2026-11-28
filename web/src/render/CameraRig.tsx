@@ -245,24 +245,42 @@ export function CameraRig({
       }
     };
     const onUp = (e: PointerEvent) => finishGesture(e);
+    const clearActiveGestures = () => {
+      active.clear();
+      events = [];
+      panEnded = false;
+      prevTap = null;
+      if (interacting.current) {
+        interacting.current = false;
+        orbitSettlingUntil.current = performance.now() + ORBIT_SETTLE_MS;
+      }
+    };
     const onCancel = (e: PointerEvent) => {
       active.delete(e.pointerId);
       events = [];
       panEnded = false;
+      prevTap = null;
       if (active.size === 0) {
         interacting.current = false;
         orbitSettlingUntil.current = performance.now() + ORBIT_SETTLE_MS;
       }
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") clearActiveGestures();
+    };
     dom.addEventListener("pointerdown", onDown);
     dom.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onCancel);
+    window.addEventListener("blur", clearActiveGestures);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       dom.removeEventListener("pointerdown", onDown);
       dom.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("blur", clearActiveGestures);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [controls, dom, get, endFollow, glideTo, onInspectAsset]);
 
