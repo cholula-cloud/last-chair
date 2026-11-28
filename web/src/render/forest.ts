@@ -157,11 +157,17 @@ export function forestMask(clearings: ForestClearings) {
   const trailSq = TRAIL_CLEAR ** 2;
   return (x: number, z: number) => {
     if (inLot(x, z) || onSpur(x, z) || inApron(x, z) || inMeadow(x, z)) return false;
-    if (Math.abs(z - ROAD_Z) < ROAD_HALF_WIDTH && x >= SITE.road.xFrom - 1 && x <= SITE.road.xTo + 1) return false;
+    if (
+      Math.abs(z - (ROAD_Z + Math.sin(x * 0.18) * 0.25)) < ROAD_HALF_WIDTH &&
+      x >= TERRAIN.bounds.xMin &&
+      x <= TERRAIN.bounds.xMax
+    ) {
+      return false;
+    }
     if ((x - LIFT_BASE.x) ** 2 + (z - LIFT_BASE.z) ** 2 < 2.5 ** 2) return false;
     for (const trail of trails) if (distSqToPolyline(x, z, trail) < trailSq) return false;
     for (const line of clearings.lines) if (distSqToLiftLine(x, z, line) < liftSq) return false;
-    return TERRAIN.height(x, z) <= 10.65;
+    return true;
   };
 }
 

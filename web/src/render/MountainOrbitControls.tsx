@@ -54,10 +54,39 @@ export function MountainOrbitControls({
   }, -1);
 
   useEffect(() => {
+    controls.disconnect();
+    controls.connect(explDomElement);
     if (keyEvents) {
-      controls.connect(keyEvents === true ? explDomElement : keyEvents);
+      controls.listenToKeyEvents(keyEvents === true ? explDomElement : keyEvents);
     }
-    return () => controls.dispose();
+
+    // Prevent iOS Safari native pinch-to-zoom / two-finger gesture hijacking and clear stuck touches on blur.
+    const preventSafariGesture = (e: Event) => e.preventDefault();
+    const resetStalePointers = () => {
+      controls.disconnect();
+      controls.connect(explDomElement);
+      if (keyEvents) {
+        controls.listenToKeyEvents(keyEvents === true ? explDomElement : keyEvents);
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") resetStalePointers();
+    };
+
+    explDomElement.addEventListener("gesturestart", preventSafariGesture, { passive: false });
+    explDomElement.addEventListener("gesturechange", preventSafariGesture, { passive: false });
+    explDomElement.addEventListener("gestureend", preventSafariGesture, { passive: false });
+    window.addEventListener("blur", resetStalePointers);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      explDomElement.removeEventListener("gesturestart", preventSafariGesture);
+      explDomElement.removeEventListener("gesturechange", preventSafariGesture);
+      explDomElement.removeEventListener("gestureend", preventSafariGesture);
+      window.removeEventListener("blur", resetStalePointers);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      controls.dispose();
+    };
   }, [keyEvents, explDomElement, controls]);
 
   useEffect(() => {

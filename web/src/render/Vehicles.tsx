@@ -192,7 +192,8 @@ function AmbientRoadTraffic() {
     if (!reduced.current && !paused) {
       phaseRef.current += Math.min(0.05, delta) * 1.4;
     }
-    const { xFrom, xTo } = SITE.road;
+    const xFrom = -72;
+    const xTo = 84;
     const span = xTo - xFrom;
     for (let i = 0; i < CRUISER_COUNT; i++) {
       const dir = i === 0 ? 1 : -1;

@@ -269,8 +269,9 @@ export function Terrain({
 /** Ploughed valley road with dashed yellow centreline and sculpted snowbanks. */
 export function Road() {
   const geometry = useMemo(() => {
-    const { xFrom, xTo } = SITE.road;
-    const segs = 120;
+    const xFrom = TERRAIN.bounds.xMin;
+    const xTo = TERRAIN.bounds.xMax;
+    const segs = 240;
     const pos: number[] = [];
     const col: number[] = [];
     const idx: number[] = [];
@@ -367,7 +368,7 @@ export function Road() {
         b + 3, b + 0, b + 4, b + 3, b + 4, b + 7,
       );
     };
-    for (let px = xFrom + 1.5; px <= xTo - 1.5; px += 3.2) {
+    for (let px = SITE.road.xFrom + 1.5; px <= SITE.road.xTo - 1.5; px += 3.2) {
       if (Math.abs(px - SITE.arrival.center.x) < 1.3) continue;
       const rz = ROAD_Z + Math.sin(px * 0.18) * 0.25;
       pushPost(px, rz - (w + 0.22));

@@ -78,6 +78,25 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
   const lifts = useGameStore((s) => s.lifts);
   const trailRuns = useGameStore((s) => s.trails);
   const usingBuildTool = usePlacementDraft((s) => s.active && !s.moveCamera);
+  const isCoarsePointer = useMemo(
+    () => typeof window !== "undefined" && Boolean(window.matchMedia?.("(pointer: coarse)").matches),
+    [],
+  );
+  const touches = useMemo(
+    () => ({
+      ONE: usingBuildTool ? (-1 as THREE.TOUCH) : THREE.TOUCH.PAN,
+      TWO: usingBuildTool ? THREE.TOUCH.DOLLY_PAN : THREE.TOUCH.DOLLY_ROTATE,
+    }),
+    [usingBuildTool],
+  );
+  const mouseButtons = useMemo(
+    () => ({
+      LEFT: usingBuildTool ? (-1 as THREE.MOUSE) : THREE.MOUSE.PAN,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE,
+    }),
+    [usingBuildTool],
+  );
   const trailKey = useGameStore((s) => snowKey(snowCarriers(s.trails)));
   const trailSnow = useMemo(() => decodeSnowKey(trailKey), [trailKey]);
   const canvas = useThree((s) => s.gl.domElement);
@@ -205,16 +224,9 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
         enableDamping
         dampingFactor={0.08}
         screenSpacePanning={false}
-        zoomToCursor
-        touches={{
-          ONE: usingBuildTool ? -1 as THREE.TOUCH : THREE.TOUCH.PAN,
-          TWO: usingBuildTool ? THREE.TOUCH.DOLLY_PAN : THREE.TOUCH.DOLLY_ROTATE,
-        }}
-        mouseButtons={{
-          LEFT: usingBuildTool ? -1 as THREE.MOUSE : THREE.MOUSE.PAN,
-          MIDDLE: THREE.MOUSE.DOLLY,
-          RIGHT: THREE.MOUSE.ROTATE,
-        }}
+        zoomToCursor={!isCoarsePointer}
+        touches={touches}
+        mouseButtons={mouseButtons}
         minAzimuthAngle={azimuth - AZIMUTH_RANGE}
         maxAzimuthAngle={azimuth + AZIMUTH_RANGE}
         minDistance={MIN_DISTANCE}
