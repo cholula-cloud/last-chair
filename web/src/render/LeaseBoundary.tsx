@@ -3,6 +3,8 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { activeLeasePolygon } from "@/game/parcels";
+import { useGameStore } from "@/game/store";
 import { TERRAIN } from "@/game/terrain";
 import { usePlacementDraft } from "@/ui/placementDraft";
 import { leaseDim } from "./leaseDim";
@@ -63,7 +65,13 @@ export function leaseDashGeometry(
  * only while a build tool is open. The fade writes a uniform each frame and never sets state.
  */
 export function LeaseBoundary() {
-  const polygon = TERRAIN.lease;
+  const mountainId = useGameStore((s) => s.mountainId);
+  const northRidgeParcel = useGameStore((s) => s.northRidgeParcel);
+  const orchardParcel = useGameStore((s) => s.orchardParcel);
+  const polygon = useMemo(
+    () => activeLeasePolygon(TERRAIN, { mountainId, northRidgeParcel, orchardParcel }),
+    [mountainId, northRidgeParcel, orchardParcel],
+  );
   const geometry = useMemo(() => (polygon ? leaseDashGeometry(polygon, TERRAIN.height) : null), [polygon]);
   useEffect(() => () => geometry?.dispose(), [geometry]);
   const mesh = useRef<THREE.Mesh>(null);

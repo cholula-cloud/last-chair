@@ -47,6 +47,7 @@ type GameActions = {
   setBuildMode: (on: boolean) => void;
   setSelectedLiftType: (t: LiftType) => void;
   placeLift: (req: { type: LiftType; bottom: XZ; top: XZ }) => void;
+  restoreStarterLine: () => void;
   undoLift: () => void;
   closeLift: (index: number) => void;
   commitPaint: (strokes: readonly PaintStroke[], glade?: boolean, connectCrossings?: boolean) => void;
@@ -72,6 +73,9 @@ type GameActions = {
   decideGroomerDown: (decision: import("./groomerDown").GroomerDownDecision) => void;
   installNightLights: () => void;
   setNightSession: (on: boolean) => void;
+  buyNorthRidgeParcel: () => void;
+  decideMountTomShuttle: (decision: "accepted" | "declined") => void;
+  toggleTrailOpen: (trailIndex: number) => void;
   decideOrchardParcel: (decision: "buy" | "decline") => void;
   decideInspectorNotice: (decision: "repaired" | "closed") => void;
   decideWhiterockCaretakerBid: (mountainId: MountainId, decision: "sell" | "keep") => void;
@@ -291,6 +295,7 @@ export const useGameStore = create<GameStore>()(
         setBuildMode: action("setBuildMode", false),
         setSelectedLiftType: action("setSelectedLiftType", false),
         placeLift: action("placeLift"),
+        restoreStarterLine: command("restoreHistoricStarterLine"),
         undoLift: command("undoLift"),
         closeLift: action("closeLift"),
         commitPaint: action("commitPaint"),
@@ -316,6 +321,9 @@ export const useGameStore = create<GameStore>()(
         decideGroomerDown: action("decideGroomerDown"),
         installNightLights: command("installNightLights"),
         setNightSession: action("setNightSession"),
+        buyNorthRidgeParcel: command("buyNorthRidgeParcel"),
+        decideMountTomShuttle: action("decideMountTomShuttle"),
+        toggleTrailOpen: action("toggleTrailOpen"),
         decideOrchardParcel: action("decideOrchardParcel"),
         decideInspectorNotice: action("decideInspectorNotice"),
         decideWhiterockCaretakerBid: action("decideWhiterockCaretakerBid"),

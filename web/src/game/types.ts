@@ -251,6 +251,8 @@ export const BUILDING_COSTS: Record<BuildingId, number> = {
 
 export const DAY_START_MIN = 7 * 60 + 30;
 export const DAY_END_MIN = 16 * 60;
+/** Extended closing clock on Mount Tom when Holyoke range lights are active. */
+export const NIGHT_SESSION_END_MIN = 18 * 60 + 30;
 /** Lifts stop loading; anyone still in a line goes home. */
 export const LIFT_CLOSE_MIN = 15 * 60 + 45;
 /** Guests reach the hill between these clock minutes, most around the peak. */

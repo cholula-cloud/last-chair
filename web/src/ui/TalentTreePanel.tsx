@@ -14,16 +14,17 @@ import {
   type TalentId,
 } from "@/game/talentProgress";
 import { CREW_ROLES, CREW_TALENTS, type CrewMember } from "@/game/talents";
+import { CastPatch } from "@/ui/kit/CastPatches";
 import { CheckIcon, LockIcon } from "@/ui/kit/icons";
 import { SegmentedControl } from "@/ui/kit/SegmentedControl";
 import { useReducedMotion } from "@/ui/motion";
 
 const CREW_ORDER: CrewMember[] = ["Frank", "Dana", "Elena"];
 
-const CREW_TINT: Record<CrewMember, string> = {
-  Frank: "#0b6b3a",
-  Dana: "#b8302a",
-  Elena: "#2f5f9e",
+const CREW_PATCH: Record<CrewMember, "frank" | "dana" | "elena"> = {
+  Frank: "frank",
+  Dana: "dana",
+  Elena: "elena",
 };
 
 function blockLabel(
@@ -146,13 +147,7 @@ export function TalentTreePanel() {
 
       <div key={crew} className="panel beat-swap space-y-3 p-3.5">
         <div className="flex items-center gap-3">
-          <div
-            className="display flex size-11 shrink-0 items-center justify-center rounded-full border-[3px] border-ink text-lg text-white"
-            style={{ background: CREW_TINT[crew] }}
-            aria-hidden="true"
-          >
-            {crew[0]}
-          </div>
+          <CastPatch id={CREW_PATCH[crew]} size={44} />
           <div className="min-w-0 flex-1">
             <h4 className="display text-[1.15rem] leading-tight text-ink">{crew}</h4>
             <p className="text-xs font-bold text-ink-soft">{role.role}</p>

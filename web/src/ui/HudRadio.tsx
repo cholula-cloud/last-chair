@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { create } from "zustand";
 import {
   liveRadioBroadcast,
@@ -11,6 +11,7 @@ import {
 } from "@/game/radioChannels";
 import { useGameStore } from "@/game/store";
 import { radioDialTurned } from "@/ui/feel";
+import { CastPatch, castPatchForSpeaker } from "@/ui/kit/CastPatches";
 import { CloseIcon } from "@/ui/kit/icons";
 import { tidy } from "@/ui/kit/parts";
 import { useReducedMotion } from "@/ui/motion";
@@ -23,19 +24,30 @@ const DISMISS_VELOCITY = 0.35;
 
 /** Session-wide tracking so switching HUD overlays never re-peeks the same dispatch. */
 const useRadioUi = create<{
+  open: boolean;
   seenKeys: Record<string, true>;
   unreadKey: string | null;
   peekingKey: string | null;
   pendingPeekKey: string | null;
+  setOpen: (open: boolean) => void;
+  toggleOpen: () => void;
   recordKey: (key: string, defer: boolean) => void;
   promotePendingPeek: () => void;
   expirePeek: () => void;
   clearUnread: () => void;
 }>((set) => ({
+  open: false,
   seenKeys: {},
   unreadKey: null,
   peekingKey: null,
   pendingPeekKey: null,
+  setOpen: (open) => set(() => (open ? { open, unreadKey: null, peekingKey: null, pendingPeekKey: null } : { open })),
+  toggleOpen: () =>
+    set((s) =>
+      s.open
+        ? { open: false }
+        : { open: true, unreadKey: null, peekingKey: null, pendingPeekKey: null },
+    ),
   recordKey: (key, defer) =>
     set((s) =>
       s.seenKeys[key]
@@ -83,8 +95,60 @@ export type MorningDispatch = {
 };
 
 /**
- * Compact 44px Radio toggle anchored under the Play button, with a transient 6s peek toast for
- * newly arriving dispatches and a full 3-band tuner popover on tap.
+ * Compact Radio key anchored in the top bar (between the clock and cash chips).
+ */
+export function HudRadioButton({ disabled = false }: { disabled?: boolean }) {
+  const state = useGameStore((s) => s);
+  const radioEnabled = useSettings((s) => s.radioEnabled);
+  const radioBand = useSettings((s) => s.radioBand);
+  const open = useRadioUi((s) => s.open);
+  const unreadKey = useRadioUi((s) => s.unreadKey);
+  const peekingKey = useRadioUi((s) => s.peekingKey);
+  const toggleOpen = useRadioUi((s) => s.toggleOpen);
+
+  const broadcast = liveRadioBroadcast(state, radioBand);
+  const wvtkLive = radioBand === "wvtk" ? broadcast : liveRadioBroadcast(state, "wvtk");
+  const meta = STATION_META[radioBand];
+  const showToast = !open && !!peekingKey && radioEnabled;
+  const showUnreadDot = !open && !showToast && !!unreadKey && radioEnabled;
+
+  return (
+    <button
+      type="button"
+      data-hud-radio-trigger="true"
+      disabled={disabled}
+      aria-expanded={open}
+      aria-controls="hud-radio-tuner"
+      aria-label={
+        radioEnabled
+          ? `${meta.shortLabel}: ${tidy(broadcast.title)}${showUnreadDot ? " (new dispatch)" : ""}`
+          : "Radio off, tap to tune WVTK 100.7"
+      }
+      onClick={toggleOpen}
+      className={`key key-sm press relative flex size-11 shrink-0 items-center justify-center [--lift:3px] sm:size-12 sm:[--lift:4px] ${
+        open || showToast
+          ? "bg-sign-yellow text-ink"
+          : radioEnabled
+            ? "bg-sign-yellow-soft text-ink"
+            : "bg-snow-2 text-ink-soft"
+      }`}
+    >
+      <WavesGlyph active={radioEnabled} />
+      {showUnreadDot && (
+        <span
+          aria-hidden="true"
+          className={`absolute -right-1 -top-1 size-3 rounded-full border-2 border-ink ${
+            wvtkLive.urgent ? "bg-barn-deep" : "bg-sign-yellow"
+          }`}
+        />
+      )}
+    </button>
+  );
+}
+
+/**
+ * Row-2 Route 100 radio surfaces: MorningNote, transient 6s peek toast for newly arriving
+ * dispatches, and the 3-band tuner popover toggled from the top-bar Radio key.
  */
 export function HudRadio({
   onOpenLog,
@@ -99,12 +163,12 @@ export function HudRadio({
   const setSettings = useSettings((s) => s.set);
   const reduceMotion = useReducedMotion();
 
-  const [open, setOpen] = useState(false);
+  const open = useRadioUi((s) => s.open);
+  const setOpen = useRadioUi((s) => s.setOpen);
   const wrapRef = useRef<HTMLDivElement>(null);
   const toastRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startY: number; startAt: number; dragging: boolean; offset: number } | null>(null);
 
-  const unreadKey = useRadioUi((s) => s.unreadKey);
   const peekingKey = useRadioUi((s) => s.peekingKey);
   const pendingPeekKey = useRadioUi((s) => s.pendingPeekKey);
   const recordKey = useRadioUi((s) => s.recordKey);
@@ -146,6 +210,7 @@ export function HudRadio({
       if (e.key === "Escape") setOpen(false);
     };
     const onPointer = (e: PointerEvent) => {
+      if (e.target instanceof Element && e.target.closest('[data-hud-radio-trigger="true"]')) return;
       if (wrapRef.current && e.target instanceof Node && !wrapRef.current.contains(e.target)) {
         setOpen(false);
       }
@@ -156,7 +221,7 @@ export function HudRadio({
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("pointerdown", onPointer);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   const selectBand = (next: RadioBandId) => {
     radioDialTurned();
@@ -171,7 +236,6 @@ export function HudRadio({
   };
 
   const showToast = !open && !morningDispatch && !!peekingKey && radioEnabled;
-  const showUnreadDot = !open && !showToast && !!unreadKey && radioEnabled;
 
   const resetToastStyle = (animate: boolean) => {
     const el = toastRef.current;
@@ -221,130 +285,97 @@ export function HudRadio({
     }
   };
 
+  if (!open && !morningDispatch && !showToast) return null;
+
   return (
     <div
       ref={wrapRef}
       data-hud-radio="true"
       className="pointer-events-none relative w-full max-w-[min(27rem,100%)]"
     >
-      <div className="flex items-start gap-2">
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-controls="hud-radio-tuner"
-          aria-label={
-            radioEnabled
-              ? `${meta.shortLabel}: ${tidy(broadcast.title)}${showUnreadDot ? " (new dispatch)" : ""}`
-              : "Radio off, tap to tune WVTK 100.7"
-          }
-          onClick={() => {
-            const next = !open;
-            setOpen(next);
-            if (next) clearUnread();
-          }}
-          className={`key key-sm press pointer-events-auto relative flex size-11 shrink-0 items-center justify-center [--lift:3px] ${
-            open || showToast
-              ? "bg-sign-yellow text-ink"
-              : radioEnabled
-                ? "bg-sign-yellow-soft text-ink"
-                : "bg-snow-2 text-ink-soft"
-          }`}
+      {!open && morningDispatch && (
+        <aside
+          aria-label="Morning note"
+          className="panel popover-in pointer-events-auto flex w-full origin-top-left items-start gap-2.5 px-3 py-2 text-left [--lift:3px]"
         >
-          <WavesGlyph active={radioEnabled} />
-          {showUnreadDot && (
-            <span
-              aria-hidden="true"
-              className={`absolute -right-1 -top-1 size-3 rounded-full border-2 border-ink ${
-                wvtkLive.urgent ? "bg-barn-deep" : "bg-sign-yellow"
-              }`}
-            />
-          )}
-        </button>
-
-        {!open && morningDispatch && (
-          <aside
-            aria-label="Morning note"
-            className="panel popover-in pointer-events-auto flex min-w-0 flex-1 origin-top-left items-start gap-2.5 px-3 py-2 text-left [--lift:3px]"
+          <span
+            aria-hidden="true"
+            className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
           >
-            <span
-              aria-hidden="true"
-              className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-sky text-ink"
-            >
-              {morningDispatch.weatherIcon}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.8rem] font-bold leading-snug text-ink">
-                <span className="font-extrabold">{morningDispatch.weatherLabel}.</span> {morningDispatch.headline}
+            {morningDispatch.weatherIcon}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.8rem] font-bold leading-snug text-ink">
+              <span className="font-extrabold">{morningDispatch.weatherLabel}.</span> {morningDispatch.headline}
+            </p>
+            {morningDispatch.overnightLine && (
+              <p className="mt-0.5 text-[0.74rem] font-bold tabular-nums text-ink-soft">
+                {morningDispatch.overnightLine}
               </p>
-              {morningDispatch.overnightLine && (
-                <p className="mt-0.5 text-[0.74rem] font-bold tabular-nums text-ink-soft">
-                  {morningDispatch.overnightLine}
-                </p>
-              )}
-              {morningDispatch.crewLine && (
-                <p className="mt-0.5 text-[0.78rem] font-extrabold leading-snug text-sign-green">
-                  {morningDispatch.crewLine}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={morningDispatch.onDismiss}
-              aria-label="Dismiss morning note"
-              className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
-            >
-              <CloseIcon size={16} />
-            </button>
-          </aside>
-        )}
-
-        {showToast && (
-          <div
-            ref={toastRef}
-            role="status"
-            aria-live="polite"
-            onPointerDown={onToastPointerDown}
-            onPointerMove={onToastPointerMove}
-            onPointerUp={onToastPointerUp}
-            onPointerCancel={() => {
-              dragRef.current = null;
-              resetToastStyle(true);
-            }}
-            className="panel popover-in pointer-events-auto flex min-w-0 flex-1 origin-top-left cursor-pointer touch-pan-x items-start gap-2 bg-sign-yellow-soft px-3 py-2 text-left [--lift:3px]"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="shrink-0 rounded-md border-2 border-ink bg-sign-yellow px-1.5 py-0.5 text-[0.65rem] font-extrabold leading-none text-ink">
-                  {meta.shortLabel}
-                </span>
-                <p className="min-w-0 truncate text-[0.8rem] font-extrabold text-ink">
-                  {tidy(broadcast.title)}
-                </p>
-              </div>
-              <p className="mt-1 line-clamp-2 text-[0.78rem] font-bold leading-snug text-ink-soft">
-                {tidy(broadcast.body)}
+            )}
+            {morningDispatch.crewLine && (
+              <p className="mt-0.5 text-[0.78rem] font-extrabold leading-snug text-sign-green">
+                {morningDispatch.crewLine}
               </p>
-            </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                clearUnread();
-              }}
-              aria-label="Dismiss radio dispatch"
-              className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
-            >
-              <CloseIcon size={15} />
-            </button>
+            )}
           </div>
-        )}
-      </div>
+          <button
+            type="button"
+            onClick={morningDispatch.onDismiss}
+            aria-label="Dismiss morning note"
+            className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
+          >
+            <CloseIcon size={16} />
+          </button>
+        </aside>
+      )}
+
+      {showToast && (
+        <div
+          ref={toastRef}
+          role="status"
+          aria-live="polite"
+          onPointerDown={onToastPointerDown}
+          onPointerMove={onToastPointerMove}
+          onPointerUp={onToastPointerUp}
+          onPointerCancel={() => {
+            dragRef.current = null;
+            resetToastStyle(true);
+          }}
+          className="panel popover-in pointer-events-auto flex w-full origin-top-left cursor-pointer touch-pan-x items-start gap-2 bg-sign-yellow-soft px-3 py-2 text-left [--lift:3px]"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="shrink-0 rounded-md border-2 border-ink bg-sign-yellow px-1.5 py-0.5 text-[0.65rem] font-extrabold leading-none text-ink">
+                {meta.shortLabel}
+              </span>
+              <p className="min-w-0 truncate text-[0.8rem] font-extrabold text-ink">
+                {tidy(broadcast.title)}
+              </p>
+            </div>
+            <p className="mt-1 line-clamp-2 text-[0.78rem] font-bold leading-snug text-ink-soft">
+              {tidy(broadcast.body)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              clearUnread();
+            }}
+            aria-label="Dismiss radio dispatch"
+            className="key key-sm press flex size-9 shrink-0 items-center justify-center [--lift:2px]"
+          >
+            <CloseIcon size={15} />
+          </button>
+        </div>
+      )}
 
       {open && (
         <section
           id="hud-radio-tuner"
           aria-label="Route 100 Radio tuner"
-          className="panel popover-in pointer-events-auto mt-1.5 max-w-[calc(100%-3.5rem)] origin-top-left space-y-2.5 p-3 sm:max-w-none"
+          className="panel popover-in pointer-events-auto origin-top-right space-y-2.5 p-3"
         >
           <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Radio stations">
             {RADIO_BANDS.map((id) => {
@@ -372,9 +403,14 @@ export function HudRadio({
 
           {radioEnabled ? (
             <div className="well px-3 py-2">
-              <p className="text-[0.72rem] font-extrabold text-sign-brown">
-                {broadcast.speaker}
-              </p>
+              <div className="flex items-center gap-1.5">
+                {castPatchForSpeaker(broadcast.speaker) && (
+                  <CastPatch id={castPatchForSpeaker(broadcast.speaker)!} size={22} />
+                )}
+                <p className="text-[0.72rem] font-extrabold text-sign-brown">
+                  {broadcast.speaker}
+                </p>
+              </div>
               <p className="display mt-0.5 text-[1rem] leading-tight text-ink">
                 {tidy(broadcast.title)}
               </p>

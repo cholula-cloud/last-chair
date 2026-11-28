@@ -3,7 +3,21 @@ import { liftName } from "./assetNames";
 import { winterRecord } from "./winterMemory";
 import type { MountainId } from "./calendar";
 import { ensureCareerHills, hillById, localContactFor, townMatchCash, type CareerHillRecord } from "./mountains/roster";
-import { mountTomNightNet, NIGHT_LIGHTS_COST } from "./mountains/mountTom";
+import {
+  dayEndMin,
+  isMountTomNightActive,
+  mountTomNightNet,
+  MT_SHUTTLE_ARRIVAL_FACTOR,
+  MT_SHUTTLE_SATURDAY_PAY,
+  NIGHT_LIGHTS_COST,
+  NIGHT_SESSION_EXTRA_SKIERS,
+} from "./mountains/mountTom";
+import {
+  NORTH_RIDGE_COST,
+  NORTH_RIDGE_REP_BONUS,
+  terrainWithActiveLease,
+  type ParcelLeaseState,
+} from "./parcels";
 import {
   INSPECTOR_REPAIR_COST,
   ORCHARD_PARCEL_COST,
@@ -75,6 +89,7 @@ import {
   checkSpacing,
   MAX_LIFTS,
   MAX_LIFT_SLOTS,
+  REFERENCE_TOPS,
   rulesFor,
   type LiftLine,
   type PlacementReason,
@@ -112,6 +127,7 @@ import {
   createInitialGuests,
   emptyDayStats,
   isOnHill,
+  makeGuest,
   meanArrivals,
   nextTalentName,
   planArrivals,
@@ -234,7 +250,8 @@ export function openNight(state: GameState): GameState {
   const openLifts = withActivities.lifts.filter((lift, i) => isLiftOperational(lift, i, withActivities.trails)).length;
   const avgQueueMin = measuredWaitMin(withActivities);
   const ctx = satisfactionContext(withActivities);
-  const day = daySatisfaction(withActivities.guests, ctx);
+  const dayGuests = withActivities.guests.filter((g) => !g.id.startsWith("night-"));
+  const day = daySatisfaction(dayGuests, ctx);
   const stats = { ...withActivities.dayStats, avgQueueMin };
   const invited = schoolBusPupils(withActivities.schoolContract, withActivities.dayIndex);
   const pupils = invited ? withActivities.guests.filter((guest) => guest.schoolPupil) : [];
@@ -354,7 +371,14 @@ export function openNight(state: GameState): GameState {
     recap.arrivals > 0
       ? TUBING_SATURDAY_BONUS
       : 0;
-  const extraHillCash = nightSessionNet + tubingBonus;
+  const shuttleBonus =
+    settled.mountainId === "mount_tom" &&
+    settled.mtShuttleDecision === "accepted" &&
+    weekdayForDay(calendar, settled.dayIndex) === "Sat" &&
+    recap.arrivals > 0
+      ? MT_SHUTTLE_SATURDAY_PAY
+      : 0;
+  const extraHillCash = nightSessionNet + tubingBonus + shuttleBonus;
   const adjustedRecap = extraHillCash !== 0
     ? { ...recap, cashDelta: recap.cashDelta + extraHillCash }
     : recap;
@@ -416,12 +440,33 @@ const MAX_STEP_MIN = 0.5;
 export function tick(state: GameState, deltaMs: number): GameState {
   if (state.phase !== "day" || state.paused || openingStep(state)) return state;
 
+  const endMin = dayEndMin(state);
   const wind = weatherForDay(state).wind;
   const addMin = deltaMs / MS_PER_GAME_MINUTE;
   const steps = Math.max(1, Math.ceil(addMin / MAX_STEP_MIN));
   const stepMin = addMin / steps;
 
   let { clockMin, guests, lifts, trails } = state;
+  if (
+    isMountTomNightActive(state) &&
+    clockMin < DAY_END_MIN &&
+    clockMin + addMin >= DAY_END_MIN &&
+    !guests.some((g) => g.id.startsWith("night-"))
+  ) {
+    const waveCount = Math.min(8, NIGHT_SESSION_EXTRA_SKIERS);
+    const eveningWave = Array.from({ length: waveCount }, (_, idx) =>
+      makeGuest({
+        id: `night-mt-${state.dayIndex}-${idx}`,
+        label: `Evening skier ${idx + 1}`,
+        persona: idx % 3 === 0 ? "race_kid" : "regular",
+        state: "pending",
+        arriveAtMin: DAY_END_MIN + idx * 7,
+        stateSinceMin: DAY_END_MIN + idx * 7,
+        targetRuns: 4,
+      }),
+    );
+    guests = [...guests, ...eveningWave];
+  }
   let {
     completedRuns,
     dispatched,
@@ -454,6 +499,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
     const partialWear: (number[] | undefined)[] = [];
     const moved = tickGuests(guests, {
       now: clockMin,
+      dayEndMin: endMin,
       wind,
       snowQuality: state.snowQuality,
       snowByTrail: trails.map((t) => experiencedSnow(t.snow)),
@@ -486,10 +532,11 @@ export function tick(state: GameState, deltaMs: number): GameState {
     let occupiedSeats = 0;
     moved.forEach((g, i) => {
       const was = guests[i];
+      const isNightGuest = g.id.startsWith("night-");
       completedRuns += g.runs - was.runs;
       const asset = g.state === "refuel" ? state.assets[g.venueIndex ?? -1] : undefined;
       if (asset && isRefuelHospitality(asset.id)) occupiedSeats += 1;
-      if (asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
+      if (!isNightGuest && asset && (was.state !== "refuel" || g.stateSinceMin !== was.stateSinceMin)) {
         const rate = assetRevenue(asset, state.founderId);
         venueRevenue[asset.id] = (venueRevenue[asset.id] ?? 0) + rate;
         cash += rate;
@@ -505,7 +552,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
           }
         }
       }
-      if (was.state === "pending" && g.state !== "pending") {
+      if (!isNightGuest && was.state === "pending" && g.state !== "pending") {
         guestsArrived += 1;
         const fare = ticketBaseOnArrival(g, state.fare);
         if (fare > 0) {
@@ -516,7 +563,7 @@ export function tick(state: GameState, deltaMs: number): GameState {
         }
       }
       // Sent home from the line at closing before a single ride.
-      if (was.state === "queue" && g.state === "depart" && g.runs === 0) turnedAway += 1;
+      if (!isNightGuest && was.state === "queue" && g.state === "depart" && g.runs === 0) turnedAway += 1;
     });
     if (seats > 0 && occupiedSeats >= seats) {
       seatsFullMin += stepMin;
@@ -581,8 +628,8 @@ export function tick(state: GameState, deltaMs: number): GameState {
       ...(intradayRevenue ? { intradayRevenue: true } : {}),
     },
   };
-  return clockMin >= DAY_END_MIN
-    ? openNight({ ...next, clockMin: DAY_END_MIN })
+  return clockMin >= endMin
+    ? openNight({ ...next, clockMin: endMin })
     : next;
 }
 
@@ -599,7 +646,7 @@ export function togglePause(state: GameState): GameState {
 }
 
 export function openNightIfReady(state: GameState): GameState {
-  if (state.phase !== "day" || state.clockMin < DAY_END_MIN) return state;
+  if (state.phase !== "day" || state.clockMin < dayEndMin(state)) return state;
   return openNight(state);
 }
 
@@ -651,7 +698,8 @@ export function liftLineOf(lift: LiftSlot): LiftLine {
 }
 
 type LiftPlacementState = Pick<GameState, "lifts" | "cash"> &
-  Partial<Pick<GameState, "assets" | "lodgeTier" | "founderId">>;
+  Partial<Pick<GameState, "assets" | "lodgeTier" | "founderId">> &
+  ParcelLeaseState;
 
 /** Terrain, buildings, lift count, spacing, crossing and cash checks. */
 export function checkPlacement(
@@ -663,7 +711,8 @@ export function checkPlacement(
   const open = state.lifts.filter((l) => l.confirmed);
   if (type === "chair" && state.lodgeTier === 1) return { ok: false, reason: "lodge_tier" };
   if (open.length >= MAX_LIFTS || state.lifts.length >= MAX_LIFT_SLOTS) return { ok: false, reason: "max_lifts" };
-  const terrain = checkLiftLine(line, TERRAIN, type);
+  const activeTerrain = terrainWithActiveLease(TERRAIN, state);
+  const terrain = checkLiftLine(line, activeTerrain, type);
   if (!terrain.ok) return terrain;
   const assets = state.assets ?? [];
   if (terminalOverlapsBuilding(line.bottom, assets) || terminalOverlapsBuilding(line.top, assets)) {
@@ -766,6 +815,39 @@ export function placeLift(
   };
 }
 
+/**
+ * Restore the historic 1985 starter surface lift and trail during the Day 1
+ * opening sequence using exact normal placement/paint costs and validation.
+ */
+export function restoreHistoricStarterLine(state: GameState): GameState {
+  if (openingStep(state) === null) return state;
+  let next = state;
+  if (openingStep(next) === "lift") {
+    const top = REFERENCE_TOPS[0] ?? { x: -1.1, z: 0.2 };
+    const afterLift = placeLift(next, { type: "surface", bottom: TERRAIN.base, top });
+    if (afterLift === next) return state;
+    next = afterLift;
+  }
+  if (openingStep(next) === "trail") {
+    const liftIndex = next.lifts.findIndex((l) => l.confirmed);
+    if (liftIndex < 0) return state;
+    const opts = trailOptions(next, liftIndex, TERRAIN);
+    const starter = opts.find((o) => o.difficulty === "green") ?? opts[0];
+    if (!starter) return state;
+    const afterTrail = commitPaint(next, [{ points: starter.path, widthFt: STANDARD_BRUSH_WIDTH }]);
+    if (afterTrail === next) return state;
+    next = afterTrail;
+  }
+  return openingStep(next) === null ? next : state;
+}
+
+/** Exact cash cost to complete the remaining Day 1 1985 starter line, or null if unavailable. */
+export function historicStarterQuote(state: GameState): number | null {
+  const after = restoreHistoricStarterLine(state);
+  if (after === state) return null;
+  return Math.max(0, state.cash - after.cash);
+}
+
 /** Undo the most recent lift at its construction minute. Remove its trails first. */
 export function undoableLiftIndex(
   state: Pick<GameState, "lifts" | "dayIndex" | "clockMin" | "phase"> & Partial<Pick<GameState, "trails">>,
@@ -862,7 +944,8 @@ export function closeLift(state: GameState, index: number): GameState {
 }
 
 export function checkPaint(state: GameState, strokes: readonly PaintStroke[], glade = false, connectCrossings = true) {
-  const preview = previewPaintedTrail(state, strokes, TERRAIN, connectCrossings);
+  const activeTerrain = terrainWithActiveLease(TERRAIN, state);
+  const preview = previewPaintedTrail(state, strokes, activeTerrain, connectCrossings);
   const original = preview.trailIndex == null ? undefined : state.trails[preview.trailIndex];
   const isGlade = original ? !!original.glade : glade;
   const name = original?.name ?? `${isGlade ? "Glade" : "Painted trail"} ${state.trails.length + 1}`;
@@ -1022,7 +1105,8 @@ function purchaseConstruction(state: GameState, total: number, ..._legacy: [Paya
   };
 }
 
-type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "lodgeStyleId" | "cash">;
+type SitePlacementState = Pick<GameState, "phase" | "dayIndex" | "lifts" | "trails" | "lodgeTier" | "lodgeStyleId" | "cash"> &
+  ParcelLeaseState;
 
 export function checkAssetPlacement(
   state: SitePlacementState & Pick<GameState, "assets">,
@@ -1039,6 +1123,7 @@ export function checkAssetPlacement(
     return [bottom, top];
   });
   const preview = previewAssetPlacement(id, at, state.lodgeTier, state.assets, {
+    terrain: terrainWithActiveLease(TERRAIN, state),
     terminals,
     defaultStyleId: state.lodgeStyleId,
     padIndex: options.padIndex,
@@ -1214,7 +1299,7 @@ export function checkGunPlacement(state: SitePlacementState & Pick<GameState, "g
     : openingStep(state) ? "Build a lift and a trail first. The rest of the hill opens up after that."
     : state.lodgeTier < requiredTier ? `Snow guns need Lodge Tier ${requiredTier}.`
     : gunReasonCopy(
-        gunPlacementReason(point, state.guns, terrainForMountain(mountainId), maxGunsFor(state.trails)),
+        gunPlacementReason(point, state.guns, terrainWithActiveLease(terrainForMountain(mountainId), state), maxGunsFor(state.trails)),
         maxGunsFor(state.trails),
       ) ?? (state.cash < constructionDraw(GUN_COST).deposit ? "Wallet says no. Close out the day, then check your balance." : null);
   if (reason) return { ok: false as const, reason };
@@ -1340,6 +1425,72 @@ export function setNightSession(state: GameState, on: boolean): GameState {
   return { ...state, nightSessionOn: on };
 }
 
+export function buyNorthRidgeParcel(state: GameState): GameState {
+  if (
+    state.mountainId !== "dutch_hill" ||
+    state.lodgeTier < 2 ||
+    state.northRidgeParcel ||
+    state.cash < NORTH_RIDGE_COST
+  ) {
+    return state;
+  }
+  return {
+    ...state,
+    cash: state.cash - NORTH_RIDGE_COST,
+    constructionSpent: state.constructionSpent + NORTH_RIDGE_COST,
+    reputation: Math.min(100, state.reputation + NORTH_RIDGE_REP_BONUS),
+    northRidgeParcel: true,
+  };
+}
+
+export function mtShuttleOfferOpen(state: GameState): boolean {
+  if (state.phase !== "night" || state.mountainId !== "mount_tom" || state.mtShuttleDecision !== null) {
+    return false;
+  }
+  const cal = seasonCalendar(state);
+  return operatingDayIndex(cal, state.dayIndex) >= 4;
+}
+
+export function decideMountTomShuttle(state: GameState, decision: "accepted" | "declined"): GameState {
+  if (!mtShuttleOfferOpen(state)) return state;
+  return {
+    ...state,
+    mtShuttleDecision: decision,
+    reputation: decision === "declined" ? Math.min(100, state.reputation + 3) : state.reputation,
+  };
+}
+
+/** Reason a built trail cannot be roped off right now, or null if toggling is safe. */
+export function trailToggleProblem(state: Pick<GameState, "lifts" | "trails">, trailIndex: number): string | null {
+  const trail = state.trails[trailIndex];
+  if (!trail) return "Trail not found.";
+  if (!trail.open) return null;
+  const openCount = state.trails.filter((t) => t.open).length;
+  if (openCount <= 1) return "Keep at least one trail open so guests can ski down.";
+  const openOnLift = state.trails.filter((t) => t.open && t.liftIndex === trail.liftIndex).length;
+  const otherLiftOpen = state.lifts.some(
+    (lift, i) => i !== trail.liftIndex && lift.confirmed && state.trails.some((t) => t.open && t.liftIndex === i),
+  );
+  if (openOnLift <= 1 && !otherLiftOpen) {
+    return "Keep at least one open trail serving an active lift.";
+  }
+  return null;
+}
+
+/** Toggle a trail between open and roped-off during the day. */
+export function toggleTrailOpen(state: GameState, trailIndex: number): GameState {
+  if (state.phase !== "day") return state;
+  const trail = state.trails[trailIndex];
+  if (!trail) return state;
+  if (trail.open && trailToggleProblem(state, trailIndex)) return state;
+  const trails = state.trails.map((item, i) => (i === trailIndex ? { ...item, open: !item.open } : item));
+  return {
+    ...state,
+    trails,
+    ...deriveSnow(snowCarriers(trails)),
+  };
+}
+
 export function decideOrchardParcel(state: GameState, decision: "buy" | "decline"): GameState {
   if (state.phase !== "night" || state.mountainId !== "maple_valley" || state.orchardParcel !== "pending") return state;
   if (decision === "buy") {
@@ -1449,6 +1600,7 @@ export function resolveNightBeat(state: GameState): GameState {
   else if (next.pendingBeat && !next.beatAcknowledged) next = acknowledgeBeat(next);
   if (next.clubBooking?.decision === "pending") next = decideClubBooking(next, "declined");
   if (next.orchardParcel === "pending") next = decideOrchardParcel(next, "decline");
+  if (mtShuttleOfferOpen(next)) next = decideMountTomShuttle(next, "declined");
   if (next.inspectorNotice?.decision === "pending") next = decideInspectorNotice(next, "closed");
   return next;
 }
@@ -1639,6 +1791,7 @@ export function sleep(state: GameState): GameState {
     (state.pendingBeat === "groomer_down" && state.groomerDownDecision === null) ||
     state.clubBooking?.decision === "pending" ||
     state.orchardParcel === "pending" ||
+    mtShuttleOfferOpen(state) ||
     state.inspectorNotice?.decision === "pending" ||
     (state.pendingBeat && !state.beatAcknowledged)
   ) {
@@ -1796,7 +1949,7 @@ export function sleep(state: GameState): GameState {
   const rng = createRng(state.rngState);
   const rand = () => rng.next();
   const calendar = seasonCalendar(state);
-  const arrivals = planArrivals({
+  const baseArrivals = planArrivals({
     calendar,
     dayIndex: openDay,
     fare: state.pendingFare,
@@ -1810,6 +1963,13 @@ export function sleep(state: GameState): GameState {
     reputation: state.reputation,
     rand,
   });
+  const shuttleCut =
+    carry.mountainId === "mount_tom" &&
+    carry.mtShuttleDecision === "accepted" &&
+    weekdayForDay(calendar, openDay) === "Sat"
+      ? MT_SHUTTLE_ARRIVAL_FACTOR
+      : 1;
+  const arrivals = Math.max(0, Math.round(baseArrivals * shuttleCut));
   const pupils = schoolBusPupils(carry.schoolContract, openDay);
   const clubCount =
     carry.clubBooking?.decision === "accepted" && carry.clubBooking.day === openDay

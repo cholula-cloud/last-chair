@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ASSET_CATALOG } from "./base";
-import { daysLeftLine, goalChips, goalInputs, type GoalChip } from "./goals";
+import { daysLeftLine, goalChips, goalInputs, winterRibbons, type GoalChip } from "./goals";
 import { createInitialState, type GameState } from "./state";
 
 const fresh = createInitialState(7);
@@ -49,4 +49,31 @@ it("counts the current day until the winter settles", () => {
   expect(daysLeftLine(1, 28)).toBe("28 days left.");
   expect(daysLeftLine(28, 28)).toBe("1 day left.");
   expect(daysLeftLine(3, 28, true)).toBe("0 days left.");
+});
+
+describe("winterRibbons", () => {
+  it("returns 3 tailored ribbons for Dutch Hill, Mount Tom, and Maple Valley", () => {
+    const dutch = winterRibbons(fresh);
+    expect(dutch).toHaveLength(3);
+    expect(dutch.map((r) => r.id)).toEqual(["solvent", "lodge", "saturday"]);
+
+    const mt = createInitialState(7, "mount_tom");
+    const mtTodo = winterRibbons(mt);
+    expect(mtTodo.map((r) => r.id)).toEqual(["solvent", "lights", "ridge"]);
+    expect(mtTodo[1]?.status).toBe("To do");
+    expect(mtTodo[2]?.status).toBe("To do");
+
+    const mtDone = winterRibbons({ ...mt, nightLights: true, mtShuttleDecision: "declined", reputation: 62 });
+    expect(mtDone[1]?.status).toBe("Done");
+    expect(mtDone[2]?.status).toBe("Done");
+
+    const mv = createInitialState(7, "maple_valley");
+    const mvTodo = winterRibbons(mv);
+    expect(mvTodo.map((r) => r.id)).toEqual(["solvent", "bus", "orchard"]);
+    const mvDone = winterRibbons({ ...mv, schoolProgramProven: true, orchardParcel: "owned" });
+    expect(mvDone[1]?.status).toBe("Done");
+    expect(mvDone[2]?.status).toBe("Done");
+    const mvMissed = winterRibbons({ ...mv, orchardParcel: "whiterock" });
+    expect(mvMissed[2]?.status).toBe("Missed");
+  });
 });

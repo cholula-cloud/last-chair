@@ -83,3 +83,78 @@ def b_snowcat():
     a.box((0, 4.3, 0.18), (4.2, 0.5, 0.06), "rubber-black", rot=(-12, 0, 0))
     a.box((0, 3.7, 0.92), (4.3, 0.9, 0.1), "amber-accent")
     return a.finish()
+
+
+def b_pickup_truck():
+    a = Asset("pickup-truck")
+    a.box((0, 0.1, 0.65), (1.9, 4.4, 0.72), "barn-red", bevel=0.06)
+    a.box((0, -0.5, 1.32), (1.76, 1.55, 0.7), "barn-red", bevel=0.04)
+    a.box((0, -1.28, 1.32), (1.56, 0.06, 0.52), "glass-dark")
+    a.box((0, -0.5, 1.71), (1.7, 1.45, 0.1), "snow")
+    a.box((0, 1.15, 0.85), (1.62, 1.6, 0.36), "timber-dark")
+    for sx in (-0.35, 0.35):
+        a.box((sx, -0.1, 1.82), (0.14, 1.9, 0.06), "ski")
+    for sx in (-0.85, 0.85):
+        for sy in (-1.25, 1.25):
+            a.cyl((sx, sy, 0.32), 0.32, 0.32, 0.24, 8, "rubber-black", rot=(0, 90, 0))
+    return a.finish()
+
+
+def b_station_wagon():
+    a = Asset("station-wagon")
+    a.box((0, 0, 0.62), (1.85, 4.4, 0.68), "shop-blue", bevel=0.06)
+    for sx in (-0.94, 0.94):
+        a.box((sx, 0.15, 0.65), (0.04, 3.1, 0.36), "timber-brown")
+    a.box((0, 0.25, 1.28), (1.68, 2.75, 0.66), "shop-blue", bevel=0.04)
+    a.box((0, -1.14, 1.28), (1.52, 0.06, 0.5), "glass-dark")
+    a.box((0, 0.25, 1.65), (1.62, 2.65, 0.1), "snow")
+    for sx in (-0.3, 0.3):
+        a.box((sx, 0.2, 1.76), (0.14, 2.1, 0.06), "amber-accent")
+    for sx in (-0.82, 0.82):
+        for sy in (-1.25, 1.25):
+            a.cyl((sx, sy, 0.3), 0.3, 0.3, 0.22, 8, "rubber-black", rot=(0, 90, 0))
+    return a.finish()
+
+
+def b_school_bus():
+    a = Asset("school-bus")
+    a.box((0, 0.2, 1.2), (2.3, 7.6, 1.6), "umbrella-yellow", bevel=0.08)
+    a.box((0, -3.7, 0.85), (2.1, 1.35, 0.9), "umbrella-yellow", bevel=0.06)
+    a.box((0, -3.02, 1.48), (1.96, 0.06, 0.65), "glass-dark")
+    for sy in (-2.0, -0.8, 0.4, 1.6, 2.8):
+        for sx in (-1.16, 1.16):
+            a.box((sx, sy, 1.48), (0.05, 0.8, 0.55), "glass-dark")
+    a.box((0, 0.2, 2.04), (2.15, 7.4, 0.12), "snow")
+    for sx in (-1.05, 1.05):
+        for sy in (-2.5, 2.4):
+            a.cyl((sx, sy, 0.42), 0.42, 0.42, 0.32, 8, "rubber-black", rot=(0, 90, 0))
+    return a.finish()
+
+
+def b_welcome_arch():
+    a = Asset("welcome-arch")
+    for sx in (-2.4, 2.4):
+        a.cyl((sx, 0, 0), 0.24, 0.2, 4.4, 6, "timber-dark")
+        a.box((sx, 0, 0.25), (0.7, 0.7, 0.5), "stone-grey")
+    a.box((0, 0, 4.35), (5.6, 0.45, 0.55), "timber-brown")
+    a.box((0, 0, 4.72), (5.8, 0.6, 0.22), "snow")
+    a.box((0, -0.25, 3.7), (3.8, 0.12, 0.95), "cream-sign")
+    return a.finish()
+
+
+def b_floodlight_tower():
+    a = Asset("floodlight-tower")
+    a.cyl((0, 0, 0), 0.2, 0.14, 9.2, 6, "timber-dark")
+    a.box((0, 0, 9.1), (2.4, 0.28, 0.28), "steel")
+    for sx in (-0.8, 0.8):
+        a.box((sx, -0.22, 9.1), (0.65, 0.35, 0.45), "shutter-black")
+        a.box((sx, -0.41, 9.1), (0.55, 0.08, 0.36), "lamp-glow")
+    return a.finish()
+
+
+def b_apple_tree():
+    a = Asset("apple-tree")
+    a.cyl((0, 0, 0), 0.28, 0.18, 2.0, 6, "timber-dark")
+    a.sphere((0, 0, 2.8), 1.35, "timber-brown", seg=7, rings=5, scale=(1.15, 1.15, 0.85))
+    a.sphere((0, 0, 3.2), 1.15, "snow", seg=7, rings=4, scale=(1.05, 1.05, 0.55))
+    return a.finish()

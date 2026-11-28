@@ -5,26 +5,9 @@ import { FOUNDERS, WINTER_GOAL } from "@/game/content";
 import { useGameStore } from "@/game/store";
 import type { FounderId } from "@/game/types";
 import { useSpeed } from "@/ui/speed";
+import { CastPatch } from "@/ui/kit/CastPatches";
 import { PrimaryButton } from "@/ui/kit/parts";
 import { Sheet } from "@/ui/kit/Sheet";
-
-/** Badge stripe per founder, drawn from the scene's jacket palette. */
-const BADGE_TINT = [
-  "#2d5a4a",
-  "#24313f",
-  "#a8382b",
-  "#2f5f9e",
-  "#5d6b2f",
-  "#7b4a8f",
-];
-
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((p) => p.charAt(0))
-    .join("")
-    .slice(0, 2);
-}
 
 export function FounderPick() {
   const phase = useGameStore((s) => s.phase);
@@ -34,7 +17,6 @@ export function FounderPick() {
 
   const selectedIndex = Math.max(0, FOUNDERS.findIndex((f) => f.id === selectedId));
   const selected = FOUNDERS[selectedIndex] ?? FOUNDERS[0]!;
-  const tint = BADGE_TINT[selectedIndex % BADGE_TINT.length]!;
 
   const detailCard = (
     <section
@@ -43,13 +25,7 @@ export function FounderPick() {
       className="panel beat-swap flex flex-col gap-2.5 p-3.5"
     >
       <div className="flex items-center gap-3">
-        <span
-          className="display flex size-12 shrink-0 items-center justify-center rounded-full border-[3px] border-ink text-[1.15rem] text-white"
-          style={{ background: tint }}
-          aria-hidden="true"
-        >
-          {initials(selected.name)}
-        </span>
+        <CastPatch id={selected.id} size={48} />
         <div className="min-w-0">
           <h3 className="display text-[1.3rem] leading-tight text-ink">{selected.name}</h3>
           <p className="text-[0.85rem] font-extrabold text-sign-green">{selected.title}</p>
@@ -102,9 +78,8 @@ export function FounderPick() {
         aria-label="Founders"
         className="grid grid-cols-2 gap-2 pb-1 sm:grid-cols-3 md:grid-cols-2"
       >
-        {FOUNDERS.map((f, i) => {
+        {FOUNDERS.map((f) => {
           const active = f.id === selected.id;
-          const color = BADGE_TINT[i % BADGE_TINT.length]!;
           return (
             <li key={f.id}>
               <button
@@ -114,13 +89,7 @@ export function FounderPick() {
                 onClick={() => setSelectedId(f.id)}
                 className="key press flex h-full min-h-[68px] w-full items-center gap-2.5 px-2.5 py-2 text-left [--lift:3px]"
               >
-                <span
-                  className="display flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-ink bg-white text-[0.9rem]"
-                  style={{ color }}
-                  aria-hidden="true"
-                >
-                  {initials(f.name)}
-                </span>
+                <CastPatch id={f.id} size={36} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-[0.88rem] font-extrabold leading-tight">
                     {f.name}

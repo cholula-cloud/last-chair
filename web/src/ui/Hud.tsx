@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { dayLabel, operatingSeasonLength, seasonCalendar, type MountainId } from "@/game/calendar";
 import { LOW_CASH } from "@/game/economy";
 import { formatMoney } from "@/game/format";
@@ -34,11 +34,19 @@ import {
 import { moodTone, satisfactionMoodWord } from "@/game/moodLabels";
 import { TONE_CHIP, type Tone } from "@/ui/kit/parts";
 import { undoChipLabel, type UndoKind } from "@/ui/undoLabel";
-import { useSpeed } from "@/ui/speed";
+import { SPEEDS, useSpeed, type GameSpeed } from "@/ui/speed";
+import { HudRadioButton } from "@/ui/HudRadio";
 import { useReducedMotion } from "@/ui/motion";
 import { useSettings } from "@/ui/settingsStore";
 
-/** Top bar: green play key, a white day and clock chip, and the gold cash chip. */
+const HOLD_SPEED_MS = 280;
+const SPEED_OPTIONS: { id: GameSpeed; label: string; tier: 1 | 2 | 3 }[] = [
+  { id: "calm", label: "Calm", tier: 1 },
+  { id: "normal", label: "Normal", tier: 2 },
+  { id: "fast", label: "Fast", tier: 3 },
+];
+
+/** Top bar: green play/pause key (hold for speed), day/clock chip, radio key, and cash chip. */
 export function TopBar({
   mountainId,
   dayIndex,
@@ -63,25 +71,160 @@ export function TopBar({
   onTogglePause: () => void;
 }) {
   const speed = useSpeed((s) => s.speed);
-  const cycleSpeed = useSpeed((s) => s.cycle);
+  const setSpeed = useSpeed((s) => s.setSpeed);
   const reducedMotion = useReducedMotion();
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const speedWrapRef = useRef<HTMLDivElement>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const openedByHoldRef = useRef(false);
+  const suppressClickRef = useRef(false);
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => clearHoldTimer, []);
+
+  useEffect(() => {
+    if (!speedOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSpeedOpen(false);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (speedWrapRef.current && e.target instanceof Node && !speedWrapRef.current.contains(e.target)) {
+        setSpeedOpen(false);
+      }
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (!openedByHoldRef.current) return;
+      openedByHoldRef.current = false;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const opt = el?.closest<HTMLElement>("[data-speed-option]")?.dataset.speedOption as GameSpeed | undefined;
+      if (opt && SPEEDS.includes(opt)) {
+        setSpeed(opt);
+        setSpeedOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerup", onPointerUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, [speedOpen, setSpeed]);
+
+  const speedTier = speed === "calm" ? 1 : speed === "normal" ? 2 : 3;
   const cal = seasonCalendar({ mountainId, seasonLength });
   const openDays = operatingSeasonLength(cal);
   const { weekday, date, note } = dayLabel(cal, dayIndex);
   const lowCash = cash >= 0 && cash < LOW_CASH;
   return (
     <div className="flex w-full items-center gap-1.5 sm:w-[min(27rem,100%)] sm:gap-2">
-      <button
-        type="button"
-        onClick={onTogglePause}
-        disabled={openingBlocked}
-        aria-label={paused ? "Resume day" : "Pause day"}
-        className={`sign sign-btn press flex size-11 shrink-0 items-center justify-center [--lift:3px] sm:size-12 sm:[--lift:4px] ${
-          notStarted && !openingBlocked && !reducedMotion ? "pulse-ring" : ""
-        }`}
-      >
-        {paused ? <PlayIcon size={20} /> : <PauseIcon size={20} />}
-      </button>
+      <div ref={speedWrapRef} className="relative shrink-0">
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            if (openingBlocked || e.button !== 0) return;
+            clearHoldTimer();
+            openedByHoldRef.current = false;
+            suppressClickRef.current = false;
+            holdTimerRef.current = window.setTimeout(() => {
+              holdTimerRef.current = null;
+              openedByHoldRef.current = true;
+              suppressClickRef.current = true;
+              setSpeedOpen(true);
+            }, HOLD_SPEED_MS);
+          }}
+          onPointerUp={() => {
+            clearHoldTimer();
+          }}
+          onPointerCancel={() => {
+            clearHoldTimer();
+            openedByHoldRef.current = false;
+            suppressClickRef.current = false;
+          }}
+          onContextMenu={(e) => {
+            if (openingBlocked) return;
+            e.preventDefault();
+            setSpeedOpen((v) => !v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" && !openingBlocked) {
+              e.preventDefault();
+              setSpeedOpen(true);
+            }
+          }}
+          onClick={() => {
+            if (suppressClickRef.current) {
+              suppressClickRef.current = false;
+              return;
+            }
+            setSpeedOpen(false);
+            onTogglePause();
+          }}
+          disabled={openingBlocked}
+          aria-haspopup="menu"
+          aria-expanded={speedOpen}
+          aria-label={paused ? "Resume day" : "Pause day"}
+          title={`${paused ? "Resume day" : "Pause day"} (${speed} speed, hold for speed)`}
+          className={`sign sign-btn press relative z-40 flex size-11 select-none items-center justify-center [--lift:3px] sm:size-12 sm:[--lift:4px] ${
+            speedOpen ? "!rounded-b-none [--lift:0px]" : ""
+          } ${
+            notStarted && !openingBlocked && !reducedMotion ? "pulse-ring" : ""
+          }`}
+        >
+          {paused ? <PlayIcon size={20} /> : <PauseIcon size={20} />}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-1 left-1/2 flex -translate-x-1/2 items-center gap-0.5"
+          >
+            {[1, 2, 3].map((pip) => (
+              <span
+                key={pip}
+                className={`size-1 rounded-full ${
+                  pip <= speedTier ? "bg-white" : "bg-white/35"
+                }`}
+              />
+            ))}
+          </span>
+        </button>
+
+        {speedOpen && (
+          <div
+            role="menu"
+            aria-label="Game speed"
+            className="panel popover-in absolute left-0 top-full z-30 -mt-[3px] flex min-w-[7.25rem] origin-top-left flex-col gap-1 rounded-tl-none p-1.5"
+          >
+            {SPEED_OPTIONS.map((opt) => {
+              const active = speed === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  data-speed-option={opt.id}
+                  onClick={() => {
+                    setSpeed(opt.id);
+                    setSpeedOpen(false);
+                  }}
+                  className={`key press flex min-h-10 items-center gap-2 px-2.5 py-1.5 text-left text-xs font-extrabold [--lift:2px] ${
+                    active ? "key-solid [--key-fill:var(--sign-yellow)]" : ""
+                  }`}
+                >
+                  <SpeedIcon tier={opt.tier} size={15} />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
       <div className="chip flex h-11 min-w-0 flex-1 items-center gap-1 px-2 sm:h-12 sm:gap-2 sm:px-3">
         <div className="flex flex-col leading-tight">
           <span className="whitespace-nowrap text-[0.85rem] font-extrabold tabular-nums sm:text-[0.9rem]">
@@ -100,14 +243,7 @@ export function TopBar({
         </div>
         <ClockText text={formatClock(clockMin)} />
       </div>
-      <button
-        type="button"
-        onClick={cycleSpeed}
-        aria-label={`Game speed: ${speed}, tap to change`}
-        className="chip press flex size-11 shrink-0 items-center justify-center sm:size-12"
-      >
-        <SpeedIcon tier={speed === "calm" ? 1 : speed === "normal" ? 2 : 3} size={20} />
-      </button>
+      <HudRadioButton />
       <span
         className={`chip display flex h-11 min-w-[4.7rem] shrink-0 items-center justify-center gap-1 whitespace-nowrap px-2 text-[1.12rem] tabular-nums sm:h-12 sm:min-w-[5.5rem] sm:px-3 sm:text-[1.28rem] ${
           cash < 0 ? "bg-barn-deep text-white" : lowCash ? "bg-sign-yellow" : "bg-gold"
@@ -241,12 +377,20 @@ export function MorningNote({
 }
 
 /** Slim Route 100 dispatch strip shown on the very first morning before the hill opens. */
-export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
+export function StartCallout({
+  step,
+  starterCost,
+  onUseStarterLine,
+}: {
+  step: "lift" | "trail" | null;
+  starterCost?: number | null;
+  onUseStarterLine?: () => void;
+}) {
   const instruction = step === "lift" ? "First job: place a lift"
     : step === "trail" ? "Paint a trail from the lift down to the base"
       : "Tap play to open the hill";
   return (
-    <p
+    <div
       role="status"
       className="chip note-in pointer-events-auto flex min-h-11 w-full max-w-[min(27rem,100%)] items-center gap-2 bg-sign-yellow-soft px-2.5 py-1 text-[0.82rem] font-extrabold text-ink [--lift:3px]"
     >
@@ -257,7 +401,16 @@ export function StartCallout({ step }: { step: "lift" | "trail" | null }) {
         <span className="-rotate-45 leading-none">!</span>
       </span>
       <span className="min-w-0 flex-1 truncate">{instruction}</span>
-    </p>
+      {step !== null && starterCost != null && onUseStarterLine && (
+        <button
+          type="button"
+          onClick={onUseStarterLine}
+          className="key key-solid press shrink-0 px-2.5 py-1 text-[0.75rem] font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:2px]"
+        >
+          Use 1985 line ({formatMoney(starterCost)})
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -1,10 +1,32 @@
+import type { MountainId } from "../calendar";
 import { formatOperatorText } from "../content";
 import type { TerrainDef } from "../terrain";
+import { DAY_END_MIN, NIGHT_SESSION_END_MIN } from "../types";
 
 export const NIGHT_LIGHTS_COST = 3500;
 export const NIGHT_SESSION_UPKEEP = 220;
 export const NIGHT_SESSION_EXTRA_SKIERS = 8;
 export const NIGHT_SESSION_REVENUE_PER_GUEST = 12;
+export const MT_SHUTTLE_SATURDAY_PAY = 400;
+export const MT_SHUTTLE_STALL_PENALTY = 12;
+export const MT_SHUTTLE_ARRIVAL_FACTOR = 0.85;
+
+export function isMountTomNightActive(state: {
+  mountainId?: MountainId;
+  nightLights?: boolean;
+  nightSessionOn?: boolean;
+}): boolean {
+  return state.mountainId === "mount_tom" && Boolean(state.nightLights) && Boolean(state.nightSessionOn);
+}
+
+/** Operating closing minute for the current mountain and night-session state. */
+export function dayEndMin(state: {
+  mountainId?: MountainId;
+  nightLights?: boolean;
+  nightSessionOn?: boolean;
+}): number {
+  return isMountTomNightActive(state) ? NIGHT_SESSION_END_MIN : DAY_END_MIN;
+}
 
 export type MountTomNoteKind = "mill_lights" | "whiterock_shuttle" | "valley_inversion";
 

@@ -1,4 +1,4 @@
-import { DAY_END_MIN, DAY_START_MIN, type WeatherKind } from "@/game/types";
+import { DAY_END_MIN, DAY_START_MIN, NIGHT_SESSION_END_MIN, type WeatherKind } from "@/game/types";
 import { clamp01, lerp, smoothstep } from "./math";
 import { PALETTE } from "./palette";
 
@@ -95,6 +95,20 @@ const DAY_KEYS: DayKey[] = [
     exposure: 1.04,
   },
   {
+    min: 14 * 60 + 30,
+    azimuth: 210,
+    elevation: 22,
+    sunColor: "#ffe0b4",
+    sunIntensity: 2.52,
+    hemiSky: "#c5d8f4",
+    hemiGround: "#e4d8ca",
+    hemiIntensity: 1.15,
+    skyTop: PALETTE.skyTop,
+    skyHorizon: "#efe4d8",
+    glow: 0.72,
+    exposure: 1.03,
+  },
+  {
     min: 15 * 60 + 30,
     azimuth: 226,
     elevation: 16,
@@ -121,6 +135,48 @@ const DAY_KEYS: DayKey[] = [
     skyHorizon: PALETTE.duskHorizon,
     glow: 0.92,
     exposure: 1.0,
+  },
+  {
+    min: 16 * 60 + 45,
+    azimuth: 244,
+    elevation: 11,
+    sunColor: "#d9987e",
+    sunIntensity: 0.95,
+    hemiSky: "#6f86b8",
+    hemiGround: "#6c6478",
+    hemiIntensity: 0.92,
+    skyTop: "#1c3764",
+    skyHorizon: "#c47c6e",
+    glow: 1.08,
+    exposure: 0.95,
+  },
+  {
+    min: 17 * 60 + 45,
+    azimuth: 250,
+    elevation: 10.5,
+    sunColor: "#9fb4e8",
+    sunIntensity: 0.48,
+    hemiSky: "#435c94",
+    hemiGround: "#28324c",
+    hemiIntensity: 0.8,
+    skyTop: "#0e1d3b",
+    skyHorizon: "#384d78",
+    glow: 1.15,
+    exposure: 0.92,
+  },
+  {
+    min: NIGHT_SESSION_END_MIN,
+    azimuth: 254,
+    elevation: 10,
+    sunColor: PALETTE.sunNight,
+    sunIntensity: 0.36,
+    hemiSky: PALETTE.hemiSkyNight,
+    hemiGround: PALETTE.hemiGroundNight,
+    hemiIntensity: 0.76,
+    skyTop: PALETTE.nightSkyTop,
+    skyHorizon: PALETTE.nightHorizon,
+    glow: 1.15,
+    exposure: 0.9,
   },
 ];
 
@@ -276,7 +332,8 @@ export function lightRig(i: RigInput, scale: { horizontal: number }, out: Rig = 
     return out;
   }
   const day = applyWeather(sampleDay(i.clockMin), i.weather);
-  const dusk = smoothstep(14 * 60, 16 * 60, i.clockMin) * (1 - clamp01(i.night));
+  const duskOut = 1 - smoothstep(DAY_END_MIN, 17 * 60, i.clockMin);
+  const dusk = smoothstep(14 * 60, 16 * 60, i.clockMin) * duskOut * (1 - clamp01(i.night));
   if (dusk > 0) {
     day.sunIntensity *= 1 - dusk * 0.25;
     day.glow = lerp(day.glow, 0.85, dusk);

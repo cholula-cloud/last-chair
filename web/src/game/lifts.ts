@@ -4,7 +4,7 @@ import type { LiftSlot } from "./state";
 import { TERRAIN, type Terrain } from "./terrain";
 import { type TrailRun } from "./trails";
 import { liftHasDescent, pickSkiRoute } from "./trailNetwork";
-import { LIFT_CLOSE_MIN, LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
+import { DAY_END_MIN, LIFT_CLOSE_MIN, LIFT_SPECS, type Guest, type LiftType, type Wind } from "./types";
 import { isWindHeld, windHoldWindow } from "./weather";
 
 /** Patrol Radio talent: honest effect on lift throughput. */
@@ -35,8 +35,9 @@ export function liftWaitMin(lift: LiftSlot, talentsOwned: string[]): number {
   return lift.queue.length / (liftCapacityPerHour(lift.type, talentsOwned) / 60);
 }
 
-export function liftLoadingClosesAt(talentsOwned: readonly string[]): number {
-  return LIFT_CLOSE_MIN + (TALENT.nightLights.learned(talentsOwned) ? TALENT.nightLights.minutes : 0);
+export function liftLoadingClosesAt(talentsOwned: readonly string[], endMin = DAY_END_MIN): number {
+  const baseClose = endMin === DAY_END_MIN ? LIFT_CLOSE_MIN : endMin - 15;
+  return baseClose + (TALENT.nightLights.learned(talentsOwned) ? TALENT.nightLights.minutes : 0);
 }
 
 /** Expected wait at the busiest confirmed lift (the HUD queue reading); 0 with empty queues. */

@@ -7,6 +7,7 @@ import { ASSET_CATALOG } from "@/game/base";
 import { constructionDraw } from "@/game/economy";
 import { GUN_COST } from "@/game/guns";
 import { leaseBounds } from "@/game/lease";
+import { terrainWithActiveLease } from "@/game/parcels";
 import { checkAssetPlacement, checkGunPlacement } from "@/game/rules";
 import { useGameStore } from "@/game/store";
 import { TERRAIN, type XZ } from "@/game/terrain";
@@ -83,10 +84,14 @@ const cellsOf = (dots: readonly Dot[], valid: boolean | null): XZ[] =>
 
 /** Horizontal and vertical lines on the lease cell step so the field reads as a grid. */
 function GridLines({ variant = "field" }: { variant?: "field" | "trail" }) {
+  const mountainId = useGameStore((s) => s.mountainId);
+  const northRidgeParcel = useGameStore((s) => s.northRidgeParcel);
+  const orchardParcel = useGameStore((s) => s.orchardParcel);
   const style = variant === "trail" ? GRID_STYLE.trailLine : GRID_STYLE.line;
   const geometry = useMemo(() => {
-    const step = TERRAIN.scale.horizontal / 2;
-    const { xMin, xMax, zMin, zMax } = leaseBounds(TERRAIN);
+    const activeTerrain = terrainWithActiveLease(TERRAIN, { mountainId, northRidgeParcel, orchardParcel });
+    const step = activeTerrain.scale.horizontal / 2;
+    const { xMin, xMax, zMin, zMax } = leaseBounds(activeTerrain);
     const points: number[] = [];
     const yAt = (x: number, z: number) => TERRAIN.height(x, z) + GRID_STYLE.height;
     const x0 = Math.floor(xMin / step) * step;
@@ -108,7 +113,7 @@ function GridLines({ variant = "field" }: { variant?: "field" | "trail" }) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
     return g;
-  }, []);
+  }, [mountainId, northRidgeParcel, orchardParcel]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <lineSegments geometry={geometry} renderOrder={0} frustumCulled={false}>
@@ -163,7 +168,18 @@ function LiftGrid() {
   const { type, bottom: draftBottom, top, snapped, review } = usePlacementDraft(useShallow((draft) => ({
     type: draft.type, bottom: draft.bottom, top: draft.top, snapped: draft.snapped, review: draft.review,
   })));
-  const rules = useGameStore(useShallow((state) => ({ lifts: state.lifts, assets: state.assets, lodgeTier: state.lodgeTier })));
+  const rules = useGameStore(useShallow((state) => ({
+    lifts: state.lifts,
+    assets: state.assets,
+    lodgeTier: state.lodgeTier,
+    mountainId: state.mountainId,
+    northRidgeParcel: state.northRidgeParcel,
+    orchardParcel: state.orchardParcel,
+  })));
+  const activeTerrain = useMemo(
+    () => terrainWithActiveLease(TERRAIN, rules),
+    [rules],
+  );
   const stepped = snapBottom(draftBottom ?? TERRAIN.base);
   // Trailing debounce of the rounded bottom: a drag settles before the cells are recomputed.
   const [settled, setSettled] = useState(stepped);
@@ -173,8 +189,8 @@ function LiftGrid() {
     return () => clearTimeout(timer);
   }, [stepped, settled]);
   const cells = useMemo(
-    () => review || !draftBottom ? [] : liftTopCells(rules, type, settled),
-    [review, draftBottom, rules, type, settled],
+    () => review || !draftBottom ? [] : liftTopCells(rules, type, settled, activeTerrain),
+    [review, draftBottom, rules, type, settled, activeTerrain],
   );
   const bottom = draftBottom ?? TERRAIN.base;
   const shown = useMemo(
@@ -191,7 +207,7 @@ function LiftGrid() {
     <>
       <GridLines />
       {cells.length > 0 && <ReachRing bottom={bottom} top={top} type={type} snapped={fade} />}
-      <DotLayer cells={shown} capacity={LIFT_CAPACITY} mode="lift" kind="valid" snapped={fade} />
+      <DotLayer cells={shown} capacity={Math.max(LIFT_CAPACITY, shown.length)} mode="lift" kind="valid" snapped={fade} />
     </>
   );
 }
@@ -225,11 +241,20 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
   movingAssetIndex: number | undefined;
 }) {
   const draftAsset = asset;
+  const parcelState = useGameStore(useShallow((s) => ({
+    mountainId: s.mountainId,
+    northRidgeParcel: s.northRidgeParcel,
+    orchardParcel: s.orchardParcel,
+  })));
+  const activeTerrain = useMemo(() => terrainWithActiveLease(TERRAIN, parcelState), [parcelState]);
   const state = useGameStore(useShallow((state) => mode && mode !== "overview" ? {
     lifts: state.lifts,
     trails: state.trails,
     assets: state.assets,
     guns: state.guns,
+    mountainId: state.mountainId,
+    northRidgeParcel: state.northRidgeParcel,
+    orchardParcel: state.orchardParcel,
     // Only whether the item is affordable matters, so a cash tick does not rebuild the dots.
     canAfford: state.cash >= constructionDraw(mode === "gun" ? GUN_COST : ASSET_CATALOG[draftAsset ?? "cafe"]?.cost ?? 0).deposit,
     phase: state.phase,
@@ -245,22 +270,23 @@ function FieldGrid({ mode, asset, movingAssetIndex }: {
         placement.assets = placement.assets.filter((_, index) => index !== movingAssetIndex);
         placement.cash = Number.MAX_SAFE_INTEGER;
       }
-      return gridDots((at) => checkAssetPlacement(placement, asset, at).ok);
+      return gridDots((at) => checkAssetPlacement(placement, asset, at).ok, activeTerrain);
     }
-    if (state && mode === "gun") return gridDots((at) => checkGunPlacement(withCash(state), at).ok);
-    return gridDots(null);
-  }, [mode, asset, movingAssetIndex, state]);
+    if (state && mode === "gun") return gridDots((at) => checkGunPlacement(withCash(state), at).ok, activeTerrain);
+    return gridDots(null, activeTerrain);
+  }, [mode, asset, movingAssetIndex, state, activeTerrain]);
   const valid = useMemo(() => cellsOf(dots, true), [dots]);
   const blocked = useMemo(() => cellsOf(dots, false), [dots]);
   const neutral = useMemo(() => cellsOf(dots, null), [dots]);
+  const cap = Math.max(FIELD_CAPACITY, dots.length);
   if (!mode) return null;
   return (
     <>
       <GridLines />
       {mode === "gun" && <GunPlacementGuide />}
-      <DotLayer cells={blocked} capacity={FIELD_CAPACITY} mode={mode} kind="blocked" />
-      <DotLayer cells={valid} capacity={FIELD_CAPACITY} mode={mode} kind="valid" />
-      <DotLayer cells={neutral} capacity={FIELD_CAPACITY} mode={mode} kind="neutral" />
+      <DotLayer cells={blocked} capacity={cap} mode={mode} kind="blocked" />
+      <DotLayer cells={valid} capacity={cap} mode={mode} kind="valid" />
+      <DotLayer cells={neutral} capacity={cap} mode={mode} kind="neutral" />
     </>
   );
 }

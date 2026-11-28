@@ -227,6 +227,8 @@ const fields: Record<keyof PersistedState, Check> = {
   groomerDown: optional(nullable(shape({ active: boolean, decision: oneOf("pending", "paid", "skipped"), day: index }))),
   nightLights: optional(boolean),
   nightSessionOn: optional(boolean),
+  northRidgeParcel: optional(boolean),
+  mtShuttleDecision: optional(nullable(oneOf("accepted", "declined"))),
   orchardParcel: optional(oneOf("unbid", "pending", "owned", "whiterock")),
   inspectorNotice: optional(nullable(shape({ day: index, liftIndex: index, decision: oneOf("pending", "repaired", "closed") }))),
   homecomingNotes: optional(array(homecomingNote)),

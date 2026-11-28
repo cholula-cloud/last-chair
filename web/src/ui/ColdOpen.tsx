@@ -5,6 +5,8 @@ import { audio as sound } from "@/audio/engine";
 import { sliderGain } from "@/audio/mix";
 import { OPERATOR_NAME_MAX, sanitizeOperatorName } from "@/game/content";
 import { useGameStore } from "@/game/store";
+import { ticketPunched } from "@/ui/feel";
+import { PunchCard } from "@/ui/kit/PunchCard";
 import { useSettings } from "@/ui/settingsStore";
 import {
   COLD_OPEN_AUDIO,
@@ -17,47 +19,6 @@ import {
 
 /** How long the voice clock may stand still before the cards run on timers instead. */
 const STALL_MS = 2000;
-
-/** Deterministic slight offsets so hand-punched ride holes feel tactile rather than stamped on a ruler. */
-const PUNCH_OFFSETS = [
-  "translate-x-[1px] -translate-y-[1px]",
-  "-translate-x-[1px] translate-y-[1px]",
-  "translate-x-[0.5px] translate-y-[1px]",
-  "-translate-x-[1px] -translate-y-[0.5px]",
-  "translate-x-[1px] translate-y-0",
-  "-translate-x-[0.5px] -translate-y-[1px]",
-  "translate-x-0 translate-y-[1px]",
-  "translate-x-[1px] -translate-y-[0.5px]",
-  "-translate-x-[1px] translate-y-[0.5px]",
-  "translate-x-[0.5px] -translate-y-[1px]",
-  "-translate-x-[0.5px] translate-y-[1px]",
-] as const;
-
-function TicketWicketHole() {
-  return (
-    <span
-      aria-hidden="true"
-      className="absolute left-1/2 top-2 z-10 size-3.5 -translate-x-1/2 rounded-full border-2 border-ink bg-[#15293e] shadow-[inset_0_2px_2px_rgba(0,0,0,0.65)] ring-2 ring-[#f8efd4]/85"
-    />
-  );
-}
-
-function TicketStub({ left, right }: { left: string; right: string }) {
-  return (
-    <div className="relative mt-auto flex items-center justify-between border-t-2 border-dashed border-ink/40 bg-[#f2e3bc] px-4 py-2.5 text-xs">
-      <span
-        aria-hidden="true"
-        className="absolute -left-2.5 -top-2.5 size-4 rounded-full border-[3px] border-ink bg-[#15293e]"
-      />
-      <span
-        aria-hidden="true"
-        className="absolute -right-2.5 -top-2.5 size-4 rounded-full border-[3px] border-ink bg-[#15293e]"
-      />
-      <span className="font-bold text-ink-soft tabular-nums">{left}</span>
-      <span className="font-extrabold text-ink">{right}</span>
-    </div>
-  );
-}
 
 /**
  * Six story cards with Maris Shaw voice-over on cards 1-2, Grammy Dot's punch-card flip on card 3,
@@ -241,111 +202,18 @@ export function ColdOpen({ onDone }: { onDone: () => void }) {
 
       {card.interactive === "punchcard" && (
         <div className="pointer-events-none absolute inset-x-0 top-[11%] flex flex-col items-center px-5">
-          <button
-            type="button"
-            onClick={() => (cardFlipped ? advance() : setCardFlipped(true))}
-            aria-label={cardFlipped ? "One ride left on the punch card. Tap to continue." : "Tap Grammy Dot's 1984-85 punch card to turn it over."}
-            className="punch-card-scene press-scale pointer-events-auto w-full max-w-xs text-left text-ink"
-          >
-            <div
-              data-flipped={cardFlipped ? "true" : "false"}
-              className="punch-card-inner grid"
-            >
-              {/* Front face */}
-              <div className="punch-card-face col-start-1 row-start-1 flex flex-col overflow-hidden rounded-[22px] border-[3px] border-ink bg-[#f8efd4] shadow-[0_6px_0_var(--ink)]">
-                <TicketWicketHole />
-                <div className="flex items-center justify-between border-b-[3px] border-ink bg-sign-green px-4 pb-2.5 pt-6 text-white">
-                  <span className="text-[0.82rem] font-extrabold text-sign-green-ink">
-                    Dutch Hill Ski Area
-                  </span>
-                  <span className="rounded-md border-2 border-ink bg-sign-yellow px-2 py-0.5 text-[0.72rem] font-extrabold text-ink tabular-nums">
-                    1984-85
-                  </span>
-                </div>
-                <div className="px-4 pb-3 pt-2.5">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="display text-[1.22rem] leading-none text-ink">
-                      Season Punch Card
-                    </p>
-                    <span className="text-xs font-extrabold text-ink-soft">
-                      12 rides
-                    </span>
-                  </div>
-                  <div className="mt-2.5 grid grid-cols-6 gap-1.5">
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const unpunched = i === 11;
-                      if (unpunched) {
-                        return (
-                          <span
-                            key={i}
-                            className="flex h-11 flex-col items-center justify-center rounded-md border-2 border-ink bg-sign-yellow-soft px-1 py-1"
-                          >
-                            <span className="flex size-6 items-center justify-center rounded-full border-2 border-ink bg-sign-yellow text-[0.7rem] font-extrabold leading-none text-ink shadow-[0_1px_0_var(--ink)] tabular-nums">
-                              12
-                            </span>
-                          </span>
-                        );
-                      }
-                      return (
-                        <span
-                          key={i}
-                          className="relative flex h-11 flex-col items-center justify-between rounded-md border border-ink/25 bg-[#f3e4bd] py-1"
-                        >
-                          <span className="text-[0.58rem] font-extrabold leading-none text-ink-soft/85 tabular-nums">
-                            {i + 1}
-                          </span>
-                          <span
-                            aria-hidden="true"
-                            className={`size-[18px] rounded-full border-2 border-ink bg-[#15293e] shadow-[inset_0_2px_2px_rgba(0,0,0,0.65)] ${PUNCH_OFFSETS[i]}`}
-                          />
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-                <TicketStub left="No. 01985" right="Tap to turn over" />
-              </div>
-
-              {/* Back face */}
-              <div className="punch-card-face punch-card-back col-start-1 row-start-1 flex flex-col overflow-hidden rounded-[22px] border-[3px] border-ink bg-[#f8efd4] shadow-[0_6px_0_var(--ink)]">
-                <TicketWicketHole />
-                <div className="flex items-center justify-between border-b-[3px] border-ink bg-[#efe0b5] px-4 pb-2.5 pt-6 text-xs font-extrabold">
-                  <span className="text-sign-brown">Grammy Dot’s ticket box</span>
-                  <span className="text-ink-soft tabular-nums">March 1985</span>
-                </div>
-                <div className="flex flex-1 flex-col justify-between px-4 pb-3 pt-3">
-                  <div className="flex items-center gap-3">
-                    <span className="display flex size-12 shrink-0 items-center justify-center rounded-full border-[3px] border-ink bg-sign-yellow text-base text-ink shadow-[0_2px_0_var(--ink)]">
-                      12
-                    </span>
-                    <div className="min-w-0">
-                      <p className="display text-[1.2rem] leading-tight text-ink">
-                        One ride left
-                      </p>
-                      <p className="mt-0.5 text-xs font-bold leading-snug text-ink-soft">
-                        Eleven punched. Number twelve is still whole.
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    aria-hidden="true"
-                    className="mt-3 flex items-center justify-between gap-1 rounded-lg border border-ink/25 bg-[#f2e3bc] px-2.5 py-2"
-                  >
-                    <span className="flex size-4 shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink bg-sign-yellow text-[0.52rem] font-extrabold leading-none text-ink">
-                      12
-                    </span>
-                    {Array.from({ length: 11 }, (_, i) => (
-                      <span
-                        key={i}
-                        className="size-3 rounded-full border-[1.5px] border-ink bg-[#15293e] shadow-[inset_0_1px_2px_rgba(0,0,0,0.65)]"
-                      />
-                    ))}
-                  </div>
-                </div>
-                <TicketStub left="Keep till closing" right="Tap to continue." />
-              </div>
-            </div>
-          </button>
+          <PunchCard
+            mode="cold-open"
+            flipped={cardFlipped}
+            onToggleFlip={() => {
+              if (cardFlipped) {
+                advance();
+              } else {
+                ticketPunched();
+                setCardFlipped(true);
+              }
+            }}
+          />
           {cardFlipped && (
             <p className="pop display mt-4 text-center text-[clamp(2rem,8vw,3rem)] tracking-tight text-sign-yellow drop-shadow-[0_4px_0_#1B3A57]">
               Last Chair

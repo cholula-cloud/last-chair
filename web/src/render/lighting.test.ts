@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DAY_END_MIN, DAY_START_MIN } from "@/game/types";
+import { DAY_END_MIN, DAY_START_MIN, NIGHT_SESSION_END_MIN } from "@/game/types";
 import { PALETTE } from "./palette";
 import {
   lightRig,
@@ -88,5 +88,15 @@ describe("lightRig", () => {
     expect(noon[0]).toBeCloseTo(ideal[0], 2);
     expect(noon[1]).toBeCloseTo(ideal[1], 2);
     expect(noon[2]).toBeCloseTo(ideal[2], 2);
+  });
+
+  it("smoothly transitions into alpine twilight during Mount Tom night sessions (16:00-18:30)", () => {
+    const close = rig({ clockMin: DAY_END_MIN, night: 0, weather: "clear" });
+    const dusk = rig({ clockMin: 17 * 60 + 15, night: 0, weather: "clear" });
+    const end = rig({ clockMin: NIGHT_SESSION_END_MIN, night: 0, weather: "clear" });
+    expect(dusk.sunIntensity).toBeLessThan(close.sunIntensity);
+    expect(end.sunIntensity).toBeLessThan(dusk.sunIntensity);
+    expect(end.glow).toBeGreaterThan(close.glow);
+    expect(sunElevationDeg(end.sunDir[0], end.sunDir)).toBeGreaterThanOrEqual(10 - 1e-6);
   });
 });

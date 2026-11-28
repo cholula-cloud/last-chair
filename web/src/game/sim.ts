@@ -207,6 +207,8 @@ export function isOnHill(g: Guest): boolean {
 export type GuestClock = {
   /** Game clock minute at the end of this step. */
   now: number;
+  /** Closing clock minute for the active hill/session (defaults to DAY_END_MIN). */
+  dayEndMin?: number;
   wind?: Wind;
   snowQuality: number;
   /** Experienced snow per trail index; falls back to `snowQuality`. */
@@ -246,7 +248,7 @@ function skiLegMinutes(clock: GuestClock, persona: Guest["persona"], leg: SkiLeg
  */
 export function tickGuests(guests: Guest[], clock: GuestClock): Guest[] {
   const { now } = clock;
-  const closeMin = liftLoadingClosesAt(clock.talentsOwned);
+  const closeMin = liftLoadingClosesAt(clock.talentsOwned, clock.dayEndMin);
   const hold = windHoldWindow(clock.talentsOwned);
   const goHome = (g: Guest, over: Partial<Guest> = {}): Guest => {
     // Sent home from a line: the wait so far counts as a completed wait.

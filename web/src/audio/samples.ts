@@ -83,7 +83,8 @@ export function createSampleLibrary(basePath: string) {
 
   return {
     hasEffect(id: SoundId): boolean {
-      return buffers.has(EFFECT_MANIFEST_ID[id]);
+      const manifestId = EFFECT_MANIFEST_ID[id];
+      return manifestId ? buffers.has(manifestId) : false;
     },
     hasBed(mood: BedMood): boolean {
       return buffers.has(BED_MANIFEST_ID[mood]);
@@ -91,7 +92,7 @@ export function createSampleLibrary(basePath: string) {
     async loadEffects(ctx: AudioContext): Promise<void> {
       if (effectsStarted) return;
       effectsStarted = true;
-      const ids = [...new Set(Object.values(EFFECT_MANIFEST_ID))];
+      const ids = [...new Set(Object.values(EFFECT_MANIFEST_ID).filter((v): v is string => Boolean(v)))];
       await loadIds(ctx, ids);
     },
     async loadBeds(ctx: AudioContext): Promise<void> {
@@ -101,6 +102,7 @@ export function createSampleLibrary(basePath: string) {
     },
     playEffect(ctx: AudioContext, out: AudioNode, id: SoundId, when: number): boolean {
       const manifestId = EFFECT_MANIFEST_ID[id];
+      if (!manifestId) return false;
       const buffer = buffers.get(manifestId);
       if (!buffer) return false;
       playBuffer(ctx, out, buffer, when);

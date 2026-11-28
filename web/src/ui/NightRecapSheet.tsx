@@ -5,7 +5,7 @@ import { TALENT } from "@/game/talents";
 import { useId, useState } from "react";
 import { BANKRUPTCY_MORNINGS, dailyCosts, morningCash } from "@/game/economy";
 import { formatMoney } from "@/game/format";
-import { expectedArrivals, previewOvernight, schoolContractOfferDay, snowServiceStats, summitLinkOfferOpen } from "@/game/rules";
+import { expectedArrivals, mtShuttleOfferOpen, previewOvernight, schoolContractOfferDay, snowServiceStats, summitLinkOfferOpen } from "@/game/rules";
 import { expectedHillValue } from "@/game/satisfaction";
 import { NO_SKIERS_PROBLEM } from "@/game/satisfaction";
 import { demandContext, topGuestDemand } from "@/game/guestsWant";
@@ -61,6 +61,7 @@ import { LoanCard } from "@/ui/LoanCard";
 import { SummitLinkCard } from "@/ui/SummitLinkCard";
 import { SchoolContractCard } from "@/ui/SchoolContractCard";
 import { GroomerDownCard } from "@/ui/GroomerDownCard";
+import { MountTomShuttleCard } from "@/ui/MountTomShuttleCard";
 import { RevenueMixDonut, VenueRevenueList } from "@/ui/revenueBreakdownUi";
 
 const WEEKDAY_FULL: Record<string, string> = {
@@ -509,6 +510,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
   const showGroomerOffer = groomerChoiceNeeded;
   const showClubOffer = night.clubBooking?.decision === "pending";
   const showOrchardOffer = night.mountainId === "maple_valley" && night.orchardParcel === "pending";
+  const showShuttleOffer = mtShuttleOfferOpen(night);
   const showInspectorOffer = night.mountainId === "maple_valley" && night.inspectorNotice?.decision === "pending";
   const showBusSummary = Boolean(night.nightRecap?.facts.schoolBus);
   const surpriseCopy =
@@ -528,6 +530,7 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
     !groomerChoiceNeeded &&
     !showClubOffer &&
     !showOrchardOffer &&
+    !showShuttleOffer &&
     !showInspectorOffer &&
     (!pendingBeat || beatAcknowledged || (!radio && pendingBeat !== "school_bus" && pendingBeat !== "groomer_down"));
   const hasGuests = recap.arrivals > 0;
@@ -610,8 +613,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
               {!summitLinkOffer && !showSchoolOffer && showGroomerOffer && "Tell Frank whether you're borrowing the town cat or running guns only."}
               {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && showClubOffer && "Answer the Bennington Ski Club before you turn in."}
               {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && showOrchardOffer && "Answer Rosa on the Maple Valley orchard parcel."}
-              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && showInspectorOffer && "Answer the Vermont tramway inspector before turning in."}
-              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && !showInspectorOffer && "Read the radio message, then tap Got it."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && showShuttleOffer && "Answer Sloane on the Saturday shuttle before turning in."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && !showShuttleOffer && showInspectorOffer && "Answer the Vermont tramway inspector before turning in."}
+              {!summitLinkOffer && !showSchoolOffer && !showGroomerOffer && !showClubOffer && !showOrchardOffer && !showShuttleOffer && !showInspectorOffer && "Read the radio message, then tap Got it."}
             </p>
           )}
           <PrimaryButton
@@ -812,6 +816,9 @@ export function NightRecapSheet({ onOffice, onMap }: { onOffice: (tab: OfficeTab
         )}
         {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && !showBusSummary &&
           radio && surpriseCopy && <RadioCard title={surpriseCopy.title}>{surpriseCopy.radio}</RadioCard>}
+        {!showSummitOffer && !showSchoolOffer && !showClubOffer && !showGroomerOffer && !showOrchardOffer && !showInspectorOffer && showShuttleOffer && (
+          <MountTomShuttleCard night={night} />
+        )}
 
         <LoanCard night={night} onTake={takeLoan} onRepay={repayLoan} repaid={recap.loanRepaid} />
 

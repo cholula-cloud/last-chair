@@ -23,7 +23,7 @@ The World Scale 2b handoff doc is historical: 2b, 2c, 2d and camera parts 1 to 3
 
 ## Status snapshot
 
-M2, M4 (code + N0–N8 Story Mode MVP), and M5 (rows 34–38 + N9–N11, playable Dutch Hill, Mount Tom, and Maple Valley) are shipped on `main`. Dutch Hill runs a **6-weekend winter (42 civil days, 18 Fri–Sun operating days)** while Act II+ hills (Mount Tom, Maple Valley) run **7 weekends (49 civil days, 21 Fri–Sun operating days)**; Mon–Thu simulate in the background. Construction is paid **100% upfront** (40/30/30 installments removed). Players can move across Dutch Hill, Mount Tom, and Maple Valley via The Call + Office Atlas, earn town-match seed bonuses, run off-screen Caretaker winters with Whiterock buyout pressure and Ledger entries, and hit Lost Hills / The Forest epilogues on foreclosure. The active queue moves to M4b batch 2 / M7 (hills 4–8 after guest scaling N12). The [P1 protocol](./TESTING.md) is available for device playtesting.
+M2, M4 (code + N0–N8 Story Mode MVP), M5 (rows 34–38 + N9–N11, playable Dutch Hill, Mount Tom, and Maple Valley), and the **110% Art, Style & Core Gameplay Polish Pass** (`SAVE_VERSION = 19`) are shipped on `main`. Dutch Hill runs a **6-weekend winter (42 civil days, 18 Fri–Sun operating days)** while Act II+ hills (Mount Tom, Maple Valley) run **7 weekends (49 civil days, 21 Fri–Sun operating days)**; Mon–Thu simulate in the background. Construction is paid **100% upfront** (40/30/30 installments removed). Recent polish adds weather snowfall, skier carving spray, snowcat headlights, playable Mount Tom **Lights On** twilight (`4:00–6:30 PM`), per-mountain palettes and diorama landmarks (Welcome Arch, fencing, pickups/wagons/school bus/coach), woven SVG cast patches, shared cardstock punch-card ceremony, Day 1 1985 starter line assist, expandable North Ridge (`$7,500`) & Orchard lease parcels, Mount Tom Whiterock shuttle tradeoff, daytime trail rope-off, max-3 world-space spotters, and hill-tailored winter ribbons. The active queue moves to M4b batch 2 and M5 hills 4–8 after guest scaling N12. The [P1 protocol](./TESTING.md) is available for device playtesting.
 
 **Built and merged**
 
@@ -604,7 +604,8 @@ Story Mode only (see §4 and [STORY.md](./STORY.md) §8). Rows N0 to N11 are shi
 
 ### M7: 110% pass
 
-Play one ICR winter and one Last Chair winter side by side, list friction, tune defaults before adding systems. Candidate list: named regulars with bios, radio serial, Whiterock arc branches and the co-op ending, tomorrow cards on the recap, scenarios (7-day ice storm), shareable season card and trail-map poster (from the Atlas trail map), a scrapbook of auto-snapped moments, a guest book of named regulars, golden-hour light and snowfall. Also: performance budget pass, accessibility audit.
+- **Shipped (Phase 1–4 polish across Hills 1–3):** living weather/snowfall + carving spray + torchlight + snowcat beams; Mount Tom playable `4:00–6:30 PM` twilight lights + Whiterock shuttle tradeoff; per-mountain themes + Welcome Arch/fencing/vehicles diorama; inline SVG `CastPatches` + interactive `PunchCard` ceremony; Day 1 1985 starter assist; schema v19 North Ridge & Orchard parcel expansion; daytime trail rope-off; max-3 `OnHillSpotters`; 3 hill-tailored `winterRibbons`.
+- **Remaining future M7 candidates:** named regulars with bios, radio serial, shareable trail-map poster, auto-snapped scrapbook, performance budget pass, accessibility audit.
 
 ### M8: Capitalist Mode (after v1)
 

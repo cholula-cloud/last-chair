@@ -150,6 +150,8 @@ export type PersistedState = {
   groomerDown: GroomerDown | null;
   nightLights: boolean;
   nightSessionOn: boolean;
+  northRidgeParcel: boolean;
+  mtShuttleDecision: "accepted" | "declined" | null;
   orchardParcel: "unbid" | "pending" | "owned" | "whiterock";
   inspectorNotice: { day: number; liftIndex: number; decision: "pending" | "repaired" | "closed" } | null;
   homecomingNotes: HomecomingNote[];
@@ -271,6 +273,8 @@ export function createInitialState(
     groomerDown: null,
     nightLights: false,
     nightSessionOn: false,
+    northRidgeParcel: false,
+    mtShuttleDecision: null,
     orchardParcel: "unbid",
     inspectorNotice: null,
     homecomingNotes: [],
@@ -350,6 +354,8 @@ export function toPersisted(state: PersistedState): PersistedState {
     groomerDown: state.groomerDown ?? null,
     nightLights: state.nightLights ?? false,
     nightSessionOn: state.nightSessionOn ?? false,
+    northRidgeParcel: state.northRidgeParcel ?? false,
+    mtShuttleDecision: state.mtShuttleDecision ?? null,
     orchardParcel: state.orchardParcel ?? "unbid",
     inspectorNotice: state.inspectorNotice ?? null,
     homecomingNotes: state.homecomingNotes ?? [],
@@ -404,4 +410,4 @@ export function hydrate<T extends GameState>(p: PersistedState | undefined, curr
 
 /** M3 starts with a clean hill and a separate save slot. */
 export const SAVE_KEY = "last-chair-m3";
-export const SAVE_VERSION = 18;
+export const SAVE_VERSION = 19;

@@ -23,6 +23,7 @@ import { scaledTickMs, useSpeed } from "@/ui/speed";
 import { Atmosphere } from "./Atmosphere";
 import { BuildScenePreview } from "./BuildScenePreview";
 import { ChimneySmoke } from "./ChimneySmoke";
+import { DioramaLandmarks } from "./DioramaLandmarks";
 import { homeAzimuth } from "./cameraFraming";
 import { MAX_DISTANCE, MIN_DISTANCE } from "./cameraControls";
 import { Guests } from "./Guests";
@@ -30,6 +31,11 @@ import type { GuestPlacement } from "./guestPlacement";
 import { Lift } from "./Lift";
 import { LiftPlacementMotion } from "./LiftPlacementMotion";
 import { Village } from "./Lodge";
+import { OnHillSpotters } from "./OnHillSpotters";
+import { OpeningGuide } from "./OpeningGuide";
+import { RangeLights } from "./RangeLights";
+import { SkierVfx } from "./SkierVfx";
+import { Snowfall } from "./Snowfall";
 import { SnowGuns } from "./SnowGuns";
 import { RenderStats } from "./RenderStats";
 import { OverlayScene } from "./OverlayScene";
@@ -147,6 +153,7 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
         <TubingHillDressing />
         <RinkSkaters />
         <ArrivalArea guests={guests} dayIndex={dayIndex} />
+        <DioramaLandmarks lowDetail={lowDetail} />
         <SnowGuns />
         <Trees lowDetail={lowDetail} lines={clearingLines} paths={forestPaths} />
 
@@ -180,8 +187,13 @@ export function MountainScene({ lowDetail = false, onInspectAsset }: {
         })}
 
         <BuildScenePreview />
+        <OpeningGuide />
+        <OnHillSpotters onInspectAsset={onInspectAsset} />
         <Guests lifts={guestLifts} trailPaths={trailPaths} followedRef={followedRef} />
+        <RangeLights />
+        <SkierVfx lowDetail={lowDetail} />
       </Suspense>
+      <Snowfall lowDetail={lowDetail} />
       <PlacementController />
       <CameraRig followId={followId} followedRef={followedRef} onInspectAsset={onInspectAsset} />
       <MountainOrbitControls

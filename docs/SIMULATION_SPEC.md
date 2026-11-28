@@ -392,7 +392,7 @@ The first eligible outstanding beat appears at closing. A delayed beat can appea
 
 ---
 
-## Save format (currently `SAVE_VERSION = 18`)
+## Save format (currently `SAVE_VERSION = 19`)
 
 Zustand saves `PersistedState` in an envelope `{ state, version, savedAt }`. `savedAt` is the epoch milliseconds of the write and is used only for the "last played" line on the Load list. Launching M3 clears the previous `last-chair-v1` save and its backup. An unreadable M3 save starts at founder selection and shows a recovery notice.
 
@@ -415,6 +415,8 @@ A failed write (storage full or denied) keeps the latest state in memory and ret
 **Settings.** Sound, master, effects, ambience and voice levels, radio, captions, coach, display preferences and default speed live under `last-chair-settings` outside the winter save. The master switch silences every audio bus. Turning radio off hides optional broadcasts and leaves contract replies available. Cold-open captions follow the player’s preference while narration plays and remain visible when narration is silent. Reduce motion sets `data-reduce-motion` on the page root. Default speed sets the day speed at the start of a winter.
 
 Row 20 introduces M3 schema v5 with construction installments, loan and repayment records, the negative morning count and the winter outcome. The migration treats existing construction as fully paid and keeps an open recap's recorded operating cash change. A saved negative balance starts with one negative morning.
+
+Schema v19 adds `northRidgeParcel` (`boolean`, bought at Dutch Hill Tier 2 for `$7,500`, expanding the north lease boundary) and `mtShuttleDecision` (`"accepted" | "declined" | null`, Mount Tom Week 2 Whiterock shuttle offer trading `+$400` Saturday stipend against `-12` parking stalls and `-15%` Saturday arrivals). Daytime trail rope-off (`toggleTrailOpen`) lets players toggle open/closed runs while keeping at least one open descent serving an active lift; `winterRibbons` evaluates 3 hill-specific milestones across Dutch Hill, Mount Tom (`nightLights` / ridge reputation), and Maple Valley (`schoolProgramProven` / `orchardParcel`). Mount Tom extends daytime closing (`dayEndMin`) from `4:00 PM` to `6:30 PM` when `nightLights && nightSessionOn`.
 
 Schema v6 records the school contract and pass offer. Schema v7 shipped with first-winter coach progress. A parallel v7 build recorded operating days, dated broadcasts and settled winters. Schema v8 accepts both v7 formats and preserves their known records. Its Office ledger starts with the next nightly settlement, when actual fare, costs, weather and receipts become available. Historical saves retain their recorded cash, season length and outcomes.
 
