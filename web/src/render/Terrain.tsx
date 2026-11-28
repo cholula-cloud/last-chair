@@ -80,6 +80,7 @@ function paint(
   const col = g.attributes.color as THREE.BufferAttribute;
   const rockCol = new THREE.Color(theme.rock);
   const floorCol = new THREE.Color(theme.forestFloor);
+  const rimHazeCol = new THREE.Color(theme.ridgeFar).lerp(new THREE.Color(PALETTE.skyHorizon), 0.35);
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const q = snowQuality;
@@ -122,6 +123,11 @@ function paint(
         c.lerp(CANOPY, 0.55 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
       }
     }
+
+    // Gently fade outer rectangular terrain bounds toward misty horizon haze.
+    const edge = Math.max(Math.abs(x) / 144, Math.abs(z) / 120);
+    const rim = smoothstep(0.62, 0.98, edge);
+    if (rim > 0) c.lerp(rimHazeCol, rim * 0.78);
 
     col.setXYZ(i, c.r, c.g, c.b);
   }

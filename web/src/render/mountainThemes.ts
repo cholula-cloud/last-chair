@@ -1,6 +1,12 @@
 import type { MountainId } from "@/game/calendar";
 import { PALETTE } from "./palette";
 
+export type HorizonProfile = {
+  valleyNotchDepth: number;
+  bluffSharpness: number;
+  valleyLightCount: number;
+};
+
 export type MountainVisualTheme = {
   id: MountainId;
   archTitle: string;
@@ -14,6 +20,7 @@ export type MountainVisualTheme = {
   birchRatio: number;
   mapleRatio: number;
   rockThreshold: number;
+  horizon: HorizonProfile;
 };
 
 const THEMES: Partial<Record<MountainId, MountainVisualTheme>> & { dutch_hill: MountainVisualTheme } = {
@@ -30,6 +37,7 @@ const THEMES: Partial<Record<MountainId, MountainVisualTheme>> & { dutch_hill: M
     birchRatio: 0.09,
     mapleRatio: 0,
     rockThreshold: 0.42,
+    horizon: { valleyNotchDepth: 0.25, bluffSharpness: 1.0, valleyLightCount: 14 },
   },
   mount_tom: {
     id: "mount_tom",
@@ -44,6 +52,7 @@ const THEMES: Partial<Record<MountainId, MountainVisualTheme>> & { dutch_hill: M
     birchRatio: 0.16,
     mapleRatio: 0,
     rockThreshold: 0.34,
+    horizon: { valleyNotchDepth: 0.65, bluffSharpness: 1.45, valleyLightCount: 22 },
   },
   maple_valley: {
     id: "maple_valley",
@@ -58,6 +67,7 @@ const THEMES: Partial<Record<MountainId, MountainVisualTheme>> & { dutch_hill: M
     birchRatio: 0.11,
     mapleRatio: 0.14,
     rockThreshold: 0.42,
+    horizon: { valleyNotchDepth: 0.35, bluffSharpness: 1.1, valleyLightCount: 14 },
   },
 };
 
