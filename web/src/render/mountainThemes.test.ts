@@ -24,4 +24,19 @@ describe("mountainTheme", () => {
     expect(mountainTheme(undefined).id).toBe("dutch_hill");
     expect(mountainTheme("unknown_hill").id).toBe("dutch_hill");
   });
+
+  it("provides distinct horizon silhouettes and evening valley light counts", () => {
+    const dh = mountainTheme("dutch_hill").horizon;
+    const mt = mountainTheme("mount_tom").horizon;
+    const mv = mountainTheme("maple_valley").horizon;
+
+    expect(mt.valleyNotchDepth).toBeGreaterThan(dh.valleyNotchDepth);
+    expect(mt.bluffSharpness).toBeGreaterThan(dh.bluffSharpness);
+    expect(mt.valleyLightCount).toBeGreaterThan(mv.valleyLightCount);
+    for (const h of [dh, mt, mv]) {
+      expect(h.valleyLightCount).toBeGreaterThanOrEqual(10);
+      expect(h.valleyLightCount).toBeLessThanOrEqual(30);
+      expect(h.bluffSharpness).toBeGreaterThanOrEqual(1);
+    }
+  });
 });

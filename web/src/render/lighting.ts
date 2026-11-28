@@ -29,8 +29,8 @@ const NIGHT_RIG: Omit<Rig, "sunDir"> & { azimuth: number; elevation: number } = 
   hemiIntensity: 0.75,
   skyTop: PALETTE.nightSkyTop,
   skyHorizon: PALETTE.nightHorizon,
-  fogNear: 140,
-  fogFar: 420,
+  fogNear: 88,
+  fogFar: 215,
   exposure: 0.9,
   glow: 1.15,
   shadowStrength: 1,
@@ -289,8 +289,8 @@ function blendDayNight(day: DayKey, night: number): void {
   OUT.hemiIntensity = lerp(day.hemiIntensity, NIGHT_RIG.hemiIntensity, n);
   OUT.skyTop = lerpHex(day.skyTop, NIGHT_RIG.skyTop, n);
   OUT.skyHorizon = lerpHex(day.skyHorizon, NIGHT_RIG.skyHorizon, n);
-  OUT.fogNear = lerp(140, NIGHT_RIG.fogNear, n);
-  OUT.fogFar = lerp(420, NIGHT_RIG.fogFar, n);
+  OUT.fogNear = lerp(88, NIGHT_RIG.fogNear, n);
+  OUT.fogFar = lerp(215, NIGHT_RIG.fogFar, n);
   OUT.exposure = lerp(day.exposure, NIGHT_RIG.exposure, n);
   OUT.glow = lerp(day.glow, NIGHT_RIG.glow, n);
   OUT.shadowStrength = 1 - n * 0.15;
