@@ -1,11 +1,12 @@
 import { liquidNetWorth } from "./economy";
-import { operatingDaysLeft, seasonCalendar } from "./calendar";
+import { operatingDaysLeft, seasonCalendar, type MountainId } from "./calendar";
 import { schoolContractOfferDay } from "./rules";
 import { SCHOOL_BUS_PUPILS } from "./schoolContract";
+import { operatingGoals } from "./winterArc";
 import type { GameState } from "./state";
 
 export type GoalChip = {
-  id: "lodge" | "bus" | "solvent";
+  id: "lodge" | "bus" | "solvent" | "lights" | "ridge" | "orchard" | "saturday";
   label: string;
   status: "Done" | "On track" | "At risk" | "To do" | "Missed" | "Declined" | "Booked";
   explainer: string;
@@ -13,11 +14,19 @@ export type GoalChip = {
 
 export function goalInputs(state: GameState) {
   return {
+    mountainId: state.mountainId,
     lodgeTier: state.lodgeTier,
     schoolContract: state.schoolContract,
     schoolEligible: state.outcome === "playing" && schoolContractOfferDay(state) !== null,
     netWorth: liquidNetWorth(state),
     outcome: state.outcome,
+    nightLights: state.nightLights,
+    reputation: state.reputation,
+    mtShuttleDecision: state.mtShuttleDecision,
+    orchardParcel: state.orchardParcel,
+    schoolProgramProven: state.schoolProgramProven,
+    vacationDay: operatingGoals(seasonCalendar(state), state.dayHistory).vacationDay,
+    assets: state.assets,
   };
 }
 
@@ -58,6 +67,73 @@ export function goalChips(state: ReturnType<typeof goalInputs>): GoalChip[] {
       : (solvent ? "Cash covers your winter loan and open bills." : "Loan balance exceeds cash right now. Build ticket revenue."),
   });
   return chips;
+}
+
+/** Three hill-tailored winter ribbons for the Punch Card and Winter Review. */
+export function winterRibbons(state: GameState): GoalChip[] {
+  const inputs = goalInputs(state);
+  const settled = inputs.outcome !== "playing";
+  const solvent = inputs.netWorth >= 0;
+  const metSolvent = inputs.outcome === "finished" && solvent;
+  const solventRibbon: GoalChip = {
+    id: "solvent",
+    label: "Lights stayed on",
+    status: settled ? (metSolvent ? "Done" : "Missed") : (solvent ? "On track" : "At risk"),
+    explainer: metSolvent ? "Finished the winter solvent." : "Keep net worth nonnegative through closing.",
+  };
+
+  const mountainId: MountainId = state.mountainId;
+  if (mountainId === "mount_tom") {
+    const lightsDone = Boolean(state.nightLights);
+    const ridgeDone = state.reputation >= 60 || state.mtShuttleDecision === "declined";
+    return [
+      solventRibbon,
+      {
+        id: "lights",
+        label: "Range lights",
+        status: lightsDone ? "Done" : settled ? "Missed" : "To do",
+        explainer: lightsDone ? "Holyoke ridge lights lit up the valley." : "Wire range lights in Office or Snow & Service.",
+      },
+      {
+        id: "ridge",
+        label: "Hold the ridge",
+        status: ridgeDone ? "Done" : settled ? "Missed" : "To do",
+        explainer: ridgeDone ? "Held Mount Tom's reputation and parking independence." : "Reach rep 60 or decline the Whiterock shuttle.",
+      },
+    ];
+  }
+
+  if (mountainId === "maple_valley") {
+    const schoolDone = Boolean(state.schoolProgramProven || (state.schoolContract?.decision === "accepted" && (state.schoolContract.pupilsTaught ?? 0) > 0));
+    const orchardDone = state.orchardParcel === "owned";
+    return [
+      solventRibbon,
+      {
+        id: "bus",
+        label: "Windham school",
+        status: schoolDone ? "Done" : settled ? "Missed" : "To do",
+        explainer: schoolDone ? "Windham district buses brought local kids to the slope." : "Open a ski school at Tier 2 for the district bus.",
+      },
+      {
+        id: "orchard",
+        label: "Save orchard",
+        status: orchardDone ? "Done" : state.orchardParcel === "whiterock" || settled ? "Missed" : "To do",
+        explainer: orchardDone ? "Kept the Maple Valley apple orchard in town hands." : "Outbid Whiterock for the orchard parcel.",
+      },
+    ];
+  }
+
+  // Dutch Hill: Solvency + Lodge/School + Smooth Saturday
+  const baseChips = goalChips(inputs);
+  const middle = baseChips.find((c) => c.id === "bus") ?? baseChips.find((c) => c.id === "lodge")!;
+  const satDone = inputs.vacationDay !== null;
+  const smoothSat: GoalChip = {
+    id: "saturday",
+    label: "Smooth Saturday",
+    status: satDone ? "Done" : settled ? "Missed" : "To do",
+    explainer: satDone ? "Ran a profitable holiday Saturday under a 5 min wait." : "Turn a profit on a holiday Saturday with waits under 5 min.",
+  };
+  return [solventRibbon, middle, smoothSat];
 }
 
 /** Legacy: consecutive civil days. Prefer operatingDaysLeftLine for the operating calendar. */

@@ -5,7 +5,17 @@ import { SYNTH, startBed, type Bed, type BedMood, type SoundId } from "./synth";
 const BASE_PATH = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_BASE_PATH ?? "" : "";
 
 /** Seconds a sound must wait after the previous one of its kind, so a drag of taps does not buzz. */
-const MIN_GAP: Record<SoundId, number> = { tap: 0.04, thunk: 0.15, sting: 0.5, chime: 0.5, dial: 0.08 };
+const MIN_GAP: Record<SoundId, number> = {
+  tap: 0.04,
+  thunk: 0.15,
+  sting: 0.5,
+  chime: 0.5,
+  dial: 0.08,
+  punch: 0.2,
+  lights: 0.5,
+  rope: 0.15,
+  bus: 0.5,
+};
 /** Seconds a bus gain takes to follow a slider, so dragging one does not click. */
 const GAIN_SMOOTHING = 0.03;
 

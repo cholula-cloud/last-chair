@@ -16,6 +16,7 @@ export function GroomerDownCard({ night }: { night: GameState }) {
   return (
     <RadioCard
       title="Groomer down tonight"
+      from="Frank Oka"
       action={
         <div className="grid grid-cols-2 gap-2">
           <button

@@ -6,8 +6,10 @@ import { liftName, venueName } from "@/game/assetNames";
 import { ASSET_CATALOG, LODGE_TIERS, type AssetId, type LodgeTier } from "@/game/base";
 import { formatMoney } from "@/game/format";
 import { MAX_LIFTS, MAX_LIFT_SLOTS } from "@/game/descent";
+import { NORTH_RIDGE_COST } from "@/game/parcels";
 import { assetRemovalQuote, liftClosureProblem, openingStep } from "@/game/rules";
 import { useGameStore } from "@/game/store";
+import { buildConfirmed } from "@/ui/feel";
 import { LIFT_LABELS, type LiftType } from "@/game/types";
 import { BuildImpactCard } from "@/ui/BuildImpactCard";
 import { startAssetPlacement, startGunPlacement, startPlacement } from "@/ui/placementDraft";
@@ -121,6 +123,8 @@ export function BuildSheet({
   const cash = useGameStore((s) => s.cash);
   const tier = useGameStore((s) => s.lodgeTier);
   const mountainId = useGameStore((s) => s.mountainId);
+  const northRidgeParcel = useGameStore((s) => s.northRidgeParcel);
+  const buyNorthRidgeParcel = useGameStore((s) => s.buyNorthRidgeParcel);
   const snowGunTier = mountainId === "mount_tom" ? 1 : 2;
   const [reviewLift, setReviewLift] = useState<number | null>(null);
   const [manageLiftsOpen, setManageLiftsOpen] = useState(false);
@@ -233,6 +237,37 @@ export function BuildSheet({
   const basePanel = (
     <div className="beat-swap space-y-3">
       <LodgeUpgradeControl variant="compact" />
+      {mountainId === "dutch_hill" && (
+        <div className="well-white flex items-center justify-between gap-2.5 p-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[0.9rem] font-extrabold leading-tight">North Ridge parcel</p>
+            <p className="mt-0.5 text-xs font-bold text-ink-soft">
+              {northRidgeParcel
+                ? "North Ridge leased. Longer uphill lift lines open."
+                : tier < 2
+                  ? "Unlocks at Lodge Tier 2. Extends the upper lease northward."
+                  : "Extends the upper lease northward for longer runs (+4 rep)."}
+            </p>
+          </div>
+          {northRidgeParcel ? (
+            <span className="chip bg-sign-green px-2.5 py-1 text-xs font-extrabold text-white [--lift:2px]">
+              Leased
+            </span>
+          ) : (
+            <button
+              type="button"
+              disabled={tier < 2 || cash < NORTH_RIDGE_COST}
+              onClick={() => {
+                buyNorthRidgeParcel();
+                buildConfirmed("North Ridge leased");
+              }}
+              className="key key-solid press shrink-0 px-3 py-2 text-xs font-extrabold [--key-fill:var(--sign-yellow)] [--lift:2px]"
+            >
+              {tier < 2 ? "Tier 2" : `Lease (${formatMoney(NORTH_RIDGE_COST)})`}
+            </button>
+          )}
+        </div>
+      )}
       <div className="space-y-2">
         <SectionHeading>Base venues</SectionHeading>
         <AssetGrid ids={BASE_ASSETS} tier={tier} onBuild={buildAsset} />

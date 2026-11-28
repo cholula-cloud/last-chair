@@ -37,6 +37,7 @@ export function SchoolContractCard({ night }: { night: GameState }) {
   return (
     <RadioCard
       title="School bus offer"
+      from="Elena Vargas"
       action={
         <div className="grid grid-cols-2 gap-2">
           <button type="button" className={primaryClass} onClick={() => decide("accepted")}>Book the bus</button>

@@ -12,6 +12,7 @@ export function ticketBaseAmount(fare: GameState["fare"]): number {
 }
 
 export function ticketBaseOnArrival(guest: Guest, fare: GameState["fare"]): number {
+  if (guest.id.startsWith("night-")) return 0;
   if (guest.schoolPupil) return SCHOOL_BUS_FARE;
   if (guest.id.startsWith("club-")) return Math.max(4, ticketBaseAmount(fare) - Math.round(CLUB_BUS_DISCOUNT / 2));
   return ticketBaseAmount(fare);

@@ -10,7 +10,9 @@ import type { Trail } from "@/game/snow";
 import type { LiftLine } from "@/game/descent";
 import type { SnowPreset } from "@/game/types";
 import { TERRAIN, fbm } from "@/game/terrain";
+import { useGameStore } from "@/game/store";
 import { forestMask } from "./forest";
+import { mountainTheme, type MountainVisualTheme } from "./mountainThemes";
 import { distanceOutsideLease, onLease } from "@/game/lease";
 import { outsideWeight, patchLeaseDim } from "./leaseDim";
 import { patchOverlay } from "./terrainOverlay";
@@ -71,10 +73,13 @@ function paint(
   snowQuality: number,
   snowDepth: number,
   canGrow: ReturnType<typeof forestMask>,
+  theme: MountainVisualTheme,
 ) {
   const pos = g.attributes.position as THREE.BufferAttribute;
   const nor = g.attributes.normal as THREE.BufferAttribute;
   const col = g.attributes.color as THREE.BufferAttribute;
+  const rockCol = new THREE.Color(theme.rock);
+  const floorCol = new THREE.Color(theme.forestFloor);
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const q = snowQuality;
@@ -101,8 +106,10 @@ function paint(
 
     const forested = canGrow(x, z);
     const steep = 1 - ny + fbm(x * 1.7, z * 1.7) * 0.12;
+    const rockStart = theme.rockThreshold - 0.04;
+    const rockEnd = theme.rockThreshold + 0.13;
     // Soften rock on wooded slopes so the floor reads as snow under canopy.
-    c.lerp(C.rock, smoothstep(0.38, 0.55, steep) * (forested ? 0.35 : 0.7));
+    c.lerp(rockCol, smoothstep(rockStart, rockEnd, steep) * (forested ? 0.35 : 0.78));
 
     const n = fbm(x * 0.9 + 3.1, z * 0.9 - 7.7);
     const bareDepth = (thin - 0.45) * 1.6 - 0.42 - y * 0.1 + n * 0.7;
@@ -110,7 +117,7 @@ function paint(
     c.lerp(C.earth, smoothstep(0, 0.18, bareDepth - road) * 0.9);
     if (forested) {
       if (onLease({ x, z })) {
-        c.lerp(FOREST_FLOOR, LEASE_CANOPY);
+        c.lerp(floorCol, LEASE_CANOPY);
       } else {
         c.lerp(CANOPY, 0.55 * smoothstep(0, CANOPY_BAND, distanceOutsideLease({ x, z })));
       }
@@ -120,6 +127,8 @@ function paint(
   }
   col.needsUpdate = true;
 }
+void C.rock;
+void FOREST_FLOOR;
 
 export function Terrain({
   lowDetail,
@@ -160,6 +169,8 @@ export function Terrain({
     g.setAttribute("aPitch", new THREE.BufferAttribute(pitch, 1));
     return g;
   }, [lowDetail]);
+  const mountainId = useGameStore((s) => s.mountainId);
+  const theme = useMemo(() => mountainTheme(mountainId), [mountainId]);
   const q = Math.round(snowQuality * 20) / 20;
   const d = Math.round(snowDepth * 20) / 20;
   const lineKey = lines
@@ -193,8 +204,8 @@ export function Terrain({
   }, [geometry, lineKey, pathKey, trails.length]);
 
   useLayoutEffect(() => {
-    paint(geometry, q, d, canGrow);
-  }, [geometry, q, d, canGrow]);
+    paint(geometry, q, d, canGrow, theme);
+  }, [geometry, q, d, canGrow, theme]);
 
   useLayoutEffect(() => {
     if (!MOUNTAIN_TRAIL_CONDITIONING) return;
@@ -310,6 +321,50 @@ export function Road() {
       );
       for (let k = 0; k < 4; k++) col.push(stripeCol.r, stripeCol.g, stripeCol.b);
       idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+    }
+
+    // Plowed gravel apron joining the main road to the parking lot spur.
+    const spur = SITE.road.spur;
+    if (spur.length >= 2) {
+      const sx = spur[0].x;
+      const zA = ROAD_Z + Math.sin(sx * 0.18) * 0.25 + w;
+      const zB = spur[1].z;
+      const halfSpur = 0.56;
+      const base = pos.length / 3;
+      pos.push(
+        sx - halfSpur, TERRAIN.height(sx - halfSpur, zA) + 0.024, zA,
+        sx + halfSpur, TERRAIN.height(sx + halfSpur, zA) + 0.024, zA,
+        sx - halfSpur * 1.18, TERRAIN.height(sx - halfSpur * 1.18, zB) + 0.024, zB,
+        sx + halfSpur * 1.18, TERRAIN.height(sx + halfSpur * 1.18, zB) + 0.024, zB,
+      );
+      for (let k = 0; k < 4; k++) col.push(roadCol.r, roadCol.g, roadCol.b);
+      idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+    }
+
+    // Timber roadside guard posts along the shoulder snowbanks.
+    const postCol = new THREE.Color(PALETTE.bark);
+    const pushPost = (px: number, pz: number) => {
+      const py = TERRAIN.height(px, pz) + 0.04;
+      const hw = 0.04;
+      const ph = 0.22;
+      const b = pos.length / 3;
+      pos.push(
+        px - hw, py, pz - hw, px + hw, py, pz - hw, px + hw, py, pz + hw, px - hw, py, pz + hw,
+        px - hw, py + ph, pz - hw, px + hw, py + ph, pz - hw, px + hw, py + ph, pz + hw, px - hw, py + ph, pz + hw,
+      );
+      for (let k = 0; k < 8; k++) col.push(postCol.r, postCol.g, postCol.b);
+      idx.push(
+        b + 4, b + 5, b + 6, b + 4, b + 6, b + 7,
+        b + 0, b + 1, b + 5, b + 0, b + 5, b + 4,
+        b + 1, b + 2, b + 6, b + 1, b + 6, b + 5,
+        b + 2, b + 3, b + 7, b + 2, b + 7, b + 6,
+        b + 3, b + 0, b + 4, b + 3, b + 4, b + 7,
+      );
+    };
+    for (let px = xFrom + 1.5; px <= xTo - 1.5; px += 3.2) {
+      if (Math.abs(px - SITE.arrival.center.x) < 1.3) continue;
+      const rz = ROAD_Z + Math.sin(px * 0.18) * 0.25;
+      pushPost(px, rz - (w + 0.22));
     }
 
     const g = new THREE.BufferGeometry();

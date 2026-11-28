@@ -48,11 +48,13 @@ Phase 2 and 3 (village/lift kit, lodge tiers, extra silhouettes) map to **M4b** 
 
 ## 110% pass — art upgrades (post-review)
 
-- Volumetric-ish snowfall (shader, not heavy sim).
-- Slightly **richer golden hour** key light vs flat midday default.
-- Queue **heat shimmer** along lift line (subtle).
-- Story billboard / heritage plaque at base.
-- UI motion: night recap slide, satisfaction pulse (respect reduced motion).
+- **Shipped (110% polish pass):**
+  - Weather-driven `Snowfall` shaders (`90` light / `240` heavy storm flakes) + single-draw skier carving `SkierVfx` spray + Last Saturday torchlight descent ribbon + dual snowcat headlight cones & amber beacon (`Lodge.tsx`).
+  - Richer `14:30` golden hour + `16:45`–`18:30` twilight lighting keyframes (`lighting.ts`) for Mount Tom **Lights On** sessions, backed by `RangeLights` sodium floodlight towers & ground glow pools.
+  - Per-mountain visual identities (`mountainThemes.ts`): basalt dark rock ledges & 16% paper birch (`mount_tom`), sugarbush maples & apple orchard (`maple_valley`), Vermont ridge blues (`dutch_hill`).
+  - `DioramaLandmarks` (Route 100 Welcome Arch, safety-orange snow fencing & lift corrals, steep-face rock outcrops, plowed apron & guard posts) + upgraded procedural `Vehicles` (pickups, wood-panel wagons, school bus, Sloane's SUV, Whiterock Express coach) + Blender source recipes in `tools/blender/props.py`.
+  - Woven 3px-ink SVG `CastPatches` and shared cardstock `PunchCard` interactive Winter Review ceremony.
+- Future candidates: queue heat shimmer along lift line, interactive heritage plaque modal.
 
 ---
 

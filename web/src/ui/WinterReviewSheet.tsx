@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { founderById } from "@/game/content";
 import { seasonCalendar } from "@/game/calendar";
+import { goalChips, goalInputs, winterRibbons } from "@/game/goals";
 import { buildCallOffers, ensureCareerHills, hillById } from "@/game/mountains/roster";
 import { SUMMIT_LINK_PAYMENT } from "@/game/summitLink";
 import { liquidNetWorth, payoffAmount } from "@/game/economy";
@@ -10,11 +12,15 @@ import { StoryEntries } from "@/ui/StoryLog";
 import { punchCardOutcomeLine, schoolMemory } from "@/game/winterMemory";
 import { formatMoney } from "@/game/format";
 import { useGameStore } from "@/game/store";
+import { ticketPunched } from "@/ui/feel";
+import { PunchCard } from "@/ui/kit/PunchCard";
 import { Sheet } from "@/ui/kit/Sheet";
 import { PinIcon } from "@/ui/kit/icons";
 import { PrimaryButton, Sign, StatTile } from "@/ui/kit/parts";
 
 export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
+  const [twelfthPunched, setTwelfthPunched] = useState(false);
+  const fullState = useGameStore();
   const phase = useGameStore((s) => s.phase);
   const outcome = useGameStore((s) => s.outcome);
   const bankrupt = outcome === "bankrupt";
@@ -110,7 +116,11 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
     );
   }
 
-  const currentHillName = hillById(mountainId).name;
+  const currentHillEntry = hillById(mountainId);
+  const currentHillName = currentHillEntry.name;
+  const ribbons = winterRibbons(fullState);
+  void goalChips;
+  void goalInputs;
   const careerList = ensureCareerHills(careerHills, mountainId);
   const lostRecord = careerList.find((h) => h.mountainId === mountainId);
   const survivingHills = careerList.filter((h) => h.status === "caretaker" && hillById(h.mountainId).playable);
@@ -208,6 +218,20 @@ export function WinterReviewSheet({ onOffice }: { onOffice?: () => void }) {
               Winter solvency goal {solvent ? "met" : "missed"}.
             </p>
           </section>
+          <PunchCard
+            key={mountainId}
+            mode="winter-review"
+            hillName={`${currentHillName}, ${currentHillEntry.state}`}
+            seasonBadge={`Winter ${careerList.reduce((sum, h) => sum + h.wintersRun, 0) || 1}`}
+            operatorLabel={fullState.operatorName || "The operator"}
+            twelfthPunched={twelfthPunched}
+            canPunchTwelfth={solvent}
+            onPunchTwelfth={() => {
+              ticketPunched();
+              setTwelfthPunched(true);
+            }}
+            ribbons={ribbons}
+          />
         </div>
         <div>
           <section className="panel mt-4 space-y-2 px-4 py-3 md:mt-0" aria-label="What the town remembers">

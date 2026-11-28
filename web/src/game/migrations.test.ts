@@ -14,7 +14,7 @@ function schema6(patch: Record<string, unknown> = {}) {
 
 describe("M3 schema migration", () => {
   it("is the current schema", () => {
-    expect(SAVE_VERSION).toBe(18);
+    expect(SAVE_VERSION).toBe(19);
   });
 
   it("loads a schema 6 save from day 1 with no tips seen", () => {
@@ -116,6 +116,17 @@ describe("M3 schema migration", () => {
     expect(result.state.orchardParcel).toBe("unbid");
     expect(result.state.homecomingNotes).toEqual([]);
     expect(result.state.caretakerLedger).toEqual([]);
+  });
+
+  it("adds northRidgeParcel and mtShuttleDecision defaults when upgrading from schema 18", () => {
+    const base = toPersisted(createInitialState(7));
+    const v18 = { ...base };
+    delete (v18 as { northRidgeParcel?: unknown }).northRidgeParcel;
+    delete (v18 as { mtShuttleDecision?: unknown }).mtShuttleDecision;
+    const result = migrate(v18, 18);
+    expect(result.reset).toBe(false);
+    expect(result.state.northRidgeParcel).toBe(false);
+    expect(result.state.mtShuttleDecision).toBeNull();
   });
 
   it("rejects a current save whose tipsSeen is not a list of strings", () => {

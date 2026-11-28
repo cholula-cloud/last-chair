@@ -22,7 +22,7 @@ export type AudioManifest = {
 
 export const AUDIO_MANIFEST = raw as AudioManifest;
 
-export const EFFECT_MANIFEST_ID: Record<SoundId, string> = {
+export const EFFECT_MANIFEST_ID: Partial<Record<SoundId, string>> = {
   tap: "ui-tap",
   thunk: "build-place",
   sting: "radio-sting",

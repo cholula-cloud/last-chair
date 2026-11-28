@@ -29,6 +29,7 @@ import {
   treeWorldWidth,
   useTreeKit,
 } from "./treeKit";
+import { mountainTheme } from "./mountainThemes";
 
 /**
  * Far kit trees stay impostors for draw-call budget. Flip only after a phone
@@ -53,6 +54,7 @@ function writeInstances(
   size: (spot: TreeSpot) => readonly [number, number],
   tinted: boolean,
   neutralTint = false,
+  mapleRatio = 0,
 ) {
   for (let i = 0; i < spots.length; i++) {
     const p = spots[i];
@@ -64,8 +66,13 @@ function writeInstances(
     mesh.setMatrixAt(i, dummy.matrix);
     if (tinted) {
       if (neutralTint) {
-        const k = 0.94 + (p.tint - 0.86) * 0.5;
-        tint.setRGB(k, k, k * 0.98);
+        const isMaple = mapleRatio > 0 && hash01(p.x, p.z, 73) < mapleRatio;
+        if (isMaple) {
+          tint.setRGB(1.06, 0.72, 0.45);
+        } else {
+          const k = 0.94 + (p.tint - 0.86) * 0.5;
+          tint.setRGB(k, k, k * 0.98);
+        }
       } else {
         tint.setRGB(p.tint * 0.97, p.tint * 1.02, p.tint * 0.97);
       }
@@ -84,17 +91,19 @@ function Instances({
   size,
   shadowOnly = false,
   neutralTint = false,
+  mapleRatio = 0,
 }: {
   geo: THREE.BufferGeometry;
   spots: readonly TreeSpot[];
   size: (spot: TreeSpot) => readonly [number, number];
   shadowOnly?: boolean;
   neutralTint?: boolean;
+  mapleRatio?: number;
 }) {
   const ref = useRef<THREE.InstancedMesh | null>(null);
   useLayoutEffect(() => {
-    if (ref.current) writeInstances(ref.current, spots, size, !shadowOnly, neutralTint);
-  }, [spots, size, shadowOnly, neutralTint]);
+    if (ref.current) writeInstances(ref.current, spots, size, !shadowOnly, neutralTint, mapleRatio);
+  }, [spots, size, shadowOnly, neutralTint, mapleRatio]);
   if (!spots.length) return null;
   if (shadowOnly) {
     return (
@@ -123,27 +132,37 @@ const proxySize = () => {
 const FAR_SIZE = farTreeWorldSize();
 const farSize = () => FAR_SIZE;
 
-function isBirchSpot(p: TreeSpot): boolean {
-  return hash01(p.x, p.z, 19) < 0.09;
+function isHardwoodSpot(p: TreeSpot, ratio: number): boolean {
+  return hash01(p.x, p.z, 19) < ratio;
 }
 
-function LeaseCellTrees({ cell, shared }: { cell: LeaseCell; shared: Shared }) {
+function LeaseCellTrees({
+  cell,
+  shared,
+  hardwoodRatio,
+  mapleRatio,
+}: {
+  cell: LeaseCell;
+  shared: Shared;
+  hardwoodRatio: number;
+  mapleRatio: number;
+}) {
   const { buckets, birches } = useMemo(() => {
     const b: TreeSpot[][] = Array.from({ length: PINE_VARIANTS }, () => []);
     const bi: TreeSpot[] = [];
     for (const p of cell.pines) {
-      if (shared.birch && isBirchSpot(p)) bi.push(p);
+      if (shared.birch && isHardwoodSpot(p, hardwoodRatio)) bi.push(p);
       else b[p.variant]?.push(p);
     }
     return { buckets: b, birches: bi };
-  }, [cell.pines, shared.birch]);
+  }, [cell.pines, shared.birch, hardwoodRatio]);
   return (
     <group>
       {Array.from({ length: PINE_VARIANTS }, (_, v) => (
         <Instances key={v} geo={shared.pines[v]} spots={buckets[v]} size={pineSize} />
       ))}
       {shared.birch && (
-        <Instances geo={shared.birch} spots={birches} size={birchSize} neutralTint />
+        <Instances geo={shared.birch} spots={birches} size={birchSize} neutralTint mapleRatio={mapleRatio} />
       )}
       <Instances geo={shared.proxy} spots={cell.pines} size={proxySize} shadowOnly />
     </group>
@@ -179,6 +198,10 @@ function ForestBody({
   const far = useMemo(() => farTreeImpostor(), []);
   useEffect(() => () => far.dispose(), [far]);
 
+  const mountainId = useGameStore((s) => s.mountainId);
+  const theme = mountainTheme(mountainId);
+  const hardwoodRatio = theme.birchRatio + theme.mapleRatio;
+  const mapleShare = hardwoodRatio > 0 ? theme.mapleRatio / hardwoodRatio : 0;
   const clearedCells = useGameStore((s) => s.clearedCells);
   const cells = useMemo(() => leaseForest({ lines, paths }), [lines, paths]);
   const visible = useMemo(() => {
@@ -197,7 +220,15 @@ function ForestBody({
 
   return (
     <group>
-      {visible.map((cell) => <LeaseCellTrees key={cell.key} cell={cell} shared={shared} />)}
+      {visible.map((cell) => (
+        <LeaseCellTrees
+          key={cell.key}
+          cell={cell}
+          shared={shared}
+          hardwoodRatio={hardwoodRatio}
+          mapleRatio={mapleShare}
+        />
+      ))}
       <FarTrees geo={far} spots={farSpots} />
     </group>
   );

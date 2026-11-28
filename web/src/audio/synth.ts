@@ -4,8 +4,8 @@
  * stop on their own.
  */
 
-export type SoundId = "tap" | "thunk" | "sting" | "chime" | "dial";
-export const SOUND_IDS: readonly SoundId[] = ["tap", "thunk", "sting", "chime", "dial"];
+export type SoundId = "tap" | "thunk" | "sting" | "chime" | "dial" | "punch" | "lights" | "rope" | "bus";
+export const SOUND_IDS: readonly SoundId[] = ["tap", "thunk", "sting", "chime", "dial", "punch", "lights", "rope", "bus"];
 
 type Tone = {
   type: OscillatorType;
@@ -120,7 +120,41 @@ function dial(ctx: AudioContext, out: AudioNode, t: number): void {
   src.stop(t + 0.15);
 }
 
-export const SYNTH: Record<SoundId, (ctx: AudioContext, out: AudioNode, t: number) => void> = { tap, thunk, sting, chime, dial };
+/** Crisp metallic ticket-punch snap and cardstock pop. */
+function punch(ctx: AudioContext, out: AudioNode, t: number): void {
+  tone(ctx, out, { type: "triangle", freq: 2600, freqEnd: 880, start: t, attack: 0.001, decay: 0.038, peak: 0.34 });
+  burst(ctx, out, t, 0.025, 4200, 0.22);
+}
+
+/** Warm sodium-vapor relay clunk and subtle transformer hum. */
+function lights(ctx: AudioContext, out: AudioNode, t: number): void {
+  tone(ctx, out, { type: "sine", freq: 110, freqEnd: 120, start: t, attack: 0.02, decay: 0.48, peak: 0.28 });
+  burst(ctx, out, t, 0.03, 950, 0.24);
+}
+
+/** Wooden stake and rope-snap click for trail closure toggles. */
+function rope(ctx: AudioContext, out: AudioNode, t: number): void {
+  tone(ctx, out, { type: "triangle", freq: 620, freqEnd: 290, start: t, attack: 0.002, decay: 0.09, peak: 0.28 });
+  burst(ctx, out, t, 0.04, 1800, 0.14);
+}
+
+/** Warm two-tone school-bus morning chime. */
+function bus(ctx: AudioContext, out: AudioNode, t: number): void {
+  tone(ctx, out, { type: "triangle", freq: 523.25, start: t, attack: 0.01, decay: 0.22, peak: 0.26 });
+  tone(ctx, out, { type: "triangle", freq: 659.25, start: t + 0.14, attack: 0.01, decay: 0.34, peak: 0.26 });
+}
+
+export const SYNTH: Record<SoundId, (ctx: AudioContext, out: AudioNode, t: number) => void> = {
+  tap,
+  thunk,
+  sting,
+  chime,
+  dial,
+  punch,
+  lights,
+  rope,
+  bus,
+};
 
 export type BedMood = "day" | "night";
 

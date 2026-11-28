@@ -11,7 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { assetIsPresent, type AssetTarget } from "@/game/assetNames";
 import { formatMoney } from "@/game/format";
 import { isLiftOperational } from "@/game/lifts";
-import { liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
+import { historicStarterQuote, liveSatisfaction, openingStep, undoableLiftIndex } from "@/game/rules";
 import { DAY_START_MIN, currentWaitMin, isOnHill } from "@/game/sim";
 import { readSnow } from "@/game/snow";
 import { snowCarriers } from "@/game/trails";
@@ -30,7 +30,7 @@ import { CoachTip } from "@/ui/CoachTip";
 import { ConfirmPop } from "@/ui/ConfirmPop";
 import { GuestsSheet } from "@/ui/GuestsSheet";
 import { useCameraUi, requestFocusPoint, requestRecenter } from "@/ui/cameraUi";
-import { usePop } from "@/ui/feel";
+import { buildConfirmed, usePop } from "@/ui/feel";
 import { FIRST_RIDE_TOAST, LAST_CHAIR_MIN, LAST_CHAIR_TOAST, isFinalOperatingDay } from "@/game/winterMemory";
 import {
   ActionBar,
@@ -137,6 +137,8 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
   const cash = useGameStore((s) => s.cash);
   const phase = useGameStore((s) => s.phase);
   const opening = useGameStore(openingStep);
+  const starterCost = useGameStore(historicStarterQuote);
+  const restoreStarterLine = useGameStore((s) => s.restoreStarterLine);
   const snowQuality = useGameStore((s) => s.snowQuality);
   const snowDepth = useGameStore((s) => s.snowDepth);
   // "tone|label" of the worst trail segment, as a string so the HUD re-renders only when it changes.
@@ -406,9 +408,30 @@ export default function PlayExperience({ onLeave }: { onLeave: (view?: "main" | 
                     buildOpen: false,
                     hasGuestsWant: false,
                   }}
+                  action={
+                    opening !== null && starterCost != null ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          restoreStarterLine();
+                          buildConfirmed("1985 line ready");
+                        }}
+                        className="key key-solid press shrink-0 px-2.5 py-1 text-[0.75rem] font-extrabold [--key-fill:var(--sign-green)] [--key-ink:#fff] [--lift:2px]"
+                      >
+                        Use 1985 line ({formatMoney(starterCost)})
+                      </button>
+                    ) : undefined
+                  }
                 />
               ) : showStartHint ? (
-                <StartCallout step={opening} />
+                <StartCallout
+                  step={opening}
+                  starterCost={starterCost}
+                  onUseStarterLine={() => {
+                    restoreStarterLine();
+                    buildConfirmed("1985 line ready");
+                  }}
+                />
               ) : (
                 <HudRadio
                   onOpenLog={() => openOffice("Reports")}

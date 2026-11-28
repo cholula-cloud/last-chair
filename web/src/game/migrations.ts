@@ -235,6 +235,18 @@ export const MIGRATIONS: readonly Migration[] = [
       forestEpilogue: Boolean(s.forestEpilogue),
     }),
   },
+  {
+    to: 19,
+    note: "Add Dutch Hill North Ridge parcel and Mount Tom Whiterock shuttle decision",
+    up: (s) => ({
+      ...s,
+      northRidgeParcel: Boolean(s.northRidgeParcel),
+      mtShuttleDecision:
+        s.mtShuttleDecision === "accepted" || s.mtShuttleDecision === "declined"
+          ? s.mtShuttleDecision
+          : null,
+    }),
+  },
 ];
 
 type MigrationResult =

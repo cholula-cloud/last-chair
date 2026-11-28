@@ -228,6 +228,19 @@ export function Village() {
   const catKit = useKit("snowcat");
   const cat = bakeKit(catKit);
   const catRef = useRef<THREE.Group>(null);
+  const catBeamMat = useRef<THREE.MeshBasicMaterial>(null);
+  const catBeaconMat = useRef<THREE.MeshBasicMaterial>(null);
+  const catBeamsMesh = useRef<THREE.Mesh>(null);
+  const catBeaconMesh = useRef<THREE.Mesh>(null);
+  const catBeamsGeo = useMemo(() => {
+    const cone = new THREE.ConeGeometry(1.45, 5.2, 10, 1, true);
+    const geo = merge([
+      { geo: cone, color: "#ffe4a8", pos: [-0.65, 1.5, 4.2], rot: [Math.PI / 2 + 0.12, 0, 0] },
+      { geo: cone, color: "#ffe4a8", pos: [0.65, 1.5, 4.2], rot: [Math.PI / 2 + 0.12, 0, 0] },
+    ]);
+    cone.dispose();
+    return geo;
+  }, []);
   const reduced = useReducedMotion();
   const night = useGameStore(s => s.phase === "night" && s.dayIndex < s.seasonLength ? s : null);
   const groom = useMemo(() => {
@@ -280,8 +293,9 @@ export function Village() {
       semiGloss.dispose();
       glass.dispose();
       glow.dispose();
+      catBeamsGeo.dispose();
     },
-    [matte, semiGloss, glass, glow],
+    [matte, semiGloss, glass, glow, catBeamsGeo],
   );
 
   const glassMat = useRef<THREE.MeshStandardMaterial>(null);
@@ -316,6 +330,8 @@ export function Village() {
   useFrame(({ clock }) => {
     if (catRef.current) {
       const cat = catRef.current;
+      if (catBeamsMesh.current) catBeamsMesh.current.visible = Boolean(groom);
+      if (catBeaconMesh.current) catBeaconMesh.current.visible = Boolean(groom);
       if (groom) {
         const cycle = reduced.current ? 0.55 : (clock.elapsedTime / 90) % 2;
         const t = cycle <= 1 ? cycle : 2 - cycle;
@@ -323,6 +339,11 @@ export function Village() {
         const next = groom(Math.max(0, Math.min(1, t + (cycle < 1 ? 0.008 : -0.008))));
         cat.position.set(p.x, p.y, p.z);
         cat.rotation.y = Math.atan2(next.x - p.x, next.z - p.z);
+        if (catBeamMat.current) catBeamMat.current.opacity = 0.22;
+        if (catBeaconMat.current) {
+          const pulse = reduced.current ? 1 : 0.45 + 0.55 * Math.max(0, Math.sin(clock.elapsedTime * 7));
+          catBeaconMat.current.color.set("#ff9f2e").multiplyScalar(0.5 + pulse * 1.1);
+        }
       } else {
         cat.position.set(SNOWCAT_POS.x, TERRAIN.height(SNOWCAT_POS.x, SNOWCAT_POS.z) - 0.02, SNOWCAT_POS.z);
         cat.rotation.y = SNOWCAT_POS.yaw;
@@ -346,6 +367,22 @@ export function Village() {
         {cat.semiGloss && <mesh geometry={cat.semiGloss} castShadow><meshStandardMaterial vertexColors roughness={0.36} metalness={0.25} /></mesh>}
         {cat.glass && <mesh geometry={cat.glass}><meshStandardMaterial vertexColors roughness={0.2} metalness={0.15} emissive="#ff9f2e" emissiveIntensity={0.45} /></mesh>}
         {cat.glow && <mesh geometry={cat.glow}><meshBasicMaterial vertexColors toneMapped={false} /></mesh>}
+        <mesh ref={catBeaconMesh} visible={false} position={[0, 3.34, 0.25]}>
+          <boxGeometry args={[0.26, 0.16, 0.26]} />
+          <meshBasicMaterial ref={catBeaconMat} color="#ff9f2e" toneMapped={false} />
+        </mesh>
+        <mesh ref={catBeamsMesh} visible={false} geometry={catBeamsGeo} renderOrder={4}>
+          <meshBasicMaterial
+            ref={catBeamMat}
+            vertexColors
+            transparent
+            opacity={0.22}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+            blending={THREE.AdditiveBlending}
+            toneMapped={false}
+          />
+        </mesh>
       </group>
       {matte.attributes.position && (
         <mesh geometry={matte} castShadow receiveShadow>

@@ -34,6 +34,21 @@ export function radioDialTurned(): void {
   audio.play("dial");
 }
 
+/** Last-chair cardstock hole punch. */
+export function ticketPunched(): void {
+  audio.play("punch");
+}
+
+/** Trail rope-off / reopen stake click. */
+export function ropeToggled(): void {
+  audio.play("rope");
+}
+
+/** Mount Tom floodlight relay snap. */
+export function lightsSnapped(): void {
+  audio.play("lights");
+}
+
 function applyMix(): void {
   const prefs = useSettings.getState();
   audio.setMix(mixGains({ ...prefs, soundOn: !prefs.muted, ambienceVolume: prefs.musicVolume }));

@@ -12,6 +12,7 @@ import { dayTintAt, type Tint } from "./dayTint";
 import { sceneCameraTarget } from "./sceneCamera";
 import { HILL_CENTER, PALETTE } from "./palette";
 import { lightRig, sunDistance, type Rig } from "./lighting";
+import { mountainTheme } from "./mountainThemes";
 
 /**
  * Shared lighting mood, written once per frame by <Atmosphere> and read by
@@ -105,6 +106,8 @@ const SHADOW_HALF = 18;
  * and weather from the store each frame, so it never re-renders on a tick.
  */
 export function Atmosphere({ lowDetail = false }: { lowDetail?: boolean }) {
+  const mountainId = useGameStore((s) => s.mountainId);
+  const theme = mountainTheme(mountainId);
   const shadowSize = lowDetail ? 1024 : 2048;
   const shadowTexel = (SHADOW_HALF * 2) / shadowSize;
   const reduced = useReducedMotion();
@@ -142,9 +145,14 @@ export function Atmosphere({ lowDetail = false }: { lowDetail?: boolean }) {
     [skyHorizonColor, skyMidColor, skyTopColor],
   );
   const ridgeGeos = useMemo(
-    () => RIDGES.map((r) => ridgeGeometry(r.radius, r.base, r.amp, r.seed, r.color, r.treeLine)),
-    [],
+    () => [
+      ridgeGeometry(520, 54, 42, 11.3, theme.ridgeFar, 0.18),
+      ridgeGeometry(420, 36, 33, 4.7, theme.ridgeMid, 0.28),
+      ridgeGeometry(320, 21, 24, 23.1, theme.ridgeNear, 0.38),
+    ],
+    [theme.ridgeFar, theme.ridgeMid, theme.ridgeNear],
   );
+  void RIDGES;
   const target = useMemo(() => new THREE.Object3D(), []);
   const sunDist = sunDistance(TERRAIN.scale);
 

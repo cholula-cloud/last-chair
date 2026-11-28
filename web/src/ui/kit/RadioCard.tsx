@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { CastPatch, castPatchForSpeaker } from "./CastPatches";
 import { LiveMessage } from "./LiveMessage";
 import { radioArrived } from "@/ui/feel";
 
@@ -55,13 +56,14 @@ export function RadioCard({
   from?: string;
 }) {
   useEffect(() => { if (announce) radioArrived(); }, [announce]);
+  const patchId = castPatchForSpeaker(from);
   return (
     <section
       aria-label={`Route 100 Radio: ${title}`}
       className="arrive panel mt-3 bg-sign-yellow-soft px-4 pb-3.5 pt-3 [--lift:4px]"
     >
       <header className="flex items-center gap-2 border-b-2 border-ink/15 pb-2.5">
-        <RadioDiamond />
+        {patchId ? <CastPatch id={patchId} size={30} /> : <RadioDiamond />}
         <span className="shrink-0 rounded-md border-2 border-ink bg-sign-yellow px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none text-ink tabular-nums">
           100.7 WVTK
         </span>

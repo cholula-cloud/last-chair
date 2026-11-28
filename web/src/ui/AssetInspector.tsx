@@ -6,12 +6,15 @@ import { ASSET_CATALOG, assetEffect, assetRevenue, isRefuelHospitality, LODGE_TI
 import { formatMoney } from "@/game/format";
 import { gunCoverage } from "@/game/guns";
 import { isLiftOperational, liftCapacityPerHour, liftLoadingClosesAt, liftWaitMin, rideMinutesForLift } from "@/game/lifts";
+import { dayEndMin } from "@/game/mountains/mountTom";
 import { readSnow } from "@/game/snow";
 import type { GameState } from "@/game/state";
 import { useGameStore } from "@/game/store";
 import { DAY_START_MIN, LIFT_LABELS, SNOW_LABELS } from "@/game/types";
 import { isWindHeld, weatherForDay } from "@/game/weather";
+import { trailToggleProblem } from "@/game/rules";
 import { normalizeStyleId, unlockedBuildingStyles, type BuildingStyleId } from "@/game/styles";
+import { ropeToggled } from "@/ui/feel";
 import { LodgeUpgradeControl } from "./LodgeUpgradeControl";
 import { LodgeAnnexPanel } from "./LodgeAnnexPanel";
 import { StylePicker } from "./StylePicker";
@@ -66,7 +69,7 @@ function assetDetails(state: GameState, target: AssetTarget): {
       const held = isWindHeld(lift.type, weatherForDay(state).wind, state.clockMin, state.talentsOwned);
       const status = lift.closing ? "Closing tonight"
         : !isLiftOperational(lift, index, state.trails) ? "Waiting for a trail"
-        : state.clockMin >= liftLoadingClosesAt(state.talentsOwned) ? "Closed for the day"
+        : state.clockMin >= liftLoadingClosesAt(state.talentsOwned, dayEndMin(state)) ? "Closed for the day"
         : held ? "Wind hold" : state.clockMin <= DAY_START_MIN && state.paused ? "Ready to open" : "Open";
       return {
         name: liftName(lift, index),
@@ -209,6 +212,32 @@ export function AssetInspector({ target, onClose }: {
           <LodgeUpgradeControl variant="inspector" className="mt-3" />
         </div>
       )}
+      {target.kind === "trail" && state.phase === "day" && (() => {
+        const trail = state.trails[target.index];
+        if (!trail) return null;
+        const problem = trail.open ? trailToggleProblem(state, target.index) : null;
+        return (
+          <div className="well mt-3 space-y-2 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-extrabold">
+                {trail.open ? "Trail is open" : "Roped off"}
+              </span>
+              <button
+                type="button"
+                disabled={Boolean(problem)}
+                onClick={() => {
+                  state.toggleTrailOpen(target.index);
+                  ropeToggled();
+                }}
+                className="key key-solid press min-h-11 px-3 text-xs font-extrabold [--key-fill:var(--sign-yellow)] [--lift:2px]"
+              >
+                {trail.open ? "Rope off trail" : "Reopen trail"}
+              </button>
+            </div>
+            {problem && <p className="text-xs font-bold text-ink-soft">{problem}</p>}
+          </div>
+        );
+      })()}
       {target.kind === "venue" && (
         <StylePicker
           value={normalizeStyleId(state.assets[target.index].styleId)}

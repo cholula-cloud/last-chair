@@ -8,10 +8,12 @@ export { SPEEDS, type GameSpeed };
 /** Session-only day speed; not saved with the hill. Starts at the default speed from Settings. */
 export const useSpeed = create<{
   speed: GameSpeed;
+  setSpeed: (speed: GameSpeed) => void;
   cycle: () => void;
   reset: () => void;
 }>((set, get) => ({
   speed: useSettings.getState().defaultSpeed,
+  setSpeed: (speed) => set({ speed }),
   cycle: () => {
     const i = SPEEDS.indexOf(get().speed);
     set({ speed: SPEEDS[(i + 1) % SPEEDS.length] });

@@ -102,6 +102,8 @@ describe("audio engine gesture and mute rules", () => {
     expect(h.ctx.count("osc")).toBeGreaterThan(0);
     const effects = h.engine.nodes!.effects as unknown as FakeNode;
     expect(h.ctx.nodes.some((n) => n.kind === "gain" && n.to.includes(effects))).toBe(true);
+    for (const id of SOUND_IDS) h.engine.play(id);
+    expect(h.ctx.count("osc")).toBeGreaterThan(2);
   });
 
   it("plays nothing when Sound is off or the effects slider is zero", async () => {
